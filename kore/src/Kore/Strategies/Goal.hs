@@ -31,9 +31,9 @@ import Control.Exception
     ( throw
     )
 import Control.Monad.Catch
-    ( Exception
+    ( Exception (..)
     , MonadCatch
-    , SomeException
+    , SomeException (..)
     , handle
     )
 import qualified Control.Monad.Trans as Trans
@@ -84,10 +84,17 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTrueCondition
+    )
 import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
     )
+import Kore.Logger
+    ( MonadLog (..)
+    )
+import Kore.Logger.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -132,6 +139,7 @@ import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( Prim
     , ProofState
+    , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
 import qualified Kore.Syntax.Sentence as Syntax
@@ -284,7 +292,8 @@ instance Goal (OnePathRule Variable) where
         ProofState.ProofState a
 
     transitionRule =
-        transitionRuleTemplate
+        withDebugProofState
+        $ transitionRuleTemplate
             TransitionRuleTemplate
                 { simplifyTemplate =
                     simplify
@@ -345,7 +354,8 @@ instance Goal (AllPathRule Variable) where
         ProofState.ProofState a
 
     transitionRule =
-        transitionRuleTemplate
+        withDebugProofState
+        $ transitionRuleTemplate
             TransitionRuleTemplate
                 { simplifyTemplate =
                     simplify
@@ -451,13 +461,19 @@ instance Goal (ReachabilityRule Variable) where
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
-            GoalStuck _ ->
+            state@(GoalStuck _) ->
                 case prim of
-                    CheckGoalStuck -> empty
+                    CheckGoalStuck ->
+                        debugProofStateFinal
+                            state
+                            CheckGoalStuck
                     _ -> return proofstate
             Proven ->
                 case prim of
-                    CheckProven -> empty
+                    CheckProven ->
+                        debugProofStateFinal
+                            Proven
+                            CheckProven
                     _ -> return proofstate
 
     strategy
@@ -573,7 +589,8 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , removeDestinationTemplate
-        :: ProofState goal goal
+        :: (goal -> ProofState goal goal)
+        -> goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
@@ -613,28 +630,36 @@ transitionRuleTemplate
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
+    transitionRuleWorker ResetGoal (GoalRewritten goal) =
+        return (Goal goal)
 
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
-    transitionRuleWorker Simplify (Goal g) =
+    transitionRuleWorker Simplify (Goal goal) =
         Profile.timeStrategy "Goal.Simplify"
-        $ Goal <$> simplifyTemplate g
-    transitionRuleWorker Simplify (GoalRemainder g) =
+        $ Goal <$> simplifyTemplate goal
+    transitionRuleWorker Simplify (GoalRemainder goal) =
         Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplifyTemplate g
+        $ GoalRemainder <$> simplifyTemplate goal
 
-    transitionRuleWorker RemoveDestination goal =
-        removeDestinationTemplate goal
+    transitionRuleWorker RemoveDestination (Goal goal) =
+        Profile.timeStrategy "Goal.RemoveDestination"
+        $ removeDestinationTemplate Goal goal
+    transitionRuleWorker RemoveDestination (GoalRemainder goal) =
+        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+        $ removeDestinationTemplate GoalRemainder goal
 
-    transitionRuleWorker TriviallyValid (Goal g)
-      | isTriviallyValidTemplate g = return Proven
-    transitionRuleWorker TriviallyValid (GoalRemainder g)
-      | isTriviallyValidTemplate g = return Proven
-    transitionRuleWorker TriviallyValid (GoalRewritten g)
-      | isTriviallyValidTemplate g = return Proven
+    transitionRuleWorker TriviallyValid (Goal goal)
+      | isTriviallyValidTemplate goal =
+          return Proven
+    transitionRuleWorker TriviallyValid (GoalRemainder goal)
+      | isTriviallyValidTemplate goal =
+          return Proven
+    transitionRuleWorker TriviallyValid (GoalRewritten goal)
+      | isTriviallyValidTemplate goal =
+          return Proven
 
-    transitionRuleWorker (DerivePar rules) (Goal g) =
+    transitionRuleWorker (DerivePar rules) (Goal goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         --
         -- Note that in most transitions it is obvious what is being transformed
@@ -644,23 +669,23 @@ transitionRuleTemplate
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
         Profile.timeStrategy "Goal.DerivePar"
-        $ deriveParTemplate rules g
-    transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
+        $ deriveParTemplate rules goal
+    transitionRuleWorker (DerivePar rules) (GoalRemainder goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveParRemainder"
-        $ deriveParTemplate rules g
+        $ deriveParTemplate rules goal
 
-    transitionRuleWorker (DeriveSeq rules) (Goal g) =
+    transitionRuleWorker (DeriveSeq rules) (Goal goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeq"
-        $ deriveSeqTemplate rules g
-    transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
+        $ deriveSeqTemplate rules goal
+    transitionRuleWorker (DeriveSeq rules) (GoalRemainder goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeqRemainder"
-        $ deriveSeqTemplate rules g
+        $ deriveSeqTemplate rules goal
 
     transitionRuleWorker _ state = return state
 
@@ -756,27 +781,10 @@ removeDestination
     => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
-    => ProofState goal goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestination =
-    \case
-        Goal goal ->
-            Profile.timeStrategy "Goal.RemoveDestination"
-            $ removeDestinationWorker Goal goal
-        GoalRemainder goal ->
-            Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-            $ removeDestinationWorker GoalRemainder goal
-        state -> return state
-
-removeDestinationWorker
-    :: MonadSimplify m
-    => MonadCatch m
-    => ProofState.ProofState goal ~ ProofState goal goal
-    => ToRulePattern goal
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal =
+removeDestination stateConstructor goal =
     withConfiguration goal $ Trans.lift $ do
         removal <- removalPredicate destination configuration
         if isTop removal
@@ -983,7 +991,7 @@ removalPredicate
                     $ (const <$> destination <*> substPattern)
             evaluatedRemainder <-
                 Exists.makeEvaluate
-                    configPredicate extraElemVariables remainderPattern
+                    sideCondition extraElemVariables remainderPattern
             return
                 . Predicate.makeNotPredicate
                 . Condition.toPredicate
@@ -1013,6 +1021,7 @@ removalPredicate
   where
     Conditional { term = destTerm } = destination
     (configTerm, configPredicate) = Pattern.splitTerm configuration
+    sideCondition = SideCondition.assumeTrueCondition configPredicate
     -- The variables of the destination that are missing from the
     -- configuration. These are the variables which should be existentially
     -- quantified in the removal predicate.
@@ -1058,7 +1067,7 @@ getDestination
     -> RHS Variable
 getDestination (toRulePattern -> RulePattern { rhs }) = rhs
 
-{-|Given a rule to use as a prototype, a 'Pattern' to use as the configuration
+{-| Given a rule to use as a prototype, a 'Pattern' to use as the configuration
 and a 'RHS' containing the destination, makes a rule out of them.
 -}
 configurationDestinationToRule
@@ -1078,3 +1087,97 @@ configurationDestinationToRule ruleType configuration rhs =
         , rhs
         , attributes = Default.def
         }
+
+class ToReachabilityRule rule where
+    toReachabilityRule :: rule -> ReachabilityRule Variable
+
+instance ToReachabilityRule (OnePathRule Variable) where
+    toReachabilityRule = OnePath
+
+instance ToReachabilityRule (AllPathRule Variable) where
+    toReachabilityRule = AllPath
+
+instance ToReachabilityRule (ReachabilityRule Variable) where
+    toReachabilityRule = id
+
+debugProofStateBracket
+    :: forall monad goal
+    .  MonadLog monad
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
+    => ProofState goal goal
+    -- ^ current proof state
+    -> Prim goal
+    -- ^ transition
+    -> monad (ProofState goal goal)
+    -- ^ action to be computed
+    -> monad (ProofState goal goal)
+debugProofStateBracket
+    (fmap toReachabilityRule -> proofState)
+    (coerce -> transition)
+    action
+  = do
+    result <- action
+    logM DebugProofState
+        { proofState
+        , transition
+        , result = Just $ toReachabilityRule <$> result
+        }
+    return result
+
+debugProofStateFinal
+    :: forall monad goal
+    .  Alternative monad
+    => MonadLog monad
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
+    => ProofState goal goal
+    -- ^ current proof state
+    -> Prim goal
+    -- ^ transition
+    -> monad (ProofState goal goal)
+debugProofStateFinal
+    (fmap toReachabilityRule -> proofState)
+    (coerce -> transition)
+  = do
+    logM DebugProofState
+        { proofState
+        , transition
+        , result = Nothing
+        }
+    empty
+
+withDebugProofState
+    :: forall monad goal
+    .  MonadLog monad
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
+    =>
+        (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        )
+    ->
+        (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        )
+withDebugProofState transitionFunc =
+    \transition state ->
+        Transition.orElse
+            (debugProofStateBracket
+                state
+                transition
+                (transitionFunc transition state)
+            )
+            (debugProofStateFinal
+                state
+                transition
+            )
+

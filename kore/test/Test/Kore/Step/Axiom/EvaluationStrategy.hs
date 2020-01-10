@@ -15,7 +15,6 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute
     ( Concrete (Concrete)
     )
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
     ( Conditional (Conditional)
@@ -30,6 +29,9 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     , makeTruePredicate
     , makeTruePredicate_
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTruePredicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -618,4 +620,4 @@ evaluateWithPredicate
     -> IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifier Mock.env
-    $ simplifier term (Condition.fromPredicate predicate)
+    $ simplifier term (SideCondition.assumeTruePredicate predicate)

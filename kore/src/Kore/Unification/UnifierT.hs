@@ -32,10 +32,6 @@ import Branch
     ( BranchT
     )
 import qualified Branch as BranchT
-import qualified Kore.Internal.Condition as Condition
-    ( topTODO
-    )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Logger
     ( MonadLog (..)
     )
@@ -158,8 +154,7 @@ unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =
     MakeAnd { makeAnd }
   where
-    makeAnd termLike1 termLike2 condition = do
+    makeAnd termLike1 termLike2 sideCondition = do
         unified <- termUnification termLike1 termLike2
         BranchT.alternate
-            $ Simplifier.simplifyCondition Condition.topTODO
-            $ Pattern.andCondition unified condition
+            $ Simplifier.simplifyCondition sideCondition unified

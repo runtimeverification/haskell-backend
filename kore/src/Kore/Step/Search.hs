@@ -54,6 +54,9 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Conditional
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( evaluate
@@ -131,14 +134,14 @@ searchGraph Config { searchType, bound } match executionGraph = do
 matchWith
     :: forall variable m
     .  (SimplifierVariable variable, MonadSimplify m)
-    => Condition variable
+    => SideCondition variable
     -> Pattern variable
     -> Pattern variable
     -> MaybeT m (OrCondition variable)
-matchWith topCondition e1 e2 = do
+matchWith sideCondition e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Unifier.runUnifierT
-        $ unificationProcedure topCondition t1 t2
+        $ unificationProcedure sideCondition t1 t2
     let
         maybeUnifiers :: Maybe [Condition variable]
         maybeUnifiers = hush eitherUnifiers
@@ -154,7 +157,7 @@ matchWith topCondition e1 e2 = do
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
-                    topCondition
+                    sideCondition
                     [ Conditional.predicate predSubst
                     , Conditional.predicate e1
                     , Conditional.predicate e2
@@ -166,7 +169,7 @@ matchWith topCondition e1 e2 = do
             case smtEvaluation of
                     Nothing ->
                         mergePredicatesAndSubstitutions
-                            topCondition
+                            sideCondition
                             [ Conditional.predicate simplified ]
                             [ Conditional.substitution merged
                             , Conditional.substitution simplified

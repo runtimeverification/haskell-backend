@@ -137,6 +137,12 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTrueCondition
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -238,37 +244,37 @@ replInterpreter0
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
-                ShowUsage          -> showUsage          $> Continue
-                Help               -> help               $> Continue
-                ShowClaim mc       -> showClaim mc       $> Continue
-                ShowAxiom ea       -> showAxiom ea       $> Continue
-                Prove i            -> prove i            $> Continue
-                ShowGraph mfile    -> showGraph mfile    $> Continue
-                ProveSteps n       -> proveSteps n       $> Continue
-                ProveStepsF n      -> proveStepsF n      $> Continue
-                SelectNode i       -> selectNode i       $> Continue
-                ShowConfig mc      -> showConfig mc      $> Continue
-                OmitCell c         -> omitCell c         $> Continue
-                ShowLeafs          -> showLeafs          $> Continue
-                ShowRule   mc      -> showRule mc        $> Continue
-                ShowPrecBranch mn  -> showPrecBranch mn  $> Continue
-                ShowChildren mn    -> showChildren mn    $> Continue
-                Label ms           -> label ms           $> Continue
-                LabelAdd l mn      -> labelAdd l mn      $> Continue
-                LabelDel l         -> labelDel l         $> Continue
-                Redirect inn file  -> redirect inn file  $> Continue
-                Try ref            -> tryAxiomClaim ref  $> Continue
-                TryF ac            -> tryFAxiomClaim ac  $> Continue
-                Clear n            -> clear n            $> Continue
-                SaveSession file   -> saveSession file   $> Continue
-                Pipe inn file args -> pipe inn file args $> Continue
-                AppendTo inn file  -> appendTo inn file  $> Continue
-                Alias a            -> alias a            $> Continue
-                TryAlias name      -> tryAlias name printAux printKore
-                LoadScript file    -> loadScript file    $> Continue
-                ProofStatus        -> proofStatus        $> Continue
-                Log opts           -> handleLog opts     $> Continue
-                Exit               -> exit
+                ShowUsage           -> showUsage           $> Continue
+                Help                -> help                $> Continue
+                ShowClaim mc        -> showClaim mc        $> Continue
+                ShowAxiom ea        -> showAxiom ea        $> Continue
+                Prove i             -> prove i             $> Continue
+                ShowGraph mfile out -> showGraph mfile out $> Continue
+                ProveSteps n        -> proveSteps n        $> Continue
+                ProveStepsF n       -> proveStepsF n       $> Continue
+                SelectNode i        -> selectNode i        $> Continue
+                ShowConfig mc       -> showConfig mc       $> Continue
+                OmitCell c          -> omitCell c          $> Continue
+                ShowLeafs           -> showLeafs           $> Continue
+                ShowRule   mc       -> showRule mc         $> Continue
+                ShowPrecBranch mn   -> showPrecBranch mn   $> Continue
+                ShowChildren mn     -> showChildren mn     $> Continue
+                Label ms            -> label ms            $> Continue
+                LabelAdd l mn       -> labelAdd l mn       $> Continue
+                LabelDel l          -> labelDel l          $> Continue
+                Redirect inn file   -> redirect inn file   $> Continue
+                Try ref             -> tryAxiomClaim ref   $> Continue
+                TryF ac             -> tryFAxiomClaim ac   $> Continue
+                Clear n             -> clear n             $> Continue
+                SaveSession file    -> saveSession file    $> Continue
+                Pipe inn file args  -> pipe inn file args  $> Continue
+                AppendTo inn file   -> appendTo inn file   $> Continue
+                Alias a             -> alias a             $> Continue
+                TryAlias name       -> tryAlias name printAux printKore
+                LoadScript file     -> loadScript file     $> Continue
+                ProofStatus         -> proofStatus         $> Continue
+                Log opts            -> handleLog opts      $> Continue
+                Exit                -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
             ( replOut
@@ -429,16 +435,18 @@ showGraph
     => MonadWriter ReplOutput m
     => Claim claim
     => Maybe FilePath
+    -> Maybe Graph.GraphvizOutput
     -> MonadState (ReplState claim) m
     => m ()
-showGraph mfile = do
+showGraph mfile out = do
+    let format = maybe Graph.Svg id out
     graph <- getInnerGraph
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
        then liftIO $ maybe
                         (showDotGraph (length axioms) graph)
-                        (saveDotGraph (length axioms) graph)
+                        (saveDotGraph (length axioms) graph format)
                         mfile
        else putStrLn' "Graphviz is not installed."
 
@@ -876,7 +884,10 @@ tryAxiomClaimWorker mode ref = do
                 patternUnifier
                     (Pattern.splitTerm -> (secondTerm, secondCondition))
                   =
-                    runUnifier' secondCondition first secondTerm
+                    runUnifier' sideCondition first secondTerm
+                  where
+                    sideCondition =
+                        SideCondition.assumeTrueCondition secondCondition
 
     tryForceAxiomOrClaim
         :: Either axiom claim
@@ -898,12 +909,12 @@ tryAxiomClaimWorker mode ref = do
                 updateExecutionGraph graph
 
     runUnifier'
-        :: Condition Variable
+        :: SideCondition Variable
         -> TermLike Variable
         -> TermLike Variable
         -> ReplM claim m ()
-    runUnifier' topCondition first second =
-        runUnifier topCondition first' second
+    runUnifier' sideCondition first second =
+        runUnifier sideCondition first' second
         >>= tell . formatUnificationMessage
       where
         first' = TermLike.refreshVariables (freeVariables second) first
@@ -1221,18 +1232,21 @@ saveDotGraph
     :: ToRulePattern axiom
     => Int
     -> InnerGraph axiom
+    -> Graph.GraphvizOutput
     -> FilePath
     -> IO ()
-saveDotGraph len gr file =
+saveDotGraph len gr format file =
     withExistingDirectory file saveGraphImg
   where
     saveGraphImg :: FilePath -> IO ()
     saveGraphImg path =
         void
-        . Graph.runGraphviz
-            (Graph.graphToDot (graphParams len) gr)
-            Graph.Jpeg
-        $ path <> ".jpeg"
+        $ Graph.addExtension
+            (Graph.runGraphviz
+                (Graph.graphToDot (graphParams len) gr)
+            )
+            format
+            path
 
 graphParams
     :: ToRulePattern axiom
