@@ -95,6 +95,7 @@
       - Test.Kore.Step.Rule.Combine
       - Test.Kore.Step.Step
       - Test.Kore.Step.Substitution
+      - Test.Kore.Strategies.AllPath.AllPath
 
 # The placement of lambdas affects inlining.
 - ignore: {name: Redundant lambda}
