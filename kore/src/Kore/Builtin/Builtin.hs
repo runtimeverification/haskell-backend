@@ -320,14 +320,8 @@ functionEvaluator impl =
         -> simplifier (AttemptedAxiom variable)
     evaluator (valid :< app) =
         impl resultSort
-        $ fmap removeEvaluated applicationChildren
+        $ fmap TermLike.removeEvaluated applicationChildren
       where
-        removeEvaluated :: TermLike variable -> TermLike variable
-        removeEvaluated termLike@(Recursive.project -> (_ :< termLikeF)) =
-            case termLikeF of
-                EvaluatedF (Evaluated e) -> removeEvaluated e
-                _                        -> termLike
-
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
 
