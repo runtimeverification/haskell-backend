@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# Generate standalone Kore tests from wasm-semantics.
+# Usage:
+#   1. Clone the `wasm-semantics` repository.
+#   2. Follow the instructions to prepare the dependencies on your system.
+#   3. Set the KORE environment variable in your shell to the location of the
+#      `kore` repository.
+#   4. Run this script in the root of the `wasm-semantics` repository.
+
 set -exuo pipefail
 
 kollect() {
