@@ -260,7 +260,8 @@ applyRulesParallel
     (map toAxiomVariables -> rules)
     initial
   = do
-      results <- unifyRules unificationProcedure SideCondition.topTODO initial rules
+      results <-
+          unifyRules unificationProcedure SideCondition.topTODO initial rules
       debugAppliedRewriteRules initial results
       finalizeRulesParallel initial results
 
@@ -313,7 +314,8 @@ applyRulesSequence
     -- axiom variables.
     (map toAxiomVariables -> rules)
   = do
-      results <- unifyRules unificationProcedure SideCondition.topTODO initial rules
+      results <-
+          unifyRules unificationProcedure SideCondition.topTODO initial rules
       debugAppliedRewriteRules initial results
       finalizeRulesSequence initial results
 
