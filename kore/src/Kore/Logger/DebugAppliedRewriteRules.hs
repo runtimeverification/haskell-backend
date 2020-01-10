@@ -20,6 +20,7 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
     ( Variable (..)
     , toVariable
@@ -51,8 +52,25 @@ newtype DebugAppliedRewriteRules =
 
 instance Pretty DebugAppliedRewriteRules where
     pretty DebugAppliedRewriteRules { appliedRewriteRules } =
-        Pretty.vsep $
-            fmap (\x -> unparse . extract $ x) appliedRewriteRules
+        case appliedRewriteRules of
+            [] -> "No rules were applied."
+            rules ->
+                Pretty.vsep
+                $ fmap prettyUnifiedRule rules
+      where
+        prettyUnifiedRule unifiedRule =
+            let rule = extract unifiedRule
+                condition =
+                    Pattern.toTermLike
+                    . Pattern.fromCondition
+                    . Conditional.withoutTerm
+                    $ unifiedRule
+            in Pretty.vsep
+                [ "Applied rule:"
+                , Pretty.indent 2 . unparse $ rule
+                , "With condition:"
+                , Pretty.indent 2 . unparse $ condition
+                ]
 
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
