@@ -1,0 +1,5 @@
+[Critical] : [CriticalExecutionError] : Error in module 'KREFLECTION' -> hooked-symbol 'Lbl'Hash'isConcrete'LParUndsRParUnds'K-REFLECTION-SYMBOLIC'Unds'Bool'Unds'K' declaration (/home/andrei/kore/test/kreflection/././kreflection-kompiled/definition.kore 92:17): found KREFLECTION.isConcrete hook
+CallStack (from HasCallStack):
+  error, called at app/share/GlobalMain.hs:452:36 in main:GlobalMain
+[Error] Critical: Haskell Backend execution failed with code 1 and produced no
+output.
