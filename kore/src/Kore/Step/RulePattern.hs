@@ -632,20 +632,35 @@ onePathRuleToTerm
 onePathRuleToTerm (OnePathRule (RulePattern left _ requires rhs _)) =
     mkImpliesRule left requires (Just wEF) rhs
 
+{- | Construct a 'TermLike' from the parts of an implication-based rule.
+
+The 'TermLike' has the following form:
+
+@
+\\implies{S}(\and{S}(left, requires), alias{S}(right))
+@
+
+that is,
+
+@
+left ∧ requires → alias(right)
+@
+
+ -}
 mkImpliesRule
     :: InternalVariable variable
     => TermLike variable                         -- ^ left-hand term
     -> Predicate variable                        -- ^ left-hand requires
-    -> Maybe (Sort -> Alias (TermLike Variable)) -- ^ modality
+    -> Maybe (Sort -> Alias (TermLike Variable)) -- ^ right-hand alias
     -> RHS variable                              -- ^ right-hand term
     -> TermLike variable
-mkImpliesRule left requires mode right =
+mkImpliesRule left requires alias right =
     TermLike.mkImplies
         (TermLike.mkAnd (Predicate.fromPredicate sortLeft requires) left)
-        (maybeApplyMode rhsTerm)
+        (maybeApplyAlias rhsTerm)
   where
-    maybeApplyMode = maybe id applyMode mode
-    applyMode mkOp r = TermLike.mkApplyAlias (mkOp sortRight) [r]
+    maybeApplyAlias = maybe id applyAlias alias
+    applyAlias mkOp r = TermLike.mkApplyAlias (mkOp sortRight) [r]
     sortLeft = TermLike.termLikeSort left
     sortRight = TermLike.termLikeSort rhsTerm
     rhsTerm = rhsToTerm right
