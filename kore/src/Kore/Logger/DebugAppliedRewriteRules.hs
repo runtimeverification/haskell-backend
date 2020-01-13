@@ -66,7 +66,7 @@ instance Pretty DebugAppliedRewriteRules where
       where
         prettyUnifiedRules =
             case appliedRewriteRules of
-                [] -> ["No rules where applied."]
+                [] -> ["No rules were applied."]
                 rules ->
                     ["The following rules were applied:"]
                     <> (rules >>= prettyUnifiedRule)
