@@ -49,7 +49,6 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import Kore.Logger
 import Kore.Profiler.Data
     ( MonadProfiler (profile)
     )
@@ -62,6 +61,7 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import Log
 import SMT
     ( MonadSMT (..)
     , SmtT (..)

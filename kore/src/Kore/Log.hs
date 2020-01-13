@@ -1,36 +1,27 @@
-{-|
-Module      : Kore.Logger.Output
-Description : Logger helpers and internals needed for Main.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : vladimir.ciobanu@runtimeverification.com
+
 -}
 
-module Kore.Logger.Output
-    ( KoreLogType (..)
-    , KoreLogOptions (..)
-    , EntryTypes
-    , TimestampsSwitch (..)
-    , koreLogFilters
+module Kore.Log
+    ( koreLogFilters
     , withLogger
-    , parseKoreLogOptions
     , emptyLogger
     , stderrLogger
     , swappableLogger
     , makeKoreLogger
     , Colog.logTextStderr
     , Colog.logTextHandle
-    , module Kore.Logger
     , runLoggerT
+    , module Log
+    , module KoreLogOptions
     ) where
 
 import Colog
     ( LogAction (..)
     )
 import qualified Colog
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Concurrent.Async
     ( Async
     , async
@@ -63,16 +54,9 @@ import Control.Monad.IO.Class
 import Control.Monad.Reader
     ( runReaderT
     )
-import Data.Functor
-    ( void
-    )
 import Data.Functor.Contravariant
     ( contramap
     )
-import Data.Set
-    ( Set
-    )
-import qualified Data.Set as Set
 import Data.String
     ( IsString
     , fromString
@@ -80,7 +64,6 @@ import Data.String
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Time.Clock
@@ -95,69 +78,22 @@ import Data.Time.LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
     )
-import Options.Applicative
-    ( Parser
-    , flag'
-    , help
-    , helpDoc
-    , long
-    , maybeReader
-    , option
-    )
-import qualified Options.Applicative.Help.Pretty as OptPretty
-import qualified Text.Megaparsec as Parser
-import qualified Text.Megaparsec.Char as Parser
-import Type.Reflection
-    ( SomeTypeRep (..)
-    )
 
-import Kore.Logger
-import Kore.Logger.DebugAppliedRule
-import Kore.Logger.DebugAxiomEvaluation
-    ( DebugAxiomEvaluationOptions
-    , filterDebugAxiomEvaluation
-    , parseDebugAxiomEvaluationOptions
+import Kore.Log.DebugAppliedRule
+import Kore.Log.DebugAxiomEvaluation
+    ( filterDebugAxiomEvaluation
     )
-import Kore.Logger.DebugSolver
+import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
-    , parseDebugSolverOptions
     , solverTranscriptLogger
     )
-import qualified Kore.Logger.DebugSolver as DebugSolver.DoNotUse
-import Kore.Logger.Registry
-    ( getEntryTypesAsText
-    , lookupTextFromTypeWithError
-    , parseEntryType
+import qualified Kore.Log.DebugSolver as DebugSolver.DoNotUse
+import Kore.Log.KoreLogOptions as KoreLogOptions
+import Kore.Log.Registry
+    ( lookupTextFromTypeWithError
     , toSomeEntryType
     )
-
--- | 'KoreLogType' is passed via command line arguments and decides if and how
--- the logger will operate.
-data KoreLogType
-    = LogStdErr
-    -- ^ Log to stderr
-    | LogFileText FilePath
-    -- ^ Log to specified file when '--log <filename>' is passed.
-    deriving (Eq, Show)
-
-type EntryTypes = Set SomeTypeRep
-
--- | 'KoreLogOptions' is the top-level options type for logging, containing the
--- desired output method and the minimum 'Severity'.
-data KoreLogOptions = KoreLogOptions
-    { logType   :: KoreLogType
-    -- ^ desired output method, see 'KoreLogType'
-    , logLevel  :: Severity
-    -- ^ minimal log level, passed via "--log-level"
-    , timestampsSwitch :: TimestampsSwitch
-    -- ^ enable or disable timestamps
-    , logEntries :: EntryTypes
-    -- ^ extra entries to show, ignoring 'logLevel'
-    , debugAppliedRuleOptions :: DebugAppliedRuleOptions
-    , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
-    , debugSolverOptions :: DebugSolverOptions
-    }
-    deriving (Eq, Show)
+import Log
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
@@ -261,85 +197,6 @@ writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
     LogAction $ \msg ->
         atomically $ writeTChan tChan msg
-
--- Parser for command line log options.
-parseKoreLogOptions :: Parser KoreLogOptions
-parseKoreLogOptions =
-    KoreLogOptions
-    <$> (parseType <|> pure LogStdErr)
-    <*> (parseLevel <|> pure Warning)
-    <*> (parseTimestampsOption <|> pure TimestampsEnable)
-    <*> (mconcat <$> many parseEntries)
-    <*> parseDebugAppliedRuleOptions
-    <*> parseDebugAxiomEvaluationOptions
-    <*> parseDebugSolverOptions
-  where
-    parseType :: Parser KoreLogType
-    parseType =
-        option
-            (maybeReader parseTypeString)
-            $ long "log"
-            <> help "Name of the log file"
-
-      where
-        parseTypeString filename = pure $ LogFileText filename
-
-    parseLevel =
-        option
-            (maybeReader parseSeverity)
-            $ long "log-level"
-            <> help "Log level: debug, info, warning, error, or critical"
-    parseSeverity =
-        \case
-            "debug"    -> pure Debug
-            "info"     -> pure Info
-            "warning"  -> pure Warning
-            "error"    -> pure Error
-            "critical" -> pure Critical
-            _          -> Nothing
-    parseTimestampsOption :: Parser TimestampsSwitch
-    parseTimestampsOption = parseTimestampsEnable <|> parseTimestampsDisable
-      where
-        parseTimestampsEnable =
-            flag' TimestampsEnable
-                (  long "enable-log-timestamps"
-                <> help "Enable log timestamps" )
-        parseTimestampsDisable =
-            flag' TimestampsDisable
-                (  long "disable-log-timestamps"
-                <> help "Disable log timestamps" )
-
-    parseEntries =
-        option
-            parseCommaSeparatedEntries
-            $ long "log-entries"
-            <> helpDoc
-               ( Just listOfEntries )
-
-    parseCommaSeparatedEntries = maybeReader $ Parser.parseMaybe entryParser
-    entryParser :: Parser.Parsec String String EntryTypes
-    entryParser = do
-        args <- many itemParser
-        pure . Set.fromList $ args
-    itemParser :: Parser.Parsec String String SomeTypeRep
-    itemParser = do
-        argument <- some (Parser.noneOf [',', ' '])
-        _ <- void (Parser.char ',') <|> Parser.eof
-        parseEntryType . Text.pack $ argument
-
-listOfEntries :: OptPretty.Doc
-listOfEntries =
-    OptPretty.vsep $
-        [ "Log entries: logs entries of supplied types"
-        , "Available entry types:"
-        ]
-        <> fmap
-            (OptPretty.indent 4 . OptPretty.text . Text.unpack)
-            getEntryTypesAsText
-
--- | Enable or disable timestamps
-data TimestampsSwitch = TimestampsEnable | TimestampsDisable
-    deriving (Eq, Show)
 
 -- Creates a kore logger which:
 --     * adds timestamps

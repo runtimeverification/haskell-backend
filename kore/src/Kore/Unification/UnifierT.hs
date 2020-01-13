@@ -32,9 +32,6 @@ import Branch
     ( BranchT
     )
 import qualified Branch as BranchT
-import Kore.Logger
-    ( MonadLog (..)
-    )
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -56,6 +53,9 @@ import Kore.Unification.SubstitutionSimplifier
     ( substitutionSimplifier
     )
 import Kore.Unification.Unify
+import Log
+    ( MonadLog (..)
+    )
 import SMT
     ( MonadSMT (..)
     )
