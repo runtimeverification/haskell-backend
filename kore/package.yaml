@@ -33,6 +33,7 @@ dependencies:
   - base >=4.7
   - aeson >=1.4
   - array >=0.5
+  - async >=2.2
   - bytestring >=0.10
   - comonad >=5.0
   - containers >=0.5.8
