@@ -9,6 +9,7 @@ module Kore.Step.EqualityPattern
     , EqualityRule (..)
     , equalityPattern
     , equalityRuleToTerm
+    , isSimplificationRule
     ) where
 
 import Control.DeepSeq
@@ -234,3 +235,10 @@ instance
             <> freeVariables requires
             <> freeVariables right
             <> freeVariables ensures
+
+isSimplificationRule :: EqualityRule variable -> Bool
+isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
+    isSimplification
+  where
+    Attribute.Simplification { isSimplification } =
+        Attribute.simplification attributes

@@ -16,6 +16,7 @@ import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import Data.List
     ( partition
+    , sortBy
     )
 import Data.Map.Strict
     ( Map
@@ -25,6 +26,7 @@ import Data.Maybe
     ( fromMaybe
     , mapMaybe
     )
+import qualified Data.Witherable as Witherable
 
 import Kore.Attribute.Axiom
     ( Assoc (Assoc)
@@ -56,6 +58,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     , EqualityRule (EqualityRule)
+    , isSimplificationRule
     )
 import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)
@@ -128,7 +131,53 @@ axiomToIdAxiomPatternPair axiom =
         Right (AllPathClaimPattern _) -> Nothing
         Right (ImplicationAxiomPattern _) -> Nothing
 
--- |Converts a registry of 'RulePattern's to one of
+processEqualityRules
+    :: [EqualityRule Variable]
+    -> ([EqualityRule Variable], [EqualityRule Variable])
+processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
+    ( processFunctionRules functionRules
+    , simplificationRules
+    )
+  where
+    (functionRules, simplificationRules) =
+        partition isSimplificationRule equalities
+    processFunctionRules =
+        sortBy ascPriority . filter (not . ignoreDefinition)
+    ascPriority
+        :: EqualityRule Variable -> EqualityRule Variable -> Ordering
+    ascPriority = undefined
+
+processAxiomPatterns
+    :: Map.Map AxiomIdentifier [EqualityRule Variable]
+    -> Map.Map AxiomIdentifier ([EqualityRule Variable], [EqualityRule Variable])
+processAxiomPatterns = fmap processEqualityRules
+
+axiomPatternsToEvaluatorsWIP
+    :: Map.Map AxiomIdentifier ([EqualityRule Variable], [EqualityRule Variable])
+    -> Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
+axiomPatternsToEvaluatorsWIP =
+    Witherable.mapMaybe equalitiesToEvaluators
+  where
+    equalitiesToEvaluators
+        :: ([EqualityRule Variable], [EqualityRule Variable])
+        -> Maybe BuiltinAndAxiomSimplifier
+    equalitiesToEvaluators (functionRules, simplificationRules) =
+        let simplificationEvaluator =
+                if null simplificationRules
+                    then Nothing
+                    else Just (firstFullEvaluation $ simplificationEvaluation <$> simplificationRules)
+            definitionEvaluator =
+                if null functionRules
+                    then Nothing
+                    else Just (definitionEvaluation functionRules)
+         in case (simplificationEvaluator, definitionEvaluator) of
+              (Nothing, Nothing) -> Nothing
+              (Just evaluator, Nothing) -> Just evaluator
+              (Nothing, Just evaluator) -> Just evaluator
+              (Just sEvaluator, Just dEvaluator) ->
+                  Just (simplifierWithFallback sEvaluator dEvaluator)
+
+-- | Converts a registry of 'RulePattern's to one of
 -- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
