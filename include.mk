@@ -34,6 +34,7 @@ STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
 KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
 KORE_EXEC_OPTS =
+export KORE_EXEC
 
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
 

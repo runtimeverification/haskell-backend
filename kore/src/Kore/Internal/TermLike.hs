@@ -22,6 +22,7 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
+    , removeEvaluated
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -648,6 +649,14 @@ forceSorts operandSorts children =
         , "but found:"
         , Pretty.indent 4 (Unparser.arguments children)
         ]
+
+{- | Remove `Evaluated` if it appears on the top of the `TermLike`.
+-}
+removeEvaluated :: TermLike variable -> TermLike variable
+removeEvaluated termLike@(Recursive.project -> (_ :< termLikeF)) =
+    case termLikeF of
+        EvaluatedF (Evaluated e) -> removeEvaluated e
+        _                        -> termLike
 
 {- | Construct an 'Application' pattern.
 

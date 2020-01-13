@@ -1,0 +1,256 @@
+/* Created: Kore.Internal.Predicate.makeAndPredicate */
+\and{SortGeneratedTopCell{}}(
+    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+    \and{SortGeneratedTopCell{}}(
+        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+        \and{SortGeneratedTopCell{}}(
+            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+            \and{SortGeneratedTopCell{}}(
+                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                \and{SortGeneratedTopCell{}}(
+                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                    \and{SortGeneratedTopCell{}}(
+                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                        \and{SortGeneratedTopCell{}}(
+                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                            \and{SortGeneratedTopCell{}}(
+                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                \and{SortGeneratedTopCell{}}(
+                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                    \and{SortGeneratedTopCell{}}(
+                                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                        \and{SortGeneratedTopCell{}}(
+                                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                            \and{SortGeneratedTopCell{}}(
+                                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                                \and{SortGeneratedTopCell{}}(
+                                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                                    \and{SortGeneratedTopCell{}}(
+                                                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                                        \and{SortGeneratedTopCell{}}(
+                                                            \equals{SortOutputCell{}, SortGeneratedTopCell{}}(
+                                                                Var'Unds'0:SortOutputCell{},
+                                                                Lbl'-LT-'output'-GT-'{}(
+                                                                    \dv{SortBytes{}}(
+                                                                        ""
+                                                                    )
+                                                                )
+                                                            ),
+                                                            \equals{SortCallStackCell{}, SortGeneratedTopCell{}}(
+                                                                Var'Unds'1:SortCallStackCell{},
+                                                                Lbl'-LT-'callStack'-GT-'{}(
+                                                                    /* builtin: */
+                                                                    Lbl'Stop'List{}()
+                                                                )
+                                                            )
+                                                        ),
+                                                        \equals{SortKCell{}, SortGeneratedTopCell{}}(
+                                                            Var'Unds'10:SortKCell{},
+                                                            Lbl'-LT-'k'-GT-'{}(
+                                                                kseq{}(
+                                                                    Lbl'Hash'halt'Unds'EVM'Unds'KItem{}(),
+                                                                    dotk{}()
+                                                                )
+                                                            )
+                                                        )
+                                                    ),
+                                                    \equals{SortExitCodeCell{}, SortGeneratedTopCell{}}(
+                                                        Var'Unds'11:SortExitCodeCell{},
+                                                        Lbl'-LT-'exit-code'-GT-'{}(
+                                                            /* builtin: */
+                                                            \dv{SortInt{}}("1")
+                                                        )
+                                                    )
+                                                ),
+                                                \equals{SortModeCell{}, SortGeneratedTopCell{}}(
+                                                    Var'Unds'12:SortModeCell{},
+                                                    Lbl'-LT-'mode'-GT-'{}(
+                                                        LblNORMAL{}()
+                                                    )
+                                                )
+                                            ),
+                                            \equals{SortScheduleCell{}, SortGeneratedTopCell{}}(
+                                                Var'Unds'13:SortScheduleCell{},
+                                                Lbl'-LT-'schedule'-GT-'{}(
+                                                    LblBYZANTIUM'Unds'EVM{}()
+                                                )
+                                            )
+                                        ),
+                                        \equals{SortInterimStatesCell{}, SortGeneratedTopCell{}}(
+                                            Var'Unds'2:SortInterimStatesCell{},
+                                            Lbl'-LT-'interimStates'-GT-'{}(
+                                                /* builtin: */ Lbl'Stop'List{}()
+                                            )
+                                        )
+                                    ),
+                                    \equals{SortTouchedAccountsCell{}, SortGeneratedTopCell{}}(
+                                        Var'Unds'3:SortTouchedAccountsCell{},
+                                        Lbl'-LT-'touchedAccounts'-GT-'{}(
+                                            /* builtin: */ Lbl'Stop'Set{}()
+                                        )
+                                    )
+                                ),
+                                \equals{SortCallStateCell{}, SortGeneratedTopCell{}}(
+                                    Var'Unds'4:SortCallStateCell{},
+                                    Lbl'-LT-'callState'-GT-'{}(
+                                        Lbl'-LT-'program'-GT-'{}(
+                                            \dv{SortBytes{}}(
+                                                "7f00000000000000000000000000000000000000000000000000000000000000037f000000000000000000000000000000000000000000000000000000000000000401fe"
+                                            )
+                                        ),
+                                        Lbl'-LT-'jumpDests'-GT-'{}(
+                                            /* builtin: */ Lbl'Stop'Set{}()
+                                        ),
+                                        Lbl'-LT-'id'-GT-'{}(
+                                            Lbl'Stop'Account'Unds'EVM-TYPES'Unds'Account{}()
+                                        ),
+                                        Lbl'-LT-'caller'-GT-'{}(
+                                            Lbl'Stop'Account'Unds'EVM-TYPES'Unds'Account{}()
+                                        ),
+                                        Lbl'-LT-'callData'-GT-'{}(
+                                            \dv{SortBytes{}}("")
+                                        ),
+                                        Lbl'-LT-'callValue'-GT-'{}(
+                                            /* builtin: */ \dv{SortInt{}}("0")
+                                        ),
+                                        Lbl'-LT-'wordStack'-GT-'{}(
+                                            Lbl'UndsColnUndsUnds'EVM-TYPES'Unds'WordStack'Unds'Int'Unds'WordStack{}(
+                                                /* builtin: */
+                                                \dv{SortInt{}}("7"),
+                                                Lbl'Stop'WordStack'Unds'EVM-TYPES'Unds'WordStack{}()
+                                            )
+                                        ),
+                                        Lbl'-LT-'localMem'-GT-'{}(
+                                            /* builtin: */ Lbl'Stop'Map{}()
+                                        ),
+                                        Lbl'-LT-'pc'-GT-'{}(
+                                            /* builtin: */ \dv{SortInt{}}("67")
+                                        ),
+                                        Lbl'-LT-'gas'-GT-'{}(
+                                            /* builtin: */
+                                            \dv{SortInt{}}("9991")
+                                        ),
+                                        Lbl'-LT-'memoryUsed'-GT-'{}(
+                                            /* builtin: */ \dv{SortInt{}}("0")
+                                        ),
+                                        Lbl'-LT-'callGas'-GT-'{}(
+                                            /* builtin: */ \dv{SortInt{}}("0")
+                                        ),
+                                        Lbl'-LT-'static'-GT-'{}(
+                                            /* builtin: */
+                                            \dv{SortBool{}}("false")
+                                        ),
+                                        Lbl'-LT-'callDepth'-GT-'{}(
+                                            /* builtin: */ \dv{SortInt{}}("0")
+                                        )
+                                    )
+                                )
+                            ),
+                            \equals{SortSubstateCell{}, SortGeneratedTopCell{}}(
+                                Var'Unds'5:SortSubstateCell{},
+                                Lbl'-LT-'substate'-GT-'{}(
+                                    Lbl'-LT-'selfDestruct'-GT-'{}(
+                                        /* builtin: */ Lbl'Stop'Set{}()
+                                    ),
+                                    Lbl'-LT-'log'-GT-'{}(
+                                        /* builtin: */ Lbl'Stop'List{}()
+                                    ),
+                                    Lbl'-LT-'refund'-GT-'{}(
+                                        /* builtin: */ \dv{SortInt{}}("0")
+                                    )
+                                )
+                            )
+                        ),
+                        \equals{SortGasPriceCell{}, SortGeneratedTopCell{}}(
+                            Var'Unds'6:SortGasPriceCell{},
+                            Lbl'-LT-'gasPrice'-GT-'{}(
+                                /* builtin: */ \dv{SortInt{}}("0")
+                            )
+                        )
+                    ),
+                    \equals{SortOriginCell{}, SortGeneratedTopCell{}}(
+                        Var'Unds'7:SortOriginCell{},
+                        Lbl'-LT-'origin'-GT-'{}(
+                            Lbl'Stop'Account'Unds'EVM-TYPES'Unds'Account{}()
+                        )
+                    )
+                ),
+                \equals{SortBlockhashesCell{}, SortGeneratedTopCell{}}(
+                    Var'Unds'8:SortBlockhashesCell{},
+                    Lbl'-LT-'blockhashes'-GT-'{}(
+                        /* builtin: */ Lbl'Stop'List{}()
+                    )
+                )
+            ),
+            \equals{SortBlockCell{}, SortGeneratedTopCell{}}(
+                Var'Unds'9:SortBlockCell{},
+                Lbl'-LT-'block'-GT-'{}(
+                    Lbl'-LT-'previousHash'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'ommersHash'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'coinbase'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'stateRoot'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'transactionsRoot'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'receiptsRoot'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'logsBloom'-GT-'{}(\dv{SortBytes{}}("")),
+                    Lbl'-LT-'difficulty'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'number'-GT-'{}(/* builtin: */ \dv{SortInt{}}("0")),
+                    Lbl'-LT-'gasLimit'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'gasUsed'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'timestamp'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'extraData'-GT-'{}(\dv{SortBytes{}}("")),
+                    Lbl'-LT-'mixHash'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'blockNonce'-GT-'{}(
+                        /* builtin: */ \dv{SortInt{}}("0")
+                    ),
+                    Lbl'-LT-'ommerBlockHeaders'-GT-'{}(
+                        LblJSONList{}(
+                            Lbl'Stop'List'LBraQuot'JSONs'QuotRBraUnds'JSONs{}()
+                        )
+                    )
+                )
+            )
+        ),
+        \equals{SortGeneratedCounterCell{}, SortGeneratedTopCell{}}(
+            VarDotVar0:SortGeneratedCounterCell{},
+            Lbl'-LT-'generatedCounter'-GT-'{}(
+                /* builtin: */ \dv{SortInt{}}("0")
+            )
+        )
+    ),
+    \equals{SortNetworkCell{}, SortGeneratedTopCell{}}(
+        VarDotVar2:SortNetworkCell{},
+        Lbl'-LT-'network'-GT-'{}(
+            Lbl'-LT-'activeAccounts'-GT-'{}(/* builtin: */ Lbl'Stop'Set{}()),
+            Lbl'-LT-'accounts'-GT-'{}(
+                /* builtin: */ Lbl'Stop'AccountCellMap{}()
+            ),
+            Lbl'-LT-'txOrder'-GT-'{}(/* builtin: */ Lbl'Stop'List{}()),
+            Lbl'-LT-'txPending'-GT-'{}(/* builtin: */ Lbl'Stop'List{}()),
+            Lbl'-LT-'messages'-GT-'{}(
+                /* builtin: */ Lbl'Stop'MessageCellMap{}()
+            )
+        )
+    )
+)
