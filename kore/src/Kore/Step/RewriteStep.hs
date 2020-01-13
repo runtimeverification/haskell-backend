@@ -39,6 +39,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
+import Kore.Logger.DebugAppliedRewriteRules
+    ( debugAppliedRewriteRules
+    )
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
@@ -255,8 +258,11 @@ applyRulesParallel
     -- axiom variables.
     (map toAxiomVariables -> rules)
     initial
-  = unifyRules unificationProcedure SideCondition.topTODO initial rules
-    >>= finalizeRulesParallel initial
+  = do
+      results <-
+          unifyRules unificationProcedure SideCondition.topTODO initial rules
+      debugAppliedRewriteRules initial results
+      finalizeRulesParallel initial results
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -306,8 +312,11 @@ applyRulesSequence
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
     (map toAxiomVariables -> rules)
-  = unifyRules unificationProcedure SideCondition.topTODO initial rules
-    >>= finalizeRulesSequence initial
+  = do
+      results <-
+          unifyRules unificationProcedure SideCondition.topTODO initial rules
+      debugAppliedRewriteRules initial results
+      finalizeRulesSequence initial results
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
