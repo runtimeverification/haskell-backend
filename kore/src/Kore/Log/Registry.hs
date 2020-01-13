@@ -51,6 +51,9 @@ import Type.Reflection
 import Kore.Log.CriticalExecutionError
     ( CriticalExecutionError
     )
+import Kore.Log.DebugAppliedRewriteRules
+    ( DebugAppliedRewriteRules
+    )
 import Kore.Log.DebugAppliedRule
     ( DebugAppliedRule
     )
@@ -100,6 +103,7 @@ registry =
                 , register debugSolverSendType
                 , register debugSolverRecvType
                 , register debugProofStateType
+                , register debugAppliedRewriteRulesType
                 , register warnBottomHookType
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
@@ -136,6 +140,7 @@ debugAppliedRuleType
   , debugSolverSendType
   , debugSolverRecvType
   , debugProofStateType
+  , debugAppliedRewriteRulesType
   , warnBottomHookType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
@@ -154,6 +159,8 @@ debugSolverRecvType =
     someTypeRep (Proxy :: Proxy DebugSolverRecv)
 debugProofStateType =
     someTypeRep (Proxy :: Proxy DebugProofState)
+debugAppliedRewriteRulesType =
+    someTypeRep (Proxy :: Proxy DebugAppliedRewriteRules)
 warnBottomHookType =
     someTypeRep (Proxy :: Proxy WarnBottomHook)
 warnFunctionWithoutEvaluatorsType =

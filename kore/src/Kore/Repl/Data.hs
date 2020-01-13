@@ -49,6 +49,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import qualified Data.GraphViz as Graph
 import Data.List
     ( intercalate
     )
@@ -202,7 +203,7 @@ data ReplCommand
     -- ^ Show the nth axiom.
     | Prove !(Either ClaimIndex RuleName)
     -- ^ Drop the current proof state and re-initialize for the nth claim.
-    | ShowGraph !(Maybe FilePath)
+    | ShowGraph !(Maybe FilePath) !(Maybe Graph.GraphvizOutput)
     -- ^ Show the current execution graph.
     | ProveSteps !Natural
     -- ^ Do n proof steps from current node.
@@ -296,10 +297,14 @@ helpText =
                                               \ with <name>\n\
     \prove <n|name>                           initializes proof mode for the nth\
                                               \ claim or for the claim with <name>\n\
-    \graph [file]                             shows the current proof graph (*)(**)\n\
-    \                                         (saves image in .jpeg format if file\
-                                              \ argument is given; file extension\
-                                              \ is added automatically)\n\
+    \graph [file] [format]                    shows the current proof graph (*)(**);\
+                                              \ note that in the case of large graphs\
+                                              \ the image might be very zoomed out;\n\
+    \                                         (saves image in [format] if file\
+                                              \ argument is given; default is .svg\
+                                              \ in order to support large graphs;\n\
+    \                                         file extension is added automatically);\
+                                              \ accepted formats: svg, jpeg, png, pdf;\n\
     \step [n]                                 attempts to run 'n' proof steps at\
                                               \the current node (n=1 by default)\n\
     \stepf [n]                                attempts to run 'n' proof steps at\
@@ -395,7 +400,7 @@ shouldStore =
         Help             -> False
         ShowClaim _      -> False
         ShowAxiom _      -> False
-        ShowGraph _      -> False
+        ShowGraph _ _     -> False
         ShowConfig _     -> False
         ShowLeafs        -> False
         ShowRule _       -> False

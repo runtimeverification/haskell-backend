@@ -15,6 +15,7 @@ module Kore.Step.RulePattern
     , RHS (..)
     , ToRulePattern (..)
     , FromRulePattern (..)
+    , UnifyingRule (..)
     , rulePattern
     , isHeatingRule
     , isCoolingRule

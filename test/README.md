@@ -129,9 +129,27 @@ with one rule name per line.
   The test will not run again until the test prerequisites change
   or `⟨name⟩.merge.out` is deleted.
   If the test fails, the actual output is moved
-  from `⟨name⟩.merge.out` to `⟨name⟩-spec.k.out.fail`.
-- `make ⟨name⟩-spec.k.out.golden`:
+  from `⟨name⟩.merge.out` to `⟨name⟩.merge.out.fail`.
+- `make ⟨name⟩.merge.out.golden`:
   Run the test to construct `⟨name⟩.merge.out.golden`.
+
+
+## Scripted tests
+
+Any script named `test-⟨name⟩.sh` will be treated as a test.
+
+`Makefile` targets:
+
+- `make test-⟨name⟩.sh.out`:
+  Run the named test and compare the output to `test-⟨name⟩.sh.out.golden`.
+  The test passes if the expected and actual output are identical.
+  The prerequisites are any files matching the pattern `test-⟨name⟩-*`.
+  The test will not run again until the test prerequisites change
+  or `test-⟨name⟩.sh.out` is deleted.
+  If the test fails, the actual output is moved
+  from `test-⟨name⟩.sh.out` to `test-⟨name⟩.sh.out.fail`.
+- `make test-⟨name⟩.sh.out.golden`:
+  Run the test to construct `test-⟨name⟩.sh.out.golden`.
 
 
 ## Definitions

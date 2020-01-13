@@ -20,6 +20,10 @@ import Data.Functor
     ( void
     , ($>)
     )
+import Data.GraphViz
+    ( GraphvizOutput
+    )
+import qualified Data.GraphViz as Graph
 import Data.List
     ( nub
     )
@@ -164,7 +168,11 @@ prove =
        )
 
 showGraph :: Parser ReplCommand
-showGraph = ShowGraph <$$> literal "graph" *> optional (quotedOrWordWithout "")
+showGraph =
+    ShowGraph
+    <$$> literal "graph"
+    *> optional (quotedOrWordWithout "")
+    <**> optional parseGraphOpt
 
 proveSteps :: Parser ReplCommand
 proveSteps =
@@ -415,3 +423,11 @@ parseClaimDecimal = ClaimIndex <$> decimal
 
 parseAxiomDecimal :: Parser AxiomIndex
 parseAxiomDecimal = AxiomIndex <$> decimal
+
+parseGraphOpt :: Parser GraphvizOutput
+parseGraphOpt =
+    (Graph.Jpeg <$ literal "jpeg")
+    <|> (Graph.Jpeg <$ literal "jpg")
+    <|> (Graph.Png <$ literal "png")
+    <|> (Graph.Svg <$ literal "svg")
+    <|> (Graph.Pdf <$ literal "pdf")
