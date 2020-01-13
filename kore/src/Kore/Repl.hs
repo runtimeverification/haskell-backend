@@ -44,6 +44,7 @@ import Control.Monad.State.Strict
     , StateT
     , evalStateT
     )
+import qualified Data.Default as Default
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List
@@ -68,9 +69,6 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Log as Log
-import qualified Kore.Log.DebugSolver as Log
-    ( emptyDebugSolverOptions
-    )
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
@@ -154,28 +152,19 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     state :: ReplState claim
     state =
         ReplState
-            { axioms     = addIndexesToAxioms axioms'
-            , claims     = addIndexesToClaims (length axioms') claims'
-            , claim      = firstClaim
-            , claimIndex = firstClaimIndex
-            , graphs     = Map.singleton firstClaimIndex firstClaimExecutionGraph
-            , node       = ReplNode (Strategy.root firstClaimExecutionGraph)
-            , commands   = Seq.empty
+            { axioms         = addIndexesToAxioms axioms'
+            , claims         = addIndexesToClaims (length axioms') claims'
+            , claim          = firstClaim
+            , claimIndex     = firstClaimIndex
+            , graphs         = Map.singleton firstClaimIndex firstClaimExecutionGraph
+            , node           = ReplNode (Strategy.root firstClaimExecutionGraph)
+            , commands       = Seq.empty
             -- TODO(Vladimir): should initialize this to the value obtained from
             -- the frontend via '--omit-labels'.
-            , omit       = mempty
-            , labels     = Map.empty
-            , aliases    = Map.empty
-            , koreLogOptions =
-                Log.KoreLogOptions
-                    { logType = Log.LogStdErr
-                    , logEntries = mempty
-                    , timestampsSwitch = Log.TimestampsEnable
-                    , logLevel = Log.Warning
-                    , debugAppliedRuleOptions = mempty
-                    , debugAxiomEvaluationOptions = mempty
-                    , debugSolverOptions = Log.emptyDebugSolverOptions
-                    }
+            , omit           = mempty
+            , labels         = Map.empty
+            , aliases        = Map.empty
+            , koreLogOptions = Default.def @Log.KoreLogOptions
             }
 
     config :: Config claim m
