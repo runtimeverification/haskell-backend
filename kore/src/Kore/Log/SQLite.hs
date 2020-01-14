@@ -4,6 +4,7 @@ module Kore.Log.SQLite
     , withLogSQLite
     ) where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Extra as Extra
 import Data.Default
@@ -60,6 +61,11 @@ declareEntries :: SQLite.Connection -> IO ()
 declareEntries conn = do
     SQL.createTable conn $ Proxy @WarnBottomHook
 
--- TODO (thomas.tuegel): Implement me!
 logSQLite :: SQLite.Connection -> LogAction IO SomeEntry
-logSQLite _ = mempty
+logSQLite conn =
+    mconcat
+        [ logWarnBottomHook
+        ]
+  where
+    maybeInsertRow = maybe (return ()) (Monad.void . SQL.insertRow conn)
+    logWarnBottomHook = LogAction (maybeInsertRow . fromEntry @WarnBottomHook)
