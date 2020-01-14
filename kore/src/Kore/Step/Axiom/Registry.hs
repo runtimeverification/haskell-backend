@@ -147,7 +147,7 @@ processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
     processFunctionRules =
         sortOn (negate . unwrapPriority . getPriorityOfRule)
         . filter (not . ignoreDefinition)
-    unwrapPriority = fromMaybe (error "TODO: rule doesn't have priority")
+    unwrapPriority = fromMaybe 0
 
 processAxiomPatterns
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
