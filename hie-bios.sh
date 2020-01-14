@@ -24,6 +24,11 @@ out -package-db $(stack path --local-pkg-db)
 out -package-db $(stack path --snapshot-pkg-db)
 out -package-db $(stack path --global-pkg-db)
 
+yq -r '. "ghc-options" []' < ./kore/package.yaml | while read opt
+do
+    out "${opt}"
+done
+
 yq -r '. "default-extensions" []' < ./kore/package.yaml | while read ext
 do
     out "-X${ext}"
