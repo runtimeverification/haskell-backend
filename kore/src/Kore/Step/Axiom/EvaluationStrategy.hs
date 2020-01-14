@@ -31,10 +31,10 @@ import Kore.Internal.SideCondition
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Logger.WarnBottomHook
+import Kore.Log.WarnBottomHook
     ( warnBottomHook
     )
-import Kore.Logger.WarnSimplificationWithRemainder
+import Kore.Log.WarnSimplificationWithRemainder
     ( warnSimplificationWithRemainder
     )
 import Kore.Step.Axiom.Evaluate

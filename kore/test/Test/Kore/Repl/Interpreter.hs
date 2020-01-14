@@ -58,11 +58,11 @@ import Kore.Internal.TermLike
     , mkElemVar
     , mkTop_
     )
-import qualified Kore.Logger.DebugSolver as Logger
+import qualified Kore.Log as Log
+import qualified Kore.Log.DebugSolver as Log
     ( emptyDebugSolverOptions
     )
-import qualified Kore.Logger.Output as Logger
-import qualified Kore.Logger.Registry as Logger
+import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
@@ -503,17 +503,17 @@ logUpdatesState = do
         axioms  = []
         claim   = emptyClaim
         options =
-            Logger.KoreLogOptions
-                { logLevel = Logger.Info
+            Log.KoreLogOptions
+                { logLevel = Log.Info
                 , logEntries =
                     Map.keysSet
-                    . Logger.typeToText
-                    $ Logger.registry
-                , timestampsSwitch = Logger.TimestampsEnable
-                , logType = Logger.LogStdErr
+                    . Log.typeToText
+                    $ Log.registry
+                , timestampsSwitch = Log.TimestampsEnable
+                , logType = Log.LogStdErr
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty
-                , debugSolverOptions = Logger.emptyDebugSolverOptions
+                , debugSolverOptions = Log.emptyDebugSolverOptions
                 }
         command = Log options
     Result { output, continue, state } <-
@@ -604,7 +604,7 @@ runWithState command axioms claims claim stateTransformer = do
     let state = stateTransformer $ mkState axioms claims claim
     let config = mkConfig mvar
     (c, s) <-
-        liftSimplifier (Logger.swappableLogger mvar)
+        liftSimplifier (Log.swappableLogger mvar)
         $ flip runStateT state
         $ flip runReaderT config
         $ replInterpreter0
@@ -654,7 +654,7 @@ hasAlias st alias@AliasDefinition { name } =
 
 hasLogging
     :: ReplState Claim
-    -> Logger.KoreLogOptions
+    -> Log.KoreLogOptions
     -> IO ()
 hasLogging st expectedLogging =
     let
@@ -689,21 +689,21 @@ mkState axioms claims claim =
         , omit           = mempty
         , labels         = Map.singleton (ClaimIndex 0) Map.empty
         , aliases        = Map.empty
-        , koreLogOptions = Logger.KoreLogOptions
-            { logLevel = Logger.Warning
+        , koreLogOptions = Log.KoreLogOptions
+            { logLevel = Log.Warning
             , logEntries = mempty
-            , timestampsSwitch = Logger.TimestampsEnable
-            , logType = Logger.LogStdErr
+            , timestampsSwitch = Log.TimestampsEnable
+            , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
         }
   where
     graph' = emptyExecutionGraph claim
 
 mkConfig
-    :: MVar (Logger.LogAction IO Logger.SomeEntry)
+    :: MVar (Log.LogAction IO Log.SomeEntry)
     -> Config Claim Simplifier
 mkConfig logger =
     Config

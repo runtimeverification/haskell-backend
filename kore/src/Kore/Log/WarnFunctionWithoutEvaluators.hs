@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.WarnFunctionWithoutEvaluators
+module Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators (..)
     , warnFunctionWithoutEvaluators
     ) where
@@ -20,14 +20,14 @@ import Data.Typeable
 import Kore.Internal.Symbol
     ( Symbol
     )
-import Kore.Logger
+import Kore.Unparser
+    ( unparse
+    )
+import Log
     ( Entry (..)
     , MonadLog
     , Severity (Warning)
     , logM
-    )
-import Kore.Unparser
-    ( unparse
     )
 
 newtype WarnFunctionWithoutEvaluators = WarnFunctionWithoutEvaluators

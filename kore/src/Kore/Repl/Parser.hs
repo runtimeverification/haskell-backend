@@ -50,15 +50,14 @@ import Type.Reflection
     ( SomeTypeRep
     )
 
-import qualified Kore.Logger as Logger
-import qualified Kore.Logger.DebugSolver as Logger
-    ( emptyDebugSolverOptions
-    )
-import Kore.Logger.Output
+import Kore.Log
     ( EntryTypes
     )
-import qualified Kore.Logger.Output as Logger
-import qualified Kore.Logger.Registry as Logger
+import qualified Kore.Log as Log
+import qualified Kore.Log.DebugSolver as Log
+    ( emptyDebugSolverOptions
+    )
+import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 
 type Parser = Parsec String String
@@ -276,8 +275,8 @@ log = do
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
         debugAxiomEvaluationOptions = mempty
-        debugSolverOptions = Logger.emptyDebugSolverOptions
-    pure $ Log Logger.KoreLogOptions
+        debugSolverOptions = Log.emptyDebugSolverOptions
+    pure $ Log Log.KoreLogOptions
         { logType
         , logLevel
         , timestampsSwitch
@@ -288,18 +287,18 @@ log = do
         }
   where
     parseSeverityWithDefault =
-        maybe Logger.Warning id <$> optional severity
+        maybe Log.Warning id <$> optional severity
     parseTimestampSwitchWithDefault =
-        maybe Logger.TimestampsEnable id <$> optional parseTimestampSwitch
+        maybe Log.TimestampsEnable id <$> optional parseTimestampSwitch
 
-severity :: Parser Logger.Severity
+severity :: Parser Log.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
   where
-    sDebug    = Logger.Debug    <$ literal "debug"
-    sInfo     = Logger.Info     <$ literal "info"
-    sWarning  = Logger.Warning  <$ literal "warning"
-    sError    = Logger.Error    <$ literal "error"
-    sCritical = Logger.Critical <$ literal "critical"
+    sDebug    = Log.Debug    <$ literal "debug"
+    sInfo     = Log.Info     <$ literal "info"
+    sWarning  = Log.Warning  <$ literal "warning"
+    sError    = Log.Error    <$ literal "error"
+    sCritical = Log.Critical <$ literal "critical"
 
 parseLogEntries :: Parser EntryTypes
 parseLogEntries = do
@@ -312,20 +311,20 @@ parseLogEntries = do
       entry = do
           item <- wordWithout ['[', ']', ',']
           _ <- optional (literal ",")
-          Logger.parseEntryType . Text.pack $ item
+          Log.parseEntryType . Text.pack $ item
 
-parseLogType :: Parser Logger.KoreLogType
+parseLogType :: Parser Log.KoreLogType
 parseLogType = logStdOut <|> logFile
   where
-    logStdOut = Logger.LogStdErr <$  literal "stderr"
+    logStdOut = Log.LogStdErr <$  literal "stderr"
     logFile   =
-        Logger.LogFileText  <$$> literal "file" *> quotedOrWordWithout ""
+        Log.LogFileText  <$$> literal "file" *> quotedOrWordWithout ""
 
-parseTimestampSwitch :: Parser Logger.TimestampsSwitch
+parseTimestampSwitch :: Parser Log.TimestampsSwitch
 parseTimestampSwitch = disable <|> enable
   where
-    disable = Logger.TimestampsDisable <$ literal "disable-log-timestamps"
-    enable  = Logger.TimestampsEnable  <$ literal "enable-log-timestamps"
+    disable = Log.TimestampsDisable <$ literal "disable-log-timestamps"
+    enable  = Log.TimestampsEnable  <$ literal "enable-log-timestamps"
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
