@@ -5,10 +5,12 @@ module Kore.Log.SQLite
     ) where
 
 import qualified Control.Monad.Catch as Exception
+import qualified Control.Monad.Extra as Extra
 import Data.Default
 import Data.Proxy
 import qualified Database.SQLite.Simple as SQLite
 import qualified Options.Applicative as Options
+import qualified System.Directory as Directory
 
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
@@ -45,7 +47,9 @@ withLogSQLite :: LogSQLiteOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
 withLogSQLite options cont =
     case sqlog of
         Nothing -> cont mempty
-        Just filePath ->
+        Just filePath -> do
+            Extra.whenM (Directory.doesPathExist filePath)
+                (Directory.removeFile filePath)
             Exception.bracket (SQLite.open filePath) SQLite.close $ \conn -> do
                 declareEntries conn
                 cont (logSQLite conn)
