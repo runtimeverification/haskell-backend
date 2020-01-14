@@ -26,7 +26,7 @@ import Kore.Internal.TermLike
     , mkAnd
     , mkElemVar
     )
-import Kore.Logger.Output
+import Kore.Log
     ( emptyLogger
     )
 import Kore.Step.Rule.Combine

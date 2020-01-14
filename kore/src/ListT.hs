@@ -29,7 +29,7 @@ import Control.Monad.RWS.Class
 import Data.Foldable
 import Data.Typeable
 
-import Kore.Logger
+import Log
     ( MonadLog (..)
     )
 

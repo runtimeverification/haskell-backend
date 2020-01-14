@@ -118,7 +118,7 @@ import Kore.Internal.TermLike
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger.Output as Logger
+import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Step.RulePattern
     ( RewriteRule (..)
@@ -407,30 +407,30 @@ liftSimplifierWithLogger
     => MonadSimplify m
     => MonadIO m
     => Monad.Trans.MonadTrans t
-    => MVar (Logger.LogAction IO Logger.SomeEntry)
+    => MVar (Log.LogAction IO Log.SomeEntry)
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
     ReplState { koreLogOptions } <- get
-    let Logger.KoreLogOptions { logType, timestampsSwitch } = koreLogOptions
+    let Log.KoreLogOptions { logType, timestampsSwitch } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
-            Logger.koreLogFilters koreLogOptions
-            $ Logger.makeKoreLogger timestampsSwitch textLogger
+            Log.koreLogFilters koreLogOptions
+            $ Log.makeKoreLogger timestampsSwitch textLogger
     _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result
   where
     logTypeToLogger
-        :: Logger.KoreLogType
-        -> t m (Logger.LogAction IO Text, Maybe Handle)
+        :: Log.KoreLogType
+        -> t m (Log.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
-            Logger.LogStdErr -> pure (Logger.logTextStderr, Nothing)
-            Logger.LogFileText file -> do
+            Log.LogStdErr -> pure (Log.logTextStderr, Nothing)
+            Log.LogFileText file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
-                pure (Logger.logTextHandle handle, Just handle)
+                pure (Log.logTextHandle handle, Just handle)
 
 -- | Run a single step for the data in state
 -- (claim, axioms, claims, current node and execution graph).

@@ -39,8 +39,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger as Log
-import Kore.Logger.DebugAppliedRewriteRules
+import qualified Kore.Log as Log
+import Kore.Log.DebugAppliedRewriteRules
     ( debugAppliedRewriteRules
     )
 import qualified Kore.Step.Remainder as Remainder

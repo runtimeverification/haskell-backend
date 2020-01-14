@@ -98,8 +98,7 @@ import Kore.Internal.TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
-import Kore.Logger
-import Kore.Logger.WarnFunctionWithoutEvaluators
+import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
     )
 import Kore.Profiler.Data
@@ -119,6 +118,7 @@ import ListT
     ( ListT (..)
     , mapListT
     )
+import Log
 import SMT
     ( MonadSMT (..)
     )

@@ -54,7 +54,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
+import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
     ( end
     , klabelIdentifier
     , notEvaluated
