@@ -177,20 +177,24 @@ processedAxiomsToEvaluators =
     equalitiesToEvaluators
         PartitionedEqualityRules { functionRules, simplificationRules }
       =
-        let simplificationEvaluator =
-                if null simplificationRules
-                    then Nothing
-                    else Just (firstFullEvaluation $ simplificationEvaluation <$> simplificationRules)
-            definitionEvaluator =
-                if null functionRules
-                    then Nothing
-                    else Just (definitionEvaluation functionRules)
-         in case (simplificationEvaluator, definitionEvaluator) of
-              (Nothing, Nothing) -> Nothing
-              (Just evaluator, Nothing) -> Just evaluator
-              (Nothing, Just evaluator) -> Just evaluator
-              (Just sEvaluator, Just dEvaluator) ->
-                  Just (simplifierWithFallback sEvaluator dEvaluator)
+        case (simplificationEvaluator, definitionEvaluator) of
+            (Nothing, Nothing) -> Nothing
+            (Just evaluator, Nothing) -> Just evaluator
+            (Nothing, Just evaluator) -> Just evaluator
+            (Just sEvaluator, Just dEvaluator) ->
+                Just (simplifierWithFallback sEvaluator dEvaluator)
+      where
+        simplificationEvaluator =
+            if null simplificationRules
+                then Nothing
+                else
+                    Just . firstFullEvaluation
+                    $ simplificationEvaluation
+                    <$> simplificationRules
+        definitionEvaluator =
+            if null functionRules
+                then Nothing
+                else Just $ definitionEvaluation functionRules
 
 axiomPatternsToEvaluators
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
