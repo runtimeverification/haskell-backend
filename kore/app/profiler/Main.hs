@@ -4,16 +4,19 @@ License     : NCSA
 
 Run like this:
 
-# Build the kore-exec and kore-profiler binaries
+Build the kore-exec and kore-profiler binaries:
+
+@
 stack build --ghc-options "-eventlog -debug"
+kore-exec +RTS -vu -RTS other-arguments >log.out 2>&1
+kore-profiler <log.out >profiler.out
+@
 
-kore-exec +RTS -vu -RTS other-arguments 2>&1 | cat > log.out
+To show only an event's children, use
 
-cat log.out | kore-profiler > profiler.out
-
-# To show only an event's children, use
-
-cat log.out | kore-profiler --filter <event-substring> > profiler.out
+@
+kore-profiler --filter <event-substring> <log.out > profiler.out
+@
 
 -}
 

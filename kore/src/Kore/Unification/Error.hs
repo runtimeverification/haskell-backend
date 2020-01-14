@@ -87,7 +87,7 @@ unsupportedPatterns message =
     UnsupportedPatterns message `on` mapVariables toVariable
 
 instance Pretty UnificationError where
-    pretty (UnsupportedPatterns {message, first, second}) =
+    pretty UnsupportedPatterns { message, first, second } =
         Pretty.vsep
             [ "Unsupported patterns: " <> Pretty.pretty message
             , "first = "
@@ -114,7 +114,7 @@ data SubstitutionError =
 
 instance Debug SubstitutionError where
     debugPrec (SimplifiableCycle variables normalization) prec =
-        (if (prec >= 10) then Pretty.parens else id)
+        (if prec >= 10 then Pretty.parens else id)
         $ Pretty.hsep
             [ "SimplifiableCycle"
             , debugPrec variables 10

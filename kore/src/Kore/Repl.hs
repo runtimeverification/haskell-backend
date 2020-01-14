@@ -261,7 +261,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     catchEverything def sa =
         catchAll sa $ \e -> do
             liftIO $ putStrLn "Stepper evaluation errored."
-            liftIO $ putStrLn (show e)
+            liftIO $ print e
             pure def
 
     replGreeting :: m ()

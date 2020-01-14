@@ -1252,9 +1252,8 @@ asInternal elements =
 
 unsafeAsConcrete :: TermLike Variable -> TermLike Concrete
 unsafeAsConcrete term =
-    case TermLike.asConcrete term of
-        Just result -> result
-        Nothing -> error "Expected concrete term."
+    TermLike.asConcrete term
+    & Maybe.fromMaybe (error "Expected concrete term.")
 
 {- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
 

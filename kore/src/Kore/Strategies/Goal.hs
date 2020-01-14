@@ -878,26 +878,8 @@ derivePar rules goal = withConfiguration goal $ do
             ,   "We decided to end the execution because we don't \
                 \understand this case well enough at the moment."
             ]
-        Right results -> do
-            let mapRules =
-                    Result.mapRules
-                    $ (fromRulePattern . goalToRule $ goal)
-                    . Step.unwrapRule
-                    . Step.withoutUnification
-                traverseConfigs =
-                    Result.traverseConfigs
-                        (pure . GoalRewritten)
-                        (pure . GoalRemainder)
-            let onePathResults =
-                    Result.mapConfigs
-                        (flip (configurationDestinationToRule goal) destination)
-                        (flip (configurationDestinationToRule goal) destination)
-                        (Result.mergeResults results)
-            results' <-
-                traverseConfigs (mapRules onePathResults)
-            Result.transitionResults results'
+        Right results -> deriveResults goal results
   where
-    destination = getDestination goal
     configuration :: Pattern Variable
     configuration = getConfiguration goal
 
@@ -933,27 +915,37 @@ deriveSeq rules goal = withConfiguration goal $ do
             ,   "We decided to end the execution because we don't \
                 \understand this case well enough at the moment."
             ]
-        Right results -> do
-            let mapRules =
-                    Result.mapRules
-                    $ (fromRulePattern . goalToRule $ goal)
-                    . Step.unwrapRule
-                    . Step.withoutUnification
-                traverseConfigs =
-                    Result.traverseConfigs
-                        (pure . GoalRewritten)
-                        (pure . GoalRemainder)
-            let onePathResults =
-                    Result.mapConfigs
-                        (flip (configurationDestinationToRule goal) destination)
-                        (flip (configurationDestinationToRule goal) destination)
-                        (Result.mergeResults results)
-            results' <-
-                traverseConfigs (mapRules onePathResults)
-            Result.transitionResults results'
+        Right results -> deriveResults goal results
+  where
+    configuration = getConfiguration goal
+
+deriveResults
+    :: MonadSimplify simplifier
+    => (Goal goal, FromRulePattern goal, ToRulePattern goal)
+    => FromRulePattern (Rule goal)
+    => goal
+    -> [Step.Results RulePattern Variable]
+    -> Strategy.TransitionT (Rule goal) simplifier (ProofState.ProofState goal)
+deriveResults goal results = do
+    let mapRules =
+            Result.mapRules
+            $ (fromRulePattern . goalToRule $ goal)
+            . Step.unwrapRule
+            . Step.withoutUnification
+        traverseConfigs =
+            Result.traverseConfigs
+                (pure . GoalRewritten)
+                (pure . GoalRemainder)
+    let onePathResults =
+            Result.mapConfigs
+                (flip (configurationDestinationToRule goal) destination)
+                (flip (configurationDestinationToRule goal) destination)
+                (Result.mergeResults results)
+    results' <-
+        traverseConfigs (mapRules onePathResults)
+    Result.transitionResults results'
   where
     destination = getDestination goal
-    configuration = getConfiguration goal
 
 withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a
 withConfiguration goal = handle (throw . WithConfiguration configuration)

@@ -439,7 +439,7 @@ showGraph
     -> MonadState (ReplState claim) m
     => m ()
 showGraph mfile out = do
-    let format = maybe Graph.Svg id out
+    let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
@@ -619,9 +619,10 @@ allProofs = do
     findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
     findProofStatus m =
         case Map.lookup StuckNode m of
-            Nothing -> case Map.lookup UnevaluatedNode m of
-                           Nothing -> Completed
-                           Just ns -> InProgress ns
+            Nothing ->
+                case Map.lookup UnevaluatedNode m of
+                    Nothing -> Completed
+                    Just ns -> InProgress ns
             Just ns -> StuckProof ns
 
 showRule
@@ -1159,12 +1160,9 @@ showRewriteRule rule =
   where
     rule' = toRulePattern rule
 
-    extractSourceAndLocation
-        :: RulePattern Variable
-        -> SourceLocation
-    extractSourceAndLocation
-        (RulePattern { Axiom.attributes }) =
-            Attribute.sourceLocation attributes
+    extractSourceAndLocation :: RulePattern Variable -> SourceLocation
+    extractSourceAndLocation RulePattern { Axiom.attributes } =
+        Attribute.sourceLocation attributes
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy

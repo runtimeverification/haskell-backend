@@ -533,8 +533,7 @@ test_unification =
                 $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
             )
         )
-    , let constr = Mock.functionalConstr10
-      in testCase "framed Map with concrete Map" $
+    , testCase "framed Map with concrete Map" $
             andSimplifySuccess
                 (UnificationTerm
                     (Mock.concatMap
@@ -555,12 +554,7 @@ test_unification =
                         ]
                     }
                 ]
-    , let
-        constr = Mock.functionalConstr10
-        constr20 = Mock.constrFunct20TestMap
-        x = mkElemVar Mock.x
-        y = mkElemVar Mock.y
-      in testCase "key outside of map" $
+    , testCase "key outside of map" $
             andSimplifySuccess
                 (UnificationTerm
                     (constr20
@@ -590,12 +584,7 @@ test_unification =
                         ]
                     }
                 ]
-    , let
-        constr = Mock.functionalConstr10
-        constr20 = Mock.constrFunct20TestMap
-        x = mkElemVar Mock.x
-        y = mkElemVar Mock.y
-      in testCase "key outside of map, symbolic opaque terms" $
+    , testCase "key outside of map, symbolic opaque terms" $
             andSimplifySuccess
                 (UnificationTerm
                     (constr20
@@ -627,11 +616,16 @@ test_unification =
                     , substitution =
                         [ ("x", constr a)
                         , ("y", a)
-                        , ("m", (mkElemVar Mock.xMap))
+                        , ("m", mkElemVar Mock.xMap)
                         ]
                     }
                 ]
     ]
+  where
+    constr = Mock.functionalConstr10
+    constr20 = Mock.constrFunct20TestMap
+    x = mkElemVar Mock.x
+    y = mkElemVar Mock.y
 
 test_evaluated :: [TestTree]
 test_evaluated =
