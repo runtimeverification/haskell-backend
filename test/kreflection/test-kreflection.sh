@@ -1,4 +1,3 @@
-#!/bin/sh
 TOP=$(git rev-parse --show-toplevel)
 KRUN=$TOP/.build/k/bin/krun
 KORE_EXEC=$TOP/.build/kore/bin/kore-exec

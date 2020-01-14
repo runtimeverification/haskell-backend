@@ -9,10 +9,10 @@ endmodule
 
 module BMC
   imports BMC-SYNTAX
-  imports BOOL
   imports INT
-  imports VERIFICATION
-  imports PATH
+  imports BOOL
+  imports MAP
+  imports SET
 
   configuration <T>
                   <k> #execute </k>
