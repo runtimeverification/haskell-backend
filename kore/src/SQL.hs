@@ -1,6 +1,7 @@
 module SQL
     ( Key (..)
     , Table (..)
+    -- * Re-exports
     , SQLite.Connection
     ) where
 
@@ -14,6 +15,7 @@ newtype Key a = Key { getKey :: Int64 }
 class Table a where
     createTable :: SQLite.Connection -> proxy a -> IO ()
 
-    -- TODO (thomas.tuegel): Implement these!
-    -- insertRow :: SQLite.Connection -> a -> IO (Key a)
+    insertRow :: SQLite.Connection -> a -> IO (Key a)
+
+    -- TODO (thomas.tuegel): Implement this!
     -- selectRow :: SQLite.Connection -> Key a -> IO a

@@ -67,6 +67,20 @@ instance SQL.Table WarnBottomHook where
         quoted str = "\"" ++ str ++ "\""
         qualifiedName = SOP.moduleName info <> "." <> SOP.datatypeName info
 
+    insertRow conn warn = do
+        let query = "INSERT INTO " <> tableName <> " VALUES (:hook, :term)"
+            WarnBottomHook { hook, term } = warn
+        SQLite.executeNamed conn query
+            [ ":hook" SQLite.:= hook
+            , ":term" SQLite.:= (show . unparse) term
+            ]
+        SQL.Key <$> SQLite.lastInsertRowId conn
+      where
+        info = SOP.datatypeInfo (pure @SOP.Proxy warn)
+        quoted str = "\"" ++ str ++ "\""
+        qualifiedName = SOP.moduleName info <> "." <> SOP.datatypeName info
+        tableName = (SQLite.Query . Text.pack . quoted) qualifiedName
+
 warnBottomHook
     :: MonadLog logger
     => SimplifierVariable variable
