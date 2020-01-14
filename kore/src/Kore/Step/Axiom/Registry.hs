@@ -10,13 +10,15 @@ Portability : portable
 module Kore.Step.Axiom.Registry
     ( extractEqualityAxioms
     , axiomPatternsToEvaluators
+    , axiomPatternsToEvaluatorsWIP
+    , processAxiomPatterns
     ) where
 
 import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import Data.List
     ( partition
-    , sortBy
+    , sortOn
     )
 import Data.Map.Strict
     ( Map
@@ -58,6 +60,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     , EqualityRule (EqualityRule)
+    , getPriorityOfRule
     , isSimplificationRule
     )
 import Kore.Step.Rule
@@ -139,13 +142,12 @@ processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
     , simplificationRules
     )
   where
-    (functionRules, simplificationRules) =
+    (simplificationRules, functionRules) =
         partition isSimplificationRule equalities
     processFunctionRules =
-        sortBy ascPriority . filter (not . ignoreDefinition)
-    ascPriority
-        :: EqualityRule Variable -> EqualityRule Variable -> Ordering
-    ascPriority = undefined
+        sortOn (negate . unwrapPriority . getPriorityOfRule)
+        . filter (not . ignoreDefinition)
+    unwrapPriority = fromMaybe (error "TODO: rule doesn't have priority")
 
 processAxiomPatterns
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
@@ -200,9 +202,9 @@ axiomPatternsToEvaluators =
       where
         simplifications, evaluations :: [EqualityRule Variable]
         (simplifications, filter (not . ignoreDefinition) -> evaluations) =
-            partition isSimplificationRule equalities
+            partition isSimplificationRule' equalities
           where
-            isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
+            isSimplificationRule' (EqualityRule EqualityPattern { attributes }) =
                 isSimplification
               where
                 Simplification { isSimplification } =

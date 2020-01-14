@@ -10,6 +10,7 @@ module Kore.Step.EqualityPattern
     , equalityPattern
     , equalityRuleToTerm
     , isSimplificationRule
+    , getPriorityOfRule
     ) where
 
 import Control.DeepSeq
@@ -242,3 +243,10 @@ isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
   where
     Attribute.Simplification { isSimplification } =
         Attribute.simplification attributes
+
+getPriorityOfRule :: EqualityRule variable -> Maybe Integer
+getPriorityOfRule (EqualityRule EqualityPattern { attributes }) =
+    getPriority
+  where
+    Attribute.Priority { getPriority } =
+        Attribute.priority attributes
