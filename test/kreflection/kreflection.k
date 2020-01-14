@@ -4,6 +4,6 @@ module KREFLECTION
 
   syntax Concrete ::= "concrete"
 
-  rule concrete => #isConcrete(#configuration)
+  rule concrete => #isConcrete(?_)
 
 endmodule
