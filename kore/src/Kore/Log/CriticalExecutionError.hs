@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.CriticalExecutionError
+module Kore.Log.CriticalExecutionError
     ( CriticalExecutionError
     , criticalExecutionError
     ) where
@@ -17,7 +17,7 @@ import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
 
-import Kore.Logger
+import Log
 
 newtype CriticalExecutionError =
     CriticalExecutionError

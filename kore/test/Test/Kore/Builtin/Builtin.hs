@@ -97,9 +97,6 @@ import qualified Kore.Internal.Symbol as Internal
     ( Symbol
     )
 import Kore.Internal.TermLike
-import Kore.Logger
-    ( MonadLog
-    )
 import Kore.Parser
     ( parseKorePattern
     )
@@ -135,6 +132,9 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString
+    )
+import Log
+    ( MonadLog
     )
 import SMT
     ( MonadSMT

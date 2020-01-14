@@ -35,7 +35,7 @@ import Kore.Internal.TermLike
     ( TermLike
     , Variable
     )
-import Kore.Logger.Output
+import Kore.Log
     ( emptyLogger
     )
 import Kore.Parser

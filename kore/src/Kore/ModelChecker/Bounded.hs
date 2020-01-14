@@ -30,7 +30,6 @@ import Kore.Internal.Pattern as Conditional
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
 import Kore.ModelChecker.Step
     ( CommonModalPattern
     , CommonProofState
@@ -67,6 +66,7 @@ import Kore.Syntax.Id
 import Kore.Syntax.Variable
     ( Variable
     )
+import qualified Log
 import Numeric.Natural
     ( Natural
     )
@@ -140,8 +140,7 @@ checkClaim
                                 startState)
                             Nothing
 
-        Logger.logInfo
-            . Text.pack
+        Log.logInfo . Text.pack
             $ ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
 
         let

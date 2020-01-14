@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
 
-module Kore.Logger.DebugAppliedRewriteRules
+module Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules (..)
     , debugAppliedRewriteRules
     ) where
@@ -29,7 +29,6 @@ import Kore.Internal.Variable
     ( Variable (..)
     , toVariable
     )
-import Kore.Logger
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern (..)
@@ -47,6 +46,7 @@ import Kore.Unparser
 import Kore.Variables.Target
     ( Target (..)
     )
+import Log
 
 data DebugAppliedRewriteRules =
     DebugAppliedRewriteRules

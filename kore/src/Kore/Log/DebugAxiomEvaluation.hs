@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.DebugAxiomEvaluation
+module Kore.Log.DebugAxiomEvaluation
     ( AxiomEvaluationState (..)
     , DebugAxiomEvaluation (..)
     , DebugAxiomEvaluationOptions (..)
@@ -25,6 +25,7 @@ module Kore.Logger.DebugAxiomEvaluation
 import Control.Applicative
     ( Alternative (..)
     )
+import Data.Default
 import Data.Function
     ( on
     )
@@ -70,17 +71,17 @@ import Kore.Internal.TermLike
     ( pattern App_
     , TermLike
     )
-import Kore.Logger
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
+import Log
     ( Entry (fromEntry)
     , MonadLog
     , Severity (..)
     , SomeEntry
     , logM
     )
-import qualified Kore.Logger as Log.DoNotUse
-import Kore.Step.Axiom.Identifier
-    ( AxiomIdentifier
-    )
+import qualified Log as Log.DoNotUse
 
 {- | A log 'Entry' when a rule is applied.
 
@@ -197,6 +198,9 @@ newtype DebugAxiomEvaluationOptions =
         { debugAxiomEvaluation :: Set Text
         }
     deriving (Eq, Show)
+
+instance Default DebugAxiomEvaluationOptions where
+    def = mempty
 
 instance Semigroup DebugAxiomEvaluationOptions where
     (<>) a b =

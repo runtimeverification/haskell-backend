@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.DebugAppliedRule
+module Kore.Log.DebugAppliedRule
     ( DebugAppliedRule
     , debugAppliedRule
     , DebugAppliedRuleOptions
@@ -15,6 +15,7 @@ module Kore.Logger.DebugAppliedRule
 import Control.Applicative
     ( Alternative (..)
     )
+import Data.Default
 import Data.Function
     ( on
     )
@@ -39,7 +40,6 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
-import Kore.Logger
 import qualified Kore.Parser.Lexeme as Parser
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
@@ -54,6 +54,7 @@ import Kore.Syntax.Id
     ( Id
     )
 import Kore.Unparser
+import Log
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
 
@@ -116,6 +117,9 @@ newtype DebugAppliedRuleOptions =
         { debugAppliedRules :: Set Id
         }
     deriving (Eq, Show)
+
+instance Default DebugAppliedRuleOptions where
+    def = mempty
 
 instance Semigroup DebugAppliedRuleOptions where
     (<>) a b =

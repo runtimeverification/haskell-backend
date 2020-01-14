@@ -118,7 +118,7 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import Kore.Logger.Output as Logger
+import Kore.Log as Log
 import Kore.Parser
     ( ParsedPattern
     , parseKoreDefinition
@@ -381,10 +381,10 @@ clockSomethingIO description something = do
     logMessage end start =
         mkMessage start end
     mkMessage start end =
-        Logger.LogMessage
+        Log.LogMessage
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
-            , severity = Logger.Info
+            , severity = Log.Info
             , callstack = emptyCallStack
             }
 
