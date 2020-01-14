@@ -166,7 +166,7 @@ import qualified Kore.Strategies.Verification as StuckVerification
 import Kore.Unparser
     ( unparseToText
     )
-import qualified Log as Log
+import qualified Log
 import SMT
     ( MonadSMT
     , SMT
