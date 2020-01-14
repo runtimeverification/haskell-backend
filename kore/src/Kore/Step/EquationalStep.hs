@@ -97,7 +97,7 @@ import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
     )
-import qualified Log as Log
+import qualified Log
 
 {- | Is the result a symbolic rewrite, i.e. a narrowing result?
 
