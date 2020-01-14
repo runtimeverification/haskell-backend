@@ -12,6 +12,7 @@ module Kore.Step.Axiom.Registry
     , axiomPatternsToEvaluators
     , axiomPatternsToEvaluatorsWIP
     , processAxiomPatterns
+    , PartitionedEqualityRules (..)
     ) where
 
 import qualified Control.Exception as Exception
@@ -134,36 +135,46 @@ axiomToIdAxiomPatternPair axiom =
         Right (AllPathClaimPattern _) -> Nothing
         Right (ImplicationAxiomPattern _) -> Nothing
 
-processEqualityRules
-    :: [EqualityRule Variable]
-    -> ([EqualityRule Variable], [EqualityRule Variable])
-processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
-    ( processFunctionRules functionRules
-    , simplificationRules
-    )
-  where
-    (simplificationRules, functionRules) =
-        partition isSimplificationRule equalities
-    processFunctionRules =
-        sortOn (negate . unwrapPriority . getPriorityOfRule)
-        . filter (not . ignoreDefinition)
-    unwrapPriority = fromMaybe 0
+data PartitionedEqualityRules =
+    PartitionedEqualityRules
+        { functionRules       :: [EqualityRule Variable]
+        , simplificationRules :: [EqualityRule Variable]
+        }
 
 processAxiomPatterns
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
-    -> Map.Map AxiomIdentifier ([EqualityRule Variable], [EqualityRule Variable])
+    -> Map.Map AxiomIdentifier PartitionedEqualityRules
 processAxiomPatterns = fmap processEqualityRules
+  where
+    processEqualityRules
+        :: [EqualityRule Variable]
+        -> PartitionedEqualityRules
+    processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
+        PartitionedEqualityRules
+            { functionRules
+            , simplificationRules
+            }
+      where
+        (simplificationRules, unProcessedFunctionRules) =
+            partition isSimplificationRule equalities
+        unwrapPriority = fromMaybe 100
+        functionRules =
+            sortOn (negate . unwrapPriority . getPriorityOfRule)
+            . filter (not . ignoreDefinition)
+            $ unProcessedFunctionRules
 
 axiomPatternsToEvaluatorsWIP
-    :: Map.Map AxiomIdentifier ([EqualityRule Variable], [EqualityRule Variable])
+    :: Map.Map AxiomIdentifier PartitionedEqualityRules
     -> Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 axiomPatternsToEvaluatorsWIP =
     Witherable.mapMaybe equalitiesToEvaluators
   where
     equalitiesToEvaluators
-        :: ([EqualityRule Variable], [EqualityRule Variable])
+        :: PartitionedEqualityRules
         -> Maybe BuiltinAndAxiomSimplifier
-    equalitiesToEvaluators (functionRules, simplificationRules) =
+    equalitiesToEvaluators
+        PartitionedEqualityRules { functionRules, simplificationRules }
+      =
         let simplificationEvaluator =
                 if null simplificationRules
                     then Nothing

@@ -65,6 +65,9 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
+type PartitionedEqualityRulesMap =
+    Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEqualityRules
+
 updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType
 updateAttributes attrs = updateAttrs
   where
@@ -272,7 +275,11 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
+    axiomPatternsToEvaluatorsWIP testProcessedAxiomPatterns
+
+testProcessedAxiomPatterns :: PartitionedEqualityRulesMap
+testProcessedAxiomPatterns =
+    processAxiomPatterns $ extractEqualityAxioms testIndexedModule
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
