@@ -41,9 +41,6 @@ import Data.Typeable
     ( Typeable
     )
 
-import Kore.Logger
-    ( MonadLog (..)
-    )
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -55,6 +52,9 @@ import ListT
     , mapListT
     )
 import qualified ListT
+import Log
+    ( MonadLog (..)
+    )
 import SMT
     ( MonadSMT (..)
     )

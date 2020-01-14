@@ -107,16 +107,16 @@ import Kore.Internal.Predicate
     ( makePredicate
     )
 import Kore.Internal.TermLike
-import Kore.Logger.CriticalExecutionError
-    ( criticalExecutionError
-    )
-import Kore.Logger.Output
+import Kore.Log
     ( KoreLogOptions (..)
     , LogMessage
     , LoggerT (..)
     , WithLog
     , parseKoreLogOptions
     , runLoggerT
+    )
+import Kore.Log.CriticalExecutionError
+    ( criticalExecutionError
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)

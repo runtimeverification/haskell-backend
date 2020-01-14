@@ -98,7 +98,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -167,6 +166,7 @@ import qualified Kore.Strategies.Verification as StuckVerification
 import Kore.Unparser
     ( unparseToText
     )
+import qualified Log as Log
 import SMT
     ( MonadSMT
     , SMT

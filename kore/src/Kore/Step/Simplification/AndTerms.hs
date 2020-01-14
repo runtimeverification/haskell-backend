@@ -71,7 +71,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     )
@@ -95,6 +94,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Log
 import Pair
 
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
@@ -245,7 +245,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
             mresult <- getResult
             case mresult of
                 Nothing -> do
-                    Logger.logDebug . Text.pack . show
+                    Log.logDebug . Text.pack . show
                         $ Pretty.hsep
                             [ "Evaluator"
                             , Pretty.pretty fnName
@@ -253,7 +253,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
                             ]
                     return mresult
                 Just result -> do
-                    Logger.logDebug . Text.pack . show
+                    Log.logDebug . Text.pack . show
                         $ Pretty.vsep
                             [ Pretty.hsep
                                 [ "Evaluator"

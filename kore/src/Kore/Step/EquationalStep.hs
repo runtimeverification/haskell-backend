@@ -48,8 +48,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger as Log
-import Kore.Logger.DebugAppliedRule
+import Kore.Log.DebugAppliedRule
     ( debugAppliedRule
     )
 import Kore.Step.EqualityPattern
@@ -98,6 +97,7 @@ import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
     )
+import qualified Log as Log
 
 {- | Is the result a symbolic rewrite, i.e. a narrowing result?
 

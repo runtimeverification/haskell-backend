@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
 
-module Kore.Logger.DebugProofState
+module Kore.Log.DebugProofState
     ( DebugProofState (..)
     ) where
 
@@ -15,7 +15,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import Kore.Internal.TermLike
     ( Variable
     )
-import Kore.Logger
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RewriteRule (..)
@@ -24,6 +23,7 @@ import Kore.Strategies.ProofState
     ( Prim (..)
     , ProofState (..)
     )
+import Log
 
 data DebugProofState =
     DebugProofState

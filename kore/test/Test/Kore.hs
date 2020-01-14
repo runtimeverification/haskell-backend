@@ -28,7 +28,7 @@ module Test.Kore
       -- * Re-exports
     , ParsedPattern
     , asParsedPattern
-    , Logger.emptyLogger
+    , Log.emptyLogger
     ) where
 
 import Hedgehog
@@ -65,7 +65,7 @@ import Kore.Internal.TermLike as TermLike hiding
     ( Alias
     , Symbol
     )
-import qualified Kore.Logger.Output as Logger
+import qualified Kore.Log as Log
     ( emptyLogger
     )
 import Kore.Parser
