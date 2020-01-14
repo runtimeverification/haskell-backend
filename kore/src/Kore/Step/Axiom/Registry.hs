@@ -10,7 +10,6 @@ Portability : portable
 module Kore.Step.Axiom.Registry
     ( extractEqualityAxioms
     , axiomPatternsToEvaluators
-    , axiomPatternsToEvaluatorsWIP
     , processAxiomPatterns
     , PartitionedEqualityRules (..)
     ) where
@@ -27,9 +26,10 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
-    , mapMaybe
     )
-import qualified Data.Witherable as Witherable
+import Data.Witherable
+    ( mapMaybe
+    )
 
 import Kore.Attribute.Axiom
     ( Assoc (Assoc)
@@ -40,9 +40,6 @@ import Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
 import qualified Kore.Attribute.Pattern as Pattern
-import Kore.Attribute.Simplification
-    ( Simplification (..)
-    )
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -141,6 +138,9 @@ data PartitionedEqualityRules =
         , simplificationRules :: [EqualityRule Variable]
         }
 
+-- | Filters and partitions a registry of 'EqualityRule's to
+-- simplification rules and function rules. The function rules
+-- are also sorted in order of priority.
 processAxiomPatterns
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
     -> Map.Map AxiomIdentifier PartitionedEqualityRules
@@ -163,11 +163,13 @@ processAxiomPatterns = fmap processEqualityRules
             . filter (not . ignoreDefinition)
             $ unProcessedFunctionRules
 
-axiomPatternsToEvaluatorsWIP
+-- | Converts a registry of processed 'EqualityRule's to one of
+-- 'BuiltinAndAxiomSimplifier's
+processedAxiomsToEvaluators
     :: Map.Map AxiomIdentifier PartitionedEqualityRules
     -> Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
-axiomPatternsToEvaluatorsWIP =
-    Witherable.mapMaybe equalitiesToEvaluators
+processedAxiomsToEvaluators =
+    mapMaybe equalitiesToEvaluators
   where
     equalitiesToEvaluators
         :: PartitionedEqualityRules
@@ -190,46 +192,11 @@ axiomPatternsToEvaluatorsWIP =
               (Just sEvaluator, Just dEvaluator) ->
                   Just (simplifierWithFallback sEvaluator dEvaluator)
 
--- | Converts a registry of 'RulePattern's to one of
--- 'BuiltinAndAxiomSimplifier's
 axiomPatternsToEvaluators
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
     -> Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 axiomPatternsToEvaluators =
-    Map.fromAscList . mapMaybe equalitiesToEvaluators . Map.toAscList
-  where
-    equalitiesToEvaluators
-        :: (AxiomIdentifier, [EqualityRule Variable])
-        -> Maybe (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-    equalitiesToEvaluators
-        (symbolId, filter (not . ignoreEqualityRule) -> equalities)
-      =
-        case (simplificationEvaluator, definitionEvaluator) of
-            (Nothing, Nothing) -> Nothing
-            (Just evaluator, Nothing) -> Just (symbolId, evaluator)
-            (Nothing, Just evaluator) -> Just (symbolId, evaluator)
-            (Just sEvaluator, Just dEvaluator) ->
-                Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
-      where
-        simplifications, evaluations :: [EqualityRule Variable]
-        (simplifications, filter (not . ignoreDefinition) -> evaluations) =
-            partition isSimplificationRule' equalities
-          where
-            isSimplificationRule' (EqualityRule EqualityPattern { attributes }) =
-                isSimplification
-              where
-                Simplification { isSimplification } =
-                    Attribute.simplification attributes
-        simplification :: [BuiltinAndAxiomSimplifier]
-        simplification = simplificationEvaluation <$> simplifications
-        simplificationEvaluator =
-            if null simplification
-                then Nothing
-                else Just (firstFullEvaluation simplification)
-        definitionEvaluator =
-            if null evaluations
-                then Nothing
-                else Just (definitionEvaluation evaluations)
+    processedAxiomsToEvaluators . processAxiomPatterns
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 

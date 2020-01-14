@@ -298,7 +298,7 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    axiomPatternsToEvaluatorsWIP testProcessedAxiomPatterns
+    axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEqualityRulesMap
 testProcessedAxiomPatterns =
@@ -362,7 +362,7 @@ test_functionRegistry =
                 Pattern.term $ head
                 $ MultiOr.extractPatterns simplified
         assertEqual "" expect actual
-    , testCase "Sorted in decreasing order of priorities"
+    , testCase "Sorted in order of priorities"
         (let axiomId = AxiomIdentifier.Application (testId "f")
           in
            (case Map.lookup axiomId testProcessedAxiomPatterns of
