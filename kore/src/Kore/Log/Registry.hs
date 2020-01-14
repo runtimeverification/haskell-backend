@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 
-module Kore.Logger.Registry
+module Kore.Log.Registry
     ( parseEntryType
     , toSomeEntryType
     , lookupTextFromTypeWithError
@@ -31,6 +31,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 import Data.Text
     ( Text
     )
@@ -48,40 +51,40 @@ import Type.Reflection
     , typeOf
     )
 
-import Kore.Logger
-    ( Entry
-    , LogMessage
-    )
-import Kore.Logger.CriticalExecutionError
+import Kore.Log.CriticalExecutionError
     ( CriticalExecutionError
     )
-import Kore.Logger.DebugAppliedRewriteRules
+import Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules
     )
-import Kore.Logger.DebugAppliedRule
+import Kore.Log.DebugAppliedRule
     ( DebugAppliedRule
     )
-import Kore.Logger.DebugAxiomEvaluation
+import Kore.Log.DebugAxiomEvaluation
     ( DebugAxiomEvaluation
     )
-import Kore.Logger.DebugProofState
+import Kore.Log.DebugProofState
     ( DebugProofState
     )
-import Kore.Logger.DebugSolver
+import Kore.Log.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
     )
-import Kore.Logger.InfoEvaluateCondition
+import Kore.Log.InfoEvaluateCondition
     ( InfoEvaluateCondition
     )
-import Kore.Logger.WarnBottomHook
+import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
-import Kore.Logger.WarnFunctionWithoutEvaluators
+import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
-import Kore.Logger.WarnSimplificationWithRemainder
+import Kore.Log.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder
+    )
+import Log
+    ( Entry
+    , LogMessage
     )
 
 data Registry =
@@ -116,7 +119,7 @@ registry =
           then Registry { textToType, typeToText }
           else
             error
-                "Failure to create Kore.Logger.Registry.registry.\
+                "Failure to create Kore.Log.Registry.registry.\
                 \ The maps 'textToType' and 'typeToText'\
                 \ should be inverses of eachother."
   where
@@ -176,14 +179,14 @@ logMessageType =
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =
-    maybe notFoundError id
+    fromMaybe notFoundError
     $ Map.lookup type' (typeToText registry)
   where
     notFoundError =
         error
             $ "Tried to log nonexistent entry type: "
             <> show type'
-            <> " It should be added to Kore.Logger.Registry.registry."
+            <> " It should be added to Kore.Log.Registry.registry."
 
 parseEntryType :: Text -> Parser.Parsec String String SomeTypeRep
 parseEntryType entryText =

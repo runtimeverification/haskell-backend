@@ -15,7 +15,7 @@ module Kore.Step.Simplification.Application
 import Branch
     ( BranchT
     )
-import qualified Branch as Branch
+import qualified Branch
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct

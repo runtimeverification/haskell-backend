@@ -212,9 +212,7 @@ translatePredicate translateUninterpreted predicate =
             , applicationChildren
             }
       = do
-        sexpr <- case translateSymbol applicationSymbolOrAlias of
-            Nothing -> empty  -- The symbol was not declared, give up.
-            Just sexpr -> return sexpr
+        sexpr <- maybe empty return $ translateSymbol applicationSymbolOrAlias
         children <- zipWithM translatePattern
             applicationChildrenSorts
             applicationChildren

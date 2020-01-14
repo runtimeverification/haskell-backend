@@ -12,7 +12,6 @@ module Kore.Step.RewriteStep
     , applyRewriteRulesSequence
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
@@ -39,8 +38,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger as Log
-import Kore.Logger.DebugAppliedRewriteRules
+import qualified Kore.Log as Log
+import Kore.Log.DebugAppliedRewriteRules
     ( debugAppliedRewriteRules
     )
 import qualified Kore.Step.Remainder as Remainder
@@ -124,7 +123,7 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule renamedRule appliedConditions =
-    Monad.liftM OrPattern.fromPatterns . Monad.Unify.gather
+    fmap OrPattern.fromPatterns . Monad.Unify.gather
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
     ruleRHS = Rule.rhs renamedRule

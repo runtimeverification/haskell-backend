@@ -98,7 +98,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -167,6 +166,7 @@ import qualified Kore.Strategies.Verification as StuckVerification
 import Kore.Unparser
     ( unparseToText
     )
+import qualified Log
 import SMT
     ( MonadSMT
     , SMT
@@ -184,7 +184,7 @@ type Equality = EqualityRule Variable
 type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
 
 -- | A collection of rules and simplifiers used during execution.
-data Initialized = Initialized { rewriteRules :: ![Rewrite] }
+newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
 
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =

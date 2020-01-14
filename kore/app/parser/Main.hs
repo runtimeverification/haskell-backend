@@ -51,10 +51,10 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , toVerifiedDefinition
     )
-import Kore.Logger.Output
+import Kore.Log
     ( getLoggerT
     )
-import qualified Kore.Logger.Output as Logger
+import qualified Kore.Log as Log
 import Kore.Parser
     ( ParsedPattern
     , parseKoreDefinition
@@ -147,7 +147,7 @@ main = do
         , willVerify
         , appKore
         }
-        -> flip runReaderT Logger.emptyLogger . getLoggerT $ do
+        -> flip runReaderT Log.emptyLogger . getLoggerT $ do
             parsedDefinition <- mainDefinitionParse fileName
             indexedModules <- if willVerify
                 then lift $ mainVerify parsedDefinition
@@ -194,7 +194,7 @@ mainVerify
         )
 mainVerify definition = do
     verifyResult <-
-        flip runReaderT Logger.emptyLogger
+        flip runReaderT Log.emptyLogger
         . getLoggerT
         $ clockSomething "Verifying the definition"
             (verifyAndIndexDefinition

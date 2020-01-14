@@ -107,16 +107,16 @@ import Kore.Internal.Predicate
     ( makePredicate
     )
 import Kore.Internal.TermLike
-import Kore.Logger.CriticalExecutionError
-    ( criticalExecutionError
-    )
-import Kore.Logger.Output
+import Kore.Log
     ( KoreLogOptions (..)
     , LogMessage
     , LoggerT (..)
     , WithLog
     , parseKoreLogOptions
     , runLoggerT
+    )
+import Kore.Log.CriticalExecutionError
+    ( criticalExecutionError
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
@@ -412,8 +412,7 @@ mainWithOptions execOptions = do
     exitCode <-
         runLoggerT koreLogOptions
         $ handle handleSomeException
-        $ handle handleWithConfiguration
-        $ go
+        $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
@@ -463,8 +462,9 @@ koreSearch execOptions searchOptions = do
     target <- mainParseSearchPattern mainModule searchFileName
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
-    final <- execute execOptions mainModule $ do
-        search breadthLimit mainModule strategy' initial target config
+    final <-
+        execute execOptions mainModule
+        $ search breadthLimit mainModule strategy' initial target config
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where

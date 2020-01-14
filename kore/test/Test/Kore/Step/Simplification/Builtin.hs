@@ -59,7 +59,7 @@ test_simplify =
             (OrPattern.fromPatterns expect)
             (evaluate origin)
 
-mkMap :: [(child, child)] -> [child] -> Builtin (child)
+mkMap :: [(child, child)] -> [child] -> Builtin child
 mkMap elements opaque =
     Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = Mock.mapSort
@@ -73,7 +73,7 @@ mkMap elements opaque =
             }
         }
 
-mkSet :: [child] -> [child] -> Builtin (child)
+mkSet :: [child] -> [child] -> Builtin child
 mkSet elements opaque =
     Domain.BuiltinSet Domain.InternalAc
         { builtinAcSort = Mock.setSort
