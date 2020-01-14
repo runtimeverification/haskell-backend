@@ -92,6 +92,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
 import Kore.Step.Simplification.InjSimplifier
+import Kore.Step.Simplification.OverloadSimplifier
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
@@ -1605,6 +1606,14 @@ injSimplifier =
     (mkInjSimplifier . SortGraph.fromSubsorts)
         [ Subsort { subsort, supersort } | (subsort, supersort) <- subsorts ]
 
+overloadSimplifier :: OverloadSimplifier
+overloadSimplifier =
+    OverloadSimplifier
+        { isOverloaded = const False
+        , isOverloading = const (const False)
+        , resolveOverloading = undefined
+        }
+
 env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
@@ -1614,6 +1623,7 @@ env =
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         , injSimplifier
+        , overloadSimplifier
         }
 
 generatorSetup :: ConsistentKore.Setup

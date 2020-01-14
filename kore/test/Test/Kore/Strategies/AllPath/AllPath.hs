@@ -477,6 +477,7 @@ instance MonadSimplify AllPathIdentity where
     localSimplifierAxioms = undefined
     askMemo = undefined
     askInjSimplifier = undefined
+    askOverloadSimplifier = undefined
 
 differentLengthPaths :: [Goal.Rule Goal]
 differentLengthPaths =

@@ -58,6 +58,7 @@ import qualified Kore.Step.Axiom.Registry as Axiom.Registry
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.InjSimplifier
+import Kore.Step.Simplification.OverloadSimplifier
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
@@ -77,6 +78,7 @@ data Env simplifier =
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         , memo                :: !(Memo.Self simplifier)
         , injSimplifier       :: !InjSimplifier
+        , overloadSimplifier  :: !OverloadSimplifier
         }
 
 {- | @Simplifier@ represents a simplification action.
@@ -147,6 +149,9 @@ instance
     askInjSimplifier = asks injSimplifier
     {-# INLINE askInjSimplifier #-}
 
+    askOverloadSimplifier = asks overloadSimplifier
+    {-# INLINE askOverloadSimplifier #-}
+
 {- | Run a simplification, returning the results along all branches.
  -}
 runSimplifierBranch
@@ -193,8 +198,10 @@ evalSimplifier verifiedModule simplifier = do
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
             , injSimplifier
+            , overloadSimplifier
             }
-    injSimplifier = mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
+    sortGraph = SortGraph.fromIndexedModule verifiedModule
+    injSimplifier = mkInjSimplifier sortGraph
     -- It's safe to build the MetadataTools using the external
     -- IndexedModule because MetadataTools doesn't retain any
     -- knowledge of the patterns which are internalized.
@@ -210,6 +217,8 @@ evalSimplifier verifiedModule simplifier = do
             (Builtin.internalize earlyMetadataTools)
             verifiedModule
     metadataTools = MetadataTools.build verifiedModule'
+    overloadSimplifier =
+        mkOverloadSimplifier verifiedModule sortGraph metadataTools
 
     initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do
@@ -237,4 +246,5 @@ evalSimplifier verifiedModule simplifier = do
             , simplifierAxioms
             , memo
             , injSimplifier
+            , overloadSimplifier
             }
