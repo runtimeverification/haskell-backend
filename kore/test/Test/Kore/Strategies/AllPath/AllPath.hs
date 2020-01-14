@@ -41,9 +41,6 @@ import GHC.Stack
 
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Logger
-    ( MonadLog (..)
-    )
 import Kore.Profiler.Data
     ( Configuration (..)
     , Destination (..)
@@ -59,6 +56,9 @@ import Kore.Step.Transition
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Strategies.Goal as Goal
 import qualified Kore.Strategies.ProofState as ProofState
+import Log
+    ( MonadLog (..)
+    )
 import SMT
     ( MonadSMT (..)
     )

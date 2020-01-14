@@ -1,31 +1,35 @@
-{-|
-Module      : Kore.Logger
-Description : Logging functions.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : vladimir.ciobanu@runtimeverification.com
+
 -}
 
-module Kore.Logger
-    ( LogMessage (..)
+module Log
+    (
+    -- * Entries
+      Entry (..)
     , Severity (..)
+    , SomeEntry (..)
+    , someEntry
+    , entryTypeText
+    -- * Interface
+    , MonadLog (..)
     , WithLog
+    -- * Implementation
+    , LoggerT (..)
+    -- * Log actions
     , LogAction (..)
+    , liftLogAction
+    , hoistLogAction
+    -- * Messages (Deprecated)
+    , LogMessage (..)
     , log
     , logDebug
     , logInfo
     , logWarning
     , logError
     , logCritical
-    , liftLogAction
-    , hoistLogAction
     , logWith
-    , entryTypeText
-    , LoggerT (..)
-    , SomeEntry (..)
-    , someEntry
-    , Entry (..)
-    , MonadLog (..)
     ) where
 
 import Colog

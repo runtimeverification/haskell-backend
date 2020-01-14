@@ -91,10 +91,6 @@ import Data.Text
     ( Text
     )
 
-import Kore.Logger
-    ( MonadLog (..)
-    )
-import qualified Kore.Logger as Logger
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     , profileEvent
@@ -103,6 +99,10 @@ import ListT
     ( ListT
     , mapListT
     )
+import Log
+    ( MonadLog (..)
+    )
+import qualified Log
 import SMT.SimpleSMT
     ( Constructor (..)
     , ConstructorArgument (..)
@@ -230,7 +230,7 @@ runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 instance MonadLog NoSMT where
     logM entry =
         NoSMT $ ReaderT $ \logger ->
-            Colog.unLogAction logger (Logger.toEntry entry)
+            Colog.unLogAction logger (Log.toEntry entry)
     logScope locally = NoSMT . Reader.local (contramap locally) . getNoSMT
 
 instance MonadSMT NoSMT where
@@ -293,7 +293,7 @@ withSolverT' action = SmtT $ do
 
 instance MonadUnliftIO m => MonadLog (SmtT m) where
     logM entry = withSolverT' $ \solver -> do
-        let logAction = contramap Logger.toEntry $ SimpleSMT.logger solver
+        let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
         liftIO $ Colog.unLogAction logAction entry
 
     logScope mapping (SmtT action) =

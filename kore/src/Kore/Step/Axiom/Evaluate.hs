@@ -38,10 +38,7 @@ import Kore.Internal.TermLike
     , mkEvaluated
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Logger
-    ( MonadLog
-    )
-import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
+import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
     ( attemptAxiom
     , klabelIdentifier
     )
@@ -76,6 +73,9 @@ import qualified Kore.Step.Step as EqualityPattern
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
+import Log
+    ( MonadLog
+    )
 
 evaluateAxioms
     :: forall variable simplifier

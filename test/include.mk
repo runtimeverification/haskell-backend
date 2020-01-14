@@ -125,7 +125,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 ### SCRIPTS
 
-test-%.sh.out: $(KORE_EXEC) $(TEST_DIR)/test-%.sh $(TEST_DIR)/test-%-*
+test-%.sh.out: $(KORE_EXEC) $(TEST_DIR)/test-%.sh
 	@echo ">>>" $(CURDIR) $(@:.out=)
 	rm -f $@
 	$(TEST_DIR)/$(@:.out=) > $@ || true
