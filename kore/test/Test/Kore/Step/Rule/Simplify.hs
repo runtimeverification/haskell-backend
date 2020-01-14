@@ -28,7 +28,7 @@ import Kore.Internal.TermLike
     , mkOr
     , termLikeSort
     )
-import Kore.Logger.Output
+import Kore.Log
     ( emptyLogger
     )
 import Kore.Step.Rule.Simplify

@@ -86,8 +86,8 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( TermLike
     )
-import qualified Kore.Logger.Output as Logger
-import qualified Kore.Logger.Registry as Logger
+import Kore.Log
+import qualified Kore.Log.Registry as Log
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -251,7 +251,7 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
-    | Log Logger.KoreLogOptions
+    | Log KoreLogOptions
     -- ^ Setup the Kore logger.
     | Exit
     -- ^ Exit the repl.
@@ -389,7 +389,7 @@ helpText =
     \Names added via b) need to be prefixed with the module name followed by\n\
     \ dot, e.g. IMP.myName\n\
     \Available entry types:\n    "
-    <> intercalate "\n    " (fmap Text.unpack Logger.getEntryTypesAsText)
+    <> intercalate "\n    " (fmap Text.unpack Log.getEntryTypesAsText)
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.
@@ -443,7 +443,7 @@ data ReplState claim = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
-    , koreLogOptions :: !Logger.KoreLogOptions
+    , koreLogOptions :: !KoreLogOptions
     -- ^ The log level, log scopes and log type decide what gets logged and where.
     }
     deriving (GHC.Generic)
@@ -466,7 +466,7 @@ data Config claim m = Config
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , logger  :: MVar (Logger.LogAction IO Logger.SomeEntry)
+    , logger  :: MVar (LogAction IO SomeEntry)
     -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.
@@ -486,12 +486,12 @@ deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
-instance Logger.MonadLog m => Logger.MonadLog (UnifierWithExplanation m) where
-    logM entry = UnifierWithExplanation $ Logger.logM entry
+instance MonadLog m => MonadLog (UnifierWithExplanation m) where
+    logM entry = UnifierWithExplanation $ logM entry
     {-# INLINE logM #-}
 
     logScope locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation (Logger.logScope locally unifierT)
+        UnifierWithExplanation (logScope locally unifierT)
     {-# INLINE logScope #-}
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)

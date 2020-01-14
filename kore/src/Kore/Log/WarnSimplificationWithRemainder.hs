@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.WarnSimplificationWithRemainder
+module Kore.Log.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder (..)
     , warnSimplificationWithRemainder
     ) where
@@ -33,8 +33,8 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-import Kore.Logger
 import Kore.Unparser
+import Log
 
 {- | A log 'Entry' when a simplification rule has remainders.
 

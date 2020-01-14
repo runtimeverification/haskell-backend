@@ -54,8 +54,7 @@ import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     )
-import Kore.Logger
-import Kore.Logger.InfoEvaluateCondition
+import Kore.Log.InfoEvaluateCondition
     ( infoEvaluateCondition
     )
 import qualified Kore.Profiler.Profile as Profile
@@ -71,6 +70,7 @@ import Kore.TopBottom
     ( TopBottom
     )
 import Kore.Unparser
+import Log
 import SMT
     ( Result (..)
     , SExpr (..)
