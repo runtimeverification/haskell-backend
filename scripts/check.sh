@@ -47,3 +47,6 @@ then
     echo >&2 "stack exec -- stylish-haskell -i" "${changed[@]}"
     exit 1
 fi
+
+stack install hlint
+stack exec -- hlint kore

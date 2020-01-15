@@ -51,6 +51,15 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
 
+assertNormalized :: Condition Variable -> IO ()
+assertNormalized expect = do
+    actual <- normalizeExcept expect
+    assertEqual
+        "Expected original result"
+        (Right $ MultiOr.make [expect])
+        actual
+    Foldable.traverse_ assertNormalizedPredicatesMulti actual
+
 test_simplifyCondition :: [TestTree]
 test_simplifyCondition =
     [ testCase "predicate = \\bottom" $ do
@@ -60,22 +69,12 @@ test_simplifyCondition =
         assertNormalizedPredicatesMulti actual
     , testCase "∃ y z. x = σ(y, z)" $ do
         let expect = Condition.fromPredicate existsPredicate
-        actual <- normalizeExcept expect
-        assertEqual
-            "Expected original result"
-            (Right $ MultiOr.make [expect])
-            actual
-        Foldable.traverse_ assertNormalizedPredicatesMulti actual
+        assertNormalized expect
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Condition.fromPredicate
                 $ Predicate.makeNotPredicate existsPredicate
-        actual <- normalizeExcept expect
-        assertEqual
-            "Expected original result"
-            (Right $ MultiOr.make [expect])
-            actual
-        Foldable.traverse_ assertNormalizedPredicatesMulti actual
+        assertNormalized expect
     , testCase "x = f(x)" $ do
         let x = ElemVar Mock.x
             expect =

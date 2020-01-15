@@ -27,6 +27,9 @@ import qualified Data.GraphViz as Graph
 import Data.List
     ( nub
     )
+import Data.Maybe
+    ( fromMaybe
+    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Prelude hiding
@@ -287,9 +290,9 @@ log = do
         }
   where
     parseSeverityWithDefault =
-        maybe Log.Warning id <$> optional severity
+        fromMaybe Log.Warning <$> optional severity
     parseTimestampSwitchWithDefault =
-        maybe Log.TimestampsEnable id <$> optional parseTimestampSwitch
+        fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
 
 severity :: Parser Log.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical

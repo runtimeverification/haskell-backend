@@ -670,16 +670,21 @@ makePredicate t = fst <$> makePredicateWorker t
                 | otherwise -> Changed
       where
         didNotChange =
-            (  TermLike.forceSort
-                (termLikeSort term)
-                (unwrapPredicate predicate)
-            == TermLike.fullyOverrideSort (termLikeSort term) term
-            -- TODO (virgil): The term sort override above is needed
-            -- because above we're computing the term with
-            -- (fmap unwrapPredicate term) which leaves the original
-            -- sort at the top, while the term's children have sort
-            -- _PREDICATE. We should fix that and not use fullyOverrideSort.
-            )
+            (==)
+                (TermLike.forceSort
+                    (termLikeSort term)
+                    (unwrapPredicate predicate)
+                )
+                (TermLike.fullyOverrideSort
+                    (termLikeSort term)
+                    term
+                    -- TODO (virgil): The term sort override above is needed
+                    -- because above we're computing the term with (fmap
+                    -- unwrapPredicate term) which leaves the original sort at
+                    -- the top, while the term's children have sort
+                    -- _PREDICATE. We should fix that and not use
+                    -- fullyOverrideSort.
+                )
 
 {- | Is the 'TermLike' a predicate?
 

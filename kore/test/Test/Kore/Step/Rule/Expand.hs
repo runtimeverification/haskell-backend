@@ -31,11 +31,9 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
     ( MetadataTools (..)
     )
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
-    , makeTruePredicate_
-    )
-import Kore.Internal.Predicate
     ( Predicate
+    , makeEqualsPredicate_
+    , makeTruePredicate_
     )
 import Kore.Internal.Symbol
     ( Symbol
