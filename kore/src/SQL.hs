@@ -3,6 +3,7 @@ module SQL
     , Table (..)
     , TableName (..)
     , createTableAux
+    , createTableNP
     , insertRowAux
     -- * Re-exports
     , SQLite.Connection
@@ -20,6 +21,12 @@ import Data.Text
     )
 import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as SQLite
+import Generics.SOP
+    ( K (..)
+    , NP (..)
+    , Shape (..)
+    )
+import qualified Generics.SOP as SOP
 
 import SQL.Column
     ( Column (..)
@@ -66,6 +73,46 @@ createTableAux conn tableName fields = do
             : Column.getTypeName typeName
             : map Column.getColumnConstraint (Set.toList columnConstraints)
             )
+
+createTableNP
+    :: forall proxy table xs
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
+    => SOP.All Column xs
+    => SQLite.Connection
+    -> proxy table
+    -> IO ()
+createTableNP conn proxy =
+    createTableAux conn (TableName tableName) columns
+  where
+    info = SOP.datatypeInfo proxy
+    tableName = SOP.moduleName info <> "." <> SOP.datatypeName info
+
+    fields = productFields proxy
+    columns = SOP.hcollapse (SOP.hcmap (Proxy @Column) column fields)
+    column fieldInfo = K (fieldName fieldInfo, columnDef fieldInfo)
+    fieldName = Text.pack . SOP.fieldName
+
+productFields
+    :: forall proxy a xs
+    .  (SOP.HasDatatypeInfo a, SOP.IsProductType a xs)
+    => proxy a
+    -> NP SOP.FieldInfo xs
+productFields proxy =
+    case ctor of
+        SOP.Constructor _ -> fakeFields
+        SOP.Infix _ _ _ -> fakeFields
+        SOP.Record _ fieldsNP -> fieldsNP
+  where
+    info = SOP.datatypeInfo proxy
+    ctor :* Nil = SOP.constructorInfo info
+
+    fakeFields :: forall ys. SOP.SListI ys => NP SOP.FieldInfo ys
+    fakeFields = shapeFields 0 SOP.shape
+
+    shapeFields :: forall ys. Int -> Shape ys -> NP SOP.FieldInfo ys
+    shapeFields _  ShapeNil         = Nil
+    shapeFields n (ShapeCons shape) =
+        SOP.FieldInfo ("field" <> show n) :* shapeFields (n + 1) shape
 
 insertRowAux
     :: SQLite.Connection

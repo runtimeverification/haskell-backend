@@ -9,7 +9,6 @@ module Kore.Log.WarnBottomHook
     , warnBottomHook
     ) where
 
-import Data.Proxy
 import Data.Text
     ( Text
     )
@@ -55,14 +54,7 @@ instance Entry WarnBottomHook where
     entrySeverity _ = Warning
 
 instance SQL.Table WarnBottomHook where
-    createTable conn proxy = do
-        SQL.createTableAux conn (SQL.TableName qualifiedName)
-            [ ("hook", SQL.columnDef (Proxy @Text))
-            , ("term", SQL.columnDef (Proxy @(TermLike Variable)))
-            ]
-      where
-        info = SOP.datatypeInfo proxy
-        qualifiedName = SOP.moduleName info <> "." <> SOP.datatypeName info
+    createTable = SQL.createTableNP
 
     insertRow conn warn = do
         let WarnBottomHook { hook, term } = warn
