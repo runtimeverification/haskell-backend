@@ -5,6 +5,7 @@ module SQL
     , createTableAux
     , createTableNP
     , insertRowAux
+    , insertRowNP
     -- * Re-exports
     , SQLite.Connection
     , module SQL.Column
@@ -22,8 +23,10 @@ import Data.Text
 import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as SQLite
 import Generics.SOP
-    ( K (..)
+    ( I (..)
+    , K (..)
     , NP (..)
+    , NS (..)
     , Shape (..)
     )
 import qualified Generics.SOP as SOP
@@ -82,15 +85,20 @@ createTableNP
     -> proxy table
     -> IO ()
 createTableNP conn proxy =
-    createTableAux conn (TableName tableName) columns
+    createTableAux conn tableName columns
   where
-    info = SOP.datatypeInfo proxy
-    tableName = SOP.moduleName info <> "." <> SOP.datatypeName info
+    tableName = tableNameSOP proxy
 
     fields = productFields proxy
     columns = SOP.hcollapse (SOP.hcmap (Proxy @Column) column fields)
     column fieldInfo = K (fieldName fieldInfo, columnDef fieldInfo)
     fieldName = Text.pack . SOP.fieldName
+
+tableNameSOP :: SOP.HasDatatypeInfo table => proxy table -> TableName
+tableNameSOP proxy =
+    TableName $ SOP.moduleName info <> "." <> SOP.datatypeName info
+  where
+    info = SOP.datatypeInfo proxy
 
 productFields
     :: forall proxy a xs
@@ -117,7 +125,7 @@ productFields proxy =
 insertRowAux
     :: SQLite.Connection
     -> TableName
-    -> [(Text, SQLite.SQLData)]
+    -> [(String, SQLite.SQLData)]
     -> IO (Key a)
 insertRowAux conn tableName fields = do
     let query =
@@ -136,5 +144,41 @@ insertRowAux conn tableName fields = do
     sepBy _   [x     ] = x
     sepBy sep (x : xs) = x <> sep <> sepBy sep xs
     names = fst <$> params
-    params = map (Bifunctor.first $ Text.cons ':') fields'
+    params = map (Bifunctor.first $ Text.pack . (:) ':') fields'
     fields' = ("id", SQLite.SQLNull) : fields
+
+insertRowNP
+    :: forall table xs
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
+    => SOP.All Column xs
+    => SQLite.Connection
+    -> table
+    -> IO (Key table)
+insertRowNP conn table =
+    insertRowAux conn tableName =<< sequence (SOP.hcollapse columns)
+  where
+    proxy = pure @SOP.Proxy table
+    tableName = tableNameSOP proxy
+    fields = productFields proxy
+    values = productTypeFrom table
+    columns = SOP.hczipWith (Proxy @Column) column fields values
+    column
+        :: Column a
+        => SOP.FieldInfo a
+        -> I a
+        -> K (IO (String, SQLite.SQLData)) a
+    column info (I x) = K $ do
+        x' <- toColumn conn x
+        return (SOP.fieldName info, x')
+
+productTypeFrom
+    :: forall a xs
+    .  (SOP.Code a ~ '[xs], SOP.IsProductType a xs)
+    => a -> NP I xs
+productTypeFrom a =
+    case ns of
+        Z np -> np
+        S _  -> error "impossible"
+  where
+    ns :: NS (NP I) '[xs]
+    SOP.SOP ns = SOP.from a

@@ -55,18 +55,7 @@ instance Entry WarnBottomHook where
 
 instance SQL.Table WarnBottomHook where
     createTable = SQL.createTableNP
-
-    insertRow conn warn = do
-        let WarnBottomHook { hook, term } = warn
-        hook' <- SQL.toColumn conn hook
-        term' <- SQL.toColumn conn term
-        SQL.insertRowAux conn (SQL.TableName qualifiedName)
-            [ ("hook", hook')
-            , ("term", term')
-            ]
-      where
-        info = SOP.datatypeInfo (pure @SOP.Proxy warn)
-        qualifiedName = SOP.moduleName info <> "." <> SOP.datatypeName info
+    insertRow = SQL.insertRowNP
 
 warnBottomHook
     :: MonadLog logger
