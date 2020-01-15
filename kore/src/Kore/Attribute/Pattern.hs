@@ -113,7 +113,9 @@ instance HasConstructorLike (Pattern variable) where
       = constructorLike
 
 isSimplified :: Pattern variable -> Bool
-isSimplified = isFullySimplified . simplified
+isSimplified Pattern {constructorLike, simplified}
+    | isConstructorLike constructorLike = True
+    | otherwise = isFullySimplified simplified
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
 setSimplified simplified patt = patt { simplified }

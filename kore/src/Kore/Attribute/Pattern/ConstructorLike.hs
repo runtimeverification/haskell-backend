@@ -283,6 +283,9 @@ class HasConstructorLike a where
     isConstructorLike a = case extractConstructorLike a of
         (ConstructorLike constructorLike) -> isJust constructorLike
 
+instance HasConstructorLike ConstructorLike where
+    extractConstructorLike = id
+
 instance HasConstructorLike (Value NormalizedMap ConstructorLike) where
     extractConstructorLike (MapValue result) = result
 
