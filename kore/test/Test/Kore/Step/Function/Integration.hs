@@ -671,9 +671,7 @@ equals comment term results =
         assertEqual "" expect actual
 
 simplify :: TermLike Variable -> IO (OrPattern Variable)
-simplify =
-    runSimplifier testEnv
-    . (TermLike.simplifyToOr SideCondition.top)
+simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier

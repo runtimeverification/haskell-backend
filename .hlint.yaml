@@ -61,8 +61,17 @@
 - ignore: {name: "Use String"}
 - ignore: {name: "Redundant id"}
 
-# Eta reduction can impact readability significantly.
-- ignore: {name: Eta reduce}
+# Ignore suggestions that may affect readability
+- ignore: {name: "Eta reduce"}
+- ignore: {name: "Avoid lambda using `infix`"}
+- ignore: {name: "Use infix"}
+- ignore: {name: "Use section"}
+- ignore: {name: "Use <$>"}
+- ignore: {name: "Redundant flip"}
+- ignore: {name: "Monad law, left identity"}
+- ignore: {name: "Monoid law, left identity"}
+- ignore: {name: "Replace case with maybe"}
+
 
 # Permit existing duplication in tests.
 # Please reflect before adding new modules to this list.
@@ -73,28 +82,40 @@
       - Test.Kore.AllPath
       - Test.Kore.ASTVerifier.DefinitionVerifier.Imports
       - Test.Kore.Builtin.Definition
+      - Test.Kore.Builtin.InternalBytes
       - Test.Kore.Builtin.List
       - Test.Kore.Builtin.Map
       - Test.Kore.Builtin.Set
+      - Test.Kore.Exec
       - Test.Kore.Internal.TermLike
       - Test.Kore.Parser.Parser
       - Test.Kore.Repl.Interpreter
+      - Test.Kore.Step.EquationalStep
+      - Test.Kore.Step.RewriteStep
+      - Test.Kore.Step.Rule.Combine
       - Test.Kore.Step.Step
       - Test.Kore.Step.Substitution
+      - Test.Kore.Strategies.AllPath.AllPath
 
 # The placement of lambdas affects inlining.
 - ignore: {name: Redundant lambda}
 
 # Testing class laws
-- ignore: {name: Use <$>, within: [Test.Data.Sup, Test.ListT]}
 - ignore: {name: Functor law, within: [Test.Data.Sup, Test.ListT]}
 - ignore: {name: Use /=, within: [Test.Data.Sup]}
-- ignore: {name: "Monad law, left identity", within: [Test.ListT]}
+- ignore: {name: "Alternative law, left identity", within: [Test.ListT]}
+- ignore: {name: "Alternative law, right identity", within: [Test.ListT]}
 - ignore: {name: "Monad law, right identity", within: [Test.ListT]}
 - ignore: {name: "Use >=>", within: [Test.ListT]}
 - ignore: {name: "Redundant id", within: [Test.ListT]}
 
-- ignore: {name: Use camelCase, within: [Test.Terse]}
+- ignore:
+    name: Use camelCase
+    within:
+      - Test.Terse
+      - Test.Kore.Step.Axiom.Evaluate
+      - Test.Kore.Step.Axiom.Matcher
+
 
 # Unsuitable suggestions
 - ignore:
@@ -102,22 +123,23 @@
     within:
       - Kore.Builtin.Builtin
       - Kore.Builtin.List
+      - Kore.Builtin.Symbols
       - Kore.Domain.Builtin
       - Kore.Exec
       - Kore.Internal.Conditional
+      - Kore.Step.Axiom.Matcher
       - Kore.Step.Simplification.AndTerms
       - Kore.Parser.Parser
+      - Main
 - ignore: {name: "Use fmap", within: [Kore.Step.Step]}
-- ignore:
-    name: "Use <$>"
-    within:
-      - Kore.Parser.Parser
-      - Kore.Step.Step
+- ignore: {name: "Avoid lambda", within: [Kore.Step.Function.Memo]}
+
 
 # Haskell names match K names
 - ignore:
     name: "Use camelCase"
     within:
+      - Kore.Builtin.Map.Map
       - Kore.Builtin.MapSymbols
       - Kore.Debug
 

@@ -97,7 +97,7 @@ import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
     )
-import qualified Log as Log
+import qualified Log
 
 {- | Is the result a symbolic rewrite, i.e. a narrowing result?
 
@@ -176,7 +176,7 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule sideCondition renamedRule appliedConditions =
-    Monad.liftM OrPattern.fromPatterns . Monad.Unify.gather
+    fmap OrPattern.fromPatterns . Monad.Unify.gather
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
@@ -298,7 +298,6 @@ recoveryFunctionLikeResults initial results = do
         -- what we would like to check above is that phi_p -> phi_t = alpha_t,
         -- but that's hard to do for non-functional patterns,
         -- so we check for (syntactic) equality instead.
-        return ()
     fullyOverrideSort' sort term
       | sort == termLikeSort term = term
       | otherwise = fullyOverrideSort sort term

@@ -44,7 +44,7 @@ import Kore.Step.Simplification.Simplify
     , BuiltinAndAxiomSimplifier (..)
     )
 import qualified Kore.TopBottom as TopBottom
-import qualified SMT as SMT
+import qualified SMT
 
 import Test.Kore.Builtin.Builtin hiding
     ( evaluate

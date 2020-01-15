@@ -97,4 +97,4 @@ toSymbol (BigEndian symbol) = symbol
 toSymbol (LittleEndian symbol) = symbol
 
 toApplication :: forall child. Endianness -> Application Symbol child
-toApplication endianness = (Application (toSymbol endianness) [])
+toApplication endianness = Application (toSymbol endianness) []

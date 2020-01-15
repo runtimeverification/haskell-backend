@@ -312,7 +312,7 @@ test_patternToAxiomPatternAndBack =
     requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
     ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
     attributesWithPriority =
-        def & field @"priority" .~ (Attribute.Priority (Just 0))
+        def & field @"priority" .~ Attribute.Priority (Just 0)
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
 

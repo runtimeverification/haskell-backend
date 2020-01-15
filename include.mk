@@ -1,7 +1,13 @@
 # Settings
 
+# Disable builtin rules to prevent obscure errors, such as:
+# copying `test.sh` to `test.sh.out` if prerequisites are missing.
+.SUFFIXES:
+MAKEFLAGS += --no-builtin-rules
+
 TOP ?= $(shell git rev-parse --show-toplevel)
 export TOP  # so that sub-makes do not invoke git again
+
 UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build

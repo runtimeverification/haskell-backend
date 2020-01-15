@@ -216,7 +216,7 @@ backSubstitute
     -- ^ Topologically-sorted substitution
     -> UnwrappedSubstitution variable
 backSubstitute sorted =
-    (flip State.evalState mempty) (traverse worker sorted)
+    flip State.evalState mempty (traverse worker sorted)
   where
     worker (variable, termLike) = do
         termLike' <- applySubstitution termLike
