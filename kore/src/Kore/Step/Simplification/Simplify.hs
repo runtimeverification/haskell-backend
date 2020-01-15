@@ -7,7 +7,6 @@ License     : NCSA
 module Kore.Step.Simplification.Simplify
     ( SimplifierVariable
     , MonadSimplify (..)
-    , simplifyTerm
     , simplifyConditionalTerm
     , simplifyConditionalTermToOr
     , TermSimplifier
@@ -85,9 +84,6 @@ import Kore.Internal.Pattern
     )
 import Kore.Internal.SideCondition
     ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -261,21 +257,6 @@ newtype TermLikeSimplifier =
         -> TermLike variable
         -> BranchT m (Pattern variable)
         )
-
-{- | Use a 'TermLikeSimplifier' to simplify a pattern.
-
-The pattern is considered as an isolated term without extra initial conditions.
-
- -}
-simplifyTerm
-    :: forall variable simplifier
-    .   ( GHC.HasCallStack
-        , SimplifierVariable variable
-        , MonadSimplify simplifier
-        )
-    => TermLike variable
-    -> simplifier (OrPattern variable)
-simplifyTerm = simplifyConditionalTermToOr SideCondition.top
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}

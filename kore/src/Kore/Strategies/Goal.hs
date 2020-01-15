@@ -124,7 +124,7 @@ import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
-    ( simplifyTerm
+    ( simplifyConditionalTermToOr
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
@@ -970,7 +970,8 @@ removalPredicate
   , isFunctionPattern destTerm
   = do
     -- TODO (thomas.tuegel): Use unification here, not simplification.
-    unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
+    unifiedConfigs <-
+        simplifyConditionalTermToOr sideCondition (mkAnd configTerm destTerm)
     case OrPattern.toPatterns unifiedConfigs of
         _ | OrPattern.isFalse unifiedConfigs ->
             return Predicate.makeTruePredicate_

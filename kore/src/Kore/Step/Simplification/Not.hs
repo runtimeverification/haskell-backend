@@ -41,6 +41,9 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike hiding
     ( mkAnd
     )
@@ -64,9 +67,11 @@ Right now this uses the following:
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Not Sort (OrPattern variable)
+    => SideCondition variable
+    -> Not Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Not { notChild } = simplifyEvaluated notChild
+simplify sideCondition Not { notChild } =
+    simplifyEvaluated sideCondition notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -88,13 +93,14 @@ to carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPattern variable
+    => SideCondition variable
+    -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated simplified =
+simplifyEvaluated sideCondition simplified =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
-        mkMultiAndPattern andPattern
+        mkMultiAndPattern sideCondition andPattern
 
 simplifyEvaluatedPredicate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
@@ -103,7 +109,8 @@ simplifyEvaluatedPredicate
 simplifyEvaluatedPredicate notChild =
     fmap OrCondition.fromConditions $ gather $ do
         let not' = Not { notChild = notChild, notSort = () }
-        andPredicate <- scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
+        andPredicate <-
+            scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
         mkMultiAndPredicate andPredicate
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
@@ -212,10 +219,11 @@ scatterAnd = scatter . distributeAnd
  -}
 mkMultiAndPattern
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => MultiAnd (Pattern variable)
+    => SideCondition variable
+    -> MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
-mkMultiAndPattern patterns =
-    Foldable.foldrM And.makeEvaluate Pattern.top patterns
+mkMultiAndPattern sideCondition patterns =
+    Foldable.foldrM (And.makeEvaluate sideCondition) Pattern.top patterns
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}

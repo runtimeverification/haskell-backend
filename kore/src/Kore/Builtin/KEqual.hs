@@ -135,6 +135,7 @@ evalKEq true (valid :< app) =
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
+    sideCondition = SideCondition.topTODO
     false = not true
     sort = Attribute.patternSort valid
     Application { applicationChildren } = app
@@ -142,15 +143,15 @@ evalKEq true (valid :< app) =
         let pattern1 = Pattern.fromTermLike termLike1
             pattern2 = Pattern.fromTermLike termLike2
 
-        defined1 <- Ceil.makeEvaluate SideCondition.topTODO pattern1
-        defined2 <- Ceil.makeEvaluate SideCondition.topTODO pattern2
-        defined <- And.simplifyEvaluated defined1 defined2
+        defined1 <- Ceil.makeEvaluate sideCondition pattern1
+        defined2 <- Ceil.makeEvaluate sideCondition pattern2
+        defined <- And.simplifyEvaluated sideCondition defined1 defined2
 
         equalTerms <-
             Equals.makeEvaluateTermsToPredicate
                 termLike1
                 termLike2
-                SideCondition.topTODO
+                sideCondition
         let trueTerm = Bool.asInternal sort true
             truePatterns = Pattern.withCondition trueTerm <$> equalTerms
 
@@ -159,7 +160,7 @@ evalKEq true (valid :< app) =
             falsePatterns = Pattern.withCondition falseTerm <$> notEqualTerms
 
         let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
-        results <- And.simplifyEvaluated defined undefinedResults
+        results <- And.simplifyEvaluated sideCondition defined undefinedResults
         pure $ Applied AttemptedAxiomResults
             { results
             , remainders = OrPattern.bottom
