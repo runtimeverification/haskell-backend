@@ -157,9 +157,8 @@ processAxiomPatterns = fmap processEqualityRules
       where
         (simplificationRules, unProcessedFunctionRules) =
             partition isSimplificationRule equalities
-        unwrapPriority = fromMaybe 100
         functionRules =
-            sortOn (unwrapPriority . getPriorityOfRule)
+            sortOn getPriorityOfRule
             . filter (not . ignoreDefinition)
             $ unProcessedFunctionRules
 

@@ -20,11 +20,15 @@ import qualified Data.Default as Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Data.Maybe
+    ( fromMaybe
+    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Owise as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
@@ -244,9 +248,15 @@ isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
     Attribute.Simplification { isSimplification } =
         Attribute.simplification attributes
 
-getPriorityOfRule :: EqualityRule variable -> Maybe Integer
+-- TODO: this should only call 'getPriority' when the
+-- frontend will take care of default priorities
+getPriorityOfRule :: EqualityRule variable -> Integer
 getPriorityOfRule (EqualityRule EqualityPattern { attributes }) =
-    getPriority
+    if isOwise
+        then 200
+        else fromMaybe 100 getPriority
   where
     Attribute.Priority { getPriority } =
         Attribute.priority attributes
+    Attribute.Owise { isOwise } =
+        Attribute.owise attributes

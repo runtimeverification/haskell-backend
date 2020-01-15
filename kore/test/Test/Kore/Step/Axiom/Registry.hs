@@ -25,6 +25,7 @@ import Data.Text
 
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Owise as Attribute
 import qualified Kore.Attribute.Priority as Attribute
 import Kore.Attribute.Simplification
     ( simplificationAttribute
@@ -234,7 +235,36 @@ testDef =
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
+                Attributes [Attribute.owiseAttribute]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol fHead [])
+                            (mkApplySymbol tHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
                 Attributes [Attribute.priorityAttribute "1"]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol fHead [])
+                            (mkApplySymbol tHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -368,7 +398,7 @@ test_functionRegistry =
            (case Map.lookup axiomId testProcessedAxiomPatterns of
                 Just PartitionedEqualityRules { functionRules } ->
                     assertEqual ""
-                        [Just 1, Just 2, Just 3]
+                        [1, 2, 3, 100, 200]
                         (fmap getPriorityOfRule functionRules)
                 _ -> assertFailure "Should find equality rules for f"
             )
