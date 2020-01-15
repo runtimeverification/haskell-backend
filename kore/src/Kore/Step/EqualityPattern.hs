@@ -248,8 +248,6 @@ isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
     Attribute.Simplification { isSimplification } =
         Attribute.simplification attributes
 
--- TODO: this should only call 'getPriority' when the
--- frontend will take care of default priorities
 getPriorityOfRule :: EqualityRule variable -> Integer
 getPriorityOfRule (EqualityRule EqualityPattern { attributes }) =
     if isOwise
