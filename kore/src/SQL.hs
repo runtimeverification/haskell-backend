@@ -32,7 +32,6 @@ newtype Key a = Key { getKey :: Int64 }
 instance Column (Key a) where
     columnDef _ = columnDef (Proxy @Int64)
     toColumn conn = toColumn conn . getKey
-    fromColumn conn sqlData = Key <$> fromColumn conn sqlData
 
 class Table a where
     createTable :: SQLite.Connection -> proxy a -> IO ()
