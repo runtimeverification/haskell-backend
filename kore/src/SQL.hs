@@ -1,16 +1,27 @@
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
+
 module SQL
     ( Key (..)
+    , columnDefForeignKey
+    , toColumnForeignKey
     , Table (..)
+    , insertUniqueRow
     , TableName (..)
     , createTableAux
     , createTableNP
     , insertRowAux
     , insertRowNP
+    , selectRowAux
+    , selectRowNP
     -- * Re-exports
     , SQLite.Connection
     , module SQL.Column
     ) where
 
+import Control.Monad
+    ( (>=>)
+    )
+import qualified Control.Monad.Extra as Monad
 import qualified Data.Bifunctor as Bifunctor
 import Data.Int
     ( Int64
@@ -45,13 +56,22 @@ instance Column (Key a) where
     columnDef _ = columnDef (Proxy @Int64)
     toColumn conn = toColumn conn . getKey
 
+columnDefForeignKey :: forall a proxy. Table a => proxy a -> ColumnDef
+columnDefForeignKey _ = ColumnDef (Column.typeInteger, Column.notNull)
+
+toColumnForeignKey :: Table a => SQLite.Connection -> a -> IO SQLite.SQLData
+toColumnForeignKey conn = insertUniqueRow conn >=> toColumn conn
+
 class Table a where
     createTable :: SQLite.Connection -> proxy a -> IO ()
 
     insertRow :: SQLite.Connection -> a -> IO (Key a)
 
-    -- TODO (thomas.tuegel): Implement this!
-    -- selectRow :: SQLite.Connection -> Key a -> IO a
+    selectRow :: SQLite.Connection -> a -> IO (Maybe (Key a))
+
+insertUniqueRow :: Table a => SQLite.Connection -> a -> IO (Key a)
+insertUniqueRow conn a =
+    Monad.maybeM (insertRow conn a) return (selectRow conn a)
 
 newtype TableName = TableName { getTableName :: String }
 
@@ -154,22 +174,12 @@ insertRowNP
     => SQLite.Connection
     -> table
     -> IO (Key table)
-insertRowNP conn table =
-    insertRowAux conn tableName =<< sequence (SOP.hcollapse columns)
+insertRowNP conn table = do
+    columns <- productColumns conn table
+    insertRowAux conn tableName columns
   where
     proxy = pure @SOP.Proxy table
     tableName = tableNameSOP proxy
-    fields = productFields proxy
-    values = productTypeFrom table
-    columns = SOP.hczipWith (Proxy @Column) column fields values
-    column
-        :: Column a
-        => SOP.FieldInfo a
-        -> I a
-        -> K (IO (String, SQLite.SQLData)) a
-    column info (I x) = K $ do
-        x' <- toColumn conn x
-        return (SOP.fieldName info, x')
 
 productTypeFrom
     :: forall a xs
@@ -182,3 +192,69 @@ productTypeFrom a =
   where
     ns :: NS (NP I) '[xs]
     SOP.SOP ns = SOP.from a
+
+productColumns
+    :: forall table xs
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
+    => SOP.All Column xs
+    => SQLite.Connection
+    -> table
+    -> IO [(String, SQLite.SQLData)]
+productColumns conn table =
+    sequence (SOP.hcollapse columns)
+  where
+    proxy = pure @SOP.Proxy table
+    fields = productFields proxy
+    values = productTypeFrom table
+    columns = SOP.hczipWith (Proxy @Column) column fields values
+    column
+        :: Column a
+        => SOP.FieldInfo a
+        -> I a
+        -> K (IO (String, SQLite.SQLData)) a
+    column info (I x) = K $ do
+        x' <- toColumn conn x
+        return (SOP.fieldName info, x')
+
+selectRowAux
+    :: SQLite.Connection
+    -> TableName
+    -> [(String, SQLite.SQLData)]
+    -> IO (Maybe (Key a))
+selectRowAux conn tableName fields = do
+    let query =
+            (SQLite.Query . Text.unwords)
+                [ "SELECT (id) FROM"
+                , (quotes . Text.pack) (getTableName tableName)
+                , "WHERE"
+                , sepBy " AND " exprs
+                ]
+    ids <- SQLite.queryNamed conn query params
+    case SQLite.fromOnly <$> ids of
+        getKey : _ -> (return . Just) SQL.Key { getKey }
+        [] -> return Nothing
+  where
+    quotes str = Text.cons '"' (Text.snoc str '"')
+    sepBy _   [      ] = Text.empty
+    sepBy _   [x     ] = x
+    sepBy sep (x : xs) = x <> sep <> sepBy sep xs
+    exprs = map expr fields
+    expr (columnName, _) =
+        Text.unwords [ Text.pack columnName, "IS", paramName columnName ]
+    params = map (namedParam . Bifunctor.first paramName) fields
+    namedParam = uncurry (SQLite.:=)
+    paramName = Text.pack . (:) ':'
+
+selectRowNP
+    :: forall table xs
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
+    => SOP.All Column xs
+    => SQLite.Connection
+    -> table
+    -> IO (Maybe (Key table))
+selectRowNP conn table = do
+    columns <- productColumns conn table
+    selectRowAux conn tableName columns
+  where
+    proxy = pure @SOP.Proxy table
+    tableName = tableNameSOP proxy

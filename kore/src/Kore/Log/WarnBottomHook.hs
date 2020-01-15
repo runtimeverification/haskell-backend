@@ -56,6 +56,7 @@ instance Entry WarnBottomHook where
 instance SQL.Table WarnBottomHook where
     createTable = SQL.createTableNP
     insertRow = SQL.insertRowNP
+    selectRow = SQL.selectRowNP
 
 warnBottomHook
     :: MonadLog logger
