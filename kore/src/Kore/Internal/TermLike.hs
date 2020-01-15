@@ -441,7 +441,7 @@ simplified.
 markSimplified :: TermLike variable -> TermLike variable
 markSimplified (Recursive.project -> attrs :< termLikeF) =
     Recursive.embed
-        (attrs { Attribute.simplified = Pattern.Simplified True } :< termLikeF)
+        (attrs { Attribute.simplified = Pattern.Simplified } :< termLikeF)
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort
