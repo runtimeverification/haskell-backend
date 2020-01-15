@@ -12,4 +12,8 @@ module PRIORITY
   rule func1(4)     => four
   rule func1(X:Int) => seven  [priority(99)] 
 
+  syntax S ::= func2(Int)     [function]
+  rule func2(4)     => four   
+  rule func2(_:Int) => seven  [owise, priority(1)]
+
 endmodule
