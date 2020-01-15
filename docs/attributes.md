@@ -92,9 +92,8 @@ axiom{R} \equals{SortSet{}, R} (
 owise{}()
 ```
 
-This function rule will apply only if the current configuration does not match
-any other function rules for a specific symbol. Has default priority 200.
-
+This rule will apply only if the term does not unify with any other rules.
+Has default priority 200.
 
 ### ProductionID
 
