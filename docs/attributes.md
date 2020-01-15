@@ -93,7 +93,7 @@ owise{}()
 ```
 
 This rule will apply only if the term does not unify with any other rules.
-any other function rules for a specific symbol. Has default priority 200.
+Has default priority 200.
 
 ### ProductionID
 
