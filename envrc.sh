@@ -1,7 +1,6 @@
 # Template .envrc for direnv (https://github.com/direnv/direnv)
 #
-# Set up shell and editors to use the same versions of Haskell and
-# K Framework tools used by this project
+# Make Haskell and K Framework tools available in shells and editors.
 #
 # Usage:
 #   1. Install direnv (refer to direnv's documentation).
