@@ -3,11 +3,13 @@ module SQL
     , Table (..)
     , TableName (..)
     , createTableAux
+    , insertRowAux
     -- * Re-exports
     , SQLite.Connection
     , module SQL.Column
     ) where
 
+import qualified Data.Bifunctor as Bifunctor
 import Data.Int
     ( Int64
     )
@@ -64,3 +66,28 @@ createTableAux conn tableName fields = do
             : Column.getTypeName typeName
             : map Column.getColumnConstraint (Set.toList columnConstraints)
             )
+
+insertRowAux
+    :: SQLite.Connection
+    -> TableName
+    -> [(Text, SQLite.SQLData)]
+    -> IO (Key a)
+insertRowAux conn tableName fields = do
+    let query =
+            (SQLite.Query . Text.unwords)
+                [ "INSERT INTO"
+                , (quotes . Text.pack) (getTableName tableName)
+                , "VALUES"
+                , parens (sepBy ", " names)
+                ]
+    SQLite.executeNamed conn query (map (uncurry (SQLite.:=)) params)
+    SQL.Key <$> SQLite.lastInsertRowId conn
+  where
+    quotes str = Text.cons '"' (Text.snoc str '"')
+    parens str = Text.cons '(' (Text.snoc str ')')
+    sepBy _   [      ] = Text.empty
+    sepBy _   [x     ] = x
+    sepBy sep (x : xs) = x <> sep <> sepBy sep xs
+    names = fst <$> params
+    params = map (Bifunctor.first $ Text.cons ':') fields'
+    fields' = ("id", SQLite.SQLNull) : fields

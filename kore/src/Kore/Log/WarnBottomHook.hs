@@ -13,12 +13,10 @@ import Data.Proxy
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Database.SQLite.Simple as SQLite
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
@@ -67,18 +65,16 @@ instance SQL.Table WarnBottomHook where
         qualifiedName = SOP.moduleName info <> "." <> SOP.datatypeName info
 
     insertRow conn warn = do
-        let query = "INSERT INTO " <> tableName <> " VALUES (:hook, :term)"
-            WarnBottomHook { hook, term } = warn
-        SQLite.executeNamed conn query
-            [ ":hook" SQLite.:= hook
-            , ":term" SQLite.:= (show . unparse) term
+        let WarnBottomHook { hook, term } = warn
+        hook' <- SQL.toColumn conn hook
+        term' <- SQL.toColumn conn term
+        SQL.insertRowAux conn (SQL.TableName qualifiedName)
+            [ ("hook", hook')
+            , ("term", term')
             ]
-        SQL.Key <$> SQLite.lastInsertRowId conn
       where
         info = SOP.datatypeInfo (pure @SOP.Proxy warn)
-        quoted str = "\"" ++ str ++ "\""
         qualifiedName = SOP.moduleName info <> "." <> SOP.datatypeName info
-        tableName = (SQLite.Query . Text.pack . quoted) qualifiedName
 
 warnBottomHook
     :: MonadLog logger
