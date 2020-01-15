@@ -9,6 +9,7 @@ module Kore.Log.WarnBottomHook
     , warnBottomHook
     ) where
 
+import Data.Proxy
 import Data.Text
     ( Text
     )
@@ -57,14 +58,12 @@ instance Entry WarnBottomHook where
 
 instance SQL.Table WarnBottomHook where
     createTable conn proxy = do
-        SQLite.execute_ conn $ SQLite.Query $ Text.unwords
-            [ "CREATE TABLE IF NOT EXISTS"
-            , (Text.pack . quoted) qualifiedName
-            , "(id INTEGER PRIMARY KEY, hook TEXT NOT NULL, term TEXT NOT NULL)"
+        SQL.createTableAux conn (SQL.TableName qualifiedName)
+            [ ("hook", SQL.columnDef (Proxy @Text))
+            , ("term", SQL.columnDef (Proxy @(TermLike Variable)))
             ]
       where
         info = SOP.datatypeInfo proxy
-        quoted str = "\"" ++ str ++ "\""
         qualifiedName = SOP.moduleName info <> "." <> SOP.datatypeName info
 
     insertRow conn warn = do
