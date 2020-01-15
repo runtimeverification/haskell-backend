@@ -97,4 +97,4 @@ toSymbol (Signed symbol) = symbol
 toSymbol (Unsigned symbol) = symbol
 
 toApplication :: forall child. Signedness -> Application Symbol child
-toApplication signedness = (Application (toSymbol signedness) [])
+toApplication signedness = Application (toSymbol signedness) []

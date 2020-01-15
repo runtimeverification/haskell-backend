@@ -690,9 +690,8 @@ maybeStringBuiltinGenerator Setup { maybeStringBuiltinSort } =
         :: Sort
         -> (Sort -> Gen (Maybe (TermLike Variable)))
         -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
-    stringGenerator stringSort _childGenerator = do
-        value <- stringGen
-        return (Just (BuiltinString.asBuiltin stringSort value))
+    stringGenerator stringSort _childGenerator =
+        Just . BuiltinString.asBuiltin stringSort <$> stringGen
 
 maybeBoolBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
@@ -713,9 +712,8 @@ maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
         :: Sort
         -> (Sort -> Gen (Maybe (TermLike Variable)))
         -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
-    boolGenerator boolSort _childGenerator = do
-        value <- Gen.bool
-        return (Just (BuiltinBool.asBuiltin boolSort value))
+    boolGenerator boolSort _childGenerator =
+        Just . BuiltinBool.asBuiltin boolSort <$> Gen.bool
 
 maybeIntBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeIntBuiltinGenerator Setup { maybeIntSort } =
@@ -815,9 +813,7 @@ maybeMapBuiltinGenerator Setup { maybeMapSorts } =
         -> Gen (Maybe (Domain.MapValue (TermLike Variable)))
     valueGenerator valueSort childGenerator = do
         maybeValue <- childGenerator valueSort
-        return $ do  -- Maybe monad
-            value <- maybeValue
-            return (Domain.MapValue value)
+        return (Domain.MapValue <$> maybeValue)
 
 -- TODO(virgil): Test that we are generating non-empty sets.
 maybeSetBuiltinGenerator :: Setup -> Maybe BuiltinGenerator

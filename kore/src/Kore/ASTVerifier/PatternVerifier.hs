@@ -427,7 +427,7 @@ verifyApplication application = do
 verifyBinder
     :: Traversable binder
     => (forall a. binder a -> Sort)
-    -> (forall a. binder a -> (UnifiedVariable Variable))
+    -> (forall a. binder a -> UnifiedVariable Variable)
     -> binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (binder Verified.Pattern)
 verifyBinder binderSort binderVariable = \binder -> do

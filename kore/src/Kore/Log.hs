@@ -195,8 +195,7 @@ concurrentLogger logger = do
 
 writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
-    LogAction $ \msg ->
-        atomically $ writeTChan tChan msg
+    LogAction $ \msg -> atomically $ writeTChan tChan msg
 
 -- Creates a kore logger which:
 --     * adds timestamps

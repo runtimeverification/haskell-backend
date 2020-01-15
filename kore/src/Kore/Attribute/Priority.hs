@@ -69,6 +69,6 @@ instance ParseAttributes Priority where
         failDuplicate' = Parser.failDuplicate priorityId
 
     toAttributes =
-        maybe def toAttribute . fmap (pack . show) . getPriority
+        maybe def (toAttribute . pack . show) . getPriority
       where
         toAttribute = Attributes . (: []) . priorityAttribute

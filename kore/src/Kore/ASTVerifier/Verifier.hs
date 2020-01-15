@@ -60,9 +60,9 @@ data VerifierContext =
         }
     deriving (GHC.Generic)
 
-data VerifierState =
+newtype VerifierState =
     VerifierState
-        { verifiedModules :: !(Map ModuleName VerifiedModule')
+        { verifiedModules :: Map ModuleName VerifiedModule'
         }
     deriving (GHC.Generic)
 

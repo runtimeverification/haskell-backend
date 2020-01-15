@@ -166,7 +166,7 @@ import qualified Kore.Strategies.Verification as StuckVerification
 import Kore.Unparser
     ( unparseToText
     )
-import qualified Log as Log
+import qualified Log
 import SMT
     ( MonadSMT
     , SMT
@@ -184,7 +184,7 @@ type Equality = EqualityRule Variable
 type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
 
 -- | A collection of rules and simplifiers used during execution.
-data Initialized = Initialized { rewriteRules :: ![Rewrite] }
+newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
 
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =

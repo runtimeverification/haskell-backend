@@ -129,7 +129,7 @@ testForModule name m testBuilder =
     testBuilder name (Attribute.Constructors.indexBySort m)
 
 constructorsAre
-    :: ( HasCallStack )
+    :: HasCallStack
     => [(Id, Sort -> Attribute.Constructors)]
     -> String
     -> Map.Map Id Attribute.Constructors
