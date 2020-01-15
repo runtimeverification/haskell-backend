@@ -86,6 +86,15 @@ axiom{R} \equals{SortSet{}, R} (
   Lbl'Unds'Set'Unds'{}(K:SortSet{},K:SortSet{}),K:SortSet{}) [idem{}()]
 ```
 
+### Owise
+
+```
+owise{}()
+```
+
+This rule will apply only if the term does not unify with any other rules.
+Has default priority 200.
+
 ### ProductionID
 
 ```
