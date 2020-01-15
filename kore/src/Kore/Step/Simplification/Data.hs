@@ -48,6 +48,7 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Profiler.Data
     ( MonadProfiler (profile)
@@ -217,8 +218,8 @@ evalSimplifier verifiedModule simplifier = do
             (Builtin.internalize earlyMetadataTools)
             verifiedModule
     metadataTools = MetadataTools.build verifiedModule'
-    overloadSimplifier =
-        mkOverloadSimplifier verifiedModule sortGraph metadataTools
+    overloadGraph = OverloadGraph.fromIndexedModule verifiedModule metadataTools
+    overloadSimplifier = mkOverloadSimplifier overloadGraph sortGraph
 
     initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do

@@ -1612,6 +1612,7 @@ overloadSimplifier =
         { isOverloaded = const False
         , isOverloading = const (const False)
         , resolveOverloading = undefined
+        , unifyOverloadWithinBound = undefined
         }
 
 env :: MonadSimplify simplifier => Env simplifier

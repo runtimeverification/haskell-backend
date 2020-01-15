@@ -80,6 +80,7 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
@@ -243,12 +244,15 @@ testTermLikeSimplifier = Simplifier.create
 testSortGraph :: SortGraph.SortGraph
 testSortGraph = SortGraph.fromIndexedModule verifiedModule
 
+testOverloadGraph :: OverloadGraph.OverloadGraph
+testOverloadGraph =
+    OverloadGraph.fromIndexedModule verifiedModule testMetadataTools
+
 testInjSimplifier :: InjSimplifier
 testInjSimplifier = mkInjSimplifier testSortGraph
 
 testOverloadSimplifier :: OverloadSimplifier
-testOverloadSimplifier =
-    mkOverloadSimplifier verifiedModule testSortGraph testMetadataTools
+testOverloadSimplifier = mkOverloadSimplifier testOverloadGraph testSortGraph
 
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
