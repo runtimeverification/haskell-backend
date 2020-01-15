@@ -14,6 +14,7 @@ module Kore.Attribute.Pattern
     , deleteFreeVariable
     , isSimplified
     , setSimplified
+    , simplifiedAttribute
     -- * Re-exports
     , module Kore.Attribute.Pattern.Created
     , module Kore.Attribute.Pattern.Defined
@@ -112,10 +113,15 @@ instance HasConstructorLike (Pattern variable) where
         Pattern {constructorLike}
       = constructorLike
 
+simplifiedAttribute :: Pattern variable -> Simplified
+simplifiedAttribute Pattern {constructorLike, simplified}
+    | isConstructorLike constructorLike = Simplified
+    | otherwise = simplified
+
 isSimplified :: Pattern variable -> Bool
 isSimplified Pattern {constructorLike, simplified}
   | isConstructorLike constructorLike = True
-    | otherwise = isFullySimplified simplified
+  | otherwise = isFullySimplified simplified
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
 setSimplified simplified patt = patt { simplified }
@@ -159,3 +165,4 @@ deleteFreeVariable variable =
 
 instance HasFreeVariables (Pattern variable) variable where
     freeVariables = freeVariables
+

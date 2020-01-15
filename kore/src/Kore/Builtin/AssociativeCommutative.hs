@@ -69,6 +69,9 @@ import GHC.Stack
     )
 
 import Branch
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -176,7 +179,8 @@ class
         :: TermLike variable
         -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 
-    isSimplifiedValue :: Domain.Value normalized (TermLike variable) -> Bool
+    simplifiedAttributeValue
+        :: Domain.Value normalized (TermLike variable) -> Attribute.Simplified
 
 instance TermWrapper Domain.NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
@@ -242,7 +246,7 @@ instance TermWrapper Domain.NormalizedMap where
             , opaque = [patt]
             }
 
-    isSimplifiedValue = TermLike.isSimplified . Domain.getMapValue
+    simplifiedAttributeValue = TermLike.simplifiedAttribute . Domain.getMapValue
 
 instance TermWrapper Domain.NormalizedSet where
     {- | Render a 'NormalizedSet' as a Domain.Builtin.
@@ -307,7 +311,7 @@ instance TermWrapper Domain.NormalizedSet where
             , opaque = [patt]
             }
 
-    isSimplifiedValue Domain.SetValue = True
+    simplifiedAttributeValue Domain.SetValue = mempty
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
 after converting @TermLike Concrete@ to @TermLike variable@.
@@ -744,15 +748,14 @@ unifyEqualsNormalized
     let unifierTerm :: TermLike variable
         unifierTerm = markSimplified $ asInternal tools sort1 renormalized
 
-        markSimplified
-          | all TermLike.isSimplified opaque
-          , all TermLike.isSimplified abstractKeys
-          , all isSimplifiedValue abstractValues
-          , all TermLike.isSimplified concreteKeys
-          , all isSimplifiedValue concreteValues
-          = TermLike.markSimplified
-          | otherwise
-          = id
+        markSimplified =
+            TermLike.setSimplified
+                (  Foldable.foldMap TermLike.simplifiedAttribute opaque
+                <> Foldable.foldMap TermLike.simplifiedAttribute abstractKeys
+                <> Foldable.foldMap simplifiedAttributeValue abstractValues
+                <> Foldable.foldMap TermLike.simplifiedAttribute concreteKeys
+                <> Foldable.foldMap simplifiedAttributeValue concreteValues
+                )
           where
             unwrapped = Domain.unwrapAc renormalized
             Domain.NormalizedAc { opaque } = unwrapped
