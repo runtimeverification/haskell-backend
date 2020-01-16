@@ -26,6 +26,7 @@ import Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeFalsePredicate_
     )
@@ -41,21 +42,31 @@ simplify
 simplify builtin =
     MultiOr.filterOr $ do
         child <- simplifyBuiltin builtin
-        return (markSimplified . mkBuiltin <$> child)
+        return (markSimplified <$> child)
+        -- let condition = Conditional.withoutTerm child
+        -- case Conditional.term child of
+        --     Domain.BuiltinMap x ->
+        --         case Domain.opaque . Domain.getNormalizedMap . Domain.builtinAcChild $ x of
+        --            [opaqueElem] -> return . flip Pattern.withCondition condition . markSimplified $ opaqueElem
+        --            _ -> return (markSimplified . mkBuiltin <$> child)
+        --     _ -> return (markSimplified . mkBuiltin <$> child)
 
 simplifyBuiltin
     :: InternalVariable variable
     => Builtin (OrPattern variable)
-    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
+    -> MultiOr (Conditional variable (TermLike variable))
 simplifyBuiltin =
     \case
-        Domain.BuiltinMap map' -> simplifyInternalMap map'
-        Domain.BuiltinList list' -> simplifyInternalList list'
-        Domain.BuiltinSet set' -> simplifyInternalSet set'
-        Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
-        Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
+        Domain.BuiltinMap map' -> fmap mkBuiltin <$> simplifyInternalMap map'
+            -- case Domain.opaque . Domain.getNormalizedMap . Domain.builtinAcChild $ map' of
+            --    [opaqueElem] -> opaqueElem
+            --    _ -> fmap mkBuiltin <$> simplifyInternalMap map'
+        Domain.BuiltinList list' -> fmap mkBuiltin <$> simplifyInternalList list'
+        Domain.BuiltinSet set' -> fmap mkBuiltin <$> simplifyInternalSet set'
+        Domain.BuiltinInt int -> (return . pure . mkBuiltin) (Domain.BuiltinInt int)
+        Domain.BuiltinBool bool -> (return . pure . mkBuiltin) (Domain.BuiltinBool bool)
         Domain.BuiltinString string ->
-            (return . pure) (Domain.BuiltinString string)
+            (return . pure . mkBuiltin) (Domain.BuiltinString string)
 
 simplifyInternal
     :: (InternalVariable variable, Traversable t)
