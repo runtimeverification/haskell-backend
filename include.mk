@@ -22,14 +22,15 @@ K_RELEASE_LIB = $(K_RELEASE)/lib
 K = $(K_RELEASE_LIB)/java/kernel-1.0-SNAPSHOT.jar
 KOMPILE = $(K_RELEASE_BIN)/kompile
 KRUN = $(K_RELEASE_BIN)/krun
+export KRUN
 KPROVE = $(K_RELEASE_BIN)/kprove
 KBMC = $(K_RELEASE_BIN)/kbmc
-export KRUN
 
 KOMPILE_OPTS = --backend haskell
-KRUN_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
-KPROVE_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
-KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) $(KORE_EXEC_OPTS)"
+KRUN_OPTS =
+export KRUN_OPTS
+KPROVE_OPTS =
+KPROVE_REPL_OPTS =
 
 HS_TOP = $(TOP)/kore
 HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
@@ -42,6 +43,7 @@ STACK_TEST = $(STACK) --work-dir=.stack-work-test
 KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
 KORE_EXEC_OPTS =
 export KORE_EXEC
+export KORE_EXEC_OPTS
 
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
 

@@ -16,10 +16,10 @@ FAILED = ( mv $@ $@.fail && false )
 FAILED_STORE_PROOFS = ( mv $(STORE_PROOFS) $(STORE_PROOFS).fail && mv $@ $@.fail && false )
 
 KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
+export KOMPILED
 DEF_KORE_DEFAULT = $(KOMPILED)/definition.kore
 DEF_KORE ?= $(DEF_KORE_DEFAULT)
 TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
-export KOMPILED
 
 TESTS = \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
@@ -121,7 +121,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE) $(KORE_EXEC)
 	@echo ">>>" $(CURDIR) "kore-exec --merge-rules" $<
 	rm -f $@
-	$(KORE_EXEC) $(DEF_KORE) $(KORE_EXEC_OPTS) --module $(KORE_MODULE) --merge-rules $< --output $@
+	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### SCRIPTS
