@@ -55,7 +55,6 @@ import Kore.Unparser
     , unparse2
     )
 import qualified Kore.Variables.Fresh as Fresh
-import qualified SQL
 
 {- | Function axioms
 
@@ -106,18 +105,6 @@ instance InternalVariable variable => Pretty (EqualityPattern variable) where
 instance TopBottom (EqualityPattern variable) where
     isTop _ = False
     isBottom _ = False
-
-instance InternalVariable variable => SQL.Table (EqualityPattern variable) where
-    createTable = SQL.createTableNP
-    insertRow = SQL.insertRowNP
-    selectRow = SQL.selectRowNP
-
-instance
-    InternalVariable variable
-    => SQL.Column (EqualityPattern variable)
-  where
-    defineColumn = SQL.defineForeignKeyColumn
-    toColumn = SQL.toForeignKeyColumn
 
 -- | Creates a basic, unconstrained, Equality pattern
 equalityPattern

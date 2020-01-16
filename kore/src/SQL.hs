@@ -7,19 +7,31 @@ module SQL
     , Table (..)
     , insertUniqueRow
     , TableName (..)
+    , tableNameSOP
     , createTableAux
     , createTableNP
+    , createTableGeneric
+    , createTableWrapper
+    , createTableUnwrapped
     , insertRowAux
     , insertRowNP
+    , insertRowGeneric
+    , insertRowWrapper
+    , insertRowUnwrapped
     , selectRowAux
     , selectRowNP
+    , selectRowGeneric
+    , selectRowWrapper
+    , selectRowUnwrapped
     -- * Re-exports
     , SQLite.Connection
     , module SQL.Column
     ) where
 
+import qualified Control.Lens as Lens
 import qualified Control.Monad.Extra as Monad
 import qualified Data.Bifunctor as Bifunctor
+import Data.Generics.Wrapped
 import Data.Int
     ( Int64
     )
@@ -49,6 +61,8 @@ import SQL.Column
 import qualified SQL.Column as Column
 
 newtype Key a = Key { getKey :: Int64 }
+    deriving (Eq, Ord, Read, Show)
+    deriving (Functor, Foldable)
 
 instance Column (Key a) where
     defineColumn conn _ = defineColumn conn (Proxy @Int64)
@@ -104,18 +118,15 @@ createTableAux conn tableName fields = do
             )
 
 createTableNP
-    :: forall proxy table xs
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
-    => SOP.All Column xs
+    :: forall xs
+    .  SOP.All Column xs
     => SQLite.Connection
-    -> proxy table
+    -> TableName
+    -> NP SOP.FieldInfo xs
     -> IO ()
-createTableNP conn proxy = do
+createTableNP conn tableName fields =
     createTableAux conn tableName =<< sequence columns
   where
-    tableName = tableNameSOP proxy
-
-    fields = productFields proxy
     columns :: [IO (Text, ColumnDef)]
     columns = SOP.hcollapse (SOP.hcmap (Proxy @Column) column fields)
     column :: Column a => SOP.FieldInfo a -> K (IO (Text, ColumnDef)) a
@@ -123,6 +134,41 @@ createTableNP conn proxy = do
         colDef <- defineColumn conn fieldInfo
         return (fieldName fieldInfo, colDef)
     fieldName = Text.pack . SOP.fieldName
+
+createTableWrapper
+    :: forall proxy new x xs
+    .  SOP.HasDatatypeInfo new
+    => (SOP.HasDatatypeInfo x, SOP.IsProductType x xs)
+    => SOP.All Column xs
+    => Lens.Iso' new x
+    -> SQLite.Connection
+    -> proxy new
+    -> IO ()
+createTableWrapper _ conn proxy =
+    createTableNP conn (tableNameSOP proxy) (productFields proxy')
+  where
+    proxy' = Proxy @x
+
+createTableUnwrapped
+    :: forall proxy s a xs
+    .  SOP.HasDatatypeInfo s
+    => (SOP.HasDatatypeInfo a, SOP.IsProductType a xs)
+    => SOP.All Column xs
+    => Wrapped s s a a
+    => SQLite.Connection
+    -> proxy s
+    -> IO ()
+createTableUnwrapped = createTableWrapper _Unwrapped
+
+createTableGeneric
+    :: forall proxy table xs
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
+    => SOP.All Column xs
+    => SQLite.Connection
+    -> proxy table
+    -> IO ()
+createTableGeneric conn proxy =
+    createTableNP conn (tableNameSOP proxy) (productFields proxy)
 
 tableNameSOP :: SOP.HasDatatypeInfo table => proxy table -> TableName
 tableNameSOP proxy =
@@ -181,15 +227,51 @@ insertRowNP
     :: forall table xs
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
     => SOP.All Column xs
+    => TableName
+    -> SQLite.Connection
+    -> table
+    -> IO (Key table)
+insertRowNP tableName conn table = do
+    columns <- productColumns conn table
+    insertRowAux conn tableName columns
+
+insertRowGeneric
+    :: forall table xs
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
+    => SOP.All Column xs
     => SQLite.Connection
     -> table
     -> IO (Key table)
-insertRowNP conn table = do
-    columns <- productColumns conn table
-    insertRowAux conn tableName columns
+insertRowGeneric =
+    insertRowNP (tableNameSOP proxy)
   where
-    proxy = pure @SOP.Proxy table
-    tableName = tableNameSOP proxy
+    proxy = Proxy @table
+
+insertRowWrapper
+    :: forall new x xs
+    .  (SOP.HasDatatypeInfo new)
+    => (SOP.HasDatatypeInfo x, SOP.IsProductType x xs)
+    => SOP.All Column xs
+    => Lens.Iso' new x
+    -> SQLite.Connection
+    -> new
+    -> IO (Key new)
+insertRowWrapper iso conn table =
+    fmap (Lens.review iso)
+    <$> insertRowNP (tableNameSOP proxy) conn (Lens.view iso table)
+  where
+    proxy = pure @Proxy table
+
+insertRowUnwrapped
+    :: forall s a xs
+    .  (SOP.HasDatatypeInfo s)
+    => (SOP.HasDatatypeInfo a, SOP.IsProductType a xs)
+    => SOP.All Column xs
+    => Wrapped s s a a
+    => SQLite.Connection
+    -> s
+    -> IO (Key s)
+insertRowUnwrapped = insertRowWrapper _Unwrapped
 
 productTypeFrom
     :: forall a xs
@@ -260,11 +342,47 @@ selectRowNP
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
     => SOP.All Column xs
     => SQLite.Connection
+    -> TableName
     -> table
     -> IO (Maybe (Key table))
-selectRowNP conn table = do
+selectRowNP conn tableName table = do
     columns <- productColumns conn table
     selectRowAux conn tableName columns
+
+selectRowGeneric
+    :: forall table xs
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
+    => SOP.All Column xs
+    => SQLite.Connection
+    -> table
+    -> IO (Maybe (Key table))
+selectRowGeneric conn table = do
+    selectRowNP conn (tableNameSOP proxy) table
   where
     proxy = pure @SOP.Proxy table
-    tableName = tableNameSOP proxy
+
+selectRowWrapper
+    :: forall new x xs
+    .  (SOP.HasDatatypeInfo new)
+    => (SOP.HasDatatypeInfo x, SOP.IsProductType x xs)
+    => SOP.All Column xs
+    => Lens.Iso' new x
+    -> SQLite.Connection
+    -> new
+    -> IO (Maybe (Key new))
+selectRowWrapper iso conn table =
+    (fmap . fmap) (Lens.review iso)
+    <$> selectRowNP conn (tableNameSOP proxy) (Lens.view iso table)
+  where
+    proxy = pure @Proxy table
+
+selectRowUnwrapped
+    :: forall s a xs
+    .  SOP.HasDatatypeInfo s
+    => (SOP.HasDatatypeInfo a, SOP.IsProductType a xs)
+    => SOP.All Column xs
+    => Wrapped s s a a
+    => SQLite.Connection
+    -> s
+    -> IO (Maybe (Key s))
+selectRowUnwrapped = selectRowWrapper _Unwrapped

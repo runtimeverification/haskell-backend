@@ -54,9 +54,9 @@ instance Entry WarnBottomHook where
     entrySeverity _ = Warning
 
 instance SQL.Table WarnBottomHook where
-    createTable = SQL.createTableNP
-    insertRow = SQL.insertRowNP
-    selectRow = SQL.selectRowNP
+    createTable = SQL.createTableGeneric
+    insertRow = SQL.insertRowGeneric
+    selectRow = SQL.selectRowGeneric
 
 warnBottomHook
     :: MonadLog logger
