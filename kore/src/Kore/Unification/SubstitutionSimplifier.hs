@@ -33,6 +33,10 @@ import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    , Substitution
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -48,10 +52,6 @@ import Kore.Substitute
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Error
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    , Substitution
-    )
 import Kore.Unification.Unify
 
 {- | A 'SubstitutionSimplifier' to use during unification.

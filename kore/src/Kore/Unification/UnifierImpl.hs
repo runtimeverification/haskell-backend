@@ -37,16 +37,16 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
     )

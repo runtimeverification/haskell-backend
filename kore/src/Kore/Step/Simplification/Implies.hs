@@ -22,6 +22,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluatedMultiple
@@ -163,11 +164,11 @@ makeEvaluateImpliesNonBool
                 $ Predicate.makeImpliesPredicate
                     (Predicate.makeAndPredicate
                         firstPredicate
-                        (Predicate.fromSubstitution firstSubstitution)
+                        (Substitution.toPredicate firstSubstitution)
                     )
                     (Predicate.makeAndPredicate
                         secondPredicate
-                        (Predicate.fromSubstitution secondSubstitution)
+                        (Substitution.toPredicate secondSubstitution)
                     )
             , substitution = mempty
             }

@@ -1,14 +1,10 @@
-{-|
-Module      : Kore.Unification.Substitution
-Description : The Substitution type.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : vladimir.ciobanu@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
 
-module Kore.Unification.Substitution
+module Kore.Internal.Substitution
     ( Substitution
     , SingleSubstitution
     , UnwrappedSubstitution
@@ -20,14 +16,15 @@ module Kore.Unification.Substitution
     , singleton
     , wrap
     , modify
-    , Kore.Unification.Substitution.mapVariables
+    , Kore.Internal.Substitution.mapVariables
     , isNormalized
     , null
     , variables
     , unsafeWrap
-    , Kore.Unification.Substitution.filter
+    , Kore.Internal.Substitution.filter
     , partition
     , reverseIfRhsIsVar
+    , toPredicate
     , Normalization (..)
     , wrapNormalization
     , applyNormalized
@@ -64,6 +61,10 @@ import Prelude hiding
 
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Debug
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( InternalVariable
     , SubstitutionVariable
@@ -133,7 +134,7 @@ instance
       where
         wrapDiffPrec diff' = \precOut ->
             (if precOut >= 10 then Pretty.parens else id)
-            ("Kore.Unification.Substitution.wrap" Pretty.<+> diff' 10)
+            ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
 
 deriving instance Show variable => Show (Substitution variable)
 
@@ -513,3 +514,18 @@ applyNormalized Normalization { normalized, denormalized } =
         }
   where
     substitute = TermLike.substitute (Map.fromList normalized)
+
+{- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
+
+An empty substitution list returns a true predicate. A non-empty substitution
+returns a conjunction of variable-substitution equalities.
+
+-}
+toPredicate
+    :: InternalVariable variable
+    => Substitution variable
+    -> Predicate variable
+toPredicate =
+    Predicate.makeMultipleAndPredicate
+    . fmap Predicate.singleSubstitutionToPredicate
+    . unwrap

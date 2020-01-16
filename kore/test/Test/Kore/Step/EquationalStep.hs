@@ -34,6 +34,10 @@ import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.EqualityPattern as EqualityPattern
     ( EqualityPattern (..)
@@ -59,10 +63,6 @@ import Kore.Unification.Error
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( MonadUnify
     , SimplifierVariable

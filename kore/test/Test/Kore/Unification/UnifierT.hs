@@ -25,6 +25,10 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
@@ -38,10 +42,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

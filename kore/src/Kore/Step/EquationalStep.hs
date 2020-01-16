@@ -47,6 +47,7 @@ import Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRule
     ( debugAppliedRule
@@ -80,7 +81,6 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as EqualityPattern
     ( toAxiomVariables
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
