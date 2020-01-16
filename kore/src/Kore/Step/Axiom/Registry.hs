@@ -138,7 +138,7 @@ data PartitionedEqualityRules =
         , simplificationRules :: ![EqualityRule Variable]
         }
 
--- | Filters and partitions a registry of 'EqualityRule's to
+-- | Filters and partitions a list of 'EqualityRule's to
 -- simplification rules and function rules. The function rules
 -- are also sorted in order of priority.
 processEqualityRules
@@ -157,7 +157,7 @@ processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
         . filter (not . ignoreDefinition)
         $ unProcessedFunctionRules
 
--- | Converts a registry of processed 'EqualityRule's to one of
+-- | Converts a collection of processed 'EqualityRule's to one of
 -- 'BuiltinAndAxiomSimplifier's
 equalitiesToEvaluators
     :: PartitionedEqualityRules
