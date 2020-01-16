@@ -41,6 +41,7 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike hiding
     ( mkAnd
     )
@@ -52,7 +53,6 @@ import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
     ( TopBottom
     )
-import qualified Kore.Unification.Substitution as Substitution
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.

@@ -36,6 +36,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     , topTODO
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
     ( Env (..)
@@ -49,7 +50,6 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Error
 import Kore.Unification.Procedure
-import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable

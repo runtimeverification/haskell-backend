@@ -1,14 +1,10 @@
-{-|
-Module      : Kore.Unification.Substitution
-Description : The Substitution type.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : vladimir.ciobanu@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
 
-module Kore.Unification.Substitution
+module Kore.Internal.Substitution
     ( Substitution
     , SingleSubstitution
     , UnwrappedSubstitution
@@ -20,12 +16,12 @@ module Kore.Unification.Substitution
     , singleton
     , wrap
     , modify
-    , Kore.Unification.Substitution.mapVariables
+    , Kore.Internal.Substitution.mapVariables
     , isNormalized
     , null
     , variables
     , unsafeWrap
-    , Kore.Unification.Substitution.filter
+    , Kore.Internal.Substitution.filter
     , partition
     , reverseIfRhsIsVar
     , toPredicate
@@ -138,7 +134,7 @@ instance
       where
         wrapDiffPrec diff' = \precOut ->
             (if precOut >= 10 then Pretty.parens else id)
-            ("Kore.Unification.Substitution.wrap" Pretty.<+> diff' 10)
+            ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
 
 deriving instance Show variable => Show (Substitution variable)
 

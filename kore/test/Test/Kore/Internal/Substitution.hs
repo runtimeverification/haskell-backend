@@ -1,4 +1,4 @@
-module Test.Kore.Unification.Substitution
+module Test.Kore.Internal.Substitution
     ( test_substitution
     , test_toPredicate
     ) where
@@ -16,6 +16,7 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate_
     , makeTruePredicate_
     )
+import Kore.Internal.Substitution
 import Kore.Internal.TermLike hiding
     ( mapVariables
     )
@@ -23,7 +24,6 @@ import Kore.TopBottom
     ( isBottom
     , isTop
     )
-import Kore.Unification.Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )

@@ -19,12 +19,12 @@ import Kore.Internal.Predicate
     , makeIffPredicate
     , makeTruePredicate
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
     , simplify
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )

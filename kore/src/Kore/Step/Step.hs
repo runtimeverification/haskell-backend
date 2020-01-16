@@ -71,6 +71,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
     , mapVariables
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , SubstitutionVariable
@@ -83,7 +84,6 @@ import qualified Kore.Step.Result as Step
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable

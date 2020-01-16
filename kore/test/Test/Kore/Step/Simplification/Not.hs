@@ -26,12 +26,12 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.Substitution
+import Kore.Internal.Substitution
     ( Substitution
     )
-import qualified Kore.Unification.Substitution as Substitution
+import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.TermLike
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

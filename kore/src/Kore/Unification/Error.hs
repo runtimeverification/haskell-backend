@@ -27,6 +27,11 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Internal.Substitution
+    ( Normalization
+    , wrapNormalization
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -35,11 +40,6 @@ import Kore.Internal.TermLike
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
-import Kore.Unification.Substitution
-    ( Normalization
-    , wrapNormalization
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

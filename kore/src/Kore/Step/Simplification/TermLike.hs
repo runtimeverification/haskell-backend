@@ -52,6 +52,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.Substitution as Substitution
+    ( toMap
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
@@ -142,9 +145,6 @@ import qualified Kore.Step.Simplification.Variable as Variable
     )
 import Kore.TopBottom
     ( TopBottom (..)
-    )
-import qualified Kore.Unification.Substitution as Substitution
-    ( toMap
     )
 import Kore.Unparser
     ( unparse

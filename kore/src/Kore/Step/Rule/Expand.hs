@@ -38,6 +38,7 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
     , mkApplySymbol
@@ -64,7 +65,6 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
     ( Variable (Variable, variableSort)
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.Fresh
     ( refreshVariable
     )

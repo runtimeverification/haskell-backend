@@ -63,6 +63,10 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
     , pattern Equals_
@@ -95,10 +99,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( runUnifierT
     )

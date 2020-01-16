@@ -46,6 +46,11 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    , UnwrappedSubstitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Substitute
@@ -55,11 +60,6 @@ import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
     )
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    , UnwrappedSubstitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one

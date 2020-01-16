@@ -85,6 +85,12 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
     , topTODO
     )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    , SingleSubstitution
+    , Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
     , TermLike
@@ -101,12 +107,6 @@ import Kore.Substitute
     ( SubstitutionVariable
     )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    , SingleSubstitution
-    , Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
     ( normalize
     )

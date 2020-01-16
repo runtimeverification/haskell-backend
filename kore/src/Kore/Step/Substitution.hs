@@ -28,14 +28,14 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Unification.Substitution
-    ( Substitution
-    )
 import Kore.Unification.Unify
     ( SimplifierVariable
     )

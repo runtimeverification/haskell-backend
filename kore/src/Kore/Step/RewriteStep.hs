@@ -37,6 +37,7 @@ import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import Kore.Log.DebugAppliedRewriteRules
@@ -64,7 +65,6 @@ import Kore.Step.Step
     , toConfigurationVariables
     , unifyRules
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable

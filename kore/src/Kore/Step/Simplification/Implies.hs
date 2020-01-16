@@ -19,6 +19,7 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluatedMultiple
@@ -28,7 +29,6 @@ import qualified Kore.Step.Simplification.Not as Not
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Unification.Substitution as Substitution
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.

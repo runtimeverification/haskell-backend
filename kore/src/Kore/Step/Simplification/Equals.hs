@@ -52,6 +52,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
@@ -81,7 +82,6 @@ import qualified Kore.Step.Simplification.Or as Or
     ( simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
