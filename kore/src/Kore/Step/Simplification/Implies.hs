@@ -28,6 +28,7 @@ import qualified Kore.Step.Simplification.Not as Not
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
+import qualified Kore.Unification.Substitution as Substitution
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
@@ -150,11 +151,11 @@ makeEvaluateImpliesNonBool
                 $ Predicate.makeImpliesPredicate
                     (Predicate.makeAndPredicate
                         firstPredicate
-                        (Predicate.fromSubstitution firstSubstitution)
+                        (Substitution.toPredicate firstSubstitution)
                     )
                     (Predicate.makeAndPredicate
                         secondPredicate
-                        (Predicate.fromSubstitution secondSubstitution)
+                        (Substitution.toPredicate secondSubstitution)
                     )
             , substitution = mempty
             }

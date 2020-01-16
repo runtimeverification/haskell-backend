@@ -115,7 +115,7 @@ hasFreeVariable variable = isFreeVariable variable . freeVariables
 @toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
 a 'PredicateSubstition' into only a 'Predicate'.
 
-See also: 'Predicate.fromSubstitution'.
+See also: 'Substitution.toPredicate'.
 
 -}
 toPredicate
@@ -125,7 +125,7 @@ toPredicate
 toPredicate Conditional {predicate, substitution} =
     Predicate.makeAndPredicate
         predicate
-        (Predicate.fromSubstitution substitution)
+        (Substitution.toPredicate substitution)
 
 mapVariables
     :: (Ord variable1, Ord variable2)
@@ -150,7 +150,7 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
     predicate' =
         Conditional.fromPredicate
         . markSimplifiedIfChildrenSimplified denormalized
-        . Predicate.fromSubstitution
+        . Substitution.toPredicate
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution

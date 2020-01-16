@@ -27,7 +27,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -40,6 +39,7 @@ import Kore.Unification.Substitution
     ( Normalization
     , wrapNormalization
     )
+import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -139,7 +139,7 @@ instance Pretty SubstitutionError where
             , (Pretty.indent 4 . Pretty.vsep) (unparse <$> variables)
             , "in substitution:"
             , (Pretty.indent 4 . unparse)
-                (Predicate.fromSubstitution $ wrapNormalization substitution)
+                (Substitution.toPredicate $ wrapNormalization substitution)
             ]
 
 -- Trivially promote substitution errors to sum-type errors

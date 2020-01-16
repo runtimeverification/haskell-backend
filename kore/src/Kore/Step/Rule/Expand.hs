@@ -38,9 +38,6 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-    ( fromSubstitution
-    , substitute
-    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkApplySymbol
@@ -68,8 +65,6 @@ import Kore.Syntax.Variable
     ( Variable (Variable, variableSort)
     )
 import qualified Kore.Unification.Substitution as Substitution
-    ( wrap
-    )
 import Kore.Variables.Fresh
     ( refreshVariable
     )
@@ -119,8 +114,8 @@ instance ExpandSingleConstructors (RulePattern Variable) where
                         leftVariables
                         allElementVariables
                 substitutionPredicate =
-                    Predicate.fromSubstitution
-                        (Substitution.wrap (Map.toList expansion))
+                    (Substitution.toPredicate . Substitution.wrap)
+                        (Map.toList expansion)
             in rule
                 { RulePattern.left = TermLike.substitute expansion left
                 , RulePattern.antiLeft =

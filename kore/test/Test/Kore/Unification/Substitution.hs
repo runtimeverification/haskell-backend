@@ -1,5 +1,6 @@
 module Test.Kore.Unification.Substitution
     ( test_substitution
+    , test_toPredicate
     ) where
 
 import Test.Tasty
@@ -9,6 +10,12 @@ import Prelude hiding
     ( null
     )
 
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeAndPredicate
+    , makeEqualsPredicate_
+    , makeTruePredicate_
+    )
 import Kore.Internal.TermLike hiding
     ( mapVariables
     )
@@ -21,6 +28,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
+import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 import Test.Terse
@@ -287,3 +295,25 @@ emptySubst = mempty
 
 singletonSubst :: [(UnifiedVariable Variable, TermLike Variable)]
 singletonSubst = [(ElemVar Mock.x, Mock.a)]
+
+test_toPredicate :: TestTree
+test_toPredicate =
+    testCase "toPredicate" $ do
+        assertEqual "null substitutions is top"
+            makeTruePredicate_
+            (toPredicate mempty :: Predicate Variable)
+        assertEqual "a = b"
+            (makeAndPredicate pr1 makeTruePredicate_)
+            (toPredicate $ wrap
+                [(ElemVar $ a Mock.testSort, mkElemVar $ b Mock.testSort)]
+            )
+
+pr1 :: Predicate Variable
+pr1 =
+    makeEqualsPredicate_
+        (mkElemVar $ a Mock.testSort)
+        (mkElemVar $ b Mock.testSort)
+
+a, b :: Sort -> ElementVariable Variable
+a = ElementVariable . Variable (testId "a") mempty
+b = ElementVariable . Variable (testId "b") mempty

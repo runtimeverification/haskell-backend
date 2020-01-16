@@ -89,7 +89,7 @@ test_simplify =
             { Conditional.predicate =
                 Predicate.makeAndPredicate predicate
                 $ Predicate.makeExistsPredicate Mock.x
-                $ Predicate.fromSubstitution substitution
+                $ Substitution.toPredicate substitution
             , Conditional.substitution = mempty
             }
     substForX =

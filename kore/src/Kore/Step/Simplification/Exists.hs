@@ -425,6 +425,6 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     quantifyTerm = TermLike.hasFreeVariable (ElemVar variable) term
     predicate' =
         Predicate.makeAndPredicate predicate
-        $ Predicate.fromSubstitution substitution
+        $ Substitution.toPredicate substitution
     quantifyPredicate =
         Predicate.hasFreeVariable (ElemVar variable) predicate'

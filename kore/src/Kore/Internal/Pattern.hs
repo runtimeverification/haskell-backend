@@ -139,7 +139,7 @@ toTermLike
 toTermLike Conditional { term, predicate, substitution } =
     simpleAnd
         (simpleAnd term predicate)
-        (Predicate.fromSubstitution substitution)
+        (Substitution.toPredicate substitution)
   where
     simpleAnd
         :: TermLike variable

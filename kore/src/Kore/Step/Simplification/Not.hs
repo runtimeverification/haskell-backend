@@ -52,6 +52,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
     ( TopBottom
     )
+import qualified Kore.Unification.Substitution as Substitution
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
@@ -158,7 +159,7 @@ makeEvaluatePredicate
             Predicate.markSimplified
             $ makeNotPredicate
             $ makeAndPredicate predicate
-            $ Predicate.fromSubstitution substitution
+            $ Substitution.toPredicate substitution
         , substitution = mempty
         }
 

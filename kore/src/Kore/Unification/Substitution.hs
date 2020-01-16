@@ -28,6 +28,7 @@ module Kore.Unification.Substitution
     , Kore.Unification.Substitution.filter
     , partition
     , reverseIfRhsIsVar
+    , toPredicate
     , Normalization (..)
     , wrapNormalization
     , applyNormalized
@@ -64,6 +65,10 @@ import Prelude hiding
 
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Debug
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( InternalVariable
     , SubstitutionVariable
@@ -513,3 +518,18 @@ applyNormalized Normalization { normalized, denormalized } =
         }
   where
     substitute = TermLike.substitute (Map.fromList normalized)
+
+{- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
+
+An empty substitution list returns a true predicate. A non-empty substitution
+returns a conjunction of variable-substitution equalities.
+
+-}
+toPredicate
+    :: InternalVariable variable
+    => Substitution variable
+    -> Predicate variable
+toPredicate =
+    Predicate.makeMultipleAndPredicate
+    . fmap Predicate.singleSubstitutionToPredicate
+    . unwrap
