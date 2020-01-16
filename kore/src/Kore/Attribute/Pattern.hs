@@ -114,7 +114,7 @@ instance HasConstructorLike (Pattern variable) where
 
 isSimplified :: Pattern variable -> Bool
 isSimplified Pattern {constructorLike, simplified}
-    | isConstructorLike constructorLike = True
+  | isConstructorLike constructorLike = True
     | otherwise = isFullySimplified simplified
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
@@ -159,4 +159,3 @@ deleteFreeVariable variable =
 
 instance HasFreeVariables (Pattern variable) variable where
     freeVariables = freeVariables
-
