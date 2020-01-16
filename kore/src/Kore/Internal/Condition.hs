@@ -41,6 +41,10 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -52,10 +56,6 @@ import Kore.Substitute
     ( SubstitutionVariable
     )
 import Kore.Syntax
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -115,7 +115,7 @@ hasFreeVariable variable = isFreeVariable variable . freeVariables
 @toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
 a 'PredicateSubstition' into only a 'Predicate'.
 
-See also: 'Predicate.fromSubstitution'.
+See also: 'Substitution.toPredicate'.
 
 -}
 toPredicate
@@ -125,7 +125,7 @@ toPredicate
 toPredicate Conditional {predicate, substitution} =
     Predicate.makeAndPredicate
         predicate
-        (Predicate.fromSubstitution substitution)
+        (Substitution.toPredicate substitution)
 
 mapVariables
     :: (Ord variable1, Ord variable2)
@@ -150,7 +150,7 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
     predicate' =
         Conditional.fromPredicate
         . markSimplifiedIfChildrenSimplified denormalized
-        . Predicate.fromSubstitution
+        . Substitution.toPredicate
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution

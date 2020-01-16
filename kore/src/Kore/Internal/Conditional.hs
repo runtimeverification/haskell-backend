@@ -45,6 +45,10 @@ import Kore.Internal.Predicate
     , singleSubstitutionToPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , Sort
@@ -55,10 +59,6 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable

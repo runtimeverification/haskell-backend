@@ -52,6 +52,7 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
@@ -71,7 +72,6 @@ import qualified Kore.Sort as Sort
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -139,7 +139,7 @@ toTermLike
 toTermLike Conditional { term, predicate, substitution } =
     simpleAnd
         (simpleAnd term predicate)
-        (Predicate.fromSubstitution substitution)
+        (Substitution.toPredicate substitution)
   where
     simpleAnd
         :: TermLike variable

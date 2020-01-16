@@ -69,6 +69,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
+import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.ExpandAlias
@@ -88,7 +89,6 @@ import Kore.TopBottom
 import Kore.Unification.Error
     ( unsupportedPatterns
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable

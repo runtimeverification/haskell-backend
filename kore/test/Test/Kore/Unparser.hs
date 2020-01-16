@@ -22,12 +22,12 @@ import Kore.Internal.Predicate
     ( makeCeilPredicate_
     , makeMultipleAndPredicate
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
 

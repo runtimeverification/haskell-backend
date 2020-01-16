@@ -13,7 +13,6 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -291,17 +290,6 @@ test_predicate =
                 $ makeEqualsPredicate_
                     (mkElemVar $ a Mock.testSort)
                     (mkElemVar $ b Mock.testSort)
-        )
-    , testCase "fromSubstitution"
-        ( do
-            assertEqual "null substitutions is top"
-                makeTruePredicate_
-                (fromSubstitution mempty :: Predicate Variable)
-            assertEqual "a = b"
-                (makeAndPredicate pr1 makeTruePredicate_)
-                (fromSubstitution $ Substitution.wrap
-                    [(ElemVar $ a Mock.testSort, mkElemVar $ b Mock.testSort)]
-                )
         )
     , let
         makeExists :: Predicate Variable -> Predicate Variable

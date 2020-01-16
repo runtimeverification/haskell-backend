@@ -30,12 +30,12 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.TopBottom as TopBottom
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 
 {- | Create a 'ConditionSimplifier' using 'simplify'.

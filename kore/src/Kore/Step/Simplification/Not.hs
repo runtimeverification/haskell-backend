@@ -44,6 +44,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike hiding
     ( mkAnd
     )
@@ -164,7 +165,7 @@ makeEvaluatePredicate
             Predicate.markSimplified
             $ makeNotPredicate
             $ makeAndPredicate predicate
-            $ Predicate.fromSubstitution substitution
+            $ Substitution.toPredicate substitution
         , substitution = mempty
         }
 

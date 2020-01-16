@@ -13,6 +13,7 @@ import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -22,7 +23,6 @@ import Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationOrSubstitutionError (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
     ( substitutionSimplifier
