@@ -1,4 +1,6 @@
-module Test.Kore.Step.Axiom.Registry (test_functionRegistry) where
+module Test.Kore.Step.Axiom.Registry
+    ( test_functionRegistry
+    ) where
 
 import Test.Tasty
     ( TestTree
@@ -23,6 +25,8 @@ import Data.Text
 
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Owise as Attribute
+import qualified Kore.Attribute.Priority as Attribute
 import Kore.Attribute.Simplification
     ( simplificationAttribute
     )
@@ -51,6 +55,9 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
 import Kore.Step.Axiom.Registry
+import Kore.Step.EqualityPattern
+    ( getPriorityOfRule
+    )
 import Kore.Step.Rule
     ( extractRewriteAxioms
     )
@@ -64,6 +71,9 @@ import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+
+type PartitionedEqualityRulesMap =
+    Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEqualityRules
 
 updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType
 updateAttributes attrs = updateAttrs
@@ -194,7 +204,8 @@ testDef =
             }
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes =
+                Attributes [Attribute.priorityAttribute "2"]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -202,6 +213,51 @@ testDef =
                         (mkEquals sortVarS
                             (mkApplySymbol fHead [])
                             (mkApplySymbol sHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
+                Attributes [Attribute.priorityAttribute "3"]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol fHead [])
+                            (mkApplySymbol sHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
+                Attributes [Attribute.owiseAttribute]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol fHead [])
+                            (mkApplySymbol tHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
+                Attributes [Attribute.priorityAttribute "1"]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol fHead [])
+                            (mkApplySymbol tHead [])
                         )
                         (mkTop sortVarS)
                     )
@@ -274,6 +330,10 @@ testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
+testProcessedAxiomPatterns :: PartitionedEqualityRulesMap
+testProcessedAxiomPatterns =
+    processEqualityRules <$> extractEqualityAxioms testIndexedModule
+
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
 
@@ -332,6 +392,17 @@ test_functionRegistry =
                 Pattern.term $ head
                 $ MultiOr.extractPatterns simplified
         assertEqual "" expect actual
+    , testCase "Sorted in order of priorities"
+        (let axiomId = AxiomIdentifier.Application (testId "f")
+          in
+           (case Map.lookup axiomId testProcessedAxiomPatterns of
+                Just PartitionedEqualityRules { functionRules } ->
+                    assertEqual ""
+                        [1, 2, 3, 100, 200]
+                        (fmap getPriorityOfRule functionRules)
+                _ -> assertFailure "Should find equality rules for f"
+            )
+        )
     ]
   where
     makePattern :: TermLike Variable -> Pattern Variable

@@ -41,3 +41,4 @@ test-results.xml
 *.fail
 cabal.project.local
 *.save-proofs.kore
+.envrc

@@ -7,10 +7,13 @@ License     : NCSA
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Attribute.Pattern
-    ( Pattern (..)
+    ( Pattern (Pattern, patternSort, freeVariables, functional, function, defined, created, constructorLike)
+    -- 'simplified' was intentionally left out above.
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
+    , isSimplified
+    , setSimplified
     -- * Re-exports
     , module Kore.Attribute.Pattern.Created
     , module Kore.Attribute.Pattern.Defined
@@ -109,6 +112,14 @@ instance HasConstructorLike (Pattern variable) where
         Pattern {constructorLike}
       = constructorLike
 
+isSimplified :: Pattern variable -> Bool
+isSimplified Pattern {constructorLike, simplified}
+  | isConstructorLike constructorLike = True
+    | otherwise = isFullySimplified simplified
+
+setSimplified :: Simplified -> Pattern variable -> Pattern variable
+setSimplified simplified patt = patt { simplified }
+
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 
 See also: 'traverseVariables'
@@ -148,4 +159,3 @@ deleteFreeVariable variable =
 
 instance HasFreeVariables (Pattern variable) variable where
     freeVariables = freeVariables
-

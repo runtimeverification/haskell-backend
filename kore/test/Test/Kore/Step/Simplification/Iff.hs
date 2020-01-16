@@ -19,6 +19,9 @@ import Kore.Internal.Predicate
     , makeIffPredicate
     , makeTruePredicate
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
@@ -199,7 +202,7 @@ makeIff first second =
 simplify
     :: Iff Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify = runSimplifier mockEnv . Iff.simplify
+simplify = runSimplifier mockEnv . Iff.simplify SideCondition.top
   where
     mockEnv = Mock.env
 
