@@ -130,7 +130,7 @@ makeEvaluateNot
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
     MultiOr.merge
-        (Pattern.fromTermLike . TermLike.markSimplified <$> makeTermNot term)
+        (Pattern.fromTermLike <$> makeTermNot term)
         (MultiOr.singleton $ Pattern.fromConditionSorted
             (termLikeSort term)
             (makeEvaluatePredicate predicate)
@@ -188,7 +188,7 @@ makeTermNot (And_ _ term1 term2) =
 makeTermNot term
   | isBottom term = MultiOr.singleton mkTop_
   | isTop term    = MultiOr.singleton mkBottom_
-  | otherwise     = MultiOr.singleton $ mkNot term
+  | otherwise     = MultiOr.singleton $ TermLike.markSimplified $ mkNot term
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
