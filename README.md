@@ -27,19 +27,44 @@ The `/docs` directory contains a comprehensive document _Semantics of K_
 that describes the mathematical foundation of Kore, and a BNF grammar
 that defines the syntax of Kore language.
 
-The `/src` directory contains a parser for the Kore language implemented
-in scala.
+The `kore` project is an implementation in Haskell of a Kore parser and symbolic execution engine,
+for use with the [K Framework] as a backend.
 
-The `/src/test` directory contains a collection of Kore definition examples.
+## Building
 
-## Build Dependencies
-
--   [curl](https://curl.haxx.se/) and [jq](https://stedolan.github.io/jq/) for downloading and building latest nightly K.
--   [git](https://git-scm.com/) for checkstyle on the repository history and files.
--   [stack](https://www.haskellstack.org/) for building the Kore project using `make`.
-
-Example installation of dependencies on Ubuntu:
+Besides [git], you will need [stack] or [cabal] to build `kore`.
 
 ```sh
-sudo apt install curl jq git haskell-stack
+stack build kore
+# or
+cabal build kore
 ```
+
+If using `cabal`, version 3.0 or later is recommended.
+
+## Developing
+
+Developers will require all the dependencies listed above.
+We also recommend (but not require!) the following dependencies.
+
+For setting up a development environment, we recommend:
+
+- [direnv] to make the project's tools available in shells and editors.
+- [ghcide], an integrated development environment for Haskell
+  that is compatible with most editors.
+
+For integration testing, we also recommend:
+
+- GNU [make]
+- The [K Framework] frontend, or [curl] to fetch an appropriate version.
+  The frontend has other dependencies, most notably a Java runtime.
+
+
+[git]: https://git-scm.com/
+[stack]: https://www.haskellstack.org/
+[cabal]: https://haskell.org/cabal
+[K Framework]: https://github.com/kframework/k
+[curl]: https://curl.haxx.se/
+[make]: https://www.gnu.org/software/make/
+[direnv]: https://github.com/direnv/direnv
+[ghcide]: https://github.com/digital-asset/ghcide
