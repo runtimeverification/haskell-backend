@@ -19,6 +19,7 @@ KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
 DEF_KORE_DEFAULT = $(KOMPILED)/definition.kore
 DEF_KORE ?= $(DEF_KORE_DEFAULT)
 TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
+export KOMPILED
 
 TESTS = \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
