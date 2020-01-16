@@ -16,6 +16,9 @@ import qualified System.Directory as Directory
 import Kore.Log.DebugAppliedRule
     ( DebugAppliedRule
     )
+import Kore.Log.InfoEvaluateCondition
+    ( InfoEvaluateCondition
+    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
@@ -85,4 +88,5 @@ foldMapEntries mapEntry =
     mconcat
         [ mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @DebugAppliedRule)
+        , mapEntry (Proxy @InfoEvaluateCondition)
         ]

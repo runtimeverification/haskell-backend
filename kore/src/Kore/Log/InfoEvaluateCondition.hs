@@ -12,6 +12,9 @@ module Kore.Log.InfoEvaluateCondition
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
 import Kore.Internal.Predicate
     ( Predicate
     , freshVariable
@@ -24,19 +27,29 @@ import Log
     , Severity (Info)
     , logM
     )
+import qualified SQL
 
 newtype InfoEvaluateCondition =
     InfoEvaluateCondition
         { getCondition :: Predicate Variable
         }
+    deriving (GHC.Generic)
+
+instance SOP.Generic InfoEvaluateCondition
+
+instance SOP.HasDatatypeInfo InfoEvaluateCondition
 
 instance Pretty InfoEvaluateCondition where
     pretty InfoEvaluateCondition { getCondition } =
         pretty $ unparseToString getCondition
 
-instance Entry InfoEvaluateCondition
-  where
+instance Entry InfoEvaluateCondition where
     entrySeverity _ = Info
+
+instance SQL.Table InfoEvaluateCondition where
+    createTable = SQL.createTableGeneric
+    insertRow = SQL.insertRowGeneric
+    selectRow = SQL.selectRowGeneric
 
 infoEvaluateCondition
     :: MonadLog log
