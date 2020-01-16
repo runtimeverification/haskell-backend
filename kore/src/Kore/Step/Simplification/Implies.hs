@@ -19,6 +19,9 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.And as And
@@ -45,10 +48,14 @@ and it has a special case for children with top terms.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Implies Sort (OrPattern variable)
+    => SideCondition variable
+    -> Implies Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Implies { impliesFirst = first, impliesSecond = second } =
-    simplifyEvaluated first second
+simplify
+    sideCondition
+    Implies { impliesFirst = first, impliesSecond = second }
+  =
+    simplifyEvaluated sideCondition first second
 
 {-| simplifies an Implies given its two 'OrPattern' children.
 
@@ -70,43 +77,49 @@ carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPattern variable
+    => SideCondition variable
+    -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated first second
+simplifyEvaluated sideCondition first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
-  | OrPattern.isFalse second = Not.simplifyEvaluated first
+  | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
   | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies first) second
+    results <- traverse (simplifyEvaluateHalfImplies sideCondition first) second
     return (MultiOr.flatten results)
 
 simplifyEvaluateHalfImplies
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPattern variable
+    => SideCondition variable
+    -> OrPattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
+    sideCondition
     first
     second
   | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])
   | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
   | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isBottom second = Not.simplifyEvaluated first
+  | Pattern.isBottom second = Not.simplifyEvaluated sideCondition first
   | otherwise =
     case MultiOr.extractPatterns first of
         [firstP] -> return $ makeEvaluateImplies firstP second
-        firstPatterns -> distributeEvaluateImplies firstPatterns second
+        firstPatterns ->
+            distributeEvaluateImplies sideCondition firstPatterns second
 
 distributeEvaluateImplies
     :: (MonadSimplify simplifier, SimplifierVariable variable)
-    => [Pattern variable]
+    => SideCondition variable
+    -> [Pattern variable]
     -> Pattern variable
     -> simplifier (OrPattern variable)
-distributeEvaluateImplies firsts second =
+distributeEvaluateImplies sideCondition firsts second =
     And.simplifyEvaluatedMultiple
-            (map (\first -> makeEvaluateImplies first second) firsts)
+        sideCondition
+        (map (\first -> makeEvaluateImplies first second) firsts)
 
 makeEvaluateImplies
     :: InternalVariable variable

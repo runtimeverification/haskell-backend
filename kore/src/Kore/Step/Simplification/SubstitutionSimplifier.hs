@@ -101,7 +101,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
-    , simplifyTerm
+    , simplifyConditionalTermToOr
     )
 import Kore.Substitute
     ( SubstitutionVariable
@@ -120,7 +120,8 @@ newtype SubstitutionSimplifier simplifier =
         { simplifySubstitution
             :: forall variable
             .  SubstitutionVariable variable
-            => Substitution variable
+            => SideCondition variable
+            -> Substitution variable
             -> simplifier (OrCondition variable)
         }
 
@@ -141,9 +142,10 @@ substitutionSimplifier =
     wrapper
         :: forall variable
         .  SubstitutionVariable variable
-        => Substitution variable
+        => SideCondition variable
+        -> Substitution variable
         -> simplifier (OrCondition variable)
-    wrapper substitution =
+    wrapper sideCondition substitution =
         fmap OrCondition.fromConditions . Branch.gather $ do
             (predicate, result) <- worker substitution & maybeT empty return
             let condition = Condition.fromNormalizationSimplified result
@@ -151,7 +153,7 @@ substitutionSimplifier =
             TopBottom.guardAgainstBottom condition'
             return condition'
       where
-        worker = simplifySubstitutionWorker simplifierMakeAnd
+        worker = simplifySubstitutionWorker sideCondition simplifierMakeAnd
 
 -- * Implementation
 
@@ -278,10 +280,11 @@ simplifySubstitutionWorker
     :: forall variable simplifier
     .  SubstitutionVariable variable
     => MonadSimplify simplifier
-    => MakeAnd simplifier
+    => SideCondition variable
+    -> MakeAnd simplifier
     -> Substitution variable
     -> MaybeT simplifier (Predicate variable, Normalization variable)
-simplifySubstitutionWorker makeAnd' = \substitution -> do
+simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     (result, Private { accum = condition }) <-
         runStateT loop Private
             { count = maxBound
@@ -366,7 +369,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
         :: TermLike variable
         -> Impl variable simplifier (TermLike variable)
     simplifyTermLike termLike = do
-        orPattern <- simplifyTerm termLike
+        orPattern <- simplifyConditionalTermToOr sideCondition termLike
         case OrPattern.toPatterns orPattern of
             [        ] -> do
                 addCondition Condition.bottom
