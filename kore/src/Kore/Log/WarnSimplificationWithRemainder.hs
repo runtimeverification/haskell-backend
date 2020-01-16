@@ -9,13 +9,15 @@ module Kore.Log.WarnSimplificationWithRemainder
     , warnSimplificationWithRemainder
     ) where
 
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
     )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -35,6 +37,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Unparser
 import Log
+import qualified SQL
 
 {- | A log 'Entry' when a simplification rule has remainders.
 
@@ -46,10 +49,57 @@ data WarnSimplificationWithRemainder =
     WarnSimplificationWithRemainder
         { inputPattern :: TermLike Variable
         , sideCondition :: SideCondition Variable
-        , results :: OrPattern Variable
-        , remainders :: OrPattern Variable
+        , results :: Results
+        , remainders :: Remainders
         }
     deriving Typeable
+    deriving (GHC.Generic)
+
+newtype Results = Results { getResults :: OrPattern Variable }
+
+instance Unparse Results where
+    unparse = unparse . toTermLike . getResults
+    unparse2 = unparse2 . toTermLike . getResults
+
+instance SQL.Column Results where
+    defineColumn = SQL.defineTextColumn
+    toColumn conn =
+        SQL.toColumn conn
+        . Pretty.renderText
+        . Pretty.layoutOneLine
+        . unparse
+
+newtype Remainders = Remainders { getRemainders :: OrPattern Variable }
+
+instance Unparse Remainders where
+    unparse = unparse . toTermLike . getRemainders
+    unparse2 = unparse2 . toTermLike . getRemainders
+
+instance SQL.Column Remainders where
+    defineColumn = SQL.defineTextColumn
+    toColumn conn =
+        SQL.toColumn conn
+        . Pretty.renderText
+        . Pretty.layoutOneLine
+        . unparse
+
+toTermLike :: OrPattern Variable -> TermLike Variable
+toTermLike = worker . OrPattern.toPatterns
+  where
+    worker =
+        \case
+            [ ] -> TermLike.mkBottom_
+            [x] -> Pattern.toTermLike x
+            (x : xs) -> TermLike.mkOr (Pattern.toTermLike x) (worker xs)
+
+instance SOP.Generic WarnSimplificationWithRemainder
+
+instance SOP.HasDatatypeInfo WarnSimplificationWithRemainder
+
+instance SQL.Table WarnSimplificationWithRemainder where
+    createTable = SQL.createTableGeneric
+    insertRow = SQL.insertRowGeneric
+    selectRow = SQL.selectRowGeneric
 
 -- TODO (thomas.tuegel): Also get the rule which is being skipped.
 {- | Log the @WarnSimplificationWithRemainder@ 'Entry'.
@@ -65,8 +115,8 @@ warnSimplificationWithRemainder
 warnSimplificationWithRemainder
     (TermLike.mapVariables toVariable -> inputPattern)
     (SideCondition.mapVariables toVariable -> sideCondition)
-    (fmap (Pattern.mapVariables toVariable) -> results)
-    (fmap (Pattern.mapVariables toVariable) -> remainders)
+    (Results . fmap (Pattern.mapVariables toVariable) -> results)
+    (Remainders . fmap (Pattern.mapVariables toVariable) -> remainders)
   =
     logM WarnSimplificationWithRemainder
         { inputPattern
@@ -88,9 +138,9 @@ instance Pretty WarnSimplificationWithRemainder where
                 , "input condition:"
                 , Pretty.indent 2 (unparse sideCondition)
                 , "results:"
-                , Pretty.indent 2 (unparseOrPattern results)
+                , Pretty.indent 2 (unparseOrPattern $ getResults results)
                 , "remainders:"
-                , Pretty.indent 2 (unparseOrPattern remainders)
+                , Pretty.indent 2 (unparseOrPattern $ getRemainders remainders)
                 ]
             , "Rule will be skipped."
             ]

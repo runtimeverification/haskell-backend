@@ -25,6 +25,9 @@ import Kore.Log.WarnBottomHook
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
+import Kore.Log.WarnSimplificationWithRemainder
+    ( WarnSimplificationWithRemainder
+    )
 import Log
 import qualified SQL
 
@@ -89,8 +92,9 @@ foldMapEntries
     -> r
 foldMapEntries mapEntry =
     mconcat
-        [ mapEntry (Proxy @WarnBottomHook)
-        , mapEntry (Proxy @DebugAppliedRule)
+        [ mapEntry (Proxy @DebugAppliedRule)
         , mapEntry (Proxy @InfoEvaluateCondition)
+        , mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
+        , mapEntry (Proxy @WarnSimplificationWithRemainder)
         ]

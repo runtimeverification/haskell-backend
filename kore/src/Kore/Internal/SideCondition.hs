@@ -39,6 +39,8 @@ import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
     )
+import qualified Pretty
+import qualified SQL
 
 {-| Side condition used in the evaluation context.
 
@@ -48,9 +50,16 @@ It is usually used to remove infeasible branches, but it may also be used for
 other purposes, say, to remove redundant parts of the result predicate.
 -}
 newtype SideCondition variable =
-    SideCondition
-        { assumedTrue :: Condition variable }
+    SideCondition { assumedTrue :: Condition variable }
     deriving (Eq, Show)
+
+instance InternalVariable variable => SQL.Column (SideCondition variable) where
+    defineColumn = SQL.defineTextColumn
+    toColumn conn =
+        SQL.toColumn conn
+        . Pretty.renderText
+        . Pretty.layoutOneLine
+        . unparse
 
 instance TopBottom (SideCondition variable) where
     isTop sideCondition@(SideCondition _) =
