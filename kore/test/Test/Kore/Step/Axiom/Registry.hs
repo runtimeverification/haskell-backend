@@ -332,7 +332,7 @@ testEvaluators =
 
 testProcessedAxiomPatterns :: PartitionedEqualityRulesMap
 testProcessedAxiomPatterns =
-    processAxiomPatterns $ extractEqualityAxioms testIndexedModule
+    processEqualityRules <$> extractEqualityAxioms testIndexedModule
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
