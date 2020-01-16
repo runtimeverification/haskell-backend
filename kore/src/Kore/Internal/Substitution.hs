@@ -45,6 +45,7 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Proxy
 import Data.Set
     ( Set
     )
@@ -87,6 +88,7 @@ import Kore.Variables.Fresh
     ( FreshVariable
     )
 import Kore.Variables.UnifiedVariable
+import qualified SQL
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -159,6 +161,10 @@ instance Ord variable => Semigroup (Substitution variable) where
 
 instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
+
+instance InternalVariable variable => SQL.Column (Substitution variable) where
+    columnDef _ = SQL.columnDef (Proxy @(Predicate variable))
+    toColumn conn = SQL.toColumn conn . toPredicate
 
 type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
 

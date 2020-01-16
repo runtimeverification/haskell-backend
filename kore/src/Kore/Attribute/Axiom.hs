@@ -36,6 +36,7 @@ import Data.Default
     ( Default (..)
     )
 import Data.Generics.Product
+import Data.Proxy
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -51,7 +52,8 @@ import Kore.Attribute.Label
 import Kore.Attribute.Overload
 import Kore.Attribute.Owise
 import Kore.Attribute.Parser
-    ( ParseAttributes (..)
+    ( AttributePattern
+    , ParseAttributes (..)
     )
 import Kore.Attribute.Priority
 import Kore.Attribute.ProductionID
@@ -63,6 +65,7 @@ import Kore.Attribute.Subsort
 import Kore.Attribute.Trusted
 import Kore.Attribute.UniqueId
 import Kore.Debug
+import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
  -}
@@ -192,3 +195,7 @@ instance ParseAttributes Axiom where
             , toAttributes . uniqueId
             , toAttributes . owise
             ]
+
+instance SQL.Column Axiom where
+    columnDef _ = SQL.columnDef (Proxy @AttributePattern)
+    toColumn conn = SQL.toColumn conn . toAttributes

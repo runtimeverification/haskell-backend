@@ -28,6 +28,8 @@ import Data.Text.Prettyprint.Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Options.Applicative
     ( Parser
     )
@@ -55,6 +57,7 @@ import Kore.Syntax.Id
     )
 import Kore.Unparser
 import Log
+import qualified SQL
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
 
@@ -74,6 +77,11 @@ newtype DebugAppliedRule =
     { appliedRule :: UnifiedEquality Variable
     }
     deriving (Eq, Typeable)
+    deriving (GHC.Generic)
+
+instance SOP.Generic DebugAppliedRule
+
+instance SOP.HasDatatypeInfo DebugAppliedRule
 
 instance Entry DebugAppliedRule where
     entrySeverity _ = Debug
@@ -95,6 +103,11 @@ instance Pretty DebugAppliedRule where
             . Pattern.fromCondition
             . Conditional.withoutTerm
             $ appliedRule
+
+instance SQL.Table DebugAppliedRule where
+    createTable = SQL.createTableNP
+    insertRow = SQL.insertRowNP
+    selectRow = SQL.selectRowNP
 
 {- | Log the 'DebugAppliedRule' entry.
  -}

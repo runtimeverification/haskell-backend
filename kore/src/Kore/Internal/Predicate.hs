@@ -70,6 +70,7 @@ import Data.List
 import Data.Map.Strict
     ( Map
     )
+import Data.Proxy
 import Data.Set
     ( Set
     )
@@ -111,6 +112,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified SQL
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -156,6 +158,10 @@ instance
 {-| 'Predicate' is a user-visible representation for predicates.
 -}
 type Predicate variable = GenericPredicate (TermLike variable)
+
+instance InternalVariable variable => SQL.Column (Predicate variable) where
+    columnDef _ = SQL.columnDef (Proxy @(TermLike variable))
+    toColumn conn (GenericPredicate termLike) = SQL.toColumn conn termLike
 
 {- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
 sometimes occurs when, say, using Predicates as Traversable.

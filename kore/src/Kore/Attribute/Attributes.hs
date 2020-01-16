@@ -23,6 +23,7 @@ import Data.Default
 import Data.Hashable
     ( Hashable
     )
+import Data.Proxy
 import Data.Text
     ( Text
     )
@@ -36,6 +37,8 @@ import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
+import qualified Pretty
+import qualified SQL
 
 -- | A pure pattern which has only been parsed.
 type ParsedPattern = Pattern Variable Attribute.Null
@@ -98,3 +101,14 @@ instance Unparse Attributes where
 
 instance Default Attributes where
     def = Attributes []
+
+instance SQL.Column Attributes where
+    columnDef _ = SQL.columnDef (Proxy @Text)
+    toColumn conn =
+        SQL.toColumn conn
+        . Pretty.renderText
+        . Pretty.layoutOneLine
+        . Pretty.hsep
+        . Pretty.punctuate (Pretty.comma <> Pretty.space)
+        . map unparse
+        . getAttributes

@@ -4,6 +4,9 @@ License     : NCSA
 
 Representation of conditional terms.
 -}
+
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
@@ -63,6 +66,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
+import qualified SQL
 
 {- | @Conditional@ represents a value conditioned on a predicate.
 
@@ -245,6 +249,25 @@ instance
             Predicate.coerceSort sort
             .  singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
+
+instance
+    ( SQL.Column (Predicate variable)
+    , SQL.Column (Substitution variable)
+    , SQL.Column term
+    ) => SQL.Table (Conditional variable term)
+  where
+    createTable = SQL.createTableNP
+    insertRow = SQL.insertRowNP
+    selectRow = SQL.selectRowNP
+
+instance
+    ( SQL.Column (Predicate variable)
+    , SQL.Column (Substitution variable)
+    , SQL.Column term
+    ) => SQL.Column (Conditional variable term)
+  where
+    columnDef = SQL.columnDefForeignKey
+    toColumn = SQL.toColumnForeignKey
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}
