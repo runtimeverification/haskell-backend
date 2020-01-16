@@ -83,7 +83,7 @@ instance Synthetic Defined (Const Signedness) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const Signedness) where
-    synthetic = const (Simplified True)
+    synthetic = const Simplified
     {-# INLINE synthetic #-}
 
 instance Synthetic ConstructorLike (Const Signedness) where
