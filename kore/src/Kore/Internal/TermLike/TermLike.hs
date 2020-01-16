@@ -121,7 +121,6 @@ import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
 import qualified Pretty
 import qualified SQL
-import qualified SQL.Column
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
 
@@ -423,7 +422,7 @@ instance HasConstructorLike (TermLike variable) where
         extractConstructorLike attrs
 
 instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
-    columnDef _ = SQL.ColumnDef (SQL.Column.typeText, SQL.Column.notNull)
+    defineColumn = SQL.defineTextColumn
     toColumn conn =
         SQL.toColumn conn
         . Pretty.renderText

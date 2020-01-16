@@ -103,7 +103,7 @@ instance Default Attributes where
     def = Attributes []
 
 instance SQL.Column Attributes where
-    columnDef _ = SQL.columnDef (Proxy @Text)
+    defineColumn conn _ = SQL.defineColumn conn (Proxy @Text)
     toColumn conn =
         SQL.toColumn conn
         . Pretty.renderText

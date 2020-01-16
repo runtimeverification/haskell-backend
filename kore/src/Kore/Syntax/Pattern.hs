@@ -256,7 +256,7 @@ instance
     (SortedVariable variable, Unparse variable)
     => SQL.Column (Pattern variable annotation)
   where
-    columnDef _ = SQL.columnDef (Proxy @Text)
+    defineColumn conn _ = SQL.defineColumn conn (Proxy @Text)
     toColumn conn =
         SQL.toColumn conn
         . Pretty.renderText

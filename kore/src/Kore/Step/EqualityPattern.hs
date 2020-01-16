@@ -116,8 +116,8 @@ instance
     InternalVariable variable
     => SQL.Column (EqualityPattern variable)
   where
-    columnDef = SQL.columnDefForeignKey
-    toColumn = SQL.toColumnForeignKey
+    defineColumn = SQL.defineForeignKeyColumn
+    toColumn = SQL.toForeignKeyColumn
 
 -- | Creates a basic, unconstrained, Equality pattern
 equalityPattern

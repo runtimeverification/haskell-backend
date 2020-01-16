@@ -266,8 +266,8 @@ instance
     , SQL.Column term
     ) => SQL.Column (Conditional variable term)
   where
-    columnDef = SQL.columnDefForeignKey
-    toColumn = SQL.toColumnForeignKey
+    defineColumn = SQL.defineForeignKeyColumn
+    toColumn = SQL.toForeignKeyColumn
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}

@@ -2,8 +2,8 @@
 
 module SQL
     ( Key (..)
-    , columnDefForeignKey
-    , toColumnForeignKey
+    , defineForeignKeyColumn
+    , toForeignKeyColumn
     , Table (..)
     , insertUniqueRow
     , TableName (..)
@@ -18,9 +18,6 @@ module SQL
     , module SQL.Column
     ) where
 
-import Control.Monad
-    ( (>=>)
-    )
 import qualified Control.Monad.Extra as Monad
 import qualified Data.Bifunctor as Bifunctor
 import Data.Int
@@ -47,20 +44,25 @@ import SQL.Column
     , ColumnConstraint
     , ColumnDef (..)
     , TypeName
+    , defineTextColumn
     )
 import qualified SQL.Column as Column
 
 newtype Key a = Key { getKey :: Int64 }
 
 instance Column (Key a) where
-    columnDef _ = columnDef (Proxy @Int64)
+    defineColumn conn _ = defineColumn conn (Proxy @Int64)
     toColumn conn = toColumn conn . getKey
 
-columnDefForeignKey :: forall a proxy. Table a => proxy a -> ColumnDef
-columnDefForeignKey _ = ColumnDef (Column.typeInteger, Column.notNull)
+defineForeignKeyColumn
+    :: Table a => SQLite.Connection -> proxy a -> IO ColumnDef
+defineForeignKeyColumn conn proxy = do
+    createTable conn proxy
+    defineColumn conn (Proxy @Int64)
 
-toColumnForeignKey :: Table a => SQLite.Connection -> a -> IO SQLite.SQLData
-toColumnForeignKey conn = insertUniqueRow conn >=> toColumn conn
+toForeignKeyColumn :: Table a => SQLite.Connection -> a -> IO SQLite.SQLData
+toForeignKeyColumn conn a =
+    insertUniqueRow conn a >>= toColumn conn
 
 class Table a where
     createTable :: SQLite.Connection -> proxy a -> IO ()
@@ -88,12 +90,16 @@ createTableAux conn tableName fields = do
     sepBy _   [      ] = Text.empty
     sepBy _   [x     ] = x
     sepBy sep (x : xs) = x <> sep <> sepBy sep xs
-    idField = ("id", ColumnDef (Column.typeInteger, Column.primaryKey))
+    idField =
+        ("id", ColumnDef { columnType, columnConstraints })
+      where
+        columnType = Column.typeInteger
+        columnConstraints = Column.primaryKey
     columns = column <$> (idField : fields)
-    column (columnName, ColumnDef (typeName, columnConstraints)) =
+    column (columnName, ColumnDef { columnType, columnConstraints }) =
         Text.unwords
             ( columnName
-            : Column.getTypeName typeName
+            : Column.getTypeName columnType
             : map Column.getColumnConstraint (Set.toList columnConstraints)
             )
 
@@ -104,14 +110,18 @@ createTableNP
     => SQLite.Connection
     -> proxy table
     -> IO ()
-createTableNP conn proxy =
-    createTableAux conn tableName columns
+createTableNP conn proxy = do
+    createTableAux conn tableName =<< sequence columns
   where
     tableName = tableNameSOP proxy
 
     fields = productFields proxy
+    columns :: [IO (Text, ColumnDef)]
     columns = SOP.hcollapse (SOP.hcmap (Proxy @Column) column fields)
-    column fieldInfo = K (fieldName fieldInfo, columnDef fieldInfo)
+    column :: Column a => SOP.FieldInfo a -> K (IO (Text, ColumnDef)) a
+    column fieldInfo = K $ do
+        colDef <- defineColumn conn fieldInfo
+        return (fieldName fieldInfo, colDef)
     fieldName = Text.pack . SOP.fieldName
 
 tableNameSOP :: SOP.HasDatatypeInfo table => proxy table -> TableName
