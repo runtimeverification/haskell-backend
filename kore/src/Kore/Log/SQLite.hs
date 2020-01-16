@@ -13,6 +13,9 @@ import qualified Database.SQLite.Simple as SQLite
 import qualified Options.Applicative as Options
 import qualified System.Directory as Directory
 
+import Kore.Log.DebugAppliedRule
+    ( DebugAppliedRule
+    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
@@ -58,14 +61,28 @@ withLogSQLite options cont =
     LogSQLiteOptions { sqlog } = options
 
 declareEntries :: SQLite.Connection -> IO ()
-declareEntries conn = do
-    SQL.createTable conn $ Proxy @WarnBottomHook
+declareEntries conn = foldMapEntries (SQL.createTable conn)
 
 logSQLite :: SQLite.Connection -> LogAction IO SomeEntry
 logSQLite conn =
-    mconcat
-        [ logWarnBottomHook
-        ]
+    foldMapEntries logEntry
   where
+    logEntry
+        :: forall entry
+        .  (Entry entry, SQL.Table entry)
+        => Proxy entry
+        -> LogAction IO SomeEntry
+    logEntry _ = LogAction (maybeInsertRow . fromEntry @entry)
+
+    maybeInsertRow :: SQL.Table entry => Maybe entry -> IO ()
     maybeInsertRow = maybe (return ()) (Monad.void . SQL.insertRow conn)
-    logWarnBottomHook = LogAction (maybeInsertRow . fromEntry @WarnBottomHook)
+
+foldMapEntries
+    :: Monoid r
+    => (forall entry. (Entry entry, SQL.Table entry) => Proxy entry -> r)
+    -> r
+foldMapEntries mapEntry =
+    mconcat
+        [ mapEntry (Proxy @WarnBottomHook)
+        , mapEntry (Proxy @DebugAppliedRule)
+        ]
