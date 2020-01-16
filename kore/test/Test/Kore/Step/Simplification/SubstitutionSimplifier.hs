@@ -10,6 +10,9 @@ import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -188,7 +191,8 @@ test_SubstitutionSimplifier =
             [ testCase "simplification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
                         Simplification.substitutionSimplifier
-                actual <- runSimplifier Mock.env $ simplifySubstitution input
+                actual <- runSimplifier Mock.env
+                    $ simplifySubstitution SideCondition.top input
                 let expect = Condition.fromNormalizationSimplified <$> results
                     actualConditions = OrCondition.toConditions actual
                     actualSubstitutions =
@@ -203,7 +207,7 @@ test_SubstitutionSimplifier =
                         Unification.substitutionSimplifier
                 actual <-
                     runSimplifier Mock.env . runUnifierT
-                    $ simplifySubstitution input
+                    $ simplifySubstitution SideCondition.top input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
                         Right $
