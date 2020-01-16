@@ -139,6 +139,7 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
     termCeil <- makeEvaluateTerm sideCondition term
     result <-
         And.simplifyEvaluatedMultiPredicate
+            sideCondition
             (MultiAnd.make
                 [ MultiOr.make [Condition.eraseConditionalTerm patt]
                 , termCeil
@@ -177,7 +178,9 @@ makeEvaluateTerm
             let Application { applicationChildren = children } = app
             simplifiedChildren <- mapM (makeEvaluateTerm sideCondition) children
             let ceils = simplifiedChildren
-            And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
+            And.simplifyEvaluatedMultiPredicate
+                sideCondition
+                (MultiAnd.make ceils)
 
       | BuiltinF child <- projected =
         makeEvaluateBuiltin sideCondition child
@@ -251,7 +254,7 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
     let
         ceils :: [OrCondition variable]
         ceils = children
-    And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
+    And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
 makeEvaluateBuiltin
     sideCondition
     patt@(Domain.BuiltinSet Domain.InternalAc
@@ -310,7 +313,9 @@ makeEvaluateNormalizedAc
             ++ variableValueConditions
             ++ variableKeyConditions
             ++ elementsWithVariablesDistinct
-    And.simplifyEvaluatedMultiPredicate (MultiAnd.make allConditions)
+    And.simplifyEvaluatedMultiPredicate
+        sideCondition
+        (MultiAnd.make allConditions)
   where
     concreteElementsList
         ::  [   ( TermLike variable
