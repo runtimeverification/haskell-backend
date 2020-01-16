@@ -22,6 +22,9 @@ import Kore.Log.InfoEvaluateCondition
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
+import Kore.Log.WarnFunctionWithoutEvaluators
+    ( WarnFunctionWithoutEvaluators
+    )
 import Log
 import qualified SQL
 
@@ -89,4 +92,5 @@ foldMapEntries mapEntry =
         [ mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @DebugAppliedRule)
         , mapEntry (Proxy @InfoEvaluateCondition)
+        , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
         ]
