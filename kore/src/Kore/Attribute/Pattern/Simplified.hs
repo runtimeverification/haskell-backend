@@ -6,13 +6,11 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
-    , alwaysSimplified
-    , notSimplified
+    , isSimplified
     ) where
 
 import Control.DeepSeq
 import Data.Hashable
-import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -35,13 +33,19 @@ The simplifier runs until we do not know how to simplify a pattern any more. A
 pattern 'isSimplified' if re-applying the simplifier would return the same
 pattern.
 
-All patterns are assumed un-simplified until marked otherwise, so that
-'isSimplified' is reset by any substitution under the pattern.
+Most patterns are assumed un-simplified until marked otherwise, so the
+simplified status is reset by any substitution under the pattern.
 
- -}
-newtype Simplified = Simplified { isSimplified :: Bool }
+-}
+data Simplified = Simplified | NotSimplified
     deriving (Eq, GHC.Generic, Ord, Show)
-    deriving (Semigroup, Monoid) via All
+
+instance Semigroup Simplified where
+    NotSimplified <> _ = NotSimplified
+    Simplified <> s = s
+
+instance Monoid Simplified where
+    mempty = Simplified
 
 instance SOP.Generic Simplified
 
@@ -56,12 +60,16 @@ instance NFData Simplified
 
 instance Hashable Simplified
 
+isSimplified :: Simplified -> Bool
+isSimplified Simplified = True
+isSimplified NotSimplified = False
+
 alwaysSimplified :: a -> Simplified
-alwaysSimplified = const (Simplified True)
+alwaysSimplified = const Simplified
 {-# INLINE alwaysSimplified #-}
 
 notSimplified :: a -> Simplified
-notSimplified = const (Simplified False)
+notSimplified = const NotSimplified
 {-# INLINE notSimplified #-}
 
 instance Synthetic Simplified (Bottom sort) where
@@ -153,12 +161,12 @@ instance Synthetic Simplified (Rewrites sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Builtin sort) where
-    synthetic (BuiltinInt    _) = Simplified True
-    synthetic (BuiltinBool   _) = Simplified True
-    synthetic (BuiltinString _) = Simplified True
-    synthetic (BuiltinMap    _) = Simplified False
-    synthetic (BuiltinList   _) = Simplified False
-    synthetic (BuiltinSet    _) = Simplified False
+    synthetic (BuiltinInt    _) = Simplified
+    synthetic (BuiltinBool   _) = Simplified
+    synthetic (BuiltinString _) = Simplified
+    synthetic (BuiltinMap    _) = NotSimplified
+    synthetic (BuiltinList   _) = NotSimplified
+    synthetic (BuiltinSet    _) = NotSimplified
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified Inhabitant where
