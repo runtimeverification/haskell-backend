@@ -10,12 +10,15 @@ Portability : portable
 module Kore.Step.Axiom.Registry
     ( extractEqualityAxioms
     , axiomPatternsToEvaluators
+    , processEqualityRules
+    , PartitionedEqualityRules (..)
     ) where
 
 import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import Data.List
     ( partition
+    , sortOn
     )
 import Data.Map.Strict
     ( Map
@@ -23,7 +26,9 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
-    , mapMaybe
+    )
+import Data.Witherable
+    ( mapMaybe
     )
 
 import Kore.Attribute.Axiom
@@ -35,9 +40,6 @@ import Kore.Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
 import qualified Kore.Attribute.Pattern as Pattern
-import Kore.Attribute.Simplification
-    ( Simplification (..)
-    )
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -56,6 +58,8 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     , EqualityRule (EqualityRule)
+    , getPriorityOfRule
+    , isSimplificationRule
     )
 import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)
@@ -128,46 +132,63 @@ axiomToIdAxiomPatternPair axiom =
         Right (AllPathClaimPattern _) -> Nothing
         Right (ImplicationAxiomPattern _) -> Nothing
 
--- |Converts a registry of 'RulePattern's to one of
+data PartitionedEqualityRules =
+    PartitionedEqualityRules
+        { functionRules       :: ![EqualityRule Variable]
+        , simplificationRules :: ![EqualityRule Variable]
+        }
+
+-- | Filters and partitions a list of 'EqualityRule's to
+-- simplification rules and function rules. The function rules
+-- are also sorted in order of priority.
+processEqualityRules
+    :: [EqualityRule Variable]
+    -> PartitionedEqualityRules
+processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
+    PartitionedEqualityRules
+        { functionRules
+        , simplificationRules
+        }
+  where
+    (simplificationRules, unProcessedFunctionRules) =
+        partition isSimplificationRule equalities
+    functionRules =
+        sortOn getPriorityOfRule
+        . filter (not . ignoreDefinition)
+        $ unProcessedFunctionRules
+
+-- | Converts a collection of processed 'EqualityRule's to one of
 -- 'BuiltinAndAxiomSimplifier's
+equalitiesToEvaluators
+    :: PartitionedEqualityRules
+    -> Maybe BuiltinAndAxiomSimplifier
+equalitiesToEvaluators
+    PartitionedEqualityRules { functionRules, simplificationRules }
+  =
+    case (simplificationEvaluator, definitionEvaluator) of
+        (Nothing, Nothing) -> Nothing
+        (Just evaluator, Nothing) -> Just evaluator
+        (Nothing, Just evaluator) -> Just evaluator
+        (Just sEvaluator, Just dEvaluator) ->
+            Just (simplifierWithFallback sEvaluator dEvaluator)
+  where
+    simplificationEvaluator =
+        if null simplificationRules
+            then Nothing
+            else
+                Just . firstFullEvaluation
+                $ simplificationEvaluation
+                <$> simplificationRules
+    definitionEvaluator =
+        if null functionRules
+            then Nothing
+            else Just $ definitionEvaluation functionRules
+
 axiomPatternsToEvaluators
     :: Map.Map AxiomIdentifier [EqualityRule Variable]
     -> Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 axiomPatternsToEvaluators =
-    Map.fromAscList . mapMaybe equalitiesToEvaluators . Map.toAscList
-  where
-    equalitiesToEvaluators
-        :: (AxiomIdentifier, [EqualityRule Variable])
-        -> Maybe (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-    equalitiesToEvaluators
-        (symbolId, filter (not . ignoreEqualityRule) -> equalities)
-      =
-        case (simplificationEvaluator, definitionEvaluator) of
-            (Nothing, Nothing) -> Nothing
-            (Just evaluator, Nothing) -> Just (symbolId, evaluator)
-            (Nothing, Just evaluator) -> Just (symbolId, evaluator)
-            (Just sEvaluator, Just dEvaluator) ->
-                Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
-      where
-        simplifications, evaluations :: [EqualityRule Variable]
-        (simplifications, filter (not . ignoreDefinition) -> evaluations) =
-            partition isSimplificationRule equalities
-          where
-            isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
-                isSimplification
-              where
-                Simplification { isSimplification } =
-                    Attribute.simplification attributes
-        simplification :: [BuiltinAndAxiomSimplifier]
-        simplification = simplificationEvaluation <$> simplifications
-        simplificationEvaluator =
-            if null simplification
-                then Nothing
-                else Just (firstFullEvaluation simplification)
-        definitionEvaluator =
-            if null evaluations
-                then Nothing
-                else Just (definitionEvaluation evaluations)
+    mapMaybe (equalitiesToEvaluators . processEqualityRules)
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
