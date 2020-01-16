@@ -6,7 +6,7 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
-    , isSimplified
+    , isFullySimplified
     ) where
 
 import Control.DeepSeq
@@ -60,9 +60,9 @@ instance NFData Simplified
 
 instance Hashable Simplified
 
-isSimplified :: Simplified -> Bool
-isSimplified Simplified = True
-isSimplified NotSimplified = False
+isFullySimplified :: Simplified -> Bool
+isFullySimplified Simplified = True
+isFullySimplified NotSimplified = False
 
 alwaysSimplified :: a -> Simplified
 alwaysSimplified = const Simplified

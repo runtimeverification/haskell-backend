@@ -81,16 +81,13 @@ import GHC.Stack
     )
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
-    ( simplified
+    ( isSimplified
     )
 import qualified Kore.Attribute.Pattern as Attribute
     ( Pattern (Pattern)
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
 import Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
-    ( isSimplified
-    )
 import Kore.Debug
 import Kore.Error
     ( Error
@@ -648,9 +645,7 @@ makePredicate t = fst <$> makePredicateWorker t
                 | wasSimplified -> markSimplified predicate
                 | otherwise -> predicate
       where
-        wasSimplified =
-            Attribute.Simplified.isSimplified
-                (Attribute.Pattern.simplified attrs)
+        wasSimplified = Attribute.Pattern.isSimplified attrs
 
     updateHasChanged
         :: HasChanged
