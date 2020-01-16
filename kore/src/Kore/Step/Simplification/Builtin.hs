@@ -57,10 +57,15 @@ simplifyBuiltin
     -> MultiOr (Conditional variable (TermLike variable))
 simplifyBuiltin =
     \case
-        Domain.BuiltinMap map' -> fmap mkBuiltin <$> simplifyInternalMap map'
-            -- case Domain.opaque . Domain.getNormalizedMap . Domain.builtinAcChild $ map' of
-            --    [opaqueElem] -> opaqueElem
-            --    _ -> fmap mkBuiltin <$> simplifyInternalMap map'
+        Domain.BuiltinMap map' ->
+            case Domain.opaque . Domain.getNormalizedMap . Domain.builtinAcChild $ map' of
+                [opaqueElem] ->
+                    let concrElem = Domain.concreteElements . Domain.getNormalizedMap . Domain.builtinAcChild $ map'
+                        elemWithVar = Domain.elementsWithVariables . Domain.getNormalizedMap . Domain.builtinAcChild $ map'
+                    in if concrElem == mempty && elemWithVar == mempty
+                          then opaqueElem
+                          else fmap mkBuiltin <$> simplifyInternalMap map'
+                _ -> fmap mkBuiltin <$> simplifyInternalMap map'
         Domain.BuiltinList list' -> fmap mkBuiltin <$> simplifyInternalList list'
         Domain.BuiltinSet set' -> fmap mkBuiltin <$> simplifyInternalSet set'
         Domain.BuiltinInt int -> (return . pure . mkBuiltin) (Domain.BuiltinInt int)
