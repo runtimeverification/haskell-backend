@@ -6,6 +6,8 @@ License     : NCSA
 
 module Kore.Log.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder (..)
+    , Results (..)
+    , Remainders (..)
     , warnSimplificationWithRemainder
     ) where
 
