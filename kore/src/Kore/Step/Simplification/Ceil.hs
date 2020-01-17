@@ -183,7 +183,9 @@ makeEvaluateTerm
                 (MultiAnd.make ceils)
 
       | BuiltinF child <- projected =
-        makeEvaluateBuiltin sideCondition child
+        fromMaybe
+            (return unsimplified)
+            (makeEvaluateBuiltin sideCondition child)
 
       | InjF inj <- projected = do
         InjSimplifier { evaluateCeilInj } <- askInjSimplifier
@@ -224,6 +226,10 @@ makeEvaluateTerm
             ++ "and programming errors."
             )
 
+    unsimplified =
+        OrCondition.fromCondition . Condition.fromPredicate
+        . Predicate.markSimplified . makeCeilPredicate_ $ term
+
 {-| Evaluates the ceil of a domain value.
 -}
 makeEvaluateBuiltin
@@ -232,24 +238,17 @@ makeEvaluateBuiltin
     => MonadSimplify simplifier
     => SideCondition variable
     -> Builtin (TermLike variable)
-    -> simplifier (OrCondition variable)
+    -> Maybe (simplifier (OrCondition variable))
 makeEvaluateBuiltin
     sideCondition
-    patt@(Domain.BuiltinMap Domain.InternalAc
+    (Domain.BuiltinMap Domain.InternalAc
         {builtinAcChild}
     )
   =
-    fromMaybe
-        (return unsimplified)
-        (makeEvaluateNormalizedAc
-            sideCondition
-            (Domain.unwrapAc builtinAcChild)
-        )
-  where
-    unsimplified =
-        OrCondition.fromCondition . Condition.fromPredicate
-        $ Predicate.markSimplified . makeCeilPredicate_ $ mkBuiltin patt
-makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
+    makeEvaluateNormalizedAc
+        sideCondition
+        (Domain.unwrapAc builtinAcChild)
+makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = Just $ do
     children <- mapM (makeEvaluateTerm sideCondition) (Foldable.toList l)
     let
         ceils :: [OrCondition variable]
@@ -257,27 +256,16 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
 makeEvaluateBuiltin
     sideCondition
-    patt@(Domain.BuiltinSet Domain.InternalAc
+    (Domain.BuiltinSet Domain.InternalAc
         {builtinAcChild}
     )
   =
-    fromMaybe
-        (return unsimplified)
-        (makeEvaluateNormalizedAc
-            sideCondition
-            (Domain.unwrapAc builtinAcChild)
-        )
-  where
-    unsimplified =
-        OrCondition.fromCondition
-            (Condition.fromPredicate
-                (Predicate.markSimplified
-                    (makeCeilPredicate_ (mkBuiltin patt))
-                )
-            )
-makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrCondition.top
+    makeEvaluateNormalizedAc
+        sideCondition
+        (Domain.unwrapAc builtinAcChild)
+makeEvaluateBuiltin _ (Domain.BuiltinBool _) = Just $ return OrCondition.top
+makeEvaluateBuiltin _ (Domain.BuiltinInt _) = Just $ return OrCondition.top
+makeEvaluateBuiltin _ (Domain.BuiltinString _) = Just $ return OrCondition.top
 
 makeEvaluateNormalizedAc
     :: forall normalized variable simplifier

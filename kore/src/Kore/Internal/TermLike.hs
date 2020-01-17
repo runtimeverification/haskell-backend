@@ -16,6 +16,8 @@ module Kore.Internal.TermLike
     , Pattern.isConstructorLike
     , assertConstructorLikeKeys
     , markSimplified
+    , setSimplified
+    , simplifiedAttribute
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
@@ -411,6 +413,9 @@ fromConcrete = mapVariables (\case {})
 isSimplified :: TermLike variable -> Bool
 isSimplified = Attribute.isSimplified . extractAttributes
 
+simplifiedAttribute :: TermLike variable -> Pattern.Simplified
+simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
+
 assertConstructorLikeKeys
     :: SortedVariable variable
     => Foldable t
@@ -442,6 +447,21 @@ markSimplified :: TermLike variable -> TermLike variable
 markSimplified (Recursive.project -> attrs :< termLikeF) =
     Recursive.embed
         (Attribute.setSimplified Pattern.Simplified attrs :< termLikeF)
+
+setSimplified :: Pattern.Simplified -> TermLike variable -> TermLike variable
+setSimplified simplified (Recursive.project -> attrs :< termLikeF) =
+     Recursive.embed
+        (  Attribute.setSimplified mergedSimplified attrs
+        :< termLikeF
+        )
+  where
+    childSimplified = simplifiedFromChildren termLikeF
+    mergedSimplified = childSimplified <> simplified
+
+simplifiedFromChildren
+    :: TermLikeF variable (TermLike variable) -> Pattern.Simplified
+simplifiedFromChildren =
+    foldMap (Attribute.simplifiedAttribute . extractAttributes)
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort

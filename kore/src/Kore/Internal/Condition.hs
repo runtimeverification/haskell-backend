@@ -7,6 +7,8 @@ module Kore.Internal.Condition
     ( Condition
     , isSimplified
     , markSimplified
+    , setPredicateSimplified
+    , simplifiedAttribute
     , eraseConditionalTerm
     , top
     , bottom
@@ -32,6 +34,9 @@ import qualified GHC.Stack as GHC
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     , isFreeVariable
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -69,6 +74,16 @@ isSimplified = Predicate.isSimplified . Conditional.predicate
 markSimplified :: Condition variable -> Condition variable
 markSimplified conditional@Conditional { predicate } =
     conditional { predicate = Predicate.markSimplified predicate }
+
+simplifiedAttribute :: Condition variable -> Attribute.Simplified
+simplifiedAttribute Conditional {term = (), predicate, substitution} =
+    Predicate.simplifiedAttribute predicate
+    <> Substitution.simplifiedAttribute substitution
+
+setPredicateSimplified
+    :: Attribute.Simplified -> Condition variable -> Condition variable
+setPredicateSimplified simplified conditional@Conditional { predicate } =
+    conditional { predicate = Predicate.setSimplified simplified predicate }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Condition'.
 eraseConditionalTerm
