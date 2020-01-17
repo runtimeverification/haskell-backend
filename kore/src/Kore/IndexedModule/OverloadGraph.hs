@@ -10,6 +10,8 @@ module Kore.IndexedModule.OverloadGraph
     , isOverloading
     , commonOverloads
     , fromIndexedModule
+    --
+    , fromOverloads
     ) where
 
 import Data.Map.Strict
@@ -74,6 +76,8 @@ commonOverloads graph sym1 sym2 =
         )
 
 {- | Build a 'OverloadGraph' from a list of overloaded symbol pairs.
+
+  It assumes that the overloaded relation is transitively closed.
  -}
 fromOverloads
     :: [(Symbol, Symbol)]  -- ^ first symbol overloads the second
