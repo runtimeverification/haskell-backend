@@ -12,9 +12,6 @@ module Kore.IndexedModule.OverloadGraph
     , fromIndexedModule
     ) where
 
-import Data.Default
-    ( def
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -102,8 +99,9 @@ fromIndexedModule verifiedModule tools = fromOverloads overloadPairList
             (Attribute.getOverload . Attribute.overload . fst)
             (recursiveIndexedModuleAxioms verifiedModule)
     toSymbol s = Symbol
-        { symbolConstructor = symbolOrAliasConstructor s
+        { symbolConstructor = sId
         , symbolParams = symbolOrAliasParams s
         , symbolSorts = MetadataTools.applicationSorts tools s
-        , symbolAttributes = def
+        , symbolAttributes = MetadataTools.symbolAttributes tools sId
         }
+      where sId = symbolOrAliasConstructor s
