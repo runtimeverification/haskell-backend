@@ -5,15 +5,14 @@ License     : NCSA
 -}
 
 module SQL
-    ( tableNameSOP
-    , createTableGeneric
-    , createTableWrapper
-    , createTableUnwrapped
+    ( createTableGeneric
     , insertRowGeneric
-    , insertRowWrapper
-    , insertRowUnwrapped
     , selectRowGeneric
+    , createTableWrapper
+    , insertRowWrapper
     , selectRowWrapper
+    , createTableUnwrapped
+    , insertRowUnwrapped
     , selectRowUnwrapped
     -- * Re-exports
     , module SQL.Table
@@ -44,9 +43,10 @@ createTableWrapper
     -> proxy new
     -> IO ()
 createTableWrapper _ conn proxy =
-    SQL.SOP.createTable conn (tableNameSOP proxy) (productFields proxy')
+    SQL.SOP.createTable conn tableName (productFields proxy')
   where
     proxy' = Proxy @x
+    tableName = SQL.SOP.tableNameGeneric proxy
 
 createTableUnwrapped
     :: forall proxy s a xs
@@ -67,13 +67,9 @@ createTableGeneric
     -> proxy table
     -> IO ()
 createTableGeneric conn proxy =
-    SQL.SOP.createTable conn (tableNameSOP proxy) (productFields proxy)
-
-tableNameSOP :: SOP.HasDatatypeInfo table => proxy table -> TableName
-tableNameSOP proxy =
-    TableName $ SOP.moduleName info <> "." <> SOP.datatypeName info
+    SQL.SOP.createTable conn tableName (productFields proxy)
   where
-    info = SOP.datatypeInfo proxy
+    tableName = SQL.SOP.tableNameGeneric proxy
 
 productFields
     :: forall proxy a xs
@@ -105,9 +101,9 @@ insertRowGeneric
     -> table
     -> IO (Key table)
 insertRowGeneric =
-    SQL.SOP.insertRow (tableNameSOP proxy)
+    SQL.SOP.insertRow tableName
   where
-    proxy = Proxy @table
+    tableName = SQL.SOP.tableNameGeneric (Proxy @table)
 
 insertRowWrapper
     :: forall new x xs
@@ -120,9 +116,9 @@ insertRowWrapper
     -> IO (Key new)
 insertRowWrapper iso conn table =
     fmap (Lens.review iso)
-    <$> SQL.SOP.insertRow (tableNameSOP proxy) conn (Lens.view iso table)
+    <$> SQL.SOP.insertRow tableName conn (Lens.view iso table)
   where
-    proxy = pure @Proxy table
+    tableName = SQL.SOP.tableNameGeneric (Proxy @new)
 
 insertRowUnwrapped
     :: forall s a xs
@@ -143,9 +139,9 @@ selectRowGeneric
     -> table
     -> IO (Maybe (Key table))
 selectRowGeneric conn table =
-    SQL.SOP.selectRow conn (tableNameSOP proxy) table
+    SQL.SOP.selectRow conn tableName table
   where
-    proxy = pure @SOP.Proxy table
+    tableName = SQL.SOP.tableNameGeneric (Proxy @table)
 
 selectRowWrapper
     :: forall new x xs
@@ -158,9 +154,9 @@ selectRowWrapper
     -> IO (Maybe (Key new))
 selectRowWrapper iso conn table =
     (fmap . fmap) (Lens.review iso)
-    <$> SQL.SOP.selectRow conn (tableNameSOP proxy) (Lens.view iso table)
+    <$> SQL.SOP.selectRow conn tableName (Lens.view iso table)
   where
-    proxy = pure @Proxy table
+    tableName = SQL.SOP.tableNameGeneric (Proxy @new)
 
 selectRowUnwrapped
     :: forall s a xs
