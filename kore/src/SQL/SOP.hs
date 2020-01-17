@@ -9,6 +9,7 @@ module SQL.SOP
     , createTable
     , insertRow
     , selectRow
+    , productFields
     -- * Re-exports
     , module SQL.Table
     ) where
@@ -38,11 +39,11 @@ import SQL.Table hiding
     )
 
 createTable
-    :: forall xs
-    .  SOP.All Column xs
+    :: forall fields
+    .  SOP.All Column fields
     => SQLite.Connection
     -> TableName
-    -> NP SOP.FieldInfo xs
+    -> NP SOP.FieldInfo fields
     -> IO ()
 createTable conn tableName fields =
     createTableAux conn tableName =<< sequence columns
@@ -62,10 +63,10 @@ tableNameGeneric proxy =
     info = SOP.datatypeInfo proxy
 
 productFields
-    :: forall proxy a xs
-    .  (SOP.HasDatatypeInfo a, SOP.IsProductType a xs)
-    => proxy a
-    -> NP SOP.FieldInfo xs
+    :: forall proxy table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => proxy table
+    -> NP SOP.FieldInfo fields
 productFields proxy =
     case ctor of
         SOP.Constructor _ -> fakeFields
@@ -84,9 +85,9 @@ productFields proxy =
         SOP.FieldInfo ("field" <> show n) :* shapeFields (n + 1) shape
 
 insertRow
-    :: forall table xs
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
-    => SOP.All Column xs
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => SOP.All Column fields
     => TableName
     -> SQLite.Connection
     -> table
@@ -96,21 +97,21 @@ insertRow tableName conn table = do
     SQL.Table.insertRowAux conn tableName columns
 
 productTypeFrom
-    :: forall a xs
-    .  (SOP.Code a ~ '[xs], SOP.IsProductType a xs)
-    => a -> NP I xs
+    :: forall table fields
+    .  SOP.IsProductType table fields
+    => table -> NP I fields
 productTypeFrom a =
     case ns of
         Z np -> np
         S _  -> error "impossible"
   where
-    ns :: NS (NP I) '[xs]
+    ns :: NS (NP I) '[fields]
     SOP.SOP ns = SOP.from a
 
 productColumns
-    :: forall table xs
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
-    => SOP.All Column xs
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => SOP.All Column fields
     => SQLite.Connection
     -> table
     -> IO [(String, SQLite.SQLData)]
@@ -131,9 +132,9 @@ productColumns conn table =
         return (SOP.fieldName info, x')
 
 selectRow
-    :: forall table xs
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table xs)
-    => SOP.All Column xs
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => SOP.All Column fields
     => SQLite.Connection
     -> TableName
     -> table
