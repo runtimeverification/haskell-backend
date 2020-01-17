@@ -36,6 +36,9 @@ import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.OverloadSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
+import Kore.Internal.ApplicationSorts
+    ( applicationSortsResult
+    )
 
 {- | Unify an overloaded constructor application pattern with a sort injection
 pattern over an (overloaded) constructor.
@@ -72,13 +75,28 @@ overloadedConstructorSortInjectionAndEquals
     Monad.guard (isOverloaded secondHead)
     overloadedAndEqualsOverloading termMerger second firstInj
 overloadedConstructorSortInjectionAndEquals
-    _termMerger
-    (Inj_ Inj { injChild = App_ firstHead _})
-    (Inj_ Inj { injChild = App_ secondHead _})
+    termMerger
+    first@(Inj_ inj@Inj { injTo, injChild = App_ firstHead firstChildren})
+    second@(Inj_ Inj { injChild = App_ secondHead secondChildren})
   = do
-    OverloadSimplifier { isOverloading } <- Simplifier.askOverloadSimplifier
-    Monad.guard (not (isOverloading firstHead secondHead))
-    error $ "\nis not overloading:\n\t" <> show firstHead <> "\n\t" <> show secondHead
+    OverloadSimplifier
+        { isOverloaded, resolveOverloading, unifyOverloadWithinBound }
+        <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded firstHead && isOverloaded secondHead)
+    case unifyOverloadWithinBound firstHead secondHead injTo of
+        Nothing -> Monad.Trans.lift
+            $ explainAndReturnBottom
+                "overloaded constructors not unifiable"
+                first
+                second
+        Just headUnion ->
+            let injFrom = applicationSortsResult $ symbolSorts headUnion
+                injProto = inj { injChild = () }
+                first' = resolveOverloading injProto headUnion firstChildren
+                second' = resolveOverloading injProto headUnion secondChildren
+                mkInj injChild =
+                    (synthesize . InjF) injProto { injFrom, injTo, injChild }
+            in Monad.Trans.lift $ termMerger (mkInj first') (mkInj second')
 overloadedConstructorSortInjectionAndEquals _ _ _ = empty
 
 overloadedAndEqualsOverloading

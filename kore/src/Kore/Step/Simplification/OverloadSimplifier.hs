@@ -36,7 +36,7 @@ import Kore.Internal.TermLike
 data OverloadSimplifier =
     OverloadSimplifier
         { isOverloading :: Symbol -> Symbol -> Bool
-        -- ^ whether the first argument is overloading the second
+        -- ^ Whether the first argument is overloading the second
         , isOverloaded :: Symbol -> Bool
         -- ^ Whether the symbol is overloaded
         , resolveOverloading
@@ -47,7 +47,9 @@ data OverloadSimplifier =
             -> Symbol
             -> [TermLike variable]
             -> TermLike variable
+        -- ^ Apply an overloading equation
         , unifyOverloadWithinBound :: Symbol -> Symbol -> Sort -> Maybe Symbol
+        -- ^ Find a common overload with result sort a subsort of the argument
         }
 
 mkOverloadSimplifier
