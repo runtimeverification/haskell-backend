@@ -44,6 +44,7 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
@@ -52,7 +53,6 @@ import Kore.Unification.Error
     ( UnificationError (..)
     , UnificationOrSubstitutionError (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

@@ -25,6 +25,9 @@ import Prelude hiding
 import Kore.Attribute.Synthetic
     ( synthesize
     )
+import Kore.Internal.ApplicationSorts
+    ( applicationSortsResult
+    )
 import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.Pattern
     ( Pattern
@@ -36,9 +39,6 @@ import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.OverloadSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
-import Kore.Internal.ApplicationSorts
-    ( applicationSortsResult
-    )
 
 {- | Unify an overloaded constructor application pattern with a sort injection
 pattern over an (overloaded) constructor.

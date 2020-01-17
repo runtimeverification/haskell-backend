@@ -81,6 +81,7 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike hiding
     ( substitute
     )
@@ -93,7 +94,6 @@ import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
     ( unsupportedPatterns
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
     ( MonadUnify
     )

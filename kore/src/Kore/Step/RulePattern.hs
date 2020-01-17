@@ -86,6 +86,13 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
+    ( toMap
+    , variables
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -109,13 +116,6 @@ import Kore.Syntax.Id
     )
 import Kore.TopBottom
     ( TopBottom (..)
-    )
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
-    ( toMap
-    , variables
     )
 import Kore.Unparser
     ( Unparse

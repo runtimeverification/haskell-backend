@@ -1,6 +1,7 @@
 module TEST
 
-  imports DOMAINS
+  imports BOOL
+  imports SET
 
   syntax Val ::= "x" | "y" | "z"
                | "success" | "ready"

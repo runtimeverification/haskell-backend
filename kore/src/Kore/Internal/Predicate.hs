@@ -48,7 +48,6 @@ module Kore.Internal.Predicate
     , coerceSort
     , predicateSort
     , fromPredicate
-    , fromSubstitution
     , unwrapPredicate
     , wrapPredicate
     , substitute
@@ -82,16 +81,13 @@ import GHC.Stack
     )
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
-    ( simplified
+    ( isSimplified
     )
 import qualified Kore.Attribute.Pattern as Attribute
     ( Pattern (Pattern)
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
 import Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
-    ( isSimplified
-    )
 import Kore.Debug
 import Kore.Error
     ( Error
@@ -111,10 +107,6 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -653,9 +645,7 @@ makePredicate t = fst <$> makePredicateWorker t
                 | wasSimplified -> markSimplified predicate
                 | otherwise -> predicate
       where
-        wasSimplified =
-            Attribute.Simplified.isSimplified
-                (Attribute.Pattern.simplified attrs)
+        wasSimplified = Attribute.Pattern.isSimplified attrs
 
     updateHasChanged
         :: HasChanged
@@ -745,21 +735,6 @@ singleSubstitutionToPredicate (var, patt) =
     -- substitution sometimes (e.g. not(not(subst)) and when simplifying
     -- claims).
     makeEqualsPredicate_ (TermLike.mkVar var) patt
-
-{- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
-
-An empty substitution list returns a true predicate. A non-empty substitution
-returns a conjunction of variable-substitution equalities.
-
--}
-fromSubstitution
-    :: InternalVariable variable
-    => Substitution variable
-    -> Predicate variable
-fromSubstitution =
-    makeMultipleAndPredicate
-    . fmap singleSubstitutionToPredicate
-    . Substitution.unwrap
 
 {- | Traverse the predicate from the top down and apply substitutions.
 

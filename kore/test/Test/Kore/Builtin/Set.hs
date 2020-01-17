@@ -95,9 +95,8 @@ import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate as Predicate hiding
-    ( fromSubstitution
-    )
+import Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Sort
     ( Sort
@@ -123,7 +122,6 @@ import Kore.Syntax.Variable
 import qualified Kore.Syntax.Variable as DoNotUse
     ( Variable (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( runUnifierT
     )

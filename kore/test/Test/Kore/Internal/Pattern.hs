@@ -27,8 +27,8 @@ import Kore.Internal.Predicate
     , makeFalsePredicate_
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

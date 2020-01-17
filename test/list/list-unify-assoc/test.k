@@ -1,6 +1,7 @@
 module TEST
 
-  imports DOMAINS
+  imports BOOL
+  imports LIST
 
   syntax Pgm ::= push( KItem )
 

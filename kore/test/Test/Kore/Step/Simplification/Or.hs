@@ -29,15 +29,15 @@ import Kore.Internal.Predicate
     , makeFalsePredicate_
     , makeTruePredicate_
     )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Or
     ( simplify
     , simplifyEvaluated
     )
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

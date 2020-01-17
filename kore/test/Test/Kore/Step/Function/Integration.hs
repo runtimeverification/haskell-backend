@@ -69,6 +69,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -102,7 +103,6 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
@@ -136,13 +136,13 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
+                    (AxiomIdentifier.Application Mock.functional10Id)
                     (axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.x))
                         (Mock.g (mkElemVar Mock.x))
                     )
                 )
-                (Mock.functionalConstr10 Mock.c)
+                (Mock.functional10 Mock.c)
         assertEqual "" expect actual
 
     , testCase "Simple evaluation (builtin branch)" $ do
@@ -155,13 +155,13 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
+                    (AxiomIdentifier.Application Mock.functional10Id)
                     (builtinEvaluation $ axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.x))
                         (Mock.g (mkElemVar Mock.x))
                     )
                 )
-                (Mock.functionalConstr10 Mock.c)
+                (Mock.functional10 Mock.c)
         assertEqual "" expect actual
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
@@ -175,19 +175,19 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
+                    (AxiomIdentifier.Application Mock.functional10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ axiomEvaluator
-                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.functional10 (mkElemVar Mock.x))
                             (Mock.g (mkElemVar Mock.x))
                         )
                         ( axiomEvaluator
-                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.functional10 (mkElemVar Mock.x))
                             (mkElemVar Mock.x)
                         )
                     )
                 )
-                (Mock.functionalConstr10 Mock.c)
+                (Mock.functional10 Mock.c)
         assertEqual "" expect actual
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
@@ -201,37 +201,37 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
+                    (AxiomIdentifier.Application Mock.functional10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier $ \_ _ ->
                             notApplicableAxiomEvaluator
                         )
                         ( axiomEvaluator
-                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.functional10 (mkElemVar Mock.x))
                             (Mock.g (mkElemVar Mock.x))
                         )
                     )
                 )
-                (Mock.functionalConstr10 Mock.c)
+                (Mock.functional10 Mock.c)
         assertEqual "" expect actual
 
     , testCase "Evaluates inside functions" $ do
         let expect =
                 Conditional
-                    { term = Mock.functional10 (Mock.functional10 Mock.c)
+                    { term = Mock.functional11 (Mock.functional11 Mock.c)
                     , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
                     }
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
+                    (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.functional10 (mkElemVar Mock.x))
+                        (Mock.functional11 (mkElemVar Mock.x))
                     )
                 )
-                (Mock.functionalConstr10 (Mock.functionalConstr10 Mock.c))
+                (Mock.functional10 (Mock.functional10 Mock.c))
         assertEqual "" expect actual
 
     , testCase "Evaluates 'or'" $ do
@@ -239,24 +239,24 @@ test_functionIntegration =
                 Conditional
                     { term =
                         mkOr
-                            (Mock.functional10 (Mock.functional10 Mock.c))
-                            (Mock.functional10 (Mock.functional10 Mock.d))
+                            (Mock.functional11 (Mock.functional11 Mock.c))
+                            (Mock.functional11 (Mock.functional11 Mock.d))
                     , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
                     }
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
+                    (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.functional10 (mkElemVar Mock.x))
+                        (Mock.functional11 (mkElemVar Mock.x))
                     )
                 )
-                (Mock.functionalConstr10
+                (Mock.functional10
                     (mkOr
-                        (Mock.functionalConstr10 Mock.c)
-                        (Mock.functionalConstr10 Mock.d)
+                        (Mock.functional10 Mock.c)
+                        (Mock.functional10 Mock.d)
                     )
                 )
         assertEqual "" expect actual
@@ -265,10 +265,10 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term =
-                        Mock.functional10
+                        Mock.functional11
                             (Mock.functional20
-                                (Mock.functional10 Mock.c)
-                                (Mock.functional10 Mock.c)
+                                (Mock.functional11 Mock.c)
+                                (Mock.functional11 Mock.c)
                             )
                     , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
@@ -276,16 +276,16 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.functionalConstr10Id)
+                    (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.functional10 (mkElemVar Mock.x))
+                        (Mock.functional11 (mkElemVar Mock.x))
                     )
                 )
-                (Mock.functionalConstr10
+                (Mock.functional10
                     (Mock.functional20
-                        (Mock.functionalConstr10 Mock.c)
-                        (Mock.functionalConstr10 Mock.c)
+                        (Mock.functional10 Mock.c)
+                        (Mock.functional10 Mock.c)
                     )
                 )
         assertEqual "" expect actual
@@ -301,7 +301,7 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.singleton
-                    (AxiomIdentifier.Application Mock.cId)
+                    (AxiomIdentifier.Application Mock.cfId)
                     ( appliedMockEvaluator Conditional
                         { term   = Mock.d
                         , predicate =
@@ -311,7 +311,7 @@ test_functionIntegration =
                         }
                     )
                 )
-                (Mock.f Mock.c)
+                (Mock.f Mock.cf)
         assertEqual "" expect actual
 
     , testCase "Merges conditions" $ do
@@ -320,35 +320,35 @@ test_functionIntegration =
                     { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.testSort Mock.cf)
-                            (makeCeilPredicate_ Mock.cg)
+                            (makeCeilPredicate Mock.testSort (Mock.f Mock.a))
+                            (makeCeilPredicate_ (Mock.g Mock.a))
                     , substitution = mempty
                     }
         actual <-
             evaluate
                 (Map.fromList
-                    [   ( AxiomIdentifier.Application Mock.cId
+                    [   ( AxiomIdentifier.Application Mock.cfId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
-                            , predicate = makeCeilPredicate_ Mock.cg
+                            , predicate = makeCeilPredicate_ (Mock.g Mock.a)
                             , substitution = mempty
                             }
                         )
-                    ,   ( AxiomIdentifier.Application Mock.dId
+                    ,   ( AxiomIdentifier.Application Mock.cgId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
-                            , predicate = makeCeilPredicate_ Mock.cf
+                            , predicate = makeCeilPredicate_ (Mock.f Mock.a)
                             , substitution = mempty
                             }
                         )
-                    ,   ( AxiomIdentifier.Application Mock.functionalConstr10Id
+                    ,   ( AxiomIdentifier.Application Mock.functional10Id
                         , axiomEvaluator
-                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.functional10 (mkElemVar Mock.x))
                             (Mock.functional11 (mkElemVar Mock.x))
                         )
                     ]
                 )
-                (Mock.functionalConstr10 (Mock.functional20 Mock.c Mock.d))
+                (Mock.functional10 (Mock.functional20 Mock.cf Mock.cg))
         assertEqual "" expect actual
 
     , testCase "Reevaluates user-defined function results." $ do
@@ -362,10 +362,10 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.fromList
-                    [   ( AxiomIdentifier.Application Mock.cId
-                        , axiomEvaluator Mock.c Mock.d
+                    [   ( AxiomIdentifier.Application Mock.cfId
+                        , axiomEvaluator Mock.cf Mock.cg
                         )
-                    ,   ( AxiomIdentifier.Application Mock.dId
+                    ,   ( AxiomIdentifier.Application Mock.cgId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate =
@@ -375,7 +375,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f Mock.c)
+                (Mock.f Mock.cf)
         assertEqual "" expect actual
 
     , testCase "Merges substitutions with reevaluation ones." $ do
@@ -395,9 +395,9 @@ test_functionIntegration =
         actual <-
             evaluate
                 (Map.fromList
-                    [   ( AxiomIdentifier.Application Mock.cId
+                    [   ( AxiomIdentifier.Application Mock.cfId
                         , appliedMockEvaluator Conditional
-                            { term = Mock.d
+                            { term = Mock.cg
                             , predicate = makeTruePredicate_
                             , substitution = Substitution.unsafeWrap
                                 [   ( ElemVar Mock.x
@@ -406,7 +406,7 @@ test_functionIntegration =
                                 ]
                             }
                         )
-                    ,   ( AxiomIdentifier.Application Mock.dId
+                    ,   ( AxiomIdentifier.Application Mock.cgId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate = makeTruePredicate_
@@ -419,7 +419,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f Mock.c)
+                (Mock.f Mock.cf)
         assertEqual "" expect actual
 
     , testCase "Simplifies substitution-predicate." $ do

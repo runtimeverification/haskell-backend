@@ -27,6 +27,7 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -43,7 +44,6 @@ import Kore.Step.Simplification.Simplify
     , SimplifierVariable
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-import qualified Kore.Unification.Substitution as Substitution
 
 {- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
 

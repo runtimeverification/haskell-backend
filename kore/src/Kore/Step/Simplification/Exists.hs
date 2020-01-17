@@ -63,6 +63,10 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
     , pattern Equals_
@@ -95,10 +99,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
@@ -219,6 +219,7 @@ makeEvaluate sideCondition variables original = do
                         , Conditional.substitution = freeSubstitution
                         }
                     else makeEvaluateBoundRight
+                        sideCondition
                         variable
                         freeSubstitution
                         normalized
@@ -339,12 +340,14 @@ See also: 'quantifyPattern'
 makeEvaluateBoundRight
     :: forall variable simplifier
     . (SimplifierVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable  -- ^ variable to be quantified
+    => SideCondition variable
+    -> ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundRight variable freeSubstitution normalized = do
+makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     orCondition <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
+        sideCondition
         (MultiAnd.make
             [   OrCondition.fromCondition quantifyCondition
             ,   OrCondition.fromCondition
@@ -425,6 +428,6 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     quantifyTerm = TermLike.hasFreeVariable (ElemVar variable) term
     predicate' =
         Predicate.makeAndPredicate predicate
-        $ Predicate.fromSubstitution substitution
+        $ Substitution.toPredicate substitution
     quantifyPredicate =
         Predicate.hasFreeVariable (ElemVar variable) predicate'

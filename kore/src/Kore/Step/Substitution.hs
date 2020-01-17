@@ -28,14 +28,14 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Unification.Substitution
-    ( Substitution
-    )
 import Kore.Unification.Unify
     ( SimplifierVariable
     )
@@ -44,10 +44,11 @@ import Kore.Unification.Unify
 normalize
     :: forall variable term simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Conditional variable term
+    => SideCondition variable
+    -> Conditional variable term
     -> BranchT simplifier (Conditional variable term)
-normalize conditional@Conditional { substitution } = do
-    results <- Monad.Trans.lift $ simplifySubstitution substitution
+normalize sideCondition conditional@Conditional { substitution } = do
+    results <- Monad.Trans.lift $ simplifySubstitution sideCondition substitution
     scatter (applyTermPredicate <$> results)
   where
     applyTermPredicate =
