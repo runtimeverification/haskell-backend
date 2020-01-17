@@ -1,6 +1,6 @@
 module SEARCH
 
-  import DOMAINS
+  imports BOOL
 
   syntax S
     ::= "initial"

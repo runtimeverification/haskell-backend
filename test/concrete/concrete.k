@@ -1,5 +1,5 @@
 module CONCRETE
-  imports DOMAINS
+  imports BOOL
 
   syntax Val ::= "a"
 
