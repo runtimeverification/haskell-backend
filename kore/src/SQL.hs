@@ -106,18 +106,13 @@ insertUniqueRow conn a =
 newtype TableName = TableName { getTableName :: String }
 
 createTableAux :: SQLite.Connection -> TableName -> [(Text, ColumnDef)] -> IO ()
-createTableAux conn tableName fields = do
+createTableAux conn tableName fields =
     SQLite.execute_ conn $ SQLite.Query $ Text.unwords
         [ "CREATE TABLE IF NOT EXISTS"
         , (quotes . Text.pack) (getTableName tableName)
         , parens (sepBy ", " columns)
         ]
   where
-    quotes str = Text.cons '"' (Text.snoc str '"')
-    parens str = Text.cons '(' (Text.snoc str ')')
-    sepBy _   [      ] = Text.empty
-    sepBy _   [x     ] = x
-    sepBy sep (x : xs) = x <> sep <> sepBy sep xs
     idField =
         ("id", ColumnDef { columnType, columnConstraints })
       where
@@ -228,11 +223,6 @@ insertRowAux conn tableName fields = do
     SQLite.executeNamed conn query (map (uncurry (SQLite.:=)) params)
     SQL.Key <$> SQLite.lastInsertRowId conn
   where
-    quotes str = Text.cons '"' (Text.snoc str '"')
-    parens str = Text.cons '(' (Text.snoc str ')')
-    sepBy _   [      ] = Text.empty
-    sepBy _   [x     ] = x
-    sepBy sep (x : xs) = x <> sep <> sepBy sep xs
     names = fst <$> params
     params = map (Bifunctor.first $ Text.pack . (:) ':') fields'
     fields' = ("id", SQLite.SQLNull) : fields
@@ -340,16 +330,23 @@ selectRowAux conn tableName fields = do
         getKey : _ -> (return . Just) SQL.Key { getKey }
         [] -> return Nothing
   where
-    quotes str = Text.cons '"' (Text.snoc str '"')
-    sepBy _   [      ] = Text.empty
-    sepBy _   [x     ] = x
-    sepBy sep (x : xs) = x <> sep <> sepBy sep xs
     exprs = map expr fields
     expr (columnName, _) =
         Text.unwords [ Text.pack columnName, "IS", paramName columnName ]
     params = map (namedParam . Bifunctor.first paramName) fields
     namedParam = uncurry (SQLite.:=)
     paramName = Text.pack . (:) ':'
+
+quotes :: Text -> Text
+quotes str = Text.cons '"' (Text.snoc str '"')
+
+sepBy :: Text -> [Text] -> Text
+sepBy _   [      ] = Text.empty
+sepBy _   [x     ] = x
+sepBy sep (x : xs) = x <> sep <> sepBy sep xs
+
+parens :: Text -> Text
+parens str = Text.cons '(' (Text.snoc str ')')
 
 selectRowNP
     :: forall table xs
@@ -370,7 +367,7 @@ selectRowGeneric
     => SQLite.Connection
     -> table
     -> IO (Maybe (Key table))
-selectRowGeneric conn table = do
+selectRowGeneric conn table =
     selectRowNP conn (tableNameSOP proxy) table
   where
     proxy = pure @SOP.Proxy table
