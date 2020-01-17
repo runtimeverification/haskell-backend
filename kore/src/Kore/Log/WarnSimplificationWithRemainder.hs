@@ -65,11 +65,7 @@ instance Unparse Results where
 
 instance SQL.Column Results where
     defineColumn = SQL.defineTextColumn
-    toColumn conn =
-        SQL.toColumn conn
-        . Pretty.renderText
-        . Pretty.layoutOneLine
-        . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 newtype Remainders = Remainders { getRemainders :: OrPattern Variable }
 
@@ -79,11 +75,7 @@ instance Unparse Remainders where
 
 instance SQL.Column Remainders where
     defineColumn = SQL.defineTextColumn
-    toColumn conn =
-        SQL.toColumn conn
-        . Pretty.renderText
-        . Pretty.layoutOneLine
-        . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 toTermLike :: OrPattern Variable -> TermLike Variable
 toTermLike = worker . OrPattern.toPatterns

@@ -46,6 +46,7 @@ import SQL.Column
     , defineTextColumn
     )
 import qualified SQL.Column as Column
+import SQL.SQL as SQL
 
 newtype Key a = Key { getKey :: Int64 }
     deriving (Eq, Ord, Read, Show)
@@ -61,35 +62,34 @@ instance Debug (Key a)
 instance Diff (Key a)
 
 instance Column (Key a) where
-    defineColumn conn _ = defineColumn conn (Proxy @Int64)
-    toColumn conn = toColumn conn . getKey
+    defineColumn _ = defineColumn (Proxy @Int64)
+    toColumn = toColumn . getKey
 
-defineForeignKeyColumn
-    :: Table a => SQLite.Connection -> proxy a -> IO ColumnDef
-defineForeignKeyColumn conn proxy = do
-    createTable conn proxy
-    defineColumn conn (Proxy @Int64)
+defineForeignKeyColumn :: Table a => proxy a -> SQL ColumnDef
+defineForeignKeyColumn proxy = do
+    createTable proxy
+    defineColumn (Proxy @Int64)
 
-toForeignKeyColumn :: Table a => SQLite.Connection -> a -> IO SQLite.SQLData
-toForeignKeyColumn conn a =
-    insertUniqueRow conn a >>= toColumn conn
+toForeignKeyColumn :: Table table => table -> SQL SQLite.SQLData
+toForeignKeyColumn a =
+    insertUniqueRow a >>= toColumn
 
 class Table a where
-    createTable :: SQLite.Connection -> proxy a -> IO ()
+    createTable :: proxy a -> SQL ()
 
-    insertRow :: SQLite.Connection -> a -> IO (Key a)
+    insertRow :: a -> SQL (Key a)
 
-    selectRow :: SQLite.Connection -> a -> IO (Maybe (Key a))
+    selectRow :: a -> SQL (Maybe (Key a))
 
-insertUniqueRow :: Table a => SQLite.Connection -> a -> IO (Key a)
-insertUniqueRow conn a =
-    Monad.maybeM (insertRow conn a) return (selectRow conn a)
+insertUniqueRow :: Table a => a -> SQL (Key a)
+insertUniqueRow a =
+    Monad.maybeM (insertRow a) return (selectRow a)
 
 newtype TableName = TableName { getTableName :: String }
 
-createTableAux :: SQLite.Connection -> TableName -> [(Text, ColumnDef)] -> IO ()
-createTableAux conn tableName fields =
-    SQLite.execute_ conn $ SQLite.Query $ Text.unwords
+createTableAux :: TableName -> [(Text, ColumnDef)] -> SQL ()
+createTableAux tableName fields = do
+    SQL.execute_ $ SQLite.Query $ Text.unwords
         [ "CREATE TABLE IF NOT EXISTS"
         , (quotes . Text.pack) (getTableName tableName)
         , parens (sepBy ", " columns)
@@ -109,11 +109,10 @@ createTableAux conn tableName fields =
             )
 
 insertRowAux
-    :: SQLite.Connection
-    -> TableName
+    :: TableName
     -> [(String, SQLite.SQLData)]
-    -> IO (Key a)
-insertRowAux conn tableName fields = do
+    -> SQL (Key a)
+insertRowAux tableName fields = do
     let query =
             (SQLite.Query . Text.unwords)
                 [ "INSERT INTO"
@@ -121,19 +120,18 @@ insertRowAux conn tableName fields = do
                 , "VALUES"
                 , parens (sepBy ", " names)
                 ]
-    SQLite.executeNamed conn query (map (uncurry (SQLite.:=)) params)
-    Key <$> SQLite.lastInsertRowId conn
+    SQL.executeNamed query (map (uncurry (SQLite.:=)) params)
+    Key <$> SQL.lastInsertRowId
   where
     names = fst <$> params
     params = map (Bifunctor.first $ Text.pack . (:) ':') fields'
     fields' = ("id", SQLite.SQLNull) : fields
 
 selectRowAux
-    :: SQLite.Connection
-    -> TableName
+    :: TableName
     -> [(String, SQLite.SQLData)]
-    -> IO (Maybe (Key a))
-selectRowAux conn tableName fields = do
+    -> SQL (Maybe (Key a))
+selectRowAux tableName fields = do
     let query =
             (SQLite.Query . Text.unwords)
                 [ "SELECT (id) FROM"
@@ -141,7 +139,7 @@ selectRowAux conn tableName fields = do
                 , "WHERE"
                 , sepBy " AND " exprs
                 ]
-    ids <- SQLite.queryNamed conn query params
+    ids <- SQL.queryNamed query params
     case SQLite.fromOnly <$> ids of
         getKey : _ -> (return . Just) Key { getKey }
         [] -> return Nothing

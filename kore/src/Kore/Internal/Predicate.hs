@@ -167,8 +167,8 @@ instance
 type Predicate variable = GenericPredicate (TermLike variable)
 
 instance InternalVariable variable => SQL.Column (Predicate variable) where
-    defineColumn conn _ = SQL.defineColumn conn (Proxy @(TermLike variable))
-    toColumn conn (GenericPredicate termLike) = SQL.toColumn conn termLike
+    defineColumn _ = SQL.defineColumn (Proxy @(TermLike variable))
+    toColumn (GenericPredicate termLike) = SQL.toColumn termLike
 
 {- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
 sometimes occurs when, say, using Predicates as Traversable.

@@ -167,8 +167,8 @@ instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
 instance InternalVariable variable => SQL.Column (Substitution variable) where
-    defineColumn conn _ = SQL.defineColumn conn (Proxy @(Predicate variable))
-    toColumn conn = SQL.toColumn conn . toPredicate
+    defineColumn _ = SQL.defineColumn (Proxy @(Predicate variable))
+    toColumn = SQL.toColumn . toPredicate
 
 type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
 

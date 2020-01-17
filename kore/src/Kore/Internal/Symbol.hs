@@ -119,11 +119,7 @@ instance Synthetic Sort (Application Symbol) where
 
 instance SQL.Column Symbol where
     defineColumn = SQL.defineTextColumn
-    toColumn conn =
-        SQL.toColumn conn
-        . Pretty.renderText
-        . Pretty.layoutOneLine
-        . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 toSymbolOrAlias :: Symbol -> SymbolOrAlias
 toSymbolOrAlias symbol =

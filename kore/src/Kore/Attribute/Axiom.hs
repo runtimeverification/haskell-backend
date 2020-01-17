@@ -197,5 +197,5 @@ instance ParseAttributes Axiom where
             ]
 
 instance SQL.Column Axiom where
-    defineColumn conn _ = SQL.defineColumn conn (Proxy @AttributePattern)
-    toColumn conn = SQL.toColumn conn . toAttributes
+    defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
+    toColumn = SQL.toColumn . toAttributes

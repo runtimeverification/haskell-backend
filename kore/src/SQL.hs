@@ -15,6 +15,7 @@ module SQL
     , insertRowUnwrapped
     , selectRowUnwrapped
     -- * Re-exports
+    , module SQL.SQL
     , module SQL.Table
     ) where
 
@@ -23,10 +24,10 @@ import Data.Generics.Wrapped
 import Data.Proxy
     ( Proxy (..)
     )
-import qualified Database.SQLite.Simple as SQLite
 import qualified Generics.SOP as SOP
 
 import qualified SQL.SOP
+import SQL.SQL
 import SQL.Table
 
 createTableWrapper
@@ -35,11 +36,10 @@ createTableWrapper
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
     => SOP.All Column fields
     => Lens.Iso' outer inner
-    -> SQLite.Connection
     -> proxy outer
-    -> IO ()
-createTableWrapper _ conn proxy =
-    SQL.SOP.createTable conn tableName fields
+    -> SQL ()
+createTableWrapper _ proxy =
+    SQL.SOP.createTable tableName fields
   where
     proxy' = Proxy @inner
     tableName = SQL.SOP.tableNameGeneric proxy
@@ -51,20 +51,18 @@ createTableUnwrapped
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
     => SOP.All Column fields
     => Wrapped outer outer inner inner
-    => SQLite.Connection
-    -> proxy outer
-    -> IO ()
+    => proxy outer
+    -> SQL ()
 createTableUnwrapped = createTableWrapper _Unwrapped
 
 createTableGeneric
     :: forall proxy table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
-    => SQLite.Connection
-    -> proxy table
-    -> IO ()
-createTableGeneric conn proxy =
-    SQL.SOP.createTable conn tableName fields
+    => proxy table
+    -> SQL ()
+createTableGeneric proxy =
+    SQL.SOP.createTable tableName fields
   where
     tableName = SQL.SOP.tableNameGeneric proxy
     fields = SQL.SOP.productFields proxy
@@ -73,9 +71,8 @@ insertRowGeneric
     :: forall table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
-    => SQLite.Connection
-    -> table
-    -> IO (Key table)
+    => table
+    -> SQL (Key table)
 insertRowGeneric =
     SQL.SOP.insertRow tableName
   where
@@ -87,35 +84,32 @@ insertRowWrapper
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
     => SOP.All Column fields
     => Lens.Iso' outer inner
-    -> SQLite.Connection
     -> outer
-    -> IO (Key outer)
-insertRowWrapper iso conn table =
+    -> SQL (Key outer)
+insertRowWrapper iso table =
     fmap (Lens.review iso)
-    <$> SQL.SOP.insertRow tableName conn (Lens.view iso table)
+    <$> SQL.SOP.insertRow tableName (Lens.view iso table)
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
 
 insertRowUnwrapped
-    :: forall s a fields
-    .  (SOP.HasDatatypeInfo s)
-    => (SOP.HasDatatypeInfo a, SOP.IsProductType a fields)
+    :: forall outer inner fields
+    .  (SOP.HasDatatypeInfo outer)
+    => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
     => SOP.All Column fields
-    => Wrapped s s a a
-    => SQLite.Connection
-    -> s
-    -> IO (Key s)
+    => Wrapped outer outer inner inner
+    => outer
+    -> SQL (Key outer)
 insertRowUnwrapped = insertRowWrapper _Unwrapped
 
 selectRowGeneric
     :: forall table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
-    => SQLite.Connection
-    -> table
-    -> IO (Maybe (Key table))
-selectRowGeneric conn table =
-    SQL.SOP.selectRow conn tableName table
+    => table
+    -> SQL (Maybe (Key table))
+selectRowGeneric table =
+    SQL.SOP.selectRow tableName table
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @table)
 
@@ -125,12 +119,11 @@ selectRowWrapper
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
     => SOP.All Column fields
     => Lens.Iso' outer inner
-    -> SQLite.Connection
     -> outer
-    -> IO (Maybe (Key outer))
-selectRowWrapper iso conn table =
+    -> SQL (Maybe (Key outer))
+selectRowWrapper iso table =
     (fmap . fmap) (Lens.review iso)
-    <$> SQL.SOP.selectRow conn tableName (Lens.view iso table)
+    <$> SQL.SOP.selectRow tableName (Lens.view iso table)
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
 
@@ -140,7 +133,6 @@ selectRowUnwrapped
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
     => SOP.All Column fields
     => Wrapped outer outer inner inner
-    => SQLite.Connection
-    -> outer
-    -> IO (Maybe (Key outer))
+    => outer
+    -> SQL (Maybe (Key outer))
 selectRowUnwrapped = selectRowWrapper _Unwrapped

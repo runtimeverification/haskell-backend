@@ -34,6 +34,8 @@ import Data.Text
 import qualified Database.SQLite.Simple as SQLite
 import qualified GHC.Generics as GHC
 
+import SQL.SQL
+
 newtype TypeName = TypeName { getTypeName :: Text }
     deriving (Eq, Ord, Read, Show)
 
@@ -69,24 +71,24 @@ columnNullable :: ColumnDef -> ColumnDef
 columnNullable = Lens.over (field @"columnConstraints") (Set.\\ notNull)
 
 class Column a where
-    defineColumn :: SQLite.Connection -> proxy a -> IO ColumnDef
-    toColumn :: SQLite.Connection -> a -> IO SQLite.SQLData
+    defineColumn :: proxy a -> SQL ColumnDef
+    toColumn :: a -> SQL SQLite.SQLData
     -- TODO (thomas.tuegel): Implement this!
     -- fromColumn :: SQLite.Connection -> SQLite.SQLData -> IO a
 
 instance Column Int64 where
-    defineColumn _ _ = return (columnNotNull $ columnDef typeInteger)
-    toColumn _ = return . SQLite.SQLInteger
+    defineColumn _ = return (columnNotNull $ columnDef typeInteger)
+    toColumn = return . SQLite.SQLInteger
 
 instance Column Text where
-    defineColumn _ _ = return (columnNotNull $ columnDef typeText)
-    toColumn _ = return . SQLite.SQLText
+    defineColumn _ = return (columnNotNull $ columnDef typeText)
+    toColumn = return . SQLite.SQLText
 
 instance Column a => Column (Maybe a) where
-    defineColumn conn _ = do
-        colDef <- defineColumn conn (Proxy @a)
+    defineColumn _ = do
+        colDef <- defineColumn (Proxy @a)
         return (columnNullable colDef)
-    toColumn conn = maybe (return SQLite.SQLNull) (toColumn conn)
+    toColumn = maybe (return SQLite.SQLNull) toColumn
 
-defineTextColumn :: SQLite.Connection -> proxy a -> IO ColumnDef
-defineTextColumn conn _ = defineColumn conn (Proxy @Text)
+defineTextColumn :: proxy a -> SQL ColumnDef
+defineTextColumn _ = defineColumn (Proxy @Text)

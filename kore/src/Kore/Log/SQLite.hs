@@ -10,10 +10,16 @@ module Kore.Log.SQLite
     , withLogSQLite
     ) where
 
-import qualified Control.Monad as Monad
+import Colog
+    ( unLogAction
+    )
 import qualified Control.Monad.Catch as Exception
-import qualified Control.Monad.Extra as Extra
+import qualified Control.Monad.Extra as Monad
+import Control.Monad.Reader
+    ( runReaderT
+    )
 import Data.Default
+import qualified Data.Foldable as Foldable
 import Data.Proxy
 import qualified Database.SQLite.Simple as SQLite
 import qualified Options.Applicative as Options
@@ -35,6 +41,9 @@ import Kore.Log.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder
     )
 import Log
+import SQL
+    ( SQL
+    )
 import qualified SQL
 
 newtype LogSQLiteOptions =
@@ -67,30 +76,35 @@ withLogSQLite options cont =
     case sqlog of
         Nothing -> cont mempty
         Just filePath -> do
-            Extra.whenM (Directory.doesPathExist filePath)
+            Monad.whenM
+                (Directory.doesPathExist filePath)
                 (Directory.removeFile filePath)
             Exception.bracket (SQLite.open filePath) SQLite.close $ \conn -> do
-                declareEntries conn
-                cont (logSQLite conn)
+                runReaderT (SQL.getSQLT declareEntries) conn
+                cont (lowerLogAction conn logSQLite)
   where
     LogSQLiteOptions { sqlog } = options
+    lowerLogAction conn logAction =
+        LogAction $ \entry -> do
+            let sqlt = unLogAction logAction entry
+            runReaderT (SQL.getSQLT sqlt) conn
 
-declareEntries :: SQLite.Connection -> IO ()
-declareEntries conn = foldMapEntries (SQL.createTable conn)
+declareEntries :: SQL ()
+declareEntries = foldMapEntries SQL.createTable
 
-logSQLite :: SQLite.Connection -> LogAction IO SomeEntry
-logSQLite conn =
+logSQLite :: LogAction SQL SomeEntry
+logSQLite =
     foldMapEntries logEntry
   where
     logEntry
         :: forall entry
         .  (Entry entry, SQL.Table entry)
         => Proxy entry
-        -> LogAction IO SomeEntry
+        -> LogAction SQL SomeEntry
     logEntry _ = LogAction (maybeInsertRow . fromEntry @entry)
 
-    maybeInsertRow :: SQL.Table entry => Maybe entry -> IO ()
-    maybeInsertRow = maybe (return ()) (Monad.void . SQL.insertRow conn)
+    maybeInsertRow :: SQL.Table entry => Maybe entry -> SQL ()
+    maybeInsertRow = Foldable.traverse_ SQL.insertRow
 
 foldMapEntries
     :: Monoid r

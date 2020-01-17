@@ -423,11 +423,7 @@ instance HasConstructorLike (TermLike variable) where
 
 instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     defineColumn = SQL.defineTextColumn
-    toColumn conn =
-        SQL.toColumn conn
-        . Pretty.renderText
-        . Pretty.layoutOneLine
-        . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)

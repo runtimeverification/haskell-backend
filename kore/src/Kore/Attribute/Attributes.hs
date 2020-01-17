@@ -23,7 +23,6 @@ import Data.Default
 import Data.Hashable
     ( Hashable
     )
-import Data.Proxy
 import Data.Text
     ( Text
     )
@@ -103,9 +102,9 @@ instance Default Attributes where
     def = Attributes []
 
 instance SQL.Column Attributes where
-    defineColumn conn _ = SQL.defineColumn conn (Proxy @Text)
-    toColumn conn =
-        SQL.toColumn conn
+    defineColumn = SQL.defineTextColumn
+    toColumn =
+        SQL.toColumn
         . Pretty.renderText
         . Pretty.layoutOneLine
         . Pretty.hsep

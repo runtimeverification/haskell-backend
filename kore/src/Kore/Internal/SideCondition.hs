@@ -55,11 +55,7 @@ newtype SideCondition variable =
 
 instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
-    toColumn conn =
-        SQL.toColumn conn
-        . Pretty.renderText
-        . Pretty.layoutOneLine
-        . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance TopBottom (SideCondition variable) where
     isTop sideCondition@(SideCondition _) =

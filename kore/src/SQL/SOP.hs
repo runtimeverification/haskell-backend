@@ -32,6 +32,7 @@ import Generics.SOP
 import qualified Generics.SOP as SOP
 
 import SQL.Column
+import SQL.SQL
 import SQL.Table hiding
     ( createTable
     , insertRow
@@ -41,18 +42,17 @@ import SQL.Table hiding
 createTable
     :: forall fields
     .  SOP.All Column fields
-    => SQLite.Connection
-    -> TableName
+    => TableName
     -> NP SOP.FieldInfo fields
-    -> IO ()
-createTable conn tableName fields =
-    createTableAux conn tableName =<< sequence columns
+    -> SQL ()
+createTable tableName fields =
+    createTableAux tableName =<< sequence columns
   where
-    columns :: [IO (Text, ColumnDef)]
+    columns :: [SQL (Text, ColumnDef)]
     columns = SOP.hcollapse (SOP.hcmap (Proxy @Column) column fields)
-    column :: Column a => SOP.FieldInfo a -> K (IO (Text, ColumnDef)) a
+    column :: Column a => SOP.FieldInfo a -> K (SQL (Text, ColumnDef)) a
     column fieldInfo = K $ do
-        colDef <- defineColumn conn fieldInfo
+        colDef <- defineColumn fieldInfo
         return (fieldName fieldInfo, colDef)
     fieldName = Text.pack . SOP.fieldName
 
@@ -89,12 +89,11 @@ insertRow
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
     => TableName
-    -> SQLite.Connection
     -> table
-    -> IO (Key table)
-insertRow tableName conn table = do
-    columns <- productColumns conn table
-    SQL.Table.insertRowAux conn tableName columns
+    -> SQL (Key table)
+insertRow tableName table = do
+    columns <- productColumns table
+    SQL.Table.insertRowAux tableName columns
 
 productTypeFrom
     :: forall table fields
@@ -112,10 +111,9 @@ productColumns
     :: forall table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
-    => SQLite.Connection
-    -> table
-    -> IO [(String, SQLite.SQLData)]
-productColumns conn table =
+    => table
+    -> SQL [(String, SQLite.SQLData)]
+productColumns table =
     sequence (SOP.hcollapse columns)
   where
     proxy = pure @SOP.Proxy table
@@ -126,19 +124,18 @@ productColumns conn table =
         :: Column a
         => SOP.FieldInfo a
         -> I a
-        -> K (IO (String, SQLite.SQLData)) a
+        -> K (SQL (String, SQLite.SQLData)) a
     column info (I x) = K $ do
-        x' <- toColumn conn x
+        x' <- toColumn x
         return (SOP.fieldName info, x')
 
 selectRow
     :: forall table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
-    => SQLite.Connection
-    -> TableName
+    => TableName
     -> table
-    -> IO (Maybe (Key table))
-selectRow conn tableName table = do
-    columns <- productColumns conn table
-    selectRowAux conn tableName columns
+    -> SQL (Maybe (Key table))
+selectRow tableName table = do
+    columns <- productColumns table
+    selectRowAux tableName columns
