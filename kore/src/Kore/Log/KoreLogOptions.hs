@@ -186,5 +186,4 @@ readSeverity =
         "info"     -> pure Info
         "warning"  -> pure Warning
         "error"    -> pure Error
-        "critical" -> pure Critical
         _          -> Nothing
