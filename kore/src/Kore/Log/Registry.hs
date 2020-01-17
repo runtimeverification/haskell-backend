@@ -60,6 +60,9 @@ import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugAxiomEvaluation
     ( DebugAxiomEvaluation
     )
+import Kore.Log.DebugEvaluateCondition
+    ( DebugEvaluateCondition
+    )
 import Kore.Log.DebugProofState
     ( DebugProofState
     )
@@ -69,9 +72,6 @@ import Kore.Log.DebugSolver
     )
 import Kore.Log.ErrorException
     ( ErrorException
-    )
-import Kore.Log.InfoEvaluateCondition
-    ( InfoEvaluateCondition
     )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
@@ -110,7 +110,7 @@ registry =
                 , register warnBottomHookType
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
-                , register logInfoEvaluateConditionType
+                , register logDebugEvaluateConditionType
                 , register criticalExecutionErrorType
                 , register logMessageType
                 ]
@@ -147,7 +147,7 @@ debugAppliedRuleType
   , warnBottomHookType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
-  , logInfoEvaluateConditionType
+  , logDebugEvaluateConditionType
   , criticalExecutionErrorType
   , logMessageType
   :: SomeTypeRep
@@ -170,8 +170,8 @@ warnFunctionWithoutEvaluatorsType =
     someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
 warnSimplificationWithRemainderType =
     someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
-logInfoEvaluateConditionType =
-    someTypeRep (Proxy :: Proxy InfoEvaluateCondition)
+logDebugEvaluateConditionType =
+    someTypeRep (Proxy :: Proxy DebugEvaluateCondition)
 criticalExecutionErrorType =
     someTypeRep (Proxy :: Proxy ErrorException)
 logMessageType =
