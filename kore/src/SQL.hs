@@ -25,6 +25,7 @@ module SQL
     , selectRowUnwrapped
     -- * Re-exports
     , SQLite.Connection
+    , Proxy (..)
     , module SQL.Column
     ) where
 
@@ -36,6 +37,8 @@ import Data.Int
     ( Int64
     )
 import Data.Proxy
+    ( Proxy (..)
+    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
@@ -50,7 +53,9 @@ import Generics.SOP
     , Shape (..)
     )
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Debug
 import SQL.Column
     ( Column (..)
     , ColumnConstraint
@@ -63,6 +68,15 @@ import qualified SQL.Column as Column
 newtype Key a = Key { getKey :: Int64 }
     deriving (Eq, Ord, Read, Show)
     deriving (Functor, Foldable)
+    deriving (GHC.Generic)
+
+instance SOP.Generic (Key a)
+
+instance SOP.HasDatatypeInfo (Key a)
+
+instance Debug (Key a)
+
+instance Diff (Key a)
 
 instance Column (Key a) where
     defineColumn conn _ = defineColumn conn (Proxy @Int64)
