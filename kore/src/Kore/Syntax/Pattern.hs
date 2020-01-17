@@ -263,7 +263,6 @@ instance
         . Pretty.layoutOneLine
         . unparse
 
-
 fromPattern
     :: Pattern variable annotation
     -> Base
