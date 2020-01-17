@@ -289,13 +289,12 @@ log = do
         fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
 
 severity :: Parser Log.Severity
-severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
+severity = sDebug <|> sInfo <|> sWarning <|> sError
   where
     sDebug    = Log.Debug    <$ literal "debug"
     sInfo     = Log.Info     <$ literal "info"
     sWarning  = Log.Warning  <$ literal "warning"
     sError    = Log.Error    <$ literal "error"
-    sCritical = Log.Critical <$ literal "critical"
 
 parseLogEntries :: Parser EntryTypes
 parseLogEntries = do

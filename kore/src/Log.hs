@@ -8,6 +8,7 @@ module Log
     (
     -- * Entries
       module Log.Entry
+    , SomeEntry (..)
     -- * Interface
     , MonadLog (..)
     , WithLog
@@ -24,12 +25,12 @@ module Log
     , logInfo
     , logWarning
     , logError
-    , logCritical
     , logWith
     ) where
 
 import Colog
     ( LogAction (..)
+    , Severity (..)
     , (<&)
     )
 import Control.Monad.Catch
@@ -177,14 +178,6 @@ logError
     => Text
     -> m ()
 logError = log Error
-
--- | Logs using 'Critical' log level. See 'log'.
-logCritical
-    :: forall m
-    . (WithLog LogMessage m)
-    => Text
-    -> m ()
-logCritical = log Critical
 
 -- ---------------------------------------------------------------------
 -- * LoggerT

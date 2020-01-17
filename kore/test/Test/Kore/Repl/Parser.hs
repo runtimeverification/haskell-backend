@@ -447,9 +447,9 @@ logTests =
             , Log.logType = Log.LogStdErr
             , Log.logEntries = Set.singleton debugAppliedRuleType
             }
-    , "log critical [DebugAppliedRule] stderr"
+    , "log error [DebugAppliedRule] stderr"
         `parsesTo_` Log def
-            { Log.logLevel = Log.Critical
+            { Log.logLevel = Log.Error
             , Log.logType = Log.LogStdErr
             , Log.logEntries = Set.singleton debugAppliedRuleType
             }

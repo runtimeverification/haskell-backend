@@ -265,14 +265,8 @@ swappableLogger mvar =
 
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
 defaultLogPretty (SomeEntry entry) =
-    Pretty.hsep
-        [ Pretty.brackets (Pretty.pretty . entrySeverity $ entry)
-        , ":"
-        , Pretty.brackets
-            . Pretty.pretty
-            . lookupTextFromTypeWithError
-            . toSomeEntryType
-            $ entry
-        , ":"
-        , Pretty.pretty entry
-        ]
+    header Pretty.<+> Pretty.pretty entry
+  where
+    severity = prettySeverity (entrySeverity entry)
+    type' = Pretty.pretty (lookupTextFromTypeWithError $ toSomeEntryType entry)
+    header = severity Pretty.<+> Pretty.parens type' <> Pretty.colon

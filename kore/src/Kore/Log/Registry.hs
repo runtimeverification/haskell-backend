@@ -51,9 +51,6 @@ import Type.Reflection
     , typeOf
     )
 
-import Kore.Log.CriticalExecutionError
-    ( CriticalExecutionError
-    )
 import Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules
     )
@@ -69,6 +66,9 @@ import Kore.Log.DebugProofState
 import Kore.Log.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
+    )
+import Kore.Log.ErrorException
+    ( ErrorException
     )
 import Kore.Log.InfoEvaluateCondition
     ( InfoEvaluateCondition
@@ -173,7 +173,7 @@ warnSimplificationWithRemainderType =
 logInfoEvaluateConditionType =
     someTypeRep (Proxy :: Proxy InfoEvaluateCondition)
 criticalExecutionErrorType =
-    someTypeRep (Proxy :: Proxy CriticalExecutionError)
+    someTypeRep (Proxy :: Proxy ErrorException)
 logMessageType =
     someTypeRep (Proxy :: Proxy LogMessage)
 
