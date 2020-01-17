@@ -5,7 +5,8 @@ License     : NCSA
 -}
 
 module Kore.Log.DebugAppliedRule
-    ( DebugAppliedRule
+    ( Equality (..)
+    , DebugAppliedRule (..)
     , debugAppliedRule
     , DebugAppliedRuleOptions
     , parseDebugAppliedRuleOptions
