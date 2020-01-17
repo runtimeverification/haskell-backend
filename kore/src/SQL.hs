@@ -1,4 +1,8 @@
-{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
+{-|
+Copyright   : (c) Runtime Verification, 2020
+License     : NCSA
+
+-}
 
 module SQL
     ( Key (..)
