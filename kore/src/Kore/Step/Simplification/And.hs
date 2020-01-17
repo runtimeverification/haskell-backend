@@ -232,10 +232,10 @@ applyAndIdempotenceAndFindContradictions patt =
   where
     (terms, negatedTerms) = splitIntoTermsAndNegations patt
     noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
-    mkAndSimplified a b
-      | TermLike.isSimplified a, TermLike.isSimplified b =
-        TermLike.markSimplified $ mkAnd a b
-      | otherwise = mkAnd a b
+    mkAndSimplified a b =
+        TermLike.setSimplified
+            (TermLike.simplifiedAttribute a <> TermLike.simplifiedAttribute b)
+            (mkAnd a b)
 
 splitIntoTermsAndNegations
     :: forall variable

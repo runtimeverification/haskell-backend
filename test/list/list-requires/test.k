@@ -1,6 +1,8 @@
 module TEST
 
-  imports DOMAINS
+  imports INT
+  imports LIST
+  imports MAP
   imports COLLECTIONS
 
   syntax Val ::= "a" | "b"

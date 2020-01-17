@@ -488,7 +488,8 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = asInternalSet $
-                    emptyNormalizedSet `with` OpaqueSet fOfXset
+                    emptyNormalizedSet
+                    `with` OpaqueSet (TermLike.markSimplified fOfXset)
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
@@ -511,7 +512,7 @@ test_ceilSimplification =
                 ]
         actual <- makeEvaluate
             Conditional
-                { term = asInternalSet $
+                { term = TermLike.markSimplified $ asInternalSet $
                     emptyNormalizedSet
                         `with` OpaqueSet fOfXset
                         `with` OpaqueSet fOfYset
@@ -528,7 +529,7 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
         actual <- (makeEvaluate . Pattern.fromTermLike)
-            (Mock.sortInjection Mock.topSort fOfA)
+            (Mock.sortInjection Mock.topSort (TermLike.markSimplified fOfA))
         assertEqual "ceil(f(a))" expected actual
         assertBool "simplified" (OrPattern.isSimplified actual)
     ]

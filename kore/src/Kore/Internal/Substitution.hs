@@ -18,6 +18,7 @@ module Kore.Internal.Substitution
     , modify
     , Kore.Internal.Substitution.mapVariables
     , isNormalized
+    , simplifiedAttribute
     , null
     , variables
     , unsafeWrap
@@ -61,6 +62,9 @@ import Prelude hiding
     )
 
 import Kore.Attribute.Pattern.FreeVariables
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified (..)
+    )
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
@@ -336,6 +340,12 @@ mapVariables variableMapper =
 isNormalized :: Substitution variable -> Bool
 isNormalized (Substitution _)           = False
 isNormalized (NormalizedSubstitution _) = True
+
+simplifiedAttribute
+    :: Substitution variable -> Attribute.Simplified
+simplifiedAttribute (Substitution _) = Attribute.NotSimplified
+simplifiedAttribute (NormalizedSubstitution normalized) =
+    Foldable.foldMap TermLike.simplifiedAttribute normalized
 
 -- | Returns true iff the substitution is empty.
 null :: Substitution variable -> Bool

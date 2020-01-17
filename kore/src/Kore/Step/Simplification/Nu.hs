@@ -15,7 +15,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
     ( fromTermLike
-    , isSimplified
+    , simplifiedAttribute
     , toTermLike
     )
 import Kore.Internal.TermLike
@@ -25,7 +25,7 @@ import Kore.Internal.TermLike
     , mkNu
     )
 import qualified Kore.Internal.TermLike as TermLike
-    ( markSimplified
+    ( setSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 
@@ -49,6 +49,6 @@ makeEvaluate
     -> Pattern variable
 makeEvaluate variable patt =
     Pattern.fromTermLike
-    $ (if Pattern.isSimplified patt then TermLike.markSimplified else id)
+    $ TermLike.setSimplified (Pattern.simplifiedAttribute patt)
     $ mkNu variable
     $ Pattern.toTermLike patt
