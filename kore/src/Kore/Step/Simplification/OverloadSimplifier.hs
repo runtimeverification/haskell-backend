@@ -33,6 +33,9 @@ import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 
+{- | Data structure encapsulating functionality for handling overloaded
+symbols during unification.
+-}
 data OverloadSimplifier =
     OverloadSimplifier
         { isOverloading :: Symbol -> Symbol -> Bool
@@ -52,6 +55,10 @@ data OverloadSimplifier =
         -- ^ Find a common overload with result sort a subsort of the argument
         }
 
+{- | Builds an Overload Simplifier given a graph encoding the overload
+relation and one encoding the subsort relation. The latter is needed for
+'unifyOverloadWithinBound'.
+-}
 mkOverloadSimplifier
     :: OverloadGraph
     -> SortGraph

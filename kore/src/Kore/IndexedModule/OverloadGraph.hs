@@ -90,6 +90,14 @@ fromOverloads overloadPairsList =
     superOverloading subOverloading =
         Set.fromList [x | (x, y) <- overloadPairsList, y == subOverloading]
 
+{- | Builds an overload graph from the @overload@ attribute annotations
+associated to overloading equations in a verified module.
+
+Assumes the overloading relation is already transitive.
+
+Currently a 'MetadataTools' helper object is used to look-up
+sort and attribute information for symbols.
+-}
 fromIndexedModule
     :: VerifiedModule Attribute.Symbol Attribute.Axiom
     -> SmtMetadataTools Attribute.StepperAttributes

@@ -601,6 +601,7 @@ applicationAxiomSimplifier applicationSimplifier =
             (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)
+
 -- |Checks whether symbol is constructor or overloaded
 isConstructorOrOverloaded
     :: MonadSimplify unifier

@@ -22,4 +22,16 @@ module SIMPLE-LISTS
     syntax Defn ::= "d1" | "d2"
 
     rule d1 d2 => i1 i2
+
+    syntax EmptyStmt ::= "e"
+
+    syntax Instr ::= mkEmptyInstr() [function, functional]
+    rule mkEmptyInstr() => e
+
+    rule D:Defn Ds:Defns => D ~> Ds
+    rule e => .
+
+    rule .Stmts => .
+
+    configuration <k> $PGM:Stmts </k>
 endmodule
