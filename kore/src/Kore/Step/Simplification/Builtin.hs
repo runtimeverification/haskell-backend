@@ -26,7 +26,6 @@ import Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeFalsePredicate_
     )
@@ -50,19 +49,16 @@ simplifyBuiltin
     -> MultiOr (Conditional variable (TermLike variable))
 simplifyBuiltin =
     \case
-        Domain.BuiltinMap map' -> simplifyInternalMap normalizeInternalMap map'
-            -- case Domain.opaque . Domain.getNormalizedMap . Domain.builtinAcChild $ map' of
-            --     [opaqueElem] ->
-            --         let concrElem = Domain.concreteElements . Domain.getNormalizedMap . Domain.builtinAcChild $ map'
-            --             elemWithVar = Domain.elementsWithVariables . Domain.getNormalizedMap . Domain.builtinAcChild $ map'
-            --         in if concrElem == mempty && elemWithVar == mempty
-            --               then opaqueElem
-            --               else fmap mkBuiltin <$> simplifyInternalMap map'
-            --     _ -> fmap mkBuiltin <$> simplifyInternalMap map'
-        Domain.BuiltinList list' -> fmap mkBuiltin <$> simplifyInternalList list'
-        Domain.BuiltinSet set' -> fmap mkBuiltin <$> simplifyInternalSet set'
-        Domain.BuiltinInt int -> (return . pure . mkBuiltin) (Domain.BuiltinInt int)
-        Domain.BuiltinBool bool -> (return . pure . mkBuiltin) (Domain.BuiltinBool bool)
+        Domain.BuiltinMap map' ->
+            simplifyInternalMap normalizeInternalMap map'
+        Domain.BuiltinList list' ->
+            fmap mkBuiltin <$> simplifyInternalList list'
+        Domain.BuiltinSet set' ->
+            fmap mkBuiltin <$> simplifyInternalSet set'
+        Domain.BuiltinInt int ->
+            (return . pure . mkBuiltin) (Domain.BuiltinInt int)
+        Domain.BuiltinBool bool ->
+            (return . pure . mkBuiltin) (Domain.BuiltinBool bool)
         Domain.BuiltinString string ->
             (return . pure . mkBuiltin) (Domain.BuiltinString string)
 
@@ -79,13 +75,14 @@ simplifyInternal normalizer tOrPattern = do
 
 simplifyInternalMap
     :: InternalVariable variable
-    => (InternalMap (TermLike Concrete) (TermLike variable) -> NormalizedMapResult variable)
+    => ( InternalMap (TermLike Concrete) (TermLike variable)
+        -> NormalizedMapResult variable
+       )
     -> InternalMap (TermLike Concrete) (OrPattern variable)
     -> MultiOr (Conditional variable (TermLike variable))
 simplifyInternalMap normalizer tOrPattern = do
     conditional <- getCompose $ traverse Compose tOrPattern
-    -- let bottom = conditional `Conditional.andPredicate` makeFalsePredicate_
-    let normalized = normalizeMapResultToTerm . normalizer <$> conditional
+    let normalized = normalizedMapResultToTerm . normalizer <$> conditional
     return normalized
 
 data NormalizedMapResult variable =
@@ -93,15 +90,15 @@ data NormalizedMapResult variable =
     | SingleOpaqueElemResult (TermLike variable)
     | BottomResult
 
-normalizeMapResultToTerm
+normalizedMapResultToTerm
     :: InternalVariable variable
     => NormalizedMapResult variable
     -> TermLike variable
-normalizeMapResultToTerm (NormalizedMapResult map') =
+normalizedMapResultToTerm (NormalizedMapResult map') =
     mkBuiltin . Domain.BuiltinMap $ map'
-normalizeMapResultToTerm (SingleOpaqueElemResult opaqueElem) =
+normalizedMapResultToTerm (SingleOpaqueElemResult opaqueElem) =
     opaqueElem
-normalizeMapResultToTerm BottomResult =
+normalizedMapResultToTerm BottomResult =
     mkBottom_
 
 normalizeInternalMap
@@ -111,15 +108,15 @@ normalizeInternalMap
 normalizeInternalMap map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
         Just normalizedMap ->
-            case Domain.opaque . Domain.getNormalizedMap . Domain.builtinAcChild $ normalizedMap of
-                [opaqueElem] ->
-                    let concrElem = Domain.concreteElements . Domain.getNormalizedMap . Domain.builtinAcChild $ normalizedMap
-                        elemWithVar = Domain.elementsWithVariables . Domain.getNormalizedMap . Domain.builtinAcChild $ normalizedMap
-                    in if concrElem == mempty && elemWithVar == mempty
-                          then SingleOpaqueElemResult opaqueElem
-                          else NormalizedMapResult normalizedMap
-                _ -> NormalizedMapResult normalizedMap
+            maybe
+                (NormalizedMapResult normalizedMap)
+                SingleOpaqueElemResult
+                $ Domain.isSingleOpaqueElem
+                    . getNormalizedAc
+                    $ normalizedMap
         _ -> BottomResult
+  where
+    getNormalizedAc = Domain.getNormalizedMap . Domain.builtinAcChild
 
 simplifyInternalSet
     :: InternalVariable variable
