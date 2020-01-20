@@ -68,8 +68,8 @@ wrong.
 
 We could do a two-step simplification (not implemented at the time
 when this document is being written). Let's say `C` is the top-level condition
-(as mentioned above, `C` is either the top level condition from the
-previous rewrite step or `⊤` when evaluating the current top-level condition).
+(as mentioned above, when evaluating the current top-level condition, `C` is either the top level condition from the
+previous rewrite step or `⊤`).
 Then we do this:
 
 1. Let us say that a sub-term `σ` of a predicate `P` yields
