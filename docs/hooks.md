@@ -562,6 +562,15 @@ Takes a map and returns a set of its keys.
         [hook{}("MAP.keys")]
 ~~~
 
+### MAP.keys_list
+
+Takes a map and returns a set of its keys.
+
+~~~
+    hooked-symbol keys_list{}(Map{}) : List{}
+        [hook{}("MAP.keys_list")]
+~~~
+
 ### MAP.values
 
 Takes a map and returns a list of its values.

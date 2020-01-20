@@ -179,6 +179,9 @@ symbolVerifiers =
     , ( Map.keysKey
       , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
       )
+    , ( Map.keys_listKey
+      , Builtin.verifySymbol Builtin.List.assertSort [assertSort]
+      )
     , ( Map.removeKey
       , Builtin.verifySymbol assertSort [assertSort, acceptAnySort]
       )
@@ -392,6 +395,22 @@ evalKeys =
             Builtin.Set.returnConcreteSet
                 resultSort
                 (fmap (const Domain.SetValue) _map)
+
+evalKeysList :: Builtin.Function
+evalKeysList =
+    Builtin.functionEvaluator evalKeysList0
+  where
+    evalKeysList0 :: Builtin.FunctionImplementation
+    evalKeysList0 resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let _map =
+                    case arguments of
+                        [_map] -> _map
+                        _ -> Builtin.wrongArity Map.keys_listKey
+            _map <- expectConcreteBuiltinMap Map.keys_listKey _map
+            Builtin.List.returnList
+                resultSort
+                (Seq.fromList . Map.keys $ _map)
 
 evalRemove :: Builtin.Function
 evalRemove =
