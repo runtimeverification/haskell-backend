@@ -111,7 +111,7 @@ normalizeInternalMap map' =
             maybe
                 (NormalizedMapResult normalizedMap)
                 SingleOpaqueElemResult
-                $ Domain.isSingleOpaqueElem
+                $ Domain.asSingleOpaqueElem
                     . getNormalizedAc
                     $ normalizedMap
         _ -> BottomResult

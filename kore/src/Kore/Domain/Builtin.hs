@@ -18,7 +18,7 @@ module Kore.Domain.Builtin
     , InternalAc (..)
     , NormalizedAc (..)
     , emptyNormalizedAc
-    , isSingleOpaqueElem
+    , asSingleOpaqueElem
     --
     , InternalMap
     , MapElement
@@ -237,13 +237,13 @@ emptyNormalizedAc = NormalizedAc
     , opaque = []
     }
 
-isSingleOpaqueElem
+asSingleOpaqueElem
     :: Eq (Element key child)
     => Eq (Value key child)
     => Ord valueWrapper
     => NormalizedAc key valueWrapper child
     -> Maybe child
-isSingleOpaqueElem
+asSingleOpaqueElem
     NormalizedAc
         { elementsWithVariables
         , concreteElements
