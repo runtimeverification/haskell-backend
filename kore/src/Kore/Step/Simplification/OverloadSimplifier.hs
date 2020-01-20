@@ -6,11 +6,13 @@ License     : NCSA
 module Kore.Step.Simplification.OverloadSimplifier
     ( OverloadSimplifier (..)
     , mkOverloadSimplifier
+    , injectTermTo
     ) where
 
 import Control.Exception
     ( assert
     )
+import qualified Data.Functor.Foldable as Recursive
 import Data.Maybe
     ( listToMaybe
     )
@@ -79,12 +81,9 @@ mkOverloadSimplifier overloadGraph sortGraph =
         $ assert (length overloadedChildrenSorts == length overloadingChildren)
         $ zipWith mkInj overloadingChildren overloadedChildrenSorts
       where
+        mkInj = injectTermTo injProto
         overloadedChildrenSorts =
             Symbol.applicationSortsOperands (symbolSorts overloadedHead)
-        mkInj injChild injTo =
-            (synthesize . InjF) injProto { injFrom, injTo, injChild }
-          where
-            injFrom = termLikeSort injChild
 
     unifyOverloadWithinBound s1 s2 topSort =
         listToMaybe withinBound
@@ -95,3 +94,18 @@ mkOverloadSimplifier overloadGraph sortGraph =
 
     resultSort :: Symbol -> Sort
     resultSort = applicationSortsResult  . symbolSorts
+
+injectTermTo
+    :: InternalVariable variable
+    => Inj ()
+    -> TermLike variable
+    -> Sort
+    -> TermLike variable
+injectTermTo injProto injChild injTo
+  | injFrom == injTo = injChild
+  | _ :< InjF injC <- Recursive.project injChild
+  = (synthesize . InjF) injC { injTo }
+  | otherwise
+  = (synthesize . InjF) injProto { injFrom, injTo, injChild }
+  where
+    injFrom = termLikeSort injChild

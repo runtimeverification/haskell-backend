@@ -25,9 +25,6 @@ import Prelude hiding
 import Kore.Attribute.Synthetic
     ( synthesize
     )
-import Kore.Internal.ApplicationSorts
-    ( applicationSortsResult
-    )
 import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.Pattern
     ( Pattern
@@ -90,12 +87,10 @@ overloadedConstructorSortInjectionAndEquals
                 first
                 second
         Just headUnion ->
-            let injFrom = applicationSortsResult $ symbolSorts headUnion
-                injProto = inj { injChild = () }
+            let injProto = inj { injChild = () }
                 first' = resolveOverloading injProto headUnion firstChildren
                 second' = resolveOverloading injProto headUnion secondChildren
-                mkInj injChild =
-                    (synthesize . InjF) injProto { injFrom, injTo, injChild }
+                mkInj injChild = injectTermTo injProto injChild injTo
             in Monad.Trans.lift $ termMerger (mkInj first') (mkInj second')
 overloadedConstructorSortInjectionAndEquals _ _ _ = empty
 
