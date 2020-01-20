@@ -22,6 +22,7 @@ module Kore.Internal.Pattern
     , fromTermLike
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
+    , simplifiedAttribute
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -39,6 +40,9 @@ import GHC.Stack
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     , getFreeElementVariables
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
     )
 import Kore.Internal.Condition
     ( Condition
@@ -97,6 +101,10 @@ fromConditionSorted sort = (<$) (mkTop sort)
 isSimplified :: Pattern variable -> Bool
 isSimplified (splitTerm -> (t, p)) =
     TermLike.isSimplified t && Condition.isSimplified p
+
+simplifiedAttribute :: Pattern variable -> Attribute.Simplified
+simplifiedAttribute (splitTerm -> (t, p)) =
+    TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
 
 freeElementVariables
     :: Ord variable

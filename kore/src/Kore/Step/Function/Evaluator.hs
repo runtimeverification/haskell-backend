@@ -131,10 +131,8 @@ evaluateApplication
             (markSimplifiedIfChildren termLike)
             childrenCondition
 
-    markSimplifiedIfChildren =
-        if all TermLike.isSimplified application
-           then TermLike.markSimplified
-           else id
+    markSimplifiedIfChildren = TermLike.setSimplified
+        (Foldable.foldMap TermLike.simplifiedAttribute application)
 
     canMemoize
       | Symbol.isMemo symbol

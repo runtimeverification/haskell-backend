@@ -68,6 +68,6 @@ simplifyEvaluatedMultiPredicate sideCondition predicates = do
         fmap markSimplified
         $ Substitution.normalize sideCondition (Foldable.fold predicates')
       where
-        markSimplified
-          | all Condition.isSimplified predicates' = Condition.markSimplified
-          | otherwise = id
+        markSimplified =
+            Condition.setPredicateSimplified
+                (Foldable.foldMap Condition.simplifiedAttribute predicates')

@@ -5,7 +5,7 @@ License     : NCSA
 module Kore.Step.Simplification.NoConfusion
     ( equalInjectiveHeadsAndEquals
     , constructorAndEqualsAssumesDifferentHeads
-    )where
+    ) where
 
 import Control.Applicative
     ( Alternative (..)
