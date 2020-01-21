@@ -19,7 +19,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
+    , makeEqualsPredicate
     , makeEqualsPredicate_
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -74,7 +76,7 @@ test_orPatternSimplification =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
                     }
                 ]
@@ -101,7 +103,7 @@ test_orPatternSimplification =
 
 positive :: TermLike Variable -> Predicate Variable
 positive u =
-    makeEqualsPredicate_
+    makeEqualsPredicate Mock.testSort
         (Mock.lessInt
             (Mock.fTestInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)

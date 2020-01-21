@@ -99,7 +99,7 @@ test_evaluateAxioms =
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         [axiom (f x) a (positive x)]
         (f z, positive z)
-        [a `andRequires` positive z]
+        [Pattern.fromTermLike a]
     ]
 
 -- * Test data

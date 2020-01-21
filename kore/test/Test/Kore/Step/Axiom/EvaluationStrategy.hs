@@ -331,7 +331,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.a
-                                , predicate = requirement
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
