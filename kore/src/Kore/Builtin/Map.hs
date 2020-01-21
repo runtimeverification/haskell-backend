@@ -410,7 +410,11 @@ evalKeysList =
             _map <- expectConcreteBuiltinMap Map.keys_listKey _map
             Builtin.List.returnList
                 resultSort
-                (Seq.fromList . Map.keys $ _map)
+                ( Seq.fromList
+                . fmap TermLike.fromConcrete
+                . Map.keys
+                $ _map
+                )
 
 evalRemove :: Builtin.Function
 evalRemove =
@@ -508,6 +512,7 @@ builtinFunctions =
         , (Map.updateKey, evalUpdate)
         , (Map.in_keysKey, evalInKeys)
         , (Map.keysKey, evalKeys)
+        , (Map.keys_listKey, evalKeysList)
         , (Map.removeKey, evalRemove)
         , (Map.removeAllKey, evalRemoveAll)
         , (Map.sizeKey, evalSize)
