@@ -439,6 +439,10 @@ keysMapSymbol :: Internal.Symbol
 keysMapSymbol =
     builtinSymbol "keysMap" setSort [mapSort] & hook "MAP.keys"
 
+keysListMapSymbol :: Internal.Symbol
+keysListMapSymbol =
+    builtinSymbol "keysListMap" listSort [mapSort] & hook "MAP.keys_list"
+
 removeMapSymbol :: Internal.Symbol
 removeMapSymbol =
     builtinSymbol "removeMap" mapSort [mapSort, intSort] & hook "MAP.remove"
@@ -502,6 +506,11 @@ keysMap
     :: TermLike Variable
     -> TermLike Variable
 keysMap map' = mkApplySymbol keysMapSymbol [map']
+
+keysListMap
+    :: TermLike Variable
+    -> TermLike Variable
+keysListMap map' = mkApplySymbol keysListMapSymbol [map']
 
 removeMap
     :: TermLike Variable
@@ -1443,6 +1452,7 @@ mapModule =
             , hookedSymbolDecl updateMapSymbol
             , hookedSymbolDecl inKeysMapSymbol
             , hookedSymbolDecl keysMapSymbol
+            , hookedSymbolDecl keysListMapSymbol
             , hookedSymbolDecl removeMapSymbol
             , hookedSymbolDecl removeAllMapSymbol
             , hookedSymbolDecl sizeMapSymbol

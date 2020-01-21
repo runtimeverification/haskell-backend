@@ -17,6 +17,9 @@ module Test.Kore.Builtin.Map
     , test_keysUnit
     , test_keysElement
     , test_keys
+    , test_keysListUnit
+    , test_keysListElement
+    , test_keysList
     , test_inKeysElement
     , test_values
     , test_simplify
@@ -118,6 +121,7 @@ import Test.Kore.Builtin.Int
     , genIntegerPattern
     )
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
@@ -446,6 +450,52 @@ test_keys =
                 patConcreteKeys = Test.Set.asTermLike keys1
                 patMap = asTermLike map1
                 patSymbolicKeys = keysMap patMap
+                predicate = mkEquals_ patConcreteKeys patSymbolicKeys
+            expect <- evaluateT patConcreteKeys
+            (===) expect      =<< evaluateT patSymbolicKeys
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_keysListUnit :: TestTree
+test_keysListUnit =
+    testCaseWithSMT
+        "keys{}(unit{}() : Map{}) === unit{}() : List{}"
+        $ do
+            let
+                patUnit = unitMap
+                patKeys = keysListMap patUnit
+                patExpect = Test.List.asTermLike []
+                predicate = mkEquals_ patExpect patKeys
+            expect <- evaluate patExpect
+            assertEqual "" expect =<< evaluate patKeys
+            assertEqual "" Pattern.top =<< evaluate predicate
+
+test_keysListElement :: TestTree
+test_keysListElement =
+    testPropertyWithSolver
+        "keys{}(element{}(key, _) : Map{}) === element{}(key) : List{}"
+        (do
+            key <- forAll genConcreteIntegerPattern
+            val <- forAll genIntegerPattern
+            let patMap = asTermLike $ Map.singleton key val
+                patKeys = Test.List.asTermLike [TermLike.fromConcrete key]
+                patSymbolic = keysListMap patMap
+                predicate = mkEquals_ patKeys patSymbolic
+            expect <- evaluateT patKeys
+            (===) expect      =<< evaluateT patSymbolic
+            (===) Pattern.top =<< evaluateT predicate
+        )
+
+test_keysList :: TestTree
+test_keysList =
+    testPropertyWithSolver
+        "MAP.keys"
+        (do
+            map1 <- forAll (genConcreteMap genIntegerPattern)
+            let keys1 = TermLike.fromConcrete <$> Map.keys map1
+                patConcreteKeys = Test.List.asTermLike keys1
+                patMap = asTermLike map1
+                patSymbolicKeys = keysListMap patMap
                 predicate = mkEquals_ patConcreteKeys patSymbolicKeys
             expect <- evaluateT patConcreteKeys
             (===) expect      =<< evaluateT patSymbolicKeys

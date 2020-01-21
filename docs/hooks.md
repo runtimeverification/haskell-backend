@@ -564,7 +564,7 @@ Takes a map and returns a set of its keys.
 
 ### MAP.keys_list
 
-Takes a map and returns a set of its keys.
+Takes a map and returns a list of its keys.
 
 ~~~
     hooked-symbol keys_list{}(Map{}) : List{}
