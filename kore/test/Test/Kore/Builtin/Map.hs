@@ -489,7 +489,7 @@ test_keysListElement =
 test_keysList :: TestTree
 test_keysList =
     testPropertyWithSolver
-        "MAP.keys"
+        "MAP.keys_list"
         (do
             map1 <- forAll (genConcreteMap genIntegerPattern)
             let keys1 = TermLike.fromConcrete <$> Map.keys map1
