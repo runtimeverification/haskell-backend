@@ -27,6 +27,7 @@ module Kore.Builtin.Map.Map
     , elementKey
     , in_keysKey
     , keysKey
+    , keys_listKey
     , lookupKey
     , lookupOrDefaultKey
     , removeAllKey
@@ -82,6 +83,9 @@ in_keysKey = "MAP.in_keys"
 
 keysKey :: IsString s => s
 keysKey = "MAP.keys"
+
+keys_listKey :: IsString s => s
+keys_listKey = "MAP.keys_list"
 
 removeKey :: IsString s => s
 removeKey = "MAP.remove"
