@@ -15,7 +15,7 @@ module Kore.Step.Simplification.Forall
 import qualified Kore.Internal.Condition as Condition
     ( fromPredicate
     , hasFreeVariable
-    , markSimplified
+    , markPredicateSimplified
     , toPredicate
     )
 import qualified Kore.Internal.Conditional as Conditional
@@ -122,7 +122,7 @@ makeEvaluate variable patt
     `Conditional.withCondition` predicate
   | termIsBoolean =
     term
-    `Conditional.withCondition` Condition.markSimplified
+    `Conditional.withCondition` Condition.markPredicateSimplified
         (Condition.fromPredicate
             (makeForallPredicate variable (Condition.toPredicate predicate))
         )

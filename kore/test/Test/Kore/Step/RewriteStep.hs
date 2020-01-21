@@ -759,7 +759,10 @@ applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
     $ runSimplifier Mock.env
     $ runUnifierT
-    $ Step.applyRewriteRulesParallel unificationProcedure rules initial
+    $ Step.applyRewriteRulesParallel
+        unificationProcedure
+        rules
+        (simplifiedPattern initial)
   where
     unificationProcedure =
         UnificationProcedure Unification.unificationProcedure
@@ -1139,7 +1142,10 @@ applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
     $ runSimplifier Mock.env
     $ runUnifierT
-    $ Step.applyRewriteRulesSequence unificationProcedure initial rules
+    $ Step.applyRewriteRulesSequence
+        unificationProcedure
+        (simplifiedPattern initial)
+        rules
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
 
@@ -1171,10 +1177,6 @@ test_applyRewriteRulesSequence =
                 makeAndPredicate
                     (makeCeilPredicate Mock.testSort Mock.cf)
                     (makeCeilPredicate_ Mock.cg)
-            definedBranchesUnsorted =
-                makeAndPredicate
-                    (makeCeilPredicate_ Mock.cf)
-                    (makeCeilPredicate_ Mock.cg)
             results =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -1197,7 +1199,7 @@ test_applyRewriteRulesSequence =
                             Predicate.makeAndPredicate
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranchesUnsorted
+                                        definedBranches
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.a
@@ -1205,7 +1207,7 @@ test_applyRewriteRulesSequence =
                                 )
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranchesUnsorted
+                                        definedBranches
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.b

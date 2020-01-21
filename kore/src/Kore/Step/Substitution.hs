@@ -48,7 +48,8 @@ normalize
     -> Conditional variable term
     -> BranchT simplifier (Conditional variable term)
 normalize sideCondition conditional@Conditional { substitution } = do
-    results <- Monad.Trans.lift $ simplifySubstitution sideCondition substitution
+    results <- Monad.Trans.lift $
+        simplifySubstitution sideCondition substitution
     scatter (applyTermPredicate <$> results)
   where
     applyTermPredicate =

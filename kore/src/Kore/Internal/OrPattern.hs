@@ -42,6 +42,9 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
@@ -53,8 +56,8 @@ import Kore.TopBottom
 -}
 type OrPattern variable = MultiOr (Pattern variable)
 
-isSimplified :: OrPattern variable -> Bool
-isSimplified = all Pattern.isSimplified
+isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
+isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
 
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}

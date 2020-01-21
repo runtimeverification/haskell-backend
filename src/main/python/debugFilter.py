@@ -256,14 +256,107 @@ class Iterator:
         elements = [str(e) for e in self.__elements]
         return "idx[" + ",".join(elements) + "]"
 
+def cleanNode(line, parentLocation, name):
+    iterator = Iterator(line)
+    while True:
+        if not line.find(parentLocation, iterator):
+            return line
+        iterator.element().removeSubnode(name)
 
 def cleanIdLocation(line):
     """Removes the idLocation part of Id structs."""
-    iterator = Iterator(line)
-    while True:
-        if not line.find(["Id ", " idLocation = AstLocationFile "], iterator):
-            return line
-        iterator.element().removeSubnode(["idLocation"])
+    cleanNode(line, ["Id ", " idLocation = AstLocationFile "], ["idLocation"])
+
+def cleanSymbolSorts(line):
+    cleanNode(
+        line,
+        ["Symbol ", " symbolSorts = ApplicationSorts "],
+        ["symbolSorts"]
+    )
+
+def cleanSymbolAttributes(line):
+    cleanNode(
+        line,
+        ["Symbol ", " symbolAttributes = Symbol "],
+        ["symbolAttributes"]
+    )
+
+def cleanPatternSortAttribute(line):
+    cleanNode(
+        line,
+        ["Pattern ", "patternSort = SortActualSort "],
+        ["patternSort"]
+    )
+
+def cleanFreeVariablesAttribute(line):
+    cleanNode(
+        line,
+        ["Pattern ", " freeVariables = FreeVariables "],
+        ["freeVariables"]
+    )
+
+def cleanFunctionalAttribute(line):
+    cleanNode(
+        line,
+        ["Pattern ", " functional = Functional "],
+        ["functional"]
+    )
+
+def cleanFunctionAttribute(line):
+    cleanNode(
+        line,
+        ["Pattern ", " function = Function "],
+        ["function"]
+    )
+
+def cleanDefinedAttribute(line):
+    cleanNode(
+        line,
+        ["Pattern ", " defined = Defined "],
+        ["defined"]
+    )
+
+def cleanCreatedAttribute(line):
+    cleanNode(
+        line,
+        ["Pattern ", " created = Created "],
+        ["created"]
+    )
+
+def cleanBuiltinListSort(line):
+    cleanNode(
+        line,
+        ["InternalList ", "builtinListSort = SortActualSort "],
+        ["builtinListSort"]
+    )
+
+def cleanBuiltinListUnit(line):
+    cleanNode(
+        line,
+        ["InternalList ", " builtinListUnit = Symbol "],
+        ["builtinListUnit"]
+    )
+
+def cleanBuiltinListElement(line):
+    cleanNode(
+        line,
+        ["InternalList ", " builtinListElement = Symbol "],
+        ["builtinListElement"]
+    )
+
+def cleanBuiltinListConcat(line):
+    cleanNode(
+        line,
+        ["InternalList ", " builtinListConcat = Symbol "],
+        ["builtinListConcat"]
+    )
+
+def cleanInjAttributes(line):
+    cleanNode(
+        line,
+        ["Inj ", " injAttributes = Symbol "],
+        ["injAttributes"]
+    )
 
 def cleanApplication(line):
     """Removes the redundant parts of ApplicationF patterns.
@@ -481,6 +574,26 @@ def cleanStandardPatterns(line):
 
 def clean(line):
     """Applies known cleaning algorithms to the line."""
+    filters = [
+        cleanIdLocation,
+        cleanSymbolSorts,
+        cleanSymbolAttributes,
+        cleanPatternSortAttribute,
+        cleanFreeVariablesAttribute,
+        cleanFunctionalAttribute,
+        cleanFunctionAttribute,
+        cleanDefinedAttribute,
+        cleanCreatedAttribute,
+        cleanBuiltinListSort,
+        cleanBuiltinListUnit,
+        cleanBuiltinListElement,
+        cleanBuiltinListConcat,
+        cleanInjAttributes
+    ]
+    for f in filters:
+        f(line)
+    return line
+    """
     return (
         cleanIdentifierEscaping( # 28 s
             cleanBottom(
@@ -504,6 +617,7 @@ def clean(line):
             )
         )
     )
+    """
 
 def cleanEvmExecStack(line):
     return (
