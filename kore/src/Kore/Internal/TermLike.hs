@@ -450,7 +450,7 @@ assertConstructorLikeKeys keys a
         in
             (error . show . Pretty.vsep) $
                 [ "Map and Set may only contain simplified \
-                  \keys (resp. elements)."
+                  \keys."
                 , Pretty.indent 2 "Simplifiable keys:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
@@ -478,6 +478,18 @@ markSimplified (Recursive.project -> attrs :< termLikeF) =
         :< termLikeF
         )
 
+cannotSimplifyNotSimplifiedError
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => TermLikeF variable (TermLike variable) -> a
+cannotSimplifyNotSimplifiedError termLikeF =
+    error
+        (  "Unexpectedly marking term with NotSimplified children as \
+            \simplified:\n"
+        ++ show termLikeF
+        ++ "\n"
+        ++ Unparser.unparseToString termLikeF
+        )
+
 setSimplified
     :: InternalVariable variable
     => Pattern.Simplified -> TermLike variable -> TermLike variable
@@ -490,13 +502,7 @@ setSimplified simplified (Recursive.project -> attrs :< termLikeF) =
     childSimplified = simplifiedFromChildren termLikeF
     mergedSimplified = case (childSimplified, simplified) of
         (Pattern.NotSimplified, Pattern.NotSimplified) -> Pattern.NotSimplified
-        (Pattern.NotSimplified, _) -> error
-            (  "Unexpectedly marking term with NotSimplified children as \
-               \simplified:\n"
-            ++ show termLikeF
-            ++ "\n"
-            ++ Unparser.unparseToString termLikeF
-            )
+        (Pattern.NotSimplified, _) -> cannotSimplifyNotSimplifiedError termLikeF
         (_, Pattern.NotSimplified) -> Pattern.NotSimplified
         _ -> childSimplified `Attribute.Simplified.simplifiedTo` simplified
 
@@ -528,13 +534,7 @@ checkedSimplifiedFromChildren
     => TermLikeF variable (TermLike variable) -> Pattern.Simplified
 checkedSimplifiedFromChildren termLikeF =
     case simplifiedFromChildren termLikeF of
-        Pattern.NotSimplified -> error
-            (  "Unexpectedly marking term with NotSimplified children as \
-               \simplified:\n"
-            ++ show termLikeF
-            ++ "\n"
-            ++ Unparser.unparseToString termLikeF
-            )
+        Pattern.NotSimplified -> cannotSimplifyNotSimplifiedError termLikeF
         simplified -> simplified
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.

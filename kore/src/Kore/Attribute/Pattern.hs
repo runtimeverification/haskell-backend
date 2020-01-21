@@ -35,6 +35,9 @@ import Data.Hashable
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import GHC.Stack
+    ( HasCallStack
+    )
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
@@ -130,26 +133,33 @@ instance HasConstructorLike (Pattern variable) where
         Pattern {constructorLike}
       = constructorLike
 
-simplifiedAttribute :: Pattern variable -> Simplified
-simplifiedAttribute Pattern {constructorLike, simplified}
-  | Simplified.isFullySimplified simplified = simplified
-  | isConstructorLike constructorLike =
-    error "Inconsistent attributes, constructorLike implies fully simplified."
-  | otherwise = simplified
+simplifiedAttribute :: HasCallStack => Pattern variable -> Simplified
+simplifiedAttribute patt@Pattern {simplified} =
+    assertSimplifiedConsistency patt simplified
 
-isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
-isSimplified sideCondition Pattern {constructorLike, simplified}
-  | Simplified.isFullySimplified simplified = True
-  | isConstructorLike constructorLike =
-    error "Inconsistent attributes, constructorLike implies fully simplified."
-  | otherwise = Simplified.isSimplified sideCondition simplified
+{- Checks whether the pattern is simplified relative to the given side
+condition.
+-}
+isSimplified
+    :: HasCallStack
+    => SideCondition.Representation -> Pattern variable -> Bool
+isSimplified sideCondition patt@Pattern {simplified} =
+    assertSimplifiedConsistency patt
+    $ Simplified.isSimplified sideCondition simplified
 
-isFullySimplified :: Pattern variable -> Bool
-isFullySimplified Pattern {constructorLike, simplified}
-  | Simplified.isFullySimplified simplified = True
-  | isConstructorLike constructorLike =
+{- Checks whether the pattern is simplified relative to any side condition.
+-}
+isFullySimplified :: HasCallStack => Pattern variable -> Bool
+isFullySimplified patt@Pattern {simplified} =
+    assertSimplifiedConsistency patt
+    $ Simplified.isFullySimplified simplified
+
+assertSimplifiedConsistency :: HasCallStack => Pattern variable -> a -> a
+assertSimplifiedConsistency Pattern {constructorLike, simplified}
+  | isConstructorLike constructorLike
+  , not (Simplified.isFullySimplified simplified) =
     error "Inconsistent attributes, constructorLike implies fully simplified."
-  | otherwise = False
+  | otherwise = id
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
 setSimplified simplified patt = patt { simplified }

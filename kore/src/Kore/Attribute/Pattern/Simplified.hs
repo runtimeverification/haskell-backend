@@ -61,11 +61,15 @@ import Kore.Syntax
     )
 import Kore.Variables.UnifiedVariable
 
-{- How well simplified is a pattern.
+{- | How well simplified is a pattern.
 -}
 data Type
     = Fully
+    -- ^ The entire pattern is simplified
     | Partly
+    -- ^ The pattern's subterms are either fully simplified or partly
+    -- simplified. Normally all the leaves in a partly simplified
+    -- subterm tree are fully simplified.
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Type
@@ -91,12 +95,19 @@ instance Semigroup Type
 instance Monoid Type where
     mempty = Fully
 
-{- Under which condition is a pattern simplified.
+{- | Under which condition is a pattern simplified.
 -}
 data Condition
     = Any
+    -- ^ The term and all its subterms are simplified the same regardless
+    -- of the side condition.
     | Condition !SideCondition.Representation
+    -- ^ The term is in its current simplified state only when using the
+    -- given side condition. When the side condition changes, e.g. by
+    -- adding extra conditions, then we may be able to further simplify the
+    -- term.
     | Unknown
+    -- ^ Parts of the term are simplified under different side conditions.
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Condition
@@ -142,24 +153,6 @@ data Simplified
     | NotSimplified
     deriving (Eq, GHC.Generic, Ord, Show)
 
-{- |
-data Simplified =
-    Simplified
-    -- ^ Fully simplified
-  | PartlySimplified
-    -- ^ From any path from the root to any leaf, one encounters a Simplified
-    -- node, and travels only through `PartlySimplified` nodes until then.
-  | SimplifiedFor !SideCondition.Representation
-    -- ^ Simplified only under the given condition, i.e. if the condition
-    -- changes, the node must be resimplified.
-  | PartlySimplifiedFor !SideCondition.Representation
-    -- ^ Similar to 'PartlySimplified'. On any path from the root to a leaf,
-    -- one encounters one of 'Simplified', 'PartlySimplified' or 'SimplifiedFor'
-    -- and travels only through `PartlySimplifiedFor` nodes until then.
-  | NotSimplified
-    deriving (Eq, GHC.Generic, Ord, Show)
- -}
-
 instance Semigroup Simplified
   where
     NotSimplified <> _ = NotSimplified
@@ -183,7 +176,27 @@ instance NFData Simplified
 
 instance Hashable Simplified
 
-simplifiedTo :: HasCallStack => Simplified -> Simplified -> Simplified
+{- | Computes the 'Simplified' attribute for a pattern given its default
+attribute (usually a merge of the pattern's subterm simplification attributes)
+and the desired one.
+
+As an example, Let us assume that the default attribute is
+@Simplified (Partly, Condition c)@ and that we would want the attribute to be
+@Simplified (Fully, Any)@.
+
+Then let us notice that the term needs the condition @c@ (most likely because
+one of its subterms is simplified only with it as a side condition), and that
+the term and is subterms went through the simplifier (the 'Partly' tag), so
+it's valid to mark it as fully simplified. The result will be
+"Simplified (Fully, Condition c)".
+-}
+simplifiedTo
+    :: HasCallStack
+    => Simplified
+    -- ^ Default value
+    -> Simplified
+    -- ^ Desired state
+    -> Simplified
 NotSimplified `simplifiedTo` NotSimplified = NotSimplified
 _ `simplifiedTo` NotSimplified =
     error "Should not make sense to upgrade something else to NotSimplified."
