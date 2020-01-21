@@ -180,13 +180,13 @@ instance Hashable Simplified
 attribute (usually a merge of the pattern's subterm simplification attributes)
 and the desired one.
 
-As an example, Let us assume that the default attribute is
+As an example, let us assume that the default attribute is
 @Simplified (Partly, Condition c)@ and that we would want the attribute to be
 @Simplified (Fully, Any)@.
 
 Then let us notice that the term needs the condition @c@ (most likely because
 one of its subterms is simplified only with it as a side condition), and that
-the term and is subterms went through the simplifier (the 'Partly' tag), so
+the term and its subterms went through the simplifier (the 'Partly' tag), so
 it's valid to mark it as fully simplified. The result will be
 "Simplified (Fully, Condition c)".
 -}
