@@ -38,6 +38,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Data
     ( Env (..)
     , runSimplifier
@@ -74,10 +75,10 @@ var name variableSort =
 
 a1, a2, a3, a4, a5 :: TermLike Variable
 a1 = Mock.c
-a2 = Mock.functional00
+a2 = TermLike.markSimplified Mock.functional00
 a3 = Mock.constr00
-a4 = Mock.functionalInjective00
-a5 = Mock.cf
+a4 = TermLike.markSimplified Mock.functionalInjective00
+a5 = TermLike.markSimplified Mock.cf
 
 a :: TermLike Variable
 a = Mock.a

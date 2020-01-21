@@ -633,7 +633,7 @@ applyEquationalRulesSequence_
     results <- Step.applyRulesSequence
         unificationProcedure
         SideCondition.top
-        initialConfig
+        (simplifiedPattern initialConfig)
         rules
     Step.assertFunctionLikeResults (term initialConfig) results
     return results
@@ -686,10 +686,6 @@ test_applyEquationalRulesSequence =
                 makeAndPredicate
                     (makeCeilPredicate Mock.testSort Mock.cf)
                     (makeCeilPredicate_ Mock.cg)
-            definedBranchesUnsorted =
-                makeAndPredicate
-                    (makeCeilPredicate_ Mock.cf)
-                    (makeCeilPredicate_ Mock.cg)
             results =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -712,7 +708,7 @@ test_applyEquationalRulesSequence =
                             Predicate.makeAndPredicate
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranchesUnsorted
+                                        definedBranches
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.a
@@ -720,7 +716,7 @@ test_applyEquationalRulesSequence =
                                 )
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranchesUnsorted
+                                        definedBranches
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.b
