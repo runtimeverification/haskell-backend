@@ -39,6 +39,8 @@ module Kore.Internal.Predicate
     , makeTruePredicate_
     , isSimplified
     , markSimplified
+    , setSimplified
+    , simplifiedAttribute
     , isFreeOf
     , freeElementVariables
     , hasFreeVariable
@@ -88,6 +90,9 @@ import qualified Kore.Attribute.Pattern as Attribute
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
 import Kore.Attribute.Pattern.FreeVariables
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
 import Kore.Debug
 import Kore.Error
     ( Error
@@ -98,6 +103,8 @@ import Kore.Internal.TermLike hiding
     , isSimplified
     , mapVariables
     , markSimplified
+    , setSimplified
+    , simplifiedAttribute
     , substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -695,6 +702,10 @@ instance HasFreeVariables (Predicate variable) variable where
 isSimplified :: Predicate variable -> Bool
 isSimplified (GenericPredicate termLike) = TermLike.isSimplified termLike
 
+simplifiedAttribute :: Predicate variable -> Attribute.Simplified
+simplifiedAttribute (GenericPredicate termLike) =
+    TermLike.simplifiedAttribute termLike
+
 {- | Mark a 'Predicate' as fully simplified.
 
 The pattern is fully simplified if we do not know how to simplify it any
@@ -706,6 +717,11 @@ simplified.
 markSimplified :: Predicate variable -> Predicate variable
 markSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.markSimplified termLike)
+
+setSimplified
+    :: Attribute.Simplified -> Predicate variable -> Predicate variable
+setSimplified simplified (GenericPredicate termLike) =
+    GenericPredicate (TermLike.setSimplified simplified termLike)
 
 -- |Is the predicate free of the given variables?
 isFreeOf
