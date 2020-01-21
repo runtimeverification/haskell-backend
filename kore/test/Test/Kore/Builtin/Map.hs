@@ -459,7 +459,7 @@ test_keys =
 test_keysListUnit :: TestTree
 test_keysListUnit =
     testCaseWithSMT
-        "keys{}(unit{}() : Map{}) === unit{}() : List{}"
+        "keys_list{}(unit{}() : Map{}) === unit{}() : List{}"
         $ do
             let
                 patUnit = unitMap
@@ -473,7 +473,7 @@ test_keysListUnit =
 test_keysListElement :: TestTree
 test_keysListElement =
     testPropertyWithSolver
-        "keys{}(element{}(key, _) : Map{}) === element{}(key) : List{}"
+        "keys_list{}(element{}(key, _) : Map{}) === element{}(key) : List{}"
         (do
             key <- forAll genConcreteIntegerPattern
             val <- forAll genIntegerPattern
