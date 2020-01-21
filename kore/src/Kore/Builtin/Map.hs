@@ -408,13 +408,14 @@ evalKeysList =
                         [_map] -> _map
                         _ -> Builtin.wrongArity Map.keys_listKey
             _map <- expectConcreteBuiltinMap Map.keys_listKey _map
+            let list =
+                    Seq.fromList
+                    . fmap TermLike.fromConcrete
+                    . Map.keys
+                    $ _map
             Builtin.List.returnList
                 resultSort
-                ( Seq.fromList
-                . fmap TermLike.fromConcrete
-                . Map.keys
-                $ _map
-                )
+                list
 
 evalRemove :: Builtin.Function
 evalRemove =
