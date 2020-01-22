@@ -86,8 +86,8 @@ import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol.Anywhere
 import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
-import Kore.Attribute.Symbol.SymbolKywd
 import Kore.Attribute.Symbol.NoEvaluators
+import Kore.Attribute.Symbol.SymbolKywd
 import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
