@@ -21,6 +21,10 @@ module Kore.Syntax.Variable
 import Control.DeepSeq
     ( NFData (..)
     )
+import Control.Lens.Combinators
+    ( Lens'
+    )
+import qualified Control.Lens.Combinators as Lens
 import Data.Hashable
 import Data.Maybe
     ( isNothing
@@ -127,12 +131,11 @@ but the reverse is not required.
 
  -}
 class SortedVariable variable where
+    lensVariableSort :: Lens' variable Sort
+
     -- | The known 'Sort' of the given variable.
     sortedVariableSort :: variable -> Sort
-    sortedVariableSort variable =
-        variableSort
-      where
-        Variable { variableSort } = toVariable variable
+    sortedVariableSort = Lens.view lensVariableSort
 
     -- | Convert a variable from the parsed syntax of Kore.
     fromVariable :: Variable -> variable
@@ -141,7 +144,10 @@ class SortedVariable variable where
 -- TODO(traiansf): the 'SortedVariable' class mixes different concerns.
 
 instance SortedVariable Variable where
-    sortedVariableSort = variableSort
+    -- TODO: make more readable
+    lensVariableSort f var =
+        fmap (Variable (variableName var) (variableCounter var))
+        $ f (variableSort var)
     fromVariable = id
     toVariable = id
 
@@ -188,6 +194,8 @@ instance Unparse Concrete where
     unparse2 = \case {}
 
 instance SortedVariable Concrete where
-    sortedVariableSort = \case {}
+    -- TODO: make morea readable
+    lensVariableSort f var =
+        fmap (case var of {}) $ f (case var of {})
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"
