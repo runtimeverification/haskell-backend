@@ -9,6 +9,9 @@ import qualified Data.Sequence as Seq
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -17,6 +20,9 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeTruePredicate_
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Builtin
     ( simplify
@@ -35,6 +41,7 @@ test_simplify =
         , becomes "\\bottom key" (mkMap [(bottom, a)] []) []
         , becomes "\\bottom term" (mkMap [(a, b)] [bottom]) []
         , becomes "duplicate key" (mkMap [(a, b), (a, c)] []) []
+        , becomes "single opaque elem" (mkMap [] [a]) [aPat]
         ]
     , testGroup "Set"
         [ becomes "\\bottom element" (mkSet [bottom] []) []
@@ -47,6 +54,12 @@ test_simplify =
     b = OrPattern.fromTermLike Mock.b
     c = OrPattern.fromTermLike Mock.c
     bottom = OrPattern.fromPatterns [Pattern.bottom]
+    aPat =
+        Conditional
+            { term = Mock.a
+            , predicate = makeTruePredicate_
+            , substitution = mempty
+            }
     becomes
         :: GHC.HasCallStack
         => TestName
