@@ -17,7 +17,6 @@ import qualified Kore.Internal.Condition as Condition
     ( bottom
     , fromPredicate
     , toPredicate
-    , top
     )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -45,6 +44,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeNotPredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -81,7 +81,6 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     simplifyAndPrune (Pattern.splitTerm -> (term, condition)) =
         fmap orPatternFromConditions . BranchT.gather $ do
             simplified <- simplifyCondition sideCondition condition
-
             Monad.Trans.lift $ resultWithFilter
                 rejectCondition
                 (resultWithFilter pruneCondition (return simplified))
@@ -103,7 +102,15 @@ simplifyConditionsWithSmt sideCondition unsimplified =
             else do
                 filtered <- conditionFilter previous
                 case filtered of
-                    Just True -> return Condition.top
+                    Just True ->
+                        -- TODO(virgil): We should be able to return
+                        -- Condition.top, but if 'a' is the only constructor
+                        -- of a sort and 'v' is a variable, then the SMT
+                        -- can detect that 'not v=a' is not satisfiable
+                        -- so we may remove a substitution here. However,
+                        -- we are not able to handle that properly.
+                        return previous
+                            { Conditional.predicate = makeTruePredicate_ }
                     Just False -> return Condition.bottom
                     Nothing -> return previous
 
