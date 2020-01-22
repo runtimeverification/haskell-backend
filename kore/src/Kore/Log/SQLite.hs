@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
+Record log entries to a SQLite database.
+
 -}
 
 module Kore.Log.SQLite
@@ -46,6 +48,7 @@ import SQL
     )
 import qualified SQL
 
+-- | @LogSQLiteOptions@ are the command-line options for the SQLite logger.
 newtype LogSQLiteOptions =
     LogSQLiteOptions
     { sqlog :: Maybe FilePath
@@ -61,6 +64,7 @@ parseLogSQLiteOptions =
     LogSQLiteOptions
     <$> Options.optional parseSQLog
 
+-- | Parse the command-line argument that takes the SQLite database's filename.
 parseSQLog :: Options.Parser FilePath
 parseSQLog =
     Options.strOption info
@@ -71,7 +75,17 @@ parseSQLog =
         <> Options.metavar "FILENAME"
         <> Options.help "Write the structured query log to FILENAME."
 
-withLogSQLite :: LogSQLiteOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
+{- | Run the continuation with a 'LogAction' to send entries to the database.
+
+The logger is configured according to the given
+'LogSQLiteOptions'. @withLogSQLite@ opens and closes the database connection
+automatically.
+
+ -}
+withLogSQLite
+    :: LogSQLiteOptions
+    -> (LogAction IO SomeEntry -> IO a)  -- ^ Continuation
+    -> IO a
 withLogSQLite options cont =
     case sqlog of
         Nothing -> cont mempty
@@ -89,9 +103,39 @@ withLogSQLite options cont =
             let sqlt = unLogAction logAction entry
             runReaderT (SQL.getSQLT sqlt) conn
 
+{- | @foldMap@ over the known 'SQL.Table' 'Entry' types.
+
+These are the only types of 'Entry' that can be logged to the database.
+
+See also: 'declareEntries', 'logSQLite'
+
+ -}
+foldMapEntries
+    :: Monoid r
+    => (forall entry. (Entry entry, SQL.Table entry) => Proxy entry -> r)
+    -> r
+foldMapEntries mapEntry =
+    mconcat
+        [ mapEntry (Proxy @DebugAppliedRule)
+        , mapEntry (Proxy @DebugEvaluateCondition)
+        , mapEntry (Proxy @WarnBottomHook)
+        , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
+        , mapEntry (Proxy @WarnSimplificationWithRemainder)
+        ]
+
+-- | Declare the SQL tables for all known 'SQL.Table' 'Entry' types.
 declareEntries :: SQL ()
 declareEntries = foldMapEntries SQL.createTable
 
+{- | Log 'SomeEntry' to the database.
+
+If the 'Entry' cannot be entered in the database, it is ignored.
+
+@logSQLite@ is a 'LogAction' in the 'SQL' context, which requires that the
+database is already connected. See 'withLogSQLite' to obtain a 'LogAction' in
+'IO'.
+
+ -}
 logSQLite :: LogAction SQL SomeEntry
 logSQLite =
     foldMapEntries logEntry
@@ -105,16 +149,3 @@ logSQLite =
 
     maybeInsertRow :: SQL.Table entry => Maybe entry -> SQL ()
     maybeInsertRow = Foldable.traverse_ SQL.insertRow
-
-foldMapEntries
-    :: Monoid r
-    => (forall entry. (Entry entry, SQL.Table entry) => Proxy entry -> r)
-    -> r
-foldMapEntries mapEntry =
-    mconcat
-        [ mapEntry (Proxy @DebugAppliedRule)
-        , mapEntry (Proxy @DebugEvaluateCondition)
-        , mapEntry (Proxy @WarnBottomHook)
-        , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
-        , mapEntry (Proxy @WarnSimplificationWithRemainder)
-        ]
