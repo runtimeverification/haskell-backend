@@ -238,10 +238,7 @@ emptyNormalizedAc = NormalizedAc
     }
 
 asSingleOpaqueElem
-    :: Eq (Element key child)
-    => Eq (Value key child)
-    => Ord valueWrapper
-    => NormalizedAc key valueWrapper child
+    :: NormalizedAc key valueWrapper child
     -> Maybe child
 asSingleOpaqueElem
     NormalizedAc
@@ -249,12 +246,11 @@ asSingleOpaqueElem
         , concreteElements
         , opaque
         }
-    | elementsWithVariables == mempty
-    , concreteElements == mempty
+    | null elementsWithVariables
+    , null concreteElements
+    , [singleOpaqueElem] <- opaque
   =
-    case opaque of
-        [singleOpaqueElem] -> Just singleOpaqueElem
-        _ -> Nothing
+      Just singleOpaqueElem
     | otherwise =  Nothing
 
 {- | Internal representation of associative-commutative builtin terms.
