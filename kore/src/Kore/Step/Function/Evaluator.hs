@@ -266,7 +266,7 @@ maybeEvaluatePattern
                 return defaultValue
             AttemptedAxiom.Applied attemptResults ->
                 return $ MultiOr.merge results remainders
-                where
+              where
                 AttemptedAxiomResults { results, remainders } =
                     attemptResults
   where
@@ -392,10 +392,10 @@ mergeWithConditionAndSubstitution
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    evaluatedResults <- fmap OrPattern.fromPatterns . BranchT.gather $ do
+    evaluatedResults <- OrPattern.gather $ do
         result <- BranchT.scatter results
         simplifyCondition sideCondition $ Pattern.andCondition result toMerge
-    evaluatedRemainders <- fmap OrPattern.fromPatterns . BranchT.gather $ do
+    evaluatedRemainders <- OrPattern.gather $ do
         remainder <- BranchT.scatter remainders
         simplifyCondition sideCondition (Pattern.andCondition remainder toMerge)
     return $ AttemptedAxiom.Applied AttemptedAxiomResults

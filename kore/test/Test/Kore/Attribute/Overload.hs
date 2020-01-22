@@ -4,13 +4,14 @@ module Test.Kore.Attribute.Overload
     , test_duplicate
     , test_arguments
     , test_parameters
-    , test_ignore
+    , test_dont_ignore
     ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Default as Default
+import Data.Function
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
@@ -22,6 +23,8 @@ import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Internal.Symbol
     ( applicationSorts
+    , functional
+    , injective
     , toSymbolOrAlias
     )
 import Kore.Internal.TermLike
@@ -54,6 +57,7 @@ superSymbol =
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts [] Mock.testSort
         }
+    & functional & injective
 
 superSymbolOrAlias :: SymbolOrAlias
 superSymbolOrAlias = toSymbolOrAlias superSymbol
@@ -121,12 +125,13 @@ test_parameters =
                     [ SortVariableSort (SortVariable "illegal") ]
                 }
 
-test_ignore :: TestTree
-test_ignore =
-    testCase "Ignore overloaded production axioms" $
+test_dont_ignore :: TestTree
+test_dont_ignore =
+    testCase "Don't ignore overloaded production axioms" $
         case Map.lookup (AxiomIdentifier.Application superId) evaluators of
-            Nothing -> return ()
-            Just _ -> assertFailure "Should ignore overloaded production axiom"
+            Nothing ->
+                assertFailure "Should not ignore overloaded production axiom"
+            Just _ -> return ()
   where
     evaluators =
         axiomPatternsToEvaluators $ extractEqualityAxioms indexedModule

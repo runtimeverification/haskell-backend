@@ -34,8 +34,15 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -65,7 +72,7 @@ test_simplifiesToSimplified =
         simplified <- catch
             (evaluateT (Pattern.fromTermLike term))
             (exceptionHandler term)
-        (===) True (OrPattern.isSimplified simplified)
+        (===) True (OrPattern.isSimplified sideRepresentation simplified)
   where
     -- Discard exceptions that are normal for randomly generated patterns.
     exceptionHandler
@@ -102,3 +109,7 @@ evaluateWithAxioms axioms =
             simplifierWithFallback
             Mock.builtinSimplifiers
             axioms
+
+sideRepresentation :: SideCondition.Representation
+sideRepresentation =
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)

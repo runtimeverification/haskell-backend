@@ -12,9 +12,9 @@ sgn(x) = 1 requires x > 0
 ```
 
 Let us also say that we're trying to simplify this top-level configuration:
-`sgn(x) and x > 1`. Then it should be obvious that this evaluates uniquely to
-`1 and x > 1`, and we can solve that by passing the top-level condition,
-`x > 1`, as a side condition to the function simplifier, which can then use it
+`sgn(x) and x>1`. Then it should be obvious that this evaluates uniquely to
+`1 and x>1`, and we can solve that by passing the top-level condition,
+`x>1`, as a side condition to the function simplifier, which can then use it
 to prune the unfeasible branches.
 
 The problem
@@ -40,7 +40,8 @@ Options
 
 Except when simplifying the top condition, we can safely use the top-level
 predicate as a side condition. When simplifying the top condition we can safely
-use the previous top condition (for the first iteration we can just use `⊤`).
+use the top condition from the previous rewrite step
+(before the first step we can just use `⊤`).
 This would allow us to simplify many predicates, but would fail for `sgn(x)==1`.
 
 ### Conditions as their own side conditions
@@ -48,8 +49,8 @@ This would allow us to simplify many predicates, but would fail for `sgn(x)==1`.
 We could try to use a condition as its own side-condition.
 
 The intuition would be that, when simplifying the `sgn(x)` part from
-`sgn(x) == 1 and x > 1` the SMT can use `x>1` to prune all branches except one.
-When simplifying `sgn(x) == 1`, the SMT may again prune all branches except one
+`sgn(x)==1 and x>1` the SMT can use `x>1` to prune all branches except one.
+When simplifying `sgn(x)==1`, the SMT may again prune all branches except one
 (assuming that it has the definition for `sgn`).
 
 The main problem is that the side condition cannot be used to prune unneeded
@@ -66,12 +67,15 @@ wrong.
 ### Combining the two
 
 We could do a two-step simplification (not implemented at the time
-when this document is being written). If `C` is the top-level condition:
+when this document is being written). Let's say `C` is the top-level condition
+(as mentioned above, when evaluating the current top-level condition, `C` is either the top level condition from the
+previous rewrite step or `⊤`).
+Then we do this:
 
 1. Let us say that a sub-term `σ` of a predicate `P` yields
    `σ = φ₁ ∨ ... ∨ φₙ`.
 1. We filter the resulting disjunction by evaluating `φᵢ` under the condition
-   `C ∧ P ∧ (σ = φᵢ)`.
+   `C ∧ P ∧ (σ = φᵢ)`. See Example 2 below.
     1. In the usual case, `σ` is a function-like pattern, and at most one of
        `φᵢ` is defined. Note that this is not always the case, since evaluating
        `sgn(x)` as part of `ceil(1/sgn(x))` with a `⊤` top-level condition
@@ -81,7 +85,7 @@ when this document is being written). If `C` is the top-level condition:
    and `C` implies `Rᵢ`, then we can simply drop `Rᵢ`).
 
 Additionally, a predicate `P` can be written as `P = P₁ ∧ ... ∧ Pₙ`, usually
-with `n>1`. Then we can simplify it as follows:
+with `n>1`. Then we can simplify it as follows (see Example 1 below):
 1. We simplify `P₁` as described above, but in the last step we check whether
    `C ∧ P₂ ... ∧ Pₙ` implies `Rᵢ`. Let `Q₁` be the result.
 1. We simplify `P₂` as above, in the last step we check whether
@@ -92,4 +96,39 @@ with `n>1`. Then we can simplify it as follows:
 
 Note that when simplifying `Pⱼ` we can't just take all `Pₖ` except `Pⱼ` as a
 side predicate in the last step since we don't want to simplify
-`sgn(x)==1 ∧ x>0` to `⊤`.
+`sgn(x)==1 ∧ x>0` to `⊤` (see Example 1 below).
+
+#### Example 1
+
+Let's say that the SMT solver understands `sgn` and `abs` and we simplify
+`sgn(x)==0 ∧ abs(x)==0`, i.e. `P₁ = sgn(x)==0` and `P₂ = abs(x)==0`.
+
+First we evaluate `sgn(x)` to `0 ∧ x==0` (we prune the other branches),
+we see that `abs(x)==0` implies `x==0`, so we simplify `sgn(x)` to `0`,
+and we simplify `P = sgn(x)==0` to `⊤`, so `Q₁ = ⊤`.
+
+Naively, we would continue to evaluate `abs(x)` with `P₁`, i.e. `sgn(x)==0`
+as a side condition. It would evaluate to `0 ∧ x==0`, we would see that
+`sgn(x)==0` implies `x==0`, so we drop that, simplifying `abs(x)` to `0`,
+and `abs(x)==0` to `⊤`, which means we just simplified the entire predicate
+to `⊤`.
+
+However, if we use the simplified version of `sgn(x)==0`, `Q₁`, i.e. `⊤`,
+then we get the right answer. We evaluate `abs(x)` to `0 ∧ x==0`
+(pruning branches as described in Example 2), then we evaluate
+`abs(x)==0` to `x==0`. Then we have `Q₂ = x==0` and we simplify the entire
+predicate to `x==0`.
+
+#### Example 2
+
+Say `C = ⊤` and we want to evaluate `P`, which is `sgn(x)==1`.
+Let's also say that we don't have a definition for `sgn` which is suitable for
+the SMT solver.
+
+We have three branches: `sgn(x)==1 and x>0`, `sgn(x)==-1 and x<0` and
+`sgn(x)==0 and x==0`. Obviously, we want the first branch, but, by default, we
+have no way of selecting it.
+
+If we just evaluate `⊤ ∧ sgn(x)==1 ∧ x<0`, the SMT solver will not be able
+to reject it. But it should be safe to evaluate
+`⊤ ∧ sgn(x)==1 ∧ sgn(x)==-1 ∧ x<0`, and that should be good enough.

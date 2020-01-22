@@ -18,6 +18,7 @@ module Kore.Domain.Builtin
     , InternalAc (..)
     , NormalizedAc (..)
     , emptyNormalizedAc
+    , asSingleOpaqueElem
     --
     , InternalMap
     , MapElement
@@ -235,6 +236,22 @@ emptyNormalizedAc = NormalizedAc
     , concreteElements = Map.empty
     , opaque = []
     }
+
+asSingleOpaqueElem
+    :: NormalizedAc key valueWrapper child
+    -> Maybe child
+asSingleOpaqueElem
+    NormalizedAc
+        { elementsWithVariables
+        , concreteElements
+        , opaque
+        }
+    | null elementsWithVariables
+    , null concreteElements
+    , [singleOpaqueElem] <- opaque
+  =
+      Just singleOpaqueElem
+    | otherwise =  Nothing
 
 {- | Internal representation of associative-commutative builtin terms.
 -}

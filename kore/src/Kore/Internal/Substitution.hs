@@ -17,7 +17,9 @@ module Kore.Internal.Substitution
     , wrap
     , modify
     , Kore.Internal.Substitution.mapVariables
+    , mapTerms
     , isNormalized
+    , isSimplified
     , simplifiedAttribute
     , null
     , variables
@@ -70,6 +72,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , SubstitutionVariable
@@ -336,16 +341,28 @@ mapVariables variableMapper =
       =
         (mapper <$> substVariable, TermLike.mapVariables mapper patt)
 
--- | Returns true iff the substitution is normalized.
-isNormalized :: Substitution variable -> Bool
-isNormalized (Substitution _)           = False
-isNormalized (NormalizedSubstitution _) = True
+mapTerms
+    :: (TermLike variable -> TermLike variable)
+    -> Substitution variable -> Substitution variable
+mapTerms mapper (Substitution s) = Substitution (fmap mapper <$> s)
+mapTerms mapper (NormalizedSubstitution s) =
+    NormalizedSubstitution (fmap mapper s)
+
+isSimplified :: SideCondition.Representation -> Substitution variable -> Bool
+isSimplified _ (Substitution _) = False
+isSimplified sideCondition (NormalizedSubstitution normalized) =
+    all (TermLike.isSimplified sideCondition) normalized
 
 simplifiedAttribute
     :: Substitution variable -> Attribute.Simplified
 simplifiedAttribute (Substitution _) = Attribute.NotSimplified
 simplifiedAttribute (NormalizedSubstitution normalized) =
     Foldable.foldMap TermLike.simplifiedAttribute normalized
+
+-- | Returns true iff the substitution is normalized.
+isNormalized :: Substitution variable -> Bool
+isNormalized (Substitution _)           = False
+isNormalized (NormalizedSubstitution _) = True
 
 -- | Returns true iff the substitution is empty.
 null :: Substitution variable -> Bool

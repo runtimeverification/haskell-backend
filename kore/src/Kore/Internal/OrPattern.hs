@@ -11,6 +11,7 @@ module Kore.Internal.OrPattern
     , toPatterns
     , fromPattern
     , fromTermLike
+    , gather
     , bottom
     , isFalse
     , isPredicate
@@ -25,6 +26,9 @@ module Kore.Internal.OrPattern
 import qualified Data.Foldable as Foldable
 import qualified GHC.Stack as GHC
 
+import Branch
+    ( BranchT
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -42,6 +46,9 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
@@ -53,8 +60,8 @@ import Kore.TopBottom
 -}
 type OrPattern variable = MultiOr (Pattern variable)
 
-isSimplified :: OrPattern variable -> Bool
-isSimplified = all Pattern.isSimplified
+isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
+isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
 
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}
@@ -174,4 +181,9 @@ coerceSort sort =
     fromPatterns
     . map (Pattern.coerceSort sort)
     . toPatterns
+
+gather
+    :: (Ord variable, Monad m)
+    => BranchT m (Pattern variable) -> m (OrPattern variable)
+gather = MultiOr.gather
 

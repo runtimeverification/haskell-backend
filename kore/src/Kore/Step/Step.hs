@@ -409,7 +409,7 @@ toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition
-    :: Ord variable
+    :: InternalVariable variable
     => SideCondition variable
     -> SideCondition (Target variable)
 toConfigurationVariablesCondition = SideCondition.mapVariables Target.NonTarget

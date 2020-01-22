@@ -56,6 +56,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
@@ -98,9 +101,10 @@ fromConditionSorted
     -> Pattern variable
 fromConditionSorted sort = (<$) (mkTop sort)
 
-isSimplified :: Pattern variable -> Bool
-isSimplified (splitTerm -> (t, p)) =
-    TermLike.isSimplified t && Condition.isSimplified p
+isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
+isSimplified sideCondition (splitTerm -> (t, p)) =
+    TermLike.isSimplified sideCondition t
+    && Condition.isSimplified sideCondition p
 
 simplifiedAttribute :: Pattern variable -> Attribute.Simplified
 simplifiedAttribute (splitTerm -> (t, p)) =

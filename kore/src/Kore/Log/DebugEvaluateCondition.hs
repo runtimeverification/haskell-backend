@@ -9,6 +9,9 @@ module Kore.Log.DebugEvaluateCondition
     , debugEvaluateCondition
     ) where
 
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -19,9 +22,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Log
-import Pretty
-    ( Pretty (..)
-    )
 import qualified SQL
 
 newtype DebugEvaluateCondition =

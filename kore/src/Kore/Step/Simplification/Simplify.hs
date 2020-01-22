@@ -32,6 +32,7 @@ module Kore.Step.Simplification.Simplify
     , applicationAxiomSimplifier
     , notApplicableAxiomEvaluator
     , purePatternAxiomEvaluator
+    , isConstructorOrOverloaded
     ) where
 
 import Control.Applicative
@@ -107,6 +108,9 @@ import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier
+    )
+import Kore.Step.Simplification.OverloadSimplifier
+    ( OverloadSimplifier (..)
     )
 import Kore.Syntax.Application
 import Kore.Unparser
@@ -212,6 +216,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         => m InjSimplifier
     askInjSimplifier = Monad.Trans.lift askInjSimplifier
     {-# INLINE askInjSimplifier #-}
+
+    -- | Retrieve the 'OverloadSimplifier' for the Kore context.
+    askOverloadSimplifier :: m OverloadSimplifier
+    default askOverloadSimplifier
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => m OverloadSimplifier
+    askOverloadSimplifier = Monad.Trans.lift askOverloadSimplifier
+    {-# INLINE askOverloadSimplifier #-}
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
@@ -589,3 +601,13 @@ applicationAxiomSimplifier applicationSimplifier =
             (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)
+
+-- |Checks whether symbol is constructor or overloaded
+isConstructorOrOverloaded
+    :: MonadSimplify unifier
+    => Symbol
+    -> unifier Bool
+isConstructorOrOverloaded s
+  = do
+    OverloadSimplifier { isOverloaded } <- askOverloadSimplifier
+    return (isConstructor s || isOverloaded s)
