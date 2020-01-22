@@ -67,6 +67,7 @@ solution and the renamed rule is wrapped with the combined condition.
  -}
 type Unified = Conditional Variable
 
+-- | @Equality@ is an applied equality rule.
 newtype Equality = Equality { getEquality :: EqualityPattern Variable }
     deriving (Eq, Typeable)
     deriving GHC.Generic
