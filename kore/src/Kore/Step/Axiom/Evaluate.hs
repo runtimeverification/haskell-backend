@@ -30,9 +30,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkEvaluated
@@ -95,8 +92,6 @@ evaluateAxioms equalityRules sideCondition termLike
   | otherwise
   = maybeNotApplicable $ do
     let
-        -- TODO (thomas.tuegel): Figure out how to get the initial conditions
-        -- and apply them here, to remove remainder branches sooner.
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike termLike
 
@@ -107,7 +102,7 @@ evaluateAxioms equalityRules sideCondition termLike
     Monad.guard (any Result.hasResults resultss)
     mapM_ rejectNarrowing resultss
 
-    ceilChild <- ceilChildOfApplicationOrTop SideCondition.topTODO termLike
+    ceilChild <- ceilChildOfApplicationOrTop sideCondition termLike
     let
         results =
             Result.mergeResults resultss

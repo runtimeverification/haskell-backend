@@ -9,6 +9,7 @@ module Kore.Internal.OrCondition
     , toConditions
     , fromConditions
     , fromCondition
+    , gather
     , bottom
     , top
     , isFalse
@@ -18,6 +19,9 @@ module Kore.Internal.OrCondition
 
 import qualified Data.Foldable as Foldable
 
+import Branch
+    ( BranchT
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -103,3 +107,8 @@ toPredicate
     => MultiOr (Predicate variable) -> Predicate variable
 toPredicate multiOr =
     Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
+
+gather
+    :: (Ord variable, Monad m)
+    => BranchT m (Condition variable) -> m (OrCondition variable)
+gather = MultiOr.gather
