@@ -19,12 +19,15 @@ import Kore.Internal.Predicate
     , makeIffPredicate
     , makeTruePredicate
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
     , simplify
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -199,7 +202,10 @@ makeIff first second =
 simplify
     :: Iff Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify = runSimplifier mockEnv . Iff.simplify
+simplify =
+    runSimplifier mockEnv
+    . Iff.simplify SideCondition.top
+    . fmap simplifiedOrPattern
   where
     mockEnv = Mock.env
 
@@ -207,4 +213,5 @@ makeEvaluate
     :: Pattern Variable
     -> Pattern Variable
     -> OrPattern Variable
-makeEvaluate = Iff.makeEvaluate
+makeEvaluate p1 p2 =
+    Iff.makeEvaluate (simplifiedPattern p1) (simplifiedPattern p2)

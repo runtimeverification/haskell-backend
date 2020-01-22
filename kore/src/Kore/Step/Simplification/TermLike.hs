@@ -52,6 +52,12 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    )
+import qualified Kore.Internal.Substitution as Substitution
+    ( toMap
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
@@ -143,9 +149,6 @@ import qualified Kore.Step.Simplification.Variable as Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
-    ( toMap
-    )
 import Kore.Unparser
     ( unparse
     , unparseToString
@@ -204,7 +207,11 @@ simplifyInternal
     ->  simplifier (OrPattern variable)
 simplifyInternal term sideCondition = do
     result <- simplifyInternalWorker term
-    unless (OrPattern.isSimplified result)
+    unless
+        (OrPattern.isSimplified
+            (SideCondition.toRepresentation sideCondition)
+            result
+        )
         (error $ unlines
             (   [ "Not simplified."
                 , "result = "
@@ -229,7 +236,7 @@ simplifyInternal term sideCondition = do
     assertConditionSimplified
         :: TermLike variable -> Condition variable -> Condition variable
     assertConditionSimplified originalTerm condition =
-        if Condition.isSimplified condition
+        if Condition.isSimplified sideConditionRepresentation condition
             then condition
             else (error . unlines)
                 [ "Not simplified."
@@ -242,7 +249,7 @@ simplifyInternal term sideCondition = do
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
-        | TermLike.isSimplified termLike
+        | TermLike.isSimplified sideConditionRepresentation termLike
         = case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate ->
@@ -335,20 +342,21 @@ simplifyInternal term sideCondition = do
             -> simplifier (OrPattern variable)
             -> simplifier (OrPattern variable)
         returnIfResultSimplifiedOrContinue originalTerm result continuation
-          | Pattern.isSimplified result
+          | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultTerm
             && resultSubstitutionIsEmpty
           = return (OrPattern.fromPattern result)
-          | Pattern.isSimplified result
+          | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultPredicate
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
-          = return (OrPattern.fromTermLike (TermLike.markSimplified resultTerm))
+          = return
+                (OrPattern.fromTermLike (TermLike.markSimplified resultTerm))
           | isTop resultTerm && Right resultPredicate == termAsPredicate
           = return
                 $ OrPattern.fromPattern
                 $ Pattern.fromCondition
-                $ Condition.markSimplified resultPredicate
+                $ Condition.markPredicateSimplified resultPredicate
           | otherwise = continuation
           where
             (resultTerm, resultPredicate) = Pattern.splitTerm result
@@ -361,7 +369,8 @@ simplifyInternal term sideCondition = do
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =
-                Exception.assert (TermLike.isSimplified termLike)
+                Exception.assert
+                    (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
@@ -373,7 +382,7 @@ simplifyInternal term sideCondition = do
             SignednessF _ -> doNotSimplify
             --
             AndF andF ->
-                And.simplify =<< simplifyChildren andF
+                And.simplify sideCondition =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
@@ -391,13 +400,13 @@ simplifyInternal term sideCondition = do
                             exists
                 in  Exists.simplify sideCondition =<< simplifyChildren fresh
             IffF iffF ->
-                Iff.simplify =<< simplifyChildren iffF
+                Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->
-                Implies.simplify =<< simplifyChildren impliesF
+                Implies.simplify sideCondition =<< simplifyChildren impliesF
             InF inF ->
                 In.simplify sideCondition =<< simplifyChildren inF
             NotF notF ->
-                Not.simplify =<< simplifyChildren notF
+                Not.simplify sideCondition =<< simplifyChildren notF
             --
             BottomF bottomF ->
                 Bottom.simplify <$> simplifyChildren bottomF
@@ -458,3 +467,5 @@ simplifyInternal term sideCondition = do
             , binderChild = freshChild
             }
       | otherwise = binder
+
+    sideConditionRepresentation = SideCondition.toRepresentation sideCondition

@@ -16,6 +16,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.TopBottom
     ( isBottom
@@ -23,7 +24,6 @@ import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
 import Kore.Unparser
     ( unparse

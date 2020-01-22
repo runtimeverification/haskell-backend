@@ -18,6 +18,12 @@ module Kore.Step.Simplification.Not
 import qualified Data.Foldable as Foldable
 
 import Branch
+import Kore.Internal.Condition
+    ( Condition
+    )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd
     ( MultiAnd
@@ -35,22 +41,27 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike hiding
-    ( mkAnd
+import Kore.Internal.SideCondition
+    ( SideCondition
     )
+import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
 import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
-    ( TopBottom
+    ( TopBottom (..)
     )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
@@ -64,9 +75,11 @@ Right now this uses the following:
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Not Sort (OrPattern variable)
+    => SideCondition variable
+    -> Not Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Not { notChild } = simplifyEvaluated notChild
+simplify sideCondition Not { notChild } =
+    simplifyEvaluated sideCondition notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -88,13 +101,14 @@ to carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPattern variable
+    => SideCondition variable
+    -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated simplified =
+simplifyEvaluated sideCondition simplified =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
-        mkMultiAndPattern andPattern
+        mkMultiAndPattern sideCondition andPattern
 
 simplifyEvaluatedPredicate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
@@ -158,7 +172,7 @@ makeEvaluatePredicate
             Predicate.markSimplified
             $ makeNotPredicate
             $ makeAndPredicate predicate
-            $ Predicate.fromSubstitution substitution
+            $ Substitution.toPredicate substitution
         , substitution = mempty
         }
 
@@ -213,10 +227,11 @@ scatterAnd = scatter . distributeAnd
  -}
 mkMultiAndPattern
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => MultiAnd (Pattern variable)
+    => SideCondition variable
+    -> MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
-mkMultiAndPattern patterns =
-    Foldable.foldrM And.makeEvaluate Pattern.top patterns
+mkMultiAndPattern sideCondition patterns =
+    Foldable.foldrM (And.makeEvaluate sideCondition) Pattern.top patterns
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}

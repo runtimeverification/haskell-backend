@@ -25,6 +25,10 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
@@ -38,10 +42,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -256,7 +256,7 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicates actual
 
-    , testCase "Constructor circular dependency?"
+    , testCase "zzzConstructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
@@ -379,8 +379,14 @@ merge
 merge s1 s2 =
     Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
-    $ mergeSubstitutionsExcept $ Substitution.wrap <$> [s1, s2]
+    $ mergeSubstitutionsExcept
+    $ Substitution.wrap . fmap simplifiedPairTerm <$> [s1, s2]
   where
+    simplifiedPairTerm
+        :: (UnifiedVariable Variable, TermLike Variable)
+        -> (UnifiedVariable Variable, TermLike Variable)
+    simplifiedPairTerm = fmap Test.simplifiedTerm
+
     mergeSubstitutionsExcept =
         Branch.alternate
         . Simplifier.simplifyCondition SideCondition.top

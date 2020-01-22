@@ -1,6 +1,7 @@
 module TEST
 
-  imports DOMAINS
+  imports BOOL
+  imports MAP
 
   syntax Val ::= "a" | "b" | "c"
 

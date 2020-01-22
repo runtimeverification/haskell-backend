@@ -69,7 +69,7 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -83,8 +83,15 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
+    , toRepresentation
     , topTODO
     )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    , SingleSubstitution
+    , Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
     , TermLike
@@ -95,18 +102,12 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
-    , simplifyTerm
+    , simplifyConditionalTermToOr
     )
 import Kore.Substitute
     ( SubstitutionVariable
     )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    , SingleSubstitution
-    , Substitution
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
@@ -120,7 +121,8 @@ newtype SubstitutionSimplifier simplifier =
         { simplifySubstitution
             :: forall variable
             .  SubstitutionVariable variable
-            => Substitution variable
+            => SideCondition variable
+            -> Substitution variable
             -> simplifier (OrCondition variable)
         }
 
@@ -141,9 +143,10 @@ substitutionSimplifier =
     wrapper
         :: forall variable
         .  SubstitutionVariable variable
-        => Substitution variable
+        => SideCondition variable
+        -> Substitution variable
         -> simplifier (OrCondition variable)
-    wrapper substitution =
+    wrapper sideCondition substitution =
         fmap OrCondition.fromConditions . Branch.gather $ do
             (predicate, result) <- worker substitution & maybeT empty return
             let condition = Condition.fromNormalizationSimplified result
@@ -151,7 +154,7 @@ substitutionSimplifier =
             TopBottom.guardAgainstBottom condition'
             return condition'
       where
-        worker = simplifySubstitutionWorker simplifierMakeAnd
+        worker = simplifySubstitutionWorker sideCondition simplifierMakeAnd
 
 -- * Implementation
 
@@ -278,10 +281,11 @@ simplifySubstitutionWorker
     :: forall variable simplifier
     .  SubstitutionVariable variable
     => MonadSimplify simplifier
-    => MakeAnd simplifier
+    => SideCondition variable
+    -> MakeAnd simplifier
     -> Substitution variable
     -> MaybeT simplifier (Predicate variable, Normalization variable)
-simplifySubstitutionWorker makeAnd' = \substitution -> do
+simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     (result, Private { accum = condition }) <-
         runStateT loop Private
             { count = maxBound
@@ -350,7 +354,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
         case uVar of
             SetVar _ -> return subst
             ElemVar _
-              | TermLike.isSimplified termLike -> return subst
+              | isSimplified -> return subst
               | otherwise -> do
                 termLike' <- simplifyTermLike termLike
                 -- simplifyTermLike returns the unsimplified input in the event
@@ -361,12 +365,16 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
                 --   3. we need a substitution to evaluate it, and
                 --   4. substitution resets the simplified marker.
                 return (uVar, TermLike.markSimplified termLike')
+              where
+                isSimplified = TermLike.isSimplified
+                    sideConditionRepresentation
+                    termLike
 
     simplifyTermLike
         :: TermLike variable
         -> Impl variable simplifier (TermLike variable)
     simplifyTermLike termLike = do
-        orPattern <- simplifyTerm termLike
+        orPattern <- simplifyConditionalTermToOr sideCondition termLike
         case OrPattern.toPatterns orPattern of
             [        ] -> do
                 addCondition Condition.bottom
@@ -387,6 +395,8 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
             & Trans.lift . Trans.lift
         addPredicate predicate
         return substitution'
+
+    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
 data Private variable =
     Private
@@ -437,3 +447,4 @@ takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty
     return substitution
+

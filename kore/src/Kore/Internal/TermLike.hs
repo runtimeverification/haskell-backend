@@ -16,6 +16,9 @@ module Kore.Internal.TermLike
     , Pattern.isConstructorLike
     , assertConstructorLikeKeys
     , markSimplified
+    , markSimplifiedConditional
+    , setSimplified
+    , simplifiedAttribute
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
@@ -203,6 +206,9 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
+    ( simplifiedTo
+    )
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness
     ( Endianness
@@ -215,6 +221,9 @@ import Kore.Error
 import Kore.Internal.Alias
 import Kore.Internal.Inj
 import Kore.Internal.InternalBytes
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     )
@@ -408,8 +417,15 @@ fromConcrete
     -> TermLike variable
 fromConcrete = mapVariables (\case {})
 
-isSimplified :: TermLike variable -> Bool
-isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
+isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
+isSimplified sideCondition =
+    Attribute.isSimplified sideCondition . extractAttributes
+
+isFullySimplified :: TermLike variable -> Bool
+isFullySimplified = Attribute.isFullySimplified . extractAttributes
+
+simplifiedAttribute :: TermLike variable -> Pattern.Simplified
+simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys
     :: SortedVariable variable
@@ -428,20 +444,98 @@ assertConstructorLikeKeys keys a
                 , Pretty.indent 2 "Simplifiable keys:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
+    | any (not . isFullySimplified) keys =
+        let simplifiableKeys =
+                filter (not . isFullySimplified) $ Foldable.toList keys
+        in
+            (error . show . Pretty.vsep) $
+                [ "Map and Set may only contain simplified \
+                  \keys."
+                , Pretty.indent 2 "Simplifiable keys:"
+                ]
+                <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | otherwise = a
 
-{- | Mark a 'TermLike' as fully simplified.
+{- | Mark a 'TermLike' as fully simplified at the current level.
 
 The pattern is fully simplified if we do not know how to simplify it any
 further. The simplifier reserves the right to skip any pattern which is marked,
 so do not mark any pattern unless you are certain it cannot be further
 simplified.
 
- -}
-markSimplified :: TermLike variable -> TermLike variable
+Note that fully simplified at the current level may not mean that the pattern
+is fully simplified (e.g. if a child is simplified conditionally).
+
+-}
+markSimplified
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => TermLike variable -> TermLike variable
 markSimplified (Recursive.project -> attrs :< termLikeF) =
     Recursive.embed
-        (attrs { Attribute.simplified = Pattern.Simplified } :< termLikeF)
+        (  Attribute.setSimplified
+            (checkedSimplifiedFromChildren termLikeF)
+            attrs
+        :< termLikeF
+        )
+
+cannotSimplifyNotSimplifiedError
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => TermLikeF variable (TermLike variable) -> a
+cannotSimplifyNotSimplifiedError termLikeF =
+    error
+        (  "Unexpectedly marking term with NotSimplified children as \
+            \simplified:\n"
+        ++ show termLikeF
+        ++ "\n"
+        ++ Unparser.unparseToString termLikeF
+        )
+
+setSimplified
+    :: InternalVariable variable
+    => Pattern.Simplified -> TermLike variable -> TermLike variable
+setSimplified simplified (Recursive.project -> attrs :< termLikeF) =
+    Recursive.embed
+        (  Attribute.setSimplified mergedSimplified attrs
+        :< termLikeF
+        )
+  where
+    childSimplified = simplifiedFromChildren termLikeF
+    mergedSimplified = case (childSimplified, simplified) of
+        (Pattern.NotSimplified, Pattern.NotSimplified) -> Pattern.NotSimplified
+        (Pattern.NotSimplified, _) -> cannotSimplifyNotSimplifiedError termLikeF
+        (_, Pattern.NotSimplified) -> Pattern.NotSimplified
+        _ -> childSimplified `Attribute.Simplified.simplifiedTo` simplified
+
+markSimplifiedConditional
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => SideCondition.Representation -> TermLike variable -> TermLike variable
+markSimplifiedConditional condition (Recursive.project -> attrs :< termLikeF) =
+    Recursive.embed
+        (  Attribute.setSimplified
+                (  checkedSimplifiedFromChildren termLikeF
+                <> Pattern.simplifiedConditionally condition
+                )
+                attrs
+        :< termLikeF
+        )
+
+simplifiedFromChildren
+    :: TermLikeF variable (TermLike variable) -> Pattern.Simplified
+simplifiedFromChildren termLikeF =
+    case mergedSimplified of
+        Pattern.NotSimplified -> Pattern.NotSimplified
+        _ -> mergedSimplified `Pattern.simplifiedTo` Pattern.fullySimplified
+  where
+    mergedSimplified =
+        foldMap (Attribute.simplifiedAttribute . extractAttributes) termLikeF
+
+checkedSimplifiedFromChildren
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => TermLikeF variable (TermLike variable) -> Pattern.Simplified
+checkedSimplifiedFromChildren termLikeF =
+    case simplifiedFromChildren termLikeF of
+        Pattern.NotSimplified -> cannotSimplifyNotSimplifiedError termLikeF
+        simplified -> simplified
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort

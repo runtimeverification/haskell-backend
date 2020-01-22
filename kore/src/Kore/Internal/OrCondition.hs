@@ -30,6 +30,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
@@ -42,8 +45,8 @@ import Kore.TopBottom
 -}
 type OrCondition variable = MultiOr (Condition variable)
 
-isSimplified :: OrCondition variable -> Bool
-isSimplified = all Condition.isSimplified
+isSimplified :: SideCondition.Representation -> OrCondition variable -> Bool
+isSimplified sideCondition = all (Condition.isSimplified sideCondition)
 
 {- | A "disjunction" of one 'Condition'.
  -}

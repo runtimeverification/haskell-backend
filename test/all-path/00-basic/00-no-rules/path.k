@@ -1,4 +1,4 @@
 module PATH
-  import DOMAINS
+  imports BOOL
   syntax S ::= "a" | "b"
 endmodule

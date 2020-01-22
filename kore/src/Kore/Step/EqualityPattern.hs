@@ -9,6 +9,8 @@ module Kore.Step.EqualityPattern
     , EqualityRule (..)
     , equalityPattern
     , equalityRuleToTerm
+    , isSimplificationRule
+    , getPriorityOfRule
     ) where
 
 import Control.DeepSeq
@@ -18,11 +20,15 @@ import qualified Data.Default as Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Data.Maybe
+    ( fromMaybe
+    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Owise as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
@@ -234,3 +240,21 @@ instance
             <> freeVariables requires
             <> freeVariables right
             <> freeVariables ensures
+
+isSimplificationRule :: EqualityRule variable -> Bool
+isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
+    isSimplification
+  where
+    Attribute.Simplification { isSimplification } =
+        Attribute.simplification attributes
+
+getPriorityOfRule :: EqualityRule variable -> Integer
+getPriorityOfRule (EqualityRule EqualityPattern { attributes }) =
+    if isOwise
+        then 200
+        else fromMaybe 100 getPriority
+  where
+    Attribute.Priority { getPriority } =
+        Attribute.priority attributes
+    Attribute.Owise { isOwise } =
+        Attribute.owise attributes

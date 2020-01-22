@@ -1,5 +1,7 @@
 module PATH
-  import DOMAINS
+  import BOOL
+  import INT
+  import SET
   syntax S ::= "a" | "b" | "c" 
   syntax Cmd ::= "select"
 

@@ -27,6 +27,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( firstFullEvaluation
@@ -37,7 +38,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )

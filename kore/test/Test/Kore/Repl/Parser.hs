@@ -463,9 +463,9 @@ logTests =
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
             }
-    , "log critical [DebugAppliedRule] stderr"
+    , "log error [DebugAppliedRule] stderr"
         `parsesTo_` Log Log.KoreLogOptions
-            { logLevel = Log.Critical
+            { logLevel = Log.Error
             , logEntries = Set.singleton debugAppliedRuleType
             , timestampsSwitch = Log.TimestampsEnable
             , logType = Log.LogStdErr

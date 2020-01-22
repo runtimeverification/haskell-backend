@@ -28,13 +28,13 @@ import Kore.Internal.Predicate
     , makeFloorPredicate_
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Floor
     ( makeEvaluateFloor
     , simplify
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -45,6 +45,7 @@ import Test.Kore
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 test_floorSimplification :: [TestTree]
@@ -187,7 +188,7 @@ makeFloor patterns =
         }
 
 evaluate :: Floor Sort (OrPattern Variable) -> OrPattern Variable
-evaluate = simplify
+evaluate = simplify . fmap simplifiedOrPattern
 
 makeEvaluate :: Pattern Variable -> OrPattern Variable
-makeEvaluate = makeEvaluateFloor
+makeEvaluate = makeEvaluateFloor . simplifiedPattern

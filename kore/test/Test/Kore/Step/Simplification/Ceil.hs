@@ -28,8 +28,13 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( toRepresentation
+    , top
     )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
@@ -45,7 +50,6 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -488,12 +492,13 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = asInternalSet $
-                    emptyNormalizedSet `with` OpaqueSet fOfXset
+                    emptyNormalizedSet
+                    `with` OpaqueSet (TermLike.markSimplified fOfXset)
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "ceil(set)" expected actual
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "ceil with opaque sets" $ do
         let
             expected = OrPattern.fromPatterns
@@ -511,7 +516,7 @@ test_ceilSimplification =
                 ]
         actual <- makeEvaluate
             Conditional
-                { term = asInternalSet $
+                { term = TermLike.markSimplified $ asInternalSet $
                     emptyNormalizedSet
                         `with` OpaqueSet fOfXset
                         `with` OpaqueSet fOfYset
@@ -519,7 +524,7 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqual "ceil(set set)" expected actual
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "ceil of sort injection" $ do
         let expected =
                 OrPattern.fromPattern Conditional
@@ -528,9 +533,10 @@ test_ceilSimplification =
                     , substitution = mempty
                     }
         actual <- (makeEvaluate . Pattern.fromTermLike)
-            (Mock.sortInjection Mock.topSort fOfA)
+            (Mock.sortInjection Mock.topSort (TermLike.markSimplified fOfA))
         assertEqual "ceil(f(a))" expected actual
-        assertBool "simplified" (OrPattern.isSimplified actual)
+        assertBool "simplified"
+            (OrPattern.isSimplified sideRepresentation actual)
     ]
   where
     fOfA :: TermLike Variable
@@ -627,3 +633,7 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     $ Ceil.makeEvaluate SideCondition.top child
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }
+
+sideRepresentation :: SideCondition.Representation
+sideRepresentation =
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)

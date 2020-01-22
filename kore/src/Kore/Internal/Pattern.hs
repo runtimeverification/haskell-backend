@@ -22,6 +22,7 @@ module Kore.Internal.Pattern
     , fromTermLike
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
+    , simplifiedAttribute
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -40,6 +41,9 @@ import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     , getFreeElementVariables
     )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -52,6 +56,10 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
@@ -71,7 +79,6 @@ import qualified Kore.Sort as Sort
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -94,9 +101,14 @@ fromConditionSorted
     -> Pattern variable
 fromConditionSorted sort = (<$) (mkTop sort)
 
-isSimplified :: Pattern variable -> Bool
-isSimplified (splitTerm -> (t, p)) =
-    TermLike.isSimplified t && Condition.isSimplified p
+isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
+isSimplified sideCondition (splitTerm -> (t, p)) =
+    TermLike.isSimplified sideCondition t
+    && Condition.isSimplified sideCondition p
+
+simplifiedAttribute :: Pattern variable -> Attribute.Simplified
+simplifiedAttribute (splitTerm -> (t, p)) =
+    TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
 
 freeElementVariables
     :: Ord variable
@@ -139,7 +151,7 @@ toTermLike
 toTermLike Conditional { term, predicate, substitution } =
     simpleAnd
         (simpleAnd term predicate)
-        (Predicate.fromSubstitution substitution)
+        (Substitution.toPredicate substitution)
   where
     simpleAnd
         :: TermLike variable

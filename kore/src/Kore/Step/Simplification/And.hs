@@ -55,6 +55,9 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
@@ -117,10 +120,11 @@ Also, we have
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => And Sort (OrPattern variable)
+    => SideCondition variable
+    -> And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify And { andFirst = first, andSecond = second } =
-    simplifyEvaluated first second
+simplify sideCondition And { andFirst = first, andSecond = second } =
+    simplifyEvaluated sideCondition first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -141,10 +145,11 @@ to carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPattern variable
+    => SideCondition variable
+    -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated first second
+simplifyEvaluated sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
   | OrPattern.isTrue first   = return second
@@ -154,16 +159,17 @@ simplifyEvaluated first second
         gather $ do
             first1 <- scatter first
             second1 <- scatter second
-            makeEvaluate first1 second1
+            makeEvaluate sideCondition first1 second1
     return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => [OrPattern variable]
+    => SideCondition variable
+    -> [OrPattern variable]
     -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple [] = return OrPattern.top
-simplifyEvaluatedMultiple (pat : patterns) =
-    foldM simplifyEvaluated pat patterns
+simplifyEvaluatedMultiple _ [] = return OrPattern.top
+simplifyEvaluatedMultiple sideCondition (pat : patterns) =
+    foldM (simplifyEvaluated sideCondition) pat patterns
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
@@ -174,24 +180,27 @@ makeEvaluate
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => Pattern variable
+    => SideCondition variable
+    -> Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluate first second
+makeEvaluate sideCondition first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
-  | otherwise = makeEvaluateNonBool first second
+  | otherwise = makeEvaluateNonBool sideCondition first second
 
 makeEvaluateNonBool
     ::  ( SimplifierVariable variable
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => Pattern variable
+    => SideCondition variable
+    -> Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
 makeEvaluateNonBool
+    sideCondition
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
@@ -200,7 +209,7 @@ makeEvaluateNonBool
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
-    normalized <- Substitution.normalize merged
+    normalized <- Substitution.normalize sideCondition merged
     return
         normalized
             { term =
@@ -223,10 +232,10 @@ applyAndIdempotenceAndFindContradictions patt =
   where
     (terms, negatedTerms) = splitIntoTermsAndNegations patt
     noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
-    mkAndSimplified a b
-      | TermLike.isSimplified a, TermLike.isSimplified b =
-        TermLike.markSimplified $ mkAnd a b
-      | otherwise = mkAnd a b
+    mkAndSimplified a b =
+        TermLike.setSimplified
+            (TermLike.simplifiedAttribute a <> TermLike.simplifiedAttribute b)
+            (mkAnd a b)
 
 splitIntoTermsAndNegations
     :: forall variable

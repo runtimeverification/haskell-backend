@@ -3,7 +3,7 @@ require "harness.k"
 module FUNCTIONS
 
   imports HARNESS
-  imports DOMAINS
+  imports INT
 
   rule <k> begin => next true </k>
 

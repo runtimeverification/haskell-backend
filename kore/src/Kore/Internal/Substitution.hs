@@ -1,14 +1,10 @@
-{-|
-Module      : Kore.Unification.Substitution
-Description : The Substitution type.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : vladimir.ciobanu@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
 
-module Kore.Unification.Substitution
+module Kore.Internal.Substitution
     ( Substitution
     , SingleSubstitution
     , UnwrappedSubstitution
@@ -20,14 +16,18 @@ module Kore.Unification.Substitution
     , singleton
     , wrap
     , modify
-    , Kore.Unification.Substitution.mapVariables
+    , Kore.Internal.Substitution.mapVariables
+    , mapTerms
     , isNormalized
+    , isSimplified
+    , simplifiedAttribute
     , null
     , variables
     , unsafeWrap
-    , Kore.Unification.Substitution.filter
+    , Kore.Internal.Substitution.filter
     , partition
     , reverseIfRhsIsVar
+    , toPredicate
     , Normalization (..)
     , wrapNormalization
     , applyNormalized
@@ -63,7 +63,17 @@ import Prelude hiding
     )
 
 import Kore.Attribute.Pattern.FreeVariables
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified (..)
+    )
 import Kore.Debug
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , SubstitutionVariable
@@ -133,7 +143,7 @@ instance
       where
         wrapDiffPrec diff' = \precOut ->
             (if precOut >= 10 then Pretty.parens else id)
-            ("Kore.Unification.Substitution.wrap" Pretty.<+> diff' 10)
+            ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
 
 deriving instance Show variable => Show (Substitution variable)
 
@@ -325,6 +335,24 @@ mapVariables variableMapper =
       =
         (mapper <$> substVariable, TermLike.mapVariables mapper patt)
 
+mapTerms
+    :: (TermLike variable -> TermLike variable)
+    -> Substitution variable -> Substitution variable
+mapTerms mapper (Substitution s) = Substitution (fmap mapper <$> s)
+mapTerms mapper (NormalizedSubstitution s) =
+    NormalizedSubstitution (fmap mapper s)
+
+isSimplified :: SideCondition.Representation -> Substitution variable -> Bool
+isSimplified _ (Substitution _) = False
+isSimplified sideCondition (NormalizedSubstitution normalized) =
+    all (TermLike.isSimplified sideCondition) normalized
+
+simplifiedAttribute
+    :: Substitution variable -> Attribute.Simplified
+simplifiedAttribute (Substitution _) = Attribute.NotSimplified
+simplifiedAttribute (NormalizedSubstitution normalized) =
+    Foldable.foldMap TermLike.simplifiedAttribute normalized
+
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution variable -> Bool
 isNormalized (Substitution _)           = False
@@ -513,3 +541,18 @@ applyNormalized Normalization { normalized, denormalized } =
         }
   where
     substitute = TermLike.substitute (Map.fromList normalized)
+
+{- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
+
+An empty substitution list returns a true predicate. A non-empty substitution
+returns a conjunction of variable-substitution equalities.
+
+-}
+toPredicate
+    :: InternalVariable variable
+    => Substitution variable
+    -> Predicate variable
+toPredicate =
+    Predicate.makeMultipleAndPredicate
+    . fmap Predicate.singleSubstitutionToPredicate
+    . unwrap

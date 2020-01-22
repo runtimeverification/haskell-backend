@@ -34,6 +34,10 @@ import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import Kore.Internal.Substitution
+    ( Normalization (..)
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.EqualityPattern as EqualityPattern
     ( EqualityPattern (..)
@@ -59,10 +63,6 @@ import Kore.Unification.Error
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.Substitution
-    ( Normalization (..)
-    )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( MonadUnify
     , SimplifierVariable
@@ -633,7 +633,7 @@ applyEquationalRulesSequence_
     results <- Step.applyRulesSequence
         unificationProcedure
         SideCondition.top
-        initialConfig
+        (simplifiedPattern initialConfig)
         rules
     Step.assertFunctionLikeResults (term initialConfig) results
     return results
@@ -686,10 +686,6 @@ test_applyEquationalRulesSequence =
                 makeAndPredicate
                     (makeCeilPredicate Mock.testSort Mock.cf)
                     (makeCeilPredicate_ Mock.cg)
-            definedBranchesUnsorted =
-                makeAndPredicate
-                    (makeCeilPredicate_ Mock.cf)
-                    (makeCeilPredicate_ Mock.cg)
             results =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -712,7 +708,7 @@ test_applyEquationalRulesSequence =
                             Predicate.makeAndPredicate
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranchesUnsorted
+                                        definedBranches
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.a
@@ -720,7 +716,7 @@ test_applyEquationalRulesSequence =
                                 )
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranchesUnsorted
+                                        definedBranches
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.b

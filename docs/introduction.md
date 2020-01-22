@@ -89,7 +89,7 @@ that is, a `Substitution` is the type of `Predicate` which can be applied as a s
 
 References:
 
-- `Kore.Unification.Substitution`
+- `Kore.Internal.Substitution`
 
 ### `Pattern`
 

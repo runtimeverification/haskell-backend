@@ -8,7 +8,7 @@ module Log
     (
     -- * Entries
       Entry (..)
-    , Severity (..)
+    , Severity (..), prettySeverity
     , SomeEntry (..)
     , someEntry
     , entryTypeText
@@ -28,12 +28,12 @@ module Log
     , logInfo
     , logWarning
     , logError
-    , logCritical
     , logWith
     ) where
 
 import Colog
     ( LogAction (..)
+    , Severity (..)
     , (<&)
     )
 import qualified Control.Lens as Lens
@@ -98,23 +98,8 @@ import Control.Monad.Counter
     ( CounterT
     )
 
--- | Log level used to describe each log message. It is also used to set the
--- minimum level to be outputted.
-data Severity
-    = Debug
-    -- ^ Lowest level used for low-level debugging.
-    | Info
-    -- ^ Used for various informative messages.
-    | Warning
-    -- ^ Used for odd/unusual cases which are recoverable.
-    | Error
-    -- ^ Used for application errors, unexpected behaviors, etc.
-    | Critical
-    -- ^ Used before shutting down the application.
-    deriving (Show, Read, Eq, Ord)
-
-instance Pretty.Pretty Severity where
-    pretty = Pretty.pretty . show
+prettySeverity :: Severity -> Pretty.Doc ann
+prettySeverity = Pretty.pretty . show
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
@@ -190,14 +175,6 @@ logError
     => Text
     -> m ()
 logError = log Error
-
--- | Logs using 'Critical' log level. See 'log'.
-logCritical
-    :: forall m
-    . (WithLog LogMessage m)
-    => Text
-    -> m ()
-logCritical = log Critical
 
 -- ---------------------------------------------------------------------
 -- * LoggerT
