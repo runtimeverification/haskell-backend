@@ -205,7 +205,7 @@ ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
   -- extraction of their axioms.
   | isUnit = True
   | isIdem = True
-  | Just _ <- getOverload = True
+  | Just _ <- getOverload = False
   | otherwise = False
   where
     Assoc { isAssoc } = Attribute.assoc attributes

@@ -12,9 +12,7 @@ import Control.Applicative
 import Control.Error
     ( MaybeT (..)
     )
-import Control.Exception
-    ( assert
-    )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Text.Prettyprint.Doc
     ( Doc
@@ -24,21 +22,18 @@ import Prelude hiding
     ( concat
     )
 
-import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
     ( synthesize
     )
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.NoConfusion
+    ( equalInjectiveHeadsAndEquals
+    )
+import Kore.Step.Simplification.OverloadSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 
@@ -64,55 +59,78 @@ overloadedConstructorSortInjectionAndEquals
     termMerger
     first@(App_ firstHead _)
     (Inj_ secondInj)
-   = do
-    tools <- Simplifier.askMetadataTools
-    if MetadataTools.isOverloaded tools firstHead
-        then overloadedAndEqualsOverloading termMerger tools first secondInj
-        else empty
+  = do
+    OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded firstHead)
+    overloadedAndEqualsOverloading termMerger first secondInj
 overloadedConstructorSortInjectionAndEquals
     termMerger
     (Inj_ firstInj)
     second@(App_ secondHead _)
-   = do
-    tools <- Simplifier.askMetadataTools
-    if MetadataTools.isOverloaded tools secondHead
-        then overloadedAndEqualsOverloading termMerger tools second firstInj
-        else empty
+  = do
+    OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded secondHead)
+    overloadedAndEqualsOverloading termMerger second firstInj
+overloadedConstructorSortInjectionAndEquals
+    termMerger
+    first@(Inj_ inj@Inj { injTo, injChild = App_ firstHead firstChildren})
+    second@(Inj_ Inj { injChild = App_ secondHead secondChildren})
+  = do
+    OverloadSimplifier
+        { isOverloaded, resolveOverloading, unifyOverloadWithinBound }
+        <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded firstHead && isOverloaded secondHead)
+    let injProto = inj { injChild = () }
+    case unifyOverloadWithinBound injProto firstHead secondHead injTo of
+        Nothing -> Monad.Trans.lift
+            $ explainAndReturnBottom
+                "overloaded constructors not unifiable"
+                first
+                second
+        Just (headUnion, maybeInjUnion) ->
+            let first' = resolveOverloading injProto headUnion firstChildren
+                second' = resolveOverloading injProto headUnion secondChildren
+                mkInj' injChild inj' = (synthesize . InjF) inj' { injChild }
+                mkInj injChild = maybe injChild (mkInj' injChild) maybeInjUnion
+            in Monad.Trans.lift $ termMerger (mkInj first') (mkInj second')
 overloadedConstructorSortInjectionAndEquals _ _ _ = empty
 
 overloadedAndEqualsOverloading
     :: (SimplifierVariable variable, MonadUnify unifier)
     => GHC.HasCallStack
     => TermSimplifier variable unifier
-    -> SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> Inj (TermLike variable)
     -> MaybeT unifier (Pattern variable)
 overloadedAndEqualsOverloading
     termMerger
-    tools
     first@(App_ firstHead _)
     second@Inj { injChild }
   | App_ secondHead secondChildren <- injChild
-  , MetadataTools.isOverloading tools firstHead secondHead
-  = equalInjectiveHeadsAndEquals
-        termMerger
-        first
-        (resolveOverloading injProto firstHead secondChildren)
-  | Just typeName <- notUnifiableType injChild
-  = Monad.Trans.lift $ do
-        explainBottom
-            ("Cannot unify overloaded constructor with " <> typeName <> ".")
+  = do
+    OverloadSimplifier { isOverloading, resolveOverloading } <-
+        Simplifier.askOverloadSimplifier
+    if isOverloading firstHead secondHead
+    then equalInjectiveHeadsAndEquals
+            termMerger
             first
-            (synthesize $ InjF second)
-        empty
+            (resolveOverloading injProto firstHead secondChildren)
+    else do
+        Monad.guard =<< isConstructorOrOverloaded secondHead
+        returnBottom "different injected ctor"
+  | Just typeName <- notUnifiableType injChild
+  = returnBottom typeName
   where
     injProto = () <$ second
 
+    returnBottom typeName =
+        Monad.Trans.lift $ do
+            explainBottom
+                ("Cannot unify overloaded constructor with " <> typeName <> ".")
+                first
+                (synthesize $ InjF second)
+            empty
     notUnifiableType :: TermLike variable -> Maybe (Doc ())
-    notUnifiableType (App_ appHead _)
-      | MetadataTools.isConstructorOrOverloaded tools appHead
-      = Just "different injected ctor"
     notUnifiableType (DV_ _ _) = Just "injected domain value"
     notUnifiableType (BuiltinBool_ _) = Just "injected builtin bool"
     notUnifiableType (BuiltinInt_ _) = Just "injected builtin int"
@@ -121,23 +139,5 @@ overloadedAndEqualsOverloading
     notUnifiableType (BuiltinSet_ _) = Just "injected builtin set"
     notUnifiableType (BuiltinString_ _) = Just "injected builtin string"
     notUnifiableType _ = Nothing
-overloadedAndEqualsOverloading _ _ _ _ = empty
+overloadedAndEqualsOverloading _ _ _ = empty
 
-resolveOverloading
-    :: InternalVariable variable
-    => GHC.HasCallStack
-    => Inj ()
-    -> Symbol
-    -> [TermLike variable]
-    -> TermLike variable
-resolveOverloading injProto overloadedHead overloadingChildren =
-    mkApplySymbol overloadedHead
-    $ assert (length overloadedChildrenSorts == length overloadingChildren)
-    $ zipWith mkInj overloadingChildren overloadedChildrenSorts
-  where
-    overloadedChildrenSorts =
-        Symbol.applicationSortsOperands (symbolSorts overloadedHead)
-    mkInj injChild injTo =
-        (synthesize . InjF) injProto { injFrom, injTo, injChild }
-      where
-        injFrom = termLikeSort injChild

@@ -12,35 +12,22 @@ module Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
     , SmtMetadataTools
     , extractMetadataTools
-    , isConstructorOrOverloaded
     , findSortConstructors
     ) where
 
-import Data.Function
-    ( on
-    )
 import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
-import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
-import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.Symbol
-    ( Symbol
-    )
-import qualified Kore.Internal.Symbol as Symbol
 import Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT.AST
     ( SmtDeclarations
@@ -58,10 +45,6 @@ data MetadataTools sortConstructors smt attributes = MetadataTools
     -- ^ Sorts for a specific symbol application.
     , symbolAttributes :: Id -> attributes
     -- ^ get the attributes of a symbol
-    , isOverloading :: Symbol -> Symbol -> Bool
-    -- ^ whether the first argument is overloading the second
-    , isOverloaded :: Symbol -> Bool
-    -- ^ Whether the symbol is overloaded
     , smtData :: smt
     -- ^ The SMT data for the given module.
     , sortConstructors :: Map Id sortConstructors
@@ -93,38 +76,11 @@ extractMetadataTools m constructorsExtractor smtExtractor =
         { sortAttributes = getSortAttributes m
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
-        , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
-        , isOverloaded = checkOverloaded . Symbol.toSymbolOrAlias
         , smtData = smtExtractor m constructors
         , sortConstructors = constructors
         }
   where
     constructors = constructorsExtractor m
-
-    overloadPairsSet = Set.fromList overloadPairsList
-
-    overloadPairsList =
-        mapMaybe
-            (Attribute.getOverload . Attribute.overload . fst)
-            (recursiveIndexedModuleAxioms m)
-
-    allOverloadsList = concatMap (\(o1, o2) -> [o1,o2]) overloadPairsList
-
-    allOverloadsSet = Set.fromList allOverloadsList
-
-    checkOverloaded :: SymbolOrAlias -> Bool
-    checkOverloaded = (`Set.member` allOverloadsSet)
-
-    checkOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
-    checkOverloading head1 head2 = (head1, head2) `Set.member` overloadPairsSet
-
--- |Checks whether symbol is constructor or overloaded
-isConstructorOrOverloaded
-    :: SmtMetadataTools Attribute.Symbol
-    -> Symbol
-    -> Bool
-isConstructorOrOverloaded tools s =
-    Symbol.isConstructor s || isOverloaded tools s
 
 {-| Extracts all constructors for a sort.
 

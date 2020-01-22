@@ -25,7 +25,6 @@ import Prelude hiding
     ( concat
     )
 
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -91,18 +90,13 @@ constructorAndEqualsAssumesDifferentHeads
     first@(App_ firstHead _)
     second@(App_ secondHead _)
   = do
-    tools <- Simplifier.askMetadataTools
-    helper tools
-  where
-    helper tools
-      | MetadataTools.isConstructorOrOverloaded tools firstHead
-      , MetadataTools.isConstructorOrOverloaded tools secondHead
-      = assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-            explainBottom
-                "Cannot unify different constructors or incompatible \
-                \sort injections."
-                first
-                second
-            empty
-      | otherwise = empty
+    Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
+    Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
+    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
+        explainBottom
+            "Cannot unify different constructors or incompatible \
+            \sort injections."
+            first
+            second
+        empty
 constructorAndEqualsAssumesDifferentHeads _ _ = empty
