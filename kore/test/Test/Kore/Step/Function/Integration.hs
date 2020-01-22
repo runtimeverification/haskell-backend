@@ -1380,4 +1380,5 @@ testEnv =
                 ]
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
+        , overloadSimplifier = Mock.overloadSimplifier
         }

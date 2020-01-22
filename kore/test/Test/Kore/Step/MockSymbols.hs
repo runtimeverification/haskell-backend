@@ -65,6 +65,7 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts
@@ -92,6 +93,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
 import Kore.Step.Simplification.InjSimplifier
+import Kore.Step.Simplification.OverloadSimplifier
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
@@ -266,6 +268,14 @@ sigmaId :: Id
 sigmaId = testId "sigma"
 anywhereId :: Id
 anywhereId = testId "anywhere"
+subsubOverloadId :: Id
+subsubOverloadId = testId "subsubOverload"
+subOverloadId :: Id
+subOverloadId = testId "subOverload"
+otherOverloadId :: Id
+otherOverloadId = testId "otherOverload"
+topOverloadId :: Id
+topOverloadId = testId "topOverload"
 
 symbol :: Id -> [Sort] -> Sort -> Symbol
 symbol name operands result =
@@ -505,6 +515,28 @@ sortInjectionSubOtherToOtherSymbol = sortInjectionSymbol subOthersort otherSort
 
 sortInjectionOtherToTopSymbol :: Symbol
 sortInjectionOtherToTopSymbol = sortInjectionSymbol otherSort topSort
+
+sortInjectionOtherToOtherTopSymbol :: Symbol
+sortInjectionOtherToOtherTopSymbol = sortInjectionSymbol otherSort otherTopSort
+
+sortInjectionSubToOtherTopSymbol :: Symbol
+sortInjectionSubToOtherTopSymbol = sortInjectionSymbol subSort otherTopSort
+
+subsubOverloadSymbol :: Symbol
+subsubOverloadSymbol =
+    symbol subsubOverloadId [subSubsort] subSubsort & functional & injective
+
+subOverloadSymbol :: Symbol
+subOverloadSymbol =
+    symbol subOverloadId [subSort] subSort & functional & injective
+
+otherOverloadSymbol :: Symbol
+otherOverloadSymbol =
+    symbol otherOverloadId [otherSort] otherSort & functional & injective
+
+topOverloadSymbol :: Symbol
+topOverloadSymbol =
+    symbol topOverloadId [topSort] topSort & functional & injective
 
 unitMapSymbol :: Symbol
 unitMapSymbol =
@@ -914,6 +946,38 @@ functionalTopConstr21
 functionalTopConstr21 arg1 arg2 =
     Internal.mkApplySymbol functionalTopConstr21Symbol [arg1, arg2]
 
+subsubOverload
+    :: InternalVariable variable
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+subsubOverload arg1 =
+    Internal.mkApplySymbol subsubOverloadSymbol [arg1]
+
+subOverload
+    :: InternalVariable variable
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+subOverload arg1 =
+    Internal.mkApplySymbol subOverloadSymbol [arg1]
+
+otherOverload
+    :: InternalVariable variable
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+otherOverload arg1 =
+    Internal.mkApplySymbol otherOverloadSymbol [arg1]
+
+topOverload
+    :: InternalVariable variable
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+topOverload arg1 =
+    Internal.mkApplySymbol topOverloadSymbol [arg1]
+
 injective10
     :: InternalVariable variable
     => GHC.HasCallStack
@@ -1000,6 +1064,18 @@ sortInjectionOtherToTop
     => TermLike variable
     -> TermLike variable
 sortInjectionOtherToTop = sortInjection topSort
+
+sortInjectionOtherToOtherTop
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionOtherToOtherTop = sortInjection otherTopSort
+
+sortInjectionSubToOtherTop
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionSubToOtherTop = sortInjection otherTopSort
 
 unitMap :: InternalVariable variable => TermLike variable
 unitMap = Internal.mkApplySymbol unitMapSymbol []
@@ -1167,6 +1243,8 @@ symbols =
     , sortInjectionSubSubToOtherSymbol
     , sortInjectionSubOtherToOtherSymbol
     , sortInjectionOtherToTopSymbol
+    , sortInjectionSubToOtherTopSymbol
+    , sortInjectionOtherToOtherTopSymbol
     , unitMapSymbol
     , elementMapSymbol
     , concatMapSymbol
@@ -1181,6 +1259,10 @@ symbols =
     , tdivIntSymbol
     , sigmaSymbol
     , anywhereSymbol
+    , subsubOverloadSymbol
+    , subOverloadSymbol
+    , otherOverloadSymbol
+    , topOverloadSymbol
     ]
 
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
@@ -1207,6 +1289,9 @@ sortAttributesMapping =
         , Default.def
         )
     ,   ( otherSort
+        , Default.def
+        )
+    ,   ( otherTopSort
         , Default.def
         )
     ,   ( mapSort
@@ -1371,6 +1456,8 @@ subSubsortId :: Id
 subSubsortId = testId "subSubsort"
 otherSortId :: Id
 otherSortId = testId "otherSort"
+otherTopSortId :: Id
+otherTopSortId = testId "otherTopSort"
 intSortId :: Id
 intSortId = testId "intSort"
 boolSortId :: Id
@@ -1434,6 +1521,13 @@ otherSort =
         , sortActualSorts = []
         }
 
+otherTopSort :: Sort
+otherTopSort =
+    SortActualSort SortActual
+        { sortActualName = otherTopSortId
+        , sortActualSorts = []
+        }
+
 mapSort :: Sort
 mapSort =
     SortActualSort SortActual
@@ -1485,10 +1579,21 @@ subsorts =
     , (subSubsort, otherSort)
     , (subOthersort, otherSort)
     , (otherSort, topSort)
+    , (otherSort, otherTopSort)
+    , (subSort, otherTopSort)
     , (subSort, testSort)
     , (testSort0, testSort)
     , (mapSort, testSort)
     , (listSort, testSort)
+    ]
+
+overloads :: [(Symbol, Symbol)]
+overloads =
+    [ (subOverloadSymbol, subsubOverloadSymbol)
+    , (otherOverloadSymbol, subsubOverloadSymbol)
+    , (topOverloadSymbol, subsubOverloadSymbol)
+    , (topOverloadSymbol, subOverloadSymbol)
+    , (topOverloadSymbol, otherOverloadSymbol)
     ]
 
 builtinMap
@@ -1600,10 +1705,18 @@ predicateSimplifier
 predicateSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
-injSimplifier :: InjSimplifier
-injSimplifier =
-    (mkInjSimplifier . SortGraph.fromSubsorts)
+sortGraph :: SortGraph.SortGraph
+sortGraph = SortGraph.fromSubsorts
         [ Subsort { subsort, supersort } | (subsort, supersort) <- subsorts ]
+
+injSimplifier :: InjSimplifier
+injSimplifier = mkInjSimplifier sortGraph
+
+overloadGraph :: OverloadGraph.OverloadGraph
+overloadGraph = OverloadGraph.fromOverloads overloads
+
+overloadSimplifier :: OverloadSimplifier
+overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
 env :: MonadSimplify simplifier => Env simplifier
 env =
@@ -1614,6 +1727,7 @@ env =
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         , injSimplifier
+        , overloadSimplifier
         }
 
 generatorSetup :: ConsistentKore.Setup
