@@ -77,28 +77,38 @@ type Renaming variable =
 
 instance FreshVariable variable => FreshVariable (ElementVariable variable)
   where
-    infVariable = undefined
-    supVariable = undefined
-    nextVariable = undefined
+    infVariable = fmap infVariable
+    supVariable = fmap supVariable
+    nextVariable = fmap nextVariable
 
 instance FreshVariable variable => FreshVariable (SetVariable variable)
   where
-    infVariable = undefined
-    supVariable = undefined
-    nextVariable = undefined
+    infVariable = fmap infVariable
+    supVariable = fmap supVariable
+    nextVariable = fmap nextVariable
 
 instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
   where
-    infVariable = undefined
-    supVariable = undefined
-    nextVariable = undefined
+    infVariable (ElemVar variable) =
+        ElemVar . infVariable $ variable
+    infVariable (SetVar variable) =
+        SetVar . infVariable $ variable
+
+    supVariable (ElemVar variable) =
+        ElemVar . supVariable $ variable
+    supVariable (SetVar variable) =
+        SetVar . supVariable $ variable
+
+    nextVariable (ElemVar variable) =
+        ElemVar . nextVariable $ variable
+    nextVariable (SetVar variable) =
+        SetVar . nextVariable $ variable
 
 instance FreshVariable Variable where
-    infVariable = undefined
-    supVariable = undefined
-    {- | Increase the 'variableCounter' of a 'Variable'
-     -}
-    nextVariable :: Variable -> Variable
+    infVariable variable = variable { variableCounter = Nothing }
+
+    supVariable variable = variable { variableCounter = Just Sup }
+
     nextVariable variable@Variable { variableName, variableCounter } =
         variable
             { variableName = variableName'
