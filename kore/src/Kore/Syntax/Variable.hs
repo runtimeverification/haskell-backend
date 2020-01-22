@@ -136,6 +136,7 @@ implementing 'fromVariable', i.e. we must be able to construct a
 but the reverse is not required.
 
  -}
+-- TODO: defaults for functor?
 class SortedVariable variable where
     lensVariableSort :: Lens' variable Sort
 
