@@ -41,21 +41,26 @@ simplify
 simplify builtin =
     MultiOr.filterOr $ do
         child <- simplifyBuiltin builtin
-        return (markSimplified . mkBuiltin <$> child)
+        return (markSimplified <$> child)
 
 simplifyBuiltin
     :: InternalVariable variable
     => Builtin (OrPattern variable)
-    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
+    -> MultiOr (Conditional variable (TermLike variable))
 simplifyBuiltin =
     \case
-        Domain.BuiltinMap map' -> simplifyInternalMap map'
-        Domain.BuiltinList list' -> simplifyInternalList list'
-        Domain.BuiltinSet set' -> simplifyInternalSet set'
-        Domain.BuiltinInt int -> (return . pure) (Domain.BuiltinInt int)
-        Domain.BuiltinBool bool -> (return . pure) (Domain.BuiltinBool bool)
+        Domain.BuiltinMap map' ->
+            simplifyInternalMap normalizeInternalMap map'
+        Domain.BuiltinList list' ->
+            fmap mkBuiltin <$> simplifyInternalList list'
+        Domain.BuiltinSet set' ->
+            fmap mkBuiltin <$> simplifyInternalSet set'
+        Domain.BuiltinInt int ->
+            (return . pure . mkBuiltin) (Domain.BuiltinInt int)
+        Domain.BuiltinBool bool ->
+            (return . pure . mkBuiltin) (Domain.BuiltinBool bool)
         Domain.BuiltinString string ->
-            (return . pure) (Domain.BuiltinString string)
+            (return . pure . mkBuiltin) (Domain.BuiltinString string)
 
 simplifyInternal
     :: (InternalVariable variable, Traversable t)
@@ -70,18 +75,48 @@ simplifyInternal normalizer tOrPattern = do
 
 simplifyInternalMap
     :: InternalVariable variable
-    => Domain.InternalMap (TermLike Concrete) (OrPattern variable)
-    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
-simplifyInternalMap =
-    (fmap . fmap) Domain.BuiltinMap
-    . simplifyInternal normalizeInternalMap
+    => ( InternalMap (TermLike Concrete) (TermLike variable)
+        -> NormalizedMapResult variable
+       )
+    -> InternalMap (TermLike Concrete) (OrPattern variable)
+    -> MultiOr (Conditional variable (TermLike variable))
+simplifyInternalMap normalizer tOrPattern = do
+    conditional <- getCompose $ traverse Compose tOrPattern
+    let normalized = normalizedMapResultToTerm . normalizer <$> conditional
+    return normalized
+
+data NormalizedMapResult variable =
+    NormalizedMapResult (InternalMap (TermLike Concrete) (TermLike variable))
+    | SingleOpaqueElemResult (TermLike variable)
+    | BottomResult
+
+normalizedMapResultToTerm
+    :: InternalVariable variable
+    => NormalizedMapResult variable
+    -> TermLike variable
+normalizedMapResultToTerm (NormalizedMapResult map') =
+    mkBuiltin . Domain.BuiltinMap $ map'
+normalizedMapResultToTerm (SingleOpaqueElemResult opaqueElem) =
+    opaqueElem
+normalizedMapResultToTerm BottomResult =
+    mkBottom_
 
 normalizeInternalMap
     :: Ord variable
     => InternalMap (TermLike Concrete) (TermLike variable)
-    -> Maybe (InternalMap (TermLike Concrete) (TermLike variable))
-normalizeInternalMap =
-    Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
+    -> NormalizedMapResult variable
+normalizeInternalMap map' =
+    case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
+        Just normalizedMap ->
+            maybe
+                (NormalizedMapResult normalizedMap)
+                SingleOpaqueElemResult
+                $ Domain.asSingleOpaqueElem
+                    . getNormalizedAc
+                    $ normalizedMap
+        _ -> BottomResult
+  where
+    getNormalizedAc = Domain.getNormalizedMap . Domain.builtinAcChild
 
 simplifyInternalSet
     :: InternalVariable variable
