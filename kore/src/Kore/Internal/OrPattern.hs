@@ -11,6 +11,7 @@ module Kore.Internal.OrPattern
     , toPatterns
     , fromPattern
     , fromTermLike
+    , gather
     , bottom
     , isFalse
     , isPredicate
@@ -25,6 +26,9 @@ module Kore.Internal.OrPattern
 import qualified Data.Foldable as Foldable
 import qualified GHC.Stack as GHC
 
+import Branch
+    ( BranchT
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -177,4 +181,9 @@ coerceSort sort =
     fromPatterns
     . map (Pattern.coerceSort sort)
     . toPatterns
+
+gather
+    :: (Ord variable, Monad m)
+    => BranchT m (Pattern variable) -> m (OrPattern variable)
+gather = MultiOr.gather
 

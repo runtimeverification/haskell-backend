@@ -9,6 +9,9 @@ module Kore.Step.Simplification.OrPattern
 
 import qualified Control.Monad.Trans as Monad.Trans
 
+import Branch
+    ( BranchT
+    )
 import qualified Branch as BranchT
 import Kore.Internal.Condition
     ( Condition
@@ -24,15 +27,14 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
     )
-import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
 import qualified Kore.Internal.OrCondition as OrCondition
-    ( fromConditions
+    ( gather
     )
 import Kore.Internal.OrPattern
     ( OrPattern
+    )
+import qualified Kore.Internal.OrPattern as OrPattern
+    ( gather
     )
 import Kore.Internal.Pattern
     ( Pattern
@@ -72,24 +74,18 @@ simplifyConditionsWithSmt
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyConditionsWithSmt sideCondition unsimplified =
-    fmap MultiOr.mergeAll . BranchT.gather $ do
+    OrPattern.gather $ do
         unsimplified1 <- BranchT.scatter unsimplified
-        Monad.Trans.lift $ simplifyAndPrune unsimplified1
+        simplifyAndPrune unsimplified1
   where
     simplifyAndPrune
-        :: Pattern variable -> simplifier (OrPattern variable)
-    simplifyAndPrune (Pattern.splitTerm -> (term, condition)) =
-        fmap orPatternFromConditions . BranchT.gather $ do
-            simplified <- simplifyCondition sideCondition condition
-            Monad.Trans.lift $ resultWithFilter
-                rejectCondition
-                (resultWithFilter pruneCondition (return simplified))
-      where
-        addTerm :: OrCondition variable -> OrPattern variable
-        addTerm = fmap (Pattern.withCondition term)
-
-        orPatternFromConditions :: [Condition variable] -> OrPattern variable
-        orPatternFromConditions = addTerm . OrCondition.fromConditions
+        :: Pattern variable -> BranchT simplifier (Pattern variable)
+    simplifyAndPrune (Pattern.splitTerm -> (term, condition)) = do
+        simplified <- simplifyCondition sideCondition condition
+        filtered <- Monad.Trans.lift $ resultWithFilter
+            rejectCondition
+            (resultWithFilter pruneCondition (return simplified))
+        return (term `Pattern.withCondition` filtered)
 
     resultWithFilter
         :: (Condition variable -> simplifier (Maybe Bool))
@@ -127,12 +123,12 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     In other words:
 
     @side ∧ ¬arg@ is not satisfiable iff @side → arg@ is @⊤@.
-    @side ∧ ¬arg@ is always true iff @side → arg@ is @⊤@
+    @side ∧ ¬arg@ is always true iff @side → arg@ is @⊥@
     -}
     pruneCondition :: Condition variable -> simplifier (Maybe Bool)
     pruneCondition condition = do
         implicationNegation <-
-            fmap OrCondition.fromConditions . BranchT.gather
+            OrCondition.gather
             $ simplifyCondition
                 SideCondition.top
                 (Condition.fromPredicate
@@ -151,7 +147,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     rejectCondition :: Condition variable -> simplifier (Maybe Bool)
     rejectCondition condition = do
         simplifiedConditions <-
-            fmap OrCondition.fromConditions . BranchT.gather
+            OrCondition.gather
             $ simplifyCondition
                     SideCondition.top
                     (addPredicate condition)
