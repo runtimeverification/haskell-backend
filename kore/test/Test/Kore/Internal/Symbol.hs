@@ -47,6 +47,7 @@ symbolAttributeGen =
         <*> memoAttributeGen
         <*> klabelAttributeGen
         <*> symbolKywdAttributeGen
+        <*> noEvaluatorsAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -83,3 +84,6 @@ klabelAttributeGen = pure Default.def
 
 symbolKywdAttributeGen :: Gen Attribute.SymbolKywd
 symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.bool
+
+noEvaluatorsAttributeGen :: Gen Attribute.NoEvaluators
+noEvaluatorsAttributeGen = Attribute.NoEvaluators <$> Gen.bool
