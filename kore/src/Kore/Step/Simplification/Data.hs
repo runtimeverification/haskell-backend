@@ -219,7 +219,7 @@ evalSimplifier verifiedModule simplifier = do
             verifiedModule
     metadataTools = MetadataTools.build verifiedModule'
     overloadGraph = OverloadGraph.fromIndexedModule verifiedModule metadataTools
-    overloadSimplifier = mkOverloadSimplifier overloadGraph sortGraph
+    overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
     initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do

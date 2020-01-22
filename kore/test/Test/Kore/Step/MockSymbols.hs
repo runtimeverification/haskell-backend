@@ -1716,7 +1716,7 @@ overloadGraph :: OverloadGraph.OverloadGraph
 overloadGraph = OverloadGraph.fromOverloads overloads
 
 overloadSimplifier :: OverloadSimplifier
-overloadSimplifier = mkOverloadSimplifier overloadGraph sortGraph
+overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
 env :: MonadSimplify simplifier => Env simplifier
 env =

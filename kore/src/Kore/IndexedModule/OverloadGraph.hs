@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
  -}
@@ -77,7 +77,8 @@ commonOverloads graph sym1 sym2 =
 
 {- | Build a 'OverloadGraph' from a list of overloaded symbol pairs.
 
-  It assumes that the overloaded relation is transitively closed.
+  The list of overloaded symbol pairs given as an argument is assumed
+  to represent the _transitive closure_ of the overloading relation.
  -}
 fromOverloads
     :: [(Symbol, Symbol)]  -- ^ first symbol overloads the second

@@ -252,7 +252,8 @@ testInjSimplifier :: InjSimplifier
 testInjSimplifier = mkInjSimplifier testSortGraph
 
 testOverloadSimplifier :: OverloadSimplifier
-testOverloadSimplifier = mkOverloadSimplifier testOverloadGraph testSortGraph
+testOverloadSimplifier =
+    mkOverloadSimplifier testOverloadGraph testInjSimplifier
 
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =

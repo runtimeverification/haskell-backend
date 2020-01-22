@@ -80,17 +80,18 @@ overloadedConstructorSortInjectionAndEquals
         { isOverloaded, resolveOverloading, unifyOverloadWithinBound }
         <- Simplifier.askOverloadSimplifier
     Monad.guard (isOverloaded firstHead && isOverloaded secondHead)
-    case unifyOverloadWithinBound firstHead secondHead injTo of
+    let injProto = inj { injChild = () }
+    case unifyOverloadWithinBound injProto firstHead secondHead injTo of
         Nothing -> Monad.Trans.lift
             $ explainAndReturnBottom
                 "overloaded constructors not unifiable"
                 first
                 second
-        Just headUnion ->
-            let injProto = inj { injChild = () }
-                first' = resolveOverloading injProto headUnion firstChildren
+        Just (headUnion, maybeInjUnion) ->
+            let first' = resolveOverloading injProto headUnion firstChildren
                 second' = resolveOverloading injProto headUnion secondChildren
-                mkInj injChild = injectTermTo injProto injChild injTo
+                mkInj' injChild inj' = (synthesize . InjF) inj' { injChild }
+                mkInj injChild = maybe injChild (mkInj' injChild) maybeInjUnion
             in Monad.Trans.lift $ termMerger (mkInj first') (mkInj second')
 overloadedConstructorSortInjectionAndEquals _ _ _ = empty
 
@@ -116,13 +117,13 @@ overloadedAndEqualsOverloading
             (resolveOverloading injProto firstHead secondChildren)
     else do
         Monad.guard =<< isConstructorOrOverloaded secondHead
-        failure "different injected ctor"
+        returnBottom "different injected ctor"
   | Just typeName <- notUnifiableType injChild
-  = failure typeName
+  = returnBottom typeName
   where
     injProto = () <$ second
 
-    failure typeName =
+    returnBottom typeName =
         Monad.Trans.lift $ do
             explainBottom
                 ("Cannot unify overloaded constructor with " <> typeName <> ".")

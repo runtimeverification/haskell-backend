@@ -217,7 +217,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     askInjSimplifier = Monad.Trans.lift askInjSimplifier
     {-# INLINE askInjSimplifier #-}
 
-    -- | Retrieve the 'InjSimplifier' for the Kore context.
+    -- | Retrieve the 'OverloadSimplifier' for the Kore context.
     askOverloadSimplifier :: m OverloadSimplifier
     default askOverloadSimplifier
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
@@ -606,7 +606,7 @@ applicationAxiomSimplifier applicationSimplifier =
 isConstructorOrOverloaded
     :: MonadSimplify unifier
     => Symbol
-    -> MaybeT unifier Bool
+    -> unifier Bool
 isConstructorOrOverloaded s
   = do
     OverloadSimplifier { isOverloaded } <- askOverloadSimplifier
