@@ -7,6 +7,7 @@
 #   3. Set the KORE environment variable in your shell to the location of the
 #      `kore` repository.
 #   4. Run this script in the root of the `evm-semantics` repository.
+#   5. Copy the resulting files back into this directory.
 
 set -exuo pipefail
 
@@ -42,7 +43,7 @@ do
             "<statusCode> EVMC_INVALID_INSTRUCTION </statusCode>"
 done
 
-kollect sum-to-n \
+kollect test-sum-to-n \
     ./kevm prove --backend haskell \
         tests/specs/examples/sum-to-n-spec.k \
         --format-failures --def-module VERIFICATION
