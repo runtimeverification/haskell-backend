@@ -103,6 +103,7 @@ instance Default Attributes where
 
 instance SQL.Column Attributes where
     defineColumn = SQL.defineTextColumn
+    -- TODO (thomas.tuegel): Use a better toColumn for lists.
     toColumn =
         SQL.toColumn
         . Pretty.renderText
