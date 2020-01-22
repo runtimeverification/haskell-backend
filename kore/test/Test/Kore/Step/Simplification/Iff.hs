@@ -202,7 +202,10 @@ makeIff first second =
 simplify
     :: Iff Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify = runSimplifier mockEnv . Iff.simplify SideCondition.top
+simplify =
+    runSimplifier mockEnv
+    . Iff.simplify SideCondition.top
+    . fmap simplifiedOrPattern
   where
     mockEnv = Mock.env
 
@@ -210,4 +213,5 @@ makeEvaluate
     :: Pattern Variable
     -> Pattern Variable
     -> OrPattern Variable
-makeEvaluate = Iff.makeEvaluate
+makeEvaluate p1 p2 =
+    Iff.makeEvaluate (simplifiedPattern p1) (simplifiedPattern p2)

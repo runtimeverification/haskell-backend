@@ -83,7 +83,7 @@ instance Synthetic Defined (Const Endianness) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const Endianness) where
-    synthetic = const Simplified
+    synthetic = const fullySimplified
     {-# INLINE synthetic #-}
 
 instance Synthetic ConstructorLike (Const Endianness) where

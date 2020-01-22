@@ -164,7 +164,7 @@ ceilChildOfApplicationOrTop sideCondition patt =
                         sideCondition
                     . MultiAnd.make
                     )
-            pure $ Conditional
+            pure Conditional
                 { term = ()
                 , predicate =
                     OrCondition.toPredicate

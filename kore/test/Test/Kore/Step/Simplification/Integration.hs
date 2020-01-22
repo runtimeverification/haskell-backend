@@ -48,8 +48,15 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -313,6 +320,41 @@ test_simplificationIntegration =
                         $ Mock.tdivInt
                             (mkElemVar Mock.xInt)
                             (mkElemVar Mock.xInt)
+                    , predicate = makeTruePredicate_
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    , testCase "no function branching" $ do
+        let expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = Mock.functional10 (mkElemVar Mock.x)
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [   (AxiomIdentifier.Application Mock.functional10Id
+                            ,   [ EqualityRule $ conditionalEqualityPattern
+                                    (Mock.functional10 (mkElemVar Mock.x))
+                                    (makeEqualsPredicate_ Mock.cf Mock.a)
+                                    (mkElemVar Mock.x)
+                                , EqualityRule $ conditionalEqualityPattern
+                                    (Mock.functional10 (mkElemVar Mock.x))
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate_ Mock.cf Mock.a)
+                                    )
+                                    (mkElemVar Mock.x)
+                                ]
+                            )
+                       ]
+                    )
+                )
+                Conditional
+                    { term = Mock.functional10 (mkElemVar Mock.x)
                     , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
@@ -761,7 +803,9 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
+        assertBool
+            "Expecting simplification"
+            (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Forall simplification" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -876,7 +920,8 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
+        assertBool "Expecting simplification"
+            (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Equals-in simplification" $ do
         let gt = SetVariable $ Variable (testId "gt") mempty Mock.stringSort
             g = SetVariable $ Variable (testId "g") mempty Mock.testSort1
@@ -893,7 +938,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "And-list simplification" $ do
         actual <- evaluate
             Conditional
@@ -903,7 +948,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Distributed equals simplification" $ do
         let k = SetVariable $ Variable (testId "k") mempty Mock.stringSort
         actual <- evaluate
@@ -916,7 +961,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "nu-floor-in-or simplification" $ do
         let q = SetVariable $ Variable (testId "q") mempty Mock.otherSort
         actual <- evaluate
@@ -931,7 +976,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "equals-predicate with sort change simplification" $ do
         actual <- evaluate
             Conditional
@@ -945,7 +990,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Preserves predicate sort" $ do
         let patt = Conditional
                 { term = mkTop Mock.listSort
@@ -954,6 +999,25 @@ test_simplificationIntegration =
                 }
         actual <- evaluate patt
         assertEqual "" (OrPattern.fromPattern patt) actual
+    , testCase "Not-iff-evaluated simplification" $ do
+        let patt = Conditional
+                { term =
+                    mkNot
+                        (mkIff
+                            mkBottom_
+                            (mkEvaluated Mock.unitMap)
+                        )
+                , predicate = makeTruePredicate Mock.boolSort
+                , substitution = mempty
+                }
+            expected = OrPattern.fromPattern Conditional
+                { term = mkEvaluated Mock.unitMap
+                , predicate = makeTruePredicate Mock.mapSort
+                , substitution = mempty
+                }
+
+        actual <- evaluate patt
+        assertEqual "" expected actual
     ]
 
 
@@ -978,6 +1042,17 @@ conditionalSimplificationRulePattern left requires right =
     patt & Lens.set (field @"requires") requires
   where
     patt = simplificationRulePattern left right
+
+conditionalEqualityPattern
+    :: InternalVariable variable
+    => TermLike variable
+    -> Predicate.Predicate variable
+    -> TermLike variable
+    -> EqualityPattern variable
+conditionalEqualityPattern left requires right =
+    patt & Lens.set (field @"requires") requires
+  where
+    patt = equalityPattern left right
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -1186,3 +1261,7 @@ asInternal :: Set.Set (TermLike Concrete) -> TermLike Variable
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
     . Map.fromSet (const Domain.SetValue)
+
+sideRepresentation :: SideCondition.Representation
+sideRepresentation =
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)

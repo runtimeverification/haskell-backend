@@ -115,8 +115,8 @@ import Kore.Log
     , parseKoreLogOptions
     , runLoggerT
     )
-import Kore.Log.CriticalExecutionError
-    ( criticalExecutionError
+import Kore.Log.ErrorException
+    ( errorException
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
@@ -424,7 +424,7 @@ mainWithOptions execOptions = do
 
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do
-        criticalExecutionError someException
+        errorException someException
         return $ ExitFailure 1
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode

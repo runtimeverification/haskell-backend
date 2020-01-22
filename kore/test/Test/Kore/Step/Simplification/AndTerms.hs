@@ -41,6 +41,16 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -1345,7 +1355,7 @@ test_functionAnd =
                 $ makeEqualsPredicate_ (f x) (f y)
         let Just actual = functionAnd (f x) (f y)
         assertEqual "" expect (syncSort actual)
-        assertBool "" (Pattern.isSimplified actual)
+        assertBool "" (Pattern.isSimplified sideRepresentation actual)
     ]
 
 fOfA :: TermLike Variable
@@ -1388,7 +1398,8 @@ simplifyUnifySorts
     -> TermLike Variable
     -> IO ([Pattern Variable], Maybe [Pattern Variable])
 simplifyUnifySorts first second = do
-    (simplified, unified) <- simplifyUnify first second
+    (simplified, unified) <-
+        simplifyUnify (simplifiedTerm first) (simplifiedTerm second)
     return (map syncSort simplified, map syncSort <$> unified)
 
 simplifyUnify
@@ -1397,8 +1408,8 @@ simplifyUnify
     -> IO ([Pattern Variable], Maybe [Pattern Variable])
 simplifyUnify first second =
     (,)
-        <$> simplify first second
-        <*> unify first second
+        <$> simplify (simplifiedTerm first) (simplifiedTerm second)
+        <*> unify (simplifiedTerm first) (simplifiedTerm second)
 
 unify
     :: TermLike Variable
@@ -1413,14 +1424,15 @@ unify first second =
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
         MaybeT . fmap Error.hush . Monad.Unify.runUnifierT
-        $ termUnification first second
+        $ termUnification (simplifiedTerm first) (simplifiedTerm second)
 
 simplify
     :: TermLike Variable
     -> TermLike Variable
     -> IO [Pattern Variable]
 simplify first second =
-    runSimplifierBranch mockEnv $ termAnd first second
+    runSimplifierBranch mockEnv
+    $ termAnd (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env
 
@@ -1432,7 +1444,7 @@ simplifyEquals
 simplifyEquals simplifierAxioms first second =
     (fmap . fmap) MultiOr.extractPatterns
     $ runSimplifier mockEnv
-    $ runMaybeT $ termEquals first second
+    $ runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env { simplifierAxioms }
 
@@ -1441,3 +1453,7 @@ syncSort patt =
     term `Pattern.withCondition` condition
   where
     (term, condition) = Pattern.splitTerm patt
+
+sideRepresentation :: SideCondition.Representation
+sideRepresentation =
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)

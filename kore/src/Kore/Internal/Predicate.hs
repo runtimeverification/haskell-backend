@@ -83,20 +83,21 @@ import GHC.Stack
     )
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
-    ( isSimplified
+    ( simplifiedAttribute
     )
 import qualified Kore.Attribute.Pattern as Attribute
     ( Pattern (Pattern)
+    , Simplified
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
 import Kore.Attribute.Pattern.FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Attribute
-    ( Simplified
-    )
 import Kore.Debug
 import Kore.Error
     ( Error
     , koreFail
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
     )
 import Kore.Internal.TermLike hiding
     ( hasFreeVariable
@@ -648,11 +649,10 @@ makePredicate t = fst <$> makePredicateWorker t
     keepSimplified hasChanged (attrs :< _) predicate =
         case hasChanged of
             Changed -> predicate
-            NotChanged
-                | wasSimplified -> markSimplified predicate
-                | otherwise -> predicate
+            NotChanged -> setSimplified simplified predicate
       where
-        wasSimplified = Attribute.Pattern.isSimplified attrs
+        simplified =
+            Attribute.Pattern.simplifiedAttribute attrs
 
     updateHasChanged
         :: HasChanged
@@ -699,8 +699,9 @@ mapVariables f = fmap (TermLike.mapVariables f)
 instance HasFreeVariables (Predicate variable) variable where
     freeVariables = freeVariables . unwrapPredicate
 
-isSimplified :: Predicate variable -> Bool
-isSimplified (GenericPredicate termLike) = TermLike.isSimplified termLike
+isSimplified :: SideCondition.Representation -> Predicate variable -> Bool
+isSimplified sideCondition (GenericPredicate termLike) =
+    TermLike.isSimplified sideCondition termLike
 
 simplifiedAttribute :: Predicate variable -> Attribute.Simplified
 simplifiedAttribute (GenericPredicate termLike) =
@@ -713,13 +714,16 @@ further. The simplifier reserves the right to skip any pattern which is marked,
 so do not mark any pattern unless you are certain it cannot be further
 simplified.
 
- -}
-markSimplified :: Predicate variable -> Predicate variable
+-}
+markSimplified
+    :: (HasCallStack, InternalVariable variable)
+    => Predicate variable -> Predicate variable
 markSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.markSimplified termLike)
 
 setSimplified
-    :: Attribute.Simplified -> Predicate variable -> Predicate variable
+    :: InternalVariable variable
+    => Attribute.Simplified -> Predicate variable -> Predicate variable
 setSimplified simplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.setSimplified simplified termLike)
 

@@ -256,7 +256,7 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicates actual
 
-    , testCase "Constructor circular dependency?"
+    , testCase "zzzConstructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
@@ -379,8 +379,14 @@ merge
 merge s1 s2 =
     Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
-    $ mergeSubstitutionsExcept $ Substitution.wrap <$> [s1, s2]
+    $ mergeSubstitutionsExcept
+    $ Substitution.wrap . fmap simplifiedPairTerm <$> [s1, s2]
   where
+    simplifiedPairTerm
+        :: (UnifiedVariable Variable, TermLike Variable)
+        -> (UnifiedVariable Variable, TermLike Variable)
+    simplifiedPairTerm = fmap Test.simplifiedTerm
+
     mergeSubstitutionsExcept =
         Branch.alternate
         . Simplifier.simplifyCondition SideCondition.top

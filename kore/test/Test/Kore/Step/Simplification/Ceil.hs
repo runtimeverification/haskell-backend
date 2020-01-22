@@ -28,7 +28,11 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
@@ -494,7 +498,7 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqual "ceil(set)" expected actual
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "ceil with opaque sets" $ do
         let
             expected = OrPattern.fromPatterns
@@ -520,7 +524,7 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqual "ceil(set set)" expected actual
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "ceil of sort injection" $ do
         let expected =
                 OrPattern.fromPattern Conditional
@@ -531,7 +535,8 @@ test_ceilSimplification =
         actual <- (makeEvaluate . Pattern.fromTermLike)
             (Mock.sortInjection Mock.topSort (TermLike.markSimplified fOfA))
         assertEqual "ceil(f(a))" expected actual
-        assertBool "simplified" (OrPattern.isSimplified actual)
+        assertBool "simplified"
+            (OrPattern.isSimplified sideRepresentation actual)
     ]
   where
     fOfA :: TermLike Variable
@@ -628,3 +633,7 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     $ Ceil.makeEvaluate SideCondition.top child
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }
+
+sideRepresentation :: SideCondition.Representation
+sideRepresentation =
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)
