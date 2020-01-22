@@ -38,6 +38,12 @@ import Numeric.Natural
 import Data.Sup
 import Kore.Debug
 import Kore.Sort
+import Kore.Syntax.ElementVariable
+    ( ElementVariable (..)
+    )
+import Kore.Syntax.SetVariable
+    ( SetVariable (..)
+    )
 import Kore.Unparser
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
@@ -150,6 +156,20 @@ instance SortedVariable Variable where
         $ f (variableSort var)
     fromVariable = id
     toVariable = id
+
+instance SortedVariable variable => SortedVariable (ElementVariable variable)
+  where
+    lensVariableSort = undefined
+    fromVariable = ElementVariable . fromVariable
+    toVariable (ElementVariable variable) =
+        toVariable variable
+
+instance SortedVariable variable => SortedVariable (SetVariable variable)
+  where
+    lensVariableSort = undefined
+    fromVariable = SetVariable . fromVariable
+    toVariable (SetVariable variable) =
+        toVariable variable
 
 {- | Unparse any 'SortedVariable' in an Applicative Kore binder.
 

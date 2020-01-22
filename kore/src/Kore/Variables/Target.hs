@@ -74,8 +74,10 @@ instance
     SortedVariable variable
     => SortedVariable (Target variable)
   where
-    sortedVariableSort (Target variable) = sortedVariableSort variable
-    sortedVariableSort (NonTarget variable) = sortedVariableSort variable
+    lensVariableSort f (Target variable) =
+        Target <$> lensVariableSort f variable
+    lensVariableSort f (NonTarget variable) =
+        NonTarget <$> lensVariableSort f variable
     fromVariable = Target . fromVariable
     toVariable (Target var) = toVariable var
     toVariable (NonTarget var) = toVariable var
@@ -83,12 +85,9 @@ instance
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
 instance FreshVariable variable => FreshVariable (Target variable) where
-    refreshVariable (Set.map unwrapVariable -> avoiding) =
-        \case
-            Target variable ->
-                Target <$> refreshVariable avoiding variable
-            NonTarget variable ->
-                NonTarget <$> refreshVariable avoiding variable
+    infVariable = undefined
+    supVariable = undefined
+    nextVariable = undefined
 
 instance
     Unparse variable =>

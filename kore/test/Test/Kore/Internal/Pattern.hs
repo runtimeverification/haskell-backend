@@ -135,6 +135,7 @@ test_expandedPattern =
         )
     ]
 
+-- TODO: maybe add the sort to the type so the lens can be implemented
 newtype V = V Integer
     deriving (Show, Eq, Ord, GHC.Generic)
 
@@ -151,6 +152,7 @@ instance Unparse V where
     unparse2 = undefined
 
 instance SortedVariable V where
+    lensVariableSort = undefined
     sortedVariableSort _ = sortVariable
     fromVariable = undefined
     toVariable = undefined
@@ -171,6 +173,7 @@ instance Unparse W where
     unparse2 = undefined
 
 instance SortedVariable W where
+    lensVariableSort = undefined
     sortedVariableSort _ = sortVariable
     fromVariable = undefined
     toVariable = undefined

@@ -675,6 +675,7 @@ instance Debug V
 instance Diff V
 
 instance SortedVariable V where
+    lensVariableSort = undefined
     sortedVariableSort _ = sortVar
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
@@ -695,6 +696,7 @@ instance Debug W
 instance Diff W
 
 instance SortedVariable W where
+    lensVariableSort = undefined
     sortedVariableSort _ = sortVar
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"

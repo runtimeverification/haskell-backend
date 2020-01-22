@@ -6,11 +6,12 @@ module Kore.Variables.Fresh
     ( FreshVariable (..)
     , Renaming
     , refreshVariables
-    , nextVariable
     -- * Re-exports
     , module Kore.Syntax.Variable
     ) where
 
+import qualified Control.Lens.Combinators as Lens
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
@@ -32,7 +33,19 @@ import Kore.Variables.UnifiedVariable
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
-class Ord variable => FreshVariable variable where
+class (Ord variable, SortedVariable variable) => FreshVariable variable where
+    -- New: The greatest lower bound on variables
+    -- with the same name as the given variable.
+    infVariable :: variable -> variable
+    -- New: The least upper bound on variables
+    -- with the same name as the given variable.
+    supVariable :: variable -> variable
+    -- New: The least variable greater than the given variable.
+    nextVariable :: variable -> variable
+
+    -- This is a default implementation in terms of the above.
+    -- The default implementation is suitable for most types
+    -- and does O(1) allocation.
     {- | Refresh a variable, renaming it avoid the given set.
 
     If the given variable occurs in the set, @refreshVariable@ must return
@@ -42,9 +55,21 @@ class Ord variable => FreshVariable variable where
 
      -}
     refreshVariable
-        :: Set variable  -- ^ variables to avoid
-        -> variable        -- ^ variable to rename
+        :: Set variable
+        -- ^ variables to avoid
+        -> variable
+        -- ^ variable to rename
         -> Maybe variable
+    refreshVariable avoiding variable = do
+        fixedLargest <-
+            Lens.set lensVariableSort theSort
+            <$> Set.lookupLT pivotMax avoiding
+        Monad.guard (fixedLargest >= pivotMin)
+        return (nextVariable fixedLargest)
+      where
+        pivotMax = supVariable variable
+        pivotMin = infVariable variable
+        theSort = Lens.view lensVariableSort variable
 
 
 type Renaming variable =
@@ -52,36 +77,40 @@ type Renaming variable =
 
 instance FreshVariable variable => FreshVariable (ElementVariable variable)
   where
-    refreshVariable avoid = traverse (refreshVariable avoid')
-      where
-        avoid' = Set.map getElementVariable avoid
+    infVariable = undefined
+    supVariable = undefined
+    nextVariable = undefined
 
 instance FreshVariable variable => FreshVariable (SetVariable variable)
   where
-    refreshVariable avoid = traverse (refreshVariable avoid')
-      where
-        avoid' = Set.map getSetVariable avoid
+    infVariable = undefined
+    supVariable = undefined
+    nextVariable = undefined
 
 instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
   where
-    refreshVariable avoid = \case
-        SetVar v -> SetVar <$> refreshVariable setVars v
-        ElemVar v -> ElemVar <$> refreshVariable elemVars v
-      where
-        avoid' = Set.toList avoid
-        setVars = Set.fromList [v | SetVar v <- avoid']
-        elemVars = Set.fromList [v | ElemVar v <- avoid']
+    infVariable = undefined
+    supVariable = undefined
+    nextVariable = undefined
 
 instance FreshVariable Variable where
-    refreshVariable avoiding variable = do
-        fixedLargest <- fixSort <$> Set.lookupLT pivotMax avoiding
-        if fixedLargest >= pivotMin
-            then Just (nextVariable fixedLargest)
-            else Nothing
+    infVariable = undefined
+    supVariable = undefined
+    {- | Increase the 'variableCounter' of a 'Variable'
+     -}
+    nextVariable :: Variable -> Variable
+    nextVariable variable@Variable { variableName, variableCounter } =
+        variable
+            { variableName = variableName'
+            , variableCounter = variableCounter'
+            }
       where
-        pivotMax = variable { variableCounter = Just Sup }
-        pivotMin = variable { variableCounter = Nothing }
-        fixSort var = var { variableSort = variableSort variable }
+        variableName' = variableName { idLocation = AstLocationGeneratedVariable }
+        variableCounter' =
+            case variableCounter of
+                Nothing -> Just (Element 0)
+                Just (Element a) -> Just (Element (succ a))
+                Just Sup -> illegalVariableCounter
 
 {- | Rename one set of variables while avoiding another.
 
@@ -122,19 +151,3 @@ refreshVariables avoid0 =
         -- The variable does not collide with any others, so renaming is not
         -- necessary.
         (Set.insert var avoid, rename)
-
-{- | Increase the 'variableCounter' of a 'Variable'
- -}
-nextVariable :: Variable -> Variable
-nextVariable variable@Variable { variableName, variableCounter } =
-    variable
-        { variableName = variableName'
-        , variableCounter = variableCounter'
-        }
-  where
-    variableName' = variableName { idLocation = AstLocationGeneratedVariable }
-    variableCounter' =
-        case variableCounter of
-            Nothing -> Just (Element 0)
-            Just (Element a) -> Just (Element (succ a))
-            Just Sup -> illegalVariableCounter

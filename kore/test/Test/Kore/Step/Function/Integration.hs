@@ -1261,9 +1261,7 @@ appliedMockEvaluator result =
         }
 
 mapVariables
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        )
+    :: FreshVariable variable
     => Pattern Variable
     -> Pattern variable
 mapVariables =

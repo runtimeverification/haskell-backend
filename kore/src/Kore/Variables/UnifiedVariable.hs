@@ -52,6 +52,14 @@ instance (Debug variable, Diff variable) => Diff (UnifiedVariable variable)
 
 instance Hashable variable => Hashable (UnifiedVariable variable)
 
+instance SortedVariable variable => SortedVariable (UnifiedVariable variable)
+  where
+    lensVariableSort = undefined
+    -- TODO: this is problematic
+    fromVariable = undefined
+    toVariable (ElemVar variable) = toVariable variable
+    toVariable (SetVar variable) = toVariable variable
+
 instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = foldMapVariable unparse
     unparse2 = foldMapVariable unparse2
