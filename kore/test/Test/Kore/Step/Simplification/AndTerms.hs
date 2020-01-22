@@ -285,6 +285,109 @@ test_andTermsSimplification =
             assertEqual "" expect actual
         ]
 
+    , testGroup "Overloading"
+        [ testCase "direct overload, left side" $ do
+            let expect =
+                    Conditional
+                        { term = Mock.topOverload
+                            (Mock.sortInjectionOtherToTop
+                               Mock.aOtherSort
+                            )
+                        , predicate = makeTruePredicate Mock.topSort
+                        , substitution = mempty
+                        }
+            actual <-
+                simplifyUnify
+                    (Mock.topOverload
+                       (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                    )
+                    (Mock.sortInjectionOtherToTop
+                       (Mock.otherOverload Mock.aOtherSort)
+                    )
+            assertEqual "" ([expect], Just [expect]) actual
+        , testCase "direct overload, right side" $ do
+            let expect =
+                    Conditional
+                        { term = Mock.topOverload
+                            (Mock.sortInjectionOtherToTop
+                               Mock.aOtherSort
+                            )
+                        , predicate = makeTruePredicate Mock.topSort
+                        , substitution = mempty
+                        }
+            actual <-
+                simplifyUnify
+                    (Mock.sortInjectionOtherToTop
+                       (Mock.otherOverload Mock.aOtherSort)
+                    )
+                    (Mock.topOverload
+                       (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                    )
+            assertEqual "" ([expect], Just [expect]) actual
+        , testCase "overload, both sides" $ do
+            let expect =
+                    Conditional
+                        { term = Mock.topOverload
+                            (Mock.sortInjectionSubSubToTop
+                                Mock.aSubSubsort
+                            )
+                        , predicate = makeTruePredicate Mock.topSort
+                        , substitution = mempty
+                        }
+            actual <-
+                simplifyUnify
+                    (Mock.sortInjectionOtherToTop
+                       (Mock.otherOverload
+                           (Mock.sortInjectionSubSubToOther
+                               Mock.aSubSubsort
+                           )
+                       )
+                    )
+                    (Mock.sortInjectionSubToTop
+                       (Mock.subOverload
+                           (Mock.sortInjectionSubSubToSub
+                               Mock.aSubSubsort
+                           )
+                       )
+                    )
+            assertEqual "" ([expect], Just [expect]) actual
+        ]
+    , testGroup "Overloading -> bottom"
+        [ testCase "direct overload, left side" $ do
+            actual <-
+                simplifyUnify
+                    (Mock.topOverload
+                       (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                    )
+                    (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+            assertEqual "" ([], Just []) actual
+        , testCase "direct overload, right side" $ do
+            actual <-
+                simplifyUnify
+                    (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                    (Mock.topOverload
+                       (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+                    )
+            assertEqual "" ([], Just []) actual
+        , testCase "overload, both sides" $ do
+            actual <-
+                simplifyUnify
+                    (Mock.sortInjectionOtherToOtherTop
+                       (Mock.otherOverload
+                           (Mock.sortInjectionSubSubToOther
+                               Mock.aSubSubsort
+                           )
+                       )
+                    )
+                    (Mock.sortInjectionSubToOtherTop
+                       (Mock.subOverload
+                           (Mock.sortInjectionSubSubToSub
+                               Mock.aSubSubsort
+                           )
+                       )
+                    )
+            assertEqual "" ([], Just []) actual
+        ]
     , testGroup "constructor and"
         [ testCase "same head" $ do
             let expect =

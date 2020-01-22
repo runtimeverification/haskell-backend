@@ -99,7 +99,19 @@ data InjSimplifier =
                 where inner < middle
         @
          -}
-        }
+
+        , injectTermTo
+            :: forall variable
+            .  GHC.HasCallStack
+            => InternalVariable variable
+            => Inj ()
+            -> TermLike variable
+            -> Sort
+            -> TermLike variable
+        {- ^ Injects a term to a given sort. Applies 'evaluateInj' to keep
+        the injection simplified.
+        -}
+    }
 
 -- | Ignore 'UnorderedInj' errors in 'evaluateInj' and 'evaluateCeilInj' below.
 ignoreUnorderedInj :: Bool
@@ -109,7 +121,8 @@ ignoreUnorderedInj =
 
 mkInjSimplifier :: SortGraph -> InjSimplifier
 mkInjSimplifier sortGraph =
-    InjSimplifier { evaluateInj, unifyInj, isOrderedInj, evaluateCeilInj }
+    InjSimplifier
+        { evaluateInj, unifyInj, isOrderedInj, evaluateCeilInj, injectTermTo }
   where
     isSubsortOf' = isSubsortOf sortGraph
 
@@ -130,6 +143,7 @@ mkInjSimplifier sortGraph =
         => Inj (TermLike variable)
         -> TermLike variable
     evaluateInj inj
+      | injFrom inj == injTo inj = injChild inj
       | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
       | otherwise =
         case injChild inj of
@@ -210,6 +224,11 @@ mkInjSimplifier sortGraph =
         Inj { injFrom = injFrom2, injTo = injTo2 } = inj2
         subsorts1 = subsortsOf sortGraph injFrom1
         subsorts2 = subsortsOf sortGraph injFrom2
+
+    injectTermTo injProto injChild injTo =
+        evaluateInj injProto { injFrom, injTo, injChild }
+      where
+        injFrom = termLikeSort injChild
 
 normalize
     :: InternalVariable variable

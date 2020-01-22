@@ -465,8 +465,6 @@ mockMetadataTools = MetadataTools
     { sortAttributes = const def
     , applicationSorts = undefined
     , symbolAttributes = undefined
-    , isOverloading = undefined
-    , isOverloaded = undefined
     , smtData = undefined
     , sortConstructors = undefined
     }

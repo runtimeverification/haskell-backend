@@ -73,8 +73,6 @@ makeMetadataTools attr sortTypes sorts declarations sortConstructors =
                     )
                     attr
                 )
-        , isOverloading = const (const False)
-        , isOverloaded = const False
         , smtData = declarations
         , sortConstructors
         }
