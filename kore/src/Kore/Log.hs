@@ -5,7 +5,8 @@ License     : NCSA
 -}
 
 module Kore.Log
-    ( koreLogFilters
+    ( CallerExecutable (..)
+    , koreLogFilters
     , withLogger
     , emptyLogger
     , stderrLogger
@@ -101,28 +102,37 @@ data WithTimestamp = WithTimestamp SomeEntry LocalTime
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
 -- the CPS style because some outputters require cleanup (e.g. files).
 withLogger
-    :: KoreLogOptions
+    :: CallerExecutable
+    -> KoreLogOptions
     -> (LogAction IO SomeEntry -> IO a)
     -> IO a
 withLogger
+    callerExe
     koreLogOptions@KoreLogOptions { debugSolverOptions }
     continue
   =
-    withMainLogger koreLogOptions
+    withMainLogger callerExe koreLogOptions
     $ \mainLogger -> withSmtSolverLogger debugSolverOptions
     $ \smtSolverLogger -> continue (mainLogger <> smtSolverLogger)
 
-withMainLogger :: KoreLogOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
 withMainLogger
-    koreLogOptions@KoreLogOptions { logType, timestampsSwitch } continue =
-        case logType of
-            LogStdErr -> continue
-                $ koreLogFilters koreLogOptions (stderrLogger timestampsSwitch)
-            LogFileText filename ->
-                Colog.withLogTextFile filename
-                $ continue
-                . koreLogFilters koreLogOptions
-                . makeKoreLogger timestampsSwitch
+    :: CallerExecutable
+    -> KoreLogOptions
+    -> (LogAction IO SomeEntry -> IO a)
+    -> IO a
+withMainLogger
+    callerExe
+    koreLogOptions@KoreLogOptions { logType, timestampsSwitch }
+    continue
+  =
+    case logType of
+        LogStdErr -> continue
+            $ koreLogFilters koreLogOptions (stderrLogger callerExe timestampsSwitch)
+        LogFileText filename ->
+            Colog.withLogTextFile filename
+            $ continue
+            . koreLogFilters koreLogOptions
+            . makeKoreLogger callerExe timestampsSwitch
 
 withSmtSolverLogger
     :: DebugSolverOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
@@ -170,10 +180,10 @@ filterSeverity level entry =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
-runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
-runLoggerT options loggerT = do
+runLoggerT :: CallerExecutable -> KoreLogOptions -> LoggerT IO a -> IO a
+runLoggerT callerExe options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
-    withLogger options $ \logger -> do
+    withLogger callerExe options $ \logger -> do
         (asyncThread, modifiedLogger) <- concurrentLogger logger
         finally
             (runLogger modifiedLogger)
@@ -197,16 +207,25 @@ writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
     LogAction $ \msg -> atomically $ writeTChan tChan msg
 
+-- | Caller of the logging function
+data CallerExecutable = KoreExec | KoreRepl
+    deriving Eq
+
+instance Show CallerExecutable where
+    show KoreExec = "kore-exec"
+    show KoreRepl = "kore-repl"
+
 -- Creates a kore logger which:
 --     * adds timestamps
 --     * formats messages: "[<severity>][<localTime>][<scope>]: <message>"
 makeKoreLogger
     :: forall m
     .  MonadIO m
-    => TimestampsSwitch
+    => CallerExecutable
+    -> TimestampsSwitch
     -> LogAction m Text
     -> LogAction m SomeEntry
-makeKoreLogger timestampSwitch logToText =
+makeKoreLogger callerExe timestampSwitch logToText =
     Colog.cmapM withTimestamp
     $ contramap messageToText logToText
   where
@@ -214,11 +233,12 @@ makeKoreLogger timestampSwitch logToText =
     messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ timestamp <> defaultLogPretty entry
+        $ timestamp <> prettyExeCaller <> Pretty.space <> defaultLogPretty entry
       where
         timestamp = case timestampSwitch of
             TimestampsEnable -> Pretty.brackets (formattedTime localTime)
             TimestampsDisable -> mempty
+        prettyExeCaller = Pretty.brackets . Pretty.pretty . show $ callerExe
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
 
 -- | Adds the current timestamp to a log entry.
@@ -237,9 +257,13 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stderrLogger :: MonadIO io => TimestampsSwitch -> LogAction io SomeEntry
-stderrLogger timestampsSwitch =
-    makeKoreLogger timestampsSwitch Colog.logTextStderr
+stderrLogger
+    :: MonadIO io
+    => CallerExecutable
+    -> TimestampsSwitch
+    -> LogAction io SomeEntry
+stderrLogger callerExe timestampsSwitch =
+    makeKoreLogger callerExe timestampsSwitch Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 

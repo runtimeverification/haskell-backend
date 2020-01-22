@@ -108,7 +108,8 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import Kore.Log
-    ( KoreLogOptions (..)
+    ( CallerExecutable (..)
+    , KoreLogOptions (..)
     , LogMessage
     , LoggerT (..)
     , WithLog
@@ -410,7 +411,7 @@ mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
     exitCode <-
-        runLoggerT koreLogOptions
+        runLoggerT KoreExec koreLogOptions
         $ handle handleSomeException
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
