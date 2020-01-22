@@ -89,20 +89,9 @@ instance FreshVariable variable => FreshVariable (SetVariable variable)
 
 instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
   where
-    infVariable (ElemVar variable) =
-        ElemVar . infVariable $ variable
-    infVariable (SetVar variable) =
-        SetVar . infVariable $ variable
-
-    supVariable (ElemVar variable) =
-        ElemVar . supVariable $ variable
-    supVariable (SetVar variable) =
-        SetVar . supVariable $ variable
-
-    nextVariable (ElemVar variable) =
-        ElemVar . nextVariable $ variable
-    nextVariable (SetVar variable) =
-        SetVar . nextVariable $ variable
+    infVariable = fmap infVariable
+    supVariable = fmap supVariable
+    nextVariable = fmap nextVariable
 
 instance FreshVariable Variable where
     infVariable variable = variable { variableCounter = Nothing }

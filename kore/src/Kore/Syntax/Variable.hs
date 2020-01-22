@@ -159,14 +159,16 @@ instance SortedVariable Variable where
 
 instance SortedVariable variable => SortedVariable (ElementVariable variable)
   where
-    lensVariableSort = undefined
+    lensVariableSort f =
+        fmap fromVariable . lensVariableSort f . toVariable
     fromVariable = ElementVariable . fromVariable
     toVariable (ElementVariable variable) =
         toVariable variable
 
 instance SortedVariable variable => SortedVariable (SetVariable variable)
   where
-    lensVariableSort = undefined
+    lensVariableSort f =
+        fmap fromVariable . lensVariableSort f . toVariable
     fromVariable = SetVariable . fromVariable
     toVariable (SetVariable variable) =
         toVariable variable

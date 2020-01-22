@@ -16,7 +16,6 @@ module Kore.Variables.Target
 import Data.Hashable
     ( Hashable
     )
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -85,9 +84,9 @@ instance
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
 instance FreshVariable variable => FreshVariable (Target variable) where
-    infVariable = undefined
-    supVariable = undefined
-    nextVariable = undefined
+    infVariable = fmap infVariable
+    supVariable = fmap supVariable
+    nextVariable = fmap nextVariable
 
 instance
     Unparse variable =>

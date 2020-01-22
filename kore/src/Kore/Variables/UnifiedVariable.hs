@@ -54,7 +54,8 @@ instance Hashable variable => Hashable (UnifiedVariable variable)
 
 instance SortedVariable variable => SortedVariable (UnifiedVariable variable)
   where
-    lensVariableSort = undefined
+    lensVariableSort f =
+        fmap fromVariable . lensVariableSort f . toVariable
     -- TODO: this is problematic
     fromVariable = undefined
     toVariable (ElemVar variable) = toVariable variable
