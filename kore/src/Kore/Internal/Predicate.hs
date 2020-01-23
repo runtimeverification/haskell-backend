@@ -72,7 +72,6 @@ import Data.List
 import Data.Map.Strict
     ( Map
     )
-import Data.Proxy
 import Data.Set
     ( Set
     )
@@ -168,7 +167,7 @@ instance
 type Predicate variable = GenericPredicate (TermLike variable)
 
 instance InternalVariable variable => SQL.Column (Predicate variable) where
-    defineColumn _ = SQL.defineColumn (Proxy @(TermLike variable))
+    defineColumn _ = SQL.defineColumn (SQL.Proxy @(TermLike variable))
     toColumn (GenericPredicate termLike) = SQL.toColumn termLike
 
 {- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
