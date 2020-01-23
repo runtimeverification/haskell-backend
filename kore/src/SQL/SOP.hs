@@ -6,20 +6,26 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE PolyKinds #-}
+
 module SQL.SOP
     ( tableNameGeneric
     , createTable
     , insertRow
     , selectRows
+    , createTableSum
+    , insertRowSum
+    , selectRowsSum
+    -- * Helpers
     , defineColumns
     , productFields
+    , ctorFields
     , productTypeFrom
     , toColumns
     -- * Re-exports
     , module SQL.Table
     ) where
 
-import qualified Control.Monad.Trans as Trans
 import Control.Monad.Trans.Accum
     ( AccumT
     , execAccumT
@@ -34,7 +40,8 @@ import Data.String
     )
 import qualified Database.SQLite.Simple as SQLite
 import Generics.SOP
-    ( I (..)
+    ( ConstructorInfo
+    , I (..)
     , K (..)
     , NP (..)
     , NS (..)
@@ -57,7 +64,7 @@ The columns are described as record fields.
  -}
 createTable
     :: forall fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
     -> NP (K String) fields  -- ^ column names
     -> NP (K ColumnDef) fields  -- ^ column definitions
@@ -77,7 +84,7 @@ addComma :: Monad m => AccumT Query m ()
 addComma = Accum.add ", "
 
 addColumnDefs
-    :: SOP.All Column fields
+    :: SOP.All SOP.Top fields
     => NP (K String) fields
     -> NP (K ColumnDef) fields
     -> AccumT Query SQL ()
@@ -120,6 +127,54 @@ tableNameGeneric proxy =
   where
     info = SOP.datatypeInfo proxy
 
+createTableSum
+    :: forall ctors
+    .  SOP.All2 Column ctors
+    => TableName
+    -> NP ConstructorInfo ctors
+    -> SQL ()
+createTableSum tableName ctors = do
+    SOP.hctraverse_ proxyAllColumn (createConstructorTable tableName) ctors
+    createTable tableName names defs
+  where
+    proxyAllColumn = Proxy @(SOP.All Column)
+
+    names :: NP (K String) ctors
+    names = columnNamesSum ctors
+
+    defs :: NP (K ColumnDef) ctors
+    defs = SOP.hmap (const $ K columnTag) names
+
+columnTag :: ColumnDef
+columnTag = Column.columnDef Column.typeInteger
+
+columnNamesSum
+    :: SOP.All SOP.Top ctors
+    => NP ConstructorInfo ctors
+    -> NP (K String) ctors
+columnNamesSum = SOP.hmap (K . SOP.constructorName)
+
+createConstructorTable
+    :: forall fields
+    .  SOP.All Column fields
+    => TableName
+    -> ConstructorInfo fields
+    -> SQL ()
+createConstructorTable typeTableName info = do
+    defs <- SQL.SOP.defineColumns names
+    createTable tableName (K ctorName :* names) (K columnTag :* defs)
+  where
+    ctorName = SOP.constructorName info
+    tableName = ctorTableName typeTableName info
+    names = ctorFields info
+
+ctorTableName :: TableName -> ConstructorInfo fields -> TableName
+ctorTableName typeTableName info =
+    (TableName . unwords)
+        [ getTableName typeTableName
+        , SOP.constructorName info
+        ]
+
 {- | The record fields of a product type.
 
 If the type is not actually a record (if it hase a regular or infix
@@ -133,13 +188,21 @@ productFields
     => proxy table
     -> NP (K String) fields
 productFields proxy =
+    ctorFields ctor
+  where
+    info = SOP.datatypeInfo proxy
+    ctor :* Nil = SOP.constructorInfo info
+
+ctorFields
+    :: SOP.All SOP.Top fields
+    => ConstructorInfo fields
+    -> NP (K String) fields
+ctorFields ctor =
     case ctor of
         SOP.Constructor _ -> fakeFields
         SOP.Infix _ _ _ -> fakeFields
         SOP.Record _ fields -> fieldNames fields
   where
-    info = SOP.datatypeInfo proxy
-    ctor :* Nil = SOP.constructorInfo info
 
     fieldNames = SOP.hmap (K . SOP.fieldName)
 
@@ -236,6 +299,39 @@ addColumnParams =
 toColumns :: SOP.All Column fields => NP I fields -> SQL (NP (K SQLData) fields)
 toColumns = SOP.hctraverse' (Proxy @Column) $ \(I field) -> K <$> toColumn field
 
+insertRowSum
+    :: forall table ctors
+    .  SOP.All2 Column ctors
+    => TableName
+    -> NP ConstructorInfo ctors
+    -> NS (NP I) ctors
+    -> SQL (Key table)
+insertRowSum typeTableName = worker
+  where
+    worker
+        :: forall ctors'
+        .  SOP.All2 Column ctors'
+        => NP ConstructorInfo ctors'
+        -> NS (NP I) ctors'
+        -> SQL (Key table)
+    worker infos (S ctors) =
+        case infos of
+            _ :* infos' -> worker infos' ctors
+    worker (info :* _) (Z fields) = do
+        let names = K ctorName :* ctorFields info
+            tag = SQLInteger 1
+        values <- toColumns fields
+        key <- insertRow tableName names (K tag :* values)
+
+        let
+            idxNames = K "id" :* K ctorName :* Nil
+            idxValues = K rowId :* K tag :* Nil
+            rowId = SQLInteger (getKey key)
+        insertRow typeTableName idxNames idxValues
+      where
+        tableName = ctorTableName typeTableName info
+        ctorName = SOP.constructorName info
+
 {- | Witness that the type @table@ is actually a product type.
  -}
 productTypeFrom
@@ -270,3 +366,28 @@ selectRows tableName infos values = do
         addColumnParams infos
     keys <- SQL.query stmt $ SOP.hcollapse values
     return (Key . SQLite.fromOnly <$> keys)
+
+selectRowsSum
+    :: forall table ctors
+    .  SOP.All2 Column ctors
+    => TableName
+    -> NP ConstructorInfo ctors
+    -> NS (NP I) ctors
+    -> SQL [Key table]
+selectRowsSum typeTableName = worker
+  where
+    worker
+        :: forall ctors'
+        .  SOP.All2 Column ctors'
+        => NP ConstructorInfo ctors'
+        -> NS (NP I) ctors'
+        -> SQL [Key table]
+    worker infos (S ctors) =
+        case infos of
+            _ :* infos' -> worker infos' ctors
+    worker (info :* _) (Z fields) = do
+        let names = ctorFields info
+        values <- toColumns fields
+        selectRows tableName names values
+      where
+        tableName = ctorTableName typeTableName info

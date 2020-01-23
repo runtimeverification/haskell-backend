@@ -15,7 +15,7 @@ module SQL.SQL
     , lastInsertRowId
     -- * Re-exports
     , Query
-    , SQLData
+    , SQLData (..)
     ) where
 
 import qualified Control.Monad.Catch as Exceptions
@@ -34,7 +34,7 @@ import Database.SQLite.Simple
     ( FromRow
     , NamedParam
     , Query
-    , SQLData
+    , SQLData (..)
     )
 import qualified Database.SQLite.Simple as SQLite
 

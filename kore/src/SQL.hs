@@ -161,21 +161,35 @@ selectRowUnwrapped
     -> SQL (Maybe (Key outer))
 selectRowUnwrapped = selectRowIso _Unwrapped
 
-{- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' record
-type.
+{- | @createTableProduct@ implements 'createTable' for a product type.
  -}
-createTableGeneric
-    :: forall proxy table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
-    => proxy table
+createTableProduct
+    :: forall fields
+    .  SOP.All Column fields
+    => TableName
+    -> SOP.ConstructorInfo fields
     -> SQL ()
-createTableGeneric proxy = do
+createTableProduct tableName ctorInfo = do
     defs <- SQL.SOP.defineColumns names
     SQL.SOP.createTable tableName names defs
   where
+    names = SQL.SOP.ctorFields ctorInfo
+
+{- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' type.
+ -}
+createTableGeneric
+    :: forall proxy table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
+    => proxy table
+    -> SQL ()
+createTableGeneric proxy =
+    case SOP.constructorInfo info of
+        ctorInfo SOP.:* SOP.Nil -> createTableProduct tableName ctorInfo
+        ctorInfos -> SQL.SOP.createTableSum tableName ctorInfos
+  where
+    info = SOP.datatypeInfo proxy
     tableName = SQL.SOP.tableNameGeneric proxy
-    names = SQL.SOP.productFields proxy
 
 withGenericFields
     :: forall table fields a
