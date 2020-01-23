@@ -197,5 +197,6 @@ instance ParseAttributes Axiom where
             ]
 
 instance SQL.Column Axiom where
+    -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
