@@ -48,6 +48,8 @@ import SQL.Column
 import qualified SQL.Column as Column
 import SQL.SQL as SQL
 
+{- | A foreign key into the table for type @a@.
+ -}
 newtype Key a = Key { getKey :: Int64 }
     deriving (Eq, Ord, Read, Show)
     deriving (Functor, Foldable)
@@ -65,25 +67,48 @@ instance Column (Key a) where
     defineColumn _ = defineColumn (Proxy @Int64)
     toColumn = toColumn . getKey
 
+{- | Implement 'defineColumn' for a foreign key reference.
+
+The referenced table will be created if it does not exist.
+
+ -}
 defineForeignKeyColumn :: Table a => proxy a -> SQL ColumnDef
 defineForeignKeyColumn proxy = do
     createTable proxy
     defineColumn (Proxy @Int64)
 
-toForeignKeyColumn :: Table table => table -> SQL SQLite.SQLData
-toForeignKeyColumn a =
-    insertUniqueRow a >>= toColumn
+{- | Implement 'toColumn' for a foreign key reference.
 
+Inserts the given data into the table and returns a key to the inserted row.
+
+ -}
+toForeignKeyColumn :: Table table => table -> SQL SQLite.SQLData
+toForeignKeyColumn a = insertUniqueRow a >>= toColumn
+
+{- | A 'Table' corresponds to a table in SQL.
+ -}
 class Table a where
+    -- | Create the table for @a@ if it does not exist.
     createTable :: proxy a -> SQL ()
 
+    {- | Insert the @a@ as a new row in the table.
+
+    Returns the 'Key' of the inserted row.
+
+     -}
     insertRow :: a -> SQL (Key a)
 
+    {- | Find the 'Key' for an @a@, if it is in the table.
+     -}
     selectRow :: a -> SQL (Maybe (Key a))
 
+{- | @(insertUniqueRow a)@ inserts @a@ into the table if not present.
+
+Returns the 'Key' of the row corresponding to @a@.
+
+ -}
 insertUniqueRow :: Table a => a -> SQL (Key a)
-insertUniqueRow a =
-    Monad.maybeM (insertRow a) return (selectRow a)
+insertUniqueRow a = Monad.maybeM (insertRow a) return (selectRow a)
 
 newtype TableName = TableName { getTableName :: String }
 
