@@ -430,7 +430,9 @@ insertRowGenericAux
 insertRowGenericAux tableName table = do
     case SOP.constructorInfo $ SOP.datatypeInfo proxy of
         info :* Nil ->
-            case ctors of Z fields -> insertRowProduct tableName info fields
+            case ctors of
+                S ctors' -> case ctors' of {}
+                Z fields -> insertRowProduct tableName info fields
         infos       -> insertRowSum tableName infos ctors
   where
     proxy = Proxy @table
@@ -540,7 +542,9 @@ selectRowGenericAux
 selectRowGenericAux tableName table = do
     keys <- case SOP.constructorInfo $ SOP.datatypeInfo proxy of
         info :* Nil ->
-            case ctors of Z fields -> selectRowsProduct tableName info fields
+            case ctors of
+                S ctors' -> case ctors' of {}
+                Z fields -> selectRowsProduct tableName info fields
         infos -> selectRowsSum tableName infos ctors
     return $ case keys of
         []      -> Nothing
