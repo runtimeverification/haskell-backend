@@ -20,9 +20,6 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -42,11 +39,10 @@ and for children with top terms.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Iff Sort (OrPattern variable)
+    => Iff Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify sideCondition Iff { iffFirst = first, iffSecond = second } =
-    simplifyEvaluated sideCondition first second
+simplify Iff { iffFirst = first, iffSecond = second } =
+    simplifyEvaluated first second
 
 {-| evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -67,18 +63,16 @@ carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated
-    sideCondition
     first
     second
   | OrPattern.isTrue first   = return second
-  | OrPattern.isFalse first  = Not.simplifyEvaluated sideCondition second
+  | OrPattern.isFalse first  = Not.simplifyEvaluated second
   | OrPattern.isTrue second  = return first
-  | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
+  | OrPattern.isFalse second = Not.simplifyEvaluated first
   | otherwise =
     return $ case ( firstPatterns, secondPatterns ) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP

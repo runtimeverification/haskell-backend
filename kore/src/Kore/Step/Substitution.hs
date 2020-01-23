@@ -44,12 +44,11 @@ import Kore.Unification.Unify
 normalize
     :: forall variable term simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Conditional variable term
+    => Conditional variable term
     -> BranchT simplifier (Conditional variable term)
-normalize sideCondition conditional@Conditional { substitution } = do
+normalize conditional@Conditional { substitution } = do
     results <- Monad.Trans.lift $
-        simplifySubstitution sideCondition substitution
+        simplifySubstitution substitution
     scatter (applyTermPredicate <$> results)
   where
     applyTermPredicate =
