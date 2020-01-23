@@ -514,6 +514,7 @@ logUpdatesState = do
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty
                 , debugSolverOptions = Log.emptyDebugSolverOptions
+                , exeName = Log.ExeName "kore-repl"
                 }
         command = Log options
     Result { output, continue, state } <-
@@ -697,6 +698,7 @@ mkState axioms claims claim =
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
+            , exeName = Log.ExeName "kore-repl"
             }
         }
   where

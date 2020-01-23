@@ -442,6 +442,7 @@ logTests =
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
+            , exeName = Log.ExeName "kore-repl"
             }
     , "log [] stderr"
         `parsesTo_` Log Log.KoreLogOptions
@@ -452,6 +453,7 @@ logTests =
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
+            , exeName = Log.ExeName "kore-repl"
             }
     , "log [DebugAppliedRule] stderr"
         `parsesTo_` Log Log.KoreLogOptions
@@ -462,6 +464,7 @@ logTests =
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
+            , exeName = Log.ExeName "kore-repl"
             }
     , "log error [DebugAppliedRule] stderr"
         `parsesTo_` Log Log.KoreLogOptions
@@ -472,6 +475,7 @@ logTests =
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
+            , exeName = Log.ExeName "kore-repl"
             }
     , "log info [ DebugAppliedRule,  DebugAxiomEvaluation ] file \"f s\""
         `parsesTo_` Log Log.KoreLogOptions
@@ -483,6 +487,7 @@ logTests =
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
+            , exeName = Log.ExeName "kore-repl"
             }
     , "log info [ DebugAppliedRule   DebugAxiomEvaluation ] file \"f s\""
         `parsesTo_` Log Log.KoreLogOptions
@@ -494,5 +499,6 @@ logTests =
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Log.emptyDebugSolverOptions
+            , exeName = Log.ExeName "kore-repl"
             }
     ]

@@ -279,6 +279,7 @@ log = do
     let debugAppliedRuleOptions = mempty
         debugAxiomEvaluationOptions = mempty
         debugSolverOptions = Log.emptyDebugSolverOptions
+        exeName = Log.ExeName "kore-repl"
     pure $ Log Log.KoreLogOptions
         { logType
         , logLevel
@@ -287,6 +288,7 @@ log = do
         , debugAppliedRuleOptions
         , debugAxiomEvaluationOptions
         , debugSolverOptions
+        , exeName
         }
   where
     parseSeverityWithDefault =

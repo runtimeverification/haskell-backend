@@ -8,6 +8,7 @@ module Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     , KoreLogType (..)
     , EntryTypes
+    , ExeName (..)
     , TimestampsSwitch (..)
     , parseKoreLogOptions
     ) where
@@ -24,6 +25,7 @@ import Data.Set
     )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import Options.Applicative
     ( Parser
     , option
@@ -65,6 +67,7 @@ data KoreLogOptions = KoreLogOptions
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
     , debugSolverOptions :: DebugSolverOptions
+    , exeName :: ExeName
     }
     deriving (Eq, Show)
 
@@ -78,6 +81,7 @@ instance Default KoreLogOptions where
             , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
             , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
             , debugSolverOptions = def @DebugSolverOptions
+            , exeName = ExeName mempty
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -138,6 +142,7 @@ parseKoreLogOptions =
     <*> parseDebugAppliedRuleOptions
     <*> parseDebugAxiomEvaluationOptions
     <*> parseDebugSolverOptions
+    <*> pure (ExeName mempty)
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -187,3 +192,10 @@ readSeverity =
         "warning"  -> pure Warning
         "error"    -> pure Error
         _          -> Nothing
+
+-- | Caller of the logging function
+newtype ExeName = ExeName { getExeName :: String }
+    deriving (Eq, Show)
+
+instance Pretty.Pretty ExeName where
+    pretty = Pretty.pretty . getExeName
