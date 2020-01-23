@@ -85,6 +85,15 @@ test_freshVariableProperties =
     , freshVariablePropertyTests
         "FreshVariable UnifiedVariable"
         (unifiedVariableGen Mock.testSort)
+    , freshVariablePropertyTests
+        "FreshVariable Target ElementVariable"
+        (targetElementVariableGen Mock.testSort)
+    , freshVariablePropertyTests
+        "FreshVariable Target SetVariable"
+        (targetSetVariableGen Mock.testSort)
+    , freshVariablePropertyTests
+        "FreshVariable Target UnifiedVariable"
+        (targetUnifiedVariableGen Mock.testSort)
     ]
 
 freshVariablePropertyTests
