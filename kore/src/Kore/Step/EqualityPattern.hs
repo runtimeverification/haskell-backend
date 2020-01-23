@@ -41,7 +41,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
-    , SortedVariable
     )
 import Kore.Step.Step
     ( UnifyingRule (..)

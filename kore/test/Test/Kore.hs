@@ -23,7 +23,6 @@ module Test.Kore
     , unifiedVariableGen
     , targetElementVariableGen
     , targetSetVariableGen
-    , targetUnifiedVariableGen
     , genBuiltin
     , couple
     , symbolOrAliasGen
@@ -265,12 +264,6 @@ targetSetVariableGen :: Sort -> Gen (Target (SetVariable Variable))
 targetSetVariableGen sort = Gen.choice
     [ Target <$> setVariableGen sort
     , NonTarget <$> setVariableGen sort
-    ]
-
-targetUnifiedVariableGen :: Sort -> Gen (Target (UnifiedVariable Variable))
-targetUnifiedVariableGen sort = Gen.choice
-    [ Target <$> unifiedVariableGen sort
-    , NonTarget <$> unifiedVariableGen sort
     ]
 
 unaryOperatorGen

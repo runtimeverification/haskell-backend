@@ -53,7 +53,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
-    , SortedVariable
     , Variable
     )
 import Kore.Sort
@@ -96,8 +95,7 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-    ( Unparse
-    , unparse
+    ( unparse
     )
 import qualified Kore.Verified as Verified
 

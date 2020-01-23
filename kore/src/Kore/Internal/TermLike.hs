@@ -337,7 +337,6 @@ Otherwise, the argument is returned.
  -}
 withoutFreeVariable
     ::  ( Ord variable
-        , SortedVariable variable
         , SyntaxVariable variable
         , Unparse variable
         )
@@ -432,8 +431,7 @@ simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys
-    :: SortedVariable variable
-    => SyntaxVariable variable
+    :: SyntaxVariable variable
     => Foldable t
     => t (TermLike variable)
     -> a

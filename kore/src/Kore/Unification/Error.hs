@@ -81,8 +81,7 @@ instance Debug UnificationError
 instance Diff UnificationError
 
 unsupportedPatterns
-    :: SortedVariable variable
-    => SyntaxVariable variable
+    :: SyntaxVariable variable
     => String
     -> TermLike variable
     -> TermLike variable

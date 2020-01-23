@@ -135,7 +135,6 @@ test_expandedPattern =
         )
     ]
 
--- TODO: maybe add the sort to the type so the lens can be implemented
 newtype V = V Integer
     deriving (Show, Eq, Ord, GHC.Generic)
 

@@ -83,8 +83,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Variable
-    ( SortedVariable
-    , SyntaxVariable
+    ( SyntaxVariable
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -449,7 +448,6 @@ reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
 
 assertNoneAreFreeVarsInRhs
     ::  ( Ord variable
-        , SortedVariable variable
         , SyntaxVariable variable
         , Unparse variable
         )

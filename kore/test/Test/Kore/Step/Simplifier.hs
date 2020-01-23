@@ -17,9 +17,6 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    )
 
 mockSimplifier
     :: SimplifierVariable variable
