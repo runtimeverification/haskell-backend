@@ -18,6 +18,12 @@ import Data.Text.Prettyprint.Doc.Render.Text
     ( renderStrict
     )
 
+{- | Lay out the document with no (automatic) line breaks.
+
+Hard line breaks will be preserved, but soft line breaks are converted to
+spaces.
+
+ -}
 layoutOneLine :: Doc ann -> SimpleDocStream ann
 layoutOneLine = flattenSimpleDocStream . layoutCompact
 
