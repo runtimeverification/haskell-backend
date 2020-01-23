@@ -1,6 +1,8 @@
 module Test.SQL
     ( testTable
     , test_EitherIntInt
+    , test_Unit
+    , test_MaybeInt
     ) where
 
 import Test.Tasty
@@ -30,7 +32,7 @@ testTable rows =
 runTestSQL :: SQL a -> IO a
 runTestSQL = runSQL ":memory:"
 
--- | Test of the Table instance for a simple sum type.
+-- | Test of the generic instance for a simple sum type.
 test_EitherIntInt :: TestTree
 test_EitherIntInt =
     testTable
@@ -50,3 +52,42 @@ instance Table EitherIntInt where
 instance SOP.Generic EitherIntInt
 
 instance SOP.HasDatatypeInfo EitherIntInt
+
+-- | Test of the generic instance for a unitary constructor.
+test_Unit :: TestTree
+test_Unit =
+    testTable [ Unit ]
+
+data Unit = Unit
+    deriving (GHC.Generic)
+
+instance Table Unit where
+    createTable = createTableGeneric
+    insertRow = insertRowGeneric
+    selectRow = selectRowGeneric
+
+instance SOP.Generic Unit
+
+instance SOP.HasDatatypeInfo Unit
+
+-- | Test of the generic instance for a sum type with a unitary constructor.
+test_MaybeInt :: TestTree
+test_MaybeInt =
+    testTable
+        [ MaybeInt (Just 0)
+        , MaybeInt (Just 1)
+        , MaybeInt (Just 2)
+        , MaybeInt Nothing
+        ]
+
+newtype MaybeInt = MaybeInt { unMaybeInt :: Maybe Int64 }
+    deriving (GHC.Generic)
+
+instance Table MaybeInt where
+    createTable = createTableUnwrapped
+    insertRow = insertRowUnwrapped
+    selectRow = selectRowUnwrapped
+
+instance SOP.Generic MaybeInt
+
+instance SOP.HasDatatypeInfo MaybeInt

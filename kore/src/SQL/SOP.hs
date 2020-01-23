@@ -26,6 +26,7 @@ module SQL.SOP
     , module SQL.Table
     ) where
 
+import qualified Control.Monad as Monad
 import Control.Monad.Trans.Accum
     ( AccumT
     , execAccumT
@@ -207,7 +208,6 @@ ctorFields ctor =
         SOP.Infix _ _ _ -> fakeFields
         SOP.Record _ fields -> fieldNames fields
   where
-
     fieldNames = SOP.hmap (K . SOP.fieldName)
 
     fakeFields :: forall ys. SOP.SListI ys => NP (K String) ys
@@ -247,13 +247,16 @@ insertRow tableName infos values = do
     stmt <- flip execAccumT mempty $ do
         Accum.add "INSERT INTO"
         addSpace
-        addTableSpec tableName infos
+        addTableSpec tableName infos'
         addSpace
         Accum.add "VALUES"
         addSpace
-        addColumnParams infos
-    SQL.execute stmt $ SOP.hcollapse values
+        addColumnParams infos'
+    SQL.execute stmt $ SOP.hcollapse values'
     Key <$> SQL.lastInsertRowId
+  where
+    infos' = K "id" :* infos
+    values' = K SQLNull :* values
 
 addTableSpec
     :: Monad m
@@ -351,6 +354,10 @@ productTypeFrom a =
     ns :: NS (NP I) '[fields]
     SOP.SOP ns = SOP.from a
 
+isNil :: NP f xs -> Bool
+isNil Nil = True
+isNil _   = False
+
 selectRows
     :: forall table fields
     .  SOP.All Column fields
@@ -364,11 +371,12 @@ selectRows tableName infos values = do
         addSpace
         addTableName tableName
         addSpace
-        Accum.add "WHERE"
-        addSpace
-        addColumnNames infos
-        Accum.add " = "
-        addColumnParams infos
+        Monad.unless (isNil infos) $ do
+            Accum.add "WHERE"
+            addSpace
+            addColumnNames infos
+            Accum.add " = "
+            addColumnParams infos
     keys <- SQL.query stmt $ SOP.hcollapse values
     return (Key . SQLite.fromOnly <$> keys)
 
