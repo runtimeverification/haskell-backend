@@ -2,8 +2,15 @@
 
 module Test.Kore.Variables.Fresh
     ( test_refreshVariable
+    , test_freshVariableProperties
     ) where
 
+import Hedgehog
+    ( forAll
+    )
+import qualified Hedgehog as Property
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -16,6 +23,8 @@ import Kore.Sort
 import Kore.Variables.Fresh
 
 import Test.Kore
+import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.SMT
 
 metaVariable :: Variable
 metaVariable = Variable
@@ -64,3 +73,32 @@ test_refreshVariable =
     Just fresh1 = refreshVariable avoid1 original
     avoid2 = Set.singleton metaVariableDifferentSort
     Just fresh2 = refreshVariable avoid2 original
+
+test_freshVariableProperties :: TestTree
+test_freshVariableProperties =
+    testPropertyWithoutSolver "FreshVariable ElementVariable" $ do
+        var <- forAll (standaloneGen $ elementVariableGen Mock.testSort)
+        varSet <- forAll (Gen.set (Range.linear 0 50) $ standaloneGen $ elementVariableGen Mock.testSort)
+        let inf = infVariable var
+            sup = supVariable var
+            nextVar = nextVariable var
+            nextNextVar = nextVariable nextVar
+            freshVar = refreshVariable varSet var
+        Property.assert (inf <= var && var < sup)
+        Property.assert (var < nextVar && nextVar < nextNextVar)
+        Property.assert (keepsSameSort freshVar var)
+        Property.assert (neverReturnsSameVar freshVar var)
+        Property.assert (returnsNewVar freshVar var varSet)
+  where
+    keepsSameSort Nothing _ = True
+    keepsSameSort (Just var') var =
+        sortedVariableSort var' == sortedVariableSort var
+
+    neverReturnsSameVar Nothing _ = True
+    neverReturnsSameVar (Just var') var =
+        var' /= var
+
+    returnsNewVar freshVar var varSet =
+        not (Set.member var varSet)
+        || isJust freshVar
+
