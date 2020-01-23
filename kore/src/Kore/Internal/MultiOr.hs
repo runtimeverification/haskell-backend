@@ -151,10 +151,12 @@ make patts = filterOr (MultiOr patts)
 {- | Construct a normalized 'MultiOr' from a single pattern.
 -}
 singleton
-    :: (Ord term, TopBottom term)
+    :: TopBottom term
     => term
     -> MultiOr term
-singleton patt = make [patt]
+singleton term
+  | isBottom term = MultiOr []
+  | otherwise     = MultiOr [term]
 
 {-| 'extractPatterns' instantiates 'getMultiOr' at 'Pattern'.
 
