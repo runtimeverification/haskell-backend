@@ -20,6 +20,7 @@ import Data.Text.Prettyprint.Doc
 
 import Kore.Internal.TermLike
     ( SortedVariable
+    , SyntaxVariable
     , TermLike
     )
 import Kore.Step.Simplification.Simplify
@@ -63,7 +64,10 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
     scatter :: Traversable t => t a -> unifier a
 
     explainBottom
-        :: (SortedVariable variable, Unparse variable)
+        :: ( SortedVariable variable
+           , SyntaxVariable variable
+           , Unparse variable
+           )
         => Doc ()
         -> TermLike variable
         -> TermLike variable

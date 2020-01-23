@@ -677,6 +677,8 @@ instance Diff V
 instance SortedVariable V where
     lensVariableSort = undefined
     sortedVariableSort _ = sortVar
+
+instance SyntaxVariable V where
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 
@@ -698,6 +700,8 @@ instance Diff W
 instance SortedVariable W where
     lensVariableSort = undefined
     sortedVariableSort _ = sortVar
+
+instance SyntaxVariable W where
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 

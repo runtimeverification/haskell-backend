@@ -154,8 +154,10 @@ instance Unparse V where
 instance SortedVariable V where
     lensVariableSort = undefined
     sortedVariableSort _ = sortVariable
-    fromVariable = undefined
+
+instance SyntaxVariable V where
     toVariable = undefined
+    fromVariable = undefined
 
 newtype W = W String
     deriving (Show, Eq, Ord, GHC.Generic)
@@ -175,8 +177,10 @@ instance Unparse W where
 instance SortedVariable W where
     lensVariableSort = undefined
     sortedVariableSort _ = sortVariable
-    fromVariable = undefined
+
+instance SyntaxVariable W where
     toVariable = undefined
+    fromVariable = undefined
 
 showVar :: V -> W
 showVar (V i) = W (show i)

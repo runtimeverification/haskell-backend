@@ -1262,6 +1262,7 @@ appliedMockEvaluator result =
 
 mapVariables
     :: FreshVariable variable
+    => SyntaxVariable variable
     => Pattern Variable
     -> Pattern variable
 mapVariables =

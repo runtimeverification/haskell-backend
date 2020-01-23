@@ -613,6 +613,7 @@ See also: 'equalAndEquals'
 domainValueAndEqualsAssumesDifferent
     :: Eq variable
     => SortedVariable variable
+    => SyntaxVariable variable
     => Unparse variable
     => MonadUnify unifier
     => GHC.HasCallStack
@@ -643,6 +644,7 @@ cannotUnifyDistinctDomainValues = "Cannot unify distinct domain values."
 cannotUnifyDomainValues
     :: Eq variable
     => SortedVariable variable
+    => SyntaxVariable variable
     => Unparse variable
     => MonadUnify unifier
     => GHC.HasCallStack
@@ -668,6 +670,7 @@ See also: 'equalAndEquals'
 stringLiteralAndEqualsAssumesDifferent
     :: Eq variable
     => SortedVariable variable
+    => SyntaxVariable variable
     => Unparse variable
     => MonadUnify unifier
     => GHC.HasCallStack
