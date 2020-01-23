@@ -16,10 +16,6 @@ import Data.Typeable
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import Pretty
-    ( Pretty
-    )
-import qualified Pretty
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -39,6 +35,10 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Unparser
 import Log
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 import qualified SQL
 
 {- | A log 'Entry' when a simplification rule has remainders.
