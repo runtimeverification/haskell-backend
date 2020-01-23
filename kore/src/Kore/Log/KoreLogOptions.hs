@@ -81,7 +81,7 @@ instance Default KoreLogOptions where
             , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
             , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
             , debugSolverOptions = def @DebugSolverOptions
-            , exeName = ExeName mempty
+            , exeName = def @ExeName
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -199,3 +199,6 @@ newtype ExeName = ExeName { getExeName :: String }
 
 instance Pretty.Pretty ExeName where
     pretty = Pretty.pretty . getExeName
+
+instance Default ExeName where
+    def = ExeName mempty
