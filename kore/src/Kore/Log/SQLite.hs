@@ -94,14 +94,14 @@ withLogSQLite options cont =
                 (Directory.doesPathExist filePath)
                 (Directory.removeFile filePath)
             Exception.bracket (SQLite.open filePath) SQLite.close $ \conn -> do
-                runReaderT (SQL.getSQLT declareEntries) conn
+                runReaderT (SQL.getSQL declareEntries) conn
                 cont (lowerLogAction conn logSQLite)
   where
     LogSQLiteOptions { sqlog } = options
     lowerLogAction conn logAction =
         LogAction $ \entry -> do
             let sqlt = unLogAction logAction entry
-            runReaderT (SQL.getSQLT sqlt) conn
+            runReaderT (SQL.getSQL sqlt) conn
 
 {- | 'foldMap' over the known 'SQL.Table' 'Entry' types.
 

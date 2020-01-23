@@ -5,9 +5,7 @@ License     : NCSA
 -}
 
 module SQL.SQL
-    ( SQLT (..)
-    , runSQLT
-    , SQL
+    ( SQL (..)
     , runSQL
     , execute_
     , executeNamed
@@ -15,24 +13,14 @@ module SQL.SQL
     , lastInsertRowId
     ) where
 
-import Control.Monad.Catch
-    ( MonadMask
-    )
 import qualified Control.Monad.Catch as Exceptions
 import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
     )
-import Control.Monad.Morph
-    ( MFunctor
-    , MMonad
-    )
 import Control.Monad.Reader
     ( ReaderT (ReaderT)
     , runReaderT
-    )
-import Control.Monad.Trans.Class
-    ( MonadTrans
     )
 import Data.Int
     ( Int64
@@ -44,42 +32,34 @@ import Database.SQLite.Simple
     )
 import qualified Database.SQLite.Simple as SQLite
 
-newtype SQLT monad a = SQLT { getSQLT :: ReaderT SQLite.Connection monad a }
+newtype SQL a = SQL { getSQL :: ReaderT SQLite.Connection IO a }
     deriving (Functor, Applicative, Monad)
-    deriving (MonadTrans, MonadIO, MFunctor, MMonad)
+    deriving (MonadIO)
 
-instance (Applicative functor, Semigroup a) => Semigroup (SQLT functor a) where
-    (<>) sqlt1 sqlt2 = SQLT $ (<>) <$> getSQLT sqlt1 <*> getSQLT sqlt2
+instance (Semigroup a) => Semigroup (SQL a) where
+    (<>) sqlt1 sqlt2 = SQL $ (<>) <$> getSQL sqlt1 <*> getSQL sqlt2
 
-instance (Applicative functor, Monoid a) => Monoid (SQLT functor a) where
+instance (Monoid a) => Monoid (SQL a) where
     mempty = pure mempty
 
-runSQLT
-    :: (MonadIO monad, MonadMask monad)
-    => FilePath
-    -> SQLT monad a
-    -> monad a
-runSQLT filePath sqlt =
+runSQL :: FilePath -> SQL a -> IO a
+runSQL filePath =
     Exceptions.bracket
         (liftIO $ SQLite.open filePath)
         (liftIO . SQLite.close)
-        (runReaderT (getSQLT sqlt))
-
-type SQL = SQLT IO
-
-runSQL :: FilePath -> SQL a -> IO a
-runSQL = runSQLT
+    . runReaderT
+    . getSQL
 
 execute_ :: Query -> SQL ()
-execute_ query = SQLT . ReaderT $ \conn -> SQLite.execute_ conn query
+execute_ query = SQL . ReaderT $ \conn -> SQLite.execute_ conn query
 
 executeNamed :: Query -> [NamedParam] -> SQL ()
 executeNamed query params =
-    SQLT . ReaderT $ \conn -> SQLite.executeNamed conn query params
+    SQL . ReaderT $ \conn -> SQLite.executeNamed conn query params
 
 lastInsertRowId :: SQL Int64
-lastInsertRowId = SQLT . ReaderT $ SQLite.lastInsertRowId
+lastInsertRowId = SQL . ReaderT $ SQLite.lastInsertRowId
 
 queryNamed :: FromRow r => Query -> [NamedParam] -> SQL [r]
 queryNamed query params =
-    SQLT . ReaderT $ \conn -> SQLite.queryNamed conn query params
+    SQL . ReaderT $ \conn -> SQLite.queryNamed conn query params
