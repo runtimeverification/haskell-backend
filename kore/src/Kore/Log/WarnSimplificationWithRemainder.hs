@@ -91,7 +91,6 @@ instance SOP.Generic WarnSimplificationWithRemainder
 instance SOP.HasDatatypeInfo WarnSimplificationWithRemainder
 
 instance SQL.Table WarnSimplificationWithRemainder where
-    createTable = SQL.createTableGeneric
     insertRow = SQL.insertRowGeneric
     selectRow = SQL.selectRowGeneric
 

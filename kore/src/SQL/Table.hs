@@ -5,16 +5,15 @@ License     : NCSA
 -}
 
 module SQL.Table
-    ( Key (..)
-    , defineForeignKeyColumn
+    ( defineForeignKeyColumn
     , toForeignKeyColumn
     , Table (..)
     , insertUniqueRow
-    , TableName (..)
     -- * Re-exports
     , SQLite.Connection
     , Proxy (..)
     , module SQL.Column
+    , module SQL.Key
     ) where
 
 import qualified Control.Monad.Extra as Monad
@@ -25,10 +24,7 @@ import Data.Proxy
     ( Proxy (..)
     )
 import qualified Database.SQLite.Simple as SQLite
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
-import Debug
 import SQL.Column
     ( Column (..)
     , ColumnConstraint
@@ -36,26 +32,9 @@ import SQL.Column
     , TypeName
     , defineTextColumn
     )
+import SQL.Key
+import qualified SQL.SOP as SOP
 import SQL.SQL as SQL
-
-{- | A foreign key into the table for type @a@.
- -}
-newtype Key a = Key { getKey :: Int64 }
-    deriving (Eq, Ord, Read, Show)
-    deriving (Functor, Foldable)
-    deriving (GHC.Generic)
-
-instance SOP.Generic (Key a)
-
-instance SOP.HasDatatypeInfo (Key a)
-
-instance Debug (Key a)
-
-instance Diff (Key a)
-
-instance Column (Key a) where
-    defineColumn _ = defineColumn (Proxy @Int64)
-    toColumn = toColumn . getKey
 
 {- | Implement 'defineColumn' for a foreign key reference.
 
@@ -80,6 +59,12 @@ toForeignKeyColumn a = insertUniqueRow a >>= toColumn
 class Table a where
     -- | Create the table for @a@ if it does not exist.
     createTable :: proxy a -> SQL ()
+    default createTable
+        :: SOP.HasDatatypeInfo a
+        => SOP.All2 Column (SOP.Code a)
+        => proxy a
+        -> SQL ()
+    createTable = SOP.createTableGeneric
 
     {- | Insert the @a@ as a new row in the table.
 
@@ -99,5 +84,3 @@ Returns the 'Key' of the row corresponding to @a@.
  -}
 insertUniqueRow :: Table a => a -> SQL (Key a)
 insertUniqueRow a = Monad.maybeM (insertRow a) return (selectRow a)
-
-newtype TableName = TableName { getTableName :: String }

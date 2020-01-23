@@ -34,7 +34,7 @@ import Generics.SOP
     )
 import qualified Generics.SOP as SOP
 
-import qualified SQL.SOP
+import SQL.SOP as SOP
 import SQL.SQL
 import SQL.Table
 
@@ -58,7 +58,7 @@ createTableIso _ proxy =
     createTableGenericAux tableName proxy'
   where
     proxy' = Proxy @inner
-    tableName = SQL.SOP.tableNameGeneric proxy
+    tableName = SOP.tableNameGeneric proxy
 
 {- | @(insertRowIso iso)@ implements 'insertRow' for a table created with
 'createTableIso'.
@@ -74,7 +74,7 @@ insertRowIso
 insertRowIso iso outer =
     fromInnerKey <$> insertRowGenericAux tableName inner
   where
-    tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
+    tableName = SOP.tableNameGeneric (Proxy @outer)
     inner = Lens.view iso outer
     fromInnerKey :: Key inner -> Key outer
     fromInnerKey = fmap (Lens.review iso)
@@ -93,7 +93,7 @@ selectRowIso
 selectRowIso iso outer = do
     fromInnerKeys <$> selectRowGenericAux tableName inner
   where
-    tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
+    tableName = SOP.tableNameGeneric (Proxy @outer)
     inner = Lens.view iso outer
     fromInnerKeys :: Maybe (Key inner) -> Maybe (Key outer)
     fromInnerKeys = (fmap . fmap) (Lens.review iso)
@@ -142,47 +142,6 @@ selectRowUnwrapped
     -> SQL (Maybe (Key outer))
 selectRowUnwrapped = selectRowIso _Unwrapped
 
-{- | @createTableProduct@ implements 'createTable' for a product type.
- -}
-createTableProduct
-    :: forall fields
-    .  SOP.All Column fields
-    => TableName
-    -> SOP.ConstructorInfo fields
-    -> SQL ()
-createTableProduct tableName ctorInfo = do
-    defs <- SQL.SOP.defineColumns names
-    SQL.SOP.createTable tableName names defs
-  where
-    names = SQL.SOP.ctorFields ctorInfo
-
-{- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' type.
- -}
-createTableGeneric
-    :: forall proxy table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
-    => proxy table
-    -> SQL ()
-createTableGeneric proxy =
-    createTableGenericAux tableName proxy
-  where
-    tableName = SQL.SOP.tableNameGeneric proxy
-
-createTableGenericAux
-    :: forall proxy table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
-    => TableName
-    -> proxy table
-    -> SQL ()
-createTableGenericAux tableName proxy =
-    case SOP.constructorInfo info of
-        ctorInfo SOP.:* SOP.Nil -> createTableProduct tableName ctorInfo
-        ctorInfos -> SQL.SOP.createTableSum tableName ctorInfos
-  where
-    info = SOP.datatypeInfo proxy
-
 withGenericProduct
     :: forall table fields a
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
@@ -193,11 +152,11 @@ withGenericProduct
     -> table
     -> SQL a
 withGenericProduct continue tableName ctor table = do
-    values <- SQL.SOP.toColumns fields
+    values <- SOP.toColumns fields
     continue tableName infos values
   where
-    infos = SQL.SOP.ctorFields ctor
-    fields = SQL.SOP.productTypeFrom table
+    infos = SOP.ctorFields ctor
+    fields = SOP.productTypeFrom table
 
 {- | @insertRowProduct@ implements 'insertRow' for a product type.
  -}
@@ -209,7 +168,7 @@ insertRowProduct
     -> SOP.ConstructorInfo fields
     -> table
     -> SQL (Key table)
-insertRowProduct = withGenericProduct SQL.SOP.insertRow
+insertRowProduct = withGenericProduct SOP.insertRow
 
 {- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
  -}
@@ -223,7 +182,7 @@ insertRowGeneric =
     insertRowGenericAux tableName
   where
     proxy = Proxy @table
-    tableName = SQL.SOP.tableNameGeneric proxy
+    tableName = SOP.tableNameGeneric proxy
 
 insertRowGenericAux
     :: forall table
@@ -235,7 +194,7 @@ insertRowGenericAux
 insertRowGenericAux tableName table = do
     case SOP.constructorInfo info of
         ctorInfo SOP.:* SOP.Nil -> insertRowProduct tableName ctorInfo table
-        ctorInfos -> SQL.SOP.insertRowSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
+        ctorInfos -> SOP.insertRowSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
   where
     proxy = Proxy @table
     info = SOP.datatypeInfo proxy
@@ -250,7 +209,7 @@ selectRowsProduct
     -> SOP.ConstructorInfo fields
     -> table
     -> SQL [Key table]
-selectRowsProduct = withGenericProduct SQL.SOP.selectRows
+selectRowsProduct = withGenericProduct SOP.selectRows
 
 {- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
  -}
@@ -263,7 +222,7 @@ selectRowGeneric
 selectRowGeneric = selectRowGenericAux tableName
   where
     proxy = Proxy @table
-    tableName = SQL.SOP.tableNameGeneric proxy
+    tableName = SOP.tableNameGeneric proxy
 
 selectRowGenericAux
     :: forall table
@@ -275,7 +234,7 @@ selectRowGenericAux
 selectRowGenericAux tableName table = do
     keys <- case SOP.constructorInfo info of
         ctorInfo SOP.:* SOP.Nil -> selectRowsProduct tableName ctorInfo table
-        ctorInfos -> SQL.SOP.selectRowsSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
+        ctorInfos -> SOP.selectRowsSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
     return $ case keys of
         []      -> Nothing
         key : _ -> Just key

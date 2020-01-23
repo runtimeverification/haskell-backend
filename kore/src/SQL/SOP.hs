@@ -9,13 +9,20 @@ License     : NCSA
 {-# LANGUAGE PolyKinds #-}
 
 module SQL.SOP
-    ( tableNameGeneric
+    ( TableName
+    , tableNameGeneric
+    -- * Low-level building blocks
     , createTable
     , insertRow
     , selectRows
+    -- * Sum types
     , createTableSum
     , insertRowSum
     , selectRowsSum
+    -- * Product types
+    , createTableProduct
+    -- * Generic implementations
+    , createTableGeneric, createTableGenericAux
     -- * Helpers
     , defineColumns
     , productFields
@@ -23,7 +30,9 @@ module SQL.SOP
     , productTypeFrom
     , toColumns
     -- * Re-exports
-    , module SQL.Table
+    , SOP.HasDatatypeInfo
+    , SOP.All2
+    , SOP.Code
     ) where
 
 import qualified Control.Monad as Monad
@@ -51,12 +60,10 @@ import Generics.SOP
 import qualified Generics.SOP as SOP
 
 import SQL.Column as Column
+import SQL.Key as Key
 import SQL.SQL as SQL
-import SQL.Table hiding
-    ( createTable
-    , insertRow
-    , selectRow
-    )
+
+newtype TableName = TableName { getTableName :: String }
 
 {- | Create a table with the given name and columns.
 
@@ -129,6 +136,20 @@ tableNameGeneric proxy =
   where
     info = SOP.datatypeInfo proxy
 
+{- | @createTableProduct@ implements 'createTable' for a product type.
+ -}
+createTableProduct
+    :: forall fields
+    .  SOP.All Column fields
+    => TableName
+    -> ConstructorInfo fields
+    -> SQL ()
+createTableProduct tableName ctorInfo = do
+    defs <- defineColumns names
+    createTable tableName names defs
+  where
+    names = ctorFields ctorInfo
+
 createTableSum
     :: forall ctors
     .  SOP.All2 Column ctors
@@ -146,6 +167,31 @@ createTableSum tableName ctors = do
 
     defs :: NP (K ColumnDef) ctors
     defs = SOP.hmap (const $ K columnTag) names
+
+{- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' type.
+ -}
+createTableGeneric
+    :: forall proxy table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
+    => proxy table
+    -> SQL ()
+createTableGeneric proxy =
+    createTableGenericAux tableName proxy
+  where
+    tableName = tableNameGeneric proxy
+
+createTableGenericAux
+    :: forall proxy table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
+    => TableName
+    -> proxy table
+    -> SQL ()
+createTableGenericAux tableName proxy =
+    case SOP.constructorInfo $ SOP.datatypeInfo proxy of
+        info :* Nil -> createTableProduct tableName info
+        infos       -> createTableSum     tableName infos
 
 columnTag :: ColumnDef
 columnTag = Column.columnDef Column.typeInteger

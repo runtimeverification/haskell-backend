@@ -53,7 +53,6 @@ instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
 
 instance SQL.Table WarnFunctionWithoutEvaluators where
-    createTable = SQL.createTableGeneric
     insertRow = SQL.insertRowGeneric
     selectRow = SQL.selectRowGeneric
 
