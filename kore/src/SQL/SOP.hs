@@ -10,31 +10,37 @@ module SQL.SOP
     ( tableNameGeneric
     , createTable
     , insertRow
-    , selectRow
+    , selectRows
     , productFields
+    , productTypeFrom
     -- * Re-exports
     , module SQL.Table
     ) where
 
+import qualified Control.Monad.Trans as Trans
+import Control.Monad.Trans.Accum
+    ( AccumT
+    , execAccumT
+    )
+import qualified Control.Monad.Trans.Accum as Accum
+import qualified Data.Foldable as Foldable
 import Data.Proxy
     ( Proxy (..)
     )
-import Data.Text
-    ( Text
+import Data.String
+    ( fromString
     )
-import qualified Data.Text as Text
 import qualified Database.SQLite.Simple as SQLite
 import Generics.SOP
     ( I (..)
-    , K (..)
     , NP (..)
     , NS (..)
     , Shape (..)
     )
 import qualified Generics.SOP as SOP
 
-import SQL.Column
-import SQL.SQL
+import SQL.Column as Column
+import SQL.SQL as SQL
 import SQL.Table hiding
     ( createTable
     , insertRow
@@ -52,16 +58,47 @@ createTable
     => TableName
     -> NP SOP.FieldInfo fields
     -> SQL ()
-createTable tableName fields =
-    createTableAux tableName =<< sequence columns
-  where
-    columns :: [SQL (Text, ColumnDef)]
-    columns = SOP.hcollapse (SOP.hcmap (Proxy @Column) column fields)
-    column :: Column a => SOP.FieldInfo a -> K (SQL (Text, ColumnDef)) a
-    column fieldInfo = K $ do
-        colDef <- defineColumn fieldInfo
-        return (fieldName fieldInfo, colDef)
-    fieldName = Text.pack . SOP.fieldName
+createTable tableName fields = do
+    stmt <- flip execAccumT mempty $ do
+        Accum.add "CREATE TABLE IF NOT EXISTS"
+        addTableName tableName
+        addSpace
+        addColumnDefs fields
+    SQL.execute_ stmt
+
+addSpace :: Monad m => AccumT Query m ()
+addSpace = Accum.add " "
+
+addComma :: Monad m => AccumT Query m ()
+addComma = Accum.add ", "
+
+addColumnDefs
+    :: SOP.All Column fields
+    => NP SOP.FieldInfo fields
+    -> AccumT Query SQL ()
+addColumnDefs = parenthesized . defineFields
+
+defineFields
+    :: SOP.All Column fields
+    => NP SOP.FieldInfo fields
+    -> AccumT Query SQL ()
+defineFields Nil = Accum.add "id INTEGER PRIMARY KEY"
+defineFields (field :* fields) = do
+    defineField field
+    addComma
+    defineFields fields
+
+defineField :: Column field => SOP.FieldInfo field -> AccumT Query SQL ()
+defineField field = do
+    addColumnName field
+    addSpace
+    defined <- Trans.lift $ defineColumn field
+    let ColumnDef { columnType } = defined
+    Accum.add $ fromString $ Column.getTypeName columnType
+    let ColumnDef { columnConstraints } = defined
+    Foldable.for_ columnConstraints $ \constraint -> do
+        addSpace
+        Accum.add $ fromString $ Column.getColumnConstraint constraint
 
 {- | The 'TableName' of a 'SOP.Generic' type.
  -}
@@ -100,16 +137,94 @@ productFields proxy =
     shapeFields n (ShapeCons shape) =
         SOP.FieldInfo ("field" <> show n) :* shapeFields (n + 1) shape
 
+addTableName :: Monad m => TableName -> AccumT Query m ()
+addTableName tableName = do
+    quoted $ Accum.add $ fromString $ getTableName tableName
+
+quoted :: Monad m => AccumT Query m a -> AccumT Query m a
+quoted inner = do
+    Accum.add "\""
+    a <- inner
+    Accum.add "\""
+    return a
+
+parenthesized :: Monad m => AccumT Query m a -> AccumT Query m a
+parenthesized inner = do
+    Accum.add "("
+    a <- inner
+    Accum.add ")"
+    return a
+
 insertRow
     :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
+    .  SOP.All Column fields
     => TableName
-    -> table
+    -> NP SOP.FieldInfo fields
+    -> NP I fields
     -> SQL (Key table)
-insertRow tableName table = do
-    columns <- productColumns table
-    SQL.Table.insertRowAux tableName columns
+insertRow tableName infos fields = do
+    stmt <- flip execAccumT mempty $ do
+        Accum.add "INSERT INTO"
+        addSpace
+        addTableSpec tableName infos
+        addSpace
+        Accum.add "VALUES"
+        addSpace
+        addColumnParams infos
+    values <- toColumns fields
+    SQL.execute stmt values
+    Key <$> SQL.lastInsertRowId
+
+addTableSpec
+    :: Monad m
+    => TableName
+    -> NP SOP.FieldInfo fields
+    -> AccumT Query m ()
+addTableSpec tableName infos = do
+    addTableName tableName
+    addSpace
+    addColumnNames infos
+
+addColumnNames
+    :: forall fields m
+    .  Monad m
+    => NP SOP.FieldInfo fields
+    -> AccumT Query m ()
+addColumnNames =
+    parenthesized . worker
+  where
+    worker :: forall fields'. NP SOP.FieldInfo fields' -> AccumT Query m ()
+    worker Nil = return ()
+    worker (info :* infos) = do
+        addColumnName info
+        case infos of
+            Nil -> return ()
+            _   -> addComma >> worker infos
+
+addColumnName :: Monad m => SOP.FieldInfo field -> AccumT Query m ()
+addColumnName field = Accum.add $ fromString $ SOP.fieldName field
+
+addColumnParams
+    :: forall fields m
+    .  Monad m
+    => NP SOP.FieldInfo fields
+    -> AccumT Query m ()
+addColumnParams =
+    parenthesized . worker
+  where
+    worker :: forall fields'. NP SOP.FieldInfo fields' -> AccumT Query m ()
+    worker Nil = return ()
+    worker (_ :* infos) = do
+        Accum.add "?"
+        case infos of
+            Nil -> return ()
+            _   -> addComma >> worker infos
+
+toColumns :: SOP.All Column fields => NP I fields -> SQL [SQLData]
+toColumns Nil = return []
+toColumns (I field :* fields) = do
+    sqlData <- toColumn field
+    (:) sqlData <$> toColumns fields
 
 {- | Witness that the type @table@ is actually a product type.
  -}
@@ -125,38 +240,24 @@ productTypeFrom a =
     ns :: NS (NP I) '[fields]
     SOP.SOP ns = SOP.from a
 
-{- | The field values of a product type.
-
- -}
-productColumns
+selectRows
     :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
-    => table
-    -> SQL [(String, SQLite.SQLData)]
-productColumns table =
-    sequence (SOP.hcollapse columns)
-  where
-    proxy = pure @SOP.Proxy table
-    fields = productFields proxy
-    values = productTypeFrom table
-    columns = SOP.hczipWith (Proxy @Column) column fields values
-    column
-        :: Column a
-        => SOP.FieldInfo a
-        -> I a
-        -> K (SQL (String, SQLite.SQLData)) a
-    column info (I x) = K $ do
-        x' <- toColumn x
-        return (SOP.fieldName info, x')
-
-selectRow
-    :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
+    .  SOP.All Column fields
     => TableName
-    -> table
-    -> SQL (Maybe (Key table))
-selectRow tableName table = do
-    columns <- productColumns table
-    selectRowAux tableName columns
+    -> NP SOP.FieldInfo fields
+    -> NP I fields
+    -> SQL [Key table]
+selectRows tableName infos fields = do
+    stmt <- flip execAccumT mempty $ do
+        Accum.add "SELECT (id) FROM"
+        addSpace
+        addTableName tableName
+        addSpace
+        Accum.add "WHERE"
+        addSpace
+        addColumnNames infos
+        Accum.add " = "
+        addColumnParams infos
+    values <- toColumns fields
+    keys <- SQL.query stmt values
+    return (Key . SQLite.fromOnly <$> keys)

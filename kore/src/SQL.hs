@@ -68,11 +68,15 @@ insertRowIso
     => Lens.Iso' outer inner
     -> outer
     -> SQL (Key outer)
-insertRowIso iso table =
-    fmap (Lens.review iso)
-    <$> SQL.SOP.insertRow tableName (Lens.view iso table)
+insertRowIso iso outer =
+    fromInnerKey <$> SQL.SOP.insertRow tableName infos fields
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
+    inner = Lens.view iso outer
+    infos = SQL.SOP.productFields (Proxy @inner)
+    fields = SQL.SOP.productTypeFrom inner
+    fromInnerKey :: Key inner -> Key outer
+    fromInnerKey = fmap (Lens.review iso)
 
 {- | @(selectRowIso iso)@ implements 'selectRow' for a table created with
 'createTableIso'.
@@ -85,11 +89,18 @@ selectRowIso
     => Lens.Iso' outer inner
     -> outer
     -> SQL (Maybe (Key outer))
-selectRowIso iso table =
-    (fmap . fmap) (Lens.review iso)
-    <$> SQL.SOP.selectRow tableName (Lens.view iso table)
+selectRowIso iso outer = do
+    keys <- fromInnerKeys <$> SQL.SOP.selectRows tableName infos fields
+    return $ case keys of
+        []      -> Nothing
+        key : _ -> Just key
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
+    inner = Lens.view iso outer
+    infos = SQL.SOP.productFields (Proxy @inner)
+    fields = SQL.SOP.productTypeFrom inner
+    fromInnerKeys :: [Key inner] -> [Key outer]
+    fromInnerKeys = (fmap . fmap) (Lens.review iso)
 
 {- | @createTableUnwrapped@ implements 'createTable' for a @newtype@ wrapper.
 
@@ -158,10 +169,12 @@ insertRowGeneric
     => SOP.All Column fields
     => table
     -> SQL (Key table)
-insertRowGeneric =
-    SQL.SOP.insertRow tableName
+insertRowGeneric table =
+    SQL.SOP.insertRow tableName infos fields
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @table)
+    infos = SQL.SOP.productFields (Proxy @table)
+    fields = SQL.SOP.productTypeFrom table
 
 {- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
  -}
@@ -171,7 +184,12 @@ selectRowGeneric
     => SOP.All Column fields
     => table
     -> SQL (Maybe (Key table))
-selectRowGeneric table =
-    SQL.SOP.selectRow tableName table
+selectRowGeneric table = do
+    keys <- SQL.SOP.selectRows tableName infos fields
+    return $ case keys of
+        []      -> Nothing
+        key : _ -> Just key
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @table)
+    infos = SQL.SOP.productFields (Proxy @table)
+    fields = SQL.SOP.productTypeFrom table

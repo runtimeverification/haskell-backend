@@ -36,7 +36,7 @@ import qualified GHC.Generics as GHC
 
 import SQL.SQL
 
-newtype TypeName = TypeName { getTypeName :: Text }
+newtype TypeName = TypeName { getTypeName :: String }
     deriving (Eq, Ord, Read, Show)
 
 typeInteger :: TypeName
@@ -45,7 +45,7 @@ typeInteger = TypeName "INTEGER"
 typeText :: TypeName
 typeText = TypeName "TEXT"
 
-newtype ColumnConstraint = ColumnConstraint { getColumnConstraint :: Text }
+newtype ColumnConstraint = ColumnConstraint { getColumnConstraint :: String }
     deriving (Eq, Ord, Read, Show)
 
 notNull :: Set ColumnConstraint

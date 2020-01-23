@@ -8,9 +8,14 @@ module SQL.SQL
     ( SQL (..)
     , runSQL
     , execute_
+    , execute
     , executeNamed
+    , query
     , queryNamed
     , lastInsertRowId
+    -- * Re-exports
+    , Query
+    , SQLData
     ) where
 
 import qualified Control.Monad.Catch as Exceptions
@@ -29,6 +34,7 @@ import Database.SQLite.Simple
     ( FromRow
     , NamedParam
     , Query
+    , SQLData
     )
 import qualified Database.SQLite.Simple as SQLite
 
@@ -58,15 +64,22 @@ runSQL filePath =
     . getSQL
 
 execute_ :: Query -> SQL ()
-execute_ query = SQL . ReaderT $ \conn -> SQLite.execute_ conn query
+execute_ q = SQL . ReaderT $ \conn -> SQLite.execute_ conn q
+
+execute :: Query -> [SQLData] -> SQL ()
+execute q values = SQL . ReaderT $ \conn -> SQLite.execute conn q values
 
 executeNamed :: Query -> [NamedParam] -> SQL ()
-executeNamed query params =
-    SQL . ReaderT $ \conn -> SQLite.executeNamed conn query params
+executeNamed q params =
+    SQL . ReaderT $ \conn -> SQLite.executeNamed conn q params
 
 lastInsertRowId :: SQL Int64
 lastInsertRowId = SQL . ReaderT $ SQLite.lastInsertRowId
 
 queryNamed :: FromRow r => Query -> [NamedParam] -> SQL [r]
-queryNamed query params =
-    SQL . ReaderT $ \conn -> SQLite.queryNamed conn query params
+queryNamed q params =
+    SQL . ReaderT $ \conn -> SQLite.queryNamed conn q params
+
+query :: FromRow r => Query -> [SQLData] -> SQL [r]
+query q params =
+    SQL . ReaderT $ \conn -> SQLite.query conn q params
