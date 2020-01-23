@@ -28,10 +28,6 @@ import Data.Generics.Wrapped
 import Data.Proxy
     ( Proxy (..)
     )
-import Generics.SOP
-    ( K
-    , NP
-    )
 import qualified Generics.SOP as SOP
 
 import SQL.SOP as SOP
@@ -141,62 +137,3 @@ selectRowUnwrapped
     => outer
     -> SQL (Maybe (Key outer))
 selectRowUnwrapped = selectRowIso _Unwrapped
-
-withGenericProduct
-    :: forall table fields a
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
-    => (TableName -> NP (K String) fields -> NP (K SQLData) fields -> SQL a)
-    -> TableName
-    -> SOP.ConstructorInfo fields
-    -> table
-    -> SQL a
-withGenericProduct continue tableName ctor table = do
-    values <- SOP.toColumns fields
-    continue tableName infos values
-  where
-    infos = SOP.ctorFields ctor
-    fields = SOP.productTypeFrom table
-
-{- | @selectRowsProduct@ implements 'selectRow' for a product type
- -}
-selectRowsProduct
-    :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
-    => TableName
-    -> SOP.ConstructorInfo fields
-    -> table
-    -> SQL [Key table]
-selectRowsProduct = withGenericProduct SOP.selectRows
-
-{- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
- -}
-selectRowGeneric
-    :: forall table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
-    => table
-    -> SQL (Maybe (Key table))
-selectRowGeneric = selectRowGenericAux tableName
-  where
-    proxy = Proxy @table
-    tableName = SOP.tableNameGeneric proxy
-
-selectRowGenericAux
-    :: forall table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
-    => TableName
-    -> table
-    -> SQL (Maybe (Key table))
-selectRowGenericAux tableName table = do
-    keys <- case SOP.constructorInfo info of
-        ctorInfo SOP.:* SOP.Nil -> selectRowsProduct tableName ctorInfo table
-        ctorInfos -> SOP.selectRowsSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
-    return $ case keys of
-        []      -> Nothing
-        key : _ -> Just key
-  where
-    proxy = Proxy @table
-    info = SOP.datatypeInfo proxy

@@ -22,9 +22,11 @@ module SQL.SOP
     -- * Product types
     , createTableProduct
     , insertRowProduct
+    , selectRowsProduct
     -- * Generic implementations
     , createTableGeneric, createTableGenericAux
     , insertRowGeneric, insertRowGenericAux
+    , selectRowGeneric, selectRowGenericAux
     -- * Helpers
     , defineColumns
     , productFields
@@ -498,3 +500,51 @@ selectRowsSum typeTableName = worker
         selectRows tableName names values
       where
         tableName = ctorTableName typeTableName info
+
+{- | @selectRowsProduct@ implements 'selectRow' for a product type
+ -}
+selectRowsProduct
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => SOP.All Column fields
+    => TableName
+    -> ConstructorInfo fields
+    -> NP I fields
+    -> SQL [Key table]
+selectRowsProduct tableName ctorInfo fields = do
+    values <- toColumns fields
+    selectRows tableName infos values
+  where
+    infos = ctorFields ctorInfo
+
+{- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
+ -}
+selectRowGeneric
+    :: forall table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
+    => table
+    -> SQL (Maybe (Key table))
+selectRowGeneric = selectRowGenericAux tableName
+  where
+    proxy = Proxy @table
+    tableName = tableNameGeneric proxy
+
+selectRowGenericAux
+    :: forall table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
+    => TableName
+    -> table
+    -> SQL (Maybe (Key table))
+selectRowGenericAux tableName table = do
+    keys <- case SOP.constructorInfo $ SOP.datatypeInfo proxy of
+        info :* Nil ->
+            case ctors of Z fields -> selectRowsProduct tableName info fields
+        infos -> selectRowsSum tableName infos ctors
+    return $ case keys of
+        []      -> Nothing
+        key : _ -> Just key
+  where
+    proxy = Proxy @table
+    ctors = SOP.unSOP $ SOP.from table

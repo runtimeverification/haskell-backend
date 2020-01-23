@@ -38,8 +38,7 @@ instance Pretty DebugEvaluateCondition where
 instance Entry DebugEvaluateCondition where
     entrySeverity _ = Debug
 
-instance SQL.Table DebugEvaluateCondition where
-    selectRow = SQL.selectRowGeneric
+instance SQL.Table DebugEvaluateCondition
 
 debugEvaluateCondition
     :: MonadLog log

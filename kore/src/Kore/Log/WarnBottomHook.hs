@@ -53,8 +53,7 @@ instance Pretty WarnBottomHook where
 instance Entry WarnBottomHook where
     entrySeverity _ = Warning
 
-instance SQL.Table WarnBottomHook where
-    selectRow = SQL.selectRowGeneric
+instance SQL.Table WarnBottomHook
 
 warnBottomHook
     :: MonadLog logger

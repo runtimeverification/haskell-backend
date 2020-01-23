@@ -52,8 +52,7 @@ instance Pretty WarnFunctionWithoutEvaluators where
 instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
 
-instance SQL.Table WarnFunctionWithoutEvaluators where
-    selectRow = SQL.selectRowGeneric
+instance SQL.Table WarnFunctionWithoutEvaluators
 
 warnFunctionWithoutEvaluators :: MonadLog m => Symbol -> m ()
 warnFunctionWithoutEvaluators symbol =

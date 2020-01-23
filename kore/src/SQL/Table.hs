@@ -82,6 +82,12 @@ class Table a where
     {- | Find the 'Key' for an @a@, if it is in the table.
      -}
     selectRow :: a -> SQL (Maybe (Key a))
+    default selectRow
+        :: SOP.HasDatatypeInfo a
+        => SOP.All2 Column (SOP.Code a)
+        => a
+        -> SQL (Maybe (Key a))
+    selectRow = SOP.selectRowGeneric
 
 {- | @(insertUniqueRow a)@ inserts @a@ into the table if not present.
 
