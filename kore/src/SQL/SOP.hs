@@ -33,6 +33,7 @@ import Data.String
 import qualified Database.SQLite.Simple as SQLite
 import Generics.SOP
     ( I (..)
+    , K (..)
     , NP (..)
     , NS (..)
     , Shape (..)
@@ -56,7 +57,7 @@ createTable
     :: forall fields
     .  SOP.All Column fields
     => TableName
-    -> NP SOP.FieldInfo fields
+    -> NP (K String) fields  -- ^ field names
     -> SQL ()
 createTable tableName fields = do
     stmt <- flip execAccumT mempty $ do
@@ -74,13 +75,13 @@ addComma = Accum.add ", "
 
 addColumnDefs
     :: SOP.All Column fields
-    => NP SOP.FieldInfo fields
+    => NP (K String) fields
     -> AccumT Query SQL ()
 addColumnDefs = parenthesized . defineFields
 
 defineFields
     :: SOP.All Column fields
-    => NP SOP.FieldInfo fields
+    => NP (K String) fields
     -> AccumT Query SQL ()
 defineFields Nil = Accum.add "id INTEGER PRIMARY KEY"
 defineFields (field :* fields) = do
@@ -88,7 +89,7 @@ defineFields (field :* fields) = do
     addComma
     defineFields fields
 
-defineField :: Column field => SOP.FieldInfo field -> AccumT Query SQL ()
+defineField :: Column field => K String field -> AccumT Query SQL ()
 defineField field = do
     addColumnName field
     addSpace
@@ -119,23 +120,25 @@ productFields
     :: forall proxy table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => proxy table
-    -> NP SOP.FieldInfo fields
+    -> NP (K String) fields
 productFields proxy =
     case ctor of
         SOP.Constructor _ -> fakeFields
         SOP.Infix _ _ _ -> fakeFields
-        SOP.Record _ fieldsNP -> fieldsNP
+        SOP.Record _ fields -> fieldNames fields
   where
     info = SOP.datatypeInfo proxy
     ctor :* Nil = SOP.constructorInfo info
 
-    fakeFields :: forall ys. SOP.SListI ys => NP SOP.FieldInfo ys
+    fieldNames = SOP.hmap (K . SOP.fieldName)
+
+    fakeFields :: forall ys. SOP.SListI ys => NP (K String) ys
     fakeFields = shapeFields 0 SOP.shape
 
-    shapeFields :: forall ys. Int -> Shape ys -> NP SOP.FieldInfo ys
+    shapeFields :: forall ys. Int -> Shape ys -> NP (K String) ys
     shapeFields _  ShapeNil         = Nil
     shapeFields n (ShapeCons shape) =
-        SOP.FieldInfo ("field" <> show n) :* shapeFields (n + 1) shape
+        K ("field" <> show n) :* shapeFields (n + 1) shape
 
 addTableName :: Monad m => TableName -> AccumT Query m ()
 addTableName tableName =
@@ -159,7 +162,7 @@ insertRow
     :: forall table fields
     .  SOP.All Column fields
     => TableName
-    -> NP SOP.FieldInfo fields
+    -> NP (K String) fields
     -> NP I fields
     -> SQL (Key table)
 insertRow tableName infos fields = do
@@ -178,7 +181,7 @@ insertRow tableName infos fields = do
 addTableSpec
     :: Monad m
     => TableName
-    -> NP SOP.FieldInfo fields
+    -> NP (K String) fields
     -> AccumT Query m ()
 addTableSpec tableName infos = do
     addTableName tableName
@@ -188,12 +191,12 @@ addTableSpec tableName infos = do
 addColumnNames
     :: forall fields m
     .  Monad m
-    => NP SOP.FieldInfo fields
+    => NP (K String) fields
     -> AccumT Query m ()
 addColumnNames =
     parenthesized . worker
   where
-    worker :: forall fields'. NP SOP.FieldInfo fields' -> AccumT Query m ()
+    worker :: forall fields'. NP (K String) fields' -> AccumT Query m ()
     worker Nil = return ()
     worker (info :* infos) = do
         addColumnName info
@@ -201,18 +204,18 @@ addColumnNames =
             Nil -> return ()
             _   -> addComma >> worker infos
 
-addColumnName :: Monad m => SOP.FieldInfo field -> AccumT Query m ()
-addColumnName field = Accum.add $ fromString $ SOP.fieldName field
+addColumnName :: Monad m => K String field -> AccumT Query m ()
+addColumnName (K fieldName) = Accum.add $ fromString fieldName
 
 addColumnParams
-    :: forall fields m
+    :: forall f fields m
     .  Monad m
-    => NP SOP.FieldInfo fields
+    => NP f fields
     -> AccumT Query m ()
 addColumnParams =
     parenthesized . worker
   where
-    worker :: forall fields'. NP SOP.FieldInfo fields' -> AccumT Query m ()
+    worker :: forall fields'. NP f fields' -> AccumT Query m ()
     worker Nil = return ()
     worker (_ :* infos) = do
         Accum.add "?"
@@ -244,7 +247,7 @@ selectRows
     :: forall table fields
     .  SOP.All Column fields
     => TableName
-    -> NP SOP.FieldInfo fields
+    -> NP (K String) fields
     -> NP I fields
     -> SQL [Key table]
 selectRows tableName infos fields = do
