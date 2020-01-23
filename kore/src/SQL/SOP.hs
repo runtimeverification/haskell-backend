@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
+'Table' definitions for 'SOP.Generic' types.
+
 -}
 
 module SQL.SOP
@@ -39,6 +41,11 @@ import SQL.Table hiding
     , selectRow
     )
 
+{- | Create a table with the given name and columns.
+
+The columns are described as record fields.
+
+ -}
 createTable
     :: forall fields
     .  SOP.All Column fields
@@ -56,12 +63,21 @@ createTable tableName fields =
         return (fieldName fieldInfo, colDef)
     fieldName = Text.pack . SOP.fieldName
 
+{- | The 'TableName' of a 'SOP.Generic' type.
+ -}
 tableNameGeneric :: SOP.HasDatatypeInfo table => proxy table -> TableName
 tableNameGeneric proxy =
     TableName $ SOP.moduleName info <> "." <> SOP.datatypeName info
   where
     info = SOP.datatypeInfo proxy
 
+{- | The record fields of a product type.
+
+If the type is not actually a record (if it hase a regular or infix
+constructor), then suitable field names are invented to be used as SQL column
+names.
+
+ -}
 productFields
     :: forall proxy table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
@@ -95,6 +111,8 @@ insertRow tableName table = do
     columns <- productColumns table
     SQL.Table.insertRowAux tableName columns
 
+{- | Witness that the type @table@ is actually a product type.
+ -}
 productTypeFrom
     :: forall table fields
     .  SOP.IsProductType table fields
@@ -107,6 +125,9 @@ productTypeFrom a =
     ns :: NS (NP I) '[fields]
     SOP.SOP ns = SOP.from a
 
+{- | The field values of a product type.
+
+ -}
 productColumns
     :: forall table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
