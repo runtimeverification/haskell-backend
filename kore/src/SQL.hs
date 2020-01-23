@@ -29,8 +29,7 @@ import Data.Proxy
     ( Proxy (..)
     )
 import Generics.SOP
-    ( FieldInfo
-    , I
+    ( K
     , NP
     )
 import qualified Generics.SOP as SOP
@@ -66,12 +65,14 @@ withIsoFields
     :: forall outer inner fields a
     .  SOP.HasDatatypeInfo outer
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
-    => (TableName -> NP FieldInfo fields -> NP I fields -> SQL a)
+    => SOP.All Column fields
+    => (TableName -> NP (K String) fields -> NP (K SQLData) fields -> SQL a)
     -> Lens.Iso' outer inner
     -> outer
     -> SQL a
-withIsoFields continue iso outer =
-    continue tableName infos fields
+withIsoFields continue iso outer = do
+    values <- SQL.SOP.toColumns fields
+    continue tableName infos values
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
     inner = Lens.view iso outer
@@ -177,11 +178,13 @@ createTableGeneric proxy =
 withGenericFields
     :: forall table fields a
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => (TableName -> NP FieldInfo fields -> NP I fields -> SQL a)
+    => SOP.All Column fields
+    => (TableName -> NP (K String) fields -> NP (K SQLData) fields -> SQL a)
     -> table
     -> SQL a
-withGenericFields continue table =
-    continue tableName infos fields
+withGenericFields continue table = do
+    values <- SQL.SOP.toColumns fields
+    continue tableName infos values
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @table)
     infos = SQL.SOP.productFields (Proxy @table)

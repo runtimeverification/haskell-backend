@@ -13,6 +13,7 @@ module SQL.SOP
     , selectRows
     , productFields
     , productTypeFrom
+    , toColumns
     -- * Re-exports
     , module SQL.Table
     ) where
@@ -163,9 +164,9 @@ insertRow
     .  SOP.All Column fields
     => TableName
     -> NP (K String) fields
-    -> NP I fields
+    -> NP (K SQLData) fields
     -> SQL (Key table)
-insertRow tableName infos fields = do
+insertRow tableName infos values = do
     stmt <- flip execAccumT mempty $ do
         Accum.add "INSERT INTO"
         addSpace
@@ -174,8 +175,7 @@ insertRow tableName infos fields = do
         Accum.add "VALUES"
         addSpace
         addColumnParams infos
-    values <- toColumns fields
-    SQL.execute stmt values
+    SQL.execute stmt $ SOP.hcollapse values
     Key <$> SQL.lastInsertRowId
 
 addTableSpec
@@ -223,11 +223,8 @@ addColumnParams =
             Nil -> return ()
             _   -> addComma >> worker infos
 
-toColumns :: SOP.All Column fields => NP I fields -> SQL [SQLData]
-toColumns Nil = return []
-toColumns (I field :* fields) = do
-    sqlData <- toColumn field
-    (:) sqlData <$> toColumns fields
+toColumns :: SOP.All Column fields => NP I fields -> SQL (NP (K SQLData) fields)
+toColumns = SOP.hctraverse' (Proxy @Column) $ \(I field) -> K <$> toColumn field
 
 {- | Witness that the type @table@ is actually a product type.
  -}
@@ -248,9 +245,9 @@ selectRows
     .  SOP.All Column fields
     => TableName
     -> NP (K String) fields
-    -> NP I fields
+    -> NP (K SQLData) fields
     -> SQL [Key table]
-selectRows tableName infos fields = do
+selectRows tableName infos values = do
     stmt <- flip execAccumT mempty $ do
         Accum.add "SELECT (id) FROM"
         addSpace
@@ -261,6 +258,5 @@ selectRows tableName infos fields = do
         addColumnNames infos
         Accum.add " = "
         addColumnParams infos
-    values <- toColumns fields
-    keys <- SQL.query stmt values
+    keys <- SQL.query stmt $ SOP.hcollapse values
     return (Key . SQLite.fromOnly <$> keys)
