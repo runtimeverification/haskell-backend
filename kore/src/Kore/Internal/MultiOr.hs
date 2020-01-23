@@ -105,6 +105,15 @@ instance TopBottom child => TopBottom (MultiOr child) where
     isBottom (MultiOr []) = True
     isBottom _ = False
 
+instance TopBottom child => From child (MultiOr child) where
+    from = singleton
+
+instance (Ord child, TopBottom child) => From [child] (MultiOr child) where
+    from = make
+
+instance From (MultiOr child) [child] where
+    from = getMultiOr
+
 {-| 'OrBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiOr'.
 -}

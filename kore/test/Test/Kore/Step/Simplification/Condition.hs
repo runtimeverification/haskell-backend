@@ -305,10 +305,10 @@ simpleEvaluator
     -> SideCondition variable
     -> simplifier (AttemptedAxiom variable)
 simpleEvaluator [] _  _ = return NotApplicable
-simpleEvaluator ((from, to) : ps) patt sideCondition
-  | from == patt =
+simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
+  | fromTermLike == patt =
     return $ Applied AttemptedAxiomResults
-        { results = OrPattern.fromTermLike to
+        { results = OrPattern.fromTermLike toTermLike
         , remainders = OrPattern.bottom
         }
   | otherwise =

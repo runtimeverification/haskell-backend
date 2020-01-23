@@ -25,7 +25,6 @@ import qualified GHC.Stats as GHC
 import qualified System.Mem as System
 
 import Debug
-import From
 
 data Stats =
     Stats

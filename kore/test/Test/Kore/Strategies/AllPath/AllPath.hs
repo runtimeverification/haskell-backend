@@ -401,8 +401,8 @@ derivePar rules (src, dst) =
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
         (pure . ProofState.GoalRemainder) (r, dst)
-    applyRule rule@(Rule (from, _))
-      | from `matches` src = Just rule
+    applyRule rule@(Rule (fromGoal, _))
+      | fromGoal `matches` src = Just rule
       | otherwise = Nothing
     applied = mapMaybe applyRule rules
     goals = Foldable.asum (goal <$> applied)
