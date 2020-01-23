@@ -48,7 +48,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Proxy
 import Data.Set
     ( Set
     )
@@ -172,7 +171,7 @@ instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
 instance InternalVariable variable => SQL.Column (Substitution variable) where
-    defineColumn _ = SQL.defineColumn (Proxy @(Predicate variable))
+    defineColumn _ = SQL.defineColumn (SQL.Proxy @(Predicate variable))
     toColumn = SQL.toColumn . toPredicate
 
 type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
