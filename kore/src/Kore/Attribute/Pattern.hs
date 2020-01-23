@@ -7,7 +7,7 @@ License     : NCSA
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Attribute.Pattern
-    ( Pattern (Pattern, patternSort, freeVariables, functional, function, defined, created, constructorLike)
+    ( Pattern (Pattern, patternSort, freeVariables, functional, function, defined, created)
     -- 'simplified' and 'constructorLike' were intentionally left out above.
     , mapVariables
     , traverseVariables
