@@ -47,7 +47,6 @@ import Data.Hashable
     ( Hashable (..)
     )
 import Data.Maybe
-import Data.Proxy
 import Data.Text
     ( Text
     )
@@ -256,7 +255,7 @@ instance
     (SortedVariable variable, Unparse variable)
     => SQL.Column (Pattern variable annotation)
   where
-    defineColumn _ = SQL.defineColumn (Proxy @Text)
+    defineColumn _ = SQL.defineColumn (SQL.Proxy @Text)
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 fromPattern
