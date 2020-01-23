@@ -67,9 +67,6 @@ columnDef columnType = ColumnDef { columnType, columnConstraints = mempty }
 columnNotNull :: ColumnDef -> ColumnDef
 columnNotNull = Lens.over (field @"columnConstraints") (<> notNull)
 
-columnNullable :: ColumnDef -> ColumnDef
-columnNullable = Lens.over (field @"columnConstraints") (Set.\\ notNull)
-
 class Column a where
     defineColumn :: proxy a -> SQL ColumnDef
     toColumn :: a -> SQL SQLite.SQLData
@@ -83,12 +80,6 @@ instance Column Int64 where
 instance Column Text where
     defineColumn _ = return (columnNotNull $ columnDef typeText)
     toColumn = return . SQLite.SQLText
-
-instance Column a => Column (Maybe a) where
-    defineColumn _ = do
-        colDef <- defineColumn (Proxy @a)
-        return (columnNullable colDef)
-    toColumn = maybe (return SQLite.SQLNull) toColumn
 
 defineTextColumn :: proxy a -> SQL ColumnDef
 defineTextColumn _ = defineColumn (Proxy @Text)
