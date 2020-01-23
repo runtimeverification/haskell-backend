@@ -235,18 +235,33 @@ insertRowGeneric table = do
     info = SOP.datatypeInfo proxy
     tableName = SQL.SOP.tableNameGeneric proxy
 
-{- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
+{- | @selectRowsProduct@ implements 'selectRow' for a product type
  -}
-selectRowGeneric
+selectRowsProduct
     :: forall table fields
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
+    => SOP.ConstructorInfo fields
+    -> table
+    -> SQL [Key table]
+selectRowsProduct = withGenericProduct SQL.SOP.selectRows
+
+{- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
+ -}
+selectRowGeneric
+    :: forall table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
     => table
     -> SQL (Maybe (Key table))
 selectRowGeneric table = do
-    keys <- withGenericProduct SQL.SOP.selectRows ctor table
+    keys <- case SOP.constructorInfo info of
+        ctorInfo SOP.:* SOP.Nil -> selectRowsProduct ctorInfo table
+        ctorInfos -> SQL.SOP.selectRowsSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
     return $ case keys of
         []      -> Nothing
         key : _ -> Just key
   where
-    ctor SOP.:* SOP.Nil = SOP.constructorInfo $ SOP.datatypeInfo (Proxy @table)
+    proxy = Proxy @table
+    info = SOP.datatypeInfo proxy
+    tableName = SQL.SOP.tableNameGeneric proxy
