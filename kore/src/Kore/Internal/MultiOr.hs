@@ -20,6 +20,7 @@ module Kore.Internal.MultiOr
     , flatten
     , flattenGeneric
     , fullCrossProduct
+    , gather
     , make
     , merge
     , mergeAll
@@ -44,6 +45,10 @@ import GHC.Exts
     )
 import qualified GHC.Generics as GHC
 
+import Branch
+    ( BranchT
+    )
+import qualified Branch as BranchT
 import Kore.Debug
 import Kore.TopBottom
     ( TopBottom (..)
@@ -332,3 +337,8 @@ crossProductGeneric
     -> MultiOr child3
 crossProductGeneric joiner (MultiOr first) (MultiOr second) =
     MultiOr $ joiner <$> first <*> second
+
+gather
+    :: (Ord a, TopBottom a, Monad m)
+    => BranchT m a -> m (MultiOr a)
+gather branched = make <$> BranchT.gather branched

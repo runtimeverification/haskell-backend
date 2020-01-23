@@ -127,147 +127,127 @@
                 \and{SortGeneratedTopCell{}}(
                     /* Created: Kore.Internal.Predicate.makeAndPredicate */
                     \and{SortGeneratedTopCell{}}(
-                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                        \and{SortGeneratedTopCell{}}(
-                            \ceil{SortMemInstCellMap{}, SortGeneratedTopCell{}}(
-                                /* builtin: */
-                                Lbl'Unds'MemInstCellMap'Unds'{}(
-                                    /* element: */ LblMemInstCellMapItem{}(
+                        \ceil{SortMemInstCellMap{}, SortGeneratedTopCell{}}(
+                            /* builtin: */
+                            Lbl'Unds'MemInstCellMap'Unds'{}(
+                                /* element: */ LblMemInstCellMapItem{}(
+                                    Lbl'-LT-'mAddr'-GT-'{}(
+                                        VarMEMADDR:SortInt{}
+                                    ),
+                                    Lbl'-LT-'memInst'-GT-'{}(
                                         Lbl'-LT-'mAddr'-GT-'{}(
                                             VarMEMADDR:SortInt{}
                                         ),
-                                        Lbl'-LT-'memInst'-GT-'{}(
-                                            Lbl'-LT-'mAddr'-GT-'{}(
-                                                VarMEMADDR:SortInt{}
-                                            ),
-                                            Lbl'-LT-'mmax'-GT-'{}(
-                                                VarDotVar50:SortOptionalInt{}
-                                            ),
-                                            Lbl'-LT-'msize'-GT-'{}(
-                                                VarSIZE:SortInt{}
-                                            ),
-                                            Lbl'-LT-'mdata'-GT-'{}(
-                                                LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
-                                                    VarBM0:SortMap{}
-                                                )
-                                            )
-                                        )
-                                    ),
-                                    /* opaque child: */ VarDotVar4:SortMemInstCellMap{}
-                                )
-                            ),
-                            \ceil{SortModuleInstCellMap{}, SortGeneratedTopCell{}}(
-                                /* builtin: */
-                                Lbl'Unds'ModuleInstCellMap'Unds'{}(
-                                    /* element: */ LblModuleInstCellMapItem{}(
-                                        Lbl'-LT-'modIdx'-GT-'{}(
-                                            VarCUR:SortInt{}
+                                        Lbl'-LT-'mmax'-GT-'{}(
+                                            VarDotVar50:SortOptionalInt{}
                                         ),
-                                        Lbl'-LT-'moduleInst'-GT-'{}(
-                                            Lbl'-LT-'modIdx'-GT-'{}(
-                                                VarCUR:SortInt{}
-                                            ),
-                                            Lbl'-LT-'exports'-GT-'{}(
-                                                Var'Unds'110:SortMap{}
-                                            ),
-                                            Lbl'-LT-'typeIds'-GT-'{}(
-                                                Var'Unds'120:SortMap{}
-                                            ),
-                                            Lbl'-LT-'types'-GT-'{}(
-                                                Var'Unds'130:SortMap{}
-                                            ),
-                                            Lbl'-LT-'nextTypeIdx'-GT-'{}(
-                                                Var'Unds'140:SortInt{}
-                                            ),
-                                            Lbl'-LT-'funcIds'-GT-'{}(
-                                                Var'Unds'150:SortMap{}
-                                            ),
-                                            Lbl'-LT-'funcAddrs'-GT-'{}(
-                                                Var'Unds'160:SortMap{}
-                                            ),
-                                            Lbl'-LT-'nextFuncIdx'-GT-'{}(
-                                                Var'Unds'170:SortInt{}
-                                            ),
-                                            Lbl'-LT-'tabIds'-GT-'{}(
-                                                Var'Unds'180:SortMap{}
-                                            ),
-                                            Lbl'-LT-'tabAddrs'-GT-'{}(
-                                                Var'Unds'190:SortMap{}
-                                            ),
-                                            Lbl'-LT-'memIds'-GT-'{}(
-                                                Var'Unds'200:SortMap{}
-                                            ),
-                                            Lbl'-LT-'memAddrs'-GT-'{}(
-                                                /* builtin: */
-                                                /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                        /* builtin: */
-                                                        \dv{SortInt{}}("0")
-                                                    ),
-                                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                        VarMEMADDR:SortInt{}
-                                                    )
-                                                )
-                                            ),
-                                            Lbl'-LT-'globIds'-GT-'{}(
-                                                Var'Unds'210:SortMap{}
-                                            ),
-                                            Lbl'-LT-'globalAddrs'-GT-'{}(
-                                                Var'Unds'220:SortMap{}
-                                            ),
-                                            Lbl'-LT-'nextGlobIdx'-GT-'{}(
-                                                Var'Unds'230:SortInt{}
-                                            )
-                                        )
-                                    ),
-                                    /* opaque child: */ VarDotVar7:SortModuleInstCellMap{}
-                                )
-                            )
-                        ),
-                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                            Lbl'Unds'andBool'Unds'{}(
-                                Lbl'Unds'andBool'Unds'{}(
-                                    Lbl'Unds-LT-Eqls'Int'Unds'{}(
-                                        Lbl'UndsPlus'Int'Unds'{}(
-                                            VarADDR:SortInt{},
-                                            /* builtin: */ \dv{SortInt{}}("8")
+                                        Lbl'-LT-'msize'-GT-'{}(
+                                            VarSIZE:SortInt{}
                                         ),
-                                        Lbl'UndsStar'Int'Unds'{}(
-                                            VarSIZE:SortInt{},
-                                            /* builtin: */
-                                            \dv{SortInt{}}("65536")
-                                        )
-                                    ),
-                                    Lbl'Hash'isByteMap'LParUndsRParUnds'KWASM-LEMMAS'Unds'Bool'Unds'ByteMap{}(
-                                        LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
-                                            VarBM0:SortMap{}
+                                        Lbl'-LT-'mdata'-GT-'{}(
+                                            LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
+                                                VarBM0:SortMap{}
+                                            )
                                         )
                                     )
                                 ),
-                                Lbl'Unds'andBool'Unds'{}(
-                                    Lbl'Unds-LT-Eqls'Int'Unds'{}(
-                                        /* builtin: */ \dv{SortInt{}}("0"),
-                                        VarADDR:SortInt{}
-                                    ),
-                                    Lbl'Unds-LT-'Int'Unds'{}(
-                                        VarADDR:SortInt{},
-                                        /* builtin: */
-                                        \dv{SortInt{}}("4294967296")
+                                /* opaque child: */ VarDotVar4:SortMemInstCellMap{}
+                            )
+                        ),
+                        \ceil{SortModuleInstCellMap{}, SortGeneratedTopCell{}}(
+                            /* builtin: */
+                            Lbl'Unds'ModuleInstCellMap'Unds'{}(
+                                /* element: */ LblModuleInstCellMapItem{}(
+                                    Lbl'-LT-'modIdx'-GT-'{}(VarCUR:SortInt{}),
+                                    Lbl'-LT-'moduleInst'-GT-'{}(
+                                        Lbl'-LT-'modIdx'-GT-'{}(
+                                            VarCUR:SortInt{}
+                                        ),
+                                        Lbl'-LT-'exports'-GT-'{}(
+                                            Var'Unds'110:SortMap{}
+                                        ),
+                                        Lbl'-LT-'typeIds'-GT-'{}(
+                                            Var'Unds'120:SortMap{}
+                                        ),
+                                        Lbl'-LT-'types'-GT-'{}(
+                                            Var'Unds'130:SortMap{}
+                                        ),
+                                        Lbl'-LT-'nextTypeIdx'-GT-'{}(
+                                            Var'Unds'140:SortInt{}
+                                        ),
+                                        Lbl'-LT-'funcIds'-GT-'{}(
+                                            Var'Unds'150:SortMap{}
+                                        ),
+                                        Lbl'-LT-'funcAddrs'-GT-'{}(
+                                            Var'Unds'160:SortMap{}
+                                        ),
+                                        Lbl'-LT-'nextFuncIdx'-GT-'{}(
+                                            Var'Unds'170:SortInt{}
+                                        ),
+                                        Lbl'-LT-'tabIds'-GT-'{}(
+                                            Var'Unds'180:SortMap{}
+                                        ),
+                                        Lbl'-LT-'tabAddrs'-GT-'{}(
+                                            Var'Unds'190:SortMap{}
+                                        ),
+                                        Lbl'-LT-'memIds'-GT-'{}(
+                                            Var'Unds'200:SortMap{}
+                                        ),
+                                        Lbl'-LT-'memAddrs'-GT-'{}(
+                                            /* builtin: */
+                                            /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                                    /* builtin: */
+                                                    \dv{SortInt{}}("0")
+                                                ),
+                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                                    VarMEMADDR:SortInt{}
+                                                )
+                                            )
+                                        ),
+                                        Lbl'-LT-'globIds'-GT-'{}(
+                                            Var'Unds'210:SortMap{}
+                                        ),
+                                        Lbl'-LT-'globalAddrs'-GT-'{}(
+                                            Var'Unds'220:SortMap{}
+                                        ),
+                                        Lbl'-LT-'nextGlobIdx'-GT-'{}(
+                                            Var'Unds'230:SortInt{}
+                                        )
                                     )
-                                )
-                            ),
-                            /* builtin: */ \dv{SortBool{}}("true")
+                                ),
+                                /* opaque child: */ VarDotVar7:SortModuleInstCellMap{}
+                            )
                         )
                     ),
                     \equals{SortBool{}, SortGeneratedTopCell{}}(
                         Lbl'Unds'andBool'Unds'{}(
-                            Lbl'Unds-LT-Eqls'Int'Unds'{}(
-                                /* builtin: */ \dv{SortInt{}}("0"),
-                                VarADDR:SortInt{}
+                            Lbl'Unds'andBool'Unds'{}(
+                                Lbl'Unds-LT-Eqls'Int'Unds'{}(
+                                    Lbl'UndsPlus'Int'Unds'{}(
+                                        VarADDR:SortInt{},
+                                        /* builtin: */ \dv{SortInt{}}("8")
+                                    ),
+                                    Lbl'UndsStar'Int'Unds'{}(
+                                        VarSIZE:SortInt{},
+                                        /* builtin: */ \dv{SortInt{}}("65536")
+                                    )
+                                ),
+                                Lbl'Hash'isByteMap'LParUndsRParUnds'KWASM-LEMMAS'Unds'Bool'Unds'ByteMap{}(
+                                    LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
+                                        VarBM0:SortMap{}
+                                    )
+                                )
                             ),
-                            Lbl'Unds-LT-'Int'Unds'{}(
-                                VarADDR:SortInt{},
-                                /* builtin: */ \dv{SortInt{}}("4294967296")
+                            Lbl'Unds'andBool'Unds'{}(
+                                Lbl'Unds-LT-Eqls'Int'Unds'{}(
+                                    /* builtin: */ \dv{SortInt{}}("0"),
+                                    VarADDR:SortInt{}
+                                ),
+                                Lbl'Unds-LT-'Int'Unds'{}(
+                                    VarADDR:SortInt{},
+                                    /* builtin: */ \dv{SortInt{}}("4294967296")
+                                )
                             )
                         ),
                         /* builtin: */ \dv{SortBool{}}("true")
