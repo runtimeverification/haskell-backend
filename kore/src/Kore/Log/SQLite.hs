@@ -103,7 +103,7 @@ withLogSQLite options cont =
             let sqlt = unLogAction logAction entry
             runReaderT (SQL.getSQLT sqlt) conn
 
-{- | @foldMap@ over the known 'SQL.Table' 'Entry' types.
+{- | 'foldMap' over the known 'SQL.Table' 'Entry' types.
 
 These are the only types of 'Entry' that can be logged to the database.
 
