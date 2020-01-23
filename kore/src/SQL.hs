@@ -54,12 +54,13 @@ createTableIso
     => Lens.Iso' outer inner
     -> proxy outer
     -> SQL ()
-createTableIso _ proxy =
-    SQL.SOP.createTable tableName fields
+createTableIso _ proxy = do
+    defs <- SQL.SOP.defineColumns names
+    SQL.SOP.createTable tableName names defs
   where
     proxy' = Proxy @inner
     tableName = SQL.SOP.tableNameGeneric proxy
-    fields = SQL.SOP.productFields proxy'
+    names = SQL.SOP.productFields proxy'
 
 withIsoFields
     :: forall outer inner fields a
@@ -169,11 +170,12 @@ createTableGeneric
     => SOP.All Column fields
     => proxy table
     -> SQL ()
-createTableGeneric proxy =
-    SQL.SOP.createTable tableName fields
+createTableGeneric proxy = do
+    defs <- SQL.SOP.defineColumns names
+    SQL.SOP.createTable tableName names defs
   where
     tableName = SQL.SOP.tableNameGeneric proxy
-    fields = SQL.SOP.productFields proxy
+    names = SQL.SOP.productFields proxy
 
 withGenericFields
     :: forall table fields a

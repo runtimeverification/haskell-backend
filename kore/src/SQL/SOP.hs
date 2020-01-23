@@ -11,6 +11,7 @@ module SQL.SOP
     , createTable
     , insertRow
     , selectRows
+    , defineColumns
     , productFields
     , productTypeFrom
     , toColumns
@@ -58,14 +59,15 @@ createTable
     :: forall fields
     .  SOP.All Column fields
     => TableName
-    -> NP (K String) fields  -- ^ field names
+    -> NP (K String) fields  -- ^ column names
+    -> NP (K ColumnDef) fields  -- ^ column definitions
     -> SQL ()
-createTable tableName fields = do
+createTable tableName names defs = do
     stmt <- flip execAccumT mempty $ do
         Accum.add "CREATE TABLE IF NOT EXISTS"
         addTableName tableName
         addSpace
-        addColumnDefs fields
+        addColumnDefs names defs
     SQL.execute_ stmt
 
 addSpace :: Monad m => AccumT Query m ()
@@ -77,30 +79,38 @@ addComma = Accum.add ", "
 addColumnDefs
     :: SOP.All Column fields
     => NP (K String) fields
+    -> NP (K ColumnDef) fields
     -> AccumT Query SQL ()
-addColumnDefs = parenthesized . defineFields
+addColumnDefs names defs = parenthesized $ defineFields names defs
 
 defineFields
-    :: SOP.All Column fields
+    :: SOP.All SOP.Top fields
     => NP (K String) fields
+    -> NP (K ColumnDef) fields
     -> AccumT Query SQL ()
-defineFields Nil = Accum.add "id INTEGER PRIMARY KEY"
-defineFields (field :* fields) = do
-    defineField field
+defineFields Nil               _ = Accum.add "id INTEGER PRIMARY KEY"
+defineFields (name :* names) (def :* defs) = do
+    defineField name def
     addComma
-    defineFields fields
+    defineFields names defs
 
-defineField :: Column field => K String field -> AccumT Query SQL ()
-defineField field = do
-    addColumnName field
+defineField :: K String field -> K ColumnDef field -> AccumT Query SQL ()
+defineField name (K defined) = do
+    addColumnName name
     addSpace
-    defined <- Trans.lift $ defineColumn field
     let ColumnDef { columnType } = defined
     Accum.add $ fromString $ Column.getTypeName columnType
     let ColumnDef { columnConstraints } = defined
     Foldable.for_ columnConstraints $ \constraint -> do
         addSpace
         Accum.add $ fromString $ Column.getColumnConstraint constraint
+
+defineColumns
+    :: SOP.All Column fields
+    => NP f fields
+    -> SQL (NP (K ColumnDef) fields)
+defineColumns =
+    SOP.hctraverse' (Proxy @Column) $ \proxy -> K <$> defineColumn proxy
 
 {- | The 'TableName' of a 'SOP.Generic' type.
  -}
@@ -161,7 +171,7 @@ parenthesized inner = do
 
 insertRow
     :: forall table fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
     -> NP (K String) fields
     -> NP (K SQLData) fields
