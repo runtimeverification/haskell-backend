@@ -5,12 +5,16 @@ License     : NCSA
 -}
 
 module SQL
-    ( createTableGeneric
+    (
+    -- * Generic table types
+      createTableGeneric
     , insertRowGeneric
     , selectRowGeneric
+    -- * Table isomorphisms
     , createTableWrapper
     , insertRowWrapper
     , selectRowWrapper
+    -- * Table newtypes
     , createTableUnwrapped
     , insertRowUnwrapped
     , selectRowUnwrapped
