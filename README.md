@@ -51,7 +51,8 @@ For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
 - [ghcide], an integrated development environment for Haskell
-  that is compatible with most editors.
+  that is compatible with most editors. Note: [yq] is required to 
+  run `ghcide` with `hie-bios.sh`.
 
 For integration testing, we also recommend:
 
@@ -68,3 +69,4 @@ For integration testing, we also recommend:
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv
 [ghcide]: https://github.com/digital-asset/ghcide
+[yq]: https://github.com/kislyuk/yq

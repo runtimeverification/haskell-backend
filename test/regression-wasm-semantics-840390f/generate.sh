@@ -7,6 +7,7 @@
 #   3. Set the KORE environment variable in your shell to the location of the
 #      `kore` repository.
 #   4. Run this script in the root of the `wasm-semantics` repository.
+#   5. Copy the resulting files back into this directory.
 
 set -exuo pipefail
 
