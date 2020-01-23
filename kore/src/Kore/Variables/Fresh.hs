@@ -34,7 +34,7 @@ import Kore.Variables.UnifiedVariable
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
 class (Ord variable, SortedVariable variable) => FreshVariable variable where
-    -- New: The greatest lower bound on variables
+    -- | The greatest lower bound on variables
     -- with the same name as the given variable.
     infVariable :: variable -> variable
     default infVariable
@@ -44,7 +44,8 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
         => variable ~ t variable'
         => variable -> variable
     infVariable = fmap infVariable
-    -- New: The least upper bound on variables
+
+    -- | The least upper bound on variables
     -- with the same name as the given variable.
     supVariable :: variable -> variable
     default supVariable
@@ -54,7 +55,8 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
         => variable ~ t variable'
         => variable -> variable
     supVariable = fmap supVariable
-    -- New: The least variable greater than the given variable.
+
+    -- | The least variable greater than the given variable.
     nextVariable :: variable -> variable
     default nextVariable
         :: forall t variable'
@@ -67,14 +69,11 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
     -- This is a default implementation in terms of the above.
     -- The default implementation is suitable for most types
     -- and does O(1) allocation.
-    {- | Refresh a variable, renaming it avoid the given set.
-
-    If the given variable occurs in the set, @refreshVariable@ must return
-    'Just' a fresh variable which does not occur in the set. If the given
-    variable does /not/ occur in the set, @refreshVariable@ /may/ return
-    'Nothing'.
-
-     -}
+    -- Refresh a variable, renaming it avoid the given set.
+    -- If the given variable occurs in the set, @refreshVariable@ must return
+    -- 'Just' a fresh variable which does not occur in the set. If the given
+    -- variable does /not/ occur in the set, @refreshVariable@ /may/ return
+    -- 'Nothing'.
     refreshVariable
         :: Set variable
         -- ^ variables to avoid
