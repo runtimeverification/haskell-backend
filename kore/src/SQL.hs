@@ -34,6 +34,14 @@ import qualified SQL.SOP
 import SQL.SQL
 import SQL.Table
 
+{- | @(createTableIso iso)@ implements 'createTable'.
+
+The table will be named for the @outer@ type (see 'createTableGeneric'). The
+'Iso' determines the structure of the table: the table will have the same
+columns as the table that 'createTableGeneric' would create for the @inner@
+type. Note, however, that the @inner@ type need not have a 'Table' instance!
+
+ -}
 createTableIso
     :: forall proxy outer inner fields
     .  SOP.HasDatatypeInfo outer
@@ -49,39 +57,9 @@ createTableIso _ proxy =
     tableName = SQL.SOP.tableNameGeneric proxy
     fields = SQL.SOP.productFields proxy'
 
-createTableUnwrapped
-    :: forall proxy outer inner fields
-    .  SOP.HasDatatypeInfo outer
-    => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
-    => SOP.All Column fields
-    => Wrapped outer outer inner inner
-    => proxy outer
-    -> SQL ()
-createTableUnwrapped = createTableIso _Unwrapped
-
-createTableGeneric
-    :: forall proxy table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
-    => proxy table
-    -> SQL ()
-createTableGeneric proxy =
-    SQL.SOP.createTable tableName fields
-  where
-    tableName = SQL.SOP.tableNameGeneric proxy
-    fields = SQL.SOP.productFields proxy
-
-insertRowGeneric
-    :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
-    => table
-    -> SQL (Key table)
-insertRowGeneric =
-    SQL.SOP.insertRow tableName
-  where
-    tableName = SQL.SOP.tableNameGeneric (Proxy @table)
-
+{- | @(insertRowIso iso)@ implements 'insertRow' for a table created with
+'createTableIso'.
+ -}
 insertRowIso
     :: forall outer inner fields
     .  SOP.HasDatatypeInfo outer
@@ -96,27 +74,9 @@ insertRowIso iso table =
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
 
-insertRowUnwrapped
-    :: forall outer inner fields
-    .  (SOP.HasDatatypeInfo outer)
-    => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
-    => SOP.All Column fields
-    => Wrapped outer outer inner inner
-    => outer
-    -> SQL (Key outer)
-insertRowUnwrapped = insertRowIso _Unwrapped
-
-selectRowGeneric
-    :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
-    => table
-    -> SQL (Maybe (Key table))
-selectRowGeneric table =
-    SQL.SOP.selectRow tableName table
-  where
-    tableName = SQL.SOP.tableNameGeneric (Proxy @table)
-
+{- | @(selectRowIso iso)@ implements 'selectRow' for a table created with
+'createTableIso'.
+ -}
 selectRowIso
     :: forall outer inner fields
     .  (SOP.HasDatatypeInfo outer)
@@ -131,6 +91,40 @@ selectRowIso iso table =
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @outer)
 
+{- | @createTableUnwrapped@ implements 'createTable' for a @newtype@ wrapper.
+
+The table will be named for the @outer@ type (see 'createTableGeneric'), but it
+will have the same columns as the table that 'createTableGeneric' would create
+for the @inner@ type. Note, however, that the @inner@ type need not have a
+'Table' instance!
+
+See also: 'createTableIso' is a more general version of this function.
+
+ -}
+createTableUnwrapped
+    :: forall proxy outer inner fields
+    .  SOP.HasDatatypeInfo outer
+    => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
+    => SOP.All Column fields
+    => Wrapped outer outer inner inner
+    => proxy outer
+    -> SQL ()
+createTableUnwrapped = createTableIso _Unwrapped
+
+{- | @insertRowUnwrapped@ implements 'insertRow' for a @newtype@ wrapper.
+ -}
+insertRowUnwrapped
+    :: forall outer inner fields
+    .  (SOP.HasDatatypeInfo outer)
+    => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
+    => SOP.All Column fields
+    => Wrapped outer outer inner inner
+    => outer
+    -> SQL (Key outer)
+insertRowUnwrapped = insertRowIso _Unwrapped
+
+{- | @selectRowUnwrapped@ implements 'selectRow' for a @newtype@ wrapper.
+ -}
 selectRowUnwrapped
     :: forall outer inner fields
     .  SOP.HasDatatypeInfo outer
@@ -140,3 +134,44 @@ selectRowUnwrapped
     => outer
     -> SQL (Maybe (Key outer))
 selectRowUnwrapped = selectRowIso _Unwrapped
+
+{- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' record
+type.
+ -}
+createTableGeneric
+    :: forall proxy table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => SOP.All Column fields
+    => proxy table
+    -> SQL ()
+createTableGeneric proxy =
+    SQL.SOP.createTable tableName fields
+  where
+    tableName = SQL.SOP.tableNameGeneric proxy
+    fields = SQL.SOP.productFields proxy
+
+{- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
+ -}
+insertRowGeneric
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => SOP.All Column fields
+    => table
+    -> SQL (Key table)
+insertRowGeneric =
+    SQL.SOP.insertRow tableName
+  where
+    tableName = SQL.SOP.tableNameGeneric (Proxy @table)
+
+{- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
+ -}
+selectRowGeneric
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
+    => SOP.All Column fields
+    => table
+    -> SQL (Maybe (Key table))
+selectRowGeneric table =
+    SQL.SOP.selectRow tableName table
+  where
+    tableName = SQL.SOP.tableNameGeneric (Proxy @table)
