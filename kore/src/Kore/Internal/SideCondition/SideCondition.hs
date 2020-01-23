@@ -13,7 +13,8 @@ import Control.DeepSeq
     )
 import Data.Hashable
     ( Hashable
-    , hash
+    , Hashed
+    , hashed
     )
 import Data.Text
     ( Text
@@ -29,12 +30,11 @@ import Kore.Debug
     , Diff (..)
     )
 
-data Representation =
+newtype Representation =
     Representation
-        { representationHash :: !Int
-        , representation :: !Text
+        { getRepresentation :: Hashed Text
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Hashable, NFData, Ord, Show)
 
 instance SOP.Generic Representation
 
@@ -44,13 +44,5 @@ instance Debug Representation
 
 instance Diff Representation
 
-instance NFData Representation
-
-instance Hashable Representation
-
 fromText :: Text -> Representation
-fromText text =
-    Representation
-        { representationHash = hash text
-        , representation = text
-        }
+fromText = Representation . hashed

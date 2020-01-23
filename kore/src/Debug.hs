@@ -32,6 +32,10 @@ import Data.Functor.Const
 import Data.Functor.Identity
     ( Identity
     )
+import Data.Hashable
+    ( Hashed
+    , unhashed
+    )
 import Data.Int
 import Data.Map.Strict
     ( Map
@@ -369,6 +373,10 @@ instance (Typeable a, Typeable b) => Debug (a -> b) where
         parens (precOut > 0)
         $ "_" <+> "::" <+> (Pretty.pretty . show) (typeOf f)
 
+instance (Debug a) => Debug (Hashed a) where
+    debugPrec h precOut =
+        parens (precOut >= 10) ("Data.Hashable.hashed" <+> debug (unhashed h))
+
 {- | 'Diff' displays the difference between values for debugging.
 
 @diff@ and @diffPrec@ should generally display the /minimal/ difference between
@@ -621,6 +629,14 @@ instance (Debug a, Debug b, Diff a, Diff b) => Diff (Either a b)
 -- | Assume all functions are the same because we cannot compare them.
 instance Diff (a -> b) where
     diffPrec = diffPrecIgnore
+
+instance (Debug a, Diff a) => Diff (Hashed a) where
+    diffPrec ha hb =
+        fmap wrapFromList $ diffPrec (unhashed ha) (unhashed hb)
+      where
+        wrapFromList diff' precOut =
+            parens (precOut >= 10) $ "Data.Hashable.hashed" <+> diff' 10
+
 
 formatExceptionInfo :: (HasCallStack, Monad m) => Text -> m ()
 formatExceptionInfo message = do
