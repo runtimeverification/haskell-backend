@@ -29,6 +29,7 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
     ( SortedVariable (..)
+    , SyntaxVariable (..)
     )
 import Kore.Unparser
 
@@ -52,9 +53,13 @@ instance (Debug variable, Diff variable) => Diff (UnifiedVariable variable)
 
 instance Hashable variable => Hashable (UnifiedVariable variable)
 
-instance SortedVariable variable => SortedVariable (UnifiedVariable variable)
+instance (SyntaxVariable variable, SortedVariable variable)
+  => SortedVariable (UnifiedVariable variable)
   where
-      lensVariableSort f = undefined
+      lensVariableSort func (ElemVar variable) =
+          ElemVar <$> lensVariableSort func variable
+      lensVariableSort func (SetVar variable) =
+          SetVar <$> lensVariableSort func variable
 
 instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = foldMapVariable unparse

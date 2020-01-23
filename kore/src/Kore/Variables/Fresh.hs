@@ -101,7 +101,8 @@ instance (SyntaxVariable variable, FreshVariable variable)
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (SetVariable variable)
 
-instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
+instance (SyntaxVariable variable, FreshVariable variable)
+  => FreshVariable (UnifiedVariable variable)
 
 instance FreshVariable Variable where
     infVariable variable = variable { variableCounter = Nothing }

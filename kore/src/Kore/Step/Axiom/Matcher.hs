@@ -606,6 +606,7 @@ Returns 'Nothing' if the variable name is already globally-unique.
  -}
 liftVariable
     :: FreshVariable variable
+    => SyntaxVariable variable
     => MonadState (MatcherState variable) matcher
     => UnifiedVariable variable
     -> matcher (Maybe (UnifiedVariable variable))

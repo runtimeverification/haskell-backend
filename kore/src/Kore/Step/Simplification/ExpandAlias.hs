@@ -37,8 +37,7 @@ import Kore.Internal.TermLike
     , substitute
     )
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    , SyntaxVariable (..)
+    ( SyntaxVariable (..)
     )
 import Kore.Unification.Unify
     ( MonadUnify
