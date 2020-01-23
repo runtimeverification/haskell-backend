@@ -54,12 +54,7 @@ instance Hashable variable => Hashable (UnifiedVariable variable)
 
 instance SortedVariable variable => SortedVariable (UnifiedVariable variable)
   where
-    lensVariableSort f =
-        fmap fromVariable . lensVariableSort f . toVariable
-    -- TODO: this is problematic
-    fromVariable = undefined
-    toVariable (ElemVar variable) = toVariable variable
-    toVariable (SetVar variable) = toVariable variable
+      lensVariableSort f = undefined
 
 instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = foldMapVariable unparse

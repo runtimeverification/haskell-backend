@@ -149,11 +149,7 @@ instance
   Should be the inverse of 'Rule.termToAxiomPattern'.
 -}
 equalityRuleToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => EqualityRule variable
     -> TermLike.TermLike variable
 equalityRuleToTerm

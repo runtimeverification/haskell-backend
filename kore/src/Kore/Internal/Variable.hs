@@ -31,5 +31,6 @@ these constraints.
 type InternalVariable variable =
     ( Ord variable
     , Debug variable, Show variable, Unparse variable
+    , SyntaxVariable variable
     , SortedVariable variable
     )

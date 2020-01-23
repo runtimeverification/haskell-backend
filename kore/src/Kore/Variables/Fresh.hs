@@ -95,9 +95,11 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
 type Renaming variable =
     Map (UnifiedVariable variable) (UnifiedVariable variable)
 
-instance FreshVariable variable => FreshVariable (ElementVariable variable)
+instance (SyntaxVariable variable, FreshVariable variable)
+  => FreshVariable (ElementVariable variable)
 
-instance FreshVariable variable => FreshVariable (SetVariable variable)
+instance (SyntaxVariable variable, FreshVariable variable)
+  => FreshVariable (SetVariable variable)
 
 instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
 

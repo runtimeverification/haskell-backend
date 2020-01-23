@@ -22,6 +22,7 @@ import qualified GHC.Generics as GHC
 import Kore.Debug
 import Kore.Syntax.Variable
     ( SortedVariable (..)
+    , SyntaxVariable (..)
     )
 import Kore.Unparser
     ( Unparse (..)
@@ -69,9 +70,10 @@ isTarget (NonTarget _) = False
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
 
-instance
-    SortedVariable variable
-    => SortedVariable (Target variable)
+instance (SyntaxVariable variable, SortedVariable variable)
+  => SortedVariable (Target variable)
+
+instance SyntaxVariable variable => SyntaxVariable (Target variable)
   where
     fromVariable = Target . fromVariable
     toVariable (Target variable) = toVariable variable
@@ -79,7 +81,8 @@ instance
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance FreshVariable variable => FreshVariable (Target variable)
+instance (SyntaxVariable variable, FreshVariable variable)
+  => FreshVariable (Target variable)
 
 instance
     Unparse variable =>

@@ -75,8 +75,8 @@ mockSimplifierHelper
 
 convertTermLikeVariables
     ::  ( Ord variable0
-        , SortedVariable variable
-        , SortedVariable variable0
+        , SyntaxVariable variable
+        , SyntaxVariable variable0
         )
     => TermLike variable
     -> TermLike variable0
@@ -86,8 +86,8 @@ convertTermLikeVariables =
 convertPatternVariables
     ::  ( Ord variable
         , Ord variable0
-        , SortedVariable variable
-        , SortedVariable variable0
+        , SyntaxVariable variable
+        , SyntaxVariable variable0
         )
     => Pattern variable
     -> Pattern variable0

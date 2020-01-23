@@ -71,7 +71,10 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
     explainBottom _ _ _ = pure ()
 
     explainAndReturnBottom
-        :: (SortedVariable variable, Unparse variable)
+        :: ( SyntaxVariable variable
+           , SortedVariable variable
+           , Unparse variable
+           )
         => Doc ()
         -> TermLike variable
         -> TermLike variable

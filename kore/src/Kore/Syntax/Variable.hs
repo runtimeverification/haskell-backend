@@ -14,6 +14,7 @@ module Kore.Syntax.Variable
     , illegalVariableCounter
     , externalizeFreshVariable
     , SortedVariable (..)
+    , SyntaxVariable (..)
     , unparse2SortedVariable
     , Concrete
     ) where
@@ -123,9 +124,7 @@ externalizeFreshVariable variable@Variable { variableName, variableCounter } =
             , idLocation = AstLocationGeneratedVariable
             }
 
-{- | 'SortedVariable' is a Kore variable with a known sort.
-
-The instances of @SortedVariable@ must encompass the 'Variable' type by
+{- | The instances of @SyntaxVariable@ must encompass the 'Variable' type by
 implementing 'fromVariable', i.e. we must be able to construct a
 @SortedVariable@ given a parsed 'Variable'.
 
@@ -136,11 +135,19 @@ implementing 'fromVariable', i.e. we must be able to construct a
 but the reverse is not required.
 
  -}
+class SyntaxVariable variable where
+    -- | Convert a variable from the parsed syntax of Kore.
+    fromVariable :: Variable -> variable
+    -- | Extract the parsed syntax of a Kore variable.
+    toVariable :: variable -> Variable
+
+-- | 'SortedVariable' is a Kore variable with a known sort.
 class SortedVariable variable where
     lensVariableSort :: Lens' variable Sort
     default lensVariableSort
         :: forall t variable'
         .  variable ~ t variable'
+        => SyntaxVariable variable
         => Lens' variable Sort
     lensVariableSort func =
         fmap fromVariable . lensVariableSort func . toVariable
@@ -148,12 +155,6 @@ class SortedVariable variable where
     -- | The known 'Sort' of the given variable.
     sortedVariableSort :: variable -> Sort
     sortedVariableSort = Lens.view lensVariableSort
-
-    -- | Convert a variable from the parsed syntax of Kore.
-    fromVariable :: Variable -> variable
-    -- | Extract the parsed syntax of a Kore variable.
-    toVariable :: variable -> Variable
--- TODO(traiansf): the 'SortedVariable' class mixes different concerns.
 
 instance SortedVariable Variable where
     lensVariableSort func variable =
@@ -166,16 +167,24 @@ instance SortedVariable Variable where
                 , variableCounter = variableCounter variable
                 , variableSort = sort
                 }
+
+instance SyntaxVariable Variable where
     fromVariable = id
     toVariable = id
 
-instance SortedVariable variable => SortedVariable (ElementVariable variable)
+instance (SyntaxVariable variable, SortedVariable variable)
+  => SortedVariable (ElementVariable variable)
+
+instance SyntaxVariable variable => SyntaxVariable (ElementVariable variable)
   where
     fromVariable = ElementVariable . fromVariable
     toVariable (ElementVariable variable) =
         toVariable variable
 
-instance SortedVariable variable => SortedVariable (SetVariable variable)
+instance (SyntaxVariable variable, SortedVariable variable)
+  => SortedVariable (SetVariable variable)
+
+instance SyntaxVariable variable => SyntaxVariable (SetVariable variable)
   where
     fromVariable = SetVariable . fromVariable
     toVariable (SetVariable variable) =
@@ -227,5 +236,7 @@ instance SortedVariable Concrete where
     lensVariableSort func variable =
         case variable of {}
         <$> func (case variable of {})
+
+instance SyntaxVariable Concrete where
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"

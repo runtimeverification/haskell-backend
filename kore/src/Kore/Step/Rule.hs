@@ -52,7 +52,8 @@ import Kore.Internal.Alias
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-    ( SortedVariable
+    ( InternalVariable
+    , SortedVariable
     , Variable
     )
 import Kore.Sort
@@ -366,11 +367,7 @@ termToAxiomPattern attributes pat =
 -}
 
 axiomPatternToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => QualifiedAxiomPattern variable
     -> TermLike.TermLike variable
 axiomPatternToTerm = \case

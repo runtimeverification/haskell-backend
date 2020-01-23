@@ -336,7 +336,11 @@ Otherwise, the argument is returned.
 
  -}
 withoutFreeVariable
-    :: (Ord variable, SortedVariable variable, Unparse variable)
+    ::  ( Ord variable
+        , SortedVariable variable
+        , SyntaxVariable variable
+        , Unparse variable
+        )
     => UnifiedVariable variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
@@ -429,6 +433,7 @@ simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys
     :: SortedVariable variable
+    => SyntaxVariable variable
     => Foldable t
     => t (TermLike variable)
     -> a

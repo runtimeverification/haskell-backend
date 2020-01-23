@@ -82,7 +82,11 @@ instance Diff UnificationError
 
 unsupportedPatterns
     :: SortedVariable variable
-    => String -> TermLike variable -> TermLike variable -> UnificationError
+    => SyntaxVariable variable
+    => String
+    -> TermLike variable
+    -> TermLike variable
+    -> UnificationError
 unsupportedPatterns message =
     UnsupportedPatterns message `on` mapVariables toVariable
 
