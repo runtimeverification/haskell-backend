@@ -37,11 +37,32 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
     -- New: The greatest lower bound on variables
     -- with the same name as the given variable.
     infVariable :: variable -> variable
+    default infVariable
+        :: forall t variable'
+        .  Functor t
+        => FreshVariable variable'
+        => variable ~ t variable'
+        => variable -> variable
+    infVariable = fmap infVariable
     -- New: The least upper bound on variables
     -- with the same name as the given variable.
     supVariable :: variable -> variable
+    default supVariable
+        :: forall t variable'
+        .  Functor t
+        => FreshVariable variable'
+        => variable ~ t variable'
+        => variable -> variable
+    supVariable = fmap supVariable
     -- New: The least variable greater than the given variable.
     nextVariable :: variable -> variable
+    default nextVariable
+        :: forall t variable'
+        .  Functor t
+        => FreshVariable variable'
+        => variable ~ t variable'
+        => variable -> variable
+    nextVariable = fmap nextVariable
 
     -- This is a default implementation in terms of the above.
     -- The default implementation is suitable for most types
@@ -76,22 +97,10 @@ type Renaming variable =
     Map (UnifiedVariable variable) (UnifiedVariable variable)
 
 instance FreshVariable variable => FreshVariable (ElementVariable variable)
-  where
-    infVariable = fmap infVariable
-    supVariable = fmap supVariable
-    nextVariable = fmap nextVariable
 
 instance FreshVariable variable => FreshVariable (SetVariable variable)
-  where
-    infVariable = fmap infVariable
-    supVariable = fmap supVariable
-    nextVariable = fmap nextVariable
 
 instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
-  where
-    infVariable = fmap infVariable
-    supVariable = fmap supVariable
-    nextVariable = fmap nextVariable
 
 instance FreshVariable Variable where
     infVariable variable = variable { variableCounter = Nothing }

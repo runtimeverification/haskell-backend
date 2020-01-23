@@ -73,20 +73,13 @@ instance
     SortedVariable variable
     => SortedVariable (Target variable)
   where
-    lensVariableSort f (Target variable) =
-        Target <$> lensVariableSort f variable
-    lensVariableSort f (NonTarget variable) =
-        NonTarget <$> lensVariableSort f variable
     fromVariable = Target . fromVariable
-    toVariable (Target var) = toVariable var
-    toVariable (NonTarget var) = toVariable var
+    toVariable (Target variable) = toVariable variable
+    toVariable (NonTarget variable) = toVariable variable
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance FreshVariable variable => FreshVariable (Target variable) where
-    infVariable = fmap infVariable
-    supVariable = fmap supVariable
-    nextVariable = fmap nextVariable
+instance FreshVariable variable => FreshVariable (Target variable)
 
 instance
     Unparse variable =>

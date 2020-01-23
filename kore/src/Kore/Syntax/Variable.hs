@@ -136,9 +136,14 @@ implementing 'fromVariable', i.e. we must be able to construct a
 but the reverse is not required.
 
  -}
--- TODO: defaults for functor?
 class SortedVariable variable where
     lensVariableSort :: Lens' variable Sort
+    default lensVariableSort
+        :: forall t variable'
+        .  variable ~ t variable'
+        => Lens' variable Sort
+    lensVariableSort func =
+        fmap fromVariable . lensVariableSort func . toVariable
 
     -- | The known 'Sort' of the given variable.
     sortedVariableSort :: variable -> Sort
@@ -151,25 +156,27 @@ class SortedVariable variable where
 -- TODO(traiansf): the 'SortedVariable' class mixes different concerns.
 
 instance SortedVariable Variable where
-    -- TODO: make more readable
-    lensVariableSort f var =
-        fmap (Variable (variableName var) (variableCounter var))
-        $ f (variableSort var)
+    lensVariableSort func variable =
+        fmap setSort
+        $ func (variableSort variable)
+      where
+        setSort sort =
+            Variable
+                { variableName = variableName variable
+                , variableCounter = variableCounter variable
+                , variableSort = sort
+                }
     fromVariable = id
     toVariable = id
 
 instance SortedVariable variable => SortedVariable (ElementVariable variable)
   where
-    lensVariableSort f =
-        fmap fromVariable . lensVariableSort f . toVariable
     fromVariable = ElementVariable . fromVariable
     toVariable (ElementVariable variable) =
         toVariable variable
 
 instance SortedVariable variable => SortedVariable (SetVariable variable)
   where
-    lensVariableSort f =
-        fmap fromVariable . lensVariableSort f . toVariable
     fromVariable = SetVariable . fromVariable
     toVariable (SetVariable variable) =
         toVariable variable
@@ -217,8 +224,8 @@ instance Unparse Concrete where
     unparse2 = \case {}
 
 instance SortedVariable Concrete where
-    -- TODO: make morea readable
-    lensVariableSort f var =
-        fmap (case var of {}) $ f (case var of {})
+    lensVariableSort func variable =
+        case variable of {}
+        <$> func (case variable of {})
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"
