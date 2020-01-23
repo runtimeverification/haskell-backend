@@ -74,11 +74,32 @@ test_refreshVariable =
     avoid2 = Set.singleton metaVariableDifferentSort
     Just fresh2 = refreshVariable avoid2 original
 
-test_freshVariableProperties :: TestTree
+test_freshVariableProperties :: [TestTree]
 test_freshVariableProperties =
-    testPropertyWithoutSolver "FreshVariable ElementVariable" $ do
-        var <- forAll (standaloneGen $ elementVariableGen Mock.testSort)
-        varSet <- forAll (Gen.set (Range.linear 0 50) $ standaloneGen $ elementVariableGen Mock.testSort)
+    [ freshVariablePropertyTests
+        "FreshVariable ElementVariable"
+        (elementVariableGen Mock.testSort)
+    , freshVariablePropertyTests
+        "FreshVariable SetVariable"
+        (setVariableGen Mock.testSort)
+    , freshVariablePropertyTests
+        "FreshVariable UnifiedVariable"
+        (unifiedVariableGen Mock.testSort)
+    ]
+
+freshVariablePropertyTests
+    :: FreshVariable variable
+    => Show variable
+    => String
+    -> Gen variable
+    -> TestTree
+freshVariablePropertyTests suiteName generator =
+    testPropertyWithoutSolver suiteName $ do
+        var <- forAll (standaloneGen generator)
+        varSet <-
+            forAll
+            $ Gen.set (Range.linear 0 50)
+            $ standaloneGen generator
         let inf = infVariable var
             sup = supVariable var
             nextVar = nextVariable var
@@ -101,4 +122,3 @@ test_freshVariableProperties =
     returnsNewVar freshVar var varSet =
         not (Set.member var varSet)
         || isJust freshVar
-
