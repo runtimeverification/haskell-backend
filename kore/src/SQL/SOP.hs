@@ -72,6 +72,7 @@ createTable
 createTable tableName names defs = do
     stmt <- flip execAccumT mempty $ do
         Accum.add "CREATE TABLE IF NOT EXISTS"
+        addSpace
         addTableName tableName
         addSpace
         addColumnDefs names defs
@@ -148,11 +149,14 @@ createTableSum tableName ctors = do
 columnTag :: ColumnDef
 columnTag = Column.columnDef Column.typeInteger
 
+tagColumnName :: ConstructorInfo fields -> String
+tagColumnName info = "tag_" <> SOP.constructorName info
+
 columnNamesSum
     :: SOP.All SOP.Top ctors
     => NP ConstructorInfo ctors
     -> NP (K String) ctors
-columnNamesSum = SOP.hmap (K . SOP.constructorName)
+columnNamesSum = SOP.hmap (K . tagColumnName)
 
 createConstructorTable
     :: forall fields
@@ -162,9 +166,9 @@ createConstructorTable
     -> SQL ()
 createConstructorTable typeTableName info = do
     defs <- SQL.SOP.defineColumns names
-    createTable tableName (K ctorName :* names) (K columnTag :* defs)
+    createTable tableName (K tag :* names) (K columnTag :* defs)
   where
-    ctorName = SOP.constructorName info
+    tag = tagColumnName info
     tableName = ctorTableName typeTableName info
     names = ctorFields info
 
@@ -318,19 +322,20 @@ insertRowSum typeTableName = worker
         case infos of
             _ :* infos' -> worker infos' ctors
     worker (info :* _) (Z fields) = do
-        let names = K ctorName :* ctorFields info
-            tag = SQLInteger 1
+        key <- insertIndexRow
+        let names = K "id" :* K tagName :* ctorFields info
+            rowid = SQLInteger (getKey key)
         values <- toColumns fields
-        key <- insertRow tableName names (K tag :* values)
-
-        let
-            idxNames = K "id" :* K ctorName :* Nil
-            idxValues = K rowId :* K tag :* Nil
-            rowId = SQLInteger (getKey key)
-        insertRow typeTableName idxNames idxValues
+        insertRow tableName names (K rowid :* K tag :* values)
       where
         tableName = ctorTableName typeTableName info
-        ctorName = SOP.constructorName info
+        tagName = tagColumnName info
+        tag = SQLInteger 1
+
+        insertIndexRow = do
+            let names = K tagName :* Nil
+                values = K tag :* Nil
+            insertRow typeTableName names values
 
 {- | Witness that the type @table@ is actually a product type.
  -}
