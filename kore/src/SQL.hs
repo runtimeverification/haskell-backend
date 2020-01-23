@@ -191,30 +191,49 @@ createTableGeneric proxy =
     info = SOP.datatypeInfo proxy
     tableName = SQL.SOP.tableNameGeneric proxy
 
-withGenericFields
+withGenericProduct
     :: forall table fields a
     .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
     => SOP.All Column fields
     => (TableName -> NP (K String) fields -> NP (K SQLData) fields -> SQL a)
+    -> SOP.ConstructorInfo fields
     -> table
     -> SQL a
-withGenericFields continue table = do
+withGenericProduct continue ctor table = do
     values <- SQL.SOP.toColumns fields
     continue tableName infos values
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @table)
-    infos = SQL.SOP.productFields (Proxy @table)
+    infos = SQL.SOP.ctorFields ctor
     fields = SQL.SOP.productTypeFrom table
+
+{- | @insertRowProduct@ implements 'insertRow' for a product type.
+ -}
+insertRowProduct
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.Code table ~ '[fields])
+    => SOP.All Column fields
+    => SOP.ConstructorInfo fields
+    -> table
+    -> SQL (Key table)
+insertRowProduct = withGenericProduct SQL.SOP.insertRow
 
 {- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
  -}
 insertRowGeneric
-    :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
+    :: forall table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
     => table
     -> SQL (Key table)
-insertRowGeneric = withGenericFields SQL.SOP.insertRow
+insertRowGeneric table = do
+    case SOP.constructorInfo info of
+        ctorInfo SOP.:* SOP.Nil -> insertRowProduct ctorInfo table
+        ctorInfos -> SQL.SOP.insertRowSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
+  where
+    proxy = Proxy @table
+    info = SOP.datatypeInfo proxy
+    tableName = SQL.SOP.tableNameGeneric proxy
 
 {- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
  -}
@@ -225,7 +244,9 @@ selectRowGeneric
     => table
     -> SQL (Maybe (Key table))
 selectRowGeneric table = do
-    keys <- withGenericFields SQL.SOP.selectRows table
+    keys <- withGenericProduct SQL.SOP.selectRows ctor table
     return $ case keys of
         []      -> Nothing
         key : _ -> Just key
+  where
+    ctor SOP.:* SOP.Nil = SOP.constructorInfo $ SOP.datatypeInfo (Proxy @table)
