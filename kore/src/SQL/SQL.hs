@@ -32,6 +32,8 @@ import Database.SQLite.Simple
     )
 import qualified Database.SQLite.Simple as SQLite
 
+{- | @SQL@ is a 'Monad' for executing SQL statements.
+ -}
 newtype SQL a = SQL { getSQL :: ReaderT SQLite.Connection IO a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO)
@@ -42,7 +44,12 @@ instance (Semigroup a) => Semigroup (SQL a) where
 instance (Monoid a) => Monoid (SQL a) where
     mempty = pure mempty
 
-runSQL :: FilePath -> SQL a -> IO a
+{- | Run the given sequence of statements in the named database.
+ -}
+runSQL
+    :: FilePath  -- ^ SQLite database
+    -> SQL a  -- ^ statements
+    -> IO a
 runSQL filePath =
     Exceptions.bracket
         (liftIO $ SQLite.open filePath)
