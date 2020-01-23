@@ -25,6 +25,7 @@ import qualified GHC.Stats as GHC
 import qualified System.Mem as System
 
 import Debug
+import From
 
 data Stats =
     Stats
@@ -49,30 +50,30 @@ instance Debug Stats
 
 instance Diff Stats
 
-fromGHC :: GHC.RTSStats -> Stats
-fromGHC rtsStats =
-    Stats
-        { gcs, major_gcs
-        , allocated_bytes, max_live_bytes
-        , mutator_cpu_ns, mutator_elapsed_ns
-        , gc_cpu_ns, gc_elapsed_ns
-        , cpu_ns, elapsed_ns
-        }
-  where
-    GHC.RTSStats
-        { gcs, major_gcs
-        , allocated_bytes, max_live_bytes
-        , mutator_cpu_ns, mutator_elapsed_ns
-        , gc_cpu_ns, gc_elapsed_ns
-        , cpu_ns, elapsed_ns
-        }
-      = rtsStats
+instance From GHC.RTSStats Stats where
+    from rtsStats =
+        Stats
+            { gcs, major_gcs
+            , allocated_bytes, max_live_bytes
+            , mutator_cpu_ns, mutator_elapsed_ns
+            , gc_cpu_ns, gc_elapsed_ns
+            , cpu_ns, elapsed_ns
+            }
+      where
+        GHC.RTSStats
+            { gcs, major_gcs
+            , allocated_bytes, max_live_bytes
+            , mutator_cpu_ns, mutator_elapsed_ns
+            , gc_cpu_ns, gc_elapsed_ns
+            , cpu_ns, elapsed_ns
+            }
+          = rtsStats
 
 getStats :: IO Stats
 getStats = do
     -- Some counters are only updated after a major GC.
     System.performMajorGC
-    fromGHC <$> GHC.getRTSStats
+    from <$> GHC.getRTSStats
 
 writeStats :: FilePath -> Stats -> IO ()
 writeStats = Aeson.encodeFile
