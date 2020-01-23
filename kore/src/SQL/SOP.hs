@@ -21,8 +21,10 @@ module SQL.SOP
     , selectRowsSum
     -- * Product types
     , createTableProduct
+    , insertRowProduct
     -- * Generic implementations
     , createTableGeneric, createTableGenericAux
+    , insertRowGeneric, insertRowGenericAux
     -- * Helpers
     , defineColumns
     , productFields
@@ -385,6 +387,52 @@ insertRowSum typeTableName = worker
             let names = K tagName :* Nil
                 values = K tag :* Nil
             insertRow typeTableName names values
+
+{- | @insertRowProduct@ implements 'insertRow' for a product type.
+ -}
+insertRowProduct
+    :: forall table fields
+    .  (SOP.HasDatatypeInfo table, SOP.Code table ~ '[fields])
+    => SOP.All Column fields
+    => TableName
+    -> SOP.ConstructorInfo fields
+    -> NP I fields
+    -> SQL (Key table)
+insertRowProduct tableName ctorInfo fields = do
+    values <- toColumns fields
+    insertRow tableName infos values
+  where
+    infos = ctorFields ctorInfo
+
+{- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
+ -}
+insertRowGeneric
+    :: forall table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
+    => table
+    -> SQL (Key table)
+insertRowGeneric =
+    insertRowGenericAux tableName
+  where
+    proxy = Proxy @table
+    tableName = tableNameGeneric proxy
+
+insertRowGenericAux
+    :: forall table
+    .  SOP.HasDatatypeInfo table
+    => SOP.All2 Column (SOP.Code table)
+    => TableName
+    -> table
+    -> SQL (Key table)
+insertRowGenericAux tableName table = do
+    case SOP.constructorInfo $ SOP.datatypeInfo proxy of
+        info :* Nil ->
+            case ctors of Z fields -> insertRowProduct tableName info fields
+        infos       -> insertRowSum tableName infos ctors
+  where
+    proxy = Proxy @table
+    ctors = SOP.unSOP $ SOP.from table
 
 {- | Witness that the type @table@ is actually a product type.
  -}

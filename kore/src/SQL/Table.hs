@@ -72,6 +72,12 @@ class Table a where
 
      -}
     insertRow :: a -> SQL (Key a)
+    default insertRow
+        :: SOP.HasDatatypeInfo a
+        => SOP.All2 Column (SOP.Code a)
+        => a
+        -> SQL (Key a)
+    insertRow = SOP.insertRowGeneric
 
     {- | Find the 'Key' for an @a@, if it is in the table.
      -}

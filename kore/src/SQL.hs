@@ -158,47 +158,6 @@ withGenericProduct continue tableName ctor table = do
     infos = SOP.ctorFields ctor
     fields = SOP.productTypeFrom table
 
-{- | @insertRowProduct@ implements 'insertRow' for a product type.
- -}
-insertRowProduct
-    :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.Code table ~ '[fields])
-    => SOP.All Column fields
-    => TableName
-    -> SOP.ConstructorInfo fields
-    -> table
-    -> SQL (Key table)
-insertRowProduct = withGenericProduct SOP.insertRow
-
-{- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
- -}
-insertRowGeneric
-    :: forall table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
-    => table
-    -> SQL (Key table)
-insertRowGeneric =
-    insertRowGenericAux tableName
-  where
-    proxy = Proxy @table
-    tableName = SOP.tableNameGeneric proxy
-
-insertRowGenericAux
-    :: forall table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
-    => TableName
-    -> table
-    -> SQL (Key table)
-insertRowGenericAux tableName table = do
-    case SOP.constructorInfo info of
-        ctorInfo SOP.:* SOP.Nil -> insertRowProduct tableName ctorInfo table
-        ctorInfos -> SOP.insertRowSum tableName ctorInfos (SOP.unSOP $ SOP.from table)
-  where
-    proxy = Proxy @table
-    info = SOP.datatypeInfo proxy
-
 {- | @selectRowsProduct@ implements 'selectRow' for a product type
  -}
 selectRowsProduct

@@ -91,7 +91,6 @@ instance SOP.Generic WarnSimplificationWithRemainder
 instance SOP.HasDatatypeInfo WarnSimplificationWithRemainder
 
 instance SQL.Table WarnSimplificationWithRemainder where
-    insertRow = SQL.insertRowGeneric
     selectRow = SQL.selectRowGeneric
 
 -- TODO (thomas.tuegel): Also get the rule which is being skipped.

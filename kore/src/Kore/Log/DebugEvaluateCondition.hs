@@ -39,7 +39,6 @@ instance Entry DebugEvaluateCondition where
     entrySeverity _ = Debug
 
 instance SQL.Table DebugEvaluateCondition where
-    insertRow = SQL.insertRowGeneric
     selectRow = SQL.selectRowGeneric
 
 debugEvaluateCondition

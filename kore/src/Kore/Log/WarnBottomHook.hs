@@ -54,7 +54,6 @@ instance Entry WarnBottomHook where
     entrySeverity _ = Warning
 
 instance SQL.Table WarnBottomHook where
-    insertRow = SQL.insertRowGeneric
     selectRow = SQL.selectRowGeneric
 
 warnBottomHook
