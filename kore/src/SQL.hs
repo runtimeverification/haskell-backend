@@ -11,9 +11,9 @@ module SQL
     , insertRowGeneric
     , selectRowGeneric
     -- * Table isomorphisms
-    , createTableWrapper
-    , insertRowWrapper
-    , selectRowWrapper
+    , createTableIso
+    , insertRowIso
+    , selectRowIso
     -- * Table newtypes
     , createTableUnwrapped
     , insertRowUnwrapped
@@ -34,7 +34,7 @@ import qualified SQL.SOP
 import SQL.SQL
 import SQL.Table
 
-createTableWrapper
+createTableIso
     :: forall proxy outer inner fields
     .  SOP.HasDatatypeInfo outer
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
@@ -42,7 +42,7 @@ createTableWrapper
     => Lens.Iso' outer inner
     -> proxy outer
     -> SQL ()
-createTableWrapper _ proxy =
+createTableIso _ proxy =
     SQL.SOP.createTable tableName fields
   where
     proxy' = Proxy @inner
@@ -57,7 +57,7 @@ createTableUnwrapped
     => Wrapped outer outer inner inner
     => proxy outer
     -> SQL ()
-createTableUnwrapped = createTableWrapper _Unwrapped
+createTableUnwrapped = createTableIso _Unwrapped
 
 createTableGeneric
     :: forall proxy table fields
@@ -82,7 +82,7 @@ insertRowGeneric =
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @table)
 
-insertRowWrapper
+insertRowIso
     :: forall outer inner fields
     .  SOP.HasDatatypeInfo outer
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
@@ -90,7 +90,7 @@ insertRowWrapper
     => Lens.Iso' outer inner
     -> outer
     -> SQL (Key outer)
-insertRowWrapper iso table =
+insertRowIso iso table =
     fmap (Lens.review iso)
     <$> SQL.SOP.insertRow tableName (Lens.view iso table)
   where
@@ -104,7 +104,7 @@ insertRowUnwrapped
     => Wrapped outer outer inner inner
     => outer
     -> SQL (Key outer)
-insertRowUnwrapped = insertRowWrapper _Unwrapped
+insertRowUnwrapped = insertRowIso _Unwrapped
 
 selectRowGeneric
     :: forall table fields
@@ -117,7 +117,7 @@ selectRowGeneric table =
   where
     tableName = SQL.SOP.tableNameGeneric (Proxy @table)
 
-selectRowWrapper
+selectRowIso
     :: forall outer inner fields
     .  (SOP.HasDatatypeInfo outer)
     => (SOP.HasDatatypeInfo inner, SOP.IsProductType inner fields)
@@ -125,7 +125,7 @@ selectRowWrapper
     => Lens.Iso' outer inner
     -> outer
     -> SQL (Maybe (Key outer))
-selectRowWrapper iso table =
+selectRowIso iso table =
     (fmap . fmap) (Lens.review iso)
     <$> SQL.SOP.selectRow tableName (Lens.view iso table)
   where
@@ -139,4 +139,4 @@ selectRowUnwrapped
     => Wrapped outer outer inner inner
     => outer
     -> SQL (Maybe (Key outer))
-selectRowUnwrapped = selectRowWrapper _Unwrapped
+selectRowUnwrapped = selectRowIso _Unwrapped
