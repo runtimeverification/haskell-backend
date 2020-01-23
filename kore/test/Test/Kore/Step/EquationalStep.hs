@@ -68,9 +68,6 @@ import Kore.Unification.UnifierT
     , SimplifierVariable
     , runUnifierT
     )
-import Kore.Variables.Fresh
-    ( nextVariable
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -284,7 +281,7 @@ test_applyEquationalRule_ =
     , testCase "non-function substitution error" $ do
         let expect = Left $ UnificationError $ unsupportedPatterns
                 "Unknown unification case."
-                (mkElemVar (nextVariable <$> Mock.x))
+                (mkElemVar Mock.x)
                 (Mock.plain10 (mkElemVar Mock.y))
             initial = pure $
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))

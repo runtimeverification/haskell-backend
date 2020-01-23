@@ -443,7 +443,7 @@ test_applyRewriteRule_ =
     , testCase "non-function substitution error" $ do
         let expect = Left $ UnificationError $ unsupportedPatterns
                 "Unknown unification case."
-                (mkElemVar (nextVariable <$> Mock.x))
+                (mkElemVar Mock.x)
                 (Mock.plain10 (mkElemVar Mock.y))
             initial = pure $
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))
