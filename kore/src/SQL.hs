@@ -19,6 +19,7 @@ module SQL
     , insertRowUnwrapped
     , selectRowUnwrapped
     -- * Re-exports
+    , module SQL.Column
     , module SQL.SQL
     , module SQL.Table
     ) where
@@ -33,6 +34,7 @@ import Data.Typeable
     )
 import qualified Generics.SOP as SOP
 
+import SQL.Column
 import SQL.SOP as SOP
 import SQL.SQL
 import SQL.Table
