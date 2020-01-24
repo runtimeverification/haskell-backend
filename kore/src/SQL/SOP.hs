@@ -72,9 +72,15 @@ import SQL.SQL as SQL
 
 newtype TableName = TableName { getTableName :: String }
 
+{- | The 'TableName' of a 'Typeable' type.
+ -}
+tableNameTypeable :: Typeable table => proxy table -> TableName
+tableNameTypeable proxy = TableName (show $ someTypeRep proxy)
+
 {- | Create a table with the given name and columns.
 
-The columns are described as record fields.
+The columns are described as record fields. An extra column named @id@ is added
+to hold the primary key.
 
  -}
 createTable
@@ -93,6 +99,63 @@ createTable tableName names defs = do
         addColumnDefs names defs
     SQL.execute_ stmt
 
+{- | Insert a row into the named table.
+ -}
+insertRow
+    :: forall table fields
+    .  SOP.All SOP.Top fields
+    => TableName
+    -> NP (K String) fields  -- ^ column names
+    -> NP (K SQLData) fields  -- ^ row data
+    -> SQL (Key table)
+insertRow tableName infos values = do
+    stmt <- Query.build $ do
+        Query.add "INSERT INTO"
+        Query.addSpace
+        addTableSpec tableName infos'
+        Query.addSpace
+        Query.add "VALUES"
+        Query.addSpace
+        addColumnParams infos'
+    SQL.execute stmt $ SOP.hcollapse values'
+    Key <$> SQL.lastInsertRowId
+  where
+    infos' = K "id" :* infos
+    values' = K SQLNull :* values
+
+{- | Select all rows that match the provided row.
+ -}
+selectRows
+    :: forall table fields
+    .  SOP.All Column fields
+    => TableName
+    -> NP (K String) fields  -- ^ column names
+    -> NP (K SQLData) fields  -- ^ row data
+    -> SQL [Key table]
+selectRows tableName infos values = do
+    stmt <- Query.build $ do
+        Query.add "SELECT (id) FROM"
+        Query.addSpace
+        addTableName tableName
+        Query.addSpace
+        Monad.unless (isNil infos) $ do
+            Query.add "WHERE"
+            Query.addSpace
+            addColumnNames infos
+            Query.add " = "
+            addColumnParams infos
+    keys <- SQL.query stmt $ SOP.hcollapse values
+    return (Key . SQLite.fromOnly <$> keys)
+
+{- | Add column definitions to a @CREATE TABLE@ statement.
+
+The column definitions look like:
+
+@
+(text TEXT NOT NULL, id INTEGER PRIMARY KEY)
+@
+
+ -}
 addColumnDefs
     :: SOP.All SOP.Top fields
     => NP (K String) fields
@@ -129,12 +192,10 @@ defineColumns
 defineColumns =
     SOP.hctraverse' (Proxy @Column) $ \proxy -> K <$> defineColumn proxy
 
-{- | The 'TableName' of a 'Typeable' type.
- -}
-tableNameTypeable :: Typeable table => proxy table -> TableName
-tableNameTypeable proxy = TableName (show $ someTypeRep proxy)
-
 {- | @createTableProduct@ implements 'createTable' for a product type.
+
+A single table is created with columns for each constructor field.
+
  -}
 createTableProduct
     :: forall fields
@@ -148,6 +209,13 @@ createTableProduct tableName ctorInfo = do
   where
     names = ctorFields ctorInfo
 
+{- | @createTableSum@ implements 'createTable' for a sum type.
+
+An index table is created with one "tag" column for each constructor.  A table
+is created for each constructor with an extra tag column.  The index table @id@
+and tag columns are used as foreign keys into the constructor tables.
+
+ -}
 createTableSum
     :: forall ctors
     .  SOP.All2 Column ctors
@@ -262,28 +330,6 @@ ctorFields ctor =
 addTableName :: Monad m => TableName -> AccumT Query m ()
 addTableName tableName =
     Query.withDoubleQuotes . Query.addString $ getTableName tableName
-
-insertRow
-    :: forall table fields
-    .  SOP.All SOP.Top fields
-    => TableName
-    -> NP (K String) fields
-    -> NP (K SQLData) fields
-    -> SQL (Key table)
-insertRow tableName infos values = do
-    stmt <- Query.build $ do
-        Query.add "INSERT INTO"
-        Query.addSpace
-        addTableSpec tableName infos'
-        Query.addSpace
-        Query.add "VALUES"
-        Query.addSpace
-        addColumnParams infos'
-    SQL.execute stmt $ SOP.hcollapse values'
-    Key <$> SQL.lastInsertRowId
-  where
-    infos' = K "id" :* infos
-    values' = K SQLNull :* values
 
 addTableSpec
     :: Monad m
@@ -428,28 +474,6 @@ productTypeFrom a =
 isNil :: NP f xs -> Bool
 isNil Nil = True
 isNil _   = False
-
-selectRows
-    :: forall table fields
-    .  SOP.All Column fields
-    => TableName
-    -> NP (K String) fields
-    -> NP (K SQLData) fields
-    -> SQL [Key table]
-selectRows tableName infos values = do
-    stmt <- Query.build $ do
-        Query.add "SELECT (id) FROM"
-        Query.addSpace
-        addTableName tableName
-        Query.addSpace
-        Monad.unless (isNil infos) $ do
-            Query.add "WHERE"
-            Query.addSpace
-            addColumnNames infos
-            Query.add " = "
-            addColumnParams infos
-    keys <- SQL.query stmt $ SOP.hcollapse values
-    return (Key . SQLite.fromOnly <$> keys)
 
 selectRowsSum
     :: forall table ctors
