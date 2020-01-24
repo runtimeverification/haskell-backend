@@ -40,17 +40,9 @@ module SQL.SOP
     ) where
 
 import qualified Control.Monad as Monad
-import Control.Monad.Trans.Accum
-    ( AccumT
-    , execAccumT
-    )
-import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
 import Data.Proxy
     ( Proxy (..)
-    )
-import Data.String
-    ( fromString
     )
 import qualified Database.SQLite.Simple as SQLite
 import Generics.SOP
@@ -65,6 +57,11 @@ import qualified Generics.SOP as SOP
 
 import SQL.Column as Column
 import SQL.Key as Key
+import SQL.Query
+    ( AccumT
+    , Query
+    )
+import qualified SQL.Query as Query
 import SQL.SQL as SQL
 
 newtype TableName = TableName { getTableName :: String }
@@ -82,48 +79,42 @@ createTable
     -> NP (K ColumnDef) fields  -- ^ column definitions
     -> SQL ()
 createTable tableName names defs = do
-    stmt <- flip execAccumT mempty $ do
-        Accum.add "CREATE TABLE IF NOT EXISTS"
-        addSpace
+    stmt <- Query.build $ do
+        Query.add "CREATE TABLE IF NOT EXISTS"
+        Query.addSpace
         addTableName tableName
-        addSpace
+        Query.addSpace
         addColumnDefs names defs
     SQL.execute_ stmt
-
-addSpace :: Monad m => AccumT Query m ()
-addSpace = Accum.add " "
-
-addComma :: Monad m => AccumT Query m ()
-addComma = Accum.add ", "
 
 addColumnDefs
     :: SOP.All SOP.Top fields
     => NP (K String) fields
     -> NP (K ColumnDef) fields
     -> AccumT Query SQL ()
-addColumnDefs names defs = parenthesized $ defineFields names defs
+addColumnDefs names defs = Query.withParens $ defineFields names defs
 
 defineFields
     :: SOP.All SOP.Top fields
     => NP (K String) fields
     -> NP (K ColumnDef) fields
     -> AccumT Query SQL ()
-defineFields Nil               _ = Accum.add "id INTEGER PRIMARY KEY"
+defineFields Nil               _ = Query.add "id INTEGER PRIMARY KEY"
 defineFields (name :* names) (def :* defs) = do
     defineField name def
-    addComma
+    Query.addComma
     defineFields names defs
 
 defineField :: K String field -> K ColumnDef field -> AccumT Query SQL ()
 defineField name (K defined) = do
     addColumnName name
-    addSpace
+    Query.addSpace
     let ColumnDef { columnType } = defined
-    Accum.add $ fromString $ Column.getTypeName columnType
+    Query.addString $ Column.getTypeName columnType
     let ColumnDef { columnConstraints } = defined
     Foldable.for_ columnConstraints $ \constraint -> do
-        addSpace
-        Accum.add $ fromString $ Column.getColumnConstraint constraint
+        Query.addSpace
+        Query.addString $ Column.getColumnConstraint constraint
 
 defineColumns
     :: SOP.All Column fields
@@ -267,21 +258,7 @@ ctorFields ctor =
 
 addTableName :: Monad m => TableName -> AccumT Query m ()
 addTableName tableName =
-    quoted $ Accum.add $ fromString $ getTableName tableName
-
-quoted :: Monad m => AccumT Query m a -> AccumT Query m a
-quoted inner = do
-    Accum.add "\""
-    a <- inner
-    Accum.add "\""
-    return a
-
-parenthesized :: Monad m => AccumT Query m a -> AccumT Query m a
-parenthesized inner = do
-    Accum.add "("
-    a <- inner
-    Accum.add ")"
-    return a
+    Query.withDoubleQuotes . Query.addString $ getTableName tableName
 
 insertRow
     :: forall table fields
@@ -291,13 +268,13 @@ insertRow
     -> NP (K SQLData) fields
     -> SQL (Key table)
 insertRow tableName infos values = do
-    stmt <- flip execAccumT mempty $ do
-        Accum.add "INSERT INTO"
-        addSpace
+    stmt <- Query.build $ do
+        Query.add "INSERT INTO"
+        Query.addSpace
         addTableSpec tableName infos'
-        addSpace
-        Accum.add "VALUES"
-        addSpace
+        Query.addSpace
+        Query.add "VALUES"
+        Query.addSpace
         addColumnParams infos'
     SQL.execute stmt $ SOP.hcollapse values'
     Key <$> SQL.lastInsertRowId
@@ -312,7 +289,7 @@ addTableSpec
     -> AccumT Query m ()
 addTableSpec tableName infos = do
     addTableName tableName
-    addSpace
+    Query.addSpace
     addColumnNames infos
 
 addColumnNames
@@ -321,7 +298,7 @@ addColumnNames
     => NP (K String) fields
     -> AccumT Query m ()
 addColumnNames =
-    parenthesized . worker
+    Query.withParens . worker
   where
     worker :: forall fields'. NP (K String) fields' -> AccumT Query m ()
     worker Nil = return ()
@@ -329,10 +306,10 @@ addColumnNames =
         addColumnName info
         case infos of
             Nil -> return ()
-            _   -> addComma >> worker infos
+            _   -> Query.addComma >> worker infos
 
 addColumnName :: Monad m => K String field -> AccumT Query m ()
-addColumnName (K fieldName) = Accum.add $ fromString fieldName
+addColumnName (K fieldName) = Query.addString fieldName
 
 addColumnParams
     :: forall f fields m
@@ -340,15 +317,15 @@ addColumnParams
     => NP f fields
     -> AccumT Query m ()
 addColumnParams =
-    parenthesized . worker
+    Query.withParens . worker
   where
     worker :: forall fields'. NP f fields' -> AccumT Query m ()
     worker Nil = return ()
     worker (_ :* infos) = do
-        Accum.add "?"
+        Query.add "?"
         case infos of
             Nil -> return ()
-            _   -> addComma >> worker infos
+            _   -> Query.addComma >> worker infos
 
 toColumns :: SOP.All Column fields => NP I fields -> SQL (NP (K SQLData) fields)
 toColumns = SOP.hctraverse' (Proxy @Column) $ \(I field) -> K <$> toColumn field
@@ -457,16 +434,16 @@ selectRows
     -> NP (K SQLData) fields
     -> SQL [Key table]
 selectRows tableName infos values = do
-    stmt <- flip execAccumT mempty $ do
-        Accum.add "SELECT (id) FROM"
-        addSpace
+    stmt <- Query.build $ do
+        Query.add "SELECT (id) FROM"
+        Query.addSpace
         addTableName tableName
-        addSpace
+        Query.addSpace
         Monad.unless (isNil infos) $ do
-            Accum.add "WHERE"
-            addSpace
+            Query.add "WHERE"
+            Query.addSpace
             addColumnNames infos
-            Accum.add " = "
+            Query.add " = "
             addColumnParams infos
     keys <- SQL.query stmt $ SOP.hcollapse values
     return (Key . SQLite.fromOnly <$> keys)
