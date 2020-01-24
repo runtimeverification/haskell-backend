@@ -138,7 +138,7 @@ productFields proxy =
         SOP.FieldInfo ("field" <> show n) :* shapeFields (n + 1) shape
 
 addTableName :: Monad m => TableName -> AccumT Query m ()
-addTableName tableName = do
+addTableName tableName =
     quoted $ Accum.add $ fromString $ getTableName tableName
 
 quoted :: Monad m => AccumT Query m a -> AccumT Query m a
