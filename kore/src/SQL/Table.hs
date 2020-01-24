@@ -23,6 +23,9 @@ import Data.Int
 import Data.Proxy
     ( Proxy (..)
     )
+import Data.Typeable
+    ( Typeable
+    )
 import qualified Database.SQLite.Simple as SQLite
 
 import SQL.Column
@@ -56,7 +59,7 @@ toForeignKeyColumn a = insertUniqueRow a >>= toColumn
 
 {- | A 'Table' corresponds to a table in SQL.
  -}
-class Table a where
+class Typeable a => Table a where
     -- | Create the table for @a@ if it does not exist.
     createTable :: proxy a -> SQL ()
     default createTable
@@ -88,6 +91,12 @@ class Table a where
         => a
         -> SQL (Maybe (Key a))
     selectRow = SOP.selectRowGeneric
+
+instance Table ()
+
+instance (Column a, Typeable a) => Table (Maybe a)
+
+instance (Column a, Typeable a, Column b, Typeable b) => Table (Either a b)
 
 {- | @(insertUniqueRow a)@ inserts @a@ into the table if not present.
 

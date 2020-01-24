@@ -28,6 +28,9 @@ import Data.Generics.Wrapped
 import Data.Proxy
     ( Proxy (..)
     )
+import Data.Typeable
+    ( Typeable
+    )
 import qualified Generics.SOP as SOP
 
 import SQL.SOP as SOP
@@ -44,9 +47,8 @@ type. Note, however, that the @inner@ type need not have a 'Table' instance!
  -}
 createTableIso
     :: forall proxy outer inner
-    .  SOP.HasDatatypeInfo outer
-    => SOP.HasDatatypeInfo inner
-    => SOP.All2 Column (SOP.Code inner)
+    .  Typeable outer
+    => (SOP.HasDatatypeInfo inner, SOP.All2 Column (SOP.Code inner))
     => Lens.Iso' outer inner
     -> proxy outer
     -> SQL ()
@@ -54,23 +56,22 @@ createTableIso _ proxy =
     createTableGenericAux tableName proxy'
   where
     proxy' = Proxy @inner
-    tableName = SOP.tableNameGeneric proxy
+    tableName = SOP.tableNameTypeable proxy
 
 {- | @(insertRowIso iso)@ implements 'insertRow' for a table created with
 'createTableIso'.
  -}
 insertRowIso
     :: forall outer inner
-    .  SOP.HasDatatypeInfo outer
-    => SOP.HasDatatypeInfo inner
-    => SOP.All2 Column (SOP.Code inner)
+    .  Typeable outer
+    => (SOP.HasDatatypeInfo inner, SOP.All2 Column (SOP.Code inner))
     => Lens.Iso' outer inner
     -> outer
     -> SQL (Key outer)
 insertRowIso iso outer =
     fromInnerKey <$> insertRowGenericAux tableName inner
   where
-    tableName = SOP.tableNameGeneric (Proxy @outer)
+    tableName = SOP.tableNameTypeable (Proxy @outer)
     inner = Lens.view iso outer
     fromInnerKey :: Key inner -> Key outer
     fromInnerKey = fmap (Lens.review iso)
@@ -80,16 +81,15 @@ insertRowIso iso outer =
  -}
 selectRowIso
     :: forall outer inner
-    .  (SOP.HasDatatypeInfo outer)
-    => SOP.HasDatatypeInfo inner
-    => SOP.All2 Column (SOP.Code inner)
+    .  Typeable outer
+    => (SOP.HasDatatypeInfo inner, SOP.All2 Column (SOP.Code inner))
     => Lens.Iso' outer inner
     -> outer
     -> SQL (Maybe (Key outer))
 selectRowIso iso outer = do
     fromInnerKeys <$> selectRowGenericAux tableName inner
   where
-    tableName = SOP.tableNameGeneric (Proxy @outer)
+    tableName = SOP.tableNameTypeable (Proxy @outer)
     inner = Lens.view iso outer
     fromInnerKeys :: Maybe (Key inner) -> Maybe (Key outer)
     fromInnerKeys = (fmap . fmap) (Lens.review iso)
@@ -106,7 +106,7 @@ See also: 'createTableIso' is a more general version of this function.
  -}
 createTableUnwrapped
     :: forall proxy outer inner
-    .  SOP.HasDatatypeInfo outer
+    .  Typeable outer
     => SOP.HasDatatypeInfo inner
     => SOP.All2 Column (SOP.Code inner)
     => Wrapped outer outer inner inner
@@ -118,7 +118,7 @@ createTableUnwrapped = createTableIso _Unwrapped
  -}
 insertRowUnwrapped
     :: forall outer inner
-    .  SOP.HasDatatypeInfo outer
+    .  Typeable outer
     => SOP.HasDatatypeInfo inner
     => SOP.All2 Column (SOP.Code inner)
     => Wrapped outer outer inner inner
@@ -130,7 +130,7 @@ insertRowUnwrapped = insertRowIso _Unwrapped
  -}
 selectRowUnwrapped
     :: forall outer inner
-    .  SOP.HasDatatypeInfo outer
+    .  Typeable outer
     => SOP.HasDatatypeInfo inner
     => SOP.All2 Column (SOP.Code inner)
     => Wrapped outer outer inner inner

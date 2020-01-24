@@ -10,7 +10,7 @@ License     : NCSA
 
 module SQL.SOP
     ( TableName
-    , tableNameGeneric
+    , tableNameTypeable
     -- * Low-level building blocks
     , createTable
     , insertRow
@@ -44,6 +44,9 @@ import qualified Data.Foldable as Foldable
 import Data.Proxy
     ( Proxy (..)
     )
+import Data.Typeable
+    ( Typeable
+    )
 import qualified Database.SQLite.Simple as SQLite
 import Generics.SOP
     ( ConstructorInfo
@@ -54,6 +57,9 @@ import Generics.SOP
     , Shape (..)
     )
 import qualified Generics.SOP as SOP
+import Type.Reflection
+    ( someTypeRep
+    )
 
 import SQL.Column as Column
 import SQL.Key as Key
@@ -123,13 +129,10 @@ defineColumns
 defineColumns =
     SOP.hctraverse' (Proxy @Column) $ \proxy -> K <$> defineColumn proxy
 
-{- | The 'TableName' of a 'SOP.Generic' type.
+{- | The 'TableName' of a 'Typeable' type.
  -}
-tableNameGeneric :: SOP.HasDatatypeInfo table => proxy table -> TableName
-tableNameGeneric proxy =
-    TableName $ SOP.moduleName info <> "." <> SOP.datatypeName info
-  where
-    info = SOP.datatypeInfo proxy
+tableNameTypeable :: Typeable table => proxy table -> TableName
+tableNameTypeable proxy = TableName (show $ someTypeRep proxy)
 
 {- | @createTableProduct@ implements 'createTable' for a product type.
  -}
@@ -167,11 +170,11 @@ createTableSum tableName ctors = do
  -}
 createTableGeneric
     :: forall proxy table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
+    .  Typeable table
+    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => proxy table
     -> SQL ()
-createTableGeneric proxy = createTableGenericAux (tableNameGeneric proxy) proxy
+createTableGeneric proxy = createTableGenericAux (tableNameTypeable proxy) proxy
 
 createTableGenericAux
     :: forall proxy table
@@ -384,11 +387,11 @@ insertRowProduct tableName ctorInfo fields = do
  -}
 insertRowGeneric
     :: forall table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
+    .  Typeable table
+    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => table
     -> SQL (Key table)
-insertRowGeneric = insertRowGenericAux (tableNameGeneric (Proxy @table))
+insertRowGeneric = insertRowGenericAux (tableNameTypeable (Proxy @table))
 
 insertRowGenericAux
     :: forall table
@@ -493,11 +496,11 @@ selectRowsProduct tableName ctorInfo fields = do
  -}
 selectRowGeneric
     :: forall table
-    .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
+    .  Typeable table
+    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => table
     -> SQL (Maybe (Key table))
-selectRowGeneric = selectRowGenericAux (tableNameGeneric (Proxy @table))
+selectRowGeneric = selectRowGenericAux (tableNameTypeable (Proxy @table))
 
 selectRowGenericAux
     :: forall table
