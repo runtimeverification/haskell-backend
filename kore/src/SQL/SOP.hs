@@ -180,10 +180,7 @@ createTableGeneric
     => SOP.All2 Column (SOP.Code table)
     => proxy table
     -> SQL ()
-createTableGeneric proxy =
-    createTableGenericAux tableName proxy
-  where
-    tableName = tableNameGeneric proxy
+createTableGeneric proxy = createTableGenericAux (tableNameGeneric proxy) proxy
 
 createTableGenericAux
     :: forall proxy table
@@ -414,11 +411,7 @@ insertRowGeneric
     => SOP.All2 Column (SOP.Code table)
     => table
     -> SQL (Key table)
-insertRowGeneric =
-    insertRowGenericAux tableName
-  where
-    proxy = Proxy @table
-    tableName = tableNameGeneric proxy
+insertRowGeneric = insertRowGenericAux (tableNameGeneric (Proxy @table))
 
 insertRowGenericAux
     :: forall table
@@ -527,10 +520,7 @@ selectRowGeneric
     => SOP.All2 Column (SOP.Code table)
     => table
     -> SQL (Maybe (Key table))
-selectRowGeneric = selectRowGenericAux tableName
-  where
-    proxy = Proxy @table
-    tableName = tableNameGeneric proxy
+selectRowGeneric = selectRowGenericAux (tableNameGeneric (Proxy @table))
 
 selectRowGenericAux
     :: forall table
