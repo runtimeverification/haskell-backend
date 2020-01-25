@@ -429,7 +429,7 @@ insertRowGenericAux
     => TableName
     -> table
     -> SQL (Key table)
-insertRowGenericAux tableName table = do
+insertRowGenericAux tableName table =
     SOP.hcollapse <$> SOP.hctraverse' proxyAllColumn insertRow' pairs
   where
     proxy = Proxy @table
