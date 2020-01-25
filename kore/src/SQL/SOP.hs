@@ -172,12 +172,19 @@ addColumnDefs names defs =
             addColumnName name
             Query.addSpace
             let ColumnDef { columnType } = defined
-            Query.addString $ Column.getTypeName columnType
+            addColumnType columnType
             let ColumnDef { columnConstraints } = defined
             Foldable.for_ columnConstraints $ \constraint -> do
                 Query.addSpace
-                Query.addString $ Column.getColumnConstraint constraint
+                addColumnConstraint constraint
+            Query.addComma
         Query.add "id INTEGER PRIMARY KEY"
+
+addColumnType :: Monad monad => TypeName -> AccumT Query monad ()
+addColumnType = Query.addString . Column.getTypeName
+
+addColumnConstraint :: Monad monad => ColumnConstraint -> AccumT Query monad ()
+addColumnConstraint = Query.addString . Column.getColumnConstraint
 
 defineColumns
     :: SOP.All Column fields
