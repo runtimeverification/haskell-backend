@@ -119,6 +119,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified SQL
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -164,6 +165,10 @@ instance
 {-| 'Predicate' is a user-visible representation for predicates.
 -}
 type Predicate variable = GenericPredicate (TermLike variable)
+
+instance InternalVariable variable => SQL.Column (Predicate variable) where
+    defineColumn _ = SQL.defineColumn (SQL.Proxy @(TermLike variable))
+    toColumn (GenericPredicate termLike) = SQL.toColumn termLike
 
 {- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
 sometimes occurs when, say, using Predicates as Traversable.

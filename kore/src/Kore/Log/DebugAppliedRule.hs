@@ -5,7 +5,8 @@ License     : NCSA
 -}
 
 module Kore.Log.DebugAppliedRule
-    ( DebugAppliedRule
+    ( Equality (..)
+    , DebugAppliedRule (..)
     , debugAppliedRule
     , DebugAppliedRuleOptions
     , parseDebugAppliedRuleOptions
@@ -28,6 +29,8 @@ import Data.Text.Prettyprint.Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Options.Applicative
     ( Parser
     )
@@ -38,7 +41,6 @@ import Kore.Internal.Conditional
     ( Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
 import qualified Kore.Parser.Lexeme as Parser
 import Kore.Step.Axiom.Identifier
@@ -55,25 +57,49 @@ import Kore.Syntax.Id
     )
 import Kore.Unparser
 import Log
+import qualified SQL
 
-{- | A @UnifiedRule@ has been renamed and unified with a configuration.
+{- | A @Unified Equality@ has been renamed and unified with a configuration.
 
 The rule's 'RulePattern.requires' clause is combined with the unification
 solution and the renamed rule is wrapped with the combined condition.
 
  -}
-type UnifiedEquality variable = Conditional variable (EqualityPattern variable)
+type Unified = Conditional Variable
+
+-- | @Equality@ is an applied equality rule.
+newtype Equality = Equality { getEquality :: EqualityPattern Variable }
+    deriving (Eq, Typeable)
+    deriving GHC.Generic
+
+instance SOP.Generic Equality
+
+instance SOP.HasDatatypeInfo Equality
+
+instance SQL.Table Equality where
+    createTable = SQL.createTableUnwrapped
+    insertRow = SQL.insertRowUnwrapped
+    selectRow = SQL.selectRowUnwrapped
+
+instance SQL.Column Equality where
+    defineColumn = SQL.defineForeignKeyColumn
+    toColumn = SQL.toForeignKeyColumn
+
+instance Pretty Equality where
+    pretty = Pretty.pretty . getEquality
 
 {- | A log 'Entry' when a rule is applied.
 
 We will log the applied rule and its unification or matching condition.
 
  -}
-newtype DebugAppliedRule =
-    DebugAppliedRule
-    { appliedRule :: UnifiedEquality Variable
-    }
+newtype DebugAppliedRule = DebugAppliedRule { appliedRule :: Unified Equality }
     deriving (Eq, Typeable)
+    deriving (GHC.Generic)
+
+instance SOP.Generic DebugAppliedRule
+
+instance SOP.HasDatatypeInfo DebugAppliedRule
 
 instance Entry DebugAppliedRule where
     entrySeverity _ = Debug
@@ -83,29 +109,31 @@ instance Pretty DebugAppliedRule where
         Pretty.vsep
             [ "Applied rule:"
             , (Pretty.indent 2 . Pretty.vsep)
-                [ (Pretty.indent 2 . Pretty.pretty)
-                    (Conditional.term appliedRule)
+                [ (Pretty.indent 2 . Pretty.pretty) term
                 , "with condition:"
                 , (Pretty.indent 2 . unparse) condition
                 ]
             ]
       where
-        condition =
-            Pattern.toTermLike
-            . Pattern.fromCondition
-            . Conditional.withoutTerm
-            $ appliedRule
+        (term, condition) = Conditional.splitTerm appliedRule
+
+instance SQL.Table DebugAppliedRule where
+    createTable = SQL.createTableUnwrapped
+    insertRow = SQL.insertRowUnwrapped
+    selectRow = SQL.selectRowUnwrapped
 
 {- | Log the 'DebugAppliedRule' entry.
  -}
 debugAppliedRule
     :: MonadLog log
     => InternalVariable variable
-    => UnifiedEquality variable
+    => Conditional variable (EqualityPattern variable)
     -> log ()
-debugAppliedRule rule =
-    logM . DebugAppliedRule
-    $ Conditional.mapVariables Equality.mapRuleVariables toVariable rule
+debugAppliedRule =
+    logM
+    . DebugAppliedRule
+    . fmap Equality
+    . Conditional.mapVariables Equality.mapRuleVariables toVariable
 
 {- | Options (from the command-line) specifying when to log specific rules.
 
@@ -151,13 +179,13 @@ filterDebugAppliedRule
     -> SomeEntry
     -> Bool
 filterDebugAppliedRule debugAppliedRuleOptions entry
-  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedEquality entry
-    = isSelectedRule debugAppliedRuleOptions appliedRule
+  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedRule entry
+  = isSelectedRule debugAppliedRuleOptions appliedRule
   | otherwise = False
 
 isSelectedRule
     :: DebugAppliedRuleOptions
-    -> UnifiedEquality Variable
+    -> Unified Equality
     -> Bool
 isSelectedRule debugAppliedRuleOptions =
     maybe False (`Set.member` debugAppliedRules) . appliedRuleId
@@ -165,12 +193,11 @@ isSelectedRule debugAppliedRuleOptions =
     matchAppliedRuleId =
         matchAxiomIdentifier . Equality.left . Conditional.term
     appliedRuleId appliedRule = do
-        axiomId <- matchAppliedRuleId appliedRule
+        axiomId <- matchAppliedRuleId (getEquality <$> appliedRule)
         case axiomId of
             Axiom.Identifier.Application ident -> pure ident
             _ -> empty
     DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
 
-matchDebugAppliedEquality :: SomeEntry -> Maybe DebugAppliedRule
-matchDebugAppliedEquality entry =
-    fromEntry entry
+matchDebugAppliedRule :: SomeEntry -> Maybe DebugAppliedRule
+matchDebugAppliedRule = fromEntry

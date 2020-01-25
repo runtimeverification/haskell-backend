@@ -49,6 +49,10 @@ import Kore.Log.Registry
     ( getEntryTypesAsText
     , parseEntryType
     )
+import Kore.Log.SQLite
+    ( LogSQLiteOptions
+    , parseLogSQLiteOptions
+    )
 import Log
 
 {- | Command line options for logging.
@@ -65,6 +69,7 @@ data KoreLogOptions = KoreLogOptions
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
     , debugSolverOptions :: DebugSolverOptions
+    , logSQLiteOptions :: LogSQLiteOptions
     }
     deriving (Eq, Show)
 
@@ -78,6 +83,7 @@ instance Default KoreLogOptions where
             , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
             , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
             , debugSolverOptions = def @DebugSolverOptions
+            , logSQLiteOptions = def @LogSQLiteOptions
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -138,6 +144,7 @@ parseKoreLogOptions =
     <*> parseDebugAppliedRuleOptions
     <*> parseDebugAxiomEvaluationOptions
     <*> parseDebugSolverOptions
+    <*> parseLogSQLiteOptions
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =

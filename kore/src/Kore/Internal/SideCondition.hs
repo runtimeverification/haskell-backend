@@ -47,6 +47,8 @@ import Kore.Unparser
     ( Unparse (..)
     , unparseToText
     )
+import qualified Pretty
+import qualified SQL
 
 {-| Side condition used in the evaluation context.
 
@@ -61,6 +63,10 @@ data SideCondition variable =
         , assumedTrue :: !(Condition variable)
         }
     deriving (Eq, Show)
+
+instance InternalVariable variable => SQL.Column (SideCondition variable) where
+    defineColumn = SQL.defineTextColumn
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance TopBottom (SideCondition variable) where
     isTop sideCondition@(SideCondition _ _) =

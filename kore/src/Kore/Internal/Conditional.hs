@@ -4,6 +4,7 @@ License     : NCSA
 
 Representation of conditional terms.
 -}
+
 module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
