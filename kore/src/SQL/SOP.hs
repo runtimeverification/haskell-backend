@@ -94,9 +94,7 @@ createTable
 createTable tableName names defs = do
     stmt <- Query.build $ do
         Query.add "CREATE TABLE IF NOT EXISTS"
-        Query.addSpace
         addTableName tableName
-        Query.addSpace
         addColumnDefs names defs
     SQL.execute_ stmt
 
@@ -112,7 +110,6 @@ insertRow
 insertRow tableName infos values = do
     stmt <- Query.build $ do
         Query.add "INSERT INTO"
-        Query.addSpace
         addTableSpec tableName infos'
         Query.addSpace
         Query.add "VALUES"
@@ -136,7 +133,6 @@ selectRows
 selectRows tableName infos values = do
     stmt <- Query.build $ do
         Query.add "SELECT (id) FROM"
-        Query.addSpace
         addTableName tableName
         Query.addSpace
         Monad.unless (isNil infos) $ do
@@ -164,7 +160,8 @@ addColumnDefs
     => NP (K String) fields  -- ^ column names
     -> NP (K ColumnDef) fields  -- ^ column definitions
     -> AccumT Query SQL ()
-addColumnDefs names defs =
+addColumnDefs names defs = do
+    Query.addSpace
     Query.withParens $ do
         let columns = SOP.hzipWith Pair names defs
         SOP.hcfor_ (Proxy @SOP.Top) columns $ \column -> do
@@ -329,7 +326,8 @@ ctorFields ctor =
         K ("field" <> show n) :* shapeFields (n + 1) shape
 
 addTableName :: Monad m => TableName -> AccumT Query m ()
-addTableName tableName =
+addTableName tableName = do
+    Query.addSpace
     Query.withDoubleQuotes . Query.addString $ getTableName tableName
 
 addTableSpec
