@@ -88,7 +88,7 @@ selectRowIso
     => Lens.Iso' outer inner
     -> outer
     -> SQL (Maybe (Key outer))
-selectRowIso iso outer = do
+selectRowIso iso outer =
     fromInnerKeys <$> selectRowGenericAux tableName inner
   where
     tableName = SOP.tableNameTypeable (Proxy @outer)
