@@ -41,6 +41,7 @@ module SQL.SOP
 
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+import Data.Functor.Product
 import Data.Proxy
     ( Proxy (..)
     )
@@ -155,35 +156,28 @@ The column definitions look like:
 (text TEXT NOT NULL, id INTEGER PRIMARY KEY)
 @
 
+The @id@ field is automatically added to the provided list of columns.
+
  -}
 addColumnDefs
     :: SOP.All SOP.Top fields
-    => NP (K String) fields
-    -> NP (K ColumnDef) fields
+    => NP (K String) fields  -- ^ column names
+    -> NP (K ColumnDef) fields  -- ^ column definitions
     -> AccumT Query SQL ()
-addColumnDefs names defs = Query.withParens $ defineFields names defs
-
-defineFields
-    :: SOP.All SOP.Top fields
-    => NP (K String) fields
-    -> NP (K ColumnDef) fields
-    -> AccumT Query SQL ()
-defineFields Nil               _ = Query.add "id INTEGER PRIMARY KEY"
-defineFields (name :* names) (def :* defs) = do
-    defineField name def
-    Query.addComma
-    defineFields names defs
-
-defineField :: K String field -> K ColumnDef field -> AccumT Query SQL ()
-defineField name (K defined) = do
-    addColumnName name
-    Query.addSpace
-    let ColumnDef { columnType } = defined
-    Query.addString $ Column.getTypeName columnType
-    let ColumnDef { columnConstraints } = defined
-    Foldable.for_ columnConstraints $ \constraint -> do
-        Query.addSpace
-        Query.addString $ Column.getColumnConstraint constraint
+addColumnDefs names defs =
+    Query.withParens $ do
+        let columns = SOP.hzipWith Pair names defs
+        SOP.hcfor_ (Proxy @SOP.Top) columns $ \column -> do
+            let Pair name (K defined) = column
+            addColumnName name
+            Query.addSpace
+            let ColumnDef { columnType } = defined
+            Query.addString $ Column.getTypeName columnType
+            let ColumnDef { columnConstraints } = defined
+            Foldable.for_ columnConstraints $ \constraint -> do
+                Query.addSpace
+                Query.addString $ Column.getColumnConstraint constraint
+        Query.add "id INTEGER PRIMARY KEY"
 
 defineColumns
     :: SOP.All Column fields
@@ -380,54 +374,38 @@ toColumns :: SOP.All Column fields => NP I fields -> SQL (NP (K SQLData) fields)
 toColumns = SOP.hctraverse' (Proxy @Column) $ \(I field) -> K <$> toColumn field
 
 insertRowSum
-    :: forall table ctors
-    .  SOP.All2 Column ctors
+    :: forall table fields
+    .  SOP.All Column fields
     => TableName
-    -> NP ConstructorInfo ctors
-    -> NS (NP I) ctors
-    -> SQL (Key table)
-insertRowSum typeTableName = worker
+    -> Product ConstructorInfo (NP I) fields
+    -> SQL (K (Key table) fields)
+insertRowSum typeTableName (Pair info fields) = do
+    key <- insertIndexRow
+    let names = K "id" :* K tagName :* ctorFields info
+        rowid = SQLInteger (getKey key)
+    values <- toColumns fields
+    K <$> insertRow tableName names (K rowid :* K tag :* values)
   where
-    worker
-        :: forall ctors'
-        .  SOP.All2 Column ctors'
-        => NP ConstructorInfo ctors'
-        -> NS (NP I) ctors'
-        -> SQL (Key table)
-    worker infos (S ctors) =
-        case infos of
-            _ :* infos' -> worker infos' ctors
-    worker (info :* _) (Z fields) = do
-        key <- insertIndexRow
-        let names = K "id" :* K tagName :* ctorFields info
-            rowid = SQLInteger (getKey key)
-        values <- toColumns fields
-        insertRow tableName names (K rowid :* K tag :* values)
-      where
-        tableName = ctorTableName typeTableName info
-        tagName = tagColumnName info
-        tag = SQLInteger 1
+    tableName = ctorTableName typeTableName info
+    tagName = tagColumnName info
+    tag = SQLInteger 1
 
-        insertIndexRow = do
-            let names = K tagName :* Nil
-                values = K tag :* Nil
-            insertRow typeTableName names values
+    insertIndexRow = do
+        let names = K tagName :* Nil
+            values = K tag :* Nil
+        insertRow typeTableName names values
 
 {- | @insertRowProduct@ implements 'insertRow' for a product type.
  -}
 insertRowProduct
     :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.Code table ~ '[fields])
-    => SOP.All Column fields
+    .  SOP.All Column fields
     => TableName
-    -> SOP.ConstructorInfo fields
-    -> NP I fields
-    -> SQL (Key table)
-insertRowProduct tableName ctorInfo fields = do
+    -> Product ConstructorInfo (NP I) fields
+    -> SQL (K (Key table) fields)
+insertRowProduct tableName (Pair info fields) = do
     values <- toColumns fields
-    insertRow tableName infos values
-  where
-    infos = ctorFields ctorInfo
+    K <$> insertRow tableName (ctorFields info) values
 
 {- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
  -}
@@ -447,15 +425,23 @@ insertRowGenericAux
     -> table
     -> SQL (Key table)
 insertRowGenericAux tableName table = do
-    case SOP.constructorInfo $ SOP.datatypeInfo proxy of
-        info :* Nil ->
-            case ctors of
-                S ctors' -> case ctors' of {}
-                Z fields -> insertRowProduct tableName info fields
-        infos       -> insertRowSum tableName infos ctors
+    SOP.hcollapse <$> SOP.hctraverse' proxyAllColumn insertRow' pairs
   where
     proxy = Proxy @table
-    ctors = SOP.unSOP $ SOP.from table
+    proxyAllColumn = Proxy @(SOP.All Column)
+    values = SOP.unSOP $ SOP.from table
+    ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
+    pairs = SOP.hzipWith Pair ctors values
+
+    insertRow'
+        :: forall fields
+        .  SOP.All Column fields
+        => Product ConstructorInfo (NP I) fields
+        -> SQL (K (Key table) fields)
+    insertRow' =
+        case ctors of
+            _ :* Nil -> insertRowProduct tableName
+            _        -> insertRowSum     tableName
 
 {- | Witness that the type @table@ is actually a product type.
  -}
@@ -465,8 +451,8 @@ productTypeFrom
     => table -> NP I fields
 productTypeFrom a =
     case ns of
-        Z np -> np
-        S _  -> error "impossible"
+        Z np    -> np
+        S other -> case other of {}
   where
     ns :: NS (NP I) '[fields]
     SOP.SOP ns = SOP.from a
@@ -476,45 +462,29 @@ isNil Nil = True
 isNil _   = False
 
 selectRowsSum
-    :: forall table ctors
-    .  SOP.All2 Column ctors
+    :: forall table fields
+    .  SOP.All Column fields
     => TableName
-    -> NP ConstructorInfo ctors
-    -> NS (NP I) ctors
-    -> SQL [Key table]
-selectRowsSum typeTableName = worker
+    -> Product ConstructorInfo (NP I) fields
+    -> SQL (K [Key table] fields)
+selectRowsSum typeTableName (Pair info fields) = do
+    let names = ctorFields info
+    values <- toColumns fields
+    K <$> selectRows tableName names values
   where
-    worker
-        :: forall ctors'
-        .  SOP.All2 Column ctors'
-        => NP ConstructorInfo ctors'
-        -> NS (NP I) ctors'
-        -> SQL [Key table]
-    worker infos (S ctors) =
-        case infos of
-            _ :* infos' -> worker infos' ctors
-    worker (info :* _) (Z fields) = do
-        let names = ctorFields info
-        values <- toColumns fields
-        selectRows tableName names values
-      where
-        tableName = ctorTableName typeTableName info
+    tableName = ctorTableName typeTableName info
 
 {- | @selectRowsProduct@ implements 'selectRow' for a product type
  -}
 selectRowsProduct
     :: forall table fields
-    .  (SOP.HasDatatypeInfo table, SOP.IsProductType table fields)
-    => SOP.All Column fields
+    .  SOP.All Column fields
     => TableName
-    -> ConstructorInfo fields
-    -> NP I fields
-    -> SQL [Key table]
-selectRowsProduct tableName ctorInfo fields = do
+    -> Product ConstructorInfo (NP I) fields
+    -> SQL (K [Key table] fields)
+selectRowsProduct tableName (Pair info fields) = do
     values <- toColumns fields
-    selectRows tableName infos values
-  where
-    infos = ctorFields ctorInfo
+    K <$> selectRows tableName (ctorFields info) values
 
 {- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
  -}
@@ -534,15 +504,23 @@ selectRowGenericAux
     -> table
     -> SQL (Maybe (Key table))
 selectRowGenericAux tableName table = do
-    keys <- case SOP.constructorInfo $ SOP.datatypeInfo proxy of
-        info :* Nil ->
-            case ctors of
-                S ctors' -> case ctors' of {}
-                Z fields -> selectRowsProduct tableName info fields
-        infos -> selectRowsSum tableName infos ctors
+    keys <- SOP.hcollapse <$> SOP.hctraverse' proxyAllColumn selectRows' pairs
     return $ case keys of
         []      -> Nothing
         key : _ -> Just key
   where
     proxy = Proxy @table
-    ctors = SOP.unSOP $ SOP.from table
+    proxyAllColumn = Proxy @(SOP.All Column)
+    ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
+    values = SOP.unSOP $ SOP.from table
+    pairs = SOP.hzipWith Pair ctors values
+
+    selectRows'
+        :: forall fields
+        .  SOP.All Column fields
+        => Product ConstructorInfo (NP I) fields
+        -> SQL (K [Key table] fields)
+    selectRows' =
+        case ctors of
+            _ :* Nil -> selectRowsProduct tableName
+            _        -> selectRowsSum     tableName
