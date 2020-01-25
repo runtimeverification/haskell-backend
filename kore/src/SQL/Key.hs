@@ -1,3 +1,11 @@
+{-|
+Copyright   : (c) Runtime Verification, 2020
+License     : NCSA
+
+Foreign keys for SQL tables.
+
+-}
+
 module SQL.Key
     ( Key(..)
     ) where
