@@ -58,6 +58,27 @@ toForeignKeyColumn :: Table table => table -> SQL SQLite.SQLData
 toForeignKeyColumn a = insertUniqueRow a >>= toColumn
 
 {- | A 'Table' corresponds to a table in SQL.
+
+To derive an instance for your type,
+
+@
+-- Note: All fields must have a 'Column' instance.
+data DataType = ...
+    deriving ('GHC.Generics.Generic', 'Data.Typeable.Typeable')
+
+instance 'Generics.SOP.Generic' DataType
+
+instance 'Generics.SOP.HasDatatypeInfo' DataType
+
+instance Table DataType
+
+-- Recommended: Add a foreign key 'Column' instance if other tables
+-- might refer to DataType.
+instance 'Column' DataType where
+    defineColumn = 'defineForeignKeyColumn'
+    toColumn = 'toForeignKeyColumn'
+@
+
  -}
 class Typeable a => Table a where
     -- | Create the table for @a@ if it does not exist.
