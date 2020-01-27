@@ -37,8 +37,15 @@ USER $USER_ID:$GROUP_ID
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
 
 ENV LC_ALL=C.UTF-8
+
+RUN cd /home/user \
+    && ( curl https://hackage.haskell.org/package/stylish-haskell-0.9.4.4/stylish-haskell-0.9.4.4.tar.gz | tar xz ) \
+    && stack install stylish-haskell-0.9.4.4
+RUN cd /home/user \
+    && ( curl https://hackage.haskell.org/package/hlint-2.2.9/hlint-2.2.9.tar.gz | tar xz ) \
+    && stack install hlint-2.2.9
+
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user kore/package.yaml /home/user/.tmp-haskell/kore/
 RUN    cd /home/user/.tmp-haskell \
-    && stack build --only-snapshot --test --bench --haddock \
-    && stack build --only-snapshot stylish-haskell-0.9.4.4
+    && stack build --only-snapshot --test --bench --haddock

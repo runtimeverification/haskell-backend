@@ -22,7 +22,6 @@ then
     exit 1
 fi
 
-stack install stylish-haskell
 changed=()
 for file in $(git diff --name-only --diff-filter=d $UPSTREAM_BRANCH)
 do
@@ -30,7 +29,7 @@ do
         *.hs|*.hs-boot) ;;
         *) continue ;;
     esac
-    $TOP/.build/kore/bin/stylish-haskell $file >$file.tmp
+    stylish-haskell $file >$file.tmp
     # (diff ...) exits with 0 when the files are the same
     # (! diff ...) means the files are _different_
     # Maybe it should have been named "same" :-\
@@ -48,5 +47,4 @@ then
     exit 1
 fi
 
-stack install hlint
-stack exec -- hlint kore
+hlint kore
