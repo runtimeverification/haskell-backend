@@ -17,6 +17,9 @@ module Kore.Step.EquationalStep
     , recoveryFunctionLikeResults
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -431,7 +434,7 @@ unifyRule sideCondition initial rule = do
     -- configuration.
     let
         ruleLeft = matchingPattern rule'
-    unification <- unifyPatterns ruleLeft initialTerm
+    unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
     let
         ruleRequires = precondition rule'

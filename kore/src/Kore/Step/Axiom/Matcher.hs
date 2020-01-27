@@ -88,16 +88,10 @@ import Kore.Internal.TermLike hiding
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Simplify
-    ( SimplifierVariable
+    ( MonadSimplify
+    , SimplifierVariable
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Unification.Error
-    ( unsupportedPatterns
-    )
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
-import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
     ( FreshVariable
@@ -119,7 +113,7 @@ pair, it is deferred until we have more information.
 
  -}
 matchOne
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, MonadSimplify unifier)
     => Pair (TermLike variable)
     -> MatcherT variable unifier ()
 matchOne pair =
@@ -143,14 +137,14 @@ deferred constraints, then matching fails.
  -}
 matchIncremental
     :: forall variable unifier
-    .  (MatchingVariable variable, MonadUnify unifier)
+    .  (MatchingVariable variable, MonadSimplify unifier)
     => TermLike variable
     -> TermLike variable
-    -> unifier (Condition variable)
+    -> unifier (Maybe (Condition variable))
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable unifier (Condition variable)
+    matcher :: MatcherT variable unifier (Maybe (Condition variable))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -167,11 +161,17 @@ matchIncremental termLike1 termLike2 =
     free2 = (getFreeVariables . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable unifier (Condition variable)
+    done :: MatcherT variable unifier (Maybe (Condition variable))
     done = do
-        final@MatcherState { queued, deferred } <- Monad.State.get
+        MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
-        Monad.unless isDone throwUnknown
+        if isDone
+            then Just <$> assembleResult
+            else return Nothing
+
+    assembleResult :: MatcherT variable unifier (Condition variable)
+    assembleResult = do
+        final <- Monad.State.get
         let MatcherState { predicate, substitution } = final
             predicate' =
                 Condition.fromPredicate
@@ -182,13 +182,8 @@ matchIncremental termLike1 termLike2 =
             solution = predicate' <> substitution'
         return solution
 
-    throwUnknown =
-        Monad.Trans.lift
-        $ Monad.Unify.throwUnificationError
-        $ unsupportedPatterns "Unknown match case" termLike1 termLike2
-
 matchEqualHeads
-    :: MonadUnify unifier
+    :: Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 -- Terminal patterns
@@ -226,7 +221,7 @@ matchEqualHeads (Pair (Equals_ _ _ term11 term12) (Equals_ _ _ term21 term22)) =
 matchEqualHeads _ = empty
 
 matchExists
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) =
@@ -234,7 +229,7 @@ matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) =
 matchExists _ = empty
 
 matchForall
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchForall (Pair (Forall_ _ variable1 term1) (Forall_ _ variable2 term2)) =
@@ -242,7 +237,7 @@ matchForall (Pair (Forall_ _ variable1 term1) (Forall_ _ variable2 term2)) =
 matchForall _ = empty
 
 matchBinder
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => Binder (ElementVariable variable) (TermLike variable)
     -> Binder (ElementVariable variable) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
@@ -267,7 +262,7 @@ matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     variableSort2 = elementVariableSort variable2
 
 matchVariable
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, MonadSimplify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchVariable (Pair (Var_ variable1) (Var_ variable2))
@@ -282,7 +277,7 @@ matchVariable (Pair (SetVar_ variable1) term2) = do
 matchVariable _ = empty
 
 matchApplication
-    :: MonadUnify unifier
+    :: Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
@@ -291,7 +286,7 @@ matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
 matchApplication _ = empty
 
 matchBuiltinList
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinList (Pair (BuiltinList_ list1) (BuiltinList_ list2)) = do
@@ -303,7 +298,7 @@ matchBuiltinList (Pair (App_ symbol1 children1) (BuiltinList_ list2))
 matchBuiltinList _ = empty
 
 matchBuiltinListConcat
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => [TermLike variable]
     -> Builtin.InternalList (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
@@ -321,7 +316,7 @@ matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
 matchBuiltinListConcat _ _ = empty
 
 matchBuiltinSet
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
@@ -337,7 +332,7 @@ matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
 matchBuiltinSet _ = empty
 
 matchBuiltinMap
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
@@ -353,7 +348,7 @@ matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
 matchBuiltinMap _ = empty
 
 matchInj
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, MonadSimplify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
@@ -433,7 +428,7 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
  -}
 substitute
     :: forall unifier variable
-    .  (MatchingVariable variable, MonadUnify unifier)
+    .  (MatchingVariable variable, MonadSimplify unifier)
     => ElementVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -496,7 +491,7 @@ the variable does not occur on the right-hand side of the substitution.
 
  -}
 setSubstitute
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, MonadSimplify unifier)
     => SetVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -537,7 +532,7 @@ substituteTermLike
 substituteTermLike subst = Builtin.renormalize . TermLike.substitute subst
 
 occursCheck
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: (MatchingVariable variable, Monad unifier)
     => UnifiedVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -656,7 +651,7 @@ matchNormalizedAc
     :: forall normalized unifier variable
     .   ( Builtin.AcWrapper normalized
         , MatchingVariable variable
-        , MonadUnify unifier
+        , Monad unifier
         )
     =>  ( Pair (Builtin.Value normalized (TermLike variable))
         -> MatcherT variable unifier ()
