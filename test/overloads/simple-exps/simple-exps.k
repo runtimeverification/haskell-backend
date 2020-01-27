@@ -1,5 +1,5 @@
 module SIMPLE-EXPS
-  imports INT
+  imports DOMAINS
   syntax Val ::= Int
   syntax Exp ::= Val
   syntax Exp ::= Exp "+" Exp             [strict]

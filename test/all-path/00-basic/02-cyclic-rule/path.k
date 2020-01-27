@@ -5,8 +5,7 @@
  *
  */
 module PATH
-  import BOOL
-  import INT
+  import DOMAINS
   syntax S ::= "a" | "b" | "c"
 
   rule a => a
