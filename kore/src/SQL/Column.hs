@@ -15,6 +15,8 @@ module SQL.Column
     , primaryKey
     , ColumnDef (..)
     , Column (..)
+    , columnDef
+    , columnNotNull
     , defineTextColumn
     ) where
 
