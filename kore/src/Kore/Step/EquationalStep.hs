@@ -47,6 +47,7 @@ import Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRule
@@ -67,15 +68,18 @@ import Kore.Step.Step
     , Results
     , UnificationProcedure (..)
     , UnifiedRule
+    , UnifyingRule
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
     , checkFunctionLike
     , checkSubstitutionCoverage
+    , matchingPattern
+    , precondition
+    , refreshRule
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
-    , unifyRules
     , wouldNarrowWith
     )
 import qualified Kore.Step.Step as EqualityPattern
@@ -372,3 +376,72 @@ applyRulesSequence
     (map EqualityPattern.toAxiomVariables -> rules)
   = unifyRules unificationProcedure sideCondition initial rules
     >>= finalizeRulesSequence sideCondition initial
+
+-- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
+unifyRules
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => UnifyingRule rule
+    => UnificationProcedure
+    -> SideCondition (Target variable)
+    -> Pattern (Target variable)
+    -- ^ Initial configuration
+    -> [rule (Target variable)]
+    -- ^ Rule
+    -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
+unifyRules unificationProcedure sideCondition initial rules =
+    Monad.Unify.gather $ do
+        rule <- Monad.Unify.scatter rules
+        unifyRule unificationProcedure sideCondition initial rule
+
+{- | Attempt to unify a rule with the initial configuration.
+
+The rule variables are renamed to avoid collision with the configuration. The
+rule's 'RulePattern.requires' clause is combined with the unification
+solution. The combined condition is simplified and checked for
+satisfiability.
+
+If any of these steps produces an error, then @unifyRule@ returns that error.
+
+@unifyRule@ returns the renamed rule wrapped with the combined conditions on
+unification. The substitution is not applied to the renamed rule.
+
+ -}
+unifyRule
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => UnifyingRule rule
+    => UnificationProcedure
+    -> SideCondition variable
+    -- ^ Top level condition.
+    -> Pattern variable
+    -- ^ Initial configuration
+    -> rule variable
+    -- ^ Rule
+    -> unifier (UnifiedRule variable (rule variable))
+unifyRule
+    (UnificationProcedure unifyPatterns)
+    sideCondition
+    initial
+    rule
+  = do
+    let (initialTerm, initialCondition) = Pattern.splitTerm initial
+        mergedSideCondition =
+            sideCondition `SideCondition.andCondition` initialCondition
+    -- Rename free axiom variables to avoid free variables from the initial
+    -- configuration.
+    let
+        configVariables = TermLike.freeVariables initial
+        (_, rule') = refreshRule configVariables rule
+    -- Unify the left-hand side of the rule with the term of the initial
+    -- configuration.
+    let
+        ruleLeft = matchingPattern rule'
+    unification <- unifyPatterns mergedSideCondition ruleLeft initialTerm
+    -- Combine the unification solution with the rule's requirement clause,
+    let
+        ruleRequires = precondition rule'
+        requires' = Condition.fromPredicate ruleRequires
+    unification' <-
+        simplifyPredicate mergedSideCondition Nothing (unification <> requires')
+    return (rule' `Conditional.withCondition` unification')
