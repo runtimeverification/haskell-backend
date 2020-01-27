@@ -1,8 +1,15 @@
 module Test.SQL
     ( testTable
+    , test_Unit
+    , test_Either
+    , test_Maybe
     ) where
 
 import Test.Tasty
+
+import Data.Int
+    ( Int64
+    )
 
 import SQL
 
@@ -22,3 +29,23 @@ testTable rows =
 
 runTestSQL :: SQL a -> IO a
 runTestSQL = runSQL ":memory:"
+
+test_Either :: TestTree
+test_Either =
+    testTable @(Either Int64 Int64)
+        [ Left 0
+        , Right 1
+        , Right 2
+        ]
+
+test_Unit :: TestTree
+test_Unit = testTable [ () ]
+
+test_Maybe :: TestTree
+test_Maybe =
+    testTable @(Maybe Int64)
+        [ Just 0
+        , Just 1
+        , Just 2
+        , Nothing
+        ]

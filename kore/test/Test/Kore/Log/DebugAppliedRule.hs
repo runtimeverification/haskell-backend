@@ -24,11 +24,11 @@ import Test.SQL
 
 test_instance_Table_Equality :: TestTree
 test_instance_Table_Equality =
-    testTable @Equality [equality1, equality2]
+    testTable [equality1, equality2]
 
-equality1, equality2 :: Equality
+equality1, equality2 :: EqualityPattern Variable
 equality1 =
-    Equality EqualityPattern
+    EqualityPattern
         { requires = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.a)
         , left = Mock.f (mkElemVar Mock.x)
         , right = Mock.a
@@ -36,7 +36,7 @@ equality1 =
         , attributes = def
         }
 equality2 =
-    Equality EqualityPattern
+    EqualityPattern
         { requires = makeEqualsPredicate_ (Mock.f Mock.b) (Mock.g Mock.b)
         , left = Mock.f (mkElemVar Mock.x)
         , right = Mock.b
@@ -46,18 +46,18 @@ equality2 =
 
 test_instance_Table_DebugAppliedRule :: TestTree
 test_instance_Table_DebugAppliedRule =
-    testTable @DebugAppliedRule
+    testTable
         [ applied equality1 subst1
         , applied equality2 subst1
         , applied equality1 subst2
         , applied equality2 subst2
         ]
 
-applied :: Equality -> Substitution Variable -> DebugAppliedRule
+applied :: EqualityPattern Variable -> Substitution Variable -> DebugAppliedRule
 applied equality substitution =
     DebugAppliedRule Conditional
         { term = equality
-        , predicate = requires . getEquality $ equality
+        , predicate = requires equality
         , substitution
         }
 
