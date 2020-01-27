@@ -157,7 +157,7 @@ class SortedVariable variable where
     sortedVariableSort = Lens.view lensVariableSort
 
 instance SortedVariable Variable where
-    lensVariableSort func variable =
+    lensVariableSort = field @"variableSort"
         fmap setSort
         $ func (variableSort variable)
       where
