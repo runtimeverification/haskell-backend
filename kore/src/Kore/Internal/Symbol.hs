@@ -16,6 +16,7 @@ module Kore.Internal.Symbol
     , isTotal
     , isInjective
     , isMemo
+    , noEvaluators
     , symbolHook
     , constructor
     , functional
@@ -53,9 +54,11 @@ import Kore.Internal.ApplicationSorts
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Unparser
+import qualified Pretty
 import SMT.AST
     ( SExpr
     )
+import qualified SQL
 
 data Symbol =
     Symbol
@@ -115,6 +118,10 @@ instance Synthetic Sort (Application Symbol) where
         resultSort = applicationSortsResult symbolSorts
         operandSorts = applicationSortsOperands symbolSorts
 
+instance SQL.Column Symbol where
+    defineColumn = SQL.defineTextColumn
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+
 toSymbolOrAlias :: Symbol -> SymbolOrAlias
 toSymbolOrAlias symbol =
     SymbolOrAlias
@@ -165,6 +172,9 @@ isTotal = Attribute.isTotal . symbolAttributes
 
 isMemo :: Symbol -> Bool
 isMemo = Attribute.isMemo . Attribute.memo . symbolAttributes
+
+noEvaluators :: Symbol -> Bool
+noEvaluators = Attribute.hasNoEvaluators . Attribute.noEvaluators . symbolAttributes
 
 symbolHook :: Symbol -> Attribute.Hook
 symbolHook = Attribute.hook . symbolAttributes

@@ -4,6 +4,7 @@ License     : NCSA
 
 Representation of conditional terms.
 -}
+
 module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
@@ -33,6 +34,9 @@ import Data.Text.Prettyprint.Doc
     ( Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
+    ( Typeable
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -63,6 +67,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
+import qualified SQL
 
 {- | @Conditional@ represents a value conditioned on a predicate.
 
@@ -245,6 +250,21 @@ instance
             Predicate.coerceSort sort
             .  singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
+
+instance
+    ( InternalVariable variable, Typeable variable
+    , SQL.Column term, Typeable term
+    )
+    => SQL.Table (Conditional variable term)
+
+instance
+    ( InternalVariable variable, Typeable variable
+    , SQL.Column term, Typeable term
+    )
+    => SQL.Column (Conditional variable term)
+  where
+    defineColumn = SQL.defineForeignKeyColumn
+    toColumn = SQL.toForeignKeyColumn
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}

@@ -17,6 +17,9 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Default as Default
+import Data.Typeable
+    ( Typeable
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -55,6 +58,7 @@ import Kore.Unparser
     , unparse2
     )
 import qualified Kore.Variables.Fresh as Fresh
+import qualified SQL
 
 {- | Function axioms
 
@@ -66,11 +70,8 @@ data EqualityPattern variable = EqualityPattern
     , ensures :: !(Predicate variable)
     , attributes :: !Attribute.Axiom
     }
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-deriving instance Eq variable => Eq (EqualityPattern variable)
-deriving instance Ord variable => Ord (EqualityPattern variable)
-deriving instance Show variable => Show (EqualityPattern variable)
 
 instance NFData variable => NFData (EqualityPattern variable)
 
@@ -105,6 +106,17 @@ instance InternalVariable variable => Pretty (EqualityPattern variable) where
 instance TopBottom (EqualityPattern variable) where
     isTop _ = False
     isBottom _ = False
+
+instance
+    (InternalVariable variable, Typeable variable)
+    => SQL.Table (EqualityPattern variable)
+
+instance
+    (InternalVariable variable, Typeable variable)
+    => SQL.Column (EqualityPattern variable)
+  where
+    defineColumn = SQL.defineForeignKeyColumn
+    toColumn = SQL.toForeignKeyColumn
 
 -- | Creates a basic, unconstrained, Equality pattern
 equalityPattern

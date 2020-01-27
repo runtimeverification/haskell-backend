@@ -4,6 +4,7 @@ module Test.Kore.Attribute.Symbol
     , test_Memo
     , test_Klabel
     , test_SymbolKywd
+    , test_NoEvaluators
     ) where
 
 import Test.Tasty
@@ -166,4 +167,14 @@ test_SymbolKywd =
     , testCase "defaultSymbolAttributes" $ assertEqual "[]"
         (Right def)
         (symbolKywd <$> parse [])
+    ]
+
+test_NoEvaluators :: [TestTree]
+test_NoEvaluators =
+    [ testCase "parseAttribute" $ assertEqual "[noEvaluators{}[]]"
+        (Right NoEvaluators { hasNoEvaluators = True })
+        (noEvaluators <$> parse [ noEvaluatorsAttribute ])
+    , testCase "defaultSymbolAttributes" $ assertEqual "[]"
+        (Right def)
+        (noEvaluators <$> parse [])
     ]
