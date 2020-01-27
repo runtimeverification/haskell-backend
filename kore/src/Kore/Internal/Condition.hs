@@ -8,6 +8,7 @@ module Kore.Internal.Condition
     , isSimplified
     , simplifiedAttribute
     , markPredicateSimplified
+    , markPredicateSimplifiedConditional
     , setPredicateSimplified
     , eraseConditionalTerm
     , top
@@ -95,6 +96,18 @@ markPredicateSimplified
     => Condition variable -> Condition variable
 markPredicateSimplified conditional@Conditional { predicate } =
     conditional { predicate = Predicate.markSimplified predicate }
+
+markPredicateSimplifiedConditional
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => SideCondition.Representation -> Condition variable -> Condition variable
+markPredicateSimplifiedConditional
+    sideCondition
+    conditional@Conditional { predicate }
+  =
+    conditional
+        { predicate =
+            Predicate.markSimplifiedConditional sideCondition predicate
+        }
 
 {-| Sets the simplified attribute for a condition's predicate.
 

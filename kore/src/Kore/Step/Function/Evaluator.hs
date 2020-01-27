@@ -32,6 +32,7 @@ import Data.Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
@@ -53,12 +54,16 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
     )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
     ( end
     , klabelIdentifier
     , notEvaluated
+    , notEvaluatedConditionally
     , reevaluation
     , start
     )
@@ -115,7 +120,7 @@ evaluateApplication
             termLike
             unevaluated
             sideCondition
-        & maybeT (return unevaluated) return
+        & maybeT (return (unevaluated Nothing)) return
         & Trans.lift
     Foldable.for_ canMemoize (recordOrPattern results)
     return results
@@ -126,14 +131,18 @@ evaluateApplication
     Application { applicationSymbolOrAlias = symbol } = application
 
     termLike = synthesize (ApplySymbolF application)
-    unevaluated =
+    unevaluated maybeSideCondition =
         OrPattern.fromPattern
         $ Pattern.withCondition
-            (markSimplifiedIfChildren termLike)
+            (markSimplifiedIfChildren maybeSideCondition termLike)
             childrenCondition
 
-    markSimplifiedIfChildren = TermLike.setSimplified
+    markSimplifiedIfChildren Nothing = TermLike.setSimplified
         (Foldable.foldMap TermLike.simplifiedAttribute application)
+    markSimplifiedIfChildren (Just condition) = TermLike.setSimplified
+        (  Foldable.foldMap TermLike.simplifiedAttribute application
+        <> Attribute.Simplified.simplifiedConditionally condition
+        )
 
     canMemoize
       | Symbol.isMemo symbol
@@ -182,7 +191,7 @@ evaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern variable
+    -> (Maybe SideCondition.Representation -> OrPattern variable)
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
@@ -196,7 +205,7 @@ evaluatePattern
         patt
         defaultValue
         sideCondition
-    & maybeT (return defaultValue) return
+    & maybeT (return (defaultValue Nothing)) return
 
 {-| Evaluates axioms on patterns.
 
@@ -210,7 +219,7 @@ maybeEvaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> OrPattern variable
+    -> (Maybe SideCondition.Representation -> OrPattern variable)
     -- ^ The default value
     -> SideCondition variable
     -> MaybeT simplifier (OrPattern variable)
@@ -235,6 +244,11 @@ maybeEvaluatePattern
                         identifier
                         klabelIdentifier
                     return AttemptedAxiom.NotApplicable
+                na@(AttemptedAxiom.NotApplicableWithCondition _) -> do
+                    DebugAxiomEvaluation.notEvaluatedConditionally
+                        identifier
+                        klabelIdentifier
+                    return na
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = orResults
                     , remainders = orRemainders
@@ -264,7 +278,9 @@ maybeEvaluatePattern
                     flattened
         case merged of
             AttemptedAxiom.NotApplicable ->
-                return defaultValue
+                return (defaultValue Nothing)
+            AttemptedAxiom.NotApplicableWithCondition c ->
+                return (defaultValue (Just c))
             AttemptedAxiom.Applied attemptResults ->
                 return $ MultiOr.merge results remainders
               where
@@ -388,6 +404,12 @@ mergeWithConditionAndSubstitution
     -> simplifier (AttemptedAxiom variable)
 mergeWithConditionAndSubstitution _ _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
+mergeWithConditionAndSubstitution
+    _
+    _
+    na@(AttemptedAxiom.NotApplicableWithCondition _)
+  =
+    return na
 mergeWithConditionAndSubstitution
     sideCondition
     toMerge

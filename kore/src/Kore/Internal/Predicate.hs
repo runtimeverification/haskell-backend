@@ -39,6 +39,8 @@ module Kore.Internal.Predicate
     , makeTruePredicate_
     , isSimplified
     , markSimplified
+    , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
     , simplifiedAttribute
     , isFreeOf
@@ -106,6 +108,8 @@ import Kore.Internal.TermLike hiding
     , isSimplified
     , mapVariables
     , markSimplified
+    , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
     , simplifiedAttribute
     , substitute
@@ -727,6 +731,24 @@ markSimplified
     => Predicate variable -> Predicate variable
 markSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.markSimplified termLike)
+
+markSimplifiedConditional
+    :: (HasCallStack, InternalVariable variable)
+    => SideCondition.Representation
+    -> Predicate variable
+    -> Predicate variable
+markSimplifiedConditional sideCondition (GenericPredicate termLike) =
+    GenericPredicate
+        (TermLike.markSimplifiedConditional sideCondition termLike)
+
+markSimplifiedMaybeConditional
+    :: (HasCallStack, InternalVariable variable)
+    => Maybe SideCondition.Representation
+    -> Predicate variable
+    -> Predicate variable
+markSimplifiedMaybeConditional maybeSideCondition (GenericPredicate termLike) =
+    GenericPredicate
+        (TermLike.markSimplifiedMaybeConditional maybeSideCondition termLike)
 
 setSimplified
     :: InternalVariable variable

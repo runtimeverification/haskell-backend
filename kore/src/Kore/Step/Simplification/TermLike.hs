@@ -218,6 +218,7 @@ simplifyInternal term sideCondition = do
                 , "result = "
                 ]
             ++ map unparseToString (OrPattern.toPatterns result)
+            ++ map show (OrPattern.toPatterns result)
             )
         )
     return result
@@ -352,12 +353,19 @@ simplifyInternal term sideCondition = do
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
           = return
-                (OrPattern.fromTermLike (TermLike.markSimplified resultTerm))
+                (OrPattern.fromTermLike
+                    (TermLike.markSimplifiedConditional
+                        sideConditionRepresentation
+                        resultTerm
+                    )
+                )
           | isTop resultTerm && Right resultPredicate == termAsPredicate
           = return
                 $ OrPattern.fromPattern
                 $ Pattern.fromCondition
-                $ Condition.markPredicateSimplified resultPredicate
+                $ Condition.markPredicateSimplifiedConditional
+                    sideConditionRepresentation
+                    resultPredicate
           | otherwise = continuation
           where
             (resultTerm, resultPredicate) = Pattern.splitTerm result

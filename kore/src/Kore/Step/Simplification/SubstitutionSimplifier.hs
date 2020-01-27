@@ -355,14 +355,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
               | isSimplified -> return subst
               | otherwise -> do
                 termLike' <- simplifyTermLike termLike
-                -- simplifyTermLike returns the unsimplified input in the event
-                -- that simplification resulted in a disjunction. We may mark
-                -- the result simplified anyway because uVar is singular, so:
-                --   1. termLike is function-like, so
-                --   2. it eventually reduces to a single term, so if it has not
-                --   3. we need a substitution to evaluate it, and
-                --   4. substitution resets the simplified marker.
-                return (uVar, TermLike.markSimplified termLike')
+                return (uVar, termLike')
               where
                 isSimplified = TermLike.isSimplified
                     sideConditionRepresentation

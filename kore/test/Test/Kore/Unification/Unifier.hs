@@ -443,12 +443,14 @@ test_unification =
         (UnificationTerm a)
         (UnificationTerm dv2)
         "Cannot handle Constructor and DomainValue:\n\
-        \a{}()\n\\dv{testSort{}}(\"dv2\")\n"
+        \/* Fl Fn D Sfa Cl */ a{}()\n\
+        \/* Fl Fn D Sfa Cl */ \\dv{testSort{}}(/* Fl Fn D Sfa Cl */ \"dv2\")\n"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a)
         "Cannot handle DomainValue and Constructor:\n\
-        \\\dv{testSort{}}(\"dv1\")\na{}()\n"
+        \/* Fl Fn D Sfa Cl */ \\dv{testSort{}}(/* Fl Fn D Sfa Cl */ \"dv1\")\n\
+        \/* Fl Fn D Sfa Cl */ a{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)

@@ -31,6 +31,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnBottomHook
@@ -85,6 +88,10 @@ definitionEvaluation rules =
             Applied AttemptedAxiomResults { results, remainders }
               | length results == 1, null remainders ->
                 return attempted
+              | otherwise ->
+                return
+                $ NotApplicableWithCondition
+                $ SideCondition.toRepresentation condition
             _ -> return NotApplicable
 
 -- | Create an evaluator from a single simplification rule.
@@ -203,6 +210,10 @@ evaluateBuiltin
     isValue pat =
         maybe False TermLike.isConstructorLike $ asConcrete pat
 
+data NonSimplifiability
+    = Always
+    | Conditional
+
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
     .  ( SimplifierVariable variable
@@ -213,11 +224,30 @@ applyFirstSimplifierThatWorks
     -> TermLike variable
     -> SideCondition variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ =
+applyFirstSimplifierThatWorks evaluators multipleResults =
+    applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
+
+applyFirstSimplifierThatWorksWorker
+    :: forall variable simplifier
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
+    => [BuiltinAndAxiomSimplifier]
+    -> AcceptsMultipleResults
+    -> NonSimplifiability
+    -> TermLike variable
+    -> SideCondition variable
+    -> simplifier (AttemptedAxiom variable)
+applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
     return AttemptedAxiom.NotApplicable
-applyFirstSimplifierThatWorks
+applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
+    return
+    $ AttemptedAxiom.NotApplicableWithCondition
+    $ SideCondition.toRepresentation sideCondition
+applyFirstSimplifierThatWorksWorker
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
+    nonSimplifiability
     patt
     sideCondition
   = do
@@ -256,13 +286,16 @@ applyFirstSimplifierThatWorks
                 orRemainders
             -- TODO (traiansf): this might generate too much output
             --    replace log with a logOnce when that becomes available
-            tryNextSimplifier
+            tryNextSimplifier Conditional
           | otherwise -> return applicationResult
-        AttemptedAxiom.NotApplicable -> tryNextSimplifier
+        AttemptedAxiom.NotApplicable -> tryNextSimplifier nonSimplifiability
+        AttemptedAxiom.NotApplicableWithCondition _ ->
+            tryNextSimplifier Conditional
   where
-    tryNextSimplifier =
-        applyFirstSimplifierThatWorks
+    tryNextSimplifier nonSimplifiability' =
+        applyFirstSimplifierThatWorksWorker
             evaluators
             multipleResults
+            nonSimplifiability'
             patt
             sideCondition
