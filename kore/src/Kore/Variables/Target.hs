@@ -16,6 +16,7 @@ module Kore.Variables.Target
 import Data.Hashable
     ( Hashable
     )
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -81,8 +82,14 @@ instance SyntaxVariable variable => SyntaxVariable (Target variable)
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance (SyntaxVariable variable, FreshVariable variable)
-  => FreshVariable (Target variable)
+instance (SyntaxVariable variable, FreshVariable variable) => FreshVariable (Target variable)
+  where
+    refreshVariable (Set.map unwrapVariable -> avoiding) =
+        \case
+            Target variable ->
+                Target <$> refreshVariable avoiding variable
+            NonTarget variable ->
+                NonTarget <$> refreshVariable avoiding variable
 
 instance
     Unparse variable =>
