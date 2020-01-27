@@ -2,6 +2,8 @@
 
 set -exuo pipefail
 
+export PATH="$HOME/.local/bin:${PATH:+:}$PATH"
+
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 UPSTREAM_REMOTE=${UPSTREAM_REMOTE:-origin}
 
