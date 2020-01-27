@@ -431,7 +431,7 @@ unifyRule sideCondition initial rule = do
     -- configuration.
     let
         ruleLeft = matchingPattern rule'
-    unification <- unifyPatterns mergedSideCondition ruleLeft initialTerm
+    unification <- unifyPatterns ruleLeft initialTerm
     -- Combine the unification solution with the rule's requirement clause,
     let
         ruleRequires = precondition rule'
@@ -442,7 +442,7 @@ unifyRule sideCondition initial rule = do
   where
     unifyPatterns = ignoreUnificationErrors matchIncremental
 
-    ignoreUnificationErrors unification _topCondition pattern1 pattern2 =
+    ignoreUnificationErrors unification pattern1 pattern2 =
         Unifier.runUnifierT (unification pattern1 pattern2)
         >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
 
