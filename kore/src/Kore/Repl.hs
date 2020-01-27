@@ -24,10 +24,8 @@ import Control.Monad
     )
 import Control.Monad.Catch
     ( MonadCatch
-    , catch
-    , catchAll
-    , throwM
     )
+import qualified Control.Monad.Catch as Exception
 import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
@@ -250,19 +248,19 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a
-    catchInterruptWithDefault def sa =
-        catch sa $ \case
+    catchInterruptWithDefault a =
+        Exception.handle $ \case
             UserInterrupt -> do
                 liftIO $ putStrLn "Step evaluation interrupted."
-                pure def
-            e -> throwM e
+                pure a
+            e -> Exception.throwM e
 
     catchEverything :: a -> m a -> m a
-    catchEverything def sa =
-        catchAll sa $ \e -> do
-            liftIO $ putStrLn "Stepper evaluation errored."
-            liftIO $ print e
-            pure def
+    catchEverything a =
+        Exception.handleAll $ \e -> liftIO $ do
+            putStrLn "Stepper evaluation errored."
+            print e
+            pure a
 
     replGreeting :: m ()
     replGreeting =

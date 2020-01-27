@@ -54,9 +54,11 @@ import Kore.Internal.ApplicationSorts
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Unparser
+import qualified Pretty
 import SMT.AST
     ( SExpr
     )
+import qualified SQL
 
 data Symbol =
     Symbol
@@ -115,6 +117,10 @@ instance Synthetic Sort (Application Symbol) where
         Symbol { symbolSorts } = symbol
         resultSort = applicationSortsResult symbolSorts
         operandSorts = applicationSortsOperands symbolSorts
+
+instance SQL.Column Symbol where
+    defineColumn = SQL.defineTextColumn
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 toSymbolOrAlias :: Symbol -> SymbolOrAlias
 toSymbolOrAlias symbol =

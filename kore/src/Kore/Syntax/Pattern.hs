@@ -47,6 +47,9 @@ import Data.Hashable
     ( Hashable (..)
     )
 import Data.Maybe
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -62,6 +65,8 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
+import qualified Pretty
+import qualified SQL
 
 {- | The abstract syntax of Kore.
 
@@ -245,6 +250,13 @@ instance TopBottom (Pattern variable annotation) where
     isTop _ = False
     isBottom (Recursive.project -> _ :< BottomF _) = True
     isBottom _ = False
+
+instance
+    (SortedVariable variable, Unparse variable)
+    => SQL.Column (Pattern variable annotation)
+  where
+    defineColumn _ = SQL.defineColumn (SQL.Proxy @Text)
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 fromPattern
     :: Pattern variable annotation

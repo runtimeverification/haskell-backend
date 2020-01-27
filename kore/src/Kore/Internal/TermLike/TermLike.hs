@@ -54,7 +54,6 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
@@ -120,6 +119,8 @@ import qualified Kore.Variables.Fresh as Fresh
     ( nextVariable
     )
 import Kore.Variables.UnifiedVariable
+import qualified Pretty
+import qualified SQL
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
 
@@ -419,6 +420,10 @@ instance InternalVariable variable => Binding (TermLike variable) where
 instance HasConstructorLike (TermLike variable) where
     extractConstructorLike (Recursive.project -> attrs :< _) =
         extractConstructorLike attrs
+
+instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
+    defineColumn = SQL.defineTextColumn
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)

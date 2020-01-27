@@ -139,6 +139,26 @@ instance Semigroup Condition
 instance Monoid Condition where
     mempty = Any
 
+data SimplifiedData =
+    SimplifiedData
+        { sType :: !Type
+        , condition :: !Condition
+        }
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic SimplifiedData
+
+instance SOP.HasDatatypeInfo SimplifiedData
+
+instance Debug SimplifiedData
+
+instance Diff SimplifiedData where
+    diffPrec = diffPrecIgnore
+
+instance NFData SimplifiedData
+
+instance Hashable SimplifiedData
+
 {- | A pattern is 'Simplified' if it has run through the simplifier.
 
 The simplifier runs until we do not know how to simplify a pattern any more. A
@@ -149,19 +169,26 @@ Most patterns are assumed un-simplified until marked otherwise, so the
 simplified status is reset by any substitution under the pattern.
 -}
 data Simplified
-    = Simplified !(Type, Condition)
+    = Simplified !SimplifiedData
     | NotSimplified
     deriving (Eq, GHC.Generic, Ord, Show)
+
+pattern Simplified_ :: Type -> Condition -> Simplified
+pattern Simplified_ sType condition =
+    (Simplified SimplifiedData { sType, condition })
+
+{-# COMPLETE Simplified_, NotSimplified #-}
 
 instance Semigroup Simplified
   where
     NotSimplified <> _ = NotSimplified
     _ <> NotSimplified = NotSimplified
 
-    Simplified (t1, c1) <> Simplified (t2, c2) = Simplified (t1 <> t2, c1 <> c2)
+    (Simplified_ t1 c1) <> (Simplified_ t2 c2) =
+        Simplified_ (t1 <> t2) (c1 <> c2)
 
 instance Monoid Simplified where
-    mempty = Simplified (mempty, mempty)
+    mempty = Simplified_ mempty mempty
 
 instance SOP.Generic Simplified
 
@@ -203,41 +230,41 @@ _ `simplifiedTo` NotSimplified =
 NotSimplified `simplifiedTo` _ =
     error "Cannot upgrade NotSimplified to something else."
 
-Simplified _ `simplifiedTo` s@(Simplified (Fully, Unknown)) = s
-Simplified (_, Unknown) `simplifiedTo` Simplified (Fully, _) =
-    Simplified (Fully, Unknown)
+Simplified_ _ _       `simplifiedTo` s@(Simplified_ Fully Unknown) = s
+Simplified_ _ Unknown `simplifiedTo`    Simplified_ Fully _ =
+    Simplified_ Fully Unknown
 
-Simplified (_, Condition c1) `simplifiedTo` s@(Simplified (Fully, Condition c2))
+Simplified_ _ (Condition c1) `simplifiedTo` s@(Simplified_ Fully (Condition c2))
   = if c1 == c2
     then s
-    else Simplified (Fully, Unknown)
-Simplified (_, Any) `simplifiedTo` s@(Simplified (Fully, Condition _)) = s
+    else Simplified_ Fully Unknown
+Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully (Condition _)) = s
 
-s@(Simplified (_, Condition _)) `simplifiedTo` Simplified (Fully, Any) = s
-Simplified (_, Any) `simplifiedTo` s@(Simplified (Fully, Any)) = s
+s@(Simplified_ _ (Condition _)) `simplifiedTo` Simplified_ Fully Any = s
+Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully Any) = s
 
-s1@(Simplified _) `simplifiedTo` s2@(Simplified (Partly, _)) = s1 <> s2
+s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
 
 isSimplified :: SideCondition.Representation -> Simplified -> Bool
-isSimplified _ (Simplified (Fully, Any)) = True
-isSimplified currentCondition (Simplified (Fully, Condition condition)) =
+isSimplified _ (Simplified_ Fully Any) = True
+isSimplified currentCondition (Simplified_ Fully (Condition condition)) =
     currentCondition == condition
-isSimplified _ (Simplified (Fully, Unknown)) = False
-isSimplified _ (Simplified (Partly, _)) = False
+isSimplified _ (Simplified_ Fully Unknown) = False
+isSimplified _ (Simplified_ Partly _) = False
 isSimplified _ NotSimplified = False
 
 isFullySimplified :: Simplified -> Bool
-isFullySimplified (Simplified (Fully, Any)) = True
-isFullySimplified (Simplified (Fully, Condition _)) = False
-isFullySimplified (Simplified (Fully, Unknown)) = False
-isFullySimplified (Simplified (Partly, _)) = False
+isFullySimplified (Simplified_ Fully Any) = True
+isFullySimplified (Simplified_ Fully (Condition _)) = False
+isFullySimplified (Simplified_ Fully Unknown) = False
+isFullySimplified (Simplified_ Partly _) = False
 isFullySimplified NotSimplified = False
 
 fullySimplified :: Simplified
-fullySimplified = Simplified (Fully, Any)
+fullySimplified = Simplified_ Fully Any
 
 simplifiedConditionally :: SideCondition.Representation -> Simplified
-simplifiedConditionally c = Simplified (Fully, Condition c)
+simplifiedConditionally c = Simplified_ Fully (Condition c)
 
 alwaysSimplified :: a -> Simplified
 alwaysSimplified = const fullySimplified
@@ -246,7 +273,7 @@ alwaysSimplified = const fullySimplified
 notSimplified :: Foldable a => a Simplified -> Simplified
 notSimplified a
   | Foldable.null a = NotSimplified
-  | otherwise = Foldable.fold a <> Simplified (Partly, Any)
+  | otherwise = Foldable.fold a <> Simplified_ Partly Any
 {-# INLINE notSimplified #-}
 
 instance Synthetic Simplified (Bottom sort) where
@@ -338,9 +365,9 @@ instance Synthetic Simplified (Rewrites sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Builtin key) where
-    synthetic (BuiltinInt    _) = Simplified (Fully, Any)
-    synthetic (BuiltinBool   _) = Simplified (Fully, Any)
-    synthetic (BuiltinString _) = Simplified (Fully, Any)
+    synthetic (BuiltinInt    _) = fullySimplified
+    synthetic (BuiltinBool   _) = fullySimplified
+    synthetic (BuiltinString _) = fullySimplified
     synthetic b@(BuiltinMap    _) = notSimplified b
     synthetic b@(BuiltinList   _) = notSimplified b
     synthetic b@(BuiltinSet    _) = notSimplified b
