@@ -26,6 +26,7 @@ import Control.Lens.Combinators
     ( Lens'
     )
 import qualified Control.Lens.Combinators as Lens
+import qualified Data.Generics.Product.Fields as Lens
 import Data.Hashable
 import Data.Maybe
     ( isNothing
@@ -157,16 +158,7 @@ class SortedVariable variable where
     sortedVariableSort = Lens.view lensVariableSort
 
 instance SortedVariable Variable where
-    lensVariableSort = field @"variableSort"
-        fmap setSort
-        $ func (variableSort variable)
-      where
-        setSort sort =
-            Variable
-                { variableName = variableName variable
-                , variableCounter = variableCounter variable
-                , variableSort = sort
-                }
+    lensVariableSort = Lens.field @"variableSort"
 
 instance SyntaxVariable Variable where
     fromVariable = id
