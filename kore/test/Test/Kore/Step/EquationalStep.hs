@@ -140,20 +140,13 @@ test_applyEquationalRule_ =
 
     , testCase "merge configuration patterns" $ do
         let term = Mock.functionalConstr10 (mkElemVar Mock.y)
-            expect = Right
-                [ OrPattern.fromPatterns [initial { term, substitution }] ]
-              where
-                substitution = Substitution.wrap [ (ElemVar Mock.x, term) ]
+            expect = Right [] -- rule does not match
             initial = Pattern.fromTermLike (Mock.sigma (mkElemVar Mock.x) term)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
 
     , testCase "substitution with symbol matching" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = fz, substitution }] ]
-              where
-                substitution =
-                    Substitution.wrap [ (ElemVar Mock.y, mkElemVar Mock.z) ]
+        let expect = Right [] -- rule does not match
             fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
             initial = Pattern.fromTermLike (Mock.sigma fy fz)
@@ -161,14 +154,9 @@ test_applyEquationalRule_ =
         assertEqual "" expect actual
 
     , testCase "merge multiple variables" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = yy, substitution }] ]
-              where
-                substitution =
-                    Substitution.wrap [ (ElemVar Mock.x, mkElemVar Mock.y) ]
+        let expect = Right [] -- rule does not match
             xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             yx = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.x)
-            yy = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y)
             initial = Pattern.fromTermLike (Mock.sigma xy yx)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaXXYY
         assertEqual "" expect actual
