@@ -21,6 +21,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Internal.Symbol
     ( Symbol
+    , noEvaluators
     )
 import Kore.Unparser
     ( unparse
@@ -58,5 +59,6 @@ instance SQL.Table WarnFunctionWithoutEvaluators where
     selectRow = SQL.selectRowGeneric
 
 warnFunctionWithoutEvaluators :: MonadLog m => Symbol -> m ()
-warnFunctionWithoutEvaluators symbol =
-    logM WarnFunctionWithoutEvaluators { symbol }
+warnFunctionWithoutEvaluators symbol
+  | noEvaluators symbol = return ()
+  | otherwise = logM WarnFunctionWithoutEvaluators { symbol }

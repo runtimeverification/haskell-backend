@@ -32,7 +32,7 @@ instance Debug NoEvaluators
 instance Diff NoEvaluators
 
 noEvaluatorsId :: Id
-noEvaluatorsId = "noEvaluators"
+noEvaluatorsId = "no-evaluators"
 
 noEvaluatorsSymbol :: SymbolOrAlias
 noEvaluatorsSymbol =

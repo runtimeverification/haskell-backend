@@ -422,9 +422,7 @@ lookupAxiomSimplifier termLike = do
                 App_ symbol _
                   | isDeclaredFunction symbol -> do
                     let hooked = criticalMissingHook symbol
-                        unhooked
-                          | noEvaluators symbol = return ()
-                          | otherwise = warnFunctionWithoutEvaluators symbol
+                        unhooked = warnFunctionWithoutEvaluators symbol
                     maybe unhooked hooked $ getHook symbol
                 _ -> return ()
             empty
