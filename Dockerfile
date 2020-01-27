@@ -41,4 +41,4 @@ ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user kore/package.yaml /home/user/.tmp-haskell/kore/
 RUN    cd /home/user/.tmp-haskell \
     && stack build --only-snapshot --test --bench --haddock \
-    && stack build --only-snapshot stylish-haskell
+    && stack build --only-snapshot stylish-haskell-0.9.4.4
