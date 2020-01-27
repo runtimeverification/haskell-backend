@@ -44,9 +44,6 @@ import Kore.Step.EqualityPattern as EqualityPattern
     , EqualityRule (..)
     , equalityPattern
     )
-import Kore.Step.EquationalStep
-    ( UnificationProcedure (..)
-    )
 import qualified Kore.Step.EquationalStep as Step
 import qualified Kore.Step.Result as Result
     ( mergeResults
@@ -62,7 +59,6 @@ import Kore.Unification.Error
     , UnificationOrSubstitutionError (..)
     , unsupportedPatterns
     )
-import qualified Kore.Unification.Procedure as Unification
 import Kore.Unification.UnifierT
     ( MonadUnify
     , SimplifierVariable
@@ -619,19 +615,16 @@ applyEquationalRulesSequence_
     :: forall unifier variable
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => UnificationProcedure
-    -> Pattern variable
+    => Pattern variable
     -- ^ Configuration being rewritten
     -> [EqualityRule variable]
     -- ^ Rewrite rules
     -> unifier (Step.Results EqualityPattern variable)
 applyEquationalRulesSequence_
-    unificationProcedure
     (Step.toConfigurationVariables -> initialConfig)
     (map getEqualityRule -> rules)
   = do
     results <- Step.applyRulesSequence
-        unificationProcedure
         SideCondition.top
         (simplifiedPattern initialConfig)
         rules
@@ -654,9 +647,7 @@ applyEquationalRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
     $ runSimplifier Mock.env
     $ runUnifierT
-    $ applyEquationalRulesSequence_ unificationProcedure initial rules
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    $ applyEquationalRulesSequence_ initial rules
 
 test_applyEquationalRulesSequence :: [TestTree]
 test_applyEquationalRulesSequence =

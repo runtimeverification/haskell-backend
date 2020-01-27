@@ -53,6 +53,9 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRule
     ( debugAppliedRule
     )
+import Kore.Step.Axiom.Matcher
+    ( matchIncremental
+    )
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     )
@@ -85,6 +88,7 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as EqualityPattern
     ( toAxiomVariables
     )
+import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
@@ -357,24 +361,21 @@ See also: 'applyRewriteRule'
 applyRulesSequence
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => UnificationProcedure
-    -> SideCondition (Target variable)
+    => SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> [EqualityPattern variable]
     -- ^ Rewrite rules
     -> unifier (Results EqualityPattern variable)
 applyRulesSequence
-    unificationProcedure
     sideCondition
     initial
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
     (map EqualityPattern.toAxiomVariables -> rules)
-  = unifyRules unificationProcedure sideCondition initial rules
+  = unifyRules sideCondition initial rules
     >>= finalizeRulesSequence sideCondition initial
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
@@ -382,17 +383,16 @@ unifyRules
     :: SimplifierVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
-    => UnificationProcedure
-    -> SideCondition (Target variable)
+    => SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Initial configuration
     -> [rule (Target variable)]
     -- ^ Rule
     -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
-unifyRules unificationProcedure sideCondition initial rules =
+unifyRules sideCondition initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        unifyRule unificationProcedure sideCondition initial rule
+        unifyRule sideCondition initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -411,20 +411,14 @@ unifyRule
     :: SimplifierVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
-    => UnificationProcedure
-    -> SideCondition variable
+    => SideCondition variable
     -- ^ Top level condition.
     -> Pattern variable
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
     -> unifier (UnifiedRule variable (rule variable))
-unifyRule
-    (UnificationProcedure unifyPatterns)
-    sideCondition
-    initial
-    rule
-  = do
+unifyRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
             sideCondition `SideCondition.andCondition` initialCondition
@@ -445,3 +439,15 @@ unifyRule
     unification' <-
         simplifyPredicate mergedSideCondition Nothing (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
+  where
+    unifyPatterns = ignoreUnificationErrors matchIncremental
+
+    ignoreUnificationErrors unification _topCondition pattern1 pattern2 =
+        Unifier.runUnifierT (unification pattern1 pattern2)
+        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
+
+    couldNotMatch pattern1 pattern2 _ =
+        Unifier.explainAndReturnBottom
+            "Could not match patterns"
+            pattern1
+            pattern2
