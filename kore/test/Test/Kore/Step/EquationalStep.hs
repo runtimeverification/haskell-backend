@@ -1,6 +1,5 @@
 module Test.Kore.Step.EquationalStep
     ( test_applyEquationalRule_
-    , test_applyEquationalRulesSequence
     ) where
 
 import Test.Tasty
@@ -12,22 +11,15 @@ import Data.Default as Default
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.MultiOr
-    ( MultiOr
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate
+    ( makeEqualsPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate_
-    , makeNotPredicate
     , makeTruePredicate
     , makeTruePredicate_
     )
@@ -49,9 +41,7 @@ import qualified Kore.Step.Result as Result
     ( mergeResults
     )
 import qualified Kore.Step.Step as Step
-    ( gatherResults
-    , remainders
-    , result
+    ( result
     , results
     )
 import Kore.Unification.Error
@@ -556,26 +546,6 @@ test_applyEquationalRule_ =
             )
             (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y))
 
-checkResults
-    :: HasCallStack
-    => MultiOr (Pattern Variable)
-    -> Step.Results EqualityPattern Variable
-    -> Assertion
-checkResults expect actual =
-    assertEqual "compare results"
-        expect
-        (Step.gatherResults actual)
-
-checkRemainders
-    :: HasCallStack
-    => MultiOr (Pattern Variable)
-    -> Step.Results EqualityPattern Variable
-    -> Assertion
-checkRemainders expect actual =
-    assertEqual "compare remainders"
-        expect
-        (Step.remainders actual)
-
 axiomCaseA :: EqualityRule Variable
 axiomCaseA =
     EqualityRule $ equalityPattern
@@ -585,19 +555,6 @@ axiomCaseA =
                 (mkElemVar Mock.z)
         )
         (mkElemVar Mock.y)
-
-axiomCaseB :: EqualityRule Variable
-axiomCaseB =
-    EqualityRule $ equalityPattern
-        (Mock.functionalConstr30
-                Mock.b
-                (mkElemVar Mock.y)
-                (mkElemVar Mock.z)
-        )
-        (mkElemVar Mock.z)
-
-axiomsCase :: [EqualityRule Variable]
-axiomsCase = [axiomCaseA, axiomCaseB]
 
 applyEquationalRulesSequence_
     :: forall unifier variable
@@ -636,77 +593,3 @@ applyEquationalRulesSequence initial rules =
     $ runSimplifier Mock.env
     $ runUnifierT
     $ applyEquationalRulesSequence_ initial rules
-
-test_applyEquationalRulesSequence :: [TestTree]
-test_applyEquationalRulesSequence =
-    [ testCase "case _ of a -> _; b -> _ -- partial" $ do
-        -- This uses `functionalConstr30(x, y, z)` to represent a case
-        -- statement,
-        -- i.e. `case x of 1 -> y; 2 -> z`
-        -- and `a`, `b` as the case labels.
-        --
-        -- Intended:
-        --   term: case x of 1 -> cf; 2 -> cg
-        --   axiom: case 1 of 1 -> cf; 2 -> cg => cf
-        --   axiom: case 2 of 1 -> cf; 2 -> cg => cg
-        -- Actual:
-        --   term: constr30(x, cg, cf)
-        --   axiom: constr30(a, y, z) => y
-        --   axiom: constr30(b, y, z) => z
-        -- Expected:
-        --   rewritten: cf, with (⌈cf⌉ and ⌈cg⌉) and [x=a]
-        --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
-        --   remainder:
-        --     constr20(x, cf, cg)
-        --        with ¬(⌈cf⌉ and [x=a])
-        --         and ¬(⌈cg⌉ and [x=b])
-        let
-            definedBranches =
-                makeAndPredicate
-                    (makeCeilPredicate Mock.testSort Mock.cf)
-                    (makeCeilPredicate_ Mock.cg)
-            results =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = Mock.cf
-                        , predicate = definedBranches
-                        , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.a)]
-                        }
-                    , Conditional
-                        { term = Mock.cg
-                        , predicate = definedBranches
-                        , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.b)]
-                        }
-                    ]
-            remainders =
-                OrPattern.fromPatterns
-                    [ initial
-                        { predicate =
-                            Predicate.makeAndPredicate
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeAndPredicate
-                                        definedBranches
-                                        (Predicate.makeEqualsPredicate_
-                                            (mkElemVar Mock.x)
-                                            Mock.a
-                                        )
-                                )
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeAndPredicate
-                                        definedBranches
-                                        (Predicate.makeEqualsPredicate_
-                                            (mkElemVar Mock.x)
-                                            Mock.b
-                                        )
-                                )
-                        }
-                    ]
-            initialTerm =
-                Mock.functionalConstr30 (mkElemVar Mock.x) Mock.cf Mock.cg
-            initial = pure initialTerm
-        Right actual <- applyEquationalRulesSequence initial axiomsCase
-        checkResults results actual
-        checkRemainders remainders actual
-    ]
