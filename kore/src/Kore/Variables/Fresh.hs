@@ -10,6 +10,11 @@ module Kore.Variables.Fresh
     , module Kore.Syntax.Variable
     ) where
 
+import Debug.Trace
+import Kore.Unparser
+    ( unparseToString
+    )
+
 import qualified Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
@@ -81,6 +86,10 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
         -- ^ variable to rename
         -> Maybe variable
     refreshVariable avoiding variable = do
+        traceM
+            $ "\n\nAvoiding: "
+            <> show ((Lens.view lensVariableCounter) <$> Set.toList avoiding)
+            <> "\n\n"
         fixedLargest <-
             Lens.set lensVariableSort theSort
             <$> Set.lookupLT pivotMax avoiding
@@ -97,12 +106,28 @@ type Renaming variable =
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (ElementVariable variable)
+  -- where
+  --   refreshVariable avoid = traverse (refreshVariable avoid')
+  --     where
+  --       avoid' = Set.map getElementVariable avoid
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (SetVariable variable)
+  where
+    refreshVariable avoid = traverse (refreshVariable avoid')
+      where
+        avoid' = Set.map getSetVariable avoid
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (UnifiedVariable variable)
+  where
+   -- refreshVariable avoid = \case
+   --      SetVar v -> SetVar <$> refreshVariable setVars v
+   --      ElemVar v -> ElemVar <$> refreshVariable elemVars v
+   --    where
+   --      avoid' = Set.toList avoid
+   --      setVars = Set.fromList [v | SetVar v <- avoid']
+   --      elemVars = Set.fromList [v | ElemVar v <- avoid']
 
 instance FreshVariable Variable where
     infVariable variable = variable { variableCounter = Nothing }
@@ -110,6 +135,7 @@ instance FreshVariable Variable where
     supVariable variable = variable { variableCounter = Just Sup }
 
     nextVariable variable@Variable { variableName, variableCounter } =
+        (trace $ "\n\n" <> show variableCounter' <> "\n\n") $
         variable
             { variableName = variableName'
             , variableCounter = variableCounter'

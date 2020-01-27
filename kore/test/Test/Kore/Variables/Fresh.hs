@@ -20,7 +20,13 @@ import Data.Maybe
 import qualified Data.Set as Set
 
 import Kore.Sort
+import Kore.Syntax.ElementVariable
+    ( ElementVariable (..)
+    )
 import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -50,6 +56,12 @@ test_refreshVariable =
     , testCase "refreshVariable - avoid original" $
         assertBool "Expected fresh variable" (original < fresh0)
 
+    , testCase "TESTING refreshVariable - avoid original" $
+        assertBool "Expected fresh variable" (originalElemVar < freshE0)
+
+    , testCase "TESTING2 refreshVariable - avoid original" $
+        assertBool "Expected fresh variable" (originalUnifVar < freshU0)
+
     , testCase "refreshVariable - avoid fresh" $
         assertBool "Expected another fresh variable"     (fresh0   < fresh1)
 
@@ -73,6 +85,14 @@ test_refreshVariable =
     Just fresh1 = refreshVariable avoid1 original
     avoid2 = Set.singleton metaVariableDifferentSort
     Just fresh2 = refreshVariable avoid2 original
+
+    originalElemVar = ElementVariable metaVariable
+    avoidE0 = Set.singleton originalElemVar
+    Just freshE0 = refreshVariable avoidE0 originalElemVar
+
+    originalUnifVar = ElemVar $ ElementVariable metaVariable
+    avoidU0 = Set.singleton originalUnifVar
+    Just freshU0 = refreshVariable avoidU0 originalUnifVar
 
 test_freshVariableProperties :: [TestTree]
 test_freshVariableProperties =

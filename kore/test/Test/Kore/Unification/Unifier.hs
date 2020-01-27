@@ -676,6 +676,7 @@ instance Diff V
 
 instance SortedVariable V where
     lensVariableSort = undefined
+    lensVariableCounter = undefined
     sortedVariableSort _ = sortVar
 
 instance SyntaxVariable V where
@@ -699,6 +700,7 @@ instance Diff W
 
 instance SortedVariable W where
     lensVariableSort = undefined
+    lensVariableCounter = undefined
     sortedVariableSort _ = sortVar
 
 instance SyntaxVariable W where

@@ -153,12 +153,22 @@ class SortedVariable variable where
     lensVariableSort func =
         fmap fromVariable . lensVariableSort func . toVariable
 
+    lensVariableCounter :: Lens' variable (Maybe (Sup Natural))
+    default lensVariableCounter
+        :: forall t variable'
+        .  variable ~ t variable'
+        => SyntaxVariable variable
+        => Lens' variable (Maybe (Sup Natural))
+    lensVariableCounter func =
+        fmap fromVariable . lensVariableCounter func . toVariable
+
     -- | The known 'Sort' of the given variable.
     sortedVariableSort :: variable -> Sort
     sortedVariableSort = Lens.view lensVariableSort
 
 instance SortedVariable Variable where
     lensVariableSort = Lens.field @"variableSort"
+    lensVariableCounter = Lens.field @"variableCounter"
 
 instance SyntaxVariable Variable where
     fromVariable = id
@@ -226,6 +236,9 @@ instance Unparse Concrete where
 
 instance SortedVariable Concrete where
     lensVariableSort func variable =
+        case variable of {}
+        <$> func (case variable of {})
+    lensVariableCounter func variable =
         case variable of {}
         <$> func (case variable of {})
 
