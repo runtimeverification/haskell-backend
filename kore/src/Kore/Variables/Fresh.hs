@@ -88,11 +88,25 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
     refreshVariable avoiding variable = do
         traceM
             $ "\n\nAvoiding: "
-            <> show ((Lens.view lensVariableCounter) <$> Set.toList avoiding)
+            <> show (Lens.view lensVariableCounter <$> Set.toList avoiding)
             <> "\n\n"
         fixedLargest <-
             Lens.set lensVariableSort theSort
             <$> Set.lookupLT pivotMax avoiding
+        traceM
+            $ "\n\nFixed largest: "
+            <> show (Lens.view lensVariableCounter fixedLargest)
+            <> "\n\nPivot min: "
+            <> show (Lens.view lensVariableCounter pivotMin)
+            <> "\n\nPivot max: "
+            <> show (Lens.view lensVariableCounter pivotMax)
+            <> "\n\nFixed largest >= pivot min (on variables): "
+            <> show (fixedLargest >= pivotMin)
+            <> "\n\nFixed largest >= pivot min (on counters): "
+            <> show
+                ( Lens.view lensVariableCounter fixedLargest
+                >= Lens.view lensVariableCounter pivotMin
+                )
         Monad.guard (fixedLargest >= pivotMin)
         return (nextVariable fixedLargest)
       where
@@ -113,10 +127,10 @@ instance (SyntaxVariable variable, FreshVariable variable)
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (SetVariable variable)
-  where
-    refreshVariable avoid = traverse (refreshVariable avoid')
-      where
-        avoid' = Set.map getSetVariable avoid
+  -- where
+  --   refreshVariable avoid = traverse (refreshVariable avoid')
+  --     where
+  --       avoid' = Set.map getSetVariable avoid
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (UnifiedVariable variable)
