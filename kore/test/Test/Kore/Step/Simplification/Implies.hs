@@ -29,9 +29,6 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Implies as Implies
 
@@ -146,6 +143,6 @@ simplifyEvaluated
     -> IO (OrPattern Variable)
 simplifyEvaluated first second =
     runSimplifier mockEnv
-    $ Implies.simplifyEvaluated SideCondition.top first second
+    $ Implies.simplifyEvaluated first second
   where
     mockEnv = Mock.env

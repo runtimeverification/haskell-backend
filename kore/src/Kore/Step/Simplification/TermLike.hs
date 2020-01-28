@@ -382,7 +382,7 @@ simplifyInternal term sideCondition = do
             SignednessF _ -> doNotSimplify
             --
             AndF andF ->
-                And.simplify sideCondition =<< simplifyChildren andF
+                And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
@@ -400,13 +400,13 @@ simplifyInternal term sideCondition = do
                             exists
                 in  Exists.simplify sideCondition =<< simplifyChildren fresh
             IffF iffF ->
-                Iff.simplify sideCondition =<< simplifyChildren iffF
+                Iff.simplify =<< simplifyChildren iffF
             ImpliesF impliesF ->
-                Implies.simplify sideCondition =<< simplifyChildren impliesF
+                Implies.simplify =<< simplifyChildren impliesF
             InF inF ->
                 In.simplify sideCondition =<< simplifyChildren inF
             NotF notF ->
-                Not.simplify sideCondition =<< simplifyChildren notF
+                Not.simplify =<< simplifyChildren notF
             --
             BottomF bottomF ->
                 Bottom.simplify <$> simplifyChildren bottomF

@@ -121,8 +121,7 @@ newtype SubstitutionSimplifier simplifier =
         { simplifySubstitution
             :: forall variable
             .  SubstitutionVariable variable
-            => SideCondition variable
-            -> Substitution variable
+            => Substitution variable
             -> simplifier (OrCondition variable)
         }
 
@@ -143,10 +142,9 @@ substitutionSimplifier =
     wrapper
         :: forall variable
         .  SubstitutionVariable variable
-        => SideCondition variable
-        -> Substitution variable
+        => Substitution variable
         -> simplifier (OrCondition variable)
-    wrapper sideCondition substitution =
+    wrapper substitution =
         fmap OrCondition.fromConditions . Branch.gather $ do
             (predicate, result) <- worker substitution & maybeT empty return
             let condition = Condition.fromNormalizationSimplified result
@@ -154,7 +152,8 @@ substitutionSimplifier =
             TopBottom.guardAgainstBottom condition'
             return condition'
       where
-        worker = simplifySubstitutionWorker sideCondition simplifierMakeAnd
+        worker =
+            simplifySubstitutionWorker SideCondition.topTODO simplifierMakeAnd
 
 -- * Implementation
 

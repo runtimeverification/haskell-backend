@@ -219,7 +219,6 @@ makeEvaluate sideCondition variables original = do
                         , Conditional.substitution = freeSubstitution
                         }
                     else makeEvaluateBoundRight
-                        sideCondition
                         variable
                         freeSubstitution
                         normalized
@@ -340,14 +339,12 @@ See also: 'quantifyPattern'
 makeEvaluateBoundRight
     :: forall variable simplifier
     . (SimplifierVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> ElementVariable variable  -- ^ variable to be quantified
+    => ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
+makeEvaluateBoundRight variable freeSubstitution normalized = do
     orCondition <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
-        sideCondition
         (MultiAnd.make
             [   OrCondition.fromCondition quantifyCondition
             ,   OrCondition.fromCondition

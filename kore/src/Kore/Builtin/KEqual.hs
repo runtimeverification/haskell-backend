@@ -145,7 +145,7 @@ evalKEq true (valid :< app) =
 
         defined1 <- Ceil.makeEvaluate sideCondition pattern1
         defined2 <- Ceil.makeEvaluate sideCondition pattern2
-        defined <- And.simplifyEvaluated sideCondition defined1 defined2
+        defined <- And.simplifyEvaluated defined1 defined2
 
         equalTerms <-
             Equals.makeEvaluateTermsToPredicate
@@ -160,7 +160,7 @@ evalKEq true (valid :< app) =
             falsePatterns = Pattern.withCondition falseTerm <$> notEqualTerms
 
         let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
-        results <- And.simplifyEvaluated sideCondition defined undefinedResults
+        results <- And.simplifyEvaluated defined undefinedResults
         pure $ Applied AttemptedAxiomResults
             { results
             , remainders = OrPattern.bottom
