@@ -179,7 +179,8 @@ matchIncremental termLike1 termLike2 =
                 $ MultiAnd.toPredicate predicate
             substitution' =
                 Condition.fromSubstitution
-                $ Substitution.fromMap substitution
+                $ Substitution.unsafeWrap
+                $ Map.toList substitution
             solution = predicate' <> substitution'
         return solution
 
