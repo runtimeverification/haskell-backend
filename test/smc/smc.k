@@ -26,9 +26,7 @@ endmodule
 
 module SMC
   imports SMC-SYNTAX
-  imports BOOL
-  imports INT
-  imports MAP
+  imports DOMAINS
 
   syntax KItem ::= "+" | "-" | "/" | "<=" | "!" | "&&" BExp | Id "=" | choice(Block, Block) | "STUCK"
 

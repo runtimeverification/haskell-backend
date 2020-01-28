@@ -1,8 +1,6 @@
 module TEST
 
-    imports BOOL
-    imports LIST
-    imports MAP
+    imports DOMAINS
 
     configuration <k> $PGM:Program </k>
                   <acct> 0 </acct>

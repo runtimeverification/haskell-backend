@@ -1,5 +1,5 @@
 module BITRANGE
-  imports INT
+  imports DOMAINS
   syntax Exp ::= Int
   syntax Exp ::= bRI           ( Int, indexInt: Int, lengthInt: Int ) [function]
                | "[" Exp "]" [function]

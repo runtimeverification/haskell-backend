@@ -1,5 +1,5 @@
 module STRICT
-  imports BOOL
+  imports DOMAINS
   syntax Val ::= "a"
   syntax Exp ::= Val
                | "b"

@@ -9,10 +9,7 @@ endmodule
 
 module BMC
   imports BMC-SYNTAX
-  imports INT
-  imports BOOL
-  imports MAP
-  imports SET
+  imports DOMAINS
 
   configuration <T>
                   <k> #execute </k>

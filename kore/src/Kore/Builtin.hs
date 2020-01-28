@@ -66,7 +66,6 @@ import qualified Kore.Builtin.Inj as Inj
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import qualified Kore.Builtin.KEqual as KEqual
-import qualified Kore.Builtin.Kreflection as Kreflection
 import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
@@ -109,7 +108,6 @@ koreVerifiers =
     <> Set.verifiers
     <> Signedness.verifiers
     <> String.verifiers
-    <> Kreflection.verifiers
 
 {- | Construct an evaluation context for Kore builtin functions.
 
