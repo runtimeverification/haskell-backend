@@ -20,12 +20,16 @@ module Kore.Step.EquationalStep
 import Prelude.Kore
 
 import Control.Error
-    ( maybeT
+    ( MaybeT
+    , maybeT
     )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
+import Data.Function
+    ( (&)
+    )
 import qualified Data.List as List
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -70,6 +74,9 @@ import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Step.Step
@@ -402,6 +409,13 @@ matchRules sideCondition initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
         matchRule sideCondition initial rule
+            & maybeT (couldNotMatch rule) Unifier.scatter
+  where
+    couldNotMatch rule =
+        Unifier.explainAndReturnBottom
+            "Could not match patterns"
+            (matchingPattern rule)
+            (term initial)
 
 {- | Attempt to match a rule with the initial configuration.
 
@@ -418,7 +432,7 @@ unification. The substitution is not applied to the renamed rule.
  -}
 matchRule
     :: InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => UnifyingRule rule
     => SideCondition variable
     -- ^ Top level condition.
@@ -426,30 +440,18 @@ matchRule
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
-    -> unifier (UnifiedRule variable (rule variable))
-matchRule sideCondition initial rule = do
+    -> MaybeT simplifier [UnifiedRule variable (rule variable)]
+matchRule sideCondition initial rule = Unifier.maybeUnifierT $ do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
+    unification <- matchIncremental ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
     let requires = precondition rule
     unification' <-
         evaluateRequires sideCondition initialCondition unification requires
     return (rule `Conditional.withCondition` unification')
-  where
-    unifyPatterns = ignoreUnificationErrors matchIncremental
-
-    ignoreUnificationErrors unification pattern1 pattern2 =
-        Unifier.runUnifierT (unification pattern1 pattern2)
-        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
-
-    couldNotMatch pattern1 pattern2 _ =
-        Unifier.explainAndReturnBottom
-            "Could not match patterns"
-            pattern1
-            pattern2
 
 {- | Evaluate the pre-condition of a rule, subject to the given constraints.
  -}
