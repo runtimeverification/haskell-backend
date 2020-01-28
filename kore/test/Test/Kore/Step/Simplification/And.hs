@@ -22,9 +22,6 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.And
@@ -455,7 +452,7 @@ findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
-evaluate = runSimplifier Mock.env . simplify SideCondition.top
+evaluate = runSimplifier Mock.env . simplify
 
 evaluatePatterns
     :: Pattern Variable
@@ -464,4 +461,4 @@ evaluatePatterns
 evaluatePatterns first second =
     fmap OrPattern.fromPatterns
     $ runSimplifierBranch Mock.env
-    $ makeEvaluate SideCondition.top first second
+    $ makeEvaluate first second

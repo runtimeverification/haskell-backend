@@ -24,6 +24,7 @@ import Control.Monad.Trans.State.Strict
 import Data.Coerce
     ( coerce
     )
+import Data.Default
 import Data.Function
 import Data.Generics.Product
 import Data.IORef
@@ -59,9 +60,6 @@ import Kore.Internal.TermLike
     , mkTop_
     )
 import qualified Kore.Log as Log
-import qualified Kore.Log.DebugSolver as Log
-    ( emptyDebugSolverOptions
-    )
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
@@ -503,18 +501,10 @@ logUpdatesState = do
         axioms  = []
         claim   = emptyClaim
         options =
-            Log.KoreLogOptions
-                { logLevel = Log.Info
-                , logEntries =
-                    Map.keysSet
-                    . Log.typeToText
-                    $ Log.registry
-                , timestampsSwitch = Log.TimestampsEnable
-                , logType = Log.LogStdErr
-                , debugAppliedRuleOptions = mempty
-                , debugAxiomEvaluationOptions = mempty
-                , debugSolverOptions = Log.emptyDebugSolverOptions
-                , exeName = Log.ExeName "kore-repl"
+            def
+                { Log.logLevel = Log.Info
+                , Log.logEntries =
+                    Map.keysSet . Log.typeToText $ Log.registry
                 }
         command = Log options
     Result { output, continue, state } <-
@@ -690,16 +680,7 @@ mkState axioms claims claim =
         , omit           = mempty
         , labels         = Map.singleton (ClaimIndex 0) Map.empty
         , aliases        = Map.empty
-        , koreLogOptions = Log.KoreLogOptions
-            { logLevel = Log.Warning
-            , logEntries = mempty
-            , timestampsSwitch = Log.TimestampsEnable
-            , logType = Log.LogStdErr
-            , debugAppliedRuleOptions = mempty
-            , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Log.emptyDebugSolverOptions
-            , exeName = Log.ExeName "kore-repl"
-            }
+        , koreLogOptions = def
         }
   where
     graph' = emptyExecutionGraph claim

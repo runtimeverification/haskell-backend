@@ -93,8 +93,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
         ->  BranchT simplifier (Conditional variable any')
     normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
-        predicates' <- Monad.Trans.lift $
-            simplifySubstitution sideCondition substitution
+        predicates' <- Monad.Trans.lift $ simplifySubstitution substitution
         predicate' <- Branch.scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 
