@@ -38,10 +38,8 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
 
 ENV LC_ALL=C.UTF-8
 
-RUN cd /home/user \
-    && ( curl https://hackage.haskell.org/package/stylish-haskell-0.9.4.4/stylish-haskell-0.9.4.4.tar.gz | tar xz ) \
-    && stack install stylish-haskell-0.9.4.4
-RUN stack install hlint
+ADD --chown=user:user global-stack.yaml /home/user/.stack/global-project/stack.yaml
+RUN cd /home/user && stack install hlint stylish-haskell
 
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user kore/package.yaml /home/user/.tmp-haskell/kore/
