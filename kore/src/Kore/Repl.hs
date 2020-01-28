@@ -10,6 +10,8 @@ module Kore.Repl
     ( runRepl
     ) where
 
+import Prelude.Kore
+
 import Control.Concurrent.MVar
 import Control.Exception
     ( AsyncException (UserInterrupt)

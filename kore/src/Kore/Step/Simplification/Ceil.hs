@@ -15,6 +15,8 @@ module Kore.Step.Simplification.Ceil
     , Ceil (..)
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive

@@ -8,6 +8,8 @@ module Kore.Syntax.Iff
     ( Iff (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

@@ -4,6 +4,8 @@ module Test.Kore.Unification.Unifier
     , test_evaluated
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Exception

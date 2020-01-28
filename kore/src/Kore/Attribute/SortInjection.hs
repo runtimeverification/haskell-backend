@@ -11,6 +11,8 @@ module Kore.Attribute.SortInjection
     , sortInjectionId, sortInjectionSymbol, sortInjectionAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

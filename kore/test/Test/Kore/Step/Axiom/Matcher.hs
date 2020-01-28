@@ -18,6 +18,8 @@ module Test.Kore.Step.Axiom.Matcher
     , matches, doesn'tMatch
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Function

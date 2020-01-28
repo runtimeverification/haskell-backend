@@ -7,6 +7,10 @@ module Kore.Step.Simplification.NoConfusion
     , constructorAndEqualsAssumesDifferentHeads
     ) where
 
+import Prelude.Kore hiding
+    ( concat
+    )
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -21,9 +25,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( concat
-    )
 
 import Kore.Internal.Pattern
     ( Pattern

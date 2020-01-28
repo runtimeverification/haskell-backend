@@ -35,6 +35,8 @@ module Kore.Step.Simplification.Simplify
     , isConstructorOrOverloaded
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

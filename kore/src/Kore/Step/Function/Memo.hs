@@ -20,6 +20,8 @@ module Kore.Step.Function.Memo
     , new
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.IO.Class
     ( MonadIO
     , liftIO

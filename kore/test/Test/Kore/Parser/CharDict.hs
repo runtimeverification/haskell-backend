@@ -1,5 +1,7 @@
 module Test.Kore.Parser.CharDict (test_charDict) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

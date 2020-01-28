@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Builtin
     ( test_simplify
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map

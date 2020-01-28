@@ -10,6 +10,8 @@ module Kore.Step.SMT.Declaration.Symbols
     ( declare
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Step.SMT.AST as AST

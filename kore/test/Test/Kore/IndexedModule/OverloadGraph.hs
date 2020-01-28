@@ -5,6 +5,8 @@ module Test.Kore.IndexedModule.OverloadGraph
     , test_fromIndexedModule
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Applicative

@@ -8,6 +8,8 @@ module Kore.Syntax.In
     ( In (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

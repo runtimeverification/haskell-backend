@@ -4,6 +4,8 @@ module Paths
     ( dataFileName
     ) where
 
+import Prelude.Kore
+
 import qualified Language.Haskell.TH as TH
 import System.Directory
     ( doesFileExist

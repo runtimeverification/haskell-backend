@@ -25,6 +25,8 @@ module Kore.Step
     , runStrategy
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty

@@ -7,6 +7,8 @@ module Kore.Builtin.Inj
     ( verifiers
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Functor.Foldable as Recursive
 
 import Kore.ASTVerifier.PatternVerifier.PatternVerifier

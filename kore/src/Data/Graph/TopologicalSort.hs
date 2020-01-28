@@ -12,6 +12,8 @@ module Data.Graph.TopologicalSort
     , TopologicalSortCycles(..)
     ) where
 
+import Prelude.Kore
+
 import Data.Graph
     ( SCC (..)
     , stronglyConnComp

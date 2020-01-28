@@ -39,6 +39,8 @@ module SQL.SOP
     , SOP.Code
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import Data.Functor.Product

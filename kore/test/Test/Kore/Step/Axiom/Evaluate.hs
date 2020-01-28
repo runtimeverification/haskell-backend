@@ -2,6 +2,8 @@ module Test.Kore.Step.Axiom.Evaluate
     ( test_evaluateAxioms
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.StringLiteral
     ( test_stringLiteralSimplification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Kore.Internal.OrPattern

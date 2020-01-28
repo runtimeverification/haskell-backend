@@ -59,6 +59,8 @@ module Kore.Attribute.Parser
     , module Kore.Syntax.Application
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

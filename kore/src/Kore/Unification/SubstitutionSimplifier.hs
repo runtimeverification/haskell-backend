@@ -11,6 +11,8 @@ module Kore.Unification.SubstitutionSimplifier
     , module Kore.Step.Simplification.SubstitutionSimplifier
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

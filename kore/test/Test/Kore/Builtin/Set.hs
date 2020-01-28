@@ -56,6 +56,8 @@ module Test.Kore.Builtin.Set
     , asInternal
     ) where
 
+import Prelude.Kore
+
 import Hedgehog hiding
     ( Concrete
     , opaque

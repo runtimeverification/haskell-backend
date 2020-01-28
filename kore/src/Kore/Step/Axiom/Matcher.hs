@@ -13,6 +13,8 @@ module Kore.Step.Axiom.Matcher
     , matchIncremental
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

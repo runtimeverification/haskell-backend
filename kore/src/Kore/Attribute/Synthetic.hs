@@ -13,6 +13,8 @@ module Kore.Attribute.Synthetic
     , synthesize, synthesizeAux
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
     ( CofreeF (..)
     )

@@ -8,6 +8,8 @@ module Kore.Attribute.Label
     , labelId, labelSymbol, labelAttribute
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

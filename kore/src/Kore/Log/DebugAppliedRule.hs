@@ -12,6 +12,8 @@ module Kore.Log.DebugAppliedRule
     , filterDebugAppliedRule
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

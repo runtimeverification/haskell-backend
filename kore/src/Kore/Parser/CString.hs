@@ -15,6 +15,8 @@ module Kore.Parser.CString
        , oneCharEscapeDict
        ) where
 
+import Prelude.Kore
+
 import Data.Char
     ( chr
     , digitToInt

@@ -19,6 +19,8 @@ module Kore.Step.Transition
     , Seq
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import Control.Monad.Catch
     ( MonadCatch (catch)

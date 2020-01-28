@@ -10,6 +10,8 @@ module Kore.Step.Simplification.Condition
     , simplifyCondition
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC

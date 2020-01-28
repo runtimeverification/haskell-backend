@@ -20,6 +20,8 @@ module Kore.Syntax.Pattern
     , module Control.Comonad
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
     ( Cofree

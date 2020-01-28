@@ -13,6 +13,8 @@ module Kore.Step.EqualityPattern
     , getPriorityOfRule
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

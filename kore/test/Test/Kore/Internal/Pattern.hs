@@ -3,6 +3,8 @@ module Test.Kore.Internal.Pattern
     , internalPatternGen
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Text.Prettyprint.Doc

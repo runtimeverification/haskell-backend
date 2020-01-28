@@ -15,6 +15,8 @@ module Test.Kore.Builtin.Bool
     , asInternal
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty

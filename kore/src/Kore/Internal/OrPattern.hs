@@ -23,6 +23,8 @@ module Kore.Internal.OrPattern
     , MultiOr.filterOr
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Foldable as Foldable
 import qualified GHC.Stack as GHC
 

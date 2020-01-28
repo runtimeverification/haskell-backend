@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Simplifier
     ( create
     ) where
 
+import Prelude.Kore ()
+
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
     ( simplifyToOr

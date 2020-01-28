@@ -26,8 +26,9 @@ module Kore.Repl.State
     , conjOfOnePathClaims
     , appReplOut
     , replOut, replOutputToString
-    )
-    where
+    ) where
+
+import Prelude.Kore
 
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens hiding

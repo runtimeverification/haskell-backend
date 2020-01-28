@@ -15,6 +15,8 @@ module Log.Entry
     , entryTypeText
     ) where
 
+import Prelude.Kore
+
 import Colog
     ( Severity (..)
     )
@@ -35,9 +37,6 @@ import Data.Typeable
     )
 import qualified Data.Typeable
     ( cast
-    )
-import Prelude hiding
-    ( log
     )
 import qualified Type.Reflection as Reflection
 

@@ -22,6 +22,8 @@ module Kore.Exec
     , Equality
     ) where
 
+import Prelude.Kore
+
 import Control.Concurrent.MVar
 import Control.Error.Util
     ( note

@@ -15,6 +15,8 @@ module Kore.Attribute.Trusted
     , trustedId, trustedSymbol, trustedAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

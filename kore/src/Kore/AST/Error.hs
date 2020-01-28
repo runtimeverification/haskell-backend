@@ -23,6 +23,8 @@ module Kore.AST.Error
     , withModuleContext
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

@@ -15,6 +15,8 @@ module Kore.Attribute.Pattern.FreeVariables
     , getFreeElementVariables
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import Data.Functor.Const
 import Data.Hashable

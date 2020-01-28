@@ -2,6 +2,8 @@ module Test.Kore.Log.WarnFunctionWithoutEvaluators
     ( test_instance_Table_WarnFunctionWithoutEvaluators
     ) where
 
+import Prelude.Kore ()
+
 import Test.Tasty
 
 import Kore.Log.WarnFunctionWithoutEvaluators

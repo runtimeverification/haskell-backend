@@ -31,6 +31,8 @@ module Test.Kore
     , Log.emptyLogger
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
     ( MonadGen
     )

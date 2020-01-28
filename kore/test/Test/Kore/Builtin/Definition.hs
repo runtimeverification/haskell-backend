@@ -3,6 +3,8 @@
 
 module Test.Kore.Builtin.Definition where
 
+import Prelude.Kore
+
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import Data.Function

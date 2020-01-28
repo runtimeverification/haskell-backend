@@ -35,6 +35,8 @@ module Kore.Syntax
     , Const (..)
     ) where
 
+import Prelude.Kore
+
 import Kore.Sort
 import Kore.Syntax.And
 import Kore.Syntax.Application

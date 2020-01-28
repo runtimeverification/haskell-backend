@@ -9,6 +9,8 @@ module Test.Kore.Builtin.Krypto
     , test_ripemd160
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Control.Lens as Lens

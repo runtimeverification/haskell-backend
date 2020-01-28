@@ -17,6 +17,8 @@ module Kore.Step.EquationalStep
     , recoveryFunctionLikeResults
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans

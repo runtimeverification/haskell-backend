@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.IntegrationProperty
     ( test_simplifiesToSimplified
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
     ( PropertyT
     , annotate

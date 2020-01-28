@@ -4,6 +4,8 @@ module Test.Kore.Step.Simplification.Equals
     , test_equalsSimplification_Pattern
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Foldable as Foldable

@@ -9,6 +9,8 @@ module Kore.Attribute.Symbol.Anywhere
     , anywhereId, anywhereSymbol, anywhereAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

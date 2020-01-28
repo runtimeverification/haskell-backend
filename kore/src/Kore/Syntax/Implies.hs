@@ -8,6 +8,8 @@ module Kore.Syntax.Implies
     ( Implies (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

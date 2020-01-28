@@ -2,6 +2,8 @@ module Test.Kore.Internal.Symbol
     ( symbolGen
     ) where
 
+import Prelude.Kore
+
 import qualified Hedgehog.Gen as Gen
 
 import qualified Data.Default as Default

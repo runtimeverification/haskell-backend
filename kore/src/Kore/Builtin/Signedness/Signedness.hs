@@ -9,6 +9,8 @@ module Kore.Builtin.Signedness.Signedness
     , toApplication
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

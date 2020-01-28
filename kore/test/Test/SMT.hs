@@ -7,6 +7,8 @@ module Test.SMT
     , runNoSMT
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
 import Test.Tasty
 import Test.Tasty.Hedgehog

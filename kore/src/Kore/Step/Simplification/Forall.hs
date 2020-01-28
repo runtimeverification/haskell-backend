@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
+import Prelude.Kore
+
 import qualified Kore.Internal.Condition as Condition
     ( fromPredicate
     , hasFreeVariable

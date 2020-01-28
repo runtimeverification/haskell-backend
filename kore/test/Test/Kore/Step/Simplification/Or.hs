@@ -5,6 +5,8 @@ module Test.Kore.Step.Simplification.Or
     , test_valueProperties
     ) where
 
+import Prelude.Kore
+
 import Test.Kore
     ( testId
     )

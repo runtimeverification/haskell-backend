@@ -21,6 +21,8 @@ module ListT
     , Alternative (..), MonadPlus (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import Control.Monad
 import Control.Monad.IO.Class

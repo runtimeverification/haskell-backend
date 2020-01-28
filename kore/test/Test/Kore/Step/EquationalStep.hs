@@ -3,6 +3,8 @@ module Test.Kore.Step.EquationalStep
     , test_applyEquationalRulesSequence
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Control.Exception as Exception

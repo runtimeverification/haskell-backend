@@ -6,6 +6,8 @@ module Test.Kore.Step.RewriteStep
     , test_applyRewriteRulesSequence
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Control.Exception as Exception

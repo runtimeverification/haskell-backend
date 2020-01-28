@@ -8,6 +8,8 @@ module Kore.Log.DebugAppliedRewriteRules
     , debugAppliedRewriteRules
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad
     ( extract
     )

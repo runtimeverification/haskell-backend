@@ -5,6 +5,8 @@ module Test.ConsistentKore
     , termLikeGen
     ) where
 
+import Prelude.Kore
+
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range

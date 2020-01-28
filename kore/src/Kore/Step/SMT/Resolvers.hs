@@ -13,6 +13,8 @@ module Kore.Step.SMT.Resolvers
     , translateSymbol
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Map.Strict as Map
 import Data.Reflection
     ( Given

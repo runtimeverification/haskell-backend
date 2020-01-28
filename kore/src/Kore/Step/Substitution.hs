@@ -12,6 +12,8 @@ module Kore.Step.Substitution
     , normalize
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 

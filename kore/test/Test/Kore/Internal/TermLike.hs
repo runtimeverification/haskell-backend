@@ -10,6 +10,8 @@ module Test.Kore.Internal.TermLike
     , termLikeChildGen
     ) where
 
+import Prelude.Kore
+
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
