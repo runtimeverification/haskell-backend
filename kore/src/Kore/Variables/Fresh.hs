@@ -86,20 +86,28 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
         -- ^ variable to rename
         -> Maybe variable
     refreshVariable avoiding variable = do
-        traceM
-            $ "\n\nAvoiding: "
-            <> show (Lens.view lensVariableCounter <$> Set.toList avoiding)
-            <> "\n\n"
         fixedLargest <-
             Lens.set lensVariableSort theSort
             <$> Set.lookupLT pivotMax avoiding
         traceM
-            $ "\n\nFixed largest: "
-            <> show (Lens.view lensVariableCounter fixedLargest)
+            $ "\n\nVariable: "
+            <> "\n    " <> show (Lens.view lensVariableName variable)
+            <> "\n    " <> show (Lens.view lensVariableSort variable)
+            <> "\n    " <> show (Lens.view lensVariableCounter variable)
+            <> "\n\nAvoiding: "
+            <> show (Lens.view lensVariableCounter <$> Set.toList avoiding)
+            <> "\n\nFixed largest: "
+            <> "\n    " <> show (Lens.view lensVariableName fixedLargest)
+            <> "\n    " <> show (Lens.view lensVariableSort fixedLargest)
+            <> "\n    " <> show (Lens.view lensVariableCounter fixedLargest)
             <> "\n\nPivot min: "
-            <> show (Lens.view lensVariableCounter pivotMin)
+            <> "\n    " <> show (Lens.view lensVariableName pivotMin)
+            <> "\n    " <> show (Lens.view lensVariableSort pivotMin)
+            <> "\n    " <> show (Lens.view lensVariableCounter pivotMin)
             <> "\n\nPivot max: "
-            <> show (Lens.view lensVariableCounter pivotMax)
+            <> "\n    " <> show (Lens.view lensVariableName pivotMax)
+            <> "\n    " <> show (Lens.view lensVariableSort pivotMax)
+            <> "\n    " <> show (Lens.view lensVariableCounter pivotMax)
             <> "\n\nFixed largest >= pivot min (on variables): "
             <> show (fixedLargest >= pivotMin)
             <> "\n\nFixed largest >= pivot min (on counters): "
@@ -120,28 +128,28 @@ type Renaming variable =
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (ElementVariable variable)
-  -- where
-  --   refreshVariable avoid = traverse (refreshVariable avoid')
-  --     where
-  --       avoid' = Set.map getElementVariable avoid
+  where
+    refreshVariable avoid = traverse (refreshVariable avoid')
+      where
+        avoid' = Set.map getElementVariable avoid
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (SetVariable variable)
-  -- where
-  --   refreshVariable avoid = traverse (refreshVariable avoid')
-  --     where
-  --       avoid' = Set.map getSetVariable avoid
+  where
+    refreshVariable avoid = traverse (refreshVariable avoid')
+      where
+        avoid' = Set.map getSetVariable avoid
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (UnifiedVariable variable)
   where
-   -- refreshVariable avoid = \case
-   --      SetVar v -> SetVar <$> refreshVariable setVars v
-   --      ElemVar v -> ElemVar <$> refreshVariable elemVars v
-   --    where
-   --      avoid' = Set.toList avoid
-   --      setVars = Set.fromList [v | SetVar v <- avoid']
-   --      elemVars = Set.fromList [v | ElemVar v <- avoid']
+   refreshVariable avoid = \case
+        SetVar v -> SetVar <$> refreshVariable setVars v
+        ElemVar v -> ElemVar <$> refreshVariable elemVars v
+      where
+        avoid' = Set.toList avoid
+        setVars = Set.fromList [v | SetVar v <- avoid']
+        elemVars = Set.fromList [v | ElemVar v <- avoid']
 
 instance FreshVariable Variable where
     infVariable variable = variable { variableCounter = Nothing }

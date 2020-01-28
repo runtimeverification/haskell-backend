@@ -162,6 +162,14 @@ class SortedVariable variable where
     lensVariableCounter func =
         fmap fromVariable . lensVariableCounter func . toVariable
 
+    lensVariableName :: Lens' variable Id
+    default lensVariableName
+        :: forall t variable'
+        .  variable ~ t variable'
+        => SyntaxVariable variable
+        => Lens' variable Id
+    lensVariableName func =
+        fmap fromVariable . lensVariableName func . toVariable
     -- | The known 'Sort' of the given variable.
     sortedVariableSort :: variable -> Sort
     sortedVariableSort = Lens.view lensVariableSort
@@ -169,6 +177,7 @@ class SortedVariable variable where
 instance SortedVariable Variable where
     lensVariableSort = Lens.field @"variableSort"
     lensVariableCounter = Lens.field @"variableCounter"
+    lensVariableName = Lens.field @"variableName"
 
 instance SyntaxVariable Variable where
     fromVariable = id
@@ -239,6 +248,9 @@ instance SortedVariable Concrete where
         case variable of {}
         <$> func (case variable of {})
     lensVariableCounter func variable =
+        case variable of {}
+        <$> func (case variable of {})
+    lensVariableName func variable =
         case variable of {}
         <$> func (case variable of {})
 

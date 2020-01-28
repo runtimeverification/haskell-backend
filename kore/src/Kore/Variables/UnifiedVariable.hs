@@ -64,6 +64,10 @@ instance (SyntaxVariable variable, SortedVariable variable)
           ElemVar <$> lensVariableCounter func variable
       lensVariableCounter func (SetVar variable) =
           SetVar <$> lensVariableCounter func variable
+      lensVariableName func (ElemVar variable) =
+          ElemVar <$> lensVariableName func variable
+      lensVariableName func (SetVar variable) =
+          SetVar <$> lensVariableName func variable
 
 instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = foldMapVariable unparse

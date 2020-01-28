@@ -153,6 +153,7 @@ instance Unparse V where
 instance SortedVariable V where
     lensVariableSort = undefined
     lensVariableCounter = undefined
+    lensVariableName = undefined
     sortedVariableSort _ = sortVariable
 
 instance SyntaxVariable V where
@@ -177,6 +178,7 @@ instance Unparse W where
 instance SortedVariable W where
     lensVariableSort = undefined
     lensVariableCounter = undefined
+    lensVariableName = undefined
     sortedVariableSort _ = sortVariable
 
 instance SyntaxVariable W where
