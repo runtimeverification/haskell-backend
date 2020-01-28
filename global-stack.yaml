@@ -1,0 +1,5 @@
+resolver: lts-14.16
+allow-newer: true
+packages: []
+extra-deps:
+  - stylish-haskell-0.9.4.4
