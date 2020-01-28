@@ -14,8 +14,6 @@ import Data.Generics.Wrapped
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Axiom.Concrete
-import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -85,10 +83,7 @@ test_evaluateAxioms =
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
         [axiom (sigma x y) a (positive x `orNot` positive y)]
         (sigma a a, makeTruePredicate_)
-        -- SMT not used to simplify trivial constraints
-        [ a `andRequires` positive a
-        , a `andRequires` makeNotPredicate (positive a)
-        ]
+        [Pattern.fromTermLike a]
     , doesn'tApply
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
@@ -137,13 +132,6 @@ andNot, orNot
     -> Predicate Variable
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
-
-andRequires
-    :: TermLike Variable
-    -> Predicate Variable
-    -> Pattern Variable
-andRequires term requires =
-    Conditional {term, predicate = requires, substitution = mempty}
 
 -- * Helpers
 

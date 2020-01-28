@@ -275,65 +275,64 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the
+    -- Checks that `f(x/x) and x != 0` evaluates to `x/x` when `f` is the
     -- identity function and `#ceil(x/y) => y != 0`
-    , testCase "function application introduces definedness condition" $ do
+    , testCase "function application requires definedness condition" $ do
         let testSortVariable = SortVariableSort $ SortVariable (testId "s")
-            expect =
-                OrPattern.fromPatterns
-                [ Conditional
+            original =
+                Pattern.fromTermLike
+                $ Mock.fInt
+                $ Mock.tdivInt
+                    (mkElemVar Mock.xInt)
+                    (mkElemVar Mock.xInt)
+            requirement =
+                makeNotPredicate
+                $ makeEqualsPredicate Mock.intSort
+                    (mkElemVar Mock.xInt)
+                    (Mock.builtinInt 0)
+            evaluators =
+                axiomPatternsToEvaluators $ Map.fromList
+                    [   (AxiomIdentifier.Application Mock.fIntId
+                        ,   [ EqualityRule $ equalityPattern
+                                (Mock.fInt (mkElemVar Mock.xInt))
+                                (mkElemVar Mock.xInt)
+                            ]
+                        )
+                    ,   (AxiomIdentifier.Ceil
+                            (AxiomIdentifier.Application Mock.tdivIntId)
+                        ,   [ EqualityRule $ simplificationRulePattern
+                                (mkCeil testSortVariable
+                                    $ Mock.tdivInt
+                                        (mkElemVar Mock.xInt)
+                                        (mkElemVar Mock.yInt)
+                                )
+                                (mkCeil testSortVariable
+                                    . mkNot
+                                    $ mkEquals testSortVariable
+                                        (mkElemVar Mock.yInt)
+                                        (Mock.builtinInt 0)
+
+                                )
+                            ]
+                        )
+                    ]
+            expect1 =
+                OrPattern.fromPattern Conditional
                     { term =
                         Mock.tdivInt
                             (mkElemVar Mock.xInt)
                             (mkElemVar Mock.xInt)
-                    , predicate =
-                        makeNotPredicate
-                        $ makeEqualsPredicate Mock.intSort
-                            (mkElemVar Mock.xInt)
-                            (Mock.builtinInt 0)
+                    , predicate = requirement
                     , substitution = mempty
                     }
-                ]
-        actual <-
-            evaluateWithAxioms
-                ( axiomPatternsToEvaluators
-                    ( Map.fromList
-                        [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ EqualityRule $ equalityPattern
-                                    (Mock.fInt (mkElemVar Mock.xInt))
-                                    (mkElemVar Mock.xInt)
-                                ]
-                            )
-                        ,   (AxiomIdentifier.Ceil
-                                (AxiomIdentifier.Application Mock.tdivIntId)
-                            ,   [ EqualityRule $ simplificationRulePattern
-                                    (mkCeil testSortVariable
-                                        $ Mock.tdivInt
-                                            (mkElemVar Mock.xInt)
-                                            (mkElemVar Mock.yInt)
-                                    )
-                                    (mkCeil testSortVariable
-                                        . mkNot
-                                        $ mkEquals testSortVariable
-                                            (mkElemVar Mock.yInt)
-                                            (Mock.builtinInt 0)
-
-                                    )
-                                ]
-                            )
-                        ]
-                    )
-                )
-                Conditional
-                    { term =
-                        Mock.fInt
-                        $ Mock.tdivInt
-                            (mkElemVar Mock.xInt)
-                            (mkElemVar Mock.xInt)
-                    , predicate = makeTruePredicate_
-                    , substitution = mempty
-                    }
-        assertEqual "" expect actual
+        actual1 <- evaluateWithAxioms evaluators
+            original { predicate = requirement }
+        assertEqual "Expected function to apply with initial condition"
+            expect1 actual1
+        let expect2 = OrPattern.fromPattern original
+        actual2 <- evaluateWithAxioms evaluators original
+        assertEqual "Expected function not to apply without initial condition"
+            expect2 actual2
     , testCase "no function branching" $ do
         let expect =
                 OrPattern.fromPatterns
@@ -369,50 +368,6 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-    -- Checks that `f(x/x)` fails to simplify to x/x
-    -- because x != 0 is not implied by the configuration
-    , testCase "non function-like simplification with remainder" $ do
-        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
-        assertErrorIO
-            (assertSubstring "" "doesn't imply rule condition")
-            (evaluateWithAxioms
-                ( axiomPatternsToEvaluators
-                    ( Map.fromList
-                        [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ EqualityRule $ equalityPattern
-                                    (Mock.fInt (mkElemVar Mock.xInt))
-                                    (mkElemVar Mock.xInt)
-                                ]
-                            )
-                        ,   (AxiomIdentifier.Ceil
-                                (AxiomIdentifier.Application Mock.tdivIntId)
-                            ,   [ EqualityRule
-                                  $ conditionalSimplificationRulePattern
-                                    (mkCeil testSortVariable
-                                        $ Mock.tdivInt
-                                            (mkElemVar Mock.xInt)
-                                            (mkElemVar Mock.xInt)
-                                    )
-                                    (makeNotPredicate $ makeEqualsPredicate_
-                                        (mkElemVar Mock.xInt)
-                                        (Mock.builtinInt 0)
-                                    )
-                                    (mkTop testSortVariable)
-                                ]
-                            )
-                        ]
-                    )
-                )
-                Conditional
-                    { term =
-                        Mock.fInt
-                        $ Mock.tdivInt
-                            (mkElemVar Mock.xInt)
-                            (mkElemVar Mock.xInt)
-                    , predicate = makeTruePredicate_
-                    , substitution = mempty
-                    }
-            )
     , testCase "exists variable equality" $ do
         let
             expect = OrPattern.top
@@ -1041,17 +996,6 @@ simplificationRulePattern left right =
         (Simplification True)
   where
     patt = equalityPattern left right
-
-conditionalSimplificationRulePattern
-    :: InternalVariable variable
-    => TermLike variable
-    -> Predicate.Predicate variable
-    -> TermLike variable
-    -> EqualityPattern variable
-conditionalSimplificationRulePattern left requires right =
-    patt & Lens.set (field @"requires") requires
-  where
-    patt = simplificationRulePattern left right
 
 conditionalEqualityPattern
     :: InternalVariable variable

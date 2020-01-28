@@ -23,9 +23,8 @@ import Control.Error
     ( MaybeT
     , maybeT
     )
+import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
-import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
     ( (&)
@@ -35,7 +34,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -44,13 +42,6 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
@@ -58,11 +49,11 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugAppliedRule
-    ( debugAppliedRule
-    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
@@ -70,10 +61,10 @@ import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     )
 import qualified Kore.Step.EqualityPattern as EqualityPattern
-import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -85,14 +76,10 @@ import Kore.Step.Step
     , UnificationProcedure (..)
     , UnifiedRule
     , UnifyingRule
-    , applyInitialConditions
-    , applyRemainder
     , assertFunctionLikeResults
     , checkFunctionLike
-    , checkSubstitutionCoverage
     , matchingPattern
     , precondition
-    , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
     , wouldNarrowWith
@@ -100,17 +87,8 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as EqualityPattern
     ( targetRuleVariables
     )
-import Kore.Unification.UnifierT
-    ( UnifierT
-    )
-import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( InternalVariable
-    , MonadUnify
-    )
-import qualified Kore.Unification.Unify as Monad.Unify
-    ( gather
-    , scatter
     )
 import Kore.Unparser
 import Kore.Variables.Target
@@ -120,7 +98,6 @@ import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
     )
-import qualified Log
 
 {- | Is the result a symbolic rewrite, i.e. a narrowing result?
 
@@ -177,83 +154,6 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
     quantify
         :: TermLike variable -> ElementVariable variable -> TermLike variable
     quantify = flip mkExists
-
-{- | Produce the final configurations of an applied rule.
-
-The rule's 'ensures' clause is applied to the conditions and normalized. The
-substitution is applied to the right-hand side of the rule to produce the final
-configurations.
-
-Because the rule is known to apply, @finalizeAppliedRule@ always returns exactly
-one branch.
-
-See also: 'applyInitialConditions'
-
- -}
-finalizeAppliedRule
-    :: forall unifier variable
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => SideCondition variable
-    -- ^ Top level condition
-    -> EqualityPattern variable
-    -- ^ Applied rule
-    -> OrCondition variable
-    -- ^ Conditions of applied rule
-    -> unifier (OrPattern variable)
-finalizeAppliedRule sideCondition renamedRule appliedConditions =
-    fmap OrPattern.fromPatterns . Monad.Unify.gather
-    $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
-  where
-    finalizeAppliedRuleWorker appliedCondition = do
-        -- Combine the initial conditions, the unification conditions, and the
-        -- axiom ensures clause. The axiom requires clause is included by
-        -- matchRule.
-        let
-            finalTerm = EqualityPattern.right renamedRule
-            ensures = EqualityPattern.ensures renamedRule
-            ensuresCondition = Condition.fromPredicate ensures
-        finalCondition <- simplifyPredicate
-            sideCondition
-            (Just appliedCondition)
-            ensuresCondition
-        -- Apply the normalized substitution to the right-hand side of the
-        -- axiom.
-        let
-            Conditional { substitution } = finalCondition
-            substitution' = Substitution.toMap substitution
-            finalTerm' = TermLike.substitute substitution' finalTerm
-        return (finalTerm' `Pattern.withCondition` finalCondition)
-
-finalizeRule
-    ::  ( InternalVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifier
-        )
-    => SideCondition (Target variable)
-    -- Top-level condition
-    -> Pattern (Target variable)
-    -- ^ Initial conditions
-    -> UnifiedRule (Target variable) (EqualityPattern (Target variable))
-    -- ^ Rewriting axiom
-    -> unifier [Result EqualityPattern variable]
-    -- TODO (virgil): This is broken, it should take advantage of the unifier's
-    -- branching and not return a list.
-finalizeRule sideCondition initial unifiedRule =
-    Monad.Unify.gather $ do
-        let initialCondition = Conditional.withoutTerm initial
-        let unificationCondition = Conditional.withoutTerm unifiedRule
-        applied <- applyInitialConditions
-            sideCondition
-            (Just initialCondition)
-            unificationCondition
-        -- Log unifiedRule here since ^ guards against bottom
-        debugAppliedRule unifiedRule
-        checkSubstitutionCoverage initial unifiedRule
-        let renamedRule = Conditional.term unifiedRule
-        final <- finalizeAppliedRule sideCondition renamedRule applied
-        let result = unwrapAndQuantifyConfiguration <$> final
-        return Step.Result { appliedRule = unifiedRule, result }
 
 {-
 This is implementing the ideas from the [Applying axioms by matching]
@@ -328,50 +228,6 @@ recoveryFunctionLikeResults initial results = do
       | sort == termLikeSort term = term
       | otherwise = fullyOverrideSort sort term
 
-finalizeRulesSequence
-    :: forall unifier variable
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => SideCondition (Target variable)
-    -> Pattern (Target variable)
-    -> [UnifiedRule (Target variable) (EqualityPattern (Target variable))]
-    -> unifier (Results EqualityPattern variable)
-finalizeRulesSequence sideCondition initial unifiedRules
-  = do
-    (results, remainder) <-
-        State.runStateT
-            (traverse finalizeRuleSequence' unifiedRules)
-            (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $
-        applyRemainder sideCondition initial remainder
-    return Step.Results
-        { results = Seq.fromList $ Foldable.fold results
-        , remainders =
-            OrPattern.fromPatterns
-            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
-            <$> remainders'
-        }
-  where
-    initialTerm = Conditional.term initial
-    finalizeRuleSequence'
-        :: UnifiedRule (Target variable) (EqualityPattern (Target variable))
-        -> State.StateT
-            (Condition (Target variable))
-            unifier
-            [Result EqualityPattern variable]
-    finalizeRuleSequence' unifiedRule = do
-        remainder <- State.get
-        let remainderPattern = Conditional.withCondition initialTerm remainder
-        results <- Monad.Trans.lift $
-            finalizeRule sideCondition remainderPattern unifiedRule
-        let unification = Conditional.withoutTerm unifiedRule
-            remainder' =
-                Condition.fromPredicate
-                $ Remainder.remainder'
-                $ MultiOr.singleton unification
-        State.put (remainder `Conditional.andCondition` remainder')
-        return results
-
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
 See also: 'applyRewriteRule'
@@ -380,7 +236,7 @@ See also: 'applyRewriteRule'
 applyRulesSequence
     ::  forall unifier variable
     .   ( InternalVariable variable
-        , MonadUnify unifier
+        , MonadSimplify unifier
         )
     => SideCondition (Target variable)
     -> Pattern (Target variable)
@@ -389,33 +245,48 @@ applyRulesSequence
     -- ^ Rewrite rules
     -> unifier (Results EqualityPattern variable)
 applyRulesSequence sideCondition initial rules =
-    matchRules sideCondition initial rules'
-    >>= finalizeRulesSequence sideCondition initial
+    Foldable.asum (matchRule sideCondition initial <$> rules')
+        & maybeT noResults finalize
   where
     rules' = EqualityPattern.targetRuleVariables sideCondition initial <$> rules
 
--- | Matches a list a rules against a configuration. See 'matchRule'.
-matchRules
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => UnifyingRule rule
-    => SideCondition (Target variable)
-    -> Pattern (Target variable)
-    -- ^ Initial configuration
-    -> [rule (Target variable)]
-    -- ^ Rule
-    -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
-matchRules sideCondition initial rules =
-    Monad.Unify.gather $ do
-        rule <- Monad.Unify.scatter rules
-        matchRule sideCondition initial rule
-            & maybeT (couldNotMatch rule) Unifier.scatter
-  where
-    couldNotMatch rule =
-        Unifier.explainAndReturnBottom
-            "Could not match patterns"
-            (matchingPattern rule)
-            (term initial)
+    finalize
+        :: UnifiedRule (Target variable) (EqualityPattern (Target variable))
+        -> unifier (Results EqualityPattern variable)
+    finalize unifiedRule = do
+        let (renamedRule, solution) = Conditional.splitTerm unifiedRule
+            Conditional { substitution } = solution
+            substitution' = Substitution.toMap substitution
+            term' =
+                TermLike.substitute substitution'
+                $ EqualityPattern.right renamedRule
+            ensures =
+                Condition.fromPredicate
+                $ Predicate.substitute substitution'
+                $ EqualityPattern.ensures renamedRule
+        return Step.Results
+            { remainders = mempty
+            , results =
+                Seq.singleton Step.Result
+                    { appliedRule = unifiedRule
+                    , result =
+                        OrPattern.fromPattern
+                        $ unwrapAndQuantifyConfiguration
+                        $ Pattern.andCondition initial { term = term' } ensures
+                    }
+            }
+
+    noResults :: unifier (Results EqualityPattern variable)
+    noResults =
+        return Step.Results
+            { results = mempty
+            , remainders =
+                OrPattern.fromPattern
+                $ Pattern.mapVariables
+                    Target.unTargetElement
+                    Target.unTargetSet
+                    initial
+            }
 
 {- | Attempt to match a rule with the initial configuration.
 
@@ -434,72 +305,48 @@ matchRule
     :: InternalVariable variable
     => MonadSimplify simplifier
     => UnifyingRule rule
-    => SideCondition variable
+    => SideCondition (Target variable)
     -- ^ Top level condition.
-    -> Pattern variable
+    -> Pattern (Target variable)
     -- ^ Initial configuration
-    -> rule variable
+    -> rule (Target variable)
     -- ^ Rule
-    -> MaybeT simplifier [UnifiedRule variable (rule variable)]
-matchRule sideCondition initial rule = Unifier.maybeUnifierT $ do
+    ->  MaybeT simplifier
+            (UnifiedRule (Target variable) (rule (Target variable)))
+matchRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-    -- Unify the left-hand side of the rule with the term of the initial
+    -- Match the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- matchIncremental ruleLeft initialTerm >>= maybe empty return
+    solution <- matchIncremental ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
     let requires = precondition rule
-    unification' <-
-        evaluateRequires sideCondition initialCondition unification requires
-    return (rule `Conditional.withCondition` unification')
+        mergedSideCondition =
+            SideCondition.andCondition sideCondition initialCondition
+    guardImplies mergedSideCondition solution requires
+    return (rule `Conditional.withCondition` solution)
 
-{- | Evaluate the pre-condition of a rule, subject to the given constraints.
- -}
-evaluateRequires
-    :: forall unifier variable
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => SideCondition variable
-    -- ^ the side condition
-    -> Condition variable
-    -- ^ the initial condition, usually from simplifying children
-    -> Condition variable
-    -- ^ the solution used to instantiate the rule
-    -> Predicate variable
-    -- ^ the pre-condition itself (the @requires@ clause)
-    -> unifier (Condition variable)
-evaluateRequires side initial solution requires = do
-    let requires' = solution <> Condition.fromPredicate requires
-    requires'' <-
-        simplifyCondition requires'
-        -- disable function evaluation:
-        & withoutAxioms
-        -- do not propagate unification errors:
-        & Unifier.maybeUnifierT
-        -- if there is a unification error
-        -- then continue with the original requirement,
-        -- else continue with the partially-simplified requirement.
-        & maybeT (return requires') Unifier.scatter
-    simplifyCondition requires''
-  where
-    {- | Evaluate a 'Condition' simplifier without any axiom evaluation.
+guardImplies
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition (Target variable)
+    -> Condition (Target variable)
+    -> Predicate (Target variable)
+    -> MaybeT simplifier ()
+guardImplies sideCondition solution requires1 = do
+    let Conditional { predicate = requires2, substitution } = solution
+    Exception.assert (isMatchingSubstitution substitution) $ return ()
+    let notRequires =
+            Condition.fromPredicate
+            $ Predicate.makeNotPredicate
+            $ Predicate.makeAndPredicate requires1 requires2
+        instantiation = Condition.fromSubstitution substitution
+    notRequires' <-
+        OrPattern.simplifyConditionsWithSmt sideCondition
+        $ OrPattern.fromPattern . Pattern.fromCondition
+        $ instantiation <> notRequires
+    Monad.guard (isBottom notRequires')
 
-    The simplified status of the results is reset because any result may be
-    further simplified when axiom evaluation is enabled.
-
-     -}
-    withoutAxioms
-        :: UnifierT unifier (Condition variable)
-        -> UnifierT unifier (Condition variable)
-    withoutAxioms =
-        fmap Condition.forgetSimplified
-        . Simplifier.localSimplifierAxioms (const mempty)
-
-    side' = SideCondition.andCondition side initial
-
-    simplifyCondition
-        :: forall unifier'
-        .  MonadUnify unifier'
-        => Condition variable
-        -> unifier' (Condition variable)
-    simplifyCondition = Branch.alternate . Simplifier.simplifyCondition side'
+isMatchingSubstitution :: Ord variable => Substitution (Target variable) -> Bool
+isMatchingSubstitution =
+    all (foldMapVariable Target.isTarget . fst) . Substitution.unwrap
