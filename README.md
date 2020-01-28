@@ -51,8 +51,11 @@ For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
 - [ghcide], an integrated development environment for Haskell
-  that is compatible with most editors. Note: [yq] is required to 
+  that is compatible with most editors. Note: [yq] is required to
   run `ghcide` with `hie-bios.sh`.
+- [hlint] and [stylish-haskell] for compliance with project guidelines. Run
+  `stack --stack-yaml global-stack.yaml install hlint stylish-haskell` to
+  install the versions that are used for CI.
 
 For integration testing, we also recommend:
 
@@ -70,3 +73,5 @@ For integration testing, we also recommend:
 [direnv]: https://github.com/direnv/direnv
 [ghcide]: https://github.com/digital-asset/ghcide
 [yq]: https://github.com/kislyuk/yq
+[hlint]: https://github.com/ndmitchell/hlint
+[stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
