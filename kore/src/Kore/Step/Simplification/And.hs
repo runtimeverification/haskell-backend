@@ -55,9 +55,6 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
@@ -120,11 +117,10 @@ Also, we have
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> And Sort (OrPattern variable)
+    => And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify sideCondition And { andFirst = first, andSecond = second } =
-    simplifyEvaluated sideCondition first second
+simplify And { andFirst = first, andSecond = second } =
+    simplifyEvaluated first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -145,11 +141,10 @@ to carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
+    => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated sideCondition first second
+simplifyEvaluated first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
   | OrPattern.isTrue first   = return second
@@ -159,17 +154,16 @@ simplifyEvaluated sideCondition first second
         gather $ do
             first1 <- scatter first
             second1 <- scatter second
-            makeEvaluate sideCondition first1 second1
+            makeEvaluate first1 second1
     return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> [OrPattern variable]
+    => [OrPattern variable]
     -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple _ [] = return OrPattern.top
-simplifyEvaluatedMultiple sideCondition (pat : patterns) =
-    foldM (simplifyEvaluated sideCondition) pat patterns
+simplifyEvaluatedMultiple [] = return OrPattern.top
+simplifyEvaluatedMultiple (pat : patterns) =
+    foldM simplifyEvaluated pat patterns
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
@@ -180,27 +174,24 @@ makeEvaluate
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => SideCondition variable
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluate sideCondition first second
+makeEvaluate first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
-  | otherwise = makeEvaluateNonBool sideCondition first second
+  | otherwise = makeEvaluateNonBool first second
 
 makeEvaluateNonBool
     ::  ( SimplifierVariable variable
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => SideCondition variable
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
 makeEvaluateNonBool
-    sideCondition
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
@@ -209,7 +200,7 @@ makeEvaluateNonBool
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
-    normalized <- Substitution.normalize sideCondition merged
+    normalized <- Substitution.normalize merged
     return
         normalized
             { term =

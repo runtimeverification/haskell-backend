@@ -207,7 +207,7 @@ simplifyEvaluated sideCondition first second
                 makeEvaluateFunctionalOr sideCondition secondP firstPatterns
         _
             | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                Iff.simplifyEvaluated sideCondition first second
+                Iff.simplifyEvaluated first second
             | otherwise ->
                 makeEvaluate
                     (OrPattern.toPattern first)
@@ -227,13 +227,13 @@ makeEvaluateFunctionalOr
 makeEvaluateFunctionalOr sideCondition first seconds = do
     firstCeil <- Ceil.makeEvaluate sideCondition first
     secondCeilsWithProofs <- mapM (Ceil.makeEvaluate sideCondition) seconds
-    firstNotCeil <- Not.simplifyEvaluated sideCondition firstCeil
+    firstNotCeil <- Not.simplifyEvaluated firstCeil
     let secondCeils = secondCeilsWithProofs
-    secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
+    secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         foldM
-            (And.simplifyEvaluated sideCondition)
+            And.simplifyEvaluated
             (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
@@ -242,7 +242,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
         foldM
-            (And.simplifyEvaluated sideCondition)
+            And.simplifyEvaluated
             firstCeil
             (oneNotBottom : firstEqualsSeconds)
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
@@ -252,7 +252,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
         (Conditional {term = secondTerm}, secondCeil)
       = do
         equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-        Implies.simplifyEvaluated sideCondition secondCeil equality
+        Implies.simplifyEvaluated secondCeil equality
 
 {-| evaluates an 'Equals' given its two 'Pattern' children.
 
@@ -299,13 +299,13 @@ makeEvaluate
     firstCeil <- Ceil.makeEvaluate sideCondition first'
     let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
     secondCeil <- Ceil.makeEvaluate sideCondition second'
-    firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
-    secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
+    firstCeilNegation <- Not.simplifyEvaluated firstCeil
+    secondCeilNegation <- Not.simplifyEvaluated secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
     negationAnd <-
-        And.simplifyEvaluated sideCondition firstCeilNegation secondCeilNegation
-    ceilAnd <- And.simplifyEvaluated sideCondition firstCeil secondCeil
-    equalityAnd <- And.simplifyEvaluated sideCondition termEquality ceilAnd
+        And.simplifyEvaluated firstCeilNegation secondCeilNegation
+    ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
+    equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
@@ -377,7 +377,6 @@ makeEvaluateTermsToPredicate first second sideCondition
             firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate
-                sideCondition
                 (MultiAnd.make [firstCeilNegation, secondCeilNegation])
 
             return $ MultiOr.merge predicatedOr ceilNegationAnd
