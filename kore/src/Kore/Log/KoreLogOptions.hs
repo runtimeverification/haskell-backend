@@ -86,7 +86,7 @@ instance Default KoreLogOptions where
             , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
             , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
             , debugSolverOptions = def @DebugSolverOptions
-            , exeName = def @ExeName
+            , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
             }
 
@@ -138,8 +138,8 @@ parseTimestampsSwitch =
         in Options.flag' TimestampsDisable info
 
 -- | Parse 'KoreLogOptions'.
-parseKoreLogOptions :: Parser KoreLogOptions
-parseKoreLogOptions =
+parseKoreLogOptions :: ExeName -> Parser KoreLogOptions
+parseKoreLogOptions exeName =
     KoreLogOptions
     <$> (parseKoreLogType <|> pure LogStdErr)
     <*> (parseSeverity <|> pure Warning)
@@ -148,7 +148,7 @@ parseKoreLogOptions =
     <*> parseDebugAppliedRuleOptions
     <*> parseDebugAxiomEvaluationOptions
     <*> parseDebugSolverOptions
-    <*> pure (ExeName mempty)
+    <*> pure exeName
     <*> parseLogSQLiteOptions
 
 parseEntryTypes :: Parser EntryTypes
@@ -206,6 +206,3 @@ newtype ExeName = ExeName { getExeName :: String }
 
 instance Pretty.Pretty ExeName where
     pretty = Pretty.pretty . getExeName
-
-instance Default ExeName where
-    def = ExeName mempty

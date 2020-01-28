@@ -225,12 +225,12 @@ makeKoreLogger exeName timestampSwitch logToText =
     messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ timestamp <> exeName' <> Pretty.space <> defaultLogPretty entry
+        $ exeName' <> timestamp <> Pretty.space <> defaultLogPretty entry
       where
         timestamp = case timestampSwitch of
             TimestampsEnable -> Pretty.brackets (formattedTime localTime)
             TimestampsDisable -> mempty
-        exeName' = Pretty.space <> Pretty.pretty exeName <> Pretty.colon
+        exeName' = Pretty.pretty exeName <> Pretty.colon
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
 
 -- | Adds the current timestamp to a log entry.

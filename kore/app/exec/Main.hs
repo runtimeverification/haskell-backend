@@ -333,7 +333,7 @@ parseKoreExecOptions =
         <*> parseBreadthLimit
         <*> parseDepthLimit
         <*> parseStrategy
-        <*> parseKoreLogOptions
+        <*> parseKoreLogOptions (ExeName "kore-exec")
         <*> pure Nothing
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
@@ -411,7 +411,7 @@ mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
     exitCode <-
-        runLoggerT (koreLogOptions { exeName = ExeName "kore-exec" })
+        runLoggerT koreLogOptions
         $ handle handleSomeException
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
