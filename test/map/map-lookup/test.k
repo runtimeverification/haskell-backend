@@ -1,7 +1,6 @@
 module TEST
 
-  imports INT
-  imports MAP
+  imports DOMAINS
 
   syntax Int ::= #lookup ( Map , Int ) [function]
 

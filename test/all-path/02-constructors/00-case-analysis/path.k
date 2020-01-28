@@ -1,5 +1,5 @@
 module PATH
-  import BOOL
+  import DOMAINS
   syntax S ::= "a" | "b" | "c"
   syntax T ::= total(S) | partial(S) | "end"
 
