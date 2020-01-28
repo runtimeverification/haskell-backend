@@ -1,5 +1,6 @@
 module WITH-CONFIG
     imports INT
+    imports DOMAINS
     imports COLLECTIONS
 
     configuration

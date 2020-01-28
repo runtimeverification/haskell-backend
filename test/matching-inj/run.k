@@ -1,6 +1,5 @@
 module RUN
-  imports BOOL
-  imports MAP
+  imports DOMAINS
 
   syntax A ::= "a"
   syntax B ::= "b"

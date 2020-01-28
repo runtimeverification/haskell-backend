@@ -1,6 +1,6 @@
 module DEMO
 
-  imports BOOL
+  imports DOMAINS
 
   syntax S ::= "a" | "b" | f(S) [function]
   rule f(a) => b

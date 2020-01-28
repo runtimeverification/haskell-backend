@@ -131,7 +131,11 @@
       - Kore.Step.Simplification.AndTerms
       - Kore.Parser.Parser
       - Main
-- ignore: {name: "Use fmap", within: [Kore.Step.Step]}
+- ignore:
+    name: "Use fmap"
+    within:
+      - Kore.Step.Step
+      - SQL.SOP
 - ignore: {name: "Avoid lambda", within: [Kore.Step.Function.Memo]}
 
 

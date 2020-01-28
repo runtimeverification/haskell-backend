@@ -33,7 +33,7 @@ endmodule
 
 module IMP
   imports IMP-SYNTAX
-  imports MAP
+  imports DOMAINS
   imports SYMBOLIC-INT
 
   syntax KResult ::= Int | Bool

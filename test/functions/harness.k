@@ -1,7 +1,6 @@
 module HARNESS
 
-  imports BASIC-K
-  imports LIST
+  imports DOMAINS
 
   // Test harness
 

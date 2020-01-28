@@ -1,6 +1,5 @@
 module TEST
-    imports INT
-    imports FLOAT
+    imports DOMAINS
 
     syntax IValType ::= "i32" | "i64"
     syntax FValType ::= "f32" | "f64"
