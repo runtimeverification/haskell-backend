@@ -59,7 +59,7 @@ declareSMTLemmas
         , MonadIO m
         , MonadSMT m
         )
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    => VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
     -> m ()
 declareSMTLemmas m = do
     SMT.All.declare (smtData tools)
@@ -69,7 +69,7 @@ declareSMTLemmas m = do
     tools = given
 
     declareRule
-        :: (Attribute.Axiom, SentenceAxiom (TermLike Variable))
+        :: (Attribute.Axiom SymbolOrAlias, SentenceAxiom (TermLike Variable))
         -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)

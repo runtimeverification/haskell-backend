@@ -46,6 +46,9 @@ import Kore.Internal.Variable
     ( InternalVariable
     , SortedVariable
     )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import Kore.Step.Step
     ( UnifyingRule (..)
     )
@@ -68,7 +71,7 @@ data EqualityPattern variable = EqualityPattern
     , left  :: !(TermLike.TermLike variable)
     , right :: !(TermLike.TermLike variable)
     , ensures :: !(Predicate variable)
-    , attributes :: !Attribute.Axiom
+    , attributes :: !(Attribute.Axiom SymbolOrAlias)
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)

@@ -78,6 +78,9 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import Kore.Syntax.Variable
 import Kore.Unification.Procedure
     ( unificationProcedure
@@ -204,7 +207,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
-        :: Attribute.Axiom
+        :: Attribute.Axiom SymbolOrAlias
         -> axiom
         -> axiom
     modifyAttribute att rule =
@@ -215,10 +218,13 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     axiomToRulePatt :: axiom -> Rule.RulePattern Variable
     axiomToRulePatt = toRulePattern
 
-    getAttribute :: axiom -> Attribute.Axiom
+    getAttribute :: axiom -> Attribute.Axiom SymbolOrAlias
     getAttribute = Rule.attributes . axiomToRulePatt
 
-    mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
+    mapAttribute
+        :: Int
+        -> Attribute.Axiom SymbolOrAlias
+        -> Attribute.Axiom SymbolOrAlias
     mapAttribute n attr =
         Lens.over (field @"identifier") (makeRuleIndex n) attr
 

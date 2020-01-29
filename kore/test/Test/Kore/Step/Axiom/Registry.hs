@@ -314,7 +314,8 @@ testDef =
             }
         ]
 
-testIndexedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
+testIndexedModule
+    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
 testIndexedModule =
     let
         verifyResult = verifyAndIndexDefinition Builtin.koreVerifiers testDef

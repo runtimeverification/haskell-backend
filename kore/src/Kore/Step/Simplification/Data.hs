@@ -63,6 +63,9 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import Log
 import SMT
     ( MonadSMT (..)
@@ -184,7 +187,7 @@ evalSimplifier
     :: forall smt a
     .  WithLog LogMessage smt
     => (MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
-    => VerifiedModule Attribute.Symbol Attribute.Axiom
+    => VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     -> SimplifierT smt a
     -> smt a
 evalSimplifier verifiedModule simplifier = do

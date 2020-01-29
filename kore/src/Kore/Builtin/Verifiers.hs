@@ -122,7 +122,7 @@ type Parser = Parsec Void Text
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-        VerifiedModule Attribute.Symbol Attribute.Axiom
+        VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     -- ^ Indexed module, to look up sort declarations
     ->  ParsedSentenceSort
     -- ^ Sort declaration to verify

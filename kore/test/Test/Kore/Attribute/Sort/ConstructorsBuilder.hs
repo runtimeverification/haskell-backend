@@ -40,6 +40,9 @@ import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Sort
     ( Sort (..)
     )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import Kore.Syntax.Id
     ( Id (getId)
     )
@@ -122,7 +125,7 @@ test_sortParsing =
 
 testForModule
     :: String
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     -> (String -> Map.Map Id Attribute.Constructors -> TestTree)
     -> TestTree
 testForModule name m testBuilder =

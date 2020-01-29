@@ -26,6 +26,9 @@ import qualified Kore.Step.SMT.Representation.All as Representation
     ( build
     )
 import qualified SMT
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 
 import Test.Kore.Step.SMT.Builders
     ( constructor
@@ -120,7 +123,7 @@ test_sortDeclaration =
 
     declareSymbolsAndSorts
         :: SMT.MonadSMT m
-        => VerifiedModule Attribute.Symbol Attribute.Axiom
+        => VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
         -> m ()
     declareSymbolsAndSorts m =
         Declaration.declare

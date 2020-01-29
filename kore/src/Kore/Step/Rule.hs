@@ -87,6 +87,9 @@ import Kore.Step.Simplification.ExpandAlias
 import Kore.Substitute
     ( SubstitutionVariable
     )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( Id (..)
@@ -215,7 +218,7 @@ not encode a normal rewrite or function axiom.
 -}
 termToAxiomPattern
     :: SubstitutionVariable variable
-    => Attribute.Axiom
+    => Attribute.Axiom SymbolOrAlias
     -> TermLike.TermLike variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
 termToAxiomPattern attributes pat =

@@ -100,7 +100,7 @@ Currently a 'MetadataTools' helper object is used to look-up
 sort and attribute information for symbols.
 -}
 fromIndexedModule
-    :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     -> SmtMetadataTools Attribute.StepperAttributes
     -> OverloadGraph
 fromIndexedModule verifiedModule tools = fromOverloads overloadPairList

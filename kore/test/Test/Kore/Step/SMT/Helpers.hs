@@ -184,10 +184,10 @@ testsForModule
         .   ( Given (SmtMetadataTools Attribute.Symbol)
             , SMT.MonadSMT m
             )
-        => VerifiedModule Attribute.Symbol Attribute.Axiom
+        => VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
         -> m ()
         )
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     -> [SmtPrelude -> TestTree]
     -> TestTree
 testsForModule name functionToTest indexedModule tests =

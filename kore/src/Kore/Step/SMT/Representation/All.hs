@@ -34,6 +34,9 @@ import qualified Kore.Step.SMT.Representation.Sorts as Sorts
 import qualified Kore.Step.SMT.Representation.Symbols as Symbols
     ( buildRepresentations
     )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import Kore.Syntax.Id
     ( Id
     )
@@ -45,7 +48,7 @@ It may ignore sorts and symbols that it can't handle yet (e.g. parameterized
 sorts).
 -}
 build
-    :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     -> Map.Map Id Attribute.Constructors
     -> AST.SmtDeclarations
 build indexedModule sortConstructors =

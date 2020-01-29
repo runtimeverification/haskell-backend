@@ -77,7 +77,7 @@ import qualified Kore.Verified as Verified
 
  -}
 extractEqualityAxioms
-    :: VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
     -> Map AxiomIdentifier [EqualityRule Variable]
 extractEqualityAxioms =
     Foldable.foldl' extractModuleAxioms Map.empty
@@ -86,7 +86,7 @@ extractEqualityAxioms =
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
         :: Map AxiomIdentifier [EqualityRule Variable]
-        -> VerifiedModule StepperAttributes Attribute.Axiom
+        -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
         -> Map AxiomIdentifier [EqualityRule Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences

@@ -109,6 +109,9 @@ import Kore.Step.Step
 import Kore.Substitute
     ( SubstitutionVariable
     )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( AstLocation (..)
@@ -194,7 +197,7 @@ data RulePattern variable = RulePattern
     , antiLeft :: !(Maybe (TermLike.TermLike variable))
     , requires :: !(Predicate variable)
     , rhs :: !(RHS variable)
-    , attributes :: !Attribute.Axiom
+    , attributes :: !(Attribute.Axiom SymbolOrAlias)
     }
     deriving (GHC.Generic)
 

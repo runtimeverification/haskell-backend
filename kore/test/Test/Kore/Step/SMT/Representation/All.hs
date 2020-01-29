@@ -31,6 +31,9 @@ import qualified Kore.Step.SMT.AST as AST
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Step.SMT.Representation.All as All
 import qualified SMT
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 
 import Test.Kore.Step.SMT.Builders
     ( constructor
@@ -87,7 +90,7 @@ test_symbolParsing =
 
 testsForModule
     :: String
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     ->  [  AST.Declarations SMT.SExpr Text Text
         -> TestTree
         ]

@@ -25,6 +25,9 @@ import qualified Kore.Step.SMT.AST as AST
     , SymbolReference
     )
 import Kore.Step.SMT.Representation.Sorts
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import qualified Kore.Syntax.Id as Kore
     ( Id
     )
@@ -146,7 +149,7 @@ test_sortParsing =
 
 testsForModule
     :: String
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     ->  [  AST.Declarations AST.SortReference AST.SymbolReference AST.Encodable
         -> TestTree
         ]

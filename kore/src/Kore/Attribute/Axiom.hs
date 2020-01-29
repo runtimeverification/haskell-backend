@@ -70,7 +70,7 @@ import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
  -}
-data Axiom =
+data Axiom symbol =
     Axiom
     { heatCool :: !HeatCool
     -- ^ An axiom may be denoted as a heating or cooling rule.
@@ -93,7 +93,7 @@ data Axiom =
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
-    , overload :: !(Overload SymbolOrAlias)
+    , overload :: !(Overload symbol)
     -- ^ The axiom is an overloaded-production axiom.
     , smtLemma :: !SmtLemma
     -- ^ The axiom should be sent to SMT as a lemma.
@@ -117,17 +117,17 @@ data Axiom =
     }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic Axiom
+instance SOP.Generic (Axiom SymbolOrAlias)
 
-instance SOP.HasDatatypeInfo Axiom
+instance SOP.HasDatatypeInfo (Axiom SymbolOrAlias)
 
-instance Debug Axiom
+instance Debug (Axiom SymbolOrAlias)
 
-instance Diff Axiom
+instance Diff (Axiom SymbolOrAlias)
 
-instance NFData Axiom
+instance NFData (Axiom SymbolOrAlias)
 
-instance Default Axiom where
+instance Default (Axiom SymbolOrAlias) where
     def =
         Axiom
             { heatCool = def
@@ -152,7 +152,7 @@ instance Default Axiom where
             , owise = def
             }
 
-instance ParseAttributes Axiom where
+instance ParseAttributes (Axiom SymbolOrAlias) where
     parseAttribute attr =
         typed @HeatCool (parseAttribute attr)
         Monad.>=> typed @ProductionID (parseAttribute attr)
@@ -197,7 +197,7 @@ instance ParseAttributes Axiom where
             , toAttributes . owise
             ]
 
-instance SQL.Column Axiom where
+instance SQL.Column (Axiom SymbolOrAlias) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes

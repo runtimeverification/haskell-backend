@@ -409,8 +409,8 @@ lookupMainModule
     => ModuleName
     -> Map.Map
         ModuleName
-        (VerifiedModule Attribute.Symbol Attribute.Axiom)
-    -> monad (VerifiedModule Attribute.Symbol Attribute.Axiom)
+        (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+    -> monad (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
 lookupMainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -427,7 +427,8 @@ Also prints timing information; see 'mainParse'.
 
  -}
 verifyDefinitionWithBase
-    ::  ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    ::  ( Map.Map ModuleName 
+            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
@@ -435,7 +436,7 @@ verifyDefinitionWithBase
     -- ^ Parsed definition to check well-formedness
     -> Main
         ( Map.Map ModuleName
-            (VerifiedModule Attribute.Symbol Attribute.Axiom)
+            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase
@@ -473,7 +474,8 @@ mainParse parser fileName = do
         Left err         -> error err
         Right definition -> return definition
 
-type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
+type LoadedModule =
+    VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
 
 type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 

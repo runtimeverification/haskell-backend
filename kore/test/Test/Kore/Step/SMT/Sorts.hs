@@ -37,6 +37,9 @@ import Kore.Syntax.Definition
 import qualified Kore.Syntax.Sentence as SentenceImport
     ( SentenceImport (..)
     )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import qualified SMT
 
 import Test.Kore.Step.SMT.Builders
@@ -378,7 +381,7 @@ test_sortDeclaration =
 
     declareSymbolsAndSorts
         :: SMT.MonadSMT m
-        => VerifiedModule Attribute.Symbol Attribute.Axiom
+        => VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
         -> m ()
     declareSymbolsAndSorts m =
         Declaration.declare

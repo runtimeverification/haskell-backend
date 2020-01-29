@@ -12,9 +12,6 @@ import Control.DeepSeq
 import Control.Exception
     ( evaluate
     )
-import Control.Lens
-    ( (.~)
-    )
 import Data.Default
 import Data.Function
     ( (&)
@@ -312,7 +309,7 @@ test_patternToAxiomPatternAndBack =
     requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
     ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
     attributesWithPriority =
-        def & field @"priority" .~ Attribute.Priority (Just 0)
+        def & setField @"priority" (Attribute.Priority (Just 0))
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
 
@@ -420,8 +417,10 @@ extractIndexedModule
     :: Text
     -> Either
         (Error a)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+        (Map.Map ModuleName
+            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+        )
+    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

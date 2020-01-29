@@ -1336,16 +1336,20 @@ verify
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
-            ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+            ModuleName 
+            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
         )
 verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
-    :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    :: Map ModuleName
+        (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
 verifiedModules = Kore.Error.assertRight (verify testDefinition)
 
-verifiedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
-Just verifiedModule = Map.lookup testModuleName verifiedModules
+verifiedModule
+    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+Just verifiedModule =
+    Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build verifiedModule

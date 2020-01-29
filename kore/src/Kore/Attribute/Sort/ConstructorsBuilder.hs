@@ -63,6 +63,9 @@ import Kore.Syntax.Id
 import Kore.Syntax.Sentence
     ( SentenceAxiom (SentenceAxiom)
     )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Syntax.Variable
     ( Variable (Variable)
@@ -73,7 +76,7 @@ import qualified Kore.Verified as Verified
     )
 
 indexBySort
-    :: VerifiedModule symbolAttribute Attribute.Axiom
+    :: VerifiedModule symbolAttribute (Attribute.Axiom SymbolOrAlias)
     -> Map.Map Id Constructors
 indexBySort indexedModule =
     Map.fromList
@@ -83,7 +86,7 @@ indexBySort indexedModule =
         )
 
 parseNoJunkAxiom
-    ::  ( Attribute.Axiom
+    ::  ( Attribute.Axiom SymbolOrAlias
         , Verified.SentenceAxiom
         )
     -> Maybe (Id, Constructors)

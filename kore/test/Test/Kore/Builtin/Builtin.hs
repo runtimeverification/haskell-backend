@@ -193,16 +193,23 @@ verify
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
-            ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
+            ModuleName
+                (VerifiedModule
+                    StepperAttributes
+                    (Attribute.Axiom SymbolOrAlias)
+                )
         )
 verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
-    :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
+    :: Map
+        ModuleName
+        (VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias))
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
+verifiedModule
+    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
 verifiedModule =
     fromMaybe
         (error $ "Missing module: " ++ show testModuleName)

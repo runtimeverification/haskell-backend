@@ -30,7 +30,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.Step.SMT.Representation.All as SMT.Representation
     ( build
     )
-
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 
 -- |Creates a set of 'MetadataTools' from a 'KoreIndexedModule'.
 --
@@ -39,7 +41,7 @@ import qualified Kore.Step.SMT.Representation.All as SMT.Representation
 -- its argument and result sorts.
 --
 build
-    :: VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
     -> SmtMetadataTools StepperAttributes
 build m =
     extractMetadataTools

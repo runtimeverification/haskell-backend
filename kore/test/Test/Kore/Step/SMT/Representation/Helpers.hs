@@ -24,6 +24,9 @@ import qualified Kore.Step.SMT.AST as AST
     , Symbol (Symbol)
     )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import qualified Kore.Syntax.Id as Kore
     ( Id
     )
@@ -35,10 +38,10 @@ import Test.Tasty.HUnit.Ext
 
 testsForModule
     :: String
-    ->  (  VerifiedModule Attribute.Symbol Attribute.Axiom
+    ->  (  VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
         -> AST.Declarations sort symbol name
         )
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
     -> [AST.Declarations sort symbol name -> TestTree]
     -> TestTree
 testsForModule name functionToTest indexedModule tests =

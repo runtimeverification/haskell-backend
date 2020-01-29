@@ -76,7 +76,9 @@ verifyAndIndexDefinition
     -> ParsedDefinition
     -> Either
         (Error VerifyError)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
+        (Map.Map ModuleName
+            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+        )
 verifyAndIndexDefinition builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
@@ -110,7 +112,10 @@ verifyAndIndexDefinitionWithBase
 
     let
         implicitModule
-            :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
+            :: ImplicitIndexedModule
+                Verified.Pattern
+                Attribute.Symbol
+                (Attribute.Axiom SymbolOrAlias)
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition

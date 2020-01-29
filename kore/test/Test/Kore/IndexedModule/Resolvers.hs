@@ -159,12 +159,14 @@ testDefinition =
         }
 
 indexedModules
-    :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    :: Map
+        ModuleName
+        (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
 indexedModules =
     assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 
 testIndexedModule, testIndexedObjectModule
-    :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
 testIndexedModule =
     fromMaybe (error $ "Missing module: " ++ show testMainModuleName)
     $ Map.lookup testMainModuleName indexedModules

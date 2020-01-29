@@ -280,7 +280,7 @@ extractSearchResults =
 
 verifiedMyModule
     :: Module Verified.Sentence
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
 verifiedMyModule module_ = indexedModule
   where
     indexedModule =
