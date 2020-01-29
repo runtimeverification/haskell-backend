@@ -54,6 +54,7 @@ import Kore.Attribute.Owise
 import Kore.Attribute.Parser
     ( AttributePattern
     , ParseAttributes (..)
+    , SymbolOrAlias
     )
 import Kore.Attribute.Priority
 import Kore.Attribute.ProductionID
@@ -92,7 +93,7 @@ data Axiom =
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
-    , overload :: !Overload
+    , overload :: !(Overload SymbolOrAlias)
     -- ^ The axiom is an overloaded-production axiom.
     , smtLemma :: !SmtLemma
     -- ^ The axiom should be sent to SMT as a lemma.
@@ -163,7 +164,7 @@ instance ParseAttributes Axiom where
         Monad.>=> typed @Trusted (parseAttribute attr)
         Monad.>=> typed @Concrete (parseAttribute attr)
         Monad.>=> typed @Simplification (parseAttribute attr)
-        Monad.>=> typed @Overload (parseAttribute attr)
+        Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
         Monad.>=> typed @SmtLemma (parseAttribute attr)
         Monad.>=> typed @Label (parseAttribute attr)
         Monad.>=> typed @SourceLocation (parseAttribute attr)

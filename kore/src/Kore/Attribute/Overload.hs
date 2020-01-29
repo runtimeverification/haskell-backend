@@ -18,30 +18,30 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
-newtype Overload =
+newtype Overload symbol =
     Overload
-        { getOverload :: Maybe (SymbolOrAlias, SymbolOrAlias) }
+        { getOverload :: Maybe (symbol, symbol) }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic Overload
+instance SOP.Generic (Overload SymbolOrAlias)
 
-instance SOP.HasDatatypeInfo Overload
+instance SOP.HasDatatypeInfo (Overload SymbolOrAlias)
 
-instance Debug Overload
+instance Debug (Overload SymbolOrAlias)
 
-instance Diff Overload
+instance Diff (Overload SymbolOrAlias)
 
-instance Semigroup Overload where
+instance Semigroup (Overload SymbolOrAlias) where
     (<>) a@(Overload (Just _)) _ = a
     (<>) _                     b = b
 
-instance Monoid Overload where
+instance Monoid (Overload SymbolOrAlias) where
     mempty = Overload { getOverload = Nothing }
 
-instance Default Overload where
+instance Default (Overload SymbolOrAlias) where
     def = mempty
 
-instance NFData Overload
+instance NFData (Overload SymbolOrAlias)
 
 -- | Kore identifier representing the @overload@ attribute symbol.
 overloadId :: Id
@@ -66,7 +66,7 @@ overloadAttribute symbol1 symbol2 =
         , attributePattern_ symbol2
         ]
 
-instance ParseAttributes Overload where
+instance ParseAttributes (Overload SymbolOrAlias) where
     parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Overload { getOverload }
