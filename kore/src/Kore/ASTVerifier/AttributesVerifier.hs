@@ -12,6 +12,9 @@ module Kore.ASTVerifier.AttributesVerifier
     , verifySortHookAttribute
     , verifySymbolHookAttribute
     , verifyNoHookAttribute
+    , verifySymbolAttributes
+    , verifyAxiomAttributes
+    , verifySortAttributes
     , parseAttributes
     ) where
 
@@ -19,9 +22,15 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 
 import Kore.ASTVerifier.Error
+import qualified Kore.Attribute.Axiom as Attribute
+    ( Axiom
+    )
 import Kore.Attribute.Hook
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Error
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
 
@@ -104,3 +113,15 @@ verifyNoHookAttribute attributes = do
             return ()
         Just _ ->
             koreFail "Unexpected 'hook' attribute"
+
+
+verifySymbolAttributes
+    :: Attribute.Axiom SymbolOrAlias
+    -> Attribute.Axiom Symbol
+verifySymbolAttributes = undefined
+
+verifyAxiomAttributes :: a
+verifyAxiomAttributes = undefined
+
+verifySortAttributes :: a
+verifySortAttributes = undefined
