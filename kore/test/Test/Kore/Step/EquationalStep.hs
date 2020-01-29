@@ -335,27 +335,27 @@ test_applyEquationalRule_ =
             axiom = EqualityRule ruleId { ensures }
         actual <- applyEquationalRuleParallel_ initial axiom
         assertEqual "" expect actual
-    -- x => x requires g(x)=f(x)
-    -- vs
-    -- a
-    -- Expected: y1 and g(a)=f(a)
-    , testCase "conjoin rule requirement" $ do
+
+    , testCase "rule requirement" $ do
         let
             requires =
-                makeEqualsPredicate_
+                makeEqualsPredicate Mock.testSort
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
-            expect = Right
-                [ OrPattern.fromPatterns
-                    [ initialTerm
-                    `Pattern.withCondition` Condition.fromPredicate requires
-                    ]
-                ]
             initialTerm = mkElemVar Mock.x
-            initial = Pattern.fromTermLike initialTerm
             axiom = EqualityRule ruleId { requires }
-        actual <- applyEquationalRuleParallel_ initial axiom
-        assertEqual "" expect actual
+            apply x = applyEquationalRuleParallel_ x axiom
+
+        let initial1 = Pattern.fromTermLike initialTerm
+            expect1 = Right []
+        actual1 <- apply initial1
+        assertEqual "Expected rule would not apply without requirement"
+            expect1 actual1
+
+        let initial2 = initial1 { predicate = requires }
+            expect2 = Right [OrPattern.fromPattern initial2]
+        actual2 <- apply initial2
+        assertEqual "Expected rule would apply with requirement" expect2 actual2
 
     , testCase "rule a => \\bottom" $ do
         let expect = Right [ OrPattern.fromPatterns [] ]
