@@ -55,6 +55,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
+import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
@@ -114,14 +115,25 @@ evaluateApplication
     (evaluateSortInjection -> application)
   = finishT $ do
     Foldable.for_ canMemoize recallOrPattern
-    results <-
-        maybeEvaluatePattern
-            childrenCondition
-            termLike
-            unevaluated
-            sideCondition
-        & maybeT (unevaluated Nothing) return
-        & Trans.lift
+    results <- OrPattern.gatherPatterns $ do
+        condition' <- simplifyCondition sideCondition childrenCondition
+        let subst = Substitution.toMap (substitution condition')
+            termLike' = TermLike.substitute subst termLike
+            unevaluated maybeSideCondition =
+                return
+                $ OrPattern.fromPattern
+                $ Pattern.withCondition
+                    (markSimplifiedIfChildren maybeSideCondition termLike)
+                    childrenCondition
+        results <-
+            maybeEvaluatePattern
+                condition'
+                termLike'
+                unevaluated
+                sideCondition
+            & maybeT (unevaluated Nothing) return
+            & Trans.lift
+        Branch.scatter results
     Foldable.for_ canMemoize (recordOrPattern results)
     return results
   where
@@ -131,12 +143,6 @@ evaluateApplication
     Application { applicationSymbolOrAlias = symbol } = application
 
     termLike = synthesize (ApplySymbolF application)
-    unevaluated maybeSideCondition =
-        return
-        $ OrPattern.fromPattern
-        $ Pattern.withCondition
-            (markSimplifiedIfChildren maybeSideCondition termLike)
-            childrenCondition
 
     markSimplifiedIfChildren Nothing = TermLike.setSimplified
         (Foldable.foldMap TermLike.simplifiedAttribute application)
