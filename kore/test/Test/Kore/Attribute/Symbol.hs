@@ -22,9 +22,6 @@ import Test.Tasty.HUnit
 import Data.Default
     ( def
     )
-import Data.Function
-    ( (&)
-    )
 import Data.Generics.Product
 
 import Kore.Attribute.Attributes

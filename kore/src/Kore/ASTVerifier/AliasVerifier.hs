@@ -17,7 +17,6 @@ import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Class as State
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
-import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.Map.Strict

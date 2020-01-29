@@ -15,7 +15,6 @@ import qualified Control.Lens as Lens
 import Data.Default
     ( def
     )
-import Data.Function
 import Data.Generics.Product
 
 import Data.Limit

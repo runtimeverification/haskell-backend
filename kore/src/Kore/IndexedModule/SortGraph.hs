@@ -16,9 +16,6 @@ module Kore.IndexedModule.SortGraph
 
 import Prelude.Kore
 
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr

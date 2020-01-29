@@ -36,9 +36,6 @@ import qualified Control.Monad as Monad
 import Control.Monad.Trans.Class
     ( lift
     )
-import Data.Function
-    ( (&)
-    )
 import Data.List
     ( intercalate
     )

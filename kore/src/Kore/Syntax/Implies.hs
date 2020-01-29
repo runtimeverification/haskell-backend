@@ -14,7 +14,6 @@ import Control.DeepSeq
     ( NFData (..)
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP

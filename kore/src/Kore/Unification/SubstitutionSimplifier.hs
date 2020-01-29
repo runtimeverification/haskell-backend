@@ -19,9 +19,6 @@ import Control.Applicative
 import Control.Error
     ( maybeT
     )
-import Data.Function
-    ( (&)
-    )
 
 import qualified Branch as BranchT
 import Kore.Internal.Condition

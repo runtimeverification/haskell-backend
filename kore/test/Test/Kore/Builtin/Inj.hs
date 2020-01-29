@@ -6,9 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.ASTVerifier.PatternVerifier

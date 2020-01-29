@@ -65,9 +65,6 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Either as Either
-import Data.Function
-    ( (&)
-    )
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map

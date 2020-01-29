@@ -18,9 +18,6 @@ import Control.Monad.Catch
     , MonadThrow (throwM)
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( (&)
-    )
 import Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
 import Data.Limit

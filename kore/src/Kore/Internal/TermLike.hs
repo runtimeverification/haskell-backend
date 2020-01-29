@@ -184,7 +184,6 @@ import Data.ByteString
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Functor.Foldable
     ( Base
     )

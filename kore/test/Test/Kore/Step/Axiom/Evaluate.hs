@@ -9,7 +9,6 @@ import Test.Tasty.HUnit
 
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import qualified Data.Text.Prettyprint.Doc as Pretty

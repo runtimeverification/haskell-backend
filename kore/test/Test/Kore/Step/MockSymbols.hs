@@ -30,7 +30,6 @@ import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Either as Either
-import Data.Function
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq

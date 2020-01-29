@@ -14,9 +14,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
-import Data.Function
-    ( (&)
-    )
 import Data.Generics.Sum.Constructors
 import qualified Data.Map.Strict as Map
 import Data.Proxy
