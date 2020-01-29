@@ -34,6 +34,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -64,7 +65,6 @@ import qualified Kore.Step.EqualityPattern as EqualityPattern
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
-import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -336,16 +336,22 @@ guardImplies
 guardImplies sideCondition solution requires1 = do
     let Conditional { predicate = requires2, substitution } = solution
     Exception.assert (isMatchingSubstitution substitution) $ return ()
-    let notRequires =
-            Condition.fromPredicate
-            $ Predicate.makeNotPredicate
-            $ Predicate.makeAndPredicate requires1 requires2
-        instantiation = Condition.fromSubstitution substitution
-    notRequires' <-
-        OrPattern.simplifyConditionsWithSmt sideCondition
-        $ OrPattern.fromPattern . Pattern.fromCondition
-        $ instantiation <> notRequires
-    Monad.guard (isBottom notRequires')
+    notRequires <- Branch.gather $ do
+        let notRequires =
+                Condition.fromPredicate
+                $ Predicate.makeNotPredicate
+                $ Predicate.makeAndPredicate requires1 requires2
+            instantiation = Condition.fromSubstitution substitution
+        simplified <-
+            Simplifier.simplifyCondition sideCondition
+            $ instantiation <> notRequires
+        evaluated <- SMT.Evaluator.evaluate (withSideCondition simplified)
+        case evaluated of
+            Just False -> empty
+            _          -> return simplified
+    Monad.guard (null notRequires)
+  where
+    withSideCondition = (<>) (SideCondition.assumedTrue sideCondition)
 
 isMatchingSubstitution :: Ord variable => Substitution (Target variable) -> Bool
 isMatchingSubstitution =
