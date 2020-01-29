@@ -25,6 +25,8 @@ module Kore.IndexedModule.Resolvers
     , getHeadApplicationSorts
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( hush
     )

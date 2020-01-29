@@ -5,6 +5,8 @@ module Test.Debug
     , test_diff
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Text.Prettyprint.Doc as Pretty

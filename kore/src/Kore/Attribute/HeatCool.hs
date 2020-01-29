@@ -12,6 +12,8 @@ module Kore.Attribute.HeatCool
     , coolId, coolSymbol, coolAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

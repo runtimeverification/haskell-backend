@@ -40,6 +40,8 @@ module Kore.Builtin.String
     , string2TokenKey
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

@@ -18,6 +18,8 @@ module Kore.Log
     , module KoreLogOptions
     ) where
 
+import Prelude.Kore
+
 import Colog
     ( LogAction (..)
     )

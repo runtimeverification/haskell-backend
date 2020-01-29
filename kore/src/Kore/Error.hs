@@ -22,6 +22,8 @@ module Kore.Error
     , module Control.Monad.Except
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

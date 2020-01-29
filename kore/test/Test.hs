@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Prelude.Kore
+
 import qualified System.Environment as Environment
 
 import qualified Driver

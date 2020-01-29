@@ -2,6 +2,8 @@ module Test.Kore.Step.SMT.Representation.Sorts
     ( test_sortParsing
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Kore.Attribute.Axiom as Attribute

@@ -7,6 +7,8 @@ module Kore.Step.Rule.Simplify
     ( SimplifyRuleLHS (..)
     ) where
 
+import Prelude.Kore
+
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )

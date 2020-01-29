@@ -23,6 +23,8 @@ module Kore.Builtin.KEqual
     , iteKey
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict

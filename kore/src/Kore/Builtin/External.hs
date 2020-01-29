@@ -7,6 +7,8 @@ module Kore.Builtin.External
     ( externalize
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Data.Functor.Const
     ( Const (..)

@@ -55,6 +55,8 @@ module Kore.Syntax.Sentence
     , module Kore.Syntax.Module
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

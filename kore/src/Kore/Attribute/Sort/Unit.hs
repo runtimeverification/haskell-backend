@@ -11,6 +11,8 @@ module Kore.Attribute.Sort.Unit
     , unitId, unitSymbol, unitAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

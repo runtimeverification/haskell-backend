@@ -23,6 +23,8 @@ module Kore.Repl.Interpreter
     , showCurrentClaimIndex
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
     ( CofreeF (..)
     )

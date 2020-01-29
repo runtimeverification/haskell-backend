@@ -12,6 +12,8 @@ module Kore.Internal.Inj
     , unorderedInj
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import Control.Exception
     ( Exception (..)

@@ -9,6 +9,8 @@ module Kore.Step.Simplification.Rule
     , simplifyFunctionAxioms
     ) where
 
+import Prelude.Kore
+
 import Data.Map.Strict
     ( Map
     )

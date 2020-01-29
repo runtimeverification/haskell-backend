@@ -6,6 +6,8 @@ module Test.Tasty.HUnit.Ext
     , module Kore.Debug
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty.HUnit hiding
     ( assertEqual
     , (@=?)

@@ -14,6 +14,8 @@ module Test.ListT
     , test_ListT_Reader
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range

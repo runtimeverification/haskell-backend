@@ -8,6 +8,8 @@ module Kore.Syntax.Equals
     ( Equals (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

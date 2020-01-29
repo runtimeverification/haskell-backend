@@ -2,6 +2,8 @@ module Test.Kore.Repl.Parser
     ( test_replParser
     ) where
 
+import Prelude.Kore
+
 import Data.Default
 import qualified Data.GraphViz as Graph
 import qualified Data.Set as Set

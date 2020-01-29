@@ -1,5 +1,7 @@
 module Test.Kore.Parser.CharSet (test_charSet) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

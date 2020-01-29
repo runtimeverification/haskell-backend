@@ -7,6 +7,8 @@ module Kore.Log.DebugProofState
     ( DebugProofState (..)
     ) where
 
+import Prelude.Kore
+
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )

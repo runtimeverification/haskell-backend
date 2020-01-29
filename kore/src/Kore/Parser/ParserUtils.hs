@@ -23,6 +23,10 @@ module Kore.Parser.ParserUtils
     , manyUntilChar
     ) where
 
+import Prelude.Kore hiding
+    ( takeWhile
+    )
+
 import Control.Applicative
     ( (<|>)
     )
@@ -31,9 +35,6 @@ import Control.Monad
     )
 import Data.Functor
     ( ($>)
-    )
-import Prelude hiding
-    ( takeWhile
     )
 import Text.Megaparsec
     ( Parsec

@@ -6,6 +6,8 @@ module Test.Kore.With
     , VariableElement (..)
     ) where
 
+import Prelude.Kore
+
 import Data.List
     ( foldl'
     )

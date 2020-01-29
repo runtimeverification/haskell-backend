@@ -3,6 +3,8 @@ module Test.Kore.Step.Simplifier
     , mockConditionSimplifier
     ) where
 
+import Prelude.Kore
+
 import Kore.Internal.OrPattern
     ( OrPattern
     )

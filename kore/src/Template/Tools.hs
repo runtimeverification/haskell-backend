@@ -8,6 +8,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Template.Tools (newDefinitionGroup) where
 
+import Prelude.Kore
+
 import Language.Haskell.TH
 
 -- Begins a new definition group.

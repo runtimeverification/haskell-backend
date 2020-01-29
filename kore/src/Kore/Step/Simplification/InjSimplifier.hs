@@ -10,6 +10,8 @@ module Kore.Step.Simplification.InjSimplifier
     , normalize
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Exception as Exception
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set

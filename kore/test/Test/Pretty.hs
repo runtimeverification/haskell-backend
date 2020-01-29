@@ -2,6 +2,8 @@ module Test.Pretty
     ( test_layoutOneLine
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Text as Text

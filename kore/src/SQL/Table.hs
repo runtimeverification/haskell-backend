@@ -16,6 +16,8 @@ module SQL.Table
     , module SQL.Key
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.Extra as Monad
 import Data.Int
     ( Int64

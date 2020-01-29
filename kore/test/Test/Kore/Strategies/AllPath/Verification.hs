@@ -2,6 +2,8 @@ module Test.Kore.Strategies.AllPath.Verification
     ( test_allPathVerification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default

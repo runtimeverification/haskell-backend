@@ -1,14 +1,16 @@
 module Test.Kore.Builtin
-    ( test_internalize ) where
+    ( test_internalize
+    ) where
+
+import Prelude.Kore hiding
+    ( concatMap
+    )
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Set
 import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( concatMap
-    )
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Kore

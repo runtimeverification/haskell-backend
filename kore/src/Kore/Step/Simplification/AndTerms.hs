@@ -19,6 +19,10 @@ module Kore.Step.Simplification.AndTerms
     , andFunctions
     ) where
 
+import Prelude.Kore hiding
+    ( concat
+    )
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -38,9 +42,6 @@ import Data.Function
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( concat
-    )
 
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.List as Builtin.List

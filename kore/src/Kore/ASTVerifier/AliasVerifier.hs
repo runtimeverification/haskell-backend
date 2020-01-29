@@ -6,6 +6,8 @@ License     : NCSA
 module Kore.ASTVerifier.AliasVerifier
     ( verifyAliases ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
 import Control.Monad.Reader
     ( ReaderT

@@ -2,6 +2,8 @@ module Test.Kore.Step.Rule.Simplify
     ( test_simplifyRule
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default

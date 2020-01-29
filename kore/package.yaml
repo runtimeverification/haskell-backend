@@ -111,6 +111,7 @@ default-extensions:
   - LambdaCase
   - MultiParamTypeClasses
   - NamedFieldPuns
+  - NoImplicitPrelude
   - OverloadedStrings
   - PatternSynonyms
   - RankNTypes

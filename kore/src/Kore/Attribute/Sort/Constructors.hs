@@ -10,6 +10,8 @@ module Kore.Attribute.Sort.Constructors
     , Constructor (..)
     ) where
 
+import Prelude.Kore
+
 import Data.List.NonEmpty
     ( NonEmpty
     )

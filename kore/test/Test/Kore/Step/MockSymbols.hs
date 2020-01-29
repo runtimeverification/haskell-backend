@@ -23,6 +23,8 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
+import Prelude.Kore
+
 import Control.Applicative
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor

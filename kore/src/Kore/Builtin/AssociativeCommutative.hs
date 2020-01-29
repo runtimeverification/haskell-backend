@@ -37,6 +37,8 @@ module Kore.Builtin.AssociativeCommutative
     , VariableElements (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

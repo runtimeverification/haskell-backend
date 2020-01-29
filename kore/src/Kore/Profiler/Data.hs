@@ -11,6 +11,8 @@ module Kore.Profiler.Data
     , Destination (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( when
     )

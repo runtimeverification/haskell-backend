@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.OrPattern
     ( test_orPatternSimplification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Kore.Internal.Conditional

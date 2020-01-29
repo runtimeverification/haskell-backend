@@ -15,6 +15,8 @@ module Kore.Builtin.Error
     , notImplementedInternal
     ) where
 
+import Prelude.Kore
+
 import GHC.Stack
     ( HasCallStack
     )

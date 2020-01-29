@@ -2,6 +2,9 @@ module Test.Kore.Step.RulePattern
     ( test_freeVariables
     , test_refreshRulePattern
     ) where
+
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -14,13 +17,13 @@ import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.RulePattern
+import Kore.Step.Step
+    ( refreshRule
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Kore.Step.Step
-    ( refreshRule
-    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_freeVariables :: TestTree

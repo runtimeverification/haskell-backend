@@ -8,6 +8,8 @@ module Kore.Syntax.Ceil
     ( Ceil (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

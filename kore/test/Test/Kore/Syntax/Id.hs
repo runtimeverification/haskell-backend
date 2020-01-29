@@ -2,6 +2,8 @@ module Test.Kore.Syntax.Id
     ( test_Id
     ) where
 
+import Prelude.Kore ()
+
 import Test.Tasty
 
 import Data.Function

@@ -14,6 +14,8 @@ module Kore.IndexedModule.SortGraph
     , Subsort (..)
     ) where
 
+import Prelude.Kore
+
 import Data.Function
     ( (&)
     )

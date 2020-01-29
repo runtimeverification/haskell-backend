@@ -11,11 +11,12 @@ module Kore.Attribute.Sort
     ( Sort (..)
     ) where
 
-import qualified Control.Monad as Monad
-import Data.Generics.Product
-import Prelude hiding
+import Prelude.Kore hiding
     ( concat
     )
+
+import qualified Control.Monad as Monad
+import Data.Generics.Product
 
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser hiding

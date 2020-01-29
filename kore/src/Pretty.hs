@@ -10,6 +10,8 @@ module Pretty
     , renderText
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

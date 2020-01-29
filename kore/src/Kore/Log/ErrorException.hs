@@ -9,6 +9,8 @@ module Kore.Log.ErrorException
     , errorException
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.Catch
     ( SomeException
     , displayException

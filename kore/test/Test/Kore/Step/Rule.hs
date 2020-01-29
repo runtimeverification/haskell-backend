@@ -3,6 +3,8 @@ module Test.Kore.Step.Rule
     , test_patternToAxiomPatternAndBack
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 

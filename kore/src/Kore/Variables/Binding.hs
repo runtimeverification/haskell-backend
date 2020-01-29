@@ -15,6 +15,8 @@ module Kore.Variables.Binding
     , nuBinder
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Env
 import qualified Control.Lens as Lens
 import Data.Monoid

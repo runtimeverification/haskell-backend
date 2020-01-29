@@ -16,6 +16,8 @@ module SQL.Query
     , withDoubleQuotes, withParens
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.Trans.Accum
     ( AccumT
     , execAccumT

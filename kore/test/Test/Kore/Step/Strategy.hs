@@ -18,6 +18,13 @@ module Test.Kore.Step.Strategy
     , prop_pickPlus
     ) where
 
+import Prelude.Kore hiding
+    ( and
+    , const
+    , or
+    , seq
+    )
+
 import Test.QuickCheck.Instances ()
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -30,12 +37,6 @@ import Data.Functor.Identity
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Sequence as Seq
 import Numeric.Natural
-import Prelude hiding
-    ( and
-    , const
-    , or
-    , seq
-    )
 
 import Data.Limit
     ( Limit (..)

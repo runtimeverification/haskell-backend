@@ -10,6 +10,8 @@ module Kore.Step.SMT.Representation.Symbols
     ( buildRepresentations
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( mapMaybe

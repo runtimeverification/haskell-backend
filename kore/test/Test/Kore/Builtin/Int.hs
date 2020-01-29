@@ -30,6 +30,8 @@ module Test.Kore.Builtin.Int
     , testInt
     ) where
 
+import Prelude.Kore
+
 import Hedgehog hiding
     ( Concrete
     )

@@ -16,6 +16,8 @@ module Kore.Step.SMT.Translate
     , runTranslator
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

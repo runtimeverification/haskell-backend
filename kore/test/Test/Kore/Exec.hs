@@ -5,6 +5,8 @@ module Test.Kore.Exec
     , test_execGetExitCode
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Applicative

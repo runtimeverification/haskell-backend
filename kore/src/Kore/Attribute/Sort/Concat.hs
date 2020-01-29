@@ -11,6 +11,8 @@ module Kore.Attribute.Sort.Concat
     , concatId, concatSymbol, concatAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

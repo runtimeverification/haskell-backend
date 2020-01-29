@@ -11,6 +11,8 @@ module Kore.Attribute.Functional
     , functionalId, functionalSymbol, functionalAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

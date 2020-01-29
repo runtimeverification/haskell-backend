@@ -10,6 +10,8 @@ module Kore.Attribute.Source
     ( Source (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( many
     )

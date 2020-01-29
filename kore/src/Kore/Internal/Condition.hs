@@ -29,6 +29,8 @@ module Kore.Internal.Condition
     , Conditional.andCondition
     ) where
 
+import Prelude.Kore
+
 import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Pattern.FreeVariables

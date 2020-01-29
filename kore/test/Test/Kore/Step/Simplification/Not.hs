@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Not
     ( test_simplifyEvaluated
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

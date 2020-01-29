@@ -8,6 +8,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 module Kore.Step.SMT.Encoder (encodeName) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

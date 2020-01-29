@@ -1,6 +1,8 @@
 module Test.Kore.Step.Simplification.Rule
     ( test_simplifyRulePattern ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 
