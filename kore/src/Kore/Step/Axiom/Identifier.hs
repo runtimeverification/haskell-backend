@@ -24,6 +24,8 @@ module Kore.Step.Axiom.Identifier
     , matchAxiomIdentifier
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

@@ -10,6 +10,8 @@ module SQL.Key
     ( Key(..)
     ) where
 
+import Prelude.Kore
+
 import Data.Int
     ( Int64
     )

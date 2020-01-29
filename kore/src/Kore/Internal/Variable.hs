@@ -11,6 +11,8 @@ module Kore.Internal.Variable
     , module Kore.Syntax.Variable
     ) where
 
+import Prelude.Kore
+
 import Kore.Debug
     ( Debug
     )

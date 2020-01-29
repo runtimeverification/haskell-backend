@@ -9,6 +9,8 @@ module Kore.Step.Rule.Combine
     , mergeRulesPredicate
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( empty
     )

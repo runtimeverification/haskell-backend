@@ -2,6 +2,8 @@ module Test.Kore.Step.SMT.Representation.Symbols
     ( test_symbolParsing
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Kore.Attribute.Axiom as Attribute

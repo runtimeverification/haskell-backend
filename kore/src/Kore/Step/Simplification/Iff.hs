@@ -13,6 +13,8 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
+import Prelude.Kore
+
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern

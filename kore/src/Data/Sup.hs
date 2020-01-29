@@ -11,6 +11,8 @@ module Data.Sup
     ( Sup (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

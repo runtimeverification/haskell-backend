@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Application
     , Application (..)
     ) where
 
+import Prelude.Kore
+
 import Branch
     ( BranchT
     )

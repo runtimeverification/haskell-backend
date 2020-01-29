@@ -19,6 +19,8 @@ module Kore.Strategies.Verification
     , toRulePattern
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( partitionEithers
     )

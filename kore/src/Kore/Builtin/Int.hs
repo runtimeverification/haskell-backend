@@ -59,6 +59,8 @@ module Kore.Builtin.Int
     , log2Key
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

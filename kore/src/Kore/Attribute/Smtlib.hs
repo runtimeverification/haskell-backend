@@ -13,6 +13,8 @@ module Kore.Attribute.Smtlib
     , shortenSExpr
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Error as Error
 import Data.Maybe
     ( fromMaybe

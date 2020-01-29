@@ -4,6 +4,8 @@ module Test.Kore.Internal.OrPattern
     , hprop_flattenIdemOr
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
     ( Property
     , (===)

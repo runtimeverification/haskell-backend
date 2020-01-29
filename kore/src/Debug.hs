@@ -20,6 +20,8 @@ module Debug
     , formatExceptionInfo
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
 import Data.ByteString
     ( ByteString

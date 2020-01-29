@@ -3,6 +3,8 @@ module Test.Kore.Unification.UnifierT
     , test_simplifyCondition
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Foldable as Foldable

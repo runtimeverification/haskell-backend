@@ -17,6 +17,8 @@ module Kore.Internal.OrCondition
     , toPredicate
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Foldable as Foldable
 
 import Branch

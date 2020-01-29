@@ -6,6 +6,8 @@ module Test.Kore.Error
     ( test_assertRight
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Terse
 

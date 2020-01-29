@@ -18,6 +18,8 @@ module SQL.SQL
     , SQLData (..)
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.Catch as Exceptions
 import Control.Monad.IO.Class
     ( MonadIO

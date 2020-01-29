@@ -1,6 +1,8 @@
 module Test.Kore.Step.Function.Evaluator
     ( test_evaluateApplication ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

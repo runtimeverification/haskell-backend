@@ -2,6 +2,8 @@ module Test.Kore.Internal.Predicate
     ( test_predicate
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Foldable

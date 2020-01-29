@@ -14,6 +14,8 @@ module Kore.Variables.Free
     , pureAllVariables
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.Extra as Monad
 import qualified Control.Monad.RWS.Strict as Monad.RWS

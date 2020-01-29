@@ -31,6 +31,8 @@ module Kore.Step.Step
     , Step.results
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map

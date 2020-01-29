@@ -24,6 +24,8 @@ module SQL
     , module SQL.Table
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
 import Data.Generics.Wrapped
 import Data.Proxy

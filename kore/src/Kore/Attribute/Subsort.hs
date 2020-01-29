@@ -10,6 +10,8 @@ module Kore.Attribute.Subsort
     , subsortAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

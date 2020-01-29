@@ -13,6 +13,8 @@ module Kore.ASTVerifier.PatternVerifier
     , module Kore.ASTVerifier.PatternVerifier.PatternVerifier
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader

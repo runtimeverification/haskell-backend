@@ -8,6 +8,8 @@ module Kore.Step.Simplification.ExpandAlias
     , substituteInAlias
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( MaybeT
     )

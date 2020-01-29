@@ -173,6 +173,8 @@ module Kore.Internal.TermLike
     , module Variable
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree

@@ -12,6 +12,8 @@ module Kore.Step.Search
     , matchWith
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( MaybeT (..)
     , nothing

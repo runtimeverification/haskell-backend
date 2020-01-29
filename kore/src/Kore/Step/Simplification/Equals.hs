@@ -14,6 +14,8 @@ module Kore.Step.Simplification.Equals
     , termEquals
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( MaybeT (..)
     )

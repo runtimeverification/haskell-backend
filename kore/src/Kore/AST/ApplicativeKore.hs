@@ -5,6 +5,8 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
+import Prelude.Kore
+
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition

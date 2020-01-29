@@ -32,6 +32,8 @@ module Kore.Parser
     , ParsedDefinition
     ) where
 
+import Prelude.Kore
+
 import Kore.Parser.Lexeme
     ( skipWhitespace
     )

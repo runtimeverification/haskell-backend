@@ -25,6 +25,8 @@ module Kore.Builtin.String.String
     , string2TokenKey
     ) where
 
+import Prelude.Kore
+
 import Data.String
     ( IsString
     )

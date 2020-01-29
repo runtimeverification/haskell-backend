@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Bottom
     ( test_bottomSimplification
     ) where
 
+import Prelude.Kore ()
+
 import Test.Tasty
 
 import Kore.Internal.OrPattern

@@ -8,6 +8,8 @@ module Kore.Attribute.Priority
     , priorityId, prioritySymbol, priorityAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import qualified Data.Maybe as Maybe
 import Data.Text

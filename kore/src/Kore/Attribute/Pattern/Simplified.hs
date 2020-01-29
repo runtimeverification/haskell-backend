@@ -13,6 +13,8 @@ module Kore.Attribute.Pattern.Simplified
     , simplifiedConditionally
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import Data.Foldable as Foldable
 import Data.Hashable

@@ -35,6 +35,8 @@ module Kore.Unparser
     , unparseAssoc'
     ) where
 
+import Prelude.Kore
+
 import Control.Category
     ( (>>>)
     )

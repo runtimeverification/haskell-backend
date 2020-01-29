@@ -18,6 +18,8 @@ module Kore.Profiler.Profile
     , timeStrategy
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( when
     )

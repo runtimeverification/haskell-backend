@@ -12,6 +12,8 @@ module Kore.Syntax.Definition
     , module Kore.Syntax.Sentence
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

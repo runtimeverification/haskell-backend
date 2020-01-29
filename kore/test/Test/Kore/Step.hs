@@ -6,6 +6,8 @@ module Test.Kore.Step
     , test_unificationError
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Control.Exception as Exception

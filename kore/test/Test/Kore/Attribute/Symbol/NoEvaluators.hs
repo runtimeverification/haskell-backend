@@ -4,7 +4,9 @@ module Test.Kore.Attribute.Symbol.NoEvaluators
     , test_duplicate
     , test_arguments
     , test_parameters
-    )where
+    ) where
+
+import Prelude.Kore
 
 import Test.Tasty
 import Test.Tasty.HUnit

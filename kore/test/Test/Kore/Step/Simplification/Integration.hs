@@ -5,6 +5,8 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import Data.Function

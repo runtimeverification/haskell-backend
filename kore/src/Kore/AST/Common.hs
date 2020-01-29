@@ -20,6 +20,8 @@ module Kore.AST.Common
     , patternString
     ) where
 
+import Prelude.Kore
+
 import Data.Hashable
 import Data.String
     ( fromString

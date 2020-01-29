@@ -45,6 +45,8 @@ module Kore.Parser.Lexeme
     , illegalSurrogate
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Char as Char

@@ -1,5 +1,7 @@
 module Test.Kore.Parser.Parser (test_koreParser) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     , testGroup

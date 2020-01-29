@@ -12,6 +12,8 @@ module Kore.Attribute.Hook
     , getHookAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import Data.Hashable
     ( Hashable

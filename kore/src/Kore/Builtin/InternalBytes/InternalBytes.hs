@@ -25,6 +25,8 @@ module Kore.Builtin.InternalBytes.InternalBytes
     , bytes2intKey
     ) where
 
+import Prelude.Kore
+
 import Data.ByteString
     ( ByteString
     )

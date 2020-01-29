@@ -25,6 +25,8 @@ module Kore.Attribute.Pattern
     , module Kore.Attribute.Pattern.Simplified
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

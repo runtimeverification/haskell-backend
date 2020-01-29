@@ -16,6 +16,8 @@ module Kore.Unification.Error
     , unsupportedPatterns
     ) where
 
+import Prelude.Kore
+
 import Data.Function
     ( on
     )

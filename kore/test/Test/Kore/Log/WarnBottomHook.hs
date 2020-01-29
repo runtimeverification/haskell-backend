@@ -2,6 +2,8 @@ module Test.Kore.Log.WarnBottomHook
     ( test_instance_Table_WarnBottomHook
     ) where
 
+import Prelude.Kore ()
+
 import Test.Tasty
 
 import Kore.Log.WarnBottomHook

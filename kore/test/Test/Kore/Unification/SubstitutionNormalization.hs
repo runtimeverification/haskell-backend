@@ -4,6 +4,8 @@ module Test.Kore.Unification.SubstitutionNormalization
     ( test_normalize
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Exception
