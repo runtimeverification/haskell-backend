@@ -417,7 +417,8 @@ extractIndexedModule
     :: Text
     -> Either
         (Error a)
-        (Map.Map ModuleName
+        (Map.Map
+            ModuleName
             (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
         )
     -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
