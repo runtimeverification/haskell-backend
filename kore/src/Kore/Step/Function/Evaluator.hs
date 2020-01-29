@@ -29,8 +29,7 @@ import Data.Text
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-
-import qualified Branch as BranchT
+import qualified Branch
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -408,7 +407,7 @@ reevaluateFunctions
     -> simplifier (OrPattern variable)
 reevaluateFunctions sideCondition rewriting = do
     let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
-    orResults <- BranchT.gather $ do
+    orResults <- Branch.gather $ do
         simplifiedTerm <- simplifyConditionalTerm sideCondition rewritingTerm
         simplifyCondition sideCondition
             $ Pattern.andCondition simplifiedTerm rewritingCondition
@@ -440,10 +439,10 @@ mergeWithConditionAndSubstitution
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
     evaluatedResults <- OrPattern.gather $ do
-        result <- BranchT.scatter results
+        result <- Branch.scatter results
         simplifyCondition sideCondition $ Pattern.andCondition result toMerge
     evaluatedRemainders <- OrPattern.gather $ do
-        remainder <- BranchT.scatter remainders
+        remainder <- Branch.scatter remainders
         simplifyCondition sideCondition (Pattern.andCondition remainder toMerge)
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = evaluatedResults
