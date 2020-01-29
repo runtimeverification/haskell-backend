@@ -292,10 +292,10 @@ targetUnifiedVariableGen sort = Gen.choice
 
 unifiedTargetVariableGen :: Sort -> Gen (UnifiedVariable (Target Variable))
 unifiedTargetVariableGen sort = Gen.choice
-    [ ElemVar <$> fmap Target <$> elementVariableGen sort
-    , ElemVar <$> fmap NonTarget <$> elementVariableGen sort
-    , SetVar <$> fmap Target <$> setVariableGen sort
-    , SetVar <$> fmap NonTarget <$> setVariableGen sort
+    [ ElemVar . fmap Target <$> elementVariableGen sort
+    , ElemVar . fmap NonTarget <$> elementVariableGen sort
+    , SetVar . fmap Target <$> setVariableGen sort
+    , SetVar . fmap NonTarget <$> setVariableGen sort
     ]
 
 unaryOperatorGen
