@@ -13,6 +13,10 @@ module Kore.Variables.Target
     , isNonTarget
     ) where
 
+import Data.Typeable
+    ( Typeable
+    )
+
 import Data.Hashable
     ( Hashable
     )
@@ -82,7 +86,7 @@ instance SyntaxVariable variable => SyntaxVariable (Target variable)
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance (SyntaxVariable variable, FreshVariable variable) => FreshVariable (Target variable)
+instance (Typeable variable, SyntaxVariable variable, FreshVariable variable) => FreshVariable (Target variable)
   where
     refreshVariable (Set.map unwrapVariable -> avoiding) =
         \case

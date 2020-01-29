@@ -9,6 +9,10 @@ module Kore.Substitute
     , substitute
     ) where
 
+import Data.Typeable
+    ( Typeable
+    )
+
 import Control.Applicative
 import qualified Data.Foldable as Foldable
 import Data.Function
@@ -70,6 +74,7 @@ substitute
     ::  forall patternType patternBase attribute variable.
         ( SubstitutionVariable variable
         , Corecursive patternType, Recursive patternType
+        , Typeable variable
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
         , VariableType patternType ~ UnifiedVariable variable

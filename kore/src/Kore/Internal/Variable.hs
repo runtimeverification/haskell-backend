@@ -11,6 +11,10 @@ module Kore.Internal.Variable
     , module Kore.Syntax.Variable
     ) where
 
+import Data.Typeable
+    ( Typeable
+    )
+
 import Kore.Debug
     ( Debug
     )
@@ -30,6 +34,7 @@ these constraints.
  -}
 type InternalVariable variable =
     ( Ord variable
+    , Typeable variable
     , Debug variable, Show variable, Unparse variable
     , SyntaxVariable variable
     , SortedVariable variable

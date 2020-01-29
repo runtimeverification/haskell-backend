@@ -10,6 +10,10 @@ module Kore.Variables.Fresh
     , module Kore.Syntax.Variable
     ) where
 
+import Data.Typeable
+    ( Typeable
+    , typeOf
+    )
 import Debug.Trace
 import Kore.Unparser
     ( unparseToString
@@ -80,7 +84,8 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
     -- variable does /not/ occur in the set, @refreshVariable@ /may/ return
     -- 'Nothing'.
     refreshVariable
-        :: Set variable
+        :: Typeable variable
+        => Set variable
         -- ^ variables to avoid
         -> variable
         -- ^ variable to rename
@@ -90,7 +95,9 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
             Lens.set lensVariableSort theSort
             <$> Set.lookupLT pivotMax avoiding
         traceM
-            $ "\n\nVariable: "
+            $ "\n\n Type: "
+            <> show (typeOf variable)
+            <> "\n\nVariable: "
             <> "\n    " <> show (Lens.view lensVariableName variable)
             <> "\n    " <> show (Lens.view lensVariableSort variable)
             <> "\n    " <> show (Lens.view lensVariableCounter variable)
@@ -122,25 +129,24 @@ class (Ord variable, SortedVariable variable) => FreshVariable variable where
         pivotMin = infVariable variable
         theSort = Lens.view lensVariableSort variable
 
-
 type Renaming variable =
     Map (UnifiedVariable variable) (UnifiedVariable variable)
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (ElementVariable variable)
-  where
-    refreshVariable avoid = traverse (refreshVariable avoid')
-      where
-        avoid' = Set.map getElementVariable avoid
+  -- where
+  --   refreshVariable avoid = traverse (refreshVariable avoid')
+  --     where
+  --       avoid' = Set.map getElementVariable avoid
 
 instance (SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (SetVariable variable)
-  where
-    refreshVariable avoid = traverse (refreshVariable avoid')
-      where
-        avoid' = Set.map getSetVariable avoid
+  -- where
+  --   refreshVariable avoid = traverse (refreshVariable avoid')
+  --     where
+  --       avoid' = Set.map getSetVariable avoid
 
-instance (SyntaxVariable variable, FreshVariable variable)
+instance (Typeable variable, SyntaxVariable variable, FreshVariable variable)
   => FreshVariable (UnifiedVariable variable)
   where
    refreshVariable avoid = \case
@@ -188,7 +194,8 @@ result with 'Kore.Internal.TermLike.mkVar':
 
  -}
 refreshVariables
-    :: FreshVariable variable
+    :: Typeable variable
+    => FreshVariable variable
     => Set variable  -- ^ variables to avoid
     -> Set variable  -- ^ variables to rename
     -> Map variable variable

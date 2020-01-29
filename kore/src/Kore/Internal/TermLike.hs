@@ -173,6 +173,10 @@ module Kore.Internal.TermLike
     , module Variable
     ) where
 
+import Data.Typeable
+    ( Typeable
+    )
+
 import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
@@ -277,6 +281,7 @@ hasFreeVariable variable = isFreeVariable variable . freeVariables
 
 refreshVariables
     :: Substitute.SubstitutionVariable variable
+    => Typeable variable
     => FreeVariables variable
     -> TermLike variable
     -> TermLike variable

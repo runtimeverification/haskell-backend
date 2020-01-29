@@ -55,6 +55,10 @@ module Kore.Internal.Predicate
     , substitute
     ) where
 
+import Data.Typeable
+    ( Typeable
+    )
+
 import Control.DeepSeq
     ( NFData
     )
@@ -764,6 +768,7 @@ contain none of the targeted variables.
  -}
 substitute
     :: SubstitutionVariable variable
+    => Typeable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable

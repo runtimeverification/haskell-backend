@@ -22,6 +22,7 @@ module Test.Kore
     , setVariableGen
     , unifiedVariableGen
     , targetElementVariableGen
+    , elementTargetVariableGen
     , targetSetVariableGen
     , genBuiltin
     , couple
@@ -259,6 +260,19 @@ targetElementVariableGen sort = Gen.choice
     [ Target <$> elementVariableGen sort
     , NonTarget <$> elementVariableGen sort
     ]
+
+elementTargetVariableGen :: Sort -> Gen (ElementVariable (Target Variable))
+elementTargetVariableGen sort = do
+    Context { objectVariables } <- Reader.ask
+    let var =
+            variableGen'
+                sort
+                [getElementVariable v | ElemVar v <- objectVariables]
+                idGen
+    Gen.choice
+        [ ElementVariable . Target <$> var
+        , ElementVariable . NonTarget <$> var
+        ]
 
 targetSetVariableGen :: Sort -> Gen (Target (SetVariable Variable))
 targetSetVariableGen sort = Gen.choice

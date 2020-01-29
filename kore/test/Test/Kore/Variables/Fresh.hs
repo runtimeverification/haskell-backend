@@ -5,6 +5,10 @@ module Test.Kore.Variables.Fresh
     , test_freshVariableProperties
     ) where
 
+import Data.Typeable
+    ( Typeable
+    )
+
 import Hedgehog
     ( forAll
     )
@@ -24,6 +28,9 @@ import Kore.Syntax.ElementVariable
     ( ElementVariable (..)
     )
 import Kore.Variables.Fresh
+import Kore.Variables.Target
+    ( Target (..)
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -62,6 +69,9 @@ test_refreshVariable =
     , testCase "TESTING2 refreshVariable - avoid original" $
         assertBool "Expected fresh variable" (originalUnifVar < freshU0)
 
+      , testCase "TESTING3 refreshVariable - avoid original" $
+        assertBool "Expected fresh variable" (originalETlemVar < freshET0)
+
     , testCase "refreshVariable - avoid fresh" $
         assertBool "Expected another fresh variable"     (fresh0   < fresh1)
 
@@ -94,6 +104,11 @@ test_refreshVariable =
     avoidU0 = Set.singleton originalUnifVar
     Just freshU0 = refreshVariable avoidU0 originalUnifVar
 
+    originalETlemVar = ElementVariable $ Target metaVariable
+    originalENTlemVar = ElementVariable $ NonTarget metaVariable
+    avoidET0 = Set.singleton originalENTlemVar
+    Just freshET0 = refreshVariable avoidET0 originalETlemVar
+
 test_freshVariableProperties :: [TestTree]
 test_freshVariableProperties =
     [ freshVariablePropertyTests
@@ -111,10 +126,14 @@ test_freshVariableProperties =
     , freshVariablePropertyTests
         "FreshVariable Target SetVariable"
         (targetSetVariableGen Mock.testSort)
+    , freshVariablePropertyTests
+        "TESTING4 FreshVariable ElementVariable Target"
+        (elementTargetVariableGen Mock.testSort)
     ]
 
 freshVariablePropertyTests
     :: FreshVariable variable
+    => Typeable variable
     => Show variable
     => String
     -> Gen variable
