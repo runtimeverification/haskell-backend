@@ -8,6 +8,7 @@ License     : NCSA
 
 module Kore.Internal.SideCondition
     ( SideCondition  -- Constructor not exported on purpose
+    , assumedTrue
     , andCondition
     , assumeTrueCondition
     , assumeTruePredicate
