@@ -15,6 +15,7 @@ module Kore.Internal.Substitution
     , fromMap
     , singleton
     , wrap
+    , wrapMaybe
     , modify
     , Kore.Internal.Substitution.mapVariables
     , mapTerms
@@ -41,6 +42,7 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Hashable
@@ -158,7 +160,38 @@ instance Ord variable => Semigroup (Substitution variable) where
       | null a, null b = mempty
       | null a         = b
       | null b         = a
-      | otherwise      = Substitution (unwrap a <> unwrap b)
+      | NormalizedSubstitution a' <- a =
+        maybe denormalized NormalizedSubstitution $ mergeMaybe a' (unwrap b)
+      | NormalizedSubstitution b' <- b =
+        maybe denormalized NormalizedSubstitution $ mergeMaybe b' (unwrap a)
+      | otherwise      = denormalized
+      where
+        unwrapped = unwrap a <> unwrap b
+        denormalized = Substitution unwrapped
+
+mergeMaybe
+    :: Ord variable
+    => Map (UnifiedVariable variable) (TermLike variable)
+    -> [(UnifiedVariable variable, TermLike variable)]
+    -> Maybe (Map (UnifiedVariable variable) (TermLike variable))
+mergeMaybe =
+    Monad.foldM insertNormalized
+  where
+    insertNormalized subst (var, termLike) = do
+        -- The variable must not occur in the substitution
+        Monad.guard (Map.notMember var subst)
+        -- or in the right-hand side of this or any other substitution,
+        Monad.guard (not $ occurs termLike)
+        Monad.guard (not $ any occurs subst)
+        -- this substitution must not depend on any substitution variable,
+        Monad.guard (not $ any depends $ Map.keys subst)
+        -- and if this is an element variable substitution, the substitution
+        -- must be defined.
+        Monad.guard (not $ isElemVar var && isBottom termLike)
+        return $ Map.insert var termLike subst
+      where
+        occurs = TermLike.hasFreeVariable var
+        depends var' = TermLike.hasFreeVariable var' termLike
 
 instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
@@ -335,6 +368,12 @@ unsafeWrap =
       where
         occurs = TermLike.hasFreeVariable var
         depends var' = TermLike.hasFreeVariable var' termLike
+
+wrapMaybe
+    :: Ord variable
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> Maybe (Map (UnifiedVariable variable) (TermLike variable))
+wrapMaybe = mergeMaybe Map.empty
 
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.
