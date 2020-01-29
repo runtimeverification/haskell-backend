@@ -101,9 +101,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.UnifierT
-    ( runUnifierT
-    )
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -261,11 +258,11 @@ matchesToVariableSubstitution
   , Substitution.null boundSubstitution
   , not (TermLike.hasFreeVariable (ElemVar variable) term)
   = do
-    matchResult <- runUnifierT $ matchIncremental first second
+    matchResult <- matchIncremental first second
     case matchResult of
-        Left _ -> return False
-        Right results ->
-            return (all (singleVariableSubstitution variable) results)
+        Nothing -> return False
+        Just results ->
+            return (singleVariableSubstitution variable results)
 
 matchesToVariableSubstitution _ _ = return False
 

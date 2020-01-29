@@ -8,6 +8,7 @@ module Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     , KoreLogType (..)
     , EntryTypes
+    , ExeName (..)
     , TimestampsSwitch (..)
     , parseKoreLogOptions
     ) where
@@ -26,6 +27,7 @@ import Data.Set
     )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import Options.Applicative
     ( Parser
     , option
@@ -71,6 +73,7 @@ data KoreLogOptions = KoreLogOptions
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
     , debugSolverOptions :: DebugSolverOptions
+    , exeName :: ExeName
     , logSQLiteOptions :: LogSQLiteOptions
     }
     deriving (Eq, Show)
@@ -85,6 +88,7 @@ instance Default KoreLogOptions where
             , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
             , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
             , debugSolverOptions = def @DebugSolverOptions
+            , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
             }
 
@@ -136,8 +140,8 @@ parseTimestampsSwitch =
         in Options.flag' TimestampsDisable info
 
 -- | Parse 'KoreLogOptions'.
-parseKoreLogOptions :: Parser KoreLogOptions
-parseKoreLogOptions =
+parseKoreLogOptions :: ExeName -> Parser KoreLogOptions
+parseKoreLogOptions exeName =
     KoreLogOptions
     <$> (parseKoreLogType <|> pure LogStdErr)
     <*> (parseSeverity <|> pure Warning)
@@ -146,6 +150,7 @@ parseKoreLogOptions =
     <*> parseDebugAppliedRuleOptions
     <*> parseDebugAxiomEvaluationOptions
     <*> parseDebugSolverOptions
+    <*> pure exeName
     <*> parseLogSQLiteOptions
 
 parseEntryTypes :: Parser EntryTypes
@@ -196,3 +201,10 @@ readSeverity =
         "warning"  -> pure Warning
         "error"    -> pure Error
         _          -> Nothing
+
+-- | Caller of the logging function
+newtype ExeName = ExeName { getExeName :: String }
+    deriving (Eq, Show)
+
+instance Pretty.Pretty ExeName where
+    pretty = Pretty.pretty . getExeName

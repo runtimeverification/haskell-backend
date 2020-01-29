@@ -119,17 +119,22 @@ withLogger koreLogOptions = runContT $ do
     logSQLite <- ContT $ withLogSQLite logSQLiteOptions
     return $ mainLogger <> smtSolverLogger <> logSQLite
 
-withMainLogger :: KoreLogOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
 withMainLogger
-    koreLogOptions@KoreLogOptions { logType, timestampsSwitch } continue =
-        case logType of
-            LogStdErr -> continue
-                $ koreLogFilters koreLogOptions (stderrLogger timestampsSwitch)
-            LogFileText filename ->
-                Colog.withLogTextFile filename
-                $ continue
-                . koreLogFilters koreLogOptions
-                . makeKoreLogger timestampsSwitch
+    :: KoreLogOptions
+    -> (LogAction IO SomeEntry -> IO a)
+    -> IO a
+withMainLogger
+    koreLogOptions@KoreLogOptions { logType, timestampsSwitch, exeName }
+    continue
+  =
+    case logType of
+        LogStdErr -> continue
+            $ koreLogFilters koreLogOptions (stderrLogger exeName timestampsSwitch)
+        LogFileText filename ->
+            Colog.withLogTextFile filename
+            $ continue
+            . koreLogFilters koreLogOptions
+            . makeKoreLogger exeName timestampsSwitch
 
 withSmtSolverLogger
     :: DebugSolverOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
@@ -210,10 +215,11 @@ writeTChanLogger tChan =
 makeKoreLogger
     :: forall m
     .  MonadIO m
-    => TimestampsSwitch
+    => ExeName
+    -> TimestampsSwitch
     -> LogAction m Text
     -> LogAction m SomeEntry
-makeKoreLogger timestampSwitch logToText =
+makeKoreLogger exeName timestampSwitch logToText =
     Colog.cmapM withTimestamp
     $ contramap messageToText logToText
   where
@@ -221,11 +227,12 @@ makeKoreLogger timestampSwitch logToText =
     messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ timestamp <> defaultLogPretty entry
+        $ exeName' Pretty.<+> timestamp Pretty.<+> defaultLogPretty entry
       where
         timestamp = case timestampSwitch of
             TimestampsEnable -> Pretty.brackets (formattedTime localTime)
             TimestampsDisable -> mempty
+        exeName' = Pretty.pretty exeName <> Pretty.colon
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
 
 -- | Adds the current timestamp to a log entry.
@@ -244,9 +251,13 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stderrLogger :: MonadIO io => TimestampsSwitch -> LogAction io SomeEntry
-stderrLogger timestampsSwitch =
-    makeKoreLogger timestampsSwitch Colog.logTextStderr
+stderrLogger
+    :: MonadIO io
+    => ExeName
+    -> TimestampsSwitch
+    -> LogAction io SomeEntry
+stderrLogger exeName timestampsSwitch =
+    makeKoreLogger exeName timestampsSwitch Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
