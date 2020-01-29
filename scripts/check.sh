@@ -5,10 +5,6 @@ set -exuo pipefail
 export PATH="$HOME/.local/bin${PATH:+:}$PATH"
 
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
-UPSTREAM_REMOTE=${UPSTREAM_REMOTE:-origin}
-
-git fetch $(git remote get-url $UPSTREAM_REMOTE) master
-UPSTREAM_BRANCH=FETCH_HEAD
 
 if ! $TOP/scripts/git-assert-clean.sh
 then
@@ -25,7 +21,7 @@ then
 fi
 
 changed=()
-for file in $(git diff --name-only --diff-filter=d $UPSTREAM_BRANCH)
+for file in $(find . -type f -name '*.hs*' '(' ! -path '*/.stack-work*' ')' '(' ! -path '*/dist*' ')')
 do
     case $file in
         *.hs|*.hs-boot) ;;
