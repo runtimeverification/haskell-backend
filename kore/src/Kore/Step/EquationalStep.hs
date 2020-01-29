@@ -87,6 +87,7 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as EqualityPattern
     ( targetRuleVariables
     )
+import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
     ( InternalVariable
     )
@@ -321,19 +322,18 @@ matchRule sideCondition initial rule = do
     solution <- matchIncremental ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
     let requires = precondition rule
-        mergedSideCondition =
-            SideCondition.andCondition sideCondition initialCondition
-    guardImplies mergedSideCondition solution requires
+    guardImplies sideCondition initialCondition solution requires
     return (rule `Conditional.withCondition` solution)
 
 guardImplies
     :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition (Target variable)
-    -> Condition (Target variable)
+    -> Condition (Target variable)  -- ^ initial condition
+    -> Condition (Target variable)  -- ^ solution
     -> Predicate (Target variable)
     -> MaybeT simplifier ()
-guardImplies sideCondition solution requires1 = do
+guardImplies sideCondition initial solution requires1 = do
     let Conditional { predicate = requires2, substitution } = solution
     Exception.assert (isMatchingSubstitution substitution) $ return ()
     notRequires <- Branch.gather $ do
@@ -347,8 +347,9 @@ guardImplies sideCondition solution requires1 = do
             instantiation = Condition.fromSubstitution substitution
         simplified <-
             Simplifier.simplifyCondition sideCondition
-            $ withSideCondition $ instantiation <> notRequires
-        evaluated <- SMT.Evaluator.evaluate simplified
+            $ initial <> instantiation <> notRequires
+        TopBottom.guardAgainstBottom simplified
+        evaluated <- SMT.Evaluator.evaluate (withSideCondition simplified)
         case evaluated of
             Just False -> empty
             _          -> return simplified
