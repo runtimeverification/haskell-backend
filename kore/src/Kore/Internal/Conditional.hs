@@ -22,6 +22,7 @@ module Kore.Internal.Conditional
     , markPredicateSimplified
     , markPredicateSimplifiedConditional
     , setPredicateSimplified
+    , assertNormalized
     ) where
 
 import Prelude.Kore
@@ -32,6 +33,7 @@ import Control.Comonad
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Exception as Exception
 import Data.Hashable
 import Data.Monoid
     ( (<>)
@@ -486,3 +488,16 @@ setPredicateSimplified
     -> Conditional variable term
 setPredicateSimplified simplified conditional@Conditional { predicate } =
     conditional { predicate = Predicate.setSimplified simplified predicate }
+
+assertNormalized
+    :: HasCallStack
+    => Ord variable
+    => Conditional variable term
+    -> a -> a
+assertNormalized Conditional { predicate, substitution } a =
+    Exception.assert normalizedSubstitution
+    $ Exception.assert irrelevantSubstitution a
+  where
+    normalizedSubstitution = Substitution.isNormalized substitution
+    irrelevantSubstitution =
+        Predicate.isFreeOf predicate (Substitution.variables substitution)
