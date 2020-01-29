@@ -8,6 +8,7 @@ module Kore.Internal.OrPattern
     , coerceSort
     , isSimplified
     , fromPatterns
+    , gatherPatterns
     , toPatterns
     , fromPattern
     , fromTermLike
@@ -30,6 +31,7 @@ import qualified Data.Foldable as Foldable
 import Branch
     ( BranchT
     )
+import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -76,6 +78,15 @@ fromPatterns
     => f (Pattern variable)
     -> OrPattern variable
 fromPatterns = from . Foldable.toList
+
+{- | 'Branch.gather' many branches into a single disjunction.
+ -}
+gatherPatterns
+    :: Monad monad
+    => Ord variable
+    => BranchT monad (Pattern variable)
+    -> monad (OrPattern variable)
+gatherPatterns = fmap fromPatterns . Branch.gather
 
 {- | Examine a disjunction of 'Pattern.Pattern's.
  -}
