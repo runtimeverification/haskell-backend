@@ -24,7 +24,7 @@ import Data.Function
     ( on
     )
 import Data.Maybe
-    ( isJust
+    ( isNothing
     )
 import qualified GHC.Stack as GHC
 
@@ -32,10 +32,8 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
 import Kore.Internal.Condition
-    ( Conditional (..)
-    )
-import Kore.Internal.Condition
     ( Condition
+    , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Predicate
@@ -1032,7 +1030,7 @@ doesn'tMatch
     -> TermLike Variable
     -> TermLike Variable
     -> TestTree
-doesn'tMatch = withMatch (assertBool "" . not . isJust)
+doesn'tMatch = withMatch (assertBool "" . isNothing)
 
 matches
     :: GHC.HasCallStack
