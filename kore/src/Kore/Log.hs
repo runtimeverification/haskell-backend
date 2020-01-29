@@ -225,7 +225,7 @@ makeKoreLogger exeName timestampSwitch logToText =
     messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ exeName' <> timestamp <> defaultLogPretty entry
+        $ exeName' Pretty.<+> timestamp Pretty.<+> defaultLogPretty entry
       where
         timestamp = case timestampSwitch of
             TimestampsEnable -> Pretty.brackets (formattedTime localTime)
