@@ -88,7 +88,7 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
 instance InternalVariable variable => Evaluable (Conditional variable term)
   where
     evaluate conditional =
-        assert (Conditional.isNormalized conditional)
+        Conditional.assertNormalized conditional
         $ evaluate (Conditional.predicate conditional)
 
 {- | Removes from a MultiOr all items refuted by an external SMT solver. -}
