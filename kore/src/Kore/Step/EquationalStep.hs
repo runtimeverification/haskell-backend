@@ -193,7 +193,7 @@ finalizeAppliedRule sideCondition renamedRule appliedConditions =
     finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
         -- axiom ensures clause. The axiom requires clause is included by
-        -- unifyRule.
+        -- matchRule.
         let
             finalTerm = EqualityPattern.right renamedRule
             ensures = EqualityPattern.ensures renamedRule
@@ -378,11 +378,11 @@ applyRulesSequence
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
     (map EqualityPattern.toAxiomVariables -> rules)
-  = unifyRules sideCondition initial rules
+  = matchRules sideCondition initial rules
     >>= finalizeRulesSequence sideCondition initial
 
--- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
-unifyRules
+-- | Matches a list a rules against a configuration. See 'matchRule'.
+matchRules
     :: SimplifierVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
@@ -392,25 +392,25 @@ unifyRules
     -> [rule (Target variable)]
     -- ^ Rule
     -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
-unifyRules sideCondition initial rules =
+matchRules sideCondition initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        unifyRule sideCondition initial rule
+        matchRule sideCondition initial rule
 
-{- | Attempt to unify a rule with the initial configuration.
+{- | Attempt to match a rule with the initial configuration.
 
 The rule variables are renamed to avoid collision with the configuration. The
 rule's 'RulePattern.requires' clause is combined with the unification
 solution. The combined condition is simplified and checked for
 satisfiability.
 
-If any of these steps produces an error, then @unifyRule@ returns that error.
+If any of these steps produces an error, then @matchRule@ returns that error.
 
-@unifyRule@ returns the renamed rule wrapped with the combined conditions on
+@matchRule@ returns the renamed rule wrapped with the combined conditions on
 unification. The substitution is not applied to the renamed rule.
 
  -}
-unifyRule
+matchRule
     :: SimplifierVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
@@ -421,7 +421,7 @@ unifyRule
     -> rule variable
     -- ^ Rule
     -> unifier (UnifiedRule variable (rule variable))
-unifyRule sideCondition initial rule = do
+matchRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
             sideCondition `SideCondition.andCondition` initialCondition
