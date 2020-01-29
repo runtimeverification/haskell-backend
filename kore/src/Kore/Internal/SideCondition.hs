@@ -15,6 +15,8 @@ module Kore.Internal.SideCondition
     , toRepresentation
     ) where
 
+import Prelude.Kore
+
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )

@@ -13,6 +13,8 @@ module Kore.IndexedModule.Error
     , noSymbolText
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

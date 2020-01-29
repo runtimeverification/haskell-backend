@@ -37,6 +37,8 @@ module Kore.Step.SMT.AST
     , mergePreferFirst
     ) where
 
+import Prelude.Kore
+
 import Data.Map.Strict
     ( Map
     )

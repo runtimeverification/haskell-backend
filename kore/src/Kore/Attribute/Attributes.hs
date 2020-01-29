@@ -14,6 +14,8 @@ module Kore.Attribute.Attributes
     , attributeInteger
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

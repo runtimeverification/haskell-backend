@@ -3,6 +3,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier
     , test_verifyBinder
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

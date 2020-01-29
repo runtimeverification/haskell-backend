@@ -11,6 +11,8 @@ module Kore.Attribute.Constructor
     , constructorId, constructorSymbol, constructorAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

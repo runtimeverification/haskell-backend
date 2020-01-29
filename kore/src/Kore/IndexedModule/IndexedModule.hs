@@ -50,6 +50,8 @@ module Kore.IndexedModule.IndexedModule
     , implicitModules
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

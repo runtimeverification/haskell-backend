@@ -18,6 +18,8 @@ module Kore.Syntax.Variable
     , Concrete
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

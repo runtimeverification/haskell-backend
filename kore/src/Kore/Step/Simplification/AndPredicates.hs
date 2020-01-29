@@ -11,6 +11,8 @@ module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Foldable as Foldable
 
 import Branch

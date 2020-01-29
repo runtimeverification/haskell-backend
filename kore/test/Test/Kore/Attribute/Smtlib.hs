@@ -3,6 +3,8 @@ module Test.Kore.Attribute.Smtlib
     , test_extracted_smthook
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

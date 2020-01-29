@@ -29,6 +29,8 @@ module Kore.Internal.MultiOr
     , Alternative (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

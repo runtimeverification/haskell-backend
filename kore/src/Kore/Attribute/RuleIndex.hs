@@ -8,6 +8,8 @@ module Kore.Attribute.RuleIndex
     ( RuleIndex (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

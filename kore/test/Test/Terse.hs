@@ -55,12 +55,13 @@ module Test.Terse
         -- $rationale
     ) where
 
+import Prelude.Kore
+
 import Control.Exception
 import Data.Foldable
     ( traverse_
     )
 
-import Prelude
 import Test.Tasty
     ( TestTree
     )

@@ -35,6 +35,8 @@ module Kore.Repl.Data
     , makeAuxReplOutput, makeKoreReplOutput
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative
     )

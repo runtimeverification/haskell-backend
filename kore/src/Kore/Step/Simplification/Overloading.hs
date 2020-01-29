@@ -6,6 +6,10 @@ module Kore.Step.Simplification.Overloading
     ( overloadedConstructorSortInjectionAndEquals
     ) where
 
+import Prelude.Kore hiding
+    ( concat
+    )
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -18,9 +22,6 @@ import Data.Text.Prettyprint.Doc
     ( Doc
     )
 import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( concat
-    )
 
 import Kore.Attribute.Synthetic
     ( synthesize
@@ -140,4 +141,3 @@ overloadedAndEqualsOverloading
     notUnifiableType (BuiltinString_ _) = Just "injected builtin string"
     notUnifiableType _ = Nothing
 overloadedAndEqualsOverloading _ _ _ = empty
-

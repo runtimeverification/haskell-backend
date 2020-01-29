@@ -8,6 +8,8 @@ module Kore.Step.Simplification.OverloadSimplifier
     , mkOverloadSimplifier
     ) where
 
+import Prelude.Kore
+
 import Control.Exception
     ( assert
     )

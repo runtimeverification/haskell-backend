@@ -7,6 +7,8 @@ module Kore.Internal.InternalBytes
     ( InternalBytes (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

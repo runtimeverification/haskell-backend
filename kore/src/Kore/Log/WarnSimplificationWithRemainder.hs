@@ -11,6 +11,8 @@ module Kore.Log.WarnSimplificationWithRemainder
     , warnSimplificationWithRemainder
     ) where
 
+import Prelude.Kore
+
 import Data.Typeable
     ( Typeable
     )

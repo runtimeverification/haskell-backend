@@ -12,6 +12,8 @@ module Kore.ModelChecker.Bounded
     , checkClaim
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph

@@ -15,6 +15,8 @@ module Kore.Step.Simplification.Not
     , simplifyEvaluatedPredicate
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Foldable as Foldable
 
 import Branch

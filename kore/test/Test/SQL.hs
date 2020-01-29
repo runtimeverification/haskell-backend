@@ -5,6 +5,8 @@ module Test.SQL
     , test_Maybe
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Int

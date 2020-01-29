@@ -2,6 +2,8 @@ module Test.Kore.Attribute.Pattern.ConstructorLike
     ( test_TermLike
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import GHC.Stack

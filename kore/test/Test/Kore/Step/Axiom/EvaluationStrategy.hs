@@ -5,6 +5,8 @@ module Test.Kore.Step.Axiom.EvaluationStrategy
     , test_builtinEvaluation
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default

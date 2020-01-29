@@ -2,6 +2,8 @@ module Test.Kore.Repl.Interpreter
     ( test_replInterpreter
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

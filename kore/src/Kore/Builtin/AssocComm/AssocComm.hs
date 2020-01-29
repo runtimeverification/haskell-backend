@@ -15,6 +15,8 @@ module Kore.Builtin.AssocComm.AssocComm
     , Opaque (..)
     ) where
 
+import Prelude.Kore
+
 import qualified Data.List as List
 
 import Kore.Internal.Symbol

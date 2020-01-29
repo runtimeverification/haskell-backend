@@ -3,6 +3,8 @@
 
 module Main (main) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( optional
     )

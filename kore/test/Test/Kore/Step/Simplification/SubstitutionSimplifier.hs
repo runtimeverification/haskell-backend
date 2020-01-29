@@ -4,6 +4,8 @@ module Test.Kore.Step.Simplification.SubstitutionSimplifier
     ( test_SubstitutionSimplifier
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified GHC.Stack as GHC

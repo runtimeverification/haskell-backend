@@ -17,6 +17,8 @@ module Kore.Log.DebugSolver
     , solverTranscriptLogger
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

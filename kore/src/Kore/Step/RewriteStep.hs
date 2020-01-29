@@ -12,6 +12,8 @@ module Kore.Step.RewriteStep
     , applyRewriteRulesSequence
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable

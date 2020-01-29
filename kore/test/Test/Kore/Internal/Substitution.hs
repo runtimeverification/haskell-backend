@@ -3,12 +3,13 @@ module Test.Kore.Internal.Substitution
     , test_toPredicate
     ) where
 
+import Prelude.Kore hiding
+    ( null
+    )
+
 import Test.Tasty
 
 import qualified Data.Set as Set
-import Prelude hiding
-    ( null
-    )
 
 import Kore.Internal.Predicate
     ( Predicate

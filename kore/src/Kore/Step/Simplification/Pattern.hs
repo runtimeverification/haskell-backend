@@ -8,6 +8,8 @@ module Kore.Step.Simplification.Pattern
     , simplify
     ) where
 
+import Prelude.Kore
+
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern

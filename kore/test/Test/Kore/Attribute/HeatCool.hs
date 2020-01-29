@@ -12,6 +12,8 @@ module Test.Kore.Attribute.HeatCool
     , test_conflict
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

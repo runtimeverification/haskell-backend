@@ -43,6 +43,8 @@ module Kore.Builtin.List
     , expectConcreteBuiltinList
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

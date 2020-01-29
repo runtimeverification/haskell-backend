@@ -150,6 +150,17 @@ module SMT.SimpleSMT
     , forallQ
     ) where
 
+import Prelude.Kore hiding
+    ( abs
+    , and
+    , concat
+    , const
+    , div
+    , mod
+    , not
+    , or
+    )
+
 import qualified Colog
 import Control.Concurrent
     ( forkIO
@@ -178,16 +189,6 @@ import Numeric
     ( readHex
     , showFFloat
     , showHex
-    )
-import Prelude hiding
-    ( abs
-    , and
-    , concat
-    , const
-    , div
-    , mod
-    , not
-    , or
     )
 import qualified Prelude
 import System.Exit

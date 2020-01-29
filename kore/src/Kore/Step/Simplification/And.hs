@@ -16,6 +16,8 @@ module Kore.Step.Simplification.And
     , termAnd
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (empty)
     )

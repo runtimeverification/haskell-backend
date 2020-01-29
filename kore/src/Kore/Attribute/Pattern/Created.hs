@@ -9,6 +9,8 @@ module Kore.Attribute.Pattern.Created
     , hasKnownCreator
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import Data.Hashable
     ( Hashable (hashWithSalt)

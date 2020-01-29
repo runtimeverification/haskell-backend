@@ -15,6 +15,8 @@ module Test.Kore.Builtin.String
     , asInternal
     ) where
 
+import Prelude.Kore
+
 import Hedgehog hiding
     ( Concrete
     )

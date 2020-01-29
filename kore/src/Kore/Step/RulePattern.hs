@@ -41,6 +41,8 @@ module Kore.Step.RulePattern
     , aPG
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

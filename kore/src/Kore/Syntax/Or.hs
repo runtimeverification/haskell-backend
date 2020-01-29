@@ -8,6 +8,8 @@ module Kore.Syntax.Or
     ( Or (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

@@ -21,6 +21,8 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyAliasSentence
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

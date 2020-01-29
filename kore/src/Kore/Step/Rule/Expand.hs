@@ -7,6 +7,8 @@ module Kore.Step.Rule.Expand
     ( ExpandSingleConstructors (..)
     ) where
 
+import Prelude.Kore
+
 import Data.List
     ( foldl'
     , foldr

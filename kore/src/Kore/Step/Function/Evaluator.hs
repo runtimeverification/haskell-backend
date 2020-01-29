@@ -12,6 +12,8 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( ExceptT
     , MaybeT (..)

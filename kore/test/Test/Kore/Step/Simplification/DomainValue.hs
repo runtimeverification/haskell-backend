@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.DomainValue
     ( test_simplify
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Kore.Internal.OrPattern

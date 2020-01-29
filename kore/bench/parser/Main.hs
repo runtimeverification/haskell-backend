@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Prelude.Kore
+
 import Criterion.Main
 
 import System.FilePath
