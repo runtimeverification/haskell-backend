@@ -341,11 +341,14 @@ guardImplies sideCondition solution requires1 = do
                 Condition.fromPredicate
                 $ Predicate.makeNotPredicate
                 $ Predicate.makeAndPredicate requires1 requires2
+            -- The substitution does not go under the negation: if the
+            -- implication holds only under the negation of the substitution,
+            -- then we say the rule does not apply.
             instantiation = Condition.fromSubstitution substitution
         simplified <-
             Simplifier.simplifyCondition sideCondition
-            $ instantiation <> notRequires
-        evaluated <- SMT.Evaluator.evaluate (withSideCondition simplified)
+            $ withSideCondition $ instantiation <> notRequires
+        evaluated <- SMT.Evaluator.evaluate simplified
         case evaluated of
             Just False -> empty
             _          -> return simplified
