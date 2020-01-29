@@ -76,7 +76,7 @@ list2setKey = "SET.list2set"
  -}
 lookupSymbolIn
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolIn = Builtin.lookupSymbol inKey
 
@@ -84,7 +84,7 @@ lookupSymbolIn = Builtin.lookupSymbol inKey
  -}
 lookupSymbolDifference
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
@@ -92,7 +92,7 @@ lookupSymbolDifference = Builtin.lookupSymbol differenceKey
  -}
 lookupSymbolList2set
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolList2set = Builtin.lookupSymbol list2setKey
 

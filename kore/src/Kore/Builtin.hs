@@ -118,7 +118,7 @@ koreVerifiers =
 
  -}
 koreEvaluators
-    :: VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    :: VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
     -> Map AxiomIdentifier Builtin.Function
 koreEvaluators = evaluators builtins
@@ -148,7 +148,7 @@ koreEvaluators = evaluators builtins
 evaluators
     :: Map Text Builtin.Function
     -- ^ Builtin functions indexed by name
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
     -> Map AxiomIdentifier Builtin.Function
 evaluators builtins indexedModule =
@@ -160,7 +160,7 @@ evaluators builtins indexedModule =
         )
   where
     hookedSymbolAttributes
-        :: VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+        :: VerifiedModule StepperAttributes
         -> Map Id StepperAttributes
     hookedSymbolAttributes im =
         Map.union
@@ -174,7 +174,7 @@ evaluators builtins indexedModule =
     importHookedSymbolAttributes
         ::  ( a
             , b
-            , VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+            , VerifiedModule StepperAttributes
             )
         -> Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im

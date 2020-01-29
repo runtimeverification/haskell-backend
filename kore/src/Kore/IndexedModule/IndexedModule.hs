@@ -81,6 +81,7 @@ import GHC.Generics
     ( Generic
     )
 
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
@@ -319,7 +320,8 @@ mapPatterns mapping indexedModule =
 
 type KoreIndexedModule = IndexedModule ParsedPattern
 
-type VerifiedModule = IndexedModule Verified.Pattern
+type VerifiedModule declAtts
+    = IndexedModule Verified.Pattern declAtts (Attribute.Axiom Symbol)
 
 {- | Convert a 'IndexedModule' back into a 'Module'.
 
@@ -342,7 +344,7 @@ The original module attributes /are/ preserved.
 
  -}
 toVerifiedModule
-    :: VerifiedModule declAtts axiomAtts
+    :: VerifiedModule declAtts
     -> Module Verified.Sentence
 toVerifiedModule = toModule
 
@@ -359,7 +361,7 @@ See also: 'toVerifiedPureModule'
  -}
 toVerifiedDefinition
     :: Foldable t
-    => t (VerifiedModule declAtts axiomAtts)
+    => t (VerifiedModule declAtts)
     -> Definition Verified.Sentence
 toVerifiedDefinition idx =
     Definition

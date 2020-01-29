@@ -33,6 +33,7 @@ import Kore.Attribute.Sort.Constructors
     , Constructors (Constructors)
     )
 import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , recursiveIndexedModuleAxioms
@@ -76,7 +77,7 @@ import qualified Kore.Verified as Verified
     )
 
 indexBySort
-    :: VerifiedModule symbolAttribute (Attribute.Axiom SymbolOrAlias)
+    :: VerifiedModule symbolAttribute
     -> Map.Map Id Constructors
 indexBySort indexedModule =
     Map.fromList
@@ -86,7 +87,7 @@ indexBySort indexedModule =
         )
 
 parseNoJunkAxiom
-    ::  ( Attribute.Axiom SymbolOrAlias
+    ::  ( Attribute.Axiom Attribute.Symbol.Symbol
         , Verified.SentenceAxiom
         )
     -> Maybe (Id, Constructors)

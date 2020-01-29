@@ -41,7 +41,7 @@ import Kore.Syntax.Application
 -- its argument and result sorts.
 --
 build
-    :: VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    :: VerifiedModule StepperAttributes
     -> SmtMetadataTools StepperAttributes
 build m =
     extractMetadataTools

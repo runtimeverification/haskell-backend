@@ -50,7 +50,7 @@ lookupSymbol
     -- ^ builtin name
     -> Sort
     -- ^ the hooked sort
-    -> VerifiedModule Attribute.Symbol axiomAtts
+    -> VerifiedModule Attribute.Symbol
     -> Either (Error e) Symbol
 lookupSymbol builtinName builtinSort indexedModule = do
     symbolConstructor <-

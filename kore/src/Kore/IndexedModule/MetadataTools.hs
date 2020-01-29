@@ -62,11 +62,11 @@ type SmtMetadataTools attributes =
 --
 extractMetadataTools
     ::  forall declAtts smt sortConstructors.
-        VerifiedModule declAtts (Attribute.Axiom SymbolOrAlias)
-    ->  (  VerifiedModule declAtts (Attribute.Axiom SymbolOrAlias)
+        VerifiedModule declAtts
+    ->  (  VerifiedModule declAtts
         -> Map Id sortConstructors
         )
-    ->  (  VerifiedModule declAtts (Attribute.Axiom SymbolOrAlias)
+    ->  (  VerifiedModule declAtts
         -> Map Id sortConstructors
         -> smt
         )

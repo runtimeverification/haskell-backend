@@ -121,7 +121,7 @@ All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations
     :: forall symbolAttribute
-    .  VerifiedModule symbolAttribute (Attribute.Axiom SymbolOrAlias)
+    .  VerifiedModule symbolAttribute
     -> Map.Map Id Attribute.Constructors
     -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule sortConstructors =

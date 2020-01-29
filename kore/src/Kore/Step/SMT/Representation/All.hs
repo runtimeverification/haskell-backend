@@ -48,7 +48,7 @@ It may ignore sorts and symbols that it can't handle yet (e.g. parameterized
 sorts).
 -}
 build
-    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    :: VerifiedModule Attribute.Symbol
     -> Map.Map Id Attribute.Constructors
     -> AST.SmtDeclarations
 build indexedModule sortConstructors =

@@ -156,7 +156,7 @@ internalize _ termLike = termLike
  -}
 lookupSymbolGet
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolGet = Builtin.lookupSymbol getKey
 

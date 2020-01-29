@@ -51,6 +51,7 @@ import Kore.Internal.Alias
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.Variable
     ( SortedVariable
     , Variable
@@ -145,7 +146,7 @@ instance (Debug variable, Diff variable) => Diff (QualifiedAxiomPattern variable
 
 -- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms
-    :: VerifiedModule declAtts axiomAtts
+    :: VerifiedModule declAtts
     -> [RewriteRule Variable]
 extractRewriteAxioms idxMod =
     mapMaybe (extractRewriteAxiomFrom . getIndexedSentence)
@@ -174,9 +175,9 @@ extractReachabilityRule sentence =
 -- | Extract all 'ImplicationRule' claims matching a given @level@ from
 -- a verified definition.
 extractImplicationClaims
-    :: VerifiedModule declAtts axiomAtts
+    :: VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, ImplicationRule Variable)]
+    -> [(Attribute.Axiom Internal.Symbol.Symbol, ImplicationRule Variable)]
 extractImplicationClaims idxMod =
     mapMaybe
         -- applying on second component

@@ -59,7 +59,7 @@ declareSMTLemmas
         , MonadIO m
         , MonadSMT m
         )
-    => VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    => VerifiedModule StepperAttributes
     -> m ()
 declareSMTLemmas m = do
     SMT.All.declare (smtData tools)
