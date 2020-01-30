@@ -91,6 +91,7 @@ import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
     )
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Log.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
@@ -228,9 +229,9 @@ class ClaimExtractor claim where
 -- | Extracts all One-Path claims from a verified module.
 extractClaims
     :: ClaimExtractor claim
-    => VerifiedModule declAtts axiomAtts
+    => VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, claim)]
+    -> [(Attribute.Axiom.Axiom Internal.Symbol.Symbol, claim)]
 extractClaims idxMod =
     mapMaybe
         -- applying on second component

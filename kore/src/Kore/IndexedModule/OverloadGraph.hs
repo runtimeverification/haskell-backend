@@ -37,7 +37,7 @@ import Kore.IndexedModule.IndexedModule
     , recursiveIndexedModuleAxioms
     )
 import Kore.IndexedModule.MetadataTools as MetadataTools
-import Kore.Internal.Symbol
+import Kore.Internal.Symbol as Internal.Symbol
 import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
@@ -106,17 +106,8 @@ fromIndexedModule
     -> OverloadGraph
 fromIndexedModule verifiedModule tools = fromOverloads overloadPairList
   where
-    overloadPairList =
-        map (\(s1, s2) -> (toSymbol s1, toSymbol s2)) preOverloadPairsList
+    overloadPairList = preOverloadPairsList
     preOverloadPairsList =
         mapMaybe
             (Attribute.getOverload . Attribute.overload . fst)
             (recursiveIndexedModuleAxioms verifiedModule)
-    toSymbol :: Syntax.Definition.Symbol -> Symbol
-    toSymbol s = Symbol
-        { symbolConstructor = sId
-        , symbolParams = symbolOrAliasParams s
-        , symbolSorts = MetadataTools.applicationSorts tools s
-        , symbolAttributes = MetadataTools.symbolAttributes tools sId
-        }
-      where sId = symbolOrAliasConstructor s

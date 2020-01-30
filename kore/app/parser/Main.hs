@@ -190,7 +190,7 @@ mainVerify
     -> IO
         (Map.Map
             ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
+            (VerifiedModule StepperAttributes)
         )
 mainVerify definition = do
     verifyResult <-

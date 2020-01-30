@@ -390,7 +390,7 @@ clockSomethingIO description something = do
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify
-    :: VerifiedModule Attribute.Symbol axiomAttrs
+    :: VerifiedModule Attribute.Symbol
     -- ^ Module containing definitions visible in the pattern
     -> ParsedPattern -- ^ Parsed pattern to check well-formedness
     -> Main Verified.Pattern

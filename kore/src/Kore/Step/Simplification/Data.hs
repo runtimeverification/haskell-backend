@@ -187,7 +187,7 @@ evalSimplifier
     :: forall smt a
     .  WithLog LogMessage smt
     => (MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
-    => VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    => VerifiedModule Attribute.Symbol
     -> SimplifierT smt a
     -> smt a
 evalSimplifier verifiedModule simplifier = do

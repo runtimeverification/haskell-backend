@@ -12,15 +12,23 @@ module Kore.ASTVerifier.AttributesVerifier
     , verifySortHookAttribute
     , verifySymbolHookAttribute
     , verifyNoHookAttribute
-    , verifySymbolAttributes
-    , verifyAxiomAttributes
-    , verifySortAttributes
+    --, verifySymbolAttributes
+    --, verifyAxiomAttributes
+    --, verifySortAttributes
     , parseAttributes
     ) where
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+import Data.Function
+    ((&)
+    )
+import Data.Bifunctor
+import Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 
+import Kore.Attribute.Symbol
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
@@ -32,7 +40,9 @@ import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
 import Kore.Syntax.Definition
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Syntax.Pattern
+import Kore.Attribute.Overload
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -117,8 +127,18 @@ verifyNoHookAttribute attributes = do
 
 verifySymbolAttributes
     :: Attribute.Axiom SymbolOrAlias
-    -> Attribute.Axiom Symbol
-verifySymbolAttributes = undefined
+    -> Attribute.Axiom Internal.Symbol.Symbol
+verifySymbolAttributes axiom =
+    axiom & field @"overload" Lens.%~ fmap toSymbol
+  where
+    toSymbol s = Internal.Symbol.Symbol
+        { Internal.Symbol.symbolConstructor = sId
+        , Internal.Symbol.symbolParams = symbolOrAliasParams s
+        , Internal.Symbol.symbolSorts = undefined
+        , Internal.Symbol.symbolAttributes = defaultSymbolAttributes
+        }
+      where
+          sId = symbolOrAliasConstructor s
 
 verifyAxiomAttributes :: a
 verifyAxiomAttributes = undefined

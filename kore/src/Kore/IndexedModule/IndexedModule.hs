@@ -92,6 +92,7 @@ import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import Kore.Error
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Parser
     ( ParsedPattern
     )
@@ -321,7 +322,10 @@ mapPatterns mapping indexedModule =
 type KoreIndexedModule = IndexedModule ParsedPattern
 
 type VerifiedModule declAtts
-    = IndexedModule Verified.Pattern declAtts (Attribute.Axiom Symbol)
+    = IndexedModule
+        Verified.Pattern
+        declAtts
+        (Attribute.Axiom Internal.Symbol.Symbol)
 
 {- | Convert a 'IndexedModule' back into a 'Module'.
 

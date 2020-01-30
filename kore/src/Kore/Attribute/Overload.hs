@@ -21,7 +21,7 @@ import Kore.Debug
 newtype Overload symbol =
     Overload
         { getOverload :: Maybe (symbol, symbol) }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show, Functor)
 
 instance SOP.Generic (Overload SymbolOrAlias)
 

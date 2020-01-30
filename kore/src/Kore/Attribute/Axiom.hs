@@ -26,6 +26,7 @@ module Kore.Attribute.Axiom
     , Constructor (..)
     , RuleIndex (..)
     , UniqueId (..)
+    , axiomSymbolToSymbolOrAlias
     ) where
 
 import Control.DeepSeq
@@ -36,6 +37,10 @@ import Data.Default
     ( Default (..)
     )
 import Data.Generics.Product
+import Data.Function
+    ( (&)
+    )
+import qualified Control.Lens as Lens
 import Data.Proxy
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -66,6 +71,10 @@ import Kore.Attribute.Subsort
 import Kore.Attribute.Trusted
 import Kore.Attribute.UniqueId
 import Kore.Debug
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    , toSymbolOrAlias
+    )
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
@@ -201,3 +210,7 @@ instance SQL.Column (Axiom SymbolOrAlias) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
+
+axiomSymbolToSymbolOrAlias :: Axiom Symbol -> Axiom SymbolOrAlias
+axiomSymbolToSymbolOrAlias axiom =
+    axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias

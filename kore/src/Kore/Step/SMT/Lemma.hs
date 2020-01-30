@@ -36,6 +36,7 @@ import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
     ( declare
     )
@@ -69,7 +70,9 @@ declareSMTLemmas m = do
     tools = given
 
     declareRule
-        :: (Attribute.Axiom SymbolOrAlias, SentenceAxiom (TermLike Variable))
+        ::  ( Attribute.Axiom Internal.Symbol.Symbol
+            , SentenceAxiom (TermLike Variable)
+            )
         -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)

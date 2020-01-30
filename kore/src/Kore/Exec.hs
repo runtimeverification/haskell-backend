@@ -39,6 +39,7 @@ import Control.Monad.Trans.Except
 import qualified Data.Bifunctor as Bifunctor
     ( first
     , second
+    , bimap
     )
 import Data.Coerce
     ( coerce
@@ -202,7 +203,7 @@ exec
         , MonadUnliftIO smt
         )
     => Limit Natural
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -238,7 +239,7 @@ execGetExitCode
         , MonadSMT smt
         , MonadUnliftIO smt
         )
-    => VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    => VerifiedModule StepperAttributes
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -267,7 +268,7 @@ search
         , MonadUnliftIO smt
         )
     => Limit Natural
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -311,11 +312,11 @@ prove
     => Strategy.GraphSearchOrder
     -> Limit Natural
     -> Limit Natural
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The spec module
-    -> Maybe (VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias))
+    -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
     -> smt
         (Either
@@ -369,11 +370,11 @@ prove
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
 proveWithRepl
-    :: VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    :: VerifiedModule StepperAttributes
     -- ^ The main module
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The spec module
-    -> Maybe (VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias))
+    -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
     -> MVar (Log.LogAction IO Log.SomeEntry)
     -> Repl.Data.ReplScript
@@ -406,9 +407,9 @@ boundedModelCheck
         )
     => Limit Natural
     -> Limit Natural
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
     -> smt (Bounded.CheckResult (TermLike Variable))
@@ -420,7 +421,10 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSomeClaims specClaims
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
-            claims = fmap makeClaim specClaims
+            claims =
+                makeClaim 
+                . Bifunctor.first Attribute.axiomSymbolToSymbolOrAlias
+                <$> specClaims
 
         Bounded.checkClaim
             breadthLimit
@@ -435,7 +439,7 @@ mergeAllRules
         , MonadSMT smt
         , MonadUnliftIO smt
         )
-    => VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    => VerifiedModule StepperAttributes
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
@@ -451,7 +455,7 @@ mergeRulesConsecutiveBatches
         )
     => Int
     -- ^ Batch size
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
@@ -470,7 +474,7 @@ mergeRules
         -> Simplifier.SimplifierT smt [RewriteRule Variable]
         )
     -- ^ The rule merger
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
@@ -593,7 +597,7 @@ simplifyRuleOnSecond (atts, rule) = do
 execute
     :: MonadSimplify simplifier
     => Limit Natural
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -629,7 +633,7 @@ execute breadthLimit verifiedModule strategy inputPattern =
 initialize
     :: forall a simplifier
     .  MonadSimplify simplifier
-    => VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    => VerifiedModule StepperAttributes
     -> (Initialized -> simplifier a)
     -> simplifier a
 initialize verifiedModule within = do
@@ -664,9 +668,9 @@ fromMaybeChanged (Unchanged a) = a
 initializeProver
     :: forall simplifier a
     .  MonadSimplify simplifier
-    => VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
-    -> Maybe (VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias))
+    => VerifiedModule StepperAttributes
+    -> VerifiedModule StepperAttributes
+    -> Maybe (VerifiedModule StepperAttributes)
     -> (InitializedProver -> simplifier a)
     -> simplifier a
 initializeProver definitionModule specModule maybeAlreadyProvenModule within =
@@ -681,7 +685,10 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
                     ]
             changedSpecClaims =
                 map
-                    (Bifunctor.second $ expandClaim tools)
+                    (Bifunctor.bimap
+                        Attribute.axiomSymbolToSymbolOrAlias
+                        (expandClaim tools)
+                    )
                     (Goal.extractClaims specModule)
             mapMSecond
                 :: Monad m
@@ -705,7 +712,9 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
                       )
                     ]
             maybeClaimsAlreadyProven =
-                Goal.extractClaims <$> maybeAlreadyProvenModule
+                fmap (Bifunctor.first Attribute.axiomSymbolToSymbolOrAlias)
+                . Goal.extractClaims
+                <$> maybeAlreadyProvenModule
             claimsAlreadyProven
                 :: [(Attribute.Axiom SymbolOrAlias, ReachabilityRule Variable)]
             claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
@@ -755,11 +764,11 @@ evalProver
         , MonadUnliftIO smt
         , MonadSMT smt
         )
-    => VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule StepperAttributes
     -- ^ The spec module
-    -> Maybe (VerifiedModule StepperAttributes (Attribute.Axiom SymbolOrAlias))
+    -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
     -> (InitializedProver -> Simplifier.SimplifierT smt a)
     -- The prover
