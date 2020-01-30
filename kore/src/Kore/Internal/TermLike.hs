@@ -18,7 +18,6 @@ module Kore.Internal.TermLike
     , markSimplified
     , markSimplifiedConditional
     , markSimplifiedMaybeConditional
-    , markSimplifiableConditional
     , setSimplified
     , simplifiedAttribute
     , isFunctionPattern
@@ -517,6 +516,9 @@ setSimplified
         (_, Pattern.NotSimplified) -> Pattern.NotSimplified
         _ -> childSimplified <> simplified
 
+{-|Marks a term as being simplified as long as the side condition stays
+unchanged.
+-}
 markSimplifiedConditional
     :: (HasCallStack, InternalVariable variable)
     => SideCondition.Representation -> TermLike variable -> TermLike variable
@@ -528,22 +530,6 @@ markSimplifiedConditional
         (  Attribute.setSimplified
                 (  checkedSimplifiedFromChildren termLikeF
                 <> Pattern.simplifiedConditionally condition
-                )
-                attrs
-        :< termLikeF
-        )
-
-markSimplifiableConditional
-    :: (GHC.HasCallStack, InternalVariable variable)
-    => SideCondition.Representation -> TermLike variable -> TermLike variable
-markSimplifiableConditional
-    condition
-    (Recursive.project -> attrs :< termLikeF)
-  =
-    Recursive.embed
-        (  Attribute.setSimplified
-                (  checkedSimplifiedFromChildren termLikeF
-                <> Pattern.simplifiableConditionally condition
                 )
                 attrs
         :< termLikeF

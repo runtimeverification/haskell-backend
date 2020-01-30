@@ -287,6 +287,15 @@ notSimplified a
   | otherwise = Foldable.fold a <> Simplified_ Partly Any
 {-# INLINE notSimplified #-}
 
+{- | Provides a short and incomplete textual description of a 'Simplified'
+object, suitable for use as an explanatory comment when unparsing patterns.
+
+There is no tag for "NotSimplified", since that's the default state.
+
+Otherwise, the tag starts with a prefix that should be unique among all
+attributes that have tags in order to prevent confusion ("S"), followed
+by short representations of the 'Type' and 'Condition'.
+-}
 unparseTag :: Simplified -> Maybe Text
 unparseTag (Simplified_ ty condition) =
     Just $ "S" <> typeRepresentation ty <> conditionRepresentation condition

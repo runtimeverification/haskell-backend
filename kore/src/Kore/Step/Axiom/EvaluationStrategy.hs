@@ -90,7 +90,7 @@ definitionEvaluation rules =
                 return attempted
               | otherwise ->
                 return
-                $ NotApplicableWithCondition
+                $ NotApplicableUntilConditionChanges
                 $ SideCondition.toRepresentation condition
             _ -> return NotApplicable
 
@@ -100,10 +100,10 @@ simplificationEvaluation
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        results <- evaluateAxioms [rule] condition term
+        results' <- evaluateAxioms [rule] condition term
         let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
-        Step.recoveryFunctionLikeResults initial results
-        return $ Results.toAttemptedAxiom results
+        Step.recoveryFunctionLikeResults initial results'
+        return $ Results.toAttemptedAxiom results'
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -210,6 +210,28 @@ evaluateBuiltin
     isValue pat =
         maybe False TermLike.isConstructorLike $ asConcrete pat
 
+{-|Whether a term cannot be simplified regardless of the side condition,
+or only with the current side condition.
+
+Example usage for @applyFirstSimplifierThatWorksWorker@:
+
+We start assuming that if we can't simplify the current term, we will never
+be able to simplify it.
+
+If we manage to apply one of the evaluators with an acceptable result
+(e.g. without remainders), we just return the result and we ignore the
+value of the @NonSimplifiability@ argument.
+
+If the result is not acceptable, we continue trying other evaluators, but we
+assume that, even if we are not able to simplify the term right now, that may
+change when the current side condition changes (i.e. we send @Conditional@
+as an argument to the next @applyFirstSimplifierThatWorksWorker@ call).
+
+If we finished trying all the evaluators without an acceptable result,
+we mark the term as simplified according to the 'NonSimplifiability' argument,
+either as "always simplified", or as "simplified while the current side
+condition is unchanged".
+-}
 data NonSimplifiability
     = Always
     | Conditional
@@ -242,7 +264,7 @@ applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
     return
-    $ AttemptedAxiom.NotApplicableWithCondition
+    $ AttemptedAxiom.NotApplicableUntilConditionChanges
     $ SideCondition.toRepresentation sideCondition
 applyFirstSimplifierThatWorksWorker
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
@@ -289,7 +311,7 @@ applyFirstSimplifierThatWorksWorker
             tryNextSimplifier Conditional
           | otherwise -> return applicationResult
         AttemptedAxiom.NotApplicable -> tryNextSimplifier nonSimplifiability
-        AttemptedAxiom.NotApplicableWithCondition _ ->
+        AttemptedAxiom.NotApplicableUntilConditionChanges _ ->
             tryNextSimplifier Conditional
   where
     tryNextSimplifier nonSimplifiability' =

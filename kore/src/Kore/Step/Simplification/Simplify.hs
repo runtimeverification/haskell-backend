@@ -504,7 +504,9 @@ a case for axioms that can't be applied.
 -}
 data AttemptedAxiom variable
     = NotApplicable
-    | NotApplicableWithCondition !SideCondition.Representation
+    | NotApplicableUntilConditionChanges !SideCondition.Representation
+    -- ^ The axiom(s) can't be applied with the given side condition, but
+    -- we may be able to apply them when the side condition changes.
     | Applied !(AttemptedAxiomResults variable)
     deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -521,12 +523,12 @@ instance
     => Diff (AttemptedAxiom variable)
 
 isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
-isApplicable (Applied _)                    = True
-isApplicable NotApplicable                  = False
-isApplicable (NotApplicableWithCondition _) = False
-isNotApplicable NotApplicable                  = True
-isNotApplicable (NotApplicableWithCondition _) = False
-isNotApplicable (Applied _)                    = False
+isApplicable (Applied _)                            = True
+isApplicable NotApplicable                          = False
+isApplicable (NotApplicableUntilConditionChanges _) = False
+isNotApplicable NotApplicable                          = True
+isNotApplicable (NotApplicableUntilConditionChanges _) = False
+isNotApplicable (Applied _)                            = False
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
@@ -544,7 +546,7 @@ A 'NotApplicable' result is not considered to have remainders.
 hasRemainders :: AttemptedAxiom variable -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
-hasRemainders (NotApplicableWithCondition _) = False
+hasRemainders (NotApplicableUntilConditionChanges _) = False
 
 {- | Return a 'NotApplicable' result for a failing 'MaybeT' action.
  -}

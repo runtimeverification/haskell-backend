@@ -193,7 +193,7 @@ applies testName axioms termLikeAndPredicate results =
         expectNoRemainders actual
         expectResults actual
     expectApplied NotApplicable = assertFailure "Expected Applied"
-    expectApplied (NotApplicableWithCondition _) =
+    expectApplied (NotApplicableUntilConditionChanges _) =
         assertFailure "Expected Applied"
     expectApplied (Applied actual) = return actual
     expectNoRemainders =

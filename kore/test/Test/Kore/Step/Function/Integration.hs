@@ -703,7 +703,7 @@ applies =
         expectNoRemainders results
   where
     expectApplied NotApplicable = assertFailure "Expected Applied"
-    expectApplied (NotApplicableWithCondition _) =
+    expectApplied (NotApplicableUntilConditionChanges _) =
         assertFailure "Expected Applied"
     expectApplied (Applied results) = return results
     expectNoRemainders =
@@ -1221,7 +1221,7 @@ simplifies =
         expectNoRemainders results
   where
     expectApplied NotApplicable = assertFailure "Expected Applied"
-    expectApplied (NotApplicableWithCondition _) =
+    expectApplied (NotApplicableUntilConditionChanges _) =
         assertFailure "Expected Applied"
     expectApplied (Applied results) = return results
     expectNoRemainders =

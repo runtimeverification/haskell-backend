@@ -244,7 +244,7 @@ maybeEvaluatePattern
                         identifier
                         klabelIdentifier
                     return AttemptedAxiom.NotApplicable
-                na@(AttemptedAxiom.NotApplicableWithCondition _) -> do
+                na@(AttemptedAxiom.NotApplicableUntilConditionChanges _) -> do
                     DebugAxiomEvaluation.notEvaluatedConditionally
                         identifier
                         klabelIdentifier
@@ -279,7 +279,7 @@ maybeEvaluatePattern
         case merged of
             AttemptedAxiom.NotApplicable ->
                 return (defaultValue Nothing)
-            AttemptedAxiom.NotApplicableWithCondition c ->
+            AttemptedAxiom.NotApplicableUntilConditionChanges c ->
                 return (defaultValue (Just c))
             AttemptedAxiom.Applied attemptResults ->
                 return $ MultiOr.merge results remainders
@@ -407,7 +407,7 @@ mergeWithConditionAndSubstitution _ _ AttemptedAxiom.NotApplicable =
 mergeWithConditionAndSubstitution
     _
     _
-    na@(AttemptedAxiom.NotApplicableWithCondition _)
+    na@(AttemptedAxiom.NotApplicableUntilConditionChanges _)
   =
     return na
 mergeWithConditionAndSubstitution
