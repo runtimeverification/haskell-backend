@@ -49,198 +49,208 @@ metaVariableDifferentSort = Variable
 
 test_refreshVariable :: [TestTree]
 test_refreshVariable =
-    [ testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty original)
+    [ testGroup "instance FreshVariable Variable"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty original)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool "Expected fresh variable" (original < fresh0 original)
+        , testCase "refreshVariable - avoid original" $
+            assertBool "Expected fresh variable" (original < fresh0 original)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 original < fresh1 original)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 original < fresh1 original)
 
-    , testCase "refreshVariable - expecting the same sort" $
-        assertBool
-            "Expected fresh variable has same sort as original"
-            (variableSort original == variableSort fresh2)
+        , testCase "refreshVariable - expecting the same sort" $
+            assertBool
+                "Expected fresh variable has same sort as original"
+                (variableSort original == variableSort fresh2)
 
-    , testCase "refreshVariable - sort order does not matter" $
-        let assertRefreshes a b =
-                assertBool "Expected fresh variable"
-                    (isJust (refreshVariable (Set.singleton a) b))
-        in do
-            assertRefreshes original metaVariableDifferentSort
-            assertRefreshes metaVariableDifferentSort original
+        , testCase "refreshVariable - sort order does not matter" $
+            let assertRefreshes a b =
+                    assertBool "Expected fresh variable"
+                        (isJust (refreshVariable (Set.singleton a) b))
+            in do
+                assertRefreshes original metaVariableDifferentSort
+                assertRefreshes metaVariableDifferentSort original
+        ]
 
-    -- Target Variable
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty targetOriginal)
+    , testGroup "instance FreshVariable (Target Variable)"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty targetOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (targetOriginal < fresh0 targetOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (targetOriginal < fresh0 targetOriginal)
 
-    , testCase "refreshVariable - avoid original (ignore Target constructor)" $
-        assertBool
-            "Expected fresh variable"
-            (targetOriginal < fresh avoidT targetOriginal)
+        , testCase "refreshVariable - avoid original (ignore Target constructor)" $
+            assertBool
+                "Expected fresh variable"
+                (targetOriginal < fresh avoidT targetOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 targetOriginal < fresh1 targetOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 targetOriginal < fresh1 targetOriginal)
+        ]
 
-    -- ElementVariable Variable
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty elemOriginal)
+    , testGroup "instance FreshVariable (ElementVariable Variable)"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty elemOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (elemOriginal < fresh0 elemOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (elemOriginal < fresh0 elemOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 elemOriginal < fresh1 elemOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 elemOriginal < fresh1 elemOriginal)
+        ]
 
-    -- SetVariable Variable
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty setOriginal)
+    , testGroup "instance FreshVariable (SetVariable Variable)"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty setOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (setOriginal < fresh0 setOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (setOriginal < fresh0 setOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 setOriginal < fresh1 setOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 setOriginal < fresh1 setOriginal)
+        ]
 
-    -- UnifiedVariable (ElementVariable Variable)
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty elemOriginal)
+    , testGroup "instance FreshVariable (UnifiedVariable (ElementVariable Variable))"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty elemOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (unifiedElemOriginal < fresh0 unifiedElemOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (unifiedElemOriginal < fresh0 unifiedElemOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 unifiedElemOriginal < fresh1 unifiedElemOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 unifiedElemOriginal < fresh1 unifiedElemOriginal)
+        ]
 
-    -- UnifiedVariable (SetVariable Variable)
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty unifiedSetOriginal)
+    , testGroup "instance FreshVariable (UnifiedVariable (SetVariable Variable))"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty unifiedSetOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (unifiedSetOriginal < fresh0 unifiedSetOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (unifiedSetOriginal < fresh0 unifiedSetOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 unifiedSetOriginal < fresh1 unifiedSetOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 unifiedSetOriginal < fresh1 unifiedSetOriginal)
+        ]
 
-    -- ElementVariable (Target Variable)
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty elemTargetOriginal)
+    , testGroup "instance FreshVariable (ElementVariable (Target Variable))"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty elemTargetOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (elemTargetOriginal < fresh0 elemTargetOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (elemTargetOriginal < fresh0 elemTargetOriginal)
 
-    , testCase "refreshVariable - avoid original (ignore Target constructor)" $
-        assertBool
-            "Expected fresh variable"
-            (elemTargetOriginal < fresh avoidET elemTargetOriginal)
+        , testCase "refreshVariable - avoid original (ignore Target constructor)" $
+            assertBool
+                "Expected fresh variable"
+                (elemTargetOriginal < fresh avoidET elemTargetOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 elemTargetOriginal < fresh1 elemTargetOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 elemTargetOriginal < fresh1 elemTargetOriginal)
+        ]
 
-    -- SetVariable (Target Variable)
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty setNonTargetOriginal)
+    , testGroup "instance FreshVariable (SetVariable (Target Variable))"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty setNonTargetOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (setNonTargetOriginal < fresh0 setNonTargetOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (setNonTargetOriginal < fresh0 setNonTargetOriginal)
 
-    , testCase "refreshVariable - avoid original (ignore Target constructor)" $
-        assertBool
-            "Expected fresh variable"
-            (setNonTargetOriginal < fresh avoidST setNonTargetOriginal)
+        , testCase "refreshVariable - avoid original (ignore Target constructor)" $
+            assertBool
+                "Expected fresh variable"
+                (setNonTargetOriginal < fresh avoidST setNonTargetOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 setNonTargetOriginal < fresh1 setNonTargetOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 setNonTargetOriginal < fresh1 setNonTargetOriginal)
+        ]
 
-    -- UnifiedVariable (Target Variable)
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty unifiedElemTargetOriginal)
+    , testGroup "instance FreshVariable (UnifiedVariable (Target Variable))"
+        [ testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty unifiedElemTargetOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (unifiedElemTargetOriginal < fresh0 unifiedElemTargetOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (unifiedElemTargetOriginal < fresh0 unifiedElemTargetOriginal)
 
-    , testCase "refreshVariable - avoid original (ignore Target constructor)" $
-        assertBool
-            "Expected fresh variable"
-            (unifiedElemTargetOriginal < fresh avoidUET unifiedElemTargetOriginal)
+        , testCase "refreshVariable - avoid original (ignore Target constructor)" $
+            assertBool
+                "Expected fresh variable"
+                (unifiedElemTargetOriginal < fresh avoidUET unifiedElemTargetOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 unifiedElemTargetOriginal < fresh1 unifiedElemTargetOriginal)
-    , testCase "refreshVariable - avoid empty set" $
-        assertEqual "Expected no new variable"
-            Nothing
-            (refreshVariable Set.empty unifiedSetNonTargetOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 unifiedElemTargetOriginal < fresh1 unifiedElemTargetOriginal)
+        , testCase "refreshVariable - avoid empty set" $
+            assertEqual "Expected no new variable"
+                Nothing
+                (refreshVariable Set.empty unifiedSetNonTargetOriginal)
 
-    , testCase "refreshVariable - avoid original" $
-        assertBool
-            "Expected fresh variable"
-            (unifiedSetNonTargetOriginal < fresh0 unifiedSetNonTargetOriginal)
+        , testCase "refreshVariable - avoid original" $
+            assertBool
+                "Expected fresh variable"
+                (unifiedSetNonTargetOriginal < fresh0 unifiedSetNonTargetOriginal)
 
-    , testCase "refreshVariable - avoid original (ignore Target constructor)" $
-        assertBool
-            "Expected fresh variable"
-            (unifiedSetNonTargetOriginal < fresh avoidUST unifiedSetNonTargetOriginal)
+        , testCase "refreshVariable - avoid original (ignore Target constructor)" $
+            assertBool
+                "Expected fresh variable"
+                (unifiedSetNonTargetOriginal < fresh avoidUST unifiedSetNonTargetOriginal)
 
-    , testCase "refreshVariable - avoid fresh" $
-        assertBool
-            "Expected another fresh variable"
-            (fresh0 unifiedSetNonTargetOriginal < fresh1 unifiedSetNonTargetOriginal)
+        , testCase "refreshVariable - avoid fresh" $
+            assertBool
+                "Expected another fresh variable"
+                (fresh0 unifiedSetNonTargetOriginal < fresh1 unifiedSetNonTargetOriginal)
+        ]
     ]
   where
     original = metaVariable
