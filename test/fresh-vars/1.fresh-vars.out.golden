@@ -1,3 +1,3 @@
 <k>
-  #Exists _0 . _0 : #Exists _0 . _0 : #Exists _0 . _0 : .Seq
+  _0 +Int ( _00 +Int ( _01 +Int 0 ) )
 </k>
