@@ -375,6 +375,15 @@ Convert a base10 string to its integer value.
         [hook{}("STRING.string2int")]
 ~~~
 
+### STRING.int2string
+
+Convert an integer value to its base10 string representation.
+
+~~~
+    hooked-symbol int2string{}(Int{}) : String{}
+        [hook{}("STRING.string2int")]
+~~~
+
 ### STRING.string2base
 
 Takes a string and a base and converts the string from `base` to its integer
