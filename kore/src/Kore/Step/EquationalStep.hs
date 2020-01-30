@@ -34,6 +34,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -428,8 +429,6 @@ matchRule
     -> unifier (UnifiedRule variable (rule variable))
 matchRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-        mergedSideCondition =
-            sideCondition `SideCondition.andCondition` initialCondition
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
@@ -442,10 +441,9 @@ matchRule sideCondition initial rule = do
     unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
     let
-        ruleRequires = precondition rule'
-        requires' = Condition.fromPredicate ruleRequires
+        requires = precondition rule'
     unification' <-
-        evaluateRequires mergedSideCondition (unification <> requires')
+        evaluateRequires sideCondition initialCondition unification requires
     return (rule' `Conditional.withCondition` unification')
   where
     unifyPatterns = ignoreUnificationErrors matchIncremental
@@ -466,10 +464,13 @@ evaluateRequires
     => MonadUnify unifier
     => SideCondition variable
     -> Condition variable
+    -> Condition variable
+    -> Predicate variable
     -> unifier (Condition variable)
-evaluateRequires sideCondition requires = do
-    requires' <-
-        simplifyPredicate sideCondition Nothing requires
+evaluateRequires side initial solution requires = do
+    let requires' = solution <> Condition.fromPredicate requires
+    requires'' <-
+        simplifyCondition requires'
         -- disable function evaluation:
         & withoutAxioms
         -- do not propagate unification errors:
@@ -477,8 +478,14 @@ evaluateRequires sideCondition requires = do
         -- if there is a unification error
         -- then continue with the original requirement,
         -- else continue with the partially-simplified requirement.
-        & maybeT (return requires) Unifier.scatter
-    simplifyPredicate sideCondition Nothing
-        $ Condition.forgetSimplified requires'
+        & maybeT (return requires') Unifier.scatter
+    simplifyCondition $ Condition.forgetSimplified requires''
   where
     withoutAxioms = Simplifier.localSimplifierAxioms (const mempty)
+    side' = SideCondition.andCondition side initial
+    simplifyCondition
+        :: forall unifier'
+        .  MonadUnify unifier'
+        => Condition variable
+        -> unifier' (Condition variable)
+    simplifyCondition = Branch.alternate . Simplifier.simplifyCondition side'
