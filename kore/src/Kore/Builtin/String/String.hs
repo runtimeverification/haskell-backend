@@ -15,6 +15,7 @@ module Kore.Builtin.String.String
     , ltKey
     , plusKey
     , string2IntKey
+    , int2StringKey
     , substrKey
     , lengthKey
     , findKey
@@ -118,6 +119,9 @@ plusKey = "STRING.concat"
 
 string2IntKey :: IsString s => s
 string2IntKey = "STRING.string2int"
+
+int2StringKey :: IsString s => s
+int2StringKey = "STRING.int2string"
 
 substrKey :: IsString s => s
 substrKey = "STRING.substr"
