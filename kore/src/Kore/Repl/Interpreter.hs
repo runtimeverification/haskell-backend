@@ -83,6 +83,7 @@ import Data.Functor
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
+import qualified Data.Graph.Inductive.Query.DFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
 import Data.IORef
@@ -441,14 +442,44 @@ showGraph
 showGraph mfile out = do
     let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
+    let smoothedOutGraph = smoothOutGraph graph
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
        then liftIO $ maybe
-                        (showDotGraph (length axioms) graph)
-                        (saveDotGraph (length axioms) graph format)
+                        (showDotGraph (length axioms) smoothedOutGraph)
+                        (saveDotGraph (length axioms) smoothedOutGraph format)
                         mfile
        else putStrLn' "Graphviz is not installed."
+
+-- | Smoothes out nodes which have inDegree == outDegree == 1
+-- (with the exception of direct children of branching nodes);
+-- this is done by computing the subgraph formed with only such nodes,
+-- and replacing each component of the subgraph with one edge in the original graph
+-- TODO: ... -> InnerGraph (Maybe rule) to be able to distinguish
+-- between Simpl/RD and a newly added edge
+smoothOutGraph :: InnerGraph rule -> InnerGraph rule
+smoothOutGraph graph =
+    let subGraph = Graph.nfilter degreeOne graph
+        nodesToRemove = Graph.nodes subGraph
+        edgesToAdd = fmap (componentToEdge subGraph) (Graph.components subGraph)
+     in Graph.insEdges edgesToAdd (Graph.delNodes nodesToRemove graph)
+  where
+    degreeOne :: Graph.Node -> Bool
+    degreeOne node =
+        (Graph.outdeg graph node == 1)
+        && (Graph.indeg graph node == 1)
+        && not (all (\n -> Graph.outdeg graph n > 1) (Graph.pre graph node))
+    componentToEdge :: InnerGraph rule -> [Graph.Node] -> Graph.LEdge (Seq rule)
+    componentToEdge subGr nodes =
+        case filter (\n -> (Graph.indeg subGr n == 0) || (Graph.outdeg subGr n == 0)) nodes of
+            [x, y] ->
+                if x < y
+                    then
+                        (head (Graph.pre graph x), head (Graph.suc graph y), mempty)
+                    else
+                        (head (Graph.pre graph y), head (Graph.suc graph x), mempty)
+            _ -> error "TODO: avoid partial function"
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
