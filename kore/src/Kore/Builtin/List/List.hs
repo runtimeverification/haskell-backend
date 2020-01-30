@@ -25,6 +25,8 @@ module Kore.Builtin.List.List
     , inKey
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Function as Function
 import Data.Reflection
     ( Given

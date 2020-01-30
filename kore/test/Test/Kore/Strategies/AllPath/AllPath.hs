@@ -8,6 +8,8 @@ module Test.Kore.Strategies.AllPath.AllPath
     , test_runStrategy
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Applicative

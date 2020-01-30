@@ -5,6 +5,8 @@ module Test.Kore.Step.SMT.Representation.Helpers
     , testsForModule
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map

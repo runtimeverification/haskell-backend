@@ -17,6 +17,8 @@ module Kore.ASTVerifier.Verifier
     , whileImporting
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
 import qualified Control.Monad.Reader as Reader
 import Control.Monad.RWS.Strict

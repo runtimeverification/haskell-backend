@@ -21,6 +21,8 @@ module Kore.Builtin.Bool.Bool
     , orElseKey
     ) where
 
+import Prelude.Kore
+
 import Data.String
     ( IsString
     )

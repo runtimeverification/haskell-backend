@@ -13,6 +13,8 @@ module Kore.ASTVerifier.DefinitionVerifier
     , verifyAndIndexDefinitionWithBase
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( foldM
     )

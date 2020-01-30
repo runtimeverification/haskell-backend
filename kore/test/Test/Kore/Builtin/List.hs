@@ -18,6 +18,8 @@ module Test.Kore.Builtin.List
     , genSeqInteger
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range

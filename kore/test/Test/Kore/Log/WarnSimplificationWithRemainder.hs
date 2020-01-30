@@ -2,6 +2,8 @@ module Test.Kore.Log.WarnSimplificationWithRemainder
     ( test_instance_Table_WarnSimplificationWithRemainder
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition

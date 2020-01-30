@@ -6,6 +6,8 @@ module Kore.Step.Simplification.InternalBytes
     ( simplify
     ) where
 
+import Prelude.Kore
+
 import Kore.Internal.InternalBytes
 import Kore.Internal.OrPattern
     ( OrPattern

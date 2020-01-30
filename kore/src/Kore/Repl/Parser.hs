@@ -11,6 +11,8 @@ module Kore.Repl.Parser
     , scriptParser
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( some
     , (<|>)
@@ -33,9 +35,6 @@ import Data.Maybe
     )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Prelude hiding
-    ( log
-    )
 import Text.Megaparsec
     ( Parsec
     , customFailure

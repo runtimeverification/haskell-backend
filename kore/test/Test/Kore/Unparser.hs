@@ -4,6 +4,8 @@ module Test.Kore.Unparser
     , test_unparseGeneric
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
     ( Gen
     , Property

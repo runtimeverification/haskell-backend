@@ -11,6 +11,8 @@ module Kore.Attribute.Smtlib.Smthook
     , smthookId, smthookSymbol, smthookAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

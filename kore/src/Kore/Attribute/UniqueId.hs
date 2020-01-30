@@ -15,6 +15,8 @@ module Kore.Attribute.UniqueId
     , uniqueIdAttribute
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

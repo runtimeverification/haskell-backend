@@ -26,6 +26,8 @@ module Kore.Builtin.Krypto
     , ecdsaRecoverKey
     ) where
 
+import Prelude.Kore
+
 
 import Control.Exception.Base
     ( assert

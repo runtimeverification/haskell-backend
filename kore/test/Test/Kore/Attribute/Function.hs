@@ -6,6 +6,8 @@ module Test.Kore.Attribute.Function
     , test_parameters
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

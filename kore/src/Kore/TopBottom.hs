@@ -13,6 +13,8 @@ module Kore.TopBottom
     , guardAgainstBottom
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

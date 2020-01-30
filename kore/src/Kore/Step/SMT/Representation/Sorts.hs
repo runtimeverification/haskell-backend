@@ -10,6 +10,8 @@ module Kore.Step.SMT.Representation.Sorts
     ( buildRepresentations
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( zipWithM
     )

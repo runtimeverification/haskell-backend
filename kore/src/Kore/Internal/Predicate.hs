@@ -55,6 +55,8 @@ module Kore.Internal.Predicate
     , substitute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

@@ -20,6 +20,8 @@ module Kore.Step.Result
     , toAttemptedAxiom
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative ((<|>))
     )

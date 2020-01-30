@@ -2,6 +2,8 @@ module Test.Kore.Step.Axiom.Registry
     ( test_functionRegistry
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

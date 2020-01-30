@@ -21,6 +21,8 @@ module Kore.Attribute.Simplification
     , simplificationId, simplificationSymbol, simplificationAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

@@ -27,6 +27,8 @@ module Kore.ASTVerifier.PatternVerifier.PatternVerifier
     , assertSameSort
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import Control.Monad
     ( (>=>)

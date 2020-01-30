@@ -12,6 +12,8 @@ module Kore.ASTVerifier.ModuleVerifier
     , verifyUniqueNames
     ) where
 
+import Prelude.Kore
+
 import Control.Lens
     ( (%=)
     )

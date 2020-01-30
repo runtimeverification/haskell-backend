@@ -21,6 +21,8 @@ module Kore.Step.Rule
     , onePathRuleToTerm
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

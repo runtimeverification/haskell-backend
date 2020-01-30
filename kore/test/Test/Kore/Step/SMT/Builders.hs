@@ -19,6 +19,8 @@ module Test.Kore.Step.SMT.Builders
     , koreSort
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text

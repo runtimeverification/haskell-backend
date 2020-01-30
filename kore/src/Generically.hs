@@ -8,6 +8,8 @@ module Generically
     ( Generically1 (..)
     ) where
 
+import Prelude.Kore
+
 {- | @Generically1@ is a wrapper for deriving instances generically.
 
 For a constraint @C@ where we can write a generic instance in terms of

@@ -3,6 +3,8 @@ module Test.Kore.IndexedModule.Resolvers
     , test_resolver_undefined_messages
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

@@ -2,6 +2,8 @@ module Test.Kore.Strategies.OnePath.Step
     ( test_onePathStrategy
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Coerce

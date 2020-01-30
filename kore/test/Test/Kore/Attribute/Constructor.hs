@@ -6,6 +6,8 @@ module Test.Kore.Attribute.Constructor
     , test_parameters
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

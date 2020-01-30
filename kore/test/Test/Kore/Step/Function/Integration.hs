@@ -10,6 +10,10 @@ module Test.Kore.Step.Function.Integration
     , test_Ceil
     ) where
 
+import Prelude.Kore hiding
+    ( succ
+    )
+
 import Test.Tasty
 
 import qualified Control.Lens as Lens
@@ -19,11 +23,7 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Prelude hiding
-    ( succ
-    )
 
 import Data.Sup
 import Kore.ASTVerifier.DefinitionVerifier

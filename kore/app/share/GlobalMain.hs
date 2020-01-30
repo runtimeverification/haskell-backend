@@ -24,6 +24,8 @@ module GlobalMain
     , loadModule
     ) where
 
+import Prelude.Kore
+
 import Control.Exception
     ( evaluate
     )

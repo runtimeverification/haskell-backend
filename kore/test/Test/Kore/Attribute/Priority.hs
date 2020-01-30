@@ -9,6 +9,8 @@ module Test.Kore.Attribute.Priority
     , test_space
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

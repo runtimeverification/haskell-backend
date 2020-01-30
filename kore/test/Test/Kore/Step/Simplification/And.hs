@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.And
     ( test_andSimplification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Kore.Internal.MultiOr

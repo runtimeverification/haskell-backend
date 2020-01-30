@@ -7,6 +7,8 @@ module Kore.Unification.Unify
     ( MonadUnify (..), SimplifierVariable
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative
     , empty

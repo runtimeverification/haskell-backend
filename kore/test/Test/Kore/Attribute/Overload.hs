@@ -7,6 +7,8 @@ module Test.Kore.Attribute.Overload
     , test_dont_ignore
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

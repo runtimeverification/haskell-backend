@@ -4,6 +4,8 @@ module Test.Kore.Builtin.Endianness
     , test_unify
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified GHC.Stack as GHC

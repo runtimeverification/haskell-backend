@@ -22,6 +22,8 @@ kore-profiler --filter <event-substring> <log.out > profiler.out
 
 module Main (main) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( when
     )

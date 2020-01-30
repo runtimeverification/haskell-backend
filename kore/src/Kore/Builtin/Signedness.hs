@@ -12,6 +12,8 @@ module Kore.Builtin.Signedness
     , module Kore.Builtin.Signedness.Signedness
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

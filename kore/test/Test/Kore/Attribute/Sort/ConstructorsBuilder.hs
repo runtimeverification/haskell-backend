@@ -2,6 +2,8 @@ module Test.Kore.Attribute.Sort.ConstructorsBuilder
     ( test_sortParsing
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

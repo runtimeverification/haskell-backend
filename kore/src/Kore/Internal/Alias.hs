@@ -11,6 +11,8 @@ module Kore.Internal.Alias
     , module Kore.Internal.ApplicationSorts
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function

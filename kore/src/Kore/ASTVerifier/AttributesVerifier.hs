@@ -25,6 +25,8 @@ import Data.Function
     )
 import Data.Bifunctor
 import Kore.IndexedModule.MetadataTools as MetadataTools
+import Prelude.Kore
+
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 

@@ -14,6 +14,8 @@ module Kore.Step.Axiom.Registry
     , PartitionedEqualityRules (..)
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import Data.List

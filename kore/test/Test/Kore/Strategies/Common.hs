@@ -4,6 +4,8 @@ module Test.Kore.Strategies.Common
     , runVerificationToPattern
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.Trans.Except
     ( runExceptT
     )

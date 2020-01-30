@@ -29,6 +29,8 @@ module Kore.Attribute.Axiom
     , axiomSymbolToSymbolOrAlias
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

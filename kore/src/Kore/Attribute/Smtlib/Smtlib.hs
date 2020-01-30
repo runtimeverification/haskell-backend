@@ -13,6 +13,8 @@ module Kore.Attribute.Smtlib.Smtlib
     , smtlibAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

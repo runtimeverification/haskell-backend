@@ -2,6 +2,8 @@ module Test.Kore.Step.Function.Memo
     ( test_Self
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Monad.State.Strict

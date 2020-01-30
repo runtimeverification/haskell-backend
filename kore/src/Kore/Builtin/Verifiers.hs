@@ -33,6 +33,8 @@ module Kore.Builtin.Verifiers
     , parseString
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

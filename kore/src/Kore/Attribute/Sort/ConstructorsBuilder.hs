@@ -8,6 +8,8 @@ module Kore.Attribute.Sort.ConstructorsBuilder
     ( indexBySort
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( when
     )

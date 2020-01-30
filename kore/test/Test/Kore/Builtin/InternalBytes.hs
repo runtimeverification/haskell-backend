@@ -16,6 +16,8 @@ module Test.Kore.Builtin.InternalBytes
     , test_InternalBytes
     ) where
 
+import Prelude.Kore
+
 import qualified Data.ByteString.Char8 as BS
 import Hedgehog hiding
     ( Concrete

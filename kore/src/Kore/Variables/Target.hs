@@ -13,6 +13,8 @@ module Kore.Variables.Target
     , isNonTarget
     ) where
 
+import Prelude.Kore
+
 import Data.Hashable
     ( Hashable
     )

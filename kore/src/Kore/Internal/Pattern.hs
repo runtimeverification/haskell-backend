@@ -33,6 +33,8 @@ module Kore.Internal.Pattern
     , Condition
     ) where
 
+import Prelude.Kore
+
 import GHC.Stack
     ( HasCallStack
     )

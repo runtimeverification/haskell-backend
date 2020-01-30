@@ -9,6 +9,8 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )

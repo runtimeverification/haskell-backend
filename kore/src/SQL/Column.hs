@@ -20,6 +20,8 @@ module SQL.Column
     , defineTextColumn
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
 import Data.Generics.Product.Fields
 import Data.Int

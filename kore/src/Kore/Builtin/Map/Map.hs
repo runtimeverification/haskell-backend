@@ -38,6 +38,8 @@ module Kore.Builtin.Map.Map
     , valuesKey
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Map.Strict as Map
 import Data.String
     ( IsString

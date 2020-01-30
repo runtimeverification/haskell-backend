@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Floor
     ( test_floorSimplification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Default as Default

@@ -20,6 +20,8 @@ module Test.Kore.Builtin.Builtin
     , runSMT
     ) where
 
+import Prelude.Kore
+
 import qualified Hedgehog
 import Test.Tasty
     ( TestTree

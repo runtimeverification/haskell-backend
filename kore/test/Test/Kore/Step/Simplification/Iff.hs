@@ -3,6 +3,8 @@ module Test.Kore.Step.Simplification.Iff
     , test_makeEvaluate
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Function as Function

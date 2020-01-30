@@ -22,6 +22,8 @@ module Kore.Log.DebugAxiomEvaluation
     , klabelIdentifier
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

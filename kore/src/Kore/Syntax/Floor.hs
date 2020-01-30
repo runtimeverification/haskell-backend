@@ -8,6 +8,8 @@ module Kore.Syntax.Floor
     ( Floor (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

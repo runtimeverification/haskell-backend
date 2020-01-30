@@ -10,6 +10,8 @@ module Kore.Step.SMT.Representation.All
     ( build
     ) where
 
+import Prelude.Kore ()
+
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Attribute.Axiom as Attribute

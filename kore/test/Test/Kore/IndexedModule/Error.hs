@@ -6,6 +6,8 @@ module Test.Kore.IndexedModule.Error
     ( test_undefineds
     ) where
 
+import Prelude.Kore ()
+
 import Test.Kore
     ( testId
     )

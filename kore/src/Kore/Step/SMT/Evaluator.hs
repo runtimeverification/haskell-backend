@@ -10,8 +10,9 @@ module Kore.Step.SMT.Evaluator
     ( decidePredicate
     , Evaluable (..)
     , filterMultiOr
-    )
-    where
+    ) where
+
+import Prelude.Kore
 
 import Control.Applicative
     ( (<|>)

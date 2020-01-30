@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Implies
     ( test_simplifyEvaluated
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

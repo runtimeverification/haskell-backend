@@ -14,6 +14,8 @@ module Kore.IndexedModule.OverloadGraph
     , fromOverloads
     ) where
 
+import Prelude.Kore
+
 import Data.Map.Strict
     ( Map
     )

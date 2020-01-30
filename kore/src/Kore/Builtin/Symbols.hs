@@ -11,6 +11,8 @@ module Kore.Builtin.Symbols
     , isSymbol
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( fromMaybe
     )

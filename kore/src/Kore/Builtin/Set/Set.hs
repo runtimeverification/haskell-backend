@@ -26,6 +26,8 @@ module Kore.Builtin.Set.Set
     , list2setKey
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Map.Strict as Map
 import Data.String
     ( IsString

@@ -7,6 +7,8 @@ module Kore.Step.Simplification.Inj
     ( simplify
     ) where
 
+import Prelude.Kore
+
 import Data.Functor.Compose
 
 import Kore.Internal.Condition as Condition

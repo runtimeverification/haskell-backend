@@ -24,6 +24,8 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
