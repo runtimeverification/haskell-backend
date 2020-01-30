@@ -14,6 +14,8 @@ module Kore.Unification.SubstitutionNormalization
     , normalize
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

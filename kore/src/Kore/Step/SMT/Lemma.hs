@@ -11,6 +11,8 @@ module Kore.Step.SMT.Lemma
     ( declareSMTLemmas
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

@@ -13,6 +13,8 @@ module Kore.Step.Simplification.SubstitutionSimplifier
     , simplifyAnds
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

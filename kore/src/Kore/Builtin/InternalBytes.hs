@@ -26,6 +26,8 @@ module Kore.Builtin.InternalBytes
     , concatKey
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

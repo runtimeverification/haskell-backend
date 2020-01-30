@@ -11,6 +11,8 @@ module Kore.Strategies.ProofState
     , ProofStateTransformer (..)
     ) where
 
+import Prelude.Kore
+
 import Data.Hashable
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)

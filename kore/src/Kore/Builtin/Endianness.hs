@@ -12,6 +12,8 @@ module Kore.Builtin.Endianness
     , module Kore.Builtin.Endianness.Endianness
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

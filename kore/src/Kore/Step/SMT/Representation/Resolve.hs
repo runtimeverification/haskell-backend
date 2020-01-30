@@ -10,6 +10,8 @@ module Kore.Step.SMT.Representation.Resolve
     ( resolve
     ) where
 
+import Prelude.Kore
+
 import Control.Error.Safe
     ( assertMay
     )

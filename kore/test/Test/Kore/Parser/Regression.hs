@@ -8,6 +8,8 @@ module Test.Kore.Parser.Regression
     , VerifyRequest(..)
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

@@ -33,6 +33,10 @@ module Kore.Internal.Substitution
     , applyNormalized
     ) where
 
+import Prelude.Kore hiding
+    ( null
+    )
+
 import Control.DeepSeq
     ( NFData
     )
@@ -57,9 +61,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import GHC.Stack
     ( HasCallStack
-    )
-import Prelude hiding
-    ( null
     )
 
 import Kore.Attribute.Pattern.FreeVariables
@@ -375,7 +376,7 @@ filter
     -> Substitution variable
     -> Substitution variable
 filter filtering =
-    modify (Prelude.filter (filtering . fst))
+    modify (Prelude.Kore.filter (filtering . fst))
 
 {- | Return the pair of substitutions that do and do not satisfy the criterion.
 

@@ -3,6 +3,8 @@ module Test.Kore.Step.Simplification.Exists
     , test_simplify
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Text.Prettyprint.Doc as Pretty

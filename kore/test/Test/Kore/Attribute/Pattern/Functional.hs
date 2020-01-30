@@ -2,6 +2,8 @@ module Test.Kore.Attribute.Pattern.Functional
     ( test_instance_Synthetic
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

@@ -17,6 +17,8 @@ module Kore.Step.EquationalStep
     , recoveryFunctionLikeResults
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

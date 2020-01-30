@@ -1,6 +1,8 @@
 module Test.Kore.Step.Axiom.Identifier
     ( test_matchAxiomIdentifier ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified GHC.Stack as GHC

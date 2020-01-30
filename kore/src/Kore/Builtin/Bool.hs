@@ -36,6 +36,8 @@ module Kore.Builtin.Bool
     , orElseKey
     ) where
 
+import Prelude.Kore
+
 import Data.Functor
     ( ($>)
     )

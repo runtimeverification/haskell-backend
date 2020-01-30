@@ -2,6 +2,8 @@ module Test.Kore.Step.EquationalStep
     ( test_applyEquationalRule_
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default as Default

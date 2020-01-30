@@ -2,6 +2,8 @@ module Test.Kore.Log.DebugEvaluateCondition
     ( test_instance_Table_DebugEvaluateCondition
     ) where
 
+import Prelude.Kore ()
+
 import Test.Tasty
 
 import Kore.Internal.Predicate

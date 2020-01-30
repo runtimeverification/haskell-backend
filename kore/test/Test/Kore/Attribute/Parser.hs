@@ -4,6 +4,8 @@ module Test.Kore.Attribute.Parser
     , expectFailure
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty.HUnit
 
 import Data.Either

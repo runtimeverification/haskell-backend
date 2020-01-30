@@ -9,6 +9,8 @@ module Kore.Builtin.Endianness.Endianness
     , toApplication
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

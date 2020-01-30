@@ -44,6 +44,10 @@ module Test.Kore.Builtin.Map
     , asInternal
     ) where
 
+import Prelude.Kore hiding
+    ( concatMap
+    )
+
 import Hedgehog
     ( Gen
     , Property
@@ -73,9 +77,6 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
 import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( concatMap
-    )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as Builtin.List

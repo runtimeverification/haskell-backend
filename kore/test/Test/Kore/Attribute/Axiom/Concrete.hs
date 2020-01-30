@@ -6,6 +6,8 @@ module Test.Kore.Attribute.Axiom.Concrete
     , test_arguments
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

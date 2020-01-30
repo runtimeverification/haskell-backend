@@ -2,6 +2,8 @@ module Test.Kore.Builtin.Inj
     ( test_patternVerifierHook
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Function

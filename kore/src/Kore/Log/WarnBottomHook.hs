@@ -9,6 +9,8 @@ module Kore.Log.WarnBottomHook
     , warnBottomHook
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

@@ -3,6 +3,8 @@ module Test.Kore.Step.Simplification.Pattern
     , test_Pattern_simplifyAndRemoveTopExists
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Kore.Internal.OrPattern

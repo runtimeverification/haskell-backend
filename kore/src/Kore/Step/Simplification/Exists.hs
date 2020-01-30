@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Exists
     , makeEvaluate
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( foldM
     )

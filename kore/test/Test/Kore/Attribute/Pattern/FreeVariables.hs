@@ -3,6 +3,8 @@ module Test.Kore.Attribute.Pattern.FreeVariables
     , test_instance_Synthetic_TermLike
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Condition
     ( test_predicateSimplification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map

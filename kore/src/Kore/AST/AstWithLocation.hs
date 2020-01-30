@@ -12,6 +12,8 @@ module Kore.AST.AstWithLocation
     , prettyPrintLocationFromAst
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

@@ -15,7 +15,7 @@ module Kore.Parser.CharSet
     , elem
     ) where
 
-import Prelude hiding
+import Prelude.Kore hiding
     ( elem
     )
 

@@ -28,6 +28,8 @@ module Kore.Attribute.Axiom
     , UniqueId (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

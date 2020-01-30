@@ -20,6 +20,8 @@ module Kore.Internal.Conditional
     , isNormalized
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad
     ( Comonad (..)
     )

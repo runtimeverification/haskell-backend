@@ -20,6 +20,8 @@ module Kore.Internal.TermLike.TermLike
     , updateCallStack
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree

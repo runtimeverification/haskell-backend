@@ -7,6 +7,8 @@ module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( maybeT

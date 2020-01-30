@@ -8,6 +8,8 @@ module Kore.Attribute.Pattern.Functional
     ( Functional (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import qualified Data.Foldable as Foldable
 import Data.Functor.Const

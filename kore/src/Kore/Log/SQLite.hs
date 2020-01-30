@@ -12,6 +12,8 @@ module Kore.Log.SQLite
     , withLogSQLite
     ) where
 
+import Prelude.Kore
+
 import Colog
     ( unLogAction
     )

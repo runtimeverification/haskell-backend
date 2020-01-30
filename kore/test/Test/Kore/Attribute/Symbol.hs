@@ -7,6 +7,8 @@ module Test.Kore.Attribute.Symbol
     , test_NoEvaluators
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

@@ -2,6 +2,8 @@ module Test.Kore.Contains
     ( AssertContains (..)
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Map.Strict

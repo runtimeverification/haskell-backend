@@ -7,6 +7,8 @@ module Kore.Attribute.Sort.Element
     , elementId, elementSymbol, elementAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

@@ -11,6 +11,8 @@ module Kore.Step.Simplification.In
     ( simplify
     ) where
 
+import Prelude.Kore
+
 import Kore.Internal.OrPattern
     ( OrPattern
     )

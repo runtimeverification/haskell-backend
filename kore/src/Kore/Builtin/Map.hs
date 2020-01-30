@@ -26,6 +26,8 @@ module Kore.Builtin.Map
     , evalUnit
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

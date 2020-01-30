@@ -13,6 +13,8 @@ module Kore.Log.KoreLogOptions
     , parseKoreLogOptions
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

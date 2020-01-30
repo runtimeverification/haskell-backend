@@ -8,6 +8,8 @@ module Kore.Internal.SideCondition.SideCondition
     , fromText
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

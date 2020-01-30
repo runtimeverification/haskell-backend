@@ -7,6 +7,8 @@ module Kore.Step.Simplification.Builtin
     ( simplify
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
 import Data.Functor.Compose
 import Data.Generics.Product
