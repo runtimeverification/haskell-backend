@@ -20,6 +20,12 @@ module Test.Kore
     , predicateChildGen
     , elementVariableGen
     , setVariableGen
+    , targetElementVariableGen
+    , elementTargetVariableGen
+    , targetSetVariableGen
+    , setTargetVariableGen
+    , targetUnifiedVariableGen
+    , unifiedTargetVariableGen
     , unifiedVariableGen
     , genBuiltin
     , couple
@@ -77,6 +83,9 @@ import Kore.Parser
 import Kore.Parser.Lexeme
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
+import Kore.Variables.Target
+    ( Target (..)
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -213,15 +222,6 @@ sortGen = do
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
 
-elementVariableGen :: Sort -> Gen (ElementVariable Variable)
-elementVariableGen patternSort = do
-    Context { objectVariables } <- Reader.ask
-    ElementVariable <$>
-        variableGen'
-            patternSort
-            [getElementVariable v | ElemVar v <- objectVariables]
-            idGen
-
 variableGen' :: Sort -> [Variable] -> Gen Id -> Gen Variable
 variableGen' patternSort variables genId =
     case filter bySort variables of
@@ -236,6 +236,15 @@ variableGen' patternSort variables genId =
     freshVariable =
         Variable <$> genId <*> pure mempty <*> pure patternSort
 
+elementVariableGen :: Sort -> Gen (ElementVariable Variable)
+elementVariableGen patternSort = do
+    Context { objectVariables } <- Reader.ask
+    ElementVariable <$>
+        variableGen'
+            patternSort
+            [getElementVariable v | ElemVar v <- objectVariables]
+            idGen
+
 setVariableGen :: Sort -> Gen (SetVariable Variable)
 setVariableGen sort = do
     Context { objectVariables } <- Reader.ask
@@ -249,6 +258,46 @@ unifiedVariableGen :: Sort -> Gen (UnifiedVariable Variable)
 unifiedVariableGen sort = Gen.choice
     [ ElemVar <$> elementVariableGen sort
     , SetVar <$> setVariableGen sort
+    ]
+
+targetElementVariableGen :: Sort -> Gen (Target (ElementVariable Variable))
+targetElementVariableGen sort = Gen.choice
+    [ Target <$> elementVariableGen sort
+    , NonTarget <$> elementVariableGen sort
+    ]
+
+elementTargetVariableGen :: Sort -> Gen (ElementVariable (Target Variable))
+elementTargetVariableGen sort = Gen.choice
+    [ (fmap . fmap) Target $ elementVariableGen sort
+    , (fmap . fmap) NonTarget $ elementVariableGen sort
+    ]
+
+targetSetVariableGen :: Sort -> Gen (Target (SetVariable Variable))
+targetSetVariableGen sort = Gen.choice
+    [ Target <$> setVariableGen sort
+    , NonTarget <$> setVariableGen sort
+    ]
+
+setTargetVariableGen :: Sort -> Gen (SetVariable (Target Variable))
+setTargetVariableGen sort = Gen.choice
+    [ (fmap . fmap) Target $ setVariableGen sort
+    , (fmap . fmap) NonTarget $ setVariableGen sort
+    ]
+
+targetUnifiedVariableGen :: Sort -> Gen (Target (UnifiedVariable Variable))
+targetUnifiedVariableGen sort = Gen.choice
+    [ Target . ElemVar <$> elementVariableGen sort
+    , Target . SetVar <$> setVariableGen sort
+    , NonTarget . ElemVar <$> elementVariableGen sort
+    , NonTarget . SetVar <$> setVariableGen sort
+    ]
+
+unifiedTargetVariableGen :: Sort -> Gen (UnifiedVariable (Target Variable))
+unifiedTargetVariableGen sort = Gen.choice
+    [ ElemVar . fmap Target <$> elementVariableGen sort
+    , ElemVar . fmap NonTarget <$> elementVariableGen sort
+    , SetVar . fmap Target <$> setVariableGen sort
+    , SetVar . fmap NonTarget <$> setVariableGen sort
     ]
 
 unaryOperatorGen
