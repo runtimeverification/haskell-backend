@@ -306,21 +306,18 @@ genericIdRawParser
     -> IdKeywordParsing
     -> Parser String
 genericIdRawParser isFirstChar isBodyChar idKeywordParsing = do
-    c <- peekChar'
-    idChar <- if not (isFirstChar c)
-        then fail ("genericIdRawParser: Invalid first character '" ++ c : "'.")
-        else ParserUtils.takeWhile isBodyChar
-    Monad.when
-        (  (idKeywordParsing == KeywordsForbidden)
-        && HashSet.member (Char8.pack idChar) koreKeywordsSet
-        )
-        (fail
+    c <- Parser.satisfy isFirstChar <?> "first identifier character"
+    cs <- Parser.takeWhileP (Just "identifier character") isBodyChar
+    let genericId = c : cs
+        keywordsForbidden = idKeywordParsing == KeywordsForbidden
+        isKeyword = HashSet.member (Char8.pack genericId) koreKeywordsSet
+    Monad.when (keywordsForbidden && isKeyword)
+        $ fail
             (  "Identifiers should not be keywords: '"
-            ++ idChar
+            ++ genericId
             ++ "'."
             )
-        )
-    return idChar
+    return genericId
 
 {- |
 
