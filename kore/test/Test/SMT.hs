@@ -16,7 +16,6 @@ import Test.Tasty.HUnit
 
 import Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
-import qualified GHC.Stack as GHC
 
 import SMT
     ( NoSMT
@@ -25,7 +24,7 @@ import SMT
 import qualified SMT
 
 testPropertyWithSolver
-    :: GHC.HasCallStack
+    :: HasCallStack
     => String
     -> PropertyT SMT ()
     -> TestTree
@@ -33,7 +32,7 @@ testPropertyWithSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runSMT
 
 testPropertyWithoutSolver
-    :: GHC.HasCallStack
+    :: HasCallStack
     => String
     -> PropertyT NoSMT ()
     -> TestTree
@@ -46,7 +45,7 @@ testCaseWithSMT str = testCase str . runSMT
 assertEqual'
     :: MonadIO m
     => (Eq a, Show a)
-    => GHC.HasCallStack
+    => HasCallStack
     => String  -- ^ Remark
     -> a  -- ^ Expected value
     -> a  -- ^ Actual value

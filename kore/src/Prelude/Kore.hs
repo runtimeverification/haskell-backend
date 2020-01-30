@@ -6,6 +6,7 @@ License   : NCSA
 
 module Prelude.Kore
     ( module Prelude
+    , HasCallStack
     , (&)
     ) where
 
@@ -14,6 +15,9 @@ module Prelude.Kore
 
 import Data.Function
     ( (&)
+    )
+import GHC.Stack
+    ( HasCallStack
     )
 import Prelude hiding
     ( log

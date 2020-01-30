@@ -73,7 +73,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as Builtin.List
@@ -1187,7 +1186,7 @@ test_renormalize =
     k2 = Test.Int.asInternal 2
 
     becomes
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
         -- ^ original, (possibly) de-normalized map
@@ -1198,14 +1197,14 @@ test_renormalize =
         testCase name $ assertEqual "" (Just expect) (Ac.renormalize origin)
 
     unchanged
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
         -> TestTree
     unchanged name origin = becomes name origin origin
 
     denorm
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
         -> TestTree

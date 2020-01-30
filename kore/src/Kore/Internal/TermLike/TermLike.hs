@@ -688,7 +688,7 @@ externalizeFreshVariables termLike =
 
 updateCallStack
     :: forall variable
-    .  GHC.HasCallStack
+    .  HasCallStack
     => TermLike variable
     -> TermLike variable
 updateCallStack = Lens.set created callstack
@@ -708,7 +708,7 @@ updateCallStack = Lens.set created callstack
 {- | Construct a variable pattern.
  -}
 mkVar
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => UnifiedVariable variable
     -> TermLike variable

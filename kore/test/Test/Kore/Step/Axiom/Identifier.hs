@@ -5,8 +5,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified GHC.Stack as GHC
-
 import Kore.Internal.TermLike
     ( TermLike
     , Variable
@@ -91,7 +89,7 @@ test_matchAxiomIdentifier =
         ceilName = "ceil " <> name
 
 match
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> Maybe AxiomIdentifier
@@ -102,7 +100,7 @@ match name input expect =
     $ matchAxiomIdentifier input
 
 matches
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> AxiomIdentifier
@@ -110,7 +108,7 @@ matches
 matches name input expect = match ("matches " ++ name) input (Just expect)
 
 notMatches
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TestTree

@@ -17,7 +17,6 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
     ( synthesize
@@ -56,7 +55,7 @@ data InjSimplifier =
 
         , evaluateInj
             :: forall variable
-            .  GHC.HasCallStack
+            .  HasCallStack
             => InternalVariable variable
             => Inj (TermLike variable)
             -> TermLike variable
@@ -88,7 +87,7 @@ data InjSimplifier =
 
         , evaluateCeilInj
             :: forall variable
-            .  GHC.HasCallStack
+            .  HasCallStack
             => InternalVariable variable
             => Ceil Sort (Inj (TermLike variable))
             -> Ceil Sort (TermLike variable)
@@ -104,7 +103,7 @@ data InjSimplifier =
 
         , injectTermTo
             :: forall variable
-            .  GHC.HasCallStack
+            .  HasCallStack
             => InternalVariable variable
             => Inj ()
             -> TermLike variable
@@ -140,7 +139,7 @@ mkInjSimplifier sortGraph =
 
     evaluateInj
         :: forall variable
-        .  GHC.HasCallStack
+        .  HasCallStack
         => InternalVariable variable
         => Inj (TermLike variable)
         -> TermLike variable

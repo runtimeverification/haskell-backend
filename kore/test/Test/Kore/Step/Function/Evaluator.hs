@@ -7,7 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Map.Strict as Map
-import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
     ( synthesize
@@ -50,7 +49,7 @@ test_evaluateApplication =
   where
     a = Mock.a
     evaluates
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Application Symbol (TermLike Variable)
         -> TermLike Variable
@@ -61,7 +60,7 @@ test_evaluateApplication =
             origin
             (OrPattern.fromTermLike expect)
     notEvaluates
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Application Symbol (TermLike Variable)
         -> (TermLike Variable -> TermLike Variable)
@@ -73,7 +72,7 @@ test_evaluateApplication =
             (OrPattern.fromTermLike $ mkExpect $ mkApplySymbol origin)
 
     makeTest
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Application Symbol (TermLike Variable)
         -> OrPattern Variable
