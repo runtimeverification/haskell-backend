@@ -25,8 +25,6 @@ module Kore.Parser.Lexeme
     , setVariableIdParser
     , sortIdParser
     , symbolIdParser
-    , idFirstChars
-    , idOtherChars
     , openCurlyBraceParser
     , closedCurlyBraceParser
     , inCurlyBracesParser
@@ -73,7 +71,6 @@ import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import qualified Kore.Parser.CharDict as CharDict
-import Kore.Parser.CharSet as CharSet
 import Kore.Parser.ParserUtils as ParserUtils
 import Kore.Sort
 import Kore.Syntax.Definition
@@ -219,9 +216,7 @@ keywordEndParser :: Parser ()
 keywordEndParser = do
     mc <- peekChar
     case mc of
-        Just c
-          | CharSet.elem c idCharSet ->
-            fail "Expecting keyword to end."
+        Just c | isIdChar c -> fail "Expecting keyword to end."
         _ -> return ()
 
 {-|'keywordBasedParsers' consumes one of the strings in the provided pairs,
@@ -306,15 +301,15 @@ data IdKeywordParsing
 @⟨prefix-char⟩ ⟨body-char⟩*@. Does not consume whitespace.
 -}
 genericIdRawParser
-    :: CharSet  -- ^ contains the characters allowed for @⟨prefix-char⟩@.
-    -> CharSet  -- ^ contains the characters allowed for @⟨body-char⟩@.
+    :: (Char -> Bool)  -- ^ contains the characters allowed for @⟨prefix-char⟩@.
+    -> (Char -> Bool)  -- ^ contains the characters allowed for @⟨body-char⟩@.
     -> IdKeywordParsing
     -> Parser String
-genericIdRawParser firstCharSet bodyCharSet idKeywordParsing = do
+genericIdRawParser isFirstChar isBodyChar idKeywordParsing = do
     c <- peekChar'
-    idChar <- if not (c `CharSet.elem` firstCharSet)
+    idChar <- if not (isFirstChar c)
         then fail ("genericIdRawParser: Invalid first character '" ++ c : "'.")
-        else ParserUtils.takeWhile (`CharSet.elem` bodyCharSet)
+        else ParserUtils.takeWhile isBodyChar
     Monad.when
         (  (idKeywordParsing == KeywordsForbidden)
         && HashSet.member (Char8.pack idChar) koreKeywordsSet
@@ -327,18 +322,42 @@ genericIdRawParser firstCharSet bodyCharSet idKeywordParsing = do
         )
     return idChar
 
-idFirstChars :: [Char]
-idFirstChars = ['A'..'Z'] ++ ['a'..'z']
+{- |
 
-idFirstCharSet :: CharSet
-idFirstCharSet = CharSet.makeCharSet idFirstChars
+@
+<id-first-char>
+  ::= ['A'..'Z', 'a'..'z']
+@
 
-idOtherChars :: [Char]
-idOtherChars = ['0'..'9'] ++ "'-"
+-}
+isIdFirstChar :: Char -> Bool
+isIdFirstChar c = ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z')
+{-# INLINE isIdFirstChar #-}
 
-idCharSet :: CharSet
-idCharSet =
-    CharSet.join idFirstCharSet (CharSet.makeCharSet idOtherChars)
+{- |
+
+@
+<id-other-char>
+  ::= ['0'..'9', '\'', '-']
+@
+
+-}
+isIdOtherChar :: Char -> Bool
+isIdOtherChar c = ('0' <= c && c <= '9') || c == '\'' || c == '-'
+{-# INLINE isIdOtherChar #-}
+
+{- |
+
+@
+<id-char>
+  ::= <id-first-char>
+    | <id-other-char>
+@
+
+-}
+isIdChar :: Char -> Bool
+isIdChar c = isIdFirstChar c || isIdOtherChar c
+{-# INLINE isIdChar #-}
 
 {- | Parses an identifier.
 
@@ -360,8 +379,7 @@ idParser :: Parser Id
 idParser = stringParserToIdParser (idRawParser KeywordsForbidden)
 
 idRawParser :: IdKeywordParsing -> Parser String
-idRawParser =
-    genericIdRawParser idFirstCharSet idCharSet
+idRawParser = genericIdRawParser isIdFirstChar isIdChar
 
 {- | Parses a module name.
 
@@ -567,4 +585,3 @@ illegalSurrogate
     -> String
 illegalSurrogate hs =
     "code 0x" ++ hs ++ " is an illegal surrogate"
-
