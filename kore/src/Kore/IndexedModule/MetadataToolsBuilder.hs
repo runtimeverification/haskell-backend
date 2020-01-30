@@ -13,9 +13,6 @@ module Kore.IndexedModule.MetadataToolsBuilder
 
 import Prelude.Kore ()
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
     ( indexBySort
     )
@@ -31,9 +28,6 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.Step.SMT.Representation.All as SMT.Representation
     ( build
-    )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
     )
 
 -- |Creates a set of 'MetadataTools' from a 'KoreIndexedModule'.

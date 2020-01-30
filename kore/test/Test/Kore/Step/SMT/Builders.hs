@@ -32,9 +32,6 @@ import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
     ( VerifyError
     )
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Constructor as Constructor
 import qualified Kore.Attribute.Functional as Functional
 import qualified Kore.Attribute.Hook as Hook
@@ -59,9 +56,6 @@ import Kore.Sort
     )
 import qualified Kore.Sort as SortActual
     ( SortActual (..)
-    )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
     )
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.Definition as Definition
@@ -89,14 +83,14 @@ import Test.Kore.With
 
 indexModule
     :: ParsedModule
-    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule Attribute.Symbol
 indexModule m@Module{ moduleName } =
     indexModules moduleName [m]
 
 indexModules
     :: ModuleName
     -> [ParsedModule]
-    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule Attribute.Symbol
 indexModules moduleName modules =
     case perhapsIndexedDefinition of
         Left err -> (error .unlines)
@@ -113,13 +107,7 @@ indexModules moduleName modules =
     perhapsIndexedDefinition
         :: Either
             (Error VerifyError)
-            (Map.Map
-                ModuleName
-                (VerifiedModule
-                    Attribute.Symbol
-                    (Attribute.Axiom SymbolOrAlias)
-                )
-            )
+            (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
     perhapsIndexedDefinition =
         verifyAndIndexDefinition
             Builtin.koreVerifiers

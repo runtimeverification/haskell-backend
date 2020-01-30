@@ -26,7 +26,6 @@ import Data.Text
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Owise as Attribute
 import qualified Kore.Attribute.Priority as Attribute
 import Kore.Attribute.Simplification
@@ -317,7 +316,7 @@ testDef =
         ]
 
 testIndexedModule
-    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    :: VerifiedModule Attribute.Symbol
 testIndexedModule =
     let
         verifyResult = verifyAndIndexDefinition Builtin.koreVerifiers testDef

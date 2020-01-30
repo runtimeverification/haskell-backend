@@ -419,11 +419,8 @@ extractIndexedModule
     :: Text
     -> Either
         (Error a)
-        (Map.Map
-            ModuleName
-            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
-        )
-    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
+    -> VerifiedModule Attribute.Symbol
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

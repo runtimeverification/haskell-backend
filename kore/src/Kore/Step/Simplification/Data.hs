@@ -35,9 +35,6 @@ import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
 
 import Branch
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -65,9 +62,6 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import Log
 import SMT
     ( MonadSMT (..)

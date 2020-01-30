@@ -51,7 +51,6 @@ import Data.Text
     ( Text
     )
 
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Hook
     ( Hook (..)
     )

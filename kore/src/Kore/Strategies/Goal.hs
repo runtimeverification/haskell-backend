@@ -89,11 +89,11 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTrueCondition
     )
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
     )
-import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Log.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy

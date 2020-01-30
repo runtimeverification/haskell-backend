@@ -48,11 +48,11 @@ import Kore.Internal.Variable
     ( InternalVariable
     , SortedVariable
     )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import Kore.Step.Step
     ( UnifyingRule (..)
+    )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
     )
 import Kore.TopBottom
     ( TopBottom (..)

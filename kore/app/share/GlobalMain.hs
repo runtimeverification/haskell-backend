@@ -111,7 +111,6 @@ import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -411,8 +410,8 @@ lookupMainModule
     => ModuleName
     -> Map.Map
         ModuleName
-        (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
-    -> monad (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+        (VerifiedModule Attribute.Symbol)
+    -> monad (VerifiedModule Attribute.Symbol)
 lookupMainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -429,16 +428,14 @@ Also prints timing information; see 'mainParse'.
 
  -}
 verifyDefinitionWithBase
-    ::  ( Map.Map ModuleName 
-            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+    ::  ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
     -> Main
-        ( Map.Map ModuleName
-            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase
@@ -477,7 +474,7 @@ mainParse parser fileName = do
         Right definition -> return definition
 
 type LoadedModule =
-    VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    VerifiedModule Attribute.Symbol
 
 type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 

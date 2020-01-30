@@ -12,9 +12,6 @@ import Data.Default
     )
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructor (Constructor)
     , ConstructorLike (..)
@@ -41,9 +38,6 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Sort
     ( Sort (..)
-    )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
     )
 import Kore.Syntax.Id
     ( Id (getId)
@@ -127,7 +121,7 @@ test_sortParsing =
 
 testForModule
     :: String
-    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule Attribute.Symbol
     -> (String -> Map.Map Id Attribute.Constructors -> TestTree)
     -> TestTree
 testForModule name m testBuilder =

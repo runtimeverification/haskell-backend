@@ -342,10 +342,10 @@ verifyAxiomSentence sentence =
         attrs <- parseAttributes' $ sentenceAxiomAttributes sentence
         State.modify $ addAxiom verified attrs
   where
-    addAxiom verified attrs =
+    addAxiom verified (verifySymbolAttributes -> attrs) =
         Lens.over
             (field @"indexedModuleAxioms")
-            ((attrs, verified) :)
+            ((attrs , verified) :)
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
@@ -372,7 +372,7 @@ verifyClaimSentence sentence =
         attrs <- parseAttributes' $ sentenceClaimAttributes sentence
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
-    addClaim verified attrs =
+    addClaim verified (verifySymbolAttributes -> attrs) =
         Lens.over
             (field @"indexedModuleClaims")
             ((attrs, verified) :)

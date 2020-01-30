@@ -81,9 +81,6 @@ import qualified Kore.ASTVerifier.PatternVerifier.PatternVerifier as PatternVeri
 import Kore.Attribute.Attributes
     ( Attributes (..)
     )
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import Kore.Attribute.Hook
     ( Hook (..)
     )

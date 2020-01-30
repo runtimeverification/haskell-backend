@@ -40,10 +40,6 @@ import Kore.IndexedModule.IndexedModule
     )
 import Kore.IndexedModule.MetadataTools as MetadataTools
 import Kore.Internal.Symbol as Internal.Symbol
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
-import qualified Kore.Syntax.Definition as Syntax.Definition
 
 {- | 'OverloadGraph' maps symbols to symbols overloading them
  -}
@@ -106,7 +102,7 @@ fromIndexedModule
     :: VerifiedModule Attribute.Symbol
     -> SmtMetadataTools Attribute.StepperAttributes
     -> OverloadGraph
-fromIndexedModule verifiedModule tools = fromOverloads overloadPairList
+fromIndexedModule verifiedModule _ = fromOverloads overloadPairList
   where
     overloadPairList = preOverloadPairsList
     preOverloadPairsList =

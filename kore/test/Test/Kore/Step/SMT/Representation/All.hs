@@ -11,9 +11,6 @@ import Data.Text
     ( Text
     )
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
     ( indexBySort
     )
@@ -33,9 +30,6 @@ import qualified Kore.Step.SMT.AST as AST
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Step.SMT.Representation.All as All
 import qualified SMT
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 
 import Test.Kore.Step.SMT.Builders
     ( constructor
@@ -92,7 +86,7 @@ test_symbolParsing =
 
 testsForModule
     :: String
-    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule Attribute.Symbol
     ->  [  AST.Declarations SMT.SExpr Text Text
         -> TestTree
         ]

@@ -6,9 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
     ( indexBySort
     )
@@ -28,9 +25,6 @@ import qualified Kore.Step.SMT.Representation.All as Representation
     ( build
     )
 import qualified SMT
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 
 import Test.Kore.Step.SMT.Builders
     ( constructor
@@ -125,7 +119,7 @@ test_sortDeclaration =
 
     declareSymbolsAndSorts
         :: SMT.MonadSMT m
-        => VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+        => VerifiedModule Attribute.Symbol
         -> m ()
     declareSymbolsAndSorts m =
         Declaration.declare

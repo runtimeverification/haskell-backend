@@ -33,6 +33,9 @@ import Data.Text
 
 import Kore.AST.Error
 import Kore.ASTVerifier.AliasVerifier
+import Kore.ASTVerifier.AttributesVerifier
+    ( verifySymbolAttributes
+    )
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.SentenceVerifier
     ( SentenceVerifier
@@ -126,7 +129,7 @@ newVerifiedModule module' = do
     let Module { moduleName, moduleAttributes } = module'
     attrs <- parseAttributes' moduleAttributes
     return
-        ( indexedModuleWithDefaultImports moduleName (Just implicitModule)
+        ( indexedModuleWithDefaultImports moduleName (Just (fmap verifySymbolAttributes implicitModule))
         & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
         )
 

@@ -65,9 +65,6 @@ import Kore.Syntax.Id
 import Kore.Syntax.Sentence
     ( SentenceAxiom (SentenceAxiom)
     )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Syntax.Variable
     ( Variable (Variable)

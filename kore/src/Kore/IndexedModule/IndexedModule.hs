@@ -151,7 +151,7 @@ data IndexedModule pat declAtts axiomAtts =
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
         -- identifiers
     }
-    deriving (Generic, Show)
+    deriving (Generic, Show, Functor)
 
 recursiveIndexedModuleSortDescriptions
     :: forall pat declAtts axiomAtts
@@ -423,7 +423,7 @@ things that are implicitly defined.
 -}
 newtype ImplicitIndexedModule pat declAtts axiomAtts =
     ImplicitIndexedModule (IndexedModule pat declAtts axiomAtts)
-    deriving (Show)
+    deriving (Show, Functor)
 
 type KoreImplicitIndexedModule = ImplicitIndexedModule ParsedPattern
 

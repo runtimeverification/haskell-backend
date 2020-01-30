@@ -14,9 +14,6 @@ import Prelude.Kore ()
 
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
@@ -35,9 +32,6 @@ import qualified Kore.Step.SMT.Representation.Sorts as Sorts
     )
 import qualified Kore.Step.SMT.Representation.Symbols as Symbols
     ( buildRepresentations
-    )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
     )
 import Kore.Syntax.Id
     ( Id

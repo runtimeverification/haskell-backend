@@ -6,9 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -25,9 +22,6 @@ import qualified Kore.Step.SMT.AST as AST
     , SymbolReference
     )
 import Kore.Step.SMT.Representation.Symbols
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import qualified Kore.Syntax.Id as Kore
     ( Id
     )
@@ -149,7 +143,7 @@ test_symbolParsing =
 
 testsForModule
     :: String
-    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule Attribute.Symbol
     ->  [  AST.Declarations AST.SortReference AST.SymbolReference AST.Encodable
         -> TestTree
         ]

@@ -88,7 +88,6 @@ import System.IO
     )
 
 import qualified Data.Limit as Limit
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol as Attribute
 import Kore.Error
     ( printError

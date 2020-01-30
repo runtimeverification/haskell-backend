@@ -78,9 +78,7 @@ verifyAndIndexDefinition
     -> ParsedDefinition
     -> Either
         (Error VerifyError)
-        (Map.Map ModuleName
-            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
-        )
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
 verifyAndIndexDefinition builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase

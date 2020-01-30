@@ -23,9 +23,6 @@ import Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import Kore.Attribute.Hook
     ( Hook (Hook)
     )

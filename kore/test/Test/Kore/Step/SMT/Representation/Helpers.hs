@@ -11,9 +11,6 @@ import Test.Tasty
 
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -26,9 +23,6 @@ import qualified Kore.Step.SMT.AST as AST
     , Symbol (Symbol)
     )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import qualified Kore.Syntax.Id as Kore
     ( Id
     )

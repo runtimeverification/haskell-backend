@@ -22,7 +22,6 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors

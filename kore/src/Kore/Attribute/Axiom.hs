@@ -34,15 +34,15 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
-import Data.Generics.Product
 import Data.Function
     ( (&)
     )
-import qualified Control.Lens as Lens
+import Data.Generics.Product
 import Data.Proxy
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

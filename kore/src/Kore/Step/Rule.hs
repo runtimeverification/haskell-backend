@@ -52,8 +52,8 @@ import Kore.Internal.Alias
     ( Alias (..)
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Internal.Symbol as Internal.Symbol
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( SortedVariable
     , Variable

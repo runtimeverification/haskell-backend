@@ -30,7 +30,6 @@ import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
     ( VerifyError
     )
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -1336,18 +1335,18 @@ verify
     -> Either
         (Kore.Error.Error VerifyError)
         (Map
-            ModuleName 
-            (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+            ModuleName
+            (VerifiedModule Attribute.Symbol)
         )
 verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
     :: Map ModuleName
-        (VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias))
+        (VerifiedModule Attribute.Symbol)
 verifiedModules = Kore.Error.assertRight (verify testDefinition)
 
 verifiedModule
-    :: VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    :: VerifiedModule Attribute.Symbol
 Just verifiedModule =
     Map.lookup testModuleName verifiedModules
 

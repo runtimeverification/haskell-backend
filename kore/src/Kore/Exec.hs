@@ -39,9 +39,9 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
-    ( first
+    ( bimap
+    , first
     , second
-    , bimap
     )
 import Data.Coerce
     ( coerce
@@ -424,7 +424,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
             claims =
-                makeClaim 
+                makeClaim
                 . Bifunctor.first Attribute.axiomSymbolToSymbolOrAlias
                 <$> specClaims
 

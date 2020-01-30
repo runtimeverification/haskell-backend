@@ -39,9 +39,6 @@ import Numeric.Natural
     )
 
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -186,10 +183,10 @@ testsForModule
         .   ( Given (SmtMetadataTools Attribute.Symbol)
             , SMT.MonadSMT m
             )
-        => VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+        => VerifiedModule Attribute.Symbol
         -> m ()
         )
-    -> VerifiedModule Attribute.Symbol (Attribute.Axiom SymbolOrAlias)
+    -> VerifiedModule Attribute.Symbol
     -> [SmtPrelude -> TestTree]
     -> TestTree
 testsForModule name functionToTest indexedModule tests =
