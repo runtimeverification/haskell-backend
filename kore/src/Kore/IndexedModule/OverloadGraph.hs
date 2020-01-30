@@ -41,6 +41,7 @@ import Kore.Internal.Symbol
 import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
+import qualified Kore.Syntax.Definition as Syntax.Definition
 
 {- | 'OverloadGraph' maps symbols to symbols overloading them
  -}
@@ -111,6 +112,7 @@ fromIndexedModule verifiedModule tools = fromOverloads overloadPairList
         mapMaybe
             (Attribute.getOverload . Attribute.overload . fst)
             (recursiveIndexedModuleAxioms verifiedModule)
+    toSymbol :: Syntax.Definition.Symbol -> Symbol
     toSymbol s = Symbol
         { symbolConstructor = sId
         , symbolParams = symbolOrAliasParams s
