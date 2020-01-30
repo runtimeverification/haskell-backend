@@ -501,6 +501,15 @@ instance Ord variable => Monoid (AttemptedAxiomResults variable) where
 
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
 a case for axioms that can't be applied.
+
+If an axiom does not match, or the requires clause is not satisfiable, then
+the result is NotApplicable.
+
+Otherwise, if the requires clause is satisfiable, but it's not implied by the
+side condition, then, for simplification axioms, the result is
+NotApplicableUntilConditionChanges.
+
+Otherwise, the result is Applied.
 -}
 data AttemptedAxiom variable
     = NotApplicable
