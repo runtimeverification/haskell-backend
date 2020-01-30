@@ -83,6 +83,9 @@ import Data.Functor
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.PatriciaTree
+    ( Gr
+    )
 import qualified Data.Graph.Inductive.Query.DFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
@@ -456,29 +459,27 @@ showGraph mfile out = do
 -- (with the exception of direct children of branching nodes);
 -- this is done by computing the subgraph formed with only such nodes,
 -- and replacing each component of the subgraph with one edge in the original graph
--- TODO: ... -> InnerGraph (Maybe rule) to be able to distinguish
--- between Simpl/RD and a newly added edge
-smoothOutGraph :: InnerGraph rule -> InnerGraph rule
+smoothOutGraph :: InnerGraph rule -> Gr CommonProofState (Maybe (Seq rule))
 smoothOutGraph graph =
     let subGraph = Graph.nfilter degreeOne graph
         nodesToRemove = Graph.nodes subGraph
         edgesToAdd = fmap (componentToEdge subGraph) (Graph.components subGraph)
-     in Graph.insEdges edgesToAdd (Graph.delNodes nodesToRemove graph)
+     in Graph.insEdges edgesToAdd (Graph.emap Just (Graph.delNodes nodesToRemove graph))
   where
     degreeOne :: Graph.Node -> Bool
     degreeOne node =
         (Graph.outdeg graph node == 1)
         && (Graph.indeg graph node == 1)
         && not (all (\n -> Graph.outdeg graph n > 1) (Graph.pre graph node))
-    componentToEdge :: InnerGraph rule -> [Graph.Node] -> Graph.LEdge (Seq rule)
+    componentToEdge :: InnerGraph rule -> [Graph.Node] -> Graph.LEdge (Maybe (Seq rule))
     componentToEdge subGr nodes =
         case filter (\n -> (Graph.indeg subGr n == 0) || (Graph.outdeg subGr n == 0)) nodes of
             [x, y] ->
                 if x < y
                     then
-                        (head (Graph.pre graph x), head (Graph.suc graph y), mempty)
+                        (head (Graph.pre graph x), head (Graph.suc graph y), Nothing)
                     else
-                        (head (Graph.pre graph y), head (Graph.suc graph x), mempty)
+                        (head (Graph.pre graph y), head (Graph.suc graph x), Nothing)
             _ -> error "TODO: avoid partial function"
 
 -- | Executes 'n' prove steps, or until branching occurs.
@@ -1252,7 +1253,7 @@ printNotFound = putStrLn' "Variable or index not found"
 -- represents the number of available axioms.
 showDotGraph
     :: ToRulePattern axiom
-    => Int -> InnerGraph axiom -> IO ()
+    => Int -> Gr CommonProofState (Maybe (Seq axiom)) -> IO ()
 showDotGraph len =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
@@ -1260,7 +1261,7 @@ showDotGraph len =
 saveDotGraph
     :: ToRulePattern axiom
     => Int
-    -> InnerGraph axiom
+    -> Gr CommonProofState (Maybe (Seq axiom))
     -> Graph.GraphvizOutput
     -> FilePath
     -> IO ()
@@ -1283,12 +1284,14 @@ graphParams
     -> Graph.GraphvizParams
          Graph.Node
          CommonProofState
-         (Seq axiom)
+         (Maybe (Seq axiom))
          ()
          CommonProofState
 graphParams len = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
-        [ Graph.textLabel (ruleIndex l len)]
+        [ Graph.textLabel (maybe "" (ruleIndex len) l)
+        , Graph.Attr.Style [(maybe (Graph.Attr.SItem Graph.Attr.Dotted mempty) (const $ Graph.Attr.SItem Graph.Attr.Solid mempty) l)]
+        ]
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
             $ case ps of
@@ -1297,7 +1300,7 @@ graphParams len = Graph.nonClusteredParams
         ]
     }
   where
-    ruleIndex lbl ln =
+    ruleIndex ln lbl =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
