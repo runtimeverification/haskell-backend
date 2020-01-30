@@ -22,6 +22,9 @@ import Prelude.Kore
 import Control.Applicative
     ( Alternative (..)
     )
+import Control.Error
+    ( maybeT
+    )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -442,7 +445,7 @@ matchRule sideCondition initial rule = do
         ruleRequires = precondition rule'
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
-        simplifyPredicate mergedSideCondition Nothing (unification <> requires')
+        evaluateRequires mergedSideCondition (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
   where
     unifyPatterns = ignoreUnificationErrors matchIncremental
@@ -456,3 +459,26 @@ matchRule sideCondition initial rule = do
             "Could not match patterns"
             pattern1
             pattern2
+
+evaluateRequires
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
+    => SideCondition variable
+    -> Condition variable
+    -> unifier (Condition variable)
+evaluateRequires sideCondition requires = do
+    requires' <-
+        simplifyPredicate sideCondition Nothing requires
+        -- disable function evaluation:
+        & withoutAxioms
+        -- do not propagate unification errors:
+        & Unifier.maybeUnifierT
+        -- if there is a unification error
+        -- then continue with the original requirement,
+        -- else continue with the partially-simplified requirement.
+        & maybeT (return requires) Unifier.scatter
+    simplifyPredicate sideCondition Nothing
+        $ Condition.forgetSimplified requires'
+  where
+    withoutAxioms = Simplifier.localSimplifierAxioms (const mempty)
