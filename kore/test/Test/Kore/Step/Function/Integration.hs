@@ -702,7 +702,9 @@ applies =
         results <- expectApplied attempted
         expectNoRemainders results
   where
-    expectApplied NotApplicable     = assertFailure "Expected Applied"
+    expectApplied NotApplicable = assertFailure "Expected Applied"
+    expectApplied (NotApplicableUntilConditionChanges _) =
+        assertFailure "Expected Applied"
     expectApplied (Applied results) = return results
     expectNoRemainders =
         assertBool "Expected no remainders"
@@ -1218,7 +1220,9 @@ simplifies =
         results <- expectApplied attempted
         expectNoRemainders results
   where
-    expectApplied NotApplicable     = assertFailure "Expected Applied"
+    expectApplied NotApplicable = assertFailure "Expected Applied"
+    expectApplied (NotApplicableUntilConditionChanges _) =
+        assertFailure "Expected Applied"
     expectApplied (Applied results) = return results
     expectNoRemainders =
         assertBool "Expected no remainders"

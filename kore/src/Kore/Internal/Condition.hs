@@ -7,8 +7,9 @@ module Kore.Internal.Condition
     ( Condition
     , isSimplified
     , simplifiedAttribute
-    , markPredicateSimplified
-    , setPredicateSimplified
+    , Conditional.markPredicateSimplified
+    , Conditional.markPredicateSimplifiedConditional
+    , Conditional.setPredicateSimplified
     , eraseConditionalTerm
     , top
     , bottom
@@ -80,31 +81,6 @@ simplifiedAttribute :: Condition variable -> Attribute.Simplified
 simplifiedAttribute Conditional {term = (), predicate, substitution} =
     Predicate.simplifiedAttribute predicate
     <> Substitution.simplifiedAttribute substitution
-
-{-| Marks the condition's predicate as being simplified.
-
-Since the substitution is usually simplified, this usually marks the entire
-condition as simplified. Note however, that the way in which the condition
-is simplified is a combination of the predicate and substitution
-simplifications. As an example, if the predicate is fully simplified,
-while the substitution is simplified only for a certain side condition,
-the entire condition is simplified only for that side condition.
--}
-markPredicateSimplified
-    :: (HasCallStack, InternalVariable variable)
-    => Condition variable -> Condition variable
-markPredicateSimplified conditional@Conditional { predicate } =
-    conditional { predicate = Predicate.markSimplified predicate }
-
-{-| Sets the simplified attribute for a condition's predicate.
-
-See 'markPredicateSimplified' for details.
--}
-setPredicateSimplified
-    :: InternalVariable variable
-    => Attribute.Simplified -> Condition variable -> Condition variable
-setPredicateSimplified simplified conditional@Conditional { predicate } =
-    conditional { predicate = Predicate.setSimplified simplified predicate }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Condition'.
 eraseConditionalTerm
