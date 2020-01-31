@@ -9,6 +9,7 @@ module Prelude.Kore
     , isJust
     , isNothing
     , fromMaybe
+    , Filterable (..)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -19,6 +20,10 @@ import Data.Maybe
     , isJust
     , isNothing
     )
+import Data.Witherable
+    ( Filterable (..)
+    )
 import Prelude hiding
-    ( log
+    ( filter
+    , log
     )
