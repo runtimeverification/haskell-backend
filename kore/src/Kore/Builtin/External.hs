@@ -14,7 +14,6 @@ import Data.Functor.Const
     ( Const (..)
     )
 import qualified Data.Functor.Foldable as Recursive
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Synthetic
@@ -89,7 +88,7 @@ externalize =
         termLikeBase@(_ :< termLikeF) = Recursive.project termLike
 
     toPatternF
-        :: GHC.HasCallStack
+        :: HasCallStack
         => Recursive.Base (TermLike variable) (TermLike variable)
         -> Recursive.Base
             (Syntax.Pattern variable Attribute.Null)

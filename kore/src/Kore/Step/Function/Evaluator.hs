@@ -26,7 +26,6 @@ import Control.Exception
     )
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Text
     ( Text
     )

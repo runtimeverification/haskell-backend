@@ -17,7 +17,6 @@ import Prelude.Kore hiding
 import Test.Tasty
 
 import qualified Control.Lens as Lens
-import Data.Function
 import Data.Generics.Product
 import Data.Map.Strict
     ( Map

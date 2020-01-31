@@ -9,9 +9,6 @@ import Test.Tasty
 import Data.Default
     ( def
     )
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Map.Strict as Map
 
 import Data.Sup

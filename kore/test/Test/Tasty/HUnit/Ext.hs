@@ -23,12 +23,11 @@ import Data.List
     ( isInfixOf
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import Kore.Debug
 
 assertEqual
-    :: (Diff a, MonadIO io, GHC.HasCallStack)
+    :: (Diff a, MonadIO io, HasCallStack)
     => String  -- ^ The message prefix
     -> a  -- ^ The expected value
     -> a  -- ^ The actual value
@@ -43,20 +42,20 @@ assertEqual preface expected actual =
               | otherwise    = (show . Pretty.vsep) [Pretty.pretty preface, ab]
 
 (@=?)
-    :: (Diff a, GHC.HasCallStack)
+    :: (Diff a, HasCallStack)
     => a  -- ^ The expected value
     -> a  -- ^ The actual value
     -> Assertion
 (@=?) expected actual = assertEqual "" expected actual
 
 (@?=)
-    :: (Diff a, GHC.HasCallStack)
+    :: (Diff a, HasCallStack)
     => a  -- ^ The actual value
     -> a  -- ^ The expected value
     -> Assertion
 (@?=) actual expected = assertEqual "" expected actual
 
-assertSubstring :: GHC.HasCallStack => String -> String -> String -> IO()
+assertSubstring :: HasCallStack => String -> String -> String -> IO()
 assertSubstring preface a b =
     assertBool message (a `isInfixOf` b)
   where

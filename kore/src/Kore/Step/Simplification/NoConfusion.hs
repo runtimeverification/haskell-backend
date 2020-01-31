@@ -24,7 +24,6 @@ import Control.Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified GHC.Stack as GHC
 
 import Kore.Internal.Pattern
     ( Pattern
@@ -47,7 +46,7 @@ equalInjectiveHeadsAndEquals
     ::  ( SimplifierVariable variable
         , MonadUnify unifier
         )
-    => GHC.HasCallStack
+    => HasCallStack
     => TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -83,7 +82,7 @@ to be different; therefore their conjunction is @\\bottom@.
 constructorAndEqualsAssumesDifferentHeads
     :: InternalVariable variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a

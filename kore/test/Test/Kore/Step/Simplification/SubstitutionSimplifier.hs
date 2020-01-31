@@ -8,8 +8,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified GHC.Stack as GHC
-
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.Substitution as Substitution
@@ -178,7 +176,7 @@ test_SubstitutionSimplifier =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> [(UnifiedVariable Variable, TermLike Variable)]
         -- ^ Test input

@@ -10,7 +10,6 @@ import Test.Tasty
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -56,7 +55,7 @@ test_simplifyEvaluated =
     ]
   where
     becomes_
-        :: GHC.HasCallStack
+        :: HasCallStack
         => [Pattern Variable]
         -> [Pattern Variable]
         -> TestTree
@@ -79,7 +78,7 @@ test_simplifyEvaluated =
           where
             actuals = Foldable.toList actual
     patternBecomes
-        :: GHC.HasCallStack
+        :: HasCallStack
         => Pattern Variable
         -> [Pattern Variable]
         -> TestTree

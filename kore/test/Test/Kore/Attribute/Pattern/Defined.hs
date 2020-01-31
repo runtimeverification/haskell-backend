@@ -7,8 +7,6 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified GHC.Stack as GHC
-
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -110,7 +108,7 @@ test_instance_Synthetic =
     range = [defined, nonDefined]
 
     check
-        :: (GHC.HasCallStack, Synthetic Defined term)
+        :: (HasCallStack, Synthetic Defined term)
         => TestName
         -> (Defined -> Bool)
         -> term Defined
@@ -121,21 +119,21 @@ test_instance_Synthetic =
             assertBool "" (checking actual)
 
     is
-        ::  ( GHC.HasCallStack
+        ::  ( HasCallStack
             , Synthetic Defined term
             )
         => term Defined -> TestTree
     is = check "Defined term" isDefined
 
     isn't
-        ::  ( GHC.HasCallStack
+        ::  ( HasCallStack
             , Synthetic Defined term
             )
         => term Defined -> TestTree
     isn't = check "Non-defined pattern" (not . isDefined)
 
     expect
-        :: GHC.HasCallStack
+        :: HasCallStack
         => Defined
         -> TermLikeF Variable Defined
         -> TestTree

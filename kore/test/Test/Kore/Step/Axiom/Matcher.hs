@@ -28,7 +28,6 @@ import Data.Function
 import Data.Maybe
     ( isNothing
     )
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
@@ -1027,7 +1026,7 @@ withMatch check comment term1 term2 =
         check actual
 
 doesn'tMatch
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -1035,7 +1034,7 @@ doesn'tMatch
 doesn'tMatch = withMatch (assertBool "" . isNothing)
 
 matches
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -1045,7 +1044,7 @@ matches comment term1 term2 substs =
     matchesAux comment term1 term2 makeTruePredicate_ (Just substs)
 
 matchesP
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -1056,7 +1055,7 @@ matchesP comment term1 term2 predicate substs =
     matchesAux comment term1 term2 predicate (Just substs)
 
 matchesAux
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable

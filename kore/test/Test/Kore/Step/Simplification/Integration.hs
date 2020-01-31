@@ -9,9 +9,6 @@ import Prelude.Kore
 
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
-import Data.Function
-    ( (&)
-    )
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set

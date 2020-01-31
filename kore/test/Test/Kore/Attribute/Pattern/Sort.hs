@@ -8,7 +8,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Exception as Exception
-import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike
@@ -115,7 +114,7 @@ test_instance_Synthetic =
     sigma = Mock.sigmaSymbol
     expected = sort
     success
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TermLikeF Variable Sort
         -> TestTree
     success termLikeF =
@@ -123,7 +122,7 @@ test_instance_Synthetic =
             let actual = synthetic termLikeF
             assertEqual "" expected actual
     failure
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TermLikeF Variable Sort
         -> TestTree
     failure termLikeF =
