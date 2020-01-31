@@ -34,9 +34,6 @@ import Control.Monad.State.Strict
     , runStateT
     )
 import qualified Control.Monad.Trans as Trans
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.List.NonEmpty
@@ -448,4 +445,3 @@ takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty
     return substitution
-

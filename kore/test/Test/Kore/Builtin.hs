@@ -10,7 +10,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Set
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Kore
@@ -134,7 +133,7 @@ withInternalized check name origin =
     testCase name (check $ Kore.internalize metadata origin)
 
 internalizes
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -143,7 +142,7 @@ internalizes name origin expect =
     withInternalized (assertEqual "" expect) name origin
 
 notInternalizes
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TestTree

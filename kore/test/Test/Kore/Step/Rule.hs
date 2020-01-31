@@ -18,9 +18,6 @@ import Control.Lens
     ( (.~)
     )
 import Data.Default
-import Data.Function
-    ( (&)
-    )
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import Data.Maybe

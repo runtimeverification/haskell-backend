@@ -65,7 +65,6 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Attribute.Pattern as Attribute
@@ -266,7 +265,7 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable m
-        . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        . (HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
@@ -276,7 +275,7 @@ newtype TermLikeSimplifier =
  -}
 simplifyConditionalTermToOr
     :: forall variable simplifier
-    .   ( GHC.HasCallStack
+    .   ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -291,7 +290,7 @@ simplifyConditionalTermToOr sideCondition termLike = do
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
-    .   ( GHC.HasCallStack
+    .   ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -310,7 +309,7 @@ simplification, but only attaches it unmodified to the final result.
  -}
 termLikeSimplifier
     ::  ( forall variable m
-        . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        . (HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> m (OrPattern variable)
@@ -321,7 +320,7 @@ termLikeSimplifier simplifier =
   where
     termLikeSimplifierWorker
         :: forall variable m
-        .  (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        .  (HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)

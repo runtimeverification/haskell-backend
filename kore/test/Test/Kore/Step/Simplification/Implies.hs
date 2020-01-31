@@ -9,7 +9,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import Kore.Internal.Condition
     ( Condition
@@ -60,7 +59,7 @@ test_simplifyEvaluated =
     ]
   where
     becomes_
-        :: GHC.HasCallStack
+        :: HasCallStack
         => ([Pattern Variable], [Pattern Variable])
         -> [Pattern Variable]
         -> TestTree

@@ -16,7 +16,6 @@ import Control.Exception
 import Data.Maybe
     ( listToMaybe
     )
-import qualified GHC.Stack as GHC
 
 import Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
@@ -42,7 +41,7 @@ data OverloadSimplifier =
         -- ^ Whether the symbol is overloaded
         , resolveOverloading
             :: forall variable
-            .  GHC.HasCallStack
+            .  HasCallStack
             => InternalVariable variable
             => Inj ()
             -> Symbol
@@ -93,7 +92,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
 
     resolveOverloading
         :: forall variable
-        .  GHC.HasCallStack
+        .  HasCallStack
         => InternalVariable variable
         => Inj ()
         -> Symbol

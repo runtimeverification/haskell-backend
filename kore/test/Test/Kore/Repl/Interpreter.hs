@@ -27,7 +27,6 @@ import Data.Coerce
     ( coerce
     )
 import Data.Default
-import Data.Function
 import Data.Generics.Product
 import Data.IORef
     ( IORef

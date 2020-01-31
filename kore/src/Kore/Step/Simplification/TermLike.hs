@@ -27,7 +27,6 @@ import Data.Maybe
     )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import qualified Branch as BranchT
     ( gather
@@ -169,7 +168,7 @@ import Kore.Variables.UnifiedVariable
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    ::  ( GHC.HasCallStack
+    ::  ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -184,7 +183,7 @@ simplify patt sideCondition = do
 'OrPattern'.
 -}
 simplifyToOr
-    ::  ( GHC.HasCallStack
+    ::  ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -200,7 +199,7 @@ simplifyToOr sideCondition term =
 
 simplifyInternal
     ::  forall variable simplifier
-    .   ( GHC.HasCallStack
+    .   ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )

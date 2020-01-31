@@ -31,8 +31,6 @@ module Kore.Internal.Condition
 
 import Prelude.Kore
 
-import qualified GHC.Stack as GHC
-
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     , isFreeVariable
@@ -93,7 +91,7 @@ while the substitution is simplified only for a certain side condition,
 the entire condition is simplified only for that side condition.
 -}
 markPredicateSimplified
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => Condition variable -> Condition variable
 markPredicateSimplified conditional@Conditional { predicate } =
     conditional { predicate = Predicate.markSimplified predicate }
@@ -209,7 +207,7 @@ conditionSort Conditional {term = (), predicate} =
     Predicate.predicateSort predicate
 
 coerceSort
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => Sort -> Condition variable -> Condition variable
 coerceSort
     sort

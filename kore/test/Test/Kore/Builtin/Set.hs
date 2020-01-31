@@ -184,7 +184,7 @@ test_unit =
   where
     xSet = elemVarS "xSet" setSort
     becomes
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TermLike Variable
         -> TermLike Variable
         -> TestName

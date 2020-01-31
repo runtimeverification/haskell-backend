@@ -11,6 +11,8 @@ module Prelude.Kore
     , fromMaybe
     , Filterable (..)
     , headMay
+    , HasCallStack
+    , (&)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -19,6 +21,9 @@ module Prelude.Kore
 import Control.Error
     ( headMay
     )
+import Data.Function
+    ( (&)
+    )
 import Data.Maybe
     ( fromMaybe
     , isJust
@@ -26,6 +31,9 @@ import Data.Maybe
     )
 import Data.Witherable
     ( Filterable (..)
+    )
+import GHC.Stack
+    ( HasCallStack
     )
 import Prelude hiding
     ( filter

@@ -14,9 +14,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
-import Data.Function
-    ( (&)
-    )
 import Data.Generics.Sum.Constructors
 import qualified Data.Map.Strict as Map
 import Data.Proxy
@@ -24,7 +21,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified GHC.Stack as GHC
 import qualified GHC.TypeLits as TypeLits
 
 import qualified Kore.Attribute.Symbol as Attribute
@@ -188,7 +184,7 @@ evaluate builtin termLike = do
 expectConstructor
     :: forall (ctor :: TypeLits.Symbol) s a
     .  (AsConstructor' ctor s a, TypeLits.KnownSymbol ctor)
-    => GHC.HasCallStack
+    => HasCallStack
     => (s -> IO a)
 expectConstructor s =
     Lens.preview (_Ctor' @ctor) s

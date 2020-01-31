@@ -16,7 +16,6 @@ import Prelude.Kore
 import Control.Error
     ( fromMaybe
     )
-import Data.Function
 import Data.Text
     ( Text
     )
