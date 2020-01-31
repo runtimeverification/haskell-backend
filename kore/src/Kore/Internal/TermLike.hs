@@ -477,7 +477,7 @@ markSimplified (Recursive.project -> attrs :< termLikeF) =
         )
 
 markSimplifiedMaybeConditional
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => Maybe SideCondition.Representation
     -> TermLike variable
     -> TermLike variable
@@ -498,7 +498,7 @@ cannotSimplifyNotSimplifiedError termLikeF =
         )
 
 setSimplified
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => Pattern.Simplified -> TermLike variable -> TermLike variable
 setSimplified
     simplified
@@ -536,7 +536,7 @@ markSimplifiedConditional
         )
 
 simplifiedFromChildren
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TermLikeF variable (TermLike variable) -> Pattern.Simplified
 simplifiedFromChildren termLikeF =
     case mergedSimplified of

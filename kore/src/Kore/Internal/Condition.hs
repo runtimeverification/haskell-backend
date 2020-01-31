@@ -32,8 +32,6 @@ module Kore.Internal.Condition
 
 import Prelude.Kore
 
-import qualified GHC.Stack as GHC
-
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     , isFreeVariable
