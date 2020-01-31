@@ -123,14 +123,17 @@ The new 'VerifiedModule' is empty except for its 'ModuleName', its 'Attributes',
 and the 'ImplicitModule' import.
 
  -}
+
 newVerifiedModule :: ParsedModule -> Verifier VerifiedModule'
 newVerifiedModule module' = do
     VerifierContext { implicitModule } <- Reader.ask
-    let Module { moduleName, moduleAttributes } = module'
+    let implicitModule'= traverse (verifySymbolAttributes undefined) implicitModule
+        Module { moduleName, moduleAttributes } = module'
+        ImplicitIndexedModule indexedModule = implicitModule
     attrs <- parseAttributes' moduleAttributes
     return
-        ( indexedModuleWithDefaultImports moduleName (Just (fmap verifySymbolAttributes implicitModule))
-        & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
+        ( indexedModuleWithDefaultImports moduleName (Just implicitModule)
+         & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
         )
 
 {- | Project the 'SentenceImport's out the list and verify them.

@@ -19,6 +19,7 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyClaims
     , verifyNonHooks
     , verifyAliasSentence
+    , parseAttributesAndVerify
     ) where
 
 import Prelude.Kore
@@ -76,6 +77,19 @@ import Kore.IndexedModule.Resolvers as Resolvers
 import Kore.Sort
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
+import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
+import Kore.Syntax.Definition
+import Kore.Syntax.Pattern
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.Resolvers
+import qualified Kore.Verified as Verified
+import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Attribute.Axiom as Attribute
+    ( Axiom
+    )
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
@@ -338,11 +352,17 @@ verifyAxioms =
 verifyAxiomSentence :: SentenceAxiom ParsedPattern -> SentenceVerifier ()
 verifyAxiomSentence sentence =
     withSentenceAxiomContext sentence $ do
+        verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker sentence
-        attrs <- parseAttributes' $ sentenceAxiomAttributes sentence
-        State.modify $ addAxiom verified attrs
+        attrs <- parseAttributesAndVerify verifiedModule'
+                    $ sentenceAxiomAttributes sentence
+        State.modify $ addAxiom verifiedModule' verified attrs
   where
-    addAxiom verified (verifySymbolAttributes -> attrs) =
+    addAxiom
+        verifiedModule'
+        verified
+        attrs
+      =
         Lens.over
             (field @"indexedModuleAxioms")
             ((attrs , verified) :)
@@ -368,11 +388,17 @@ verifyClaims =
 verifyClaimSentence :: SentenceClaim ParsedPattern -> SentenceVerifier ()
 verifyClaimSentence sentence =
     withSentenceClaimContext sentence $ do
+        verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)
-        attrs <- parseAttributes' $ sentenceClaimAttributes sentence
-        State.modify' $ addClaim (SentenceClaim verified) attrs
+        attrs <- parseAttributesAndVerify verifiedModule'
+                    $ sentenceClaimAttributes sentence
+        State.modify' $ addClaim verifiedModule' (SentenceClaim verified) attrs
   where
-    addClaim verified (verifySymbolAttributes -> attrs) =
+    addClaim
+        verifiedModule'
+        verified
+        attrs
+      =
         Lens.over
             (field @"indexedModuleClaims")
             ((attrs, verified) :)
@@ -438,3 +464,11 @@ parseAttributes'
     -> error attrs
 parseAttributes' =
     Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
+
+parseAttributesAndVerify
+    :: MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol a
+    -> Attributes
+    -> error (Attribute.Axiom Internal.Symbol.Symbol)
+parseAttributesAndVerify indexModule a =
+    parseAttributes' a >>= verifySymbolAttributes indexModule

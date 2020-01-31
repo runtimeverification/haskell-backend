@@ -42,6 +42,10 @@ import Kore.Syntax.Application
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.Resolvers
+import qualified Kore.Verified as Verified
+import qualified Kore.Attribute.Symbol as Attribute
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -125,17 +129,26 @@ verifyNoHookAttribute attributes = do
 
 
 verifySymbolAttributes
-    :: Attribute.Axiom SymbolOrAlias
-    -> Attribute.Axiom Internal.Symbol.Symbol
-verifySymbolAttributes axiom =
-    axiom & field @"overload" Lens.%~ fmap toSymbol
+    :: MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol a
+    -> Attribute.Axiom SymbolOrAlias
+    -> error (Attribute.Axiom Internal.Symbol.Symbol)
+verifySymbolAttributes indexedModule axiom =
+    return $ axiom & field @"overload" Lens.%~ fmap toSymbol
   where
-    toSymbol s = Internal.Symbol.Symbol
-        { Internal.Symbol.symbolConstructor = symbolOrAliasConstructor s
-        , Internal.Symbol.symbolParams = symbolOrAliasParams s
-        , Internal.Symbol.symbolSorts = undefined
-        , Internal.Symbol.symbolAttributes = defaultSymbolAttributes
-        }
+    toSymbol s = 
+        let (symbolAttributes, decl) = undefined
+                {-resolveThing
+                    indexedModuleSymbolSentences
+                    indexedModule
+                    (symbolOrAliasConstructor s)-}
+        in
+            Internal.Symbol.Symbol
+                { Internal.Symbol.symbolConstructor = symbolOrAliasConstructor s
+                , Internal.Symbol.symbolParams = symbolOrAliasParams s
+                , Internal.Symbol.symbolSorts = undefined
+                , Internal.Symbol.symbolAttributes = defaultSymbolAttributes
+                }
 
 verifyAxiomAttributes :: a
 verifyAxiomAttributes = undefined

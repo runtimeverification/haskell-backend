@@ -12,6 +12,7 @@ module Kore.IndexedModule.Resolvers
     , getSymbolAttributes
     , resolveSort
     , resolveAlias
+    , resolveThing
     , resolveSymbol
     , resolveInternalSymbol
     , resolveHook
