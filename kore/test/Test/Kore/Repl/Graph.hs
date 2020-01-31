@@ -135,11 +135,11 @@ tree2 =
         ]
 
 g1', g2', chain', tree1', tree2' :: Gr () (Maybe ())
-g1' = smoothOutGraph g1
-g2' = smoothOutGraph g2
-chain' = smoothOutGraph chain
-tree1' = smoothOutGraph tree1
-tree2' = smoothOutGraph tree2
+g1' = either error id $ smoothOutGraph g1
+g2' = either error id $ smoothOutGraph g2
+chain' = either error id $ smoothOutGraph chain
+tree1' = either error id $ smoothOutGraph tree1
+tree2' = either error id $ smoothOutGraph tree2
 
 expectedG1'
   , expectedG2'

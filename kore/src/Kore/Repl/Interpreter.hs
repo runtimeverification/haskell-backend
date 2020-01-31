@@ -446,7 +446,12 @@ showGraph
 showGraph mfile out = do
     let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
-    let smoothedOutGraph = smoothOutGraph graph
+    smoothedOutGraph <-
+            case smoothOutGraph graph of
+                Left str -> do
+                    putStrLn' str
+                    return $ Graph.emap Just graph
+                Right gr -> return gr
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
@@ -459,31 +464,41 @@ showGraph mfile out = do
 -- | Smoothes out nodes which have inDegree == outDegree == 1
 -- (with the exception of the direct children of branching nodes).
 -- This is done by computing the subgraph formed with only such nodes,
--- and replacing each component of the subgraph with one edge in the original graph.
--- TODO: assumes graph is a partially ordered tree (parent(node) < node)
-smoothOutGraph :: Gr node edge -> Gr node (Maybe edge)
-smoothOutGraph graph =
+-- and replacing each component of the subgraph with one edge
+-- in the original graph.
+-- This assumes the execution graph is a directed tree
+-- with its edges pointed "downwards" (from the root)
+-- and is partially ordered (parent(node) < node).
+smoothOutGraph :: Gr node edge -> Either String (Gr node (Maybe edge))
+smoothOutGraph graph = do
     let subGraph = Graph.nfilter inOutDegreeOne graph
         nodesToRemove = Graph.nodes subGraph
-        edgesToAdd = fmap (componentToEdge subGraph) (Graph.components subGraph)
-     in Graph.insEdges edgesToAdd (Graph.emap Just (Graph.delNodes nodesToRemove graph))
+    edgesToAdd <- traverse (componentToEdge subGraph) (Graph.components subGraph)
+    return $ Graph.insEdges edgesToAdd (Graph.emap Just (Graph.delNodes nodesToRemove graph))
   where
     inOutDegreeOne :: Graph.Node -> Bool
     inOutDegreeOne node =
         Graph.outdeg graph node == 1
         && Graph.indeg graph node == 1
         && not (all isBranchingNode $ Graph.pre graph node)
-    componentToEdge :: Gr node edge -> [Graph.Node] -> Graph.LEdge (Maybe edge)
+    -- TODO: refactor componentToEdge
+    componentToEdge
+        :: Gr node edge
+        -> [Graph.Node]
+        -> Either String (Graph.LEdge (Maybe edge))
     componentToEdge subGraph nodes =
         case filter (isLeaf subGraph) nodes of
-            [x] -> (head (Graph.pre graph x), head (Graph.suc graph x), Nothing)
+            [x] -> Right (head (Graph.pre graph x), head (Graph.suc graph x), Nothing)
             [x, y] ->
                 if x < y
                     then
-                        (head (Graph.pre graph x), head (Graph.suc graph y), Nothing)
+                        Right (head (Graph.pre graph x), head (Graph.suc graph y), Nothing)
                     else
-                        (head (Graph.pre graph y), head (Graph.suc graph x), Nothing)
-            _ -> error "TODO: avoid partial function"
+                        Right (head (Graph.pre graph y), head (Graph.suc graph x), Nothing)
+            _ ->
+                Left
+                    "Could not process execution graph for visualization.\
+                    \ Will default to showing the full graph."
     isBranchingNode :: Graph.Node -> Bool
     isBranchingNode node =
         Graph.outdeg graph node > 1
