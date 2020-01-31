@@ -3,8 +3,13 @@ module Test.Kore.Repl.Graph
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit.Ext
+import Test.Tasty.HUnit.Ext hiding
+    ( assert
+    )
 
+import Control.Exception
+    ( assert
+    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
@@ -19,7 +24,6 @@ import Kore.Repl.Interpreter
     ( smoothOutGraph
     )
 
--- TODO: test actual == expected
 test_graph :: [TestTree]
 test_graph =
     [ testGroup "Smooth out graph with a single node"
@@ -32,6 +36,8 @@ test_graph =
             assertBool ""
                 $ Set.fromList (inOutDegreeOne g1')
                 `isSubsetOf` Set.fromList (childrenOfBranchings g1)
+        , testCase "actual === expected" $
+            assert (g1' == expectedG1') $ return ()
         ]
     , testGroup "Smooth out chain graph"
         [ testCase "Contains only a subset of the original nodes" $
@@ -43,28 +49,34 @@ test_graph =
             assertBool ""
                 $ Set.fromList (inOutDegreeOne chain')
                 `isSubsetOf` Set.fromList (childrenOfBranchings chain)
+        , testCase "actual === expected" $
+            assert (chain' == expectedChain') $ return ()
         ]
     , testGroup "Smooth out arbitrary tree1"
-        [ testCase "Contains only a subset of the original nodes" $ do
+        [ testCase "Contains only a subset of the original nodes" $
             assertBool "" (nodesSet tree1' `isSubsetOf` nodesSet tree1)
         , testCase "Number of edges is smaller or equal" $
             assertBool "" (Graph.size tree1' <= Graph.size tree1)
         , testCase "The only nodes with in/out degree == 1\
-                    \ are included in the children of branchings" $ do
+                    \ are included in the children of branchings" $
             assertBool ""
                 $ Set.fromList (inOutDegreeOne tree1')
                 `isSubsetOf` Set.fromList (childrenOfBranchings tree1)
+        , testCase "actual === expected" $
+            assert (tree1' == expectedTree1') $ return ()
         ]
     , testGroup "TESTING Smooth out tree with branching at the root"
-        [ testCase "Contains only a subset of the original nodes" $ do
+        [ testCase "Contains only a subset of the original nodes" $
             assertBool "" (nodesSet tree2' `isSubsetOf` nodesSet tree2)
         , testCase "Number of edges is smaller or equal" $
             assertBool "" (Graph.size tree2' <= Graph.size tree2)
         , testCase "The only nodes with in/out degree == 1\
-                    \ are included in the children of branchings" $ do
+                    \ are included in the children of branchings" $
             assertBool ""
                 $ Set.fromList (inOutDegreeOne tree2')
                 `isSubsetOf` Set.fromList (childrenOfBranchings tree2)
+        , testCase "actual === expected" $
+            assert (tree2' == expectedTree2') $ return ()
         ]
     ]
 
@@ -113,3 +125,35 @@ g1' = smoothOutGraph g1
 chain' = smoothOutGraph chain
 tree1' = smoothOutGraph tree1
 tree2' = smoothOutGraph tree2
+
+expectedG1'
+  , expectedChain'
+  , expectedTree1'
+  , expectedTree2' :: Gr () (Maybe ())
+expectedG1' = Graph.mkGraph [(1, ())] []
+expectedChain' =
+    Graph.mkGraph
+        [(0, ()), (100, ())]
+        [(0, 100, Nothing)]
+expectedTree1' =
+    Graph.mkGraph
+        [ (0, ()), (1, ()), (2, ()), (3, ())
+        , (5, ()), (6, ()), (9, ())
+        , (7, ()), (8, ()), (10, ()), (13, ())
+        ]
+        [ (0, 1, Just ()), (1, 2, Just ())
+        , (1, 3, Just ()), (2, 5, Nothing)
+        , (5, 6, Just ()), (5, 7, Just ())
+        , (5, 8, Just ()), (6, 9, Just ())
+        , (8, 10, Just ()), (3, 13, Nothing)
+        ]
+expectedTree2' =
+    Graph.mkGraph
+        [ (0, ()), (1, ()), (2, ()), (3, ())
+        , (4, ()), (11, ()), (10, ()), (9, ())
+        ]
+        [ (0, 1, Just ()), (0, 2, Just ())
+        , (0, 3, Just ()), (0, 4, Just ())
+        , (2, 10, Nothing), (3, 9, Nothing)
+        , (4, 11, Just ())
+        ]
