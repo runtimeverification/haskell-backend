@@ -103,7 +103,6 @@ import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
 import Kore.Unparser
-import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )

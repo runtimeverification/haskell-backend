@@ -7,6 +7,7 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Data.Set as Set
 import Data.Text.Prettyprint.Doc
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -157,6 +158,14 @@ instance SortedVariable V where
     fromVariable = undefined
     toVariable = undefined
 
+instance FreshVariable V where
+    refreshVariable avoiding v@(V name)
+      | Set.notMember v avoiding = Nothing
+      | otherwise =
+        Just ((head . dropWhile (flip Set.member avoiding)) (V <$> names' ))
+      where
+        names' = iterate (+ 1) name
+
 newtype W = W String
     deriving (Show, Eq, Ord, GHC.Generic)
 
@@ -176,6 +185,14 @@ instance SortedVariable W where
     sortedVariableSort _ = sortVariable
     fromVariable = undefined
     toVariable = undefined
+
+instance FreshVariable W where
+    refreshVariable avoiding w@(W name)
+      | Set.notMember w avoiding = Nothing
+      | otherwise =
+        Just ((head . dropWhile (flip Set.member avoiding)) (W <$> names' ))
+      where
+        names' = iterate (<> "\'") name
 
 showVar :: V -> W
 showVar (V i) = W (show i)

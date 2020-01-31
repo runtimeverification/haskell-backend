@@ -90,6 +90,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
+    , FreshVariable
     , SubstitutionVariable
     , Symbol
     , TermLike
@@ -405,7 +406,7 @@ type BuiltinAndAxiomSimplifierMap =
 
 lookupAxiomSimplifier
     :: MonadSimplify simplifier
-    => InternalVariable variable
+    => (InternalVariable variable, FreshVariable variable)
     => TermLike variable
     -> MaybeT simplifier BuiltinAndAxiomSimplifier
 lookupAxiomSimplifier termLike = do

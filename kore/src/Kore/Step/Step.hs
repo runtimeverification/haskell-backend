@@ -78,7 +78,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( InternalVariable
+    ( FreshVariable
+    , InternalVariable
     , SubstitutionVariable
     , TermLike
     )
@@ -157,7 +158,7 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        :: Ord variable2
+        :: (Ord variable1, FreshVariable variable2)
         => (variable1 -> variable2)
         -> rule variable1
         -> rule variable2
@@ -253,7 +254,7 @@ wouldNarrowWith unified =
 
 -- |Renames variables to be distinguishable from those in configuration
 toAxiomVariables
-    :: Ord variable
+    :: FreshVariable variable
     => UnifyingRule rule
     => rule variable
     -> rule (Target variable)
@@ -262,7 +263,7 @@ toAxiomVariables = mapRuleVariables Target.Target
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
  -}
 unwrapRule
-    :: Ord variable
+    :: FreshVariable variable
     => UnifyingRule rule
     => rule (Target variable) -> rule variable
 unwrapRule = mapRuleVariables Target.unwrapVariable
@@ -407,14 +408,14 @@ applyInitialConditions sideCondition initial unification = do
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariables
-    :: Ord variable
+    :: FreshVariable variable
     => Pattern variable
     -> Pattern (Target variable)
 toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition
-    :: InternalVariable variable
+    :: (InternalVariable variable, FreshVariable variable)
     => SideCondition variable
     -> SideCondition (Target variable)
 toConfigurationVariablesCondition = SideCondition.mapVariables Target.NonTarget

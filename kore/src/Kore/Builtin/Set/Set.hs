@@ -46,6 +46,9 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 
 concatKey :: IsString s => s
 concatKey = "SET.concat"
@@ -122,7 +125,7 @@ isSymbolList2set = Builtin.isSymbol list2setKey
 -}
 asTermLike
     :: forall variable
-    .  InternalVariable variable
+    .  (InternalVariable variable, FreshVariable variable)
     => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
@@ -167,6 +170,7 @@ asTermLike builtin =
         :: (TermLike Concrete, Domain.SetValue (TermLike variable))
         -> TermLike variable
     concreteElement (key, value) = element (TermLike.fromConcrete key, value)
+
     element
         :: (TermLike variable, Domain.SetValue (TermLike variable))
         -> TermLike variable

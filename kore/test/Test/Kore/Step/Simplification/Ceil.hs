@@ -596,7 +596,7 @@ mockEvaluator
 mockEvaluator evaluation _ _ = return evaluation
 
 mapVariables
-    :: InternalVariable variable
+    :: (InternalVariable variable, FreshVariable variable)
     => Pattern Variable
     -> Pattern variable
 mapVariables =

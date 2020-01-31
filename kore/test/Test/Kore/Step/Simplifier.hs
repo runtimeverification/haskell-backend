@@ -76,9 +76,10 @@ mockSimplifierHelper
         unevaluatedPatt
 
 convertTermLikeVariables
-    ::  ( Ord variable0
+    ::  ( Ord variable
         , SortedVariable variable
         , SortedVariable variable0
+        , FreshVariable variable0
         )
     => TermLike variable
     -> TermLike variable0
@@ -87,9 +88,9 @@ convertTermLikeVariables =
 
 convertPatternVariables
     ::  ( Ord variable
-        , Ord variable0
         , SortedVariable variable
         , SortedVariable variable0
+        , FreshVariable variable0
         )
     => Pattern variable
     -> Pattern variable0

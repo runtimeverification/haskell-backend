@@ -120,6 +120,9 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -702,7 +705,11 @@ isPredicate = Either.isRight . makePredicate
 
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
-mapVariables :: Ord to => (from -> to) -> Predicate from -> Predicate to
+mapVariables
+    :: (Ord from, FreshVariable to)
+    => (from -> to)
+    -> Predicate from
+    -> Predicate to
 mapVariables f = fmap (TermLike.mapVariables f)
 
 instance HasFreeVariables (Predicate variable) variable where

@@ -90,7 +90,7 @@ withoutUnification = Conditional.term
  -}
 unwrapConfiguration
     :: forall variable
-    .  InternalVariable variable
+    .  (InternalVariable variable, FreshVariable variable)
     => Pattern (Target variable)
     -> Pattern variable
 unwrapConfiguration config@Conditional { substitution } =

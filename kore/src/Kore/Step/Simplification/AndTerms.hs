@@ -602,11 +602,9 @@ See also: 'equalAndEquals'
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
-    :: Eq variable
-    => SortedVariable variable
-    => Unparse variable
+    :: HasCallStack
+    => InternalVariable variable
     => MonadUnify unifier
-    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a
@@ -632,11 +630,9 @@ cannotUnifyDistinctDomainValues :: Pretty.Doc ()
 cannotUnifyDistinctDomainValues = "Cannot unify distinct domain values."
 
 cannotUnifyDomainValues
-    :: Eq variable
-    => SortedVariable variable
-    => Unparse variable
+    :: HasCallStack
+    => InternalVariable variable
     => MonadUnify unifier
-    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> unifier a
@@ -657,11 +653,9 @@ See also: 'equalAndEquals'
 
  -}
 stringLiteralAndEqualsAssumesDifferent
-    :: Eq variable
-    => SortedVariable variable
-    => Unparse variable
+    :: HasCallStack
+    => InternalVariable variable
     => MonadUnify unifier
-    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a

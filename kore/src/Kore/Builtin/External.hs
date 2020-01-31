@@ -34,6 +34,9 @@ import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 
@@ -44,7 +47,7 @@ See also: 'asPattern'
  -}
 externalize
     ::  forall variable
-    .   InternalVariable variable
+    .   (InternalVariable variable, FreshVariable variable)
     =>  TermLike variable
     ->  Syntax.Pattern variable Attribute.Null
 externalize =

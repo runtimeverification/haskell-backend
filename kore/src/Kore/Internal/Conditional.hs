@@ -77,6 +77,9 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -408,7 +411,7 @@ isPredicate Conditional {term} = isTop term
 
 -}
 mapVariables
-    :: (Ord variableFrom, Ord variableTo)
+    :: (Ord variableFrom, FreshVariable variableTo)
     => ((variableFrom -> variableTo) -> termFrom -> termTo)
     -> (variableFrom -> variableTo)
     -> Conditional variableFrom termFrom

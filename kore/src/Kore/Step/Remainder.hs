@@ -66,7 +66,7 @@ See also: 'remainder\''
 
  -}
 remainder
-    :: InternalVariable variable
+    :: (InternalVariable variable, FreshVariable variable)
     => MultiOr (Condition (Target variable))
     -> Predicate variable
 remainder =

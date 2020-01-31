@@ -61,6 +61,9 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 
 concatKey :: IsString s => s
 concatKey = "MAP.concat"
@@ -204,7 +207,7 @@ isSymbolValues = Builtin.isSymbol valuesKey
  -}
 asTermLike
     :: forall variable
-    .  InternalVariable variable
+    .  (InternalVariable variable, FreshVariable variable)
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
@@ -249,6 +252,7 @@ asTermLike builtin =
         :: (TermLike Concrete, Domain.MapValue (TermLike variable))
         -> TermLike variable
     concreteElement (key, value) = element (TermLike.fromConcrete key, value)
+
     element
         :: (TermLike variable, Domain.MapValue (TermLike variable))
         -> TermLike variable

@@ -102,6 +102,9 @@ getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
 getFreeElementVariables =
     mapMaybe extractElementVariable . Set.toList . getFreeVariables
 
+-- TODO (thomas.tuegel): Use an associated type family with HasFreeVariables to
+-- fix type inference.
+
 -- | Class for extracting the free variables of a pattern, term, rule, ...
 class HasFreeVariables pat variable where
     freeVariables :: pat -> FreeVariables variable

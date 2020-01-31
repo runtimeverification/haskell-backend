@@ -349,7 +349,7 @@ modify f = wrap . f . unwrap
 -- with the given function.
 mapVariables
     :: forall variableFrom variableTo
-    .  (Ord variableFrom, Ord variableTo)
+    .  (Ord variableFrom, FreshVariable variableTo)
     => (variableFrom -> variableTo)
     -> Substitution variableFrom
     -> Substitution variableTo

@@ -144,6 +144,7 @@ module Kore.Internal.TermLike
     -- * Re-exports
     , module Kore.Internal.Variable
     , Substitute.SubstitutionVariable
+    , FreshVariable (..)
     , Symbol (..)
     , Alias (..)
     , SortedVariable (..)
@@ -270,6 +271,9 @@ import Kore.Unparser
     )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
 
@@ -341,7 +345,7 @@ Otherwise, the argument is returned.
 
  -}
 withoutFreeVariable
-    :: (Ord variable, SortedVariable variable, Unparse variable)
+    :: InternalVariable variable
     => UnifiedVariable variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
@@ -417,7 +421,7 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcrete
-    :: Ord variable
+    :: FreshVariable variable
     => TermLike Concrete
     -> TermLike variable
 fromConcrete = mapVariables (\case {})
@@ -446,7 +450,7 @@ simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys
-    :: SortedVariable variable
+    :: InternalVariable variable
     => Foldable t
     => t (TermLike variable)
     -> a

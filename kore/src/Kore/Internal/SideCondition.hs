@@ -52,6 +52,9 @@ import Kore.Unparser
     ( Unparse (..)
     , unparseToText
     )
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import qualified Pretty
 import qualified SQL
 
@@ -154,7 +157,7 @@ toRepresentation :: SideCondition variable -> SideCondition.Representation
 toRepresentation SideCondition { representation } = representation
 
 mapVariables
-    :: (Ord variable1, InternalVariable variable2)
+    :: (Ord variable1, InternalVariable variable2, FreshVariable variable2)
     => (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2

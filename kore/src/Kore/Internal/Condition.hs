@@ -66,6 +66,9 @@ import Kore.Substitute
     ( SubstitutionVariable
     )
 import Kore.Syntax
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -148,7 +151,7 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    :: (Ord variable1, Ord variable2)
+    :: (Ord variable1, FreshVariable variable2)
     => (variable1 -> variable2)
     -> Condition variable1
     -> Condition variable2

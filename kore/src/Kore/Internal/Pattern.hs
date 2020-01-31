@@ -77,6 +77,9 @@ import qualified Kore.Sort as Sort
 import Kore.TopBottom
     ( TopBottom (..)
     )
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -119,7 +122,7 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    :: (Ord variableFrom, Ord variableTo)
+    :: (Ord variableFrom, FreshVariable variableTo)
     => (variableFrom -> variableTo)
     -> Pattern variableFrom
     -> Pattern variableTo

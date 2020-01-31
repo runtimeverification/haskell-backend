@@ -5,6 +5,7 @@ module Test.Kore.Internal.TermLike
     , test_externalizeFreshVariables
     , test_refreshVariables
     , test_hasConstructorLikeTop
+    , test_mapVariables
     --
     , termLikeGen
     , termLikeChildGen
@@ -23,6 +24,9 @@ import qualified Data.Set as Set
 import Data.Sup
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (FreeVariables)
+    )
+import Kore.Attribute.Synthetic
+    ( resynthesize
     )
 import Kore.Domain.Builtin
     ( Builtin (..)
@@ -356,3 +360,53 @@ x00 = ElementVariable ex { variableName = "x00" }
 
 x1 :: ElementVariable Variable
 x1 = ElementVariable ex { variableName = "x1" }
+
+test_mapVariables :: [TestTree]
+test_mapVariables =
+    [ testCase "renames \\exists" $ do
+        let original = mkExists Mock.y (mkElemVar Mock.x)
+            renamed = mapVariables (const $ getElementVariable Mock.y) original
+        updatesFreeVariables renamed
+        doesNotCapture (ElemVar Mock.y) renamed
+
+    , testCase "renames \\forall" $ do
+        let original = mkForall Mock.y (mkElemVar Mock.x)
+            renamed = mapVariables (const $ getElementVariable Mock.y) original
+        updatesFreeVariables renamed
+        doesNotCapture (ElemVar Mock.y) renamed
+
+    , testCase "renames \\mu" $ do
+        let original = mkMu Mock.setY (mkSetVar Mock.setX)
+            renamed = mapVariables (const $ getSetVariable Mock.setY) original
+        updatesFreeVariables renamed
+        doesNotCapture (SetVar Mock.setY) renamed
+
+    , testCase "renames \\nu" $ do
+        let original = mkNu Mock.setY (mkSetVar Mock.setX)
+            renamed = mapVariables (const $ getSetVariable Mock.setY) original
+        updatesFreeVariables renamed
+        doesNotCapture (SetVar Mock.setY) renamed
+    ]
+  where
+    doesNotCapture
+        :: HasCallStack
+        => UnifiedVariable Variable
+        -> TermLike Variable
+        -> Assertion
+    doesNotCapture unifiedVariable renamed =
+        assertBool
+            "does not capture free variables"
+            (hasFreeVariable unifiedVariable renamed)
+
+    updatesFreeVariables
+        :: HasCallStack
+        => TermLike Variable
+        -> Assertion
+    updatesFreeVariables renamed =
+        assertEqual
+            "updates the FreeVariables attribute"
+            (freeVariables resynthesized :: FreeVariables Variable)
+            (freeVariables       renamed)
+      where
+        resynthesized :: TermLike Variable
+        resynthesized = resynthesize renamed

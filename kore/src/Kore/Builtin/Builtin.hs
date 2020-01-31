@@ -129,6 +129,8 @@ import qualified Kore.Unification.Unify as Monad.Unify
     )
 import Kore.Unparser
 
+-- TODO (thomas.tuegel): Include hook name here.
+
 type Function = BuiltinAndAxiomSimplifier
 
 notImplemented :: Function
@@ -167,7 +169,7 @@ unaryOperator
     .   (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Parse operand
     ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
+        . SubstitutionVariable variable => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -175,18 +177,13 @@ unaryOperator
     -> (a -> b)
     -- ^ Operation on builtin types
     -> Function
-unaryOperator
-    extractVal
-    asPattern
-    ctx
-    op
-  =
+unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
-        :: InternalVariable variable
+        :: SubstitutionVariable variable
         => MonadSimplify m
         => Sort
         -> [TermLike variable]
@@ -215,7 +212,7 @@ binaryOperator
     .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
     ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
+        . SubstitutionVariable variable => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -223,18 +220,13 @@ binaryOperator
     -> (a -> a -> b)
     -- ^ Operation on builtin types
     -> Function
-binaryOperator
-    extractVal
-    asPattern
-    ctx
-    op
-  =
+binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: SimplifierVariable variable
+        :: SubstitutionVariable variable
         => MonadSimplify m
         => Sort
         -> [TermLike variable]
@@ -263,7 +255,7 @@ ternaryOperator
     .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
     ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
+        . SubstitutionVariable variable => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -271,18 +263,13 @@ ternaryOperator
     -> (a -> a -> a -> b)
     -- ^ Operation on builtin types
     -> Function
-ternaryOperator
-    extractVal
-    asPattern
-    ctx
-    op
-  =
+ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: SimplifierVariable variable
+        :: SubstitutionVariable variable
         => MonadSimplify m
         => Sort
         -> [TermLike variable]

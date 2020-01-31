@@ -133,7 +133,7 @@ isNarrowingResult Step.Result { appliedRule } =
  -}
 unwrapAndQuantifyConfiguration
     :: forall variable
-    .  InternalVariable variable
+    .  (InternalVariable variable, FreshVariable variable)
     => Pattern (Target variable)
     -> Pattern variable
 unwrapAndQuantifyConfiguration config@Conditional { substitution } =
