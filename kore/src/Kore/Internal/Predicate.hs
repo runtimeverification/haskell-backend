@@ -40,7 +40,7 @@ module Kore.Internal.Predicate
     , isSimplified
     , markSimplified
     , setSimplified
-    , forgetSimplified
+    , Kore.Internal.Predicate.forgetSimplified
     , simplifiedAttribute
     , isFreeOf
     , freeElementVariables
@@ -94,9 +94,6 @@ import qualified Kore.Attribute.Pattern as Attribute
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
 import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Synthetic
-    ( resynthesize
-    )
 import Kore.Debug
 import Kore.Error
     ( Error
@@ -742,7 +739,7 @@ forgetSimplified
     :: InternalVariable variable
     => Predicate variable -> Predicate variable
 forgetSimplified (GenericPredicate termLike) =
-    GenericPredicate (resynthesize termLike)
+    GenericPredicate (TermLike.forgetSimplified termLike)
 
 -- |Is the predicate free of the given variables?
 isFreeOf

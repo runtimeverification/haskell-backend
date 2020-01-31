@@ -69,9 +69,6 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified (..)
     )
-import Kore.Attribute.Synthetic
-    ( resynthesize
-    )
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
@@ -361,7 +358,10 @@ isSimplified sideCondition (NormalizedSubstitution normalized) =
 forgetSimplified
     :: InternalVariable variable
     => Substitution variable -> Substitution variable
-forgetSimplified = wrap . map (Bifunctor.second resynthesize) . unwrap
+forgetSimplified =
+    wrap
+    . map (Bifunctor.second TermLike.forgetSimplified)
+    . unwrap
 
 simplifiedAttribute
     :: Substitution variable -> Attribute.Simplified
