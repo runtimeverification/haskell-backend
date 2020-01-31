@@ -39,6 +39,19 @@ test_graph =
         , testCase "actual === expected" $
             assert (g1' == expectedG1') $ return ()
         ]
+    , testGroup "Smooth out graph with two nodes"
+        [ testCase "Contains only a subset of the original nodes" $
+            assertBool "" (nodesSet g2' `isSubsetOf` nodesSet g2)
+        , testCase "Number of edges is smaller or equal" $
+            assertBool "" (Graph.size g2' <= Graph.size g2)
+        , testCase "The only nodes with in/out degree == 1\
+                    \ are included in the children of branchings" $
+            assertBool ""
+                $ Set.fromList (inOutDegreeOne g2')
+                `isSubsetOf` Set.fromList (childrenOfBranchings g2)
+        , testCase "actual === expected" $
+            assert (g2' == expectedG2') $ return ()
+        ]
     , testGroup "Smooth out chain graph"
         [ testCase "Contains only a subset of the original nodes" $
             assertBool "" (nodesSet chain' `isSubsetOf` nodesSet chain)
@@ -65,7 +78,7 @@ test_graph =
         , testCase "actual === expected" $
             assert (tree1' == expectedTree1') $ return ()
         ]
-    , testGroup "TESTING Smooth out tree with branching at the root"
+    , testGroup "Smooth out tree with branching at the root"
         [ testCase "Contains only a subset of the original nodes" $
             assertBool "" (nodesSet tree2' `isSubsetOf` nodesSet tree2)
         , testCase "Number of edges is smaller or equal" $
@@ -100,8 +113,9 @@ childrenOfBranchings gr =
 nodesSet :: Gr a b -> Set Graph.Node
 nodesSet = Set.fromList . Graph.nodes
 
-g1, chain, tree1, tree2 :: Gr () ()
+g1, g2, chain, tree1, tree2 :: Gr () ()
 g1 = Graph.mkUGraph [1] []
+g2 = Graph.mkUGraph [1, 2] [(1, 2)]
 chain = Graph.mkUGraph [0..100] [(x, y) | x <- [0..99], let y = x + 1]
 tree1 =
     Graph.mkUGraph
@@ -120,17 +134,23 @@ tree2 =
         , (4, 11)
         ]
 
-g1', chain', tree1', tree2' :: Gr () (Maybe ())
+g1', g2', chain', tree1', tree2' :: Gr () (Maybe ())
 g1' = smoothOutGraph g1
+g2' = smoothOutGraph g2
 chain' = smoothOutGraph chain
 tree1' = smoothOutGraph tree1
 tree2' = smoothOutGraph tree2
 
 expectedG1'
+  , expectedG2'
   , expectedChain'
   , expectedTree1'
   , expectedTree2' :: Gr () (Maybe ())
 expectedG1' = Graph.mkGraph [(1, ())] []
+expectedG2' =
+    Graph.mkGraph
+        [(1, ()), (2, ())]
+        [(1, 2, Just ())]
 expectedChain' =
     Graph.mkGraph
         [(0, ()), (100, ())]

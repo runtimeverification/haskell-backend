@@ -460,21 +460,22 @@ showGraph mfile out = do
 -- (with the exception of the direct children of branching nodes).
 -- This is done by computing the subgraph formed with only such nodes,
 -- and replacing each component of the subgraph with one edge in the original graph.
+-- TODO: assumes graph is a partially ordered tree (parent(node) < node)
 smoothOutGraph :: Gr node edge -> Gr node (Maybe edge)
 smoothOutGraph graph =
-    let subGraph = Graph.nfilter degreeOne graph
+    let subGraph = Graph.nfilter inOutDegreeOne graph
         nodesToRemove = Graph.nodes subGraph
         edgesToAdd = fmap (componentToEdge subGraph) (Graph.components subGraph)
      in Graph.insEdges edgesToAdd (Graph.emap Just (Graph.delNodes nodesToRemove graph))
   where
-    degreeOne :: Graph.Node -> Bool
-    degreeOne node =
-        (Graph.outdeg graph node == 1)
-        && (Graph.indeg graph node == 1)
-        && not (all (\n -> Graph.outdeg graph n > 1) (Graph.pre graph node))
+    inOutDegreeOne :: Graph.Node -> Bool
+    inOutDegreeOne node =
+        Graph.outdeg graph node == 1
+        && Graph.indeg graph node == 1
+        && not (all isBranchingNode $ Graph.pre graph node)
     componentToEdge :: Gr node edge -> [Graph.Node] -> Graph.LEdge (Maybe edge)
-    componentToEdge subGr nodes =
-        case filter (\n -> (Graph.indeg subGr n == 0) || (Graph.outdeg subGr n == 0)) nodes of
+    componentToEdge subGraph nodes =
+        case filter (isLeaf subGraph) nodes of
             [x] -> (head (Graph.pre graph x), head (Graph.suc graph x), Nothing)
             [x, y] ->
                 if x < y
@@ -483,6 +484,12 @@ smoothOutGraph graph =
                     else
                         (head (Graph.pre graph y), head (Graph.suc graph x), Nothing)
             _ -> error "TODO: avoid partial function"
+    isBranchingNode :: Graph.Node -> Bool
+    isBranchingNode node =
+        Graph.outdeg graph node > 1
+    isLeaf :: Gr node edge -> Graph.Node -> Bool
+    isLeaf graph' node =
+        Graph.indeg graph' node == 0 || Graph.outdeg graph' node == 0
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
