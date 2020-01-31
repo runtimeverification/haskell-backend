@@ -97,6 +97,9 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as EqualityPattern
     ( toAxiomVariables
     )
+import Kore.Unification.UnifierT
+    ( UnifierT
+    )
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( MonadUnify
@@ -458,14 +461,20 @@ matchRule sideCondition initial rule = do
             pattern1
             pattern2
 
+{- | Evaluate the pre-condition of a rule, subject to the given constraints.
+ -}
 evaluateRequires
     :: forall unifier variable
     .  SimplifierVariable variable
     => MonadUnify unifier
     => SideCondition variable
+    -- ^ the side condition
     -> Condition variable
+    -- ^ the initial condition, usually from simplifying children
     -> Condition variable
+    -- ^ the solution used to instantiate the rule
     -> Predicate variable
+    -- ^ the pre-condition itself (the @requires@ clause)
     -> unifier (Condition variable)
 evaluateRequires side initial solution requires = do
     let requires' = solution <> Condition.fromPredicate requires
@@ -479,10 +488,23 @@ evaluateRequires side initial solution requires = do
         -- then continue with the original requirement,
         -- else continue with the partially-simplified requirement.
         & maybeT (return requires') Unifier.scatter
-    simplifyCondition $ Condition.forgetSimplified requires''
+    simplifyCondition requires''
   where
-    withoutAxioms = Simplifier.localSimplifierAxioms (const mempty)
+    {- | Evaluate a 'Condition' simplifier without any axiom evaluation.
+
+    The simplified status of the results is reset because any result may be
+    further simplified when axiom evaluation is enabled.
+
+     -}
+    withoutAxioms
+        :: UnifierT unifier (Condition variable)
+        -> UnifierT unifier (Condition variable)
+    withoutAxioms =
+        fmap Condition.forgetSimplified
+        . Simplifier.localSimplifierAxioms (const mempty)
+
     side' = SideCondition.andCondition side initial
+
     simplifyCondition
         :: forall unifier'
         .  MonadUnify unifier'
