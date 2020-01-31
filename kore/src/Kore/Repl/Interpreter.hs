@@ -21,6 +21,7 @@ module Kore.Repl.Interpreter
     , allProofs
     , ReplStatus(..)
     , showCurrentClaimIndex
+    , smoothOutGraph
     ) where
 
 import Control.Comonad.Trans.Cofree
@@ -456,10 +457,10 @@ showGraph mfile out = do
        else putStrLn' "Graphviz is not installed."
 
 -- | Smoothes out nodes which have inDegree == outDegree == 1
--- (with the exception of direct children of branching nodes);
--- this is done by computing the subgraph formed with only such nodes,
--- and replacing each component of the subgraph with one edge in the original graph
-smoothOutGraph :: InnerGraph rule -> Gr CommonProofState (Maybe (Seq rule))
+-- (with the exception of the direct children of branching nodes).
+-- This is done by computing the subgraph formed with only such nodes,
+-- and replacing each component of the subgraph with one edge in the original graph.
+smoothOutGraph :: Gr node edge -> Gr node (Maybe edge)
 smoothOutGraph graph =
     let subGraph = Graph.nfilter degreeOne graph
         nodesToRemove = Graph.nodes subGraph
@@ -471,9 +472,10 @@ smoothOutGraph graph =
         (Graph.outdeg graph node == 1)
         && (Graph.indeg graph node == 1)
         && not (all (\n -> Graph.outdeg graph n > 1) (Graph.pre graph node))
-    componentToEdge :: InnerGraph rule -> [Graph.Node] -> Graph.LEdge (Maybe (Seq rule))
+    componentToEdge :: Gr node edge -> [Graph.Node] -> Graph.LEdge (Maybe edge)
     componentToEdge subGr nodes =
         case filter (\n -> (Graph.indeg subGr n == 0) || (Graph.outdeg subGr n == 0)) nodes of
+            [x] -> (head (Graph.pre graph x), head (Graph.suc graph x), Nothing)
             [x, y] ->
                 if x < y
                     then
