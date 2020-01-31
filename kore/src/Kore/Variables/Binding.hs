@@ -22,14 +22,13 @@ import qualified Control.Lens as Lens
 import Data.Monoid
     ( Any (..)
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Kore.Syntax.ElementVariable
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
-import Kore.Unparser
-import Kore.Variables.UnifiedVariable
+import Kore.Syntax.SetVariable
 
 {- | @Binding@ defines traversals for patterns with binders.
 
@@ -79,31 +78,23 @@ See also: 'forallBinder'.
 
  -}
 existsBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Exists sort variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Exists sort variable1 child1)
+            (Exists sort variable2 child2)
+            (Binder (ElementVariable variable1) child1)
+            (Binder (ElementVariable variable2) child2)
 existsBinder mapping exists =
     finish <$> mapping binder
   where
     binder =
         Binder
-            { binderVariable = ElemVar existsVariable
+            { binderVariable = existsVariable
             , binderChild = existsChild
             }
       where
         Exists { existsVariable, existsChild } = exists
     finish Binder { binderVariable, binderChild } =
-        exists { existsVariable, existsChild = binderChild }
-      where
-        existsVariable =
-            case binderVariable of
-                ElemVar eVar -> eVar
-                SetVar sVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected an element variable, but found:"
-                        , Pretty.indent 4 (unparse sVar)
-                        ]
+        exists { existsVariable = binderVariable, existsChild = binderChild }
 
 {- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
 
@@ -113,29 +104,21 @@ See also: 'existsBinder'.
 
  -}
 forallBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Forall sort variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Forall sort variable1 child1)
+            (Forall sort variable2 child2)
+            (Binder (ElementVariable variable1) child1)
+            (Binder (ElementVariable variable2) child2)
 forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = ElemVar forallVariable, binderChild }
+        Binder { binderVariable = forallVariable, binderChild }
       where
         Forall { forallVariable } = forall
         Forall { forallChild    = binderChild    } = forall
     finish Binder { binderVariable, binderChild } =
-        forall { forallVariable, forallChild = binderChild }
-      where
-        forallVariable =
-            case binderVariable of
-                ElemVar eVar -> eVar
-                SetVar sVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected an element variable, but found:"
-                        , Pretty.indent 4 (unparse sVar)
-                        ]
+        forall { forallVariable = binderVariable, forallChild = binderChild }
 
 {- | A 'Lens.Lens' to view a 'Mu' as a 'Binder'.
 
@@ -145,29 +128,21 @@ See also: 'nuBinder'.
 
  -}
 muBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Mu variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Mu variable1 child1)
+            (Mu variable2 child2)
+            (Binder (SetVariable variable1) child1)
+            (Binder (SetVariable variable2) child2)
 muBinder mapping mu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = SetVar muVariable, binderChild }
+        Binder { binderVariable = muVariable, binderChild }
       where
         Mu { muVariable } = mu
         Mu { muChild    = binderChild    } = mu
     finish Binder { binderVariable, binderChild } =
-        mu { muVariable, muChild = binderChild }
-      where
-        muVariable =
-            case binderVariable of
-                SetVar sVar -> sVar
-                ElemVar eVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected a set variable, but found:"
-                        , Pretty.indent 4 (unparse eVar)
-                        ]
+        mu { muVariable = binderVariable, muChild = binderChild }
 
 {- | A 'Lens.Lens' to view a 'Nu' as a 'Binder'.
 
@@ -177,26 +152,18 @@ See also: 'muBinder'.
 
  -}
 nuBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Nu variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Nu variable1 child1)
+            (Nu variable2 child2)
+            (Binder (SetVariable variable1) child1)
+            (Binder (SetVariable variable2) child2)
 nuBinder mapping nu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = SetVar nuVariable, binderChild }
+        Binder { binderVariable = nuVariable, binderChild }
       where
         Nu { nuVariable } = nu
         Nu { nuChild    = binderChild    } = nu
     finish Binder { binderVariable, binderChild } =
-        nu { nuVariable, nuChild = binderChild }
-      where
-        nuVariable =
-            case binderVariable of
-                SetVar sVar -> sVar
-                ElemVar eVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected a set variable, but found:"
-                        , Pretty.indent 4 (unparse eVar)
-                        ]
+        nu { nuVariable = binderVariable, nuChild = binderChild }
