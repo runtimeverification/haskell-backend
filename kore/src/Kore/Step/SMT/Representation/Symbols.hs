@@ -13,9 +13,6 @@ module Kore.Step.SMT.Representation.Symbols
 import Prelude.Kore
 
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 
 import qualified Kore.Attribute.Constructor as Attribute
     ( Constructor (Constructor, isConstructor)

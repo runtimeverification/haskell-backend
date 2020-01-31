@@ -23,9 +23,6 @@ import Data.List
     ( sortBy
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 import GHC.Stack
     ( HasCallStack
     )

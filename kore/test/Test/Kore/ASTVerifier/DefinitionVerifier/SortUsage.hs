@@ -13,9 +13,6 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.List as List
-import Data.Maybe
-    ( mapMaybe
-    )
 import qualified Data.Text as Text
 
 import Kore.ASTVerifier.Error

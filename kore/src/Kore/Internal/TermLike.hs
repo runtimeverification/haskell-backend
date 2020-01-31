@@ -189,7 +189,6 @@ import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Maybe
 import Data.Monoid
     ( Endo (..)
     )

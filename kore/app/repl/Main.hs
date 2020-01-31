@@ -15,7 +15,6 @@ import Control.Monad.Trans
 import Control.Monad.Trans.Reader
     ( runReaderT
     )
-import Data.Maybe
 import Data.Reflection
 import Data.Semigroup
     ( (<>)

@@ -28,11 +28,6 @@ import qualified Data.List as List
     ( foldl'
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( catMaybes
-    , fromMaybe
-    , mapMaybe
-    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
