@@ -47,7 +47,7 @@ module SMT
     , SimpleSMT.forallQ
     ) where
 
-import Prelude.Kore
+import Prelude
 
 import qualified Colog
 import Control.Concurrent.MVar

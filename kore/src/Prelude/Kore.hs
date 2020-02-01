@@ -18,6 +18,7 @@ module Prelude.Kore
     , Filterable (..)
     -- * Errors
     , HasCallStack
+    , assert
     -- * Applicative and Alternative
     , Applicative (..)
     , Alternative (..)
@@ -34,6 +35,9 @@ import Control.Applicative
     )
 import Control.Error
     ( headMay
+    )
+import Control.Exception
+    ( assert
     )
 import Data.Function
     ( (&)

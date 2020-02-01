@@ -99,9 +99,6 @@ import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.Transition
 import Numeric.Natural
 
-assert :: Bool -> a -> a
-assert b a = if b then a else error "assertion failed"
-
 {- | An execution strategy.
 
     @Strategy prim@ represents a strategy for execution by applying rewrite
