@@ -6,7 +6,9 @@ License     : NCSA
 module Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     , isElemVar
+    , expectElemVar
     , isSetVar
+    , expectSetVar
     , extractElementVariable
     , foldMapVariable
     , unifiedVariableSort
@@ -62,9 +64,41 @@ isElemVar :: UnifiedVariable variable -> Bool
 isElemVar (ElemVar _) = True
 isElemVar _ = False
 
+{- | Extract an 'ElementVariable' from a 'UnifiedVariable'.
+
+It is an error if the 'UnifiedVariable' is not the 'ElemVar' constructor.
+
+Use @expectElemVar@ when maintaining the invariant outside the type system that
+the 'UnifiedVariable' is an 'ElementVariable', but please include a comment at
+the call site describing how the invariant is maintained.
+
+ -}
+expectElemVar
+    :: HasCallStack
+    => UnifiedVariable variable
+    -> ElementVariable variable
+expectElemVar (ElemVar elementVariable) = elementVariable
+expectElemVar _ = error "Expected element variable"
+
 isSetVar :: UnifiedVariable variable -> Bool
 isSetVar (SetVar _) = True
 isSetVar _ = False
+
+{- | Extract an 'SetVariable' from a 'UnifiedVariable'.
+
+It is an error if the 'UnifiedVariable' is not the 'SetVar' constructor.
+
+Use @expectSetVar@ when maintaining the invariant outside the type system that
+the 'UnifiedVariable' is an 'SetVariable', but please include a comment at
+the call site describing how the invariant is maintained.
+
+ -}
+expectSetVar
+    :: HasCallStack
+    => UnifiedVariable variable
+    -> SetVariable variable
+expectSetVar (SetVar setVariable) = setVariable
+expectSetVar _ = error "Expected set variable"
 
 instance
     SortedVariable variable =>
