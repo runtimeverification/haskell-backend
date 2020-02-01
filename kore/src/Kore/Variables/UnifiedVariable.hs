@@ -12,6 +12,8 @@ module Kore.Variables.UnifiedVariable
     , extractElementVariable
     , foldMapVariable
     , unifiedVariableSort
+    , refreshElementVariable
+    , refreshSetVariable
     ) where
 
 import Prelude.Kore
@@ -21,6 +23,10 @@ import Control.DeepSeq
     )
 import Data.Functor.Const
 import Data.Hashable
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import GHC.Generics
     ( Generic
@@ -35,6 +41,7 @@ import Kore.Syntax.Variable
     ( SortedVariable (..)
     )
 import Kore.Unparser
+import Kore.Variables.Fresh
 
 {- | @UnifiedVariable@ helps distinguish set variables (introduced by 'SetVar')
 from element variables (introduced by 'ElemVar').
@@ -59,6 +66,16 @@ instance Hashable variable => Hashable (UnifiedVariable variable)
 instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = foldMapVariable unparse
     unparse2 = foldMapVariable unparse2
+
+instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
+  where
+    refreshVariable avoid = \case
+        SetVar v -> SetVar <$> refreshVariable setVars v
+        ElemVar v -> ElemVar <$> refreshVariable elemVars v
+      where
+        avoid' = Set.toList avoid
+        setVars = Set.fromList [v | SetVar v <- avoid']
+        elemVars = Set.fromList [v | ElemVar v <- avoid']
 
 isElemVar :: UnifiedVariable variable -> Bool
 isElemVar (ElemVar _) = True
@@ -123,3 +140,23 @@ unifiedVariableSort
     => UnifiedVariable variable
     -> Sort
 unifiedVariableSort = foldMapVariable sortedVariableSort
+
+refreshElementVariable
+    :: FreshVariable (UnifiedVariable variable)
+    => Set (UnifiedVariable variable)
+    -> ElementVariable variable
+    -> Maybe (ElementVariable variable)
+refreshElementVariable avoiding =
+    -- expectElemVar is safe because the FreshVariable instance of
+    -- UnifiedVariable (above) conserves the ElemVar constructor.
+    fmap expectElemVar . refreshVariable avoiding . ElemVar
+
+refreshSetVariable
+    :: FreshVariable (UnifiedVariable variable)
+    => Set (UnifiedVariable variable)
+    -> SetVariable variable
+    -> Maybe (SetVariable variable)
+refreshSetVariable avoiding =
+    -- expectElemVar is safe because the FreshVariable instance of
+    -- UnifiedVariable (above) conserves the SetVar constructor.
+    fmap expectSetVar . refreshVariable avoiding . SetVar
