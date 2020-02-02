@@ -3,6 +3,7 @@
 module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
     , test_Nat
+    , test_short_circuit
     , test_List
     , test_lookupMap
     , test_updateMap
@@ -822,6 +823,87 @@ natSimplifiers =
         , factorialEvaluator
         ]
 
+-- | Add an unsatisfiable requirement to the 'EqualityRule'.
+requiresBottom :: EqualityRule Variable -> EqualityRule Variable
+requiresBottom (EqualityRule rule) =
+    EqualityRule rule { requires = makeEqualsPredicate_ zero one }
+
+{- | Add an unsatisfiable @\\equals@ requirement to the 'EqualityRule'.
+
+In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
+requirement which results in a fatal error when evaluated.
+
+ -}
+requiresFatalEquals :: EqualityRule Variable -> EqualityRule Variable
+requiresFatalEquals (EqualityRule rule) =
+    EqualityRule rule
+        { requires =
+            makeAndPredicate
+                (makeEqualsPredicate_ (fatal zero) one)
+                (makeEqualsPredicate_ zero         one)
+        }
+
+{- | Add an unsatisfiable @\\in@ requirement to the 'EqualityRule'.
+
+In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
+requirement which results in a fatal error when evaluated.
+
+ -}
+requiresFatalIn :: EqualityRule Variable -> EqualityRule Variable
+requiresFatalIn (EqualityRule rule) =
+    EqualityRule rule
+        { requires =
+            makeAndPredicate
+                (makeEqualsPredicate_ (fatal zero) one)
+                (makeCeilPredicate_ (mkAnd zero one))
+        }
+
+{- | Test short-circuiting evaluation of function requirements.
+
+We want to check that functions are not evaluated in an 'EqualityRule'
+requirement if the pre-condition is known to be unsatisfiable without function
+evaluation. We check this by including a 'requires' clause with one
+unsatisfiable condition and one "fatal" condition (a condition producing a fatal
+error if evaluated). If we do function evaluation on the unsatisfiable
+requirement, a fatal error will be produced.
+
+ -}
+test_short_circuit :: [TestTree]
+test_short_circuit =
+    [ notApplies  "requires 0 = 1 does not apply"
+        [requiresBottom plusZeroRule]
+        (plus zero one)
+    , notApplies  "requires fatal(0) = 1 ∧ 0 = 1 does not apply"
+        [requiresFatalEquals plusZeroRule]
+        (plus zero one)
+    , notApplies  "requires fatal(0) = 1 ∧ 0 ∈ 1 does not apply"
+        [requiresFatalIn plusZeroRule]
+        (plus zero one)
+    ]
+
+{- | A symbol which throws a fatal error when evaluated.
+
+@fatalSymbol@ is useful for checking that symbols in certain positions are never
+evaluated.
+
+ -}
+fatalSymbol :: Symbol
+fatalSymbol = Mock.symbol "fatal" [natSort] natSort & function
+
+fatal :: TermLike Variable -> TermLike Variable
+fatal x = mkApplySymbol fatalSymbol [x]
+
+fatalEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+fatalEvaluator =
+    ( AxiomIdentifier.Application ident
+    , BuiltinAndAxiomSimplifier $ \_ _ -> error "fatal error"
+    )
+  where
+    ident = symbolConstructor fatalSymbol
+
+fatalSimplifiers :: BuiltinAndAxiomSimplifierMap
+fatalSimplifiers = uncurry Map.singleton fatalEvaluator
+
 test_List :: [TestTree]
 test_List =
     [ applies                  "lengthList([]) => ... ~ lengthList([])"
@@ -1380,6 +1462,7 @@ testEnv =
                 , natSimplifiers
                 , listSimplifiers
                 , mapSimplifiers
+                , fatalSimplifiers
                 ]
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier

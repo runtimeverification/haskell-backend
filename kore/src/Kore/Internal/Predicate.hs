@@ -42,6 +42,7 @@ module Kore.Internal.Predicate
     , markSimplifiedConditional
     , markSimplifiedMaybeConditional
     , setSimplified
+    , Kore.Internal.Predicate.forgetSimplified
     , simplifiedAttribute
     , isFreeOf
     , freeElementVariables
@@ -755,6 +756,12 @@ setSimplified
     => Attribute.Simplified -> Predicate variable -> Predicate variable
 setSimplified simplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.setSimplified simplified termLike)
+
+forgetSimplified
+    :: InternalVariable variable
+    => Predicate variable -> Predicate variable
+forgetSimplified (GenericPredicate termLike) =
+    GenericPredicate (TermLike.forgetSimplified termLike)
 
 -- |Is the predicate free of the given variables?
 isFreeOf

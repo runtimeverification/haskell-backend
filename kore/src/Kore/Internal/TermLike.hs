@@ -19,6 +19,7 @@ module Kore.Internal.TermLike
     , markSimplifiedConditional
     , markSimplifiedMaybeConditional
     , setSimplified
+    , forgetSimplified
     , simplifiedAttribute
     , isFunctionPattern
     , isFunctionalPattern
@@ -418,6 +419,19 @@ fromConcrete = mapVariables (\case {})
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
     Attribute.isSimplified sideCondition . extractAttributes
+
+{- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
+
+@
+isSimplified (forgetSimplified _) == False
+@
+
+ -}
+forgetSimplified
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+forgetSimplified = resynthesize
 
 isFullySimplified :: TermLike variable -> Bool
 isFullySimplified = Attribute.isFullySimplified . extractAttributes

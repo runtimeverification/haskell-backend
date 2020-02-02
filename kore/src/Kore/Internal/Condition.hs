@@ -7,6 +7,7 @@ module Kore.Internal.Condition
     ( Condition
     , isSimplified
     , simplifiedAttribute
+    , forgetSimplified
     , Conditional.markPredicateSimplified
     , Conditional.markPredicateSimplifiedConditional
     , Conditional.setPredicateSimplified
@@ -81,6 +82,16 @@ simplifiedAttribute :: Condition variable -> Attribute.Simplified
 simplifiedAttribute Conditional {term = (), predicate, substitution} =
     Predicate.simplifiedAttribute predicate
     <> Substitution.simplifiedAttribute substitution
+
+forgetSimplified
+    :: InternalVariable variable
+    => Condition variable -> Condition variable
+forgetSimplified Conditional { term = (), predicate, substitution } =
+    Conditional
+        { term = ()
+        , predicate = Predicate.forgetSimplified predicate
+        , substitution = Substitution.forgetSimplified substitution
+        }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Condition'.
 eraseConditionalTerm
