@@ -1426,6 +1426,7 @@ listModule =
             , hookedSymbolDecl getListSymbol
             , hookedSymbolDecl updateListSymbol
             , hookedSymbolDecl inListSymbol
+            , hookedSymbolDecl sizeListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol

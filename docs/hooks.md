@@ -666,6 +666,15 @@ Is a value an element of the given list?
         [hook{}("LIST.in")]
 ~~~
 
+### LIST.size
+
+The number of elements in the given list.
+
+~~~
+    hooked-symbol size{}(List{}) : Int{}
+        [hook{}("LIST.size")]
+~~~
+
 ## SET
 
 Depends on `BOOL`.

@@ -31,6 +31,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnBottomHook
@@ -85,6 +88,10 @@ definitionEvaluation rules =
             Applied AttemptedAxiomResults { results, remainders }
               | length results == 1, null remainders ->
                 return attempted
+              | otherwise ->
+                return
+                $ NotApplicableUntilConditionChanges
+                $ SideCondition.toRepresentation condition
             _ -> return NotApplicable
 
 -- | Create an evaluator from a single simplification rule.
@@ -93,10 +100,10 @@ simplificationEvaluation
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        results <- evaluateAxioms [rule] condition term
+        results' <- evaluateAxioms [rule] condition term
         let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
-        Step.recoveryFunctionLikeResults initial results
-        return $ Results.toAttemptedAxiom results
+        Step.recoveryFunctionLikeResults initial results'
+        return $ Results.toAttemptedAxiom results'
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -203,6 +210,32 @@ evaluateBuiltin
     isValue pat =
         maybe False TermLike.isConstructorLike $ asConcrete pat
 
+{-|Whether a term cannot be simplified regardless of the side condition,
+or only with the current side condition.
+
+Example usage for @applyFirstSimplifierThatWorksWorker@:
+
+We start assuming that if we can't simplify the current term, we will never
+be able to simplify it.
+
+If we manage to apply one of the evaluators with an acceptable result
+(e.g. without remainders), we just return the result and we ignore the
+value of the @NonSimplifiability@ argument.
+
+If the result is not acceptable, we continue trying other evaluators, but we
+assume that, even if we are not able to simplify the term right now, that may
+change when the current side condition changes (i.e. we send @Conditional@
+as an argument to the next @applyFirstSimplifierThatWorksWorker@ call).
+
+If we finished trying all the evaluators without an acceptable result,
+we mark the term as simplified according to the 'NonSimplifiability' argument,
+either as "always simplified", or as "simplified while the current side
+condition is unchanged".
+-}
+data NonSimplifiability
+    = Always
+    | Conditional
+
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
     .  ( SimplifierVariable variable
@@ -213,11 +246,30 @@ applyFirstSimplifierThatWorks
     -> TermLike variable
     -> SideCondition variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ =
+applyFirstSimplifierThatWorks evaluators multipleResults =
+    applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
+
+applyFirstSimplifierThatWorksWorker
+    :: forall variable simplifier
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
+    => [BuiltinAndAxiomSimplifier]
+    -> AcceptsMultipleResults
+    -> NonSimplifiability
+    -> TermLike variable
+    -> SideCondition variable
+    -> simplifier (AttemptedAxiom variable)
+applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
     return AttemptedAxiom.NotApplicable
-applyFirstSimplifierThatWorks
+applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
+    return
+    $ AttemptedAxiom.NotApplicableUntilConditionChanges
+    $ SideCondition.toRepresentation sideCondition
+applyFirstSimplifierThatWorksWorker
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
+    nonSimplifiability
     patt
     sideCondition
   = do
@@ -256,13 +308,16 @@ applyFirstSimplifierThatWorks
                 orRemainders
             -- TODO (traiansf): this might generate too much output
             --    replace log with a logOnce when that becomes available
-            tryNextSimplifier
+            tryNextSimplifier Conditional
           | otherwise -> return applicationResult
-        AttemptedAxiom.NotApplicable -> tryNextSimplifier
+        AttemptedAxiom.NotApplicable -> tryNextSimplifier nonSimplifiability
+        AttemptedAxiom.NotApplicableUntilConditionChanges _ ->
+            tryNextSimplifier Conditional
   where
-    tryNextSimplifier =
-        applyFirstSimplifierThatWorks
+    tryNextSimplifier nonSimplifiability' =
+        applyFirstSimplifierThatWorksWorker
             evaluators
             multipleResults
+            nonSimplifiability'
             patt
             sideCondition

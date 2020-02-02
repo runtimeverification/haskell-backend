@@ -192,7 +192,9 @@ applies testName axioms termLikeAndPredicate results =
         actual <- expectApplied attempted
         expectNoRemainders actual
         expectResults actual
-    expectApplied NotApplicable     = assertFailure "Expected Applied"
+    expectApplied NotApplicable = assertFailure "Expected Applied"
+    expectApplied (NotApplicableUntilConditionChanges _) =
+        assertFailure "Expected Applied"
     expectApplied (Applied actual) = return actual
     expectNoRemainders =
         assertEqualOrPattern "Expected no remainders" OrPattern.bottom

@@ -204,10 +204,10 @@ makeEvaluateTerm
                 , substitution = mempty
                 }
             (mkCeil_ term)
-            (OrPattern.fromPattern Conditional
+            (\maybeCondition -> OrPattern.fromPattern Conditional
                 { term = mkTop_
                 , predicate =
-                    Predicate.markSimplified
+                    Predicate.markSimplifiedMaybeConditional maybeCondition
                     $ makeCeilPredicate_ term
                 , substitution = mempty
                 }

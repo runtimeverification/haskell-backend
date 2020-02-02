@@ -167,6 +167,7 @@ import qualified Kore.Strategies.Verification as StuckVerification
     )
 import Kore.Unparser
     ( unparseToText
+    , unparseToText2
     )
 import qualified Log
 import SMT
@@ -342,7 +343,7 @@ prove
                 searchOrder
                 (AllClaims claims)
                 (Axioms axioms)
-                (AlreadyProven (map unparseToText alreadyProven))
+                (AlreadyProven (map unparseToText2 alreadyProven))
                 (ToProve
                     (map (\x -> (x,depthLimit))
                         (extractUntrustedClaims' claims)

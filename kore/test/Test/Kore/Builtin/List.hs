@@ -12,6 +12,7 @@ module Test.Kore.Builtin.List
     , test_inElement
     , test_inConcat
     , hprop_unparse
+    , test_size
     --
     , asInternal
     , asTermLike
@@ -287,6 +288,36 @@ test_isBuiltin =
         assertBool "" (not (List.isSymbolUnit Mock.aSymbol))
         assertBool "" (not (List.isSymbolUnit Mock.concatListSymbol))
     ]
+
+test_size :: [TestTree]
+test_size =
+    [ testPropertyWithSolver "size(unit(_)) = 0" $ do
+        let original = sizeList unitList
+            zero = mkInt 0
+            predicate = mkEquals_ zero original
+        (===) (Pattern.fromTermLike zero) =<< evaluateT original
+        (===) Pattern.top                      =<< evaluateT predicate
+    , testPropertyWithSolver "size(element(_)) = 1" $ do
+        k <- forAll genInteger
+        let original = sizeList (elementList $ mkInt k)
+            one = mkInt 1
+            predicate = mkEquals_ one original
+        (===) (Pattern.fromTermLike one) =<< evaluateT original
+        (===) Pattern.top                =<< evaluateT predicate
+    , testPropertyWithSolver "size(a + b) = size(a) + size(b)" $ do
+        as <- asInternal . fmap mkInt <$> forAll genSeqInteger
+        bs <- asInternal . fmap mkInt <$> forAll genSeqInteger
+        let sizeConcat = sizeList (concatList as bs)
+            addSize = addInt (sizeList as) (sizeList bs)
+            predicate = mkEquals_ sizeConcat addSize
+        expect1 <- evaluateT sizeConcat
+        expect2 <- evaluateT addSize
+        (===) expect1 expect2
+        (===) Pattern.top    =<< evaluateT predicate
+    ]
+
+mkInt :: Integer -> TermLike Variable
+mkInt = Test.Int.asInternal
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asTermLike

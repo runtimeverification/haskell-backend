@@ -17,6 +17,7 @@ module Kore.Internal.TermLike
     , assertConstructorLikeKeys
     , markSimplified
     , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
     , forgetSimplified
     , simplifiedAttribute
@@ -207,9 +208,6 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
-import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
-    ( simplifiedTo
-    )
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness
     ( Endianness
@@ -492,6 +490,15 @@ markSimplified (Recursive.project -> attrs :< termLikeF) =
         :< termLikeF
         )
 
+markSimplifiedMaybeConditional
+    :: (HasCallStack, InternalVariable variable)
+    => Maybe SideCondition.Representation
+    -> TermLike variable
+    -> TermLike variable
+markSimplifiedMaybeConditional Nothing = markSimplified
+markSimplifiedMaybeConditional (Just condition) =
+    markSimplifiedConditional condition
+
 cannotSimplifyNotSimplifiedError
     :: (HasCallStack, InternalVariable variable)
     => TermLikeF variable (TermLike variable) -> a
@@ -505,9 +512,12 @@ cannotSimplifyNotSimplifiedError termLikeF =
         )
 
 setSimplified
-    :: InternalVariable variable
+    :: (HasCallStack, InternalVariable variable)
     => Pattern.Simplified -> TermLike variable -> TermLike variable
-setSimplified simplified (Recursive.project -> attrs :< termLikeF) =
+setSimplified
+    simplified
+    (Recursive.project -> attrs :< termLikeF)
+  =
     Recursive.embed
         (  Attribute.setSimplified mergedSimplified attrs
         :< termLikeF
@@ -518,12 +528,18 @@ setSimplified simplified (Recursive.project -> attrs :< termLikeF) =
         (Pattern.NotSimplified, Pattern.NotSimplified) -> Pattern.NotSimplified
         (Pattern.NotSimplified, _) -> cannotSimplifyNotSimplifiedError termLikeF
         (_, Pattern.NotSimplified) -> Pattern.NotSimplified
-        _ -> childSimplified `Attribute.Simplified.simplifiedTo` simplified
+        _ -> childSimplified <> simplified
 
+{-|Marks a term as being simplified as long as the side condition stays
+unchanged.
+-}
 markSimplifiedConditional
     :: (HasCallStack, InternalVariable variable)
     => SideCondition.Representation -> TermLike variable -> TermLike variable
-markSimplifiedConditional condition (Recursive.project -> attrs :< termLikeF) =
+markSimplifiedConditional
+    condition
+    (Recursive.project -> attrs :< termLikeF)
+  =
     Recursive.embed
         (  Attribute.setSimplified
                 (  checkedSimplifiedFromChildren termLikeF
@@ -534,7 +550,8 @@ markSimplifiedConditional condition (Recursive.project -> attrs :< termLikeF) =
         )
 
 simplifiedFromChildren
-    :: TermLikeF variable (TermLike variable) -> Pattern.Simplified
+    :: HasCallStack
+    => TermLikeF variable (TermLike variable) -> Pattern.Simplified
 simplifiedFromChildren termLikeF =
     case mergedSimplified of
         Pattern.NotSimplified -> Pattern.NotSimplified
