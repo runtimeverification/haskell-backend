@@ -17,10 +17,10 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 import Kore.Internal.Symbol
     ( Symbol (..)
     )
-import Kore.Debug
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload symbol =
