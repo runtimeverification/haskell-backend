@@ -19,9 +19,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Function as Function
 import Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty

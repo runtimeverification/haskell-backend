@@ -80,7 +80,6 @@ import Kore.Parser
     ( ParsedPattern
     , asParsedPattern
     )
-import Kore.Parser.Lexeme
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Variables.Target
@@ -151,6 +150,9 @@ objectIdGen =
     genericIdGen
         (Gen.element idFirstChars)
         (Gen.element $ idFirstChars ++ idOtherChars)
+  where
+    idFirstChars = ['A'..'Z'] <> ['a'..'z']
+    idOtherChars = ['0'..'9'] <> ['\'', '-']
 
 setVarIdGen :: MonadGen m => m Id
 setVarIdGen = testId <$> fmap ("@" <>) objectIdGen

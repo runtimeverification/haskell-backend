@@ -184,7 +184,6 @@ import qualified GHC.Generics as GHC
 import GHC.Stack
     ( callStack
     )
-import qualified GHC.Stack as GHC
 import Numeric
     ( readHex
     , showFFloat
@@ -285,7 +284,7 @@ newSolver exe opts logger = do
     return solver
 
 logMessageWith
-    :: GHC.HasCallStack
+    :: HasCallStack
     => Log.Severity
     -> Solver
     -> Text
@@ -295,10 +294,10 @@ logMessageWith severity Solver { logger } a =
   where
     message = Log.SomeEntry $ Log.LogMessage a severity callStack
 
-debug :: GHC.HasCallStack => Solver -> Text -> IO ()
+debug :: HasCallStack => Solver -> Text -> IO ()
 debug = logMessageWith Log.Debug
 
-warn :: GHC.HasCallStack => Solver -> Text -> IO ()
+warn :: HasCallStack => Solver -> Text -> IO ()
 warn = logMessageWith Log.Warning
 
 send :: Solver -> SExpr -> IO ()

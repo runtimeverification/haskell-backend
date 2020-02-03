@@ -36,12 +36,8 @@ import Control.Exception
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.List as Builtin.List
@@ -120,7 +116,7 @@ termUnification
     :: forall variable unifier
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
@@ -147,7 +143,7 @@ termUnification =
 maybeTermEquals
     :: SimplifierVariable variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -158,7 +154,7 @@ maybeTermEquals = maybeTransformTerm equalsFunctions
 maybeTermAnd
     :: SimplifierVariable variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -170,7 +166,7 @@ andFunctions
     :: forall variable unifier
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => [TermTransformationOld variable unifier]
 andFunctions =
     map (forAnd . snd) (filter appliesToAnd andEqualsFunctions)
@@ -189,7 +185,7 @@ equalsFunctions
     :: forall variable unifier
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => [TermTransformationOld variable unifier]
 equalsFunctions =
     map (forEquals . snd) (filter appliesToEquals andEqualsFunctions)
@@ -208,7 +204,7 @@ andEqualsFunctions
     :: forall variable unifier
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd s), "expandAlias")
@@ -559,7 +555,7 @@ sort with constructors.
 domainValueAndConstructorErrors
     :: SimplifierVariable variable
     => Monad unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a
@@ -616,7 +612,7 @@ domainValueAndEqualsAssumesDifferent
     => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a
@@ -646,7 +642,7 @@ cannotUnifyDomainValues
     => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> unifier a
@@ -671,7 +667,7 @@ stringLiteralAndEqualsAssumesDifferent
     => SortedVariable variable
     => Unparse variable
     => MonadUnify unifier
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a

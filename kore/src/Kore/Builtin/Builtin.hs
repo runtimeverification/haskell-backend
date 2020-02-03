@@ -49,7 +49,6 @@ import Control.Error
     ( MaybeT (..)
     , fromMaybe
     )
-import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Text
     ( Text

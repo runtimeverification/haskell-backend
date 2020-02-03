@@ -596,11 +596,7 @@ instance FromRulePattern (ReachabilityRule Variable) where
   Should be the inverse of 'Rule.termToAxiomPattern'.
 -}
 rewriteRuleToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => RewriteRule variable
     -> TermLike.TermLike variable
 rewriteRuleToTerm
@@ -627,11 +623,7 @@ rewriteRuleToTerm
 
 -- | Converts a 'OnePathRule' into its term representation
 onePathRuleToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => OnePathRule variable
     -> TermLike.TermLike variable
 onePathRuleToTerm (OnePathRule (RulePattern left _ requires rhs _)) =
@@ -672,11 +664,7 @@ mkImpliesRule left requires alias right =
 
 -- | Converts an 'AllPathRule' into its term representation
 allPathRuleToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => AllPathRule variable
     -> TermLike.TermLike variable
 allPathRuleToTerm (AllPathRule (RulePattern left _ requires rhs _)) =
@@ -684,11 +672,7 @@ allPathRuleToTerm (AllPathRule (RulePattern left _ requires rhs _)) =
 
 -- | Converts an 'ImplicationRule' into its term representation
 implicationRuleToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => ImplicationRule variable
     -> TermLike.TermLike variable
 implicationRuleToTerm

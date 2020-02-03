@@ -7,8 +7,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified GHC.Stack as GHC
-
 import Kore.Internal.Inj
 import Kore.Internal.TermLike hiding
     ( Top (..)
@@ -141,7 +139,7 @@ test_unifyInj =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Inj (TermLike Variable)
         -> Inj (TermLike Variable)
@@ -159,7 +157,7 @@ test_normalize =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> TermLike Variable
         -> TermLike Variable

@@ -35,9 +35,6 @@ import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
 import qualified Control.Monad.Trans as Trans
-import Data.Function
-    ( (&)
-    )
 import Data.Map.Strict
     ( Map
     )

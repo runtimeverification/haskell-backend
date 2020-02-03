@@ -7,7 +7,6 @@ import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import Data.Function
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Text
@@ -1427,6 +1426,7 @@ listModule =
             , hookedSymbolDecl getListSymbol
             , hookedSymbolDecl updateListSymbol
             , hookedSymbolDecl inListSymbol
+            , hookedSymbolDecl sizeListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol

@@ -94,8 +94,7 @@ import Generics.SOP
     )
 import qualified Generics.SOP as SOP
 import GHC.Stack
-    ( HasCallStack
-    , callStack
+    ( callStack
     , prettyCallStack
     )
 import qualified GHC.Stack as GHC

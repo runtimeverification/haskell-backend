@@ -26,7 +26,6 @@ module Kore.Internal.OrPattern
 import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
-import qualified GHC.Stack as GHC
 
 import Branch
     ( BranchT
@@ -177,7 +176,7 @@ toTermLike multiOr =
         patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
 
 coerceSort
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => Sort -> OrPattern variable -> OrPattern variable
 coerceSort sort =
     fromPatterns
@@ -188,4 +187,3 @@ gather
     :: (Ord variable, Monad m)
     => BranchT m (Pattern variable) -> m (OrPattern variable)
 gather = MultiOr.gather
-

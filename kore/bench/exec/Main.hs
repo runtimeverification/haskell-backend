@@ -4,9 +4,6 @@ import Prelude.Kore
 
 import Criterion.Main
 
-import Data.Function
-    ( (&)
-    )
 import Data.Limit
     ( Limit
     )

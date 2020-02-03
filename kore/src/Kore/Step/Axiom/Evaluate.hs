@@ -15,7 +15,6 @@ import Control.Error
     )
 import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
-import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 

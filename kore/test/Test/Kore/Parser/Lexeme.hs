@@ -76,7 +76,8 @@ idParserTests =
                 \  |\n\
                 \1 | [\n\
                 \  | ^\n\
-                \genericIdRawParser: Invalid first character '['.\n"
+                \unexpected '['\n\
+                \expecting first identifier character\n"
             }
         , Failure FailureTest
             { failureInput = "module"

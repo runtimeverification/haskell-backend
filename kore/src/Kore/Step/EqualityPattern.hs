@@ -46,7 +46,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
-    , SortedVariable
     )
 import Kore.Step.Step
     ( UnifyingRule (..)
@@ -166,11 +165,7 @@ instance
   Should be the inverse of 'Rule.termToAxiomPattern'.
 -}
 equalityRuleToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => EqualityRule variable
     -> TermLike.TermLike variable
 equalityRuleToTerm

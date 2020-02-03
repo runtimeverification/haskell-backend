@@ -138,7 +138,7 @@ logMsg = logM
 -- | Logs a message using given 'Severity'.
 log
     :: forall m
-    . (GHC.HasCallStack, WithLog LogMessage m)
+    . (HasCallStack, WithLog LogMessage m)
     => Severity
     -- ^ If lower than the minimum severity, the message will not be logged
     -> Text

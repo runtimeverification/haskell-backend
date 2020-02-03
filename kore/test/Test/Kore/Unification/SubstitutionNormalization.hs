@@ -15,7 +15,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Substitution as Substitution
@@ -269,7 +268,7 @@ test_normalize =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Map (UnifiedVariable Variable) (TermLike Variable)
         -- ^ Test input
@@ -299,7 +298,7 @@ test_normalize =
         Normalization { normalized, denormalized } = normalization
 
     testBottom
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Map (UnifiedVariable Variable) (TermLike Variable)
         -- ^ Test input

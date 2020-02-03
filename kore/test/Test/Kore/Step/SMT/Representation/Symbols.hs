@@ -62,7 +62,6 @@ import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers
 import Test.Kore.With
     ( with
     )
-import Test.Tasty.HUnit.Ext
 
 test_symbolParsing :: [TestTree]
 test_symbolParsing =

@@ -13,7 +13,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Default as Default
-import Data.Function
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe

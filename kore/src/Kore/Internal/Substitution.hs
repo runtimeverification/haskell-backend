@@ -20,6 +20,7 @@ module Kore.Internal.Substitution
     , mapTerms
     , isNormalized
     , isSimplified
+    , forgetSimplified
     , simplifiedAttribute
     , null
     , variables
@@ -41,6 +42,7 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Control.Exception as Exception
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import Data.Hashable
@@ -352,6 +354,14 @@ isSimplified :: SideCondition.Representation -> Substitution variable -> Bool
 isSimplified _ (Substitution _) = False
 isSimplified sideCondition (NormalizedSubstitution normalized) =
     all (TermLike.isSimplified sideCondition) normalized
+
+forgetSimplified
+    :: InternalVariable variable
+    => Substitution variable -> Substitution variable
+forgetSimplified =
+    wrap
+    . map (Bifunctor.second TermLike.forgetSimplified)
+    . unwrap
 
 simplifiedAttribute
     :: Substitution variable -> Attribute.Simplified
