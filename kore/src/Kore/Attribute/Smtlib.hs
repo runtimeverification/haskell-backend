@@ -16,9 +16,6 @@ module Kore.Attribute.Smtlib
 import Prelude.Kore
 
 import qualified Control.Error as Error
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Text as Text
 import SMT.SimpleSMT
 

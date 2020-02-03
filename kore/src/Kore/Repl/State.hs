@@ -73,7 +73,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
 import Data.Sequence
     ( Seq
     )
@@ -396,7 +395,7 @@ getRuleFor maybeNode = do
     getRewriteRule
         :: [(a, b, Seq axiom)]
         -> Maybe axiom
-    getRewriteRule = listToMaybe . concatMap (toList . third)
+    getRewriteRule = headMay . concatMap (toList . third)
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
@@ -555,7 +554,7 @@ addOrUpdateAlias alias@AliasDefinition { name, command } = do
     checkCommandExists = do
         cmds <- existingCommands
         let
-            maybeCommand = listToMaybe $ words command
+            maybeCommand = headMay $ words command
             maybeExists = Set.member <$> maybeCommand <*> pure cmds
         maybe
             (Monad.Error.throwError UnknownCommand)

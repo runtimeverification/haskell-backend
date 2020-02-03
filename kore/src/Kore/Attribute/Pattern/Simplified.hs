@@ -11,6 +11,8 @@ module Kore.Attribute.Pattern.Simplified
     , simplifiedTo
     , fullySimplified
     , simplifiedConditionally
+    , simplifiableConditionally
+    , unparseTag
     ) where
 
 import Prelude.Kore
@@ -18,11 +20,11 @@ import Prelude.Kore
 import Control.DeepSeq
 import Data.Foldable as Foldable
 import Data.Hashable
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -242,7 +244,8 @@ Simplified_ _ (Condition c1) `simplifiedTo` s@(Simplified_ Fully (Condition c2))
     else Simplified_ Fully Unknown
 Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully (Condition _)) = s
 
-s@(Simplified_ _ (Condition _)) `simplifiedTo` Simplified_ Fully Any = s
+Simplified_ _ c@(Condition _) `simplifiedTo` Simplified_ Fully Any =
+    Simplified_ Fully c
 Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully Any) = s
 
 s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
@@ -268,6 +271,9 @@ fullySimplified = Simplified_ Fully Any
 simplifiedConditionally :: SideCondition.Representation -> Simplified
 simplifiedConditionally c = Simplified_ Fully (Condition c)
 
+simplifiableConditionally :: SideCondition.Representation -> Simplified
+simplifiableConditionally c = Simplified_ Partly (Condition c)
+
 alwaysSimplified :: a -> Simplified
 alwaysSimplified = const fullySimplified
 {-# INLINE alwaysSimplified #-}
@@ -277,6 +283,27 @@ notSimplified a
   | Foldable.null a = NotSimplified
   | otherwise = Foldable.fold a <> Simplified_ Partly Any
 {-# INLINE notSimplified #-}
+
+{- | Provides a short and incomplete textual description of a 'Simplified'
+object, suitable for use as an explanatory comment when unparsing patterns.
+
+There is no tag for "NotSimplified", since that's the default state.
+
+Otherwise, the tag starts with a prefix that should be unique among all
+attributes that have tags in order to prevent confusion ("S"), followed
+by short representations of the 'Type' and 'Condition'.
+-}
+unparseTag :: Simplified -> Maybe Text
+unparseTag (Simplified_ ty condition) =
+    Just $ "S" <> typeRepresentation ty <> conditionRepresentation condition
+  where
+    typeRepresentation Fully = "f"
+    typeRepresentation Partly = "p"
+
+    conditionRepresentation Any = "a"
+    conditionRepresentation (Condition _) = "c"
+    conditionRepresentation Unknown = "u"
+unparseTag NotSimplified = Nothing
 
 instance Synthetic Simplified (Bottom sort) where
     synthetic = alwaysSimplified

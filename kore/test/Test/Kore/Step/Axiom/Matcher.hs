@@ -25,9 +25,6 @@ import Test.Tasty
 import Data.Function
     ( on
     )
-import Data.Maybe
-    ( isNothing
-    )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool

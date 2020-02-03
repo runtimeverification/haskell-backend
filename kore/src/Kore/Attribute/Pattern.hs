@@ -16,6 +16,7 @@ module Kore.Attribute.Pattern
     , isSimplified
     , setSimplified
     , simplifiedAttribute
+    , constructorLikeAttribute
     -- * Re-exports
     , module Kore.Attribute.Pattern.Created
     , module Kore.Attribute.Pattern.Defined
@@ -37,9 +38,6 @@ import Data.Hashable
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
@@ -139,6 +137,9 @@ simplifiedAttribute :: HasCallStack => Pattern variable -> Simplified
 simplifiedAttribute patt@Pattern {simplified} =
     assertSimplifiedConsistency patt simplified
 
+constructorLikeAttribute :: Pattern variable -> ConstructorLike
+constructorLikeAttribute Pattern {constructorLike} = constructorLike
+
 {- Checks whether the pattern is simplified relative to the given side
 condition.
 -}
@@ -205,4 +206,3 @@ deleteFreeVariable variable =
 
 instance HasFreeVariables (Pattern variable) variable where
     freeVariables = freeVariables
-

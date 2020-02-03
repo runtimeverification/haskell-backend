@@ -6,10 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import GHC.Stack
-    ( HasCallStack
-    )
-
 import Kore.Internal.TermLike
 
 import qualified Test.Kore.Step.MockSymbols as Mock

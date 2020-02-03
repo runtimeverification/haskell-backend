@@ -39,7 +39,10 @@ module Kore.Internal.Predicate
     , makeTruePredicate_
     , isSimplified
     , markSimplified
+    , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
+    , Kore.Internal.Predicate.forgetSimplified
     , simplifiedAttribute
     , isFreeOf
     , freeElementVariables
@@ -80,9 +83,6 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( simplifiedAttribute
@@ -106,6 +106,8 @@ import Kore.Internal.TermLike hiding
     , isSimplified
     , mapVariables
     , markSimplified
+    , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
     , simplifiedAttribute
     , substitute
@@ -728,11 +730,35 @@ markSimplified
 markSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.markSimplified termLike)
 
+markSimplifiedConditional
+    :: (HasCallStack, InternalVariable variable)
+    => SideCondition.Representation
+    -> Predicate variable
+    -> Predicate variable
+markSimplifiedConditional sideCondition (GenericPredicate termLike) =
+    GenericPredicate
+        (TermLike.markSimplifiedConditional sideCondition termLike)
+
+markSimplifiedMaybeConditional
+    :: (HasCallStack, InternalVariable variable)
+    => Maybe SideCondition.Representation
+    -> Predicate variable
+    -> Predicate variable
+markSimplifiedMaybeConditional maybeSideCondition (GenericPredicate termLike) =
+    GenericPredicate
+        (TermLike.markSimplifiedMaybeConditional maybeSideCondition termLike)
+
 setSimplified
     :: InternalVariable variable
     => Attribute.Simplified -> Predicate variable -> Predicate variable
 setSimplified simplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.setSimplified simplified termLike)
+
+forgetSimplified
+    :: InternalVariable variable
+    => Predicate variable -> Predicate variable
+forgetSimplified (GenericPredicate termLike) =
+    GenericPredicate (TermLike.forgetSimplified termLike)
 
 -- |Is the predicate free of the given variables?
 isFreeOf

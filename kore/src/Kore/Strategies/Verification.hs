@@ -174,7 +174,7 @@ verify
             :: (claim, Limit Natural)
             -> Either (claim, Limit Natural) claim
         lookupEither claim@(rule, _) =
-            if unparseToText rule `elem` alreadyProven
+            if unparseToText2 rule `elem` alreadyProven
                 then Right rule
                 else Left claim
 

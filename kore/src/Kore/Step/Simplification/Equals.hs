@@ -25,9 +25,6 @@ import Control.Monad
 import Data.List
     ( foldl'
     )
-import Data.Maybe
-    ( fromMaybe
-    )
 
 import Branch
     ( BranchT

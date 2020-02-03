@@ -83,6 +83,8 @@ import Data.Limit
     )
 import qualified Data.List as List
 import Data.Maybe
+    ( fromJust
+    )
 import Data.Sequence
     ( Seq
     )

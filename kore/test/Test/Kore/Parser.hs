@@ -25,9 +25,6 @@ import Test.Tasty.HUnit
 import Data.Either
     ( isLeft
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Parser.ParserUtils
 

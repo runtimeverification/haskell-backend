@@ -30,9 +30,6 @@ import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import Data.Hashable
-import Data.Maybe
-    ( isJust
-    )
 import Data.Text
     ( Text
     )

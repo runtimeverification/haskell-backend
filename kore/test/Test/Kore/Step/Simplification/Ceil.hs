@@ -7,9 +7,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 
 import qualified Data.Sup as Sup
 import qualified Kore.Builtin.AssociativeCommutative as Ac

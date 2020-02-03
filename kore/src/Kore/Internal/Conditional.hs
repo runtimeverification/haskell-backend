@@ -18,6 +18,9 @@ module Kore.Internal.Conditional
     , isPredicate
     , Kore.Internal.Conditional.mapVariables
     , isNormalized
+    , markPredicateSimplified
+    , markPredicateSimplifiedConditional
+    , setPredicateSimplified
     ) where
 
 import Prelude.Kore
@@ -45,12 +48,18 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute
+    ( Simplified
+    )
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
     , singleSubstitutionToPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.Substitution
     ( Substitution
     )
@@ -394,3 +403,44 @@ isNormalized :: Ord variable => Conditional variable term -> Bool
 isNormalized Conditional { predicate, substitution } =
     Substitution.isNormalized substitution
     && Predicate.isFreeOf predicate (Substitution.variables substitution)
+
+{-| Marks the condition's predicate as being simplified.
+
+Since the substitution is usually simplified, this usually marks the entire
+condition as simplified. Note however, that the way in which the condition
+is simplified is a combination of the predicate and substitution
+simplifications. As an example, if the predicate is fully simplified,
+while the substitution is simplified only for a certain side condition,
+the entire condition is simplified only for that side condition.
+-}
+markPredicateSimplified
+    :: (HasCallStack, InternalVariable variable)
+    => Conditional variable term -> Conditional variable term
+markPredicateSimplified conditional@Conditional { predicate } =
+    conditional { predicate = Predicate.markSimplified predicate }
+
+markPredicateSimplifiedConditional
+    :: (HasCallStack, InternalVariable variable)
+    => SideCondition.Representation
+    -> Conditional variable term
+    -> Conditional variable term
+markPredicateSimplifiedConditional
+    sideCondition
+    conditional@Conditional { predicate }
+  =
+    conditional
+        { predicate =
+            Predicate.markSimplifiedConditional sideCondition predicate
+        }
+
+{-| Sets the simplified attribute for a condition's predicate.
+
+See 'markPredicateSimplified' for details.
+-}
+setPredicateSimplified
+    :: (InternalVariable variable)
+    => Attribute.Simplified
+    -> Conditional variable term
+    -> Conditional variable term
+setPredicateSimplified simplified conditional@Conditional { predicate } =
+    conditional { predicate = Predicate.setSimplified simplified predicate }
