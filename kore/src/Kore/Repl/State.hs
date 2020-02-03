@@ -15,6 +15,7 @@ module Kore.Repl.State
     , ruleReference
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
+    , smoothOutGraph
     , getConfigAt, getRuleFor, getLabels, setLabels
     , runStepper, runStepper'
     , runUnifier
@@ -30,6 +31,9 @@ module Kore.Repl.State
     where
 
 import Control.Concurrent.MVar
+import Control.Error.Util
+    ( note
+    )
 import qualified Control.Lens as Lens hiding
     ( makeLenses
     )
@@ -61,6 +65,10 @@ import Data.Foldable
     )
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.PatriciaTree
+    ( Gr
+    )
+import qualified Data.Graph.Inductive.Query.DFS as Graph
 import Data.List.Extra
     ( findIndex
     , groupSort
@@ -327,6 +335,64 @@ updateExecutionGraph
 updateExecutionGraph gph = do
     ReplState { claimIndex, graphs } <- get
     field @"graphs" Lens..= Map.insert claimIndex gph graphs
+
+-- | Smoothes out nodes which have inDegree == outDegree == 1
+-- (with the exception of the direct children of branching nodes).
+-- This is done by computing the subgraph formed with only such nodes,
+-- and replacing each component of the subgraph with one edge
+-- in the original graph.
+-- This assumes the execution graph is a directed tree
+-- with its edges pointed "downwards" (from the root)
+-- and is partially ordered (parent(node) < node).
+smoothOutGraph :: Gr node edge -> Either String (Gr node (Maybe edge))
+smoothOutGraph graph = do
+    let subGraph = Graph.nfilter inOutDegreeOne graph
+        nodesToRemove = Graph.nodes subGraph
+    edgesToAdd <-
+        traverse (componentToEdge subGraph) (Graph.components subGraph)
+    let liftedSubGraph = Graph.emap Just (Graph.delNodes nodesToRemove graph)
+        liftedGraph = Graph.insEdges edgesToAdd liftedSubGraph
+    return liftedGraph
+  where
+    inOutDegreeOne :: Graph.Node -> Bool
+    inOutDegreeOne node =
+        Graph.outdeg graph node == 1
+        && Graph.indeg graph node == 1
+        && not (all isBranchingNode $ Graph.pre graph node)
+    componentToEdge
+        :: Gr node edge
+        -> [Graph.Node]
+        -> Either String (Graph.LEdge (Maybe edge))
+    componentToEdge subGraph nodes =
+        case filter (isTerminalNode subGraph) nodes of
+            [node] -> makeNewEdge node node
+            [node1, node2] ->
+                if node1 < node2
+                    then makeNewEdge node1 node2
+                    else makeNewEdge node2 node1
+            _ -> Left processingError
+    makeNewEdge
+        :: Graph.Node
+        -> Graph.Node
+        -> Either String (Graph.LEdge (Maybe edge))
+    makeNewEdge node1 node2 = do
+        nodePre <- extractNewEdgeNode (Graph.pre graph node1)
+        nodeSuc <- extractNewEdgeNode (Graph.suc graph node2)
+        return (nodePre, nodeSuc, Nothing)
+    extractNewEdgeNode
+        :: [Graph.Node]
+        -> Either String Graph.Node
+    extractNewEdgeNode =
+        note processingError . listToMaybe
+    isBranchingNode :: Graph.Node -> Bool
+    isBranchingNode node =
+        Graph.outdeg graph node > 1
+    isTerminalNode :: Gr node edge -> Graph.Node -> Bool
+    isTerminalNode graph' node =
+        Graph.indeg graph' node == 0 || Graph.outdeg graph' node == 0
+    processingError =
+        "Could not process execution graph for visualization.\
+        \ Will default to showing the full graph."
 
 -- | Get the node labels for the current claim.
 getLabels

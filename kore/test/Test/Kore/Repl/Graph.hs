@@ -20,7 +20,7 @@ import Data.Set
     )
 import qualified Data.Set as Set
 
-import Kore.Repl.Interpreter
+import Kore.Repl.State
     ( smoothOutGraph
     )
 
