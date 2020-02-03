@@ -362,36 +362,6 @@ withoutFreeVariable variable termLike result
         ]
   | otherwise = result
 
-{- | Use the provided traversal to replace all variables in a 'TermLike'.
-
-@traverseVariables@ is strict, i.e. its argument is fully evaluated before it
-returns. When composing multiple transformations with @traverseVariables@, the
-intermediate trees will be fully allocated; @mapVariables@ is more composable in
-this respect.
-
-__Warning__: @traverseVariables@ will capture variables if the provided
-traversal is not injective!
-
-See also: 'mapVariables'
-
- -}
-traverseVariables
-    ::  forall m variable1 variable2.
-        (Monad m, Ord variable2)
-    => (variable1 -> m variable2)
-    -> TermLike variable1
-    -> m (TermLike variable2)
-traverseVariables traversing =
-    Recursive.fold traverseVariablesWorker
-  where
-    traverseVariablesWorker (attrs :< pat) =
-        Recursive.embed <$> projected
-      where
-        projected =
-            (:<)
-                <$> Attribute.traverseVariables traversing attrs
-                <*> (traverseVariablesF traversing =<< sequence pat)
-
 {- | Construct a @'TermLike' 'Concrete'@ from any 'TermLike'.
 
 A concrete pattern contains no variables, so @asConcreteStepPattern@ is
@@ -404,11 +374,12 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcrete
-    :: TermLike variable
+    :: Ord variable
+    => TermLike variable
     -> Maybe (TermLike Concrete)
 asConcrete = traverseVariables (\case { _ -> Nothing })
 
-isConcrete :: TermLike variable -> Bool
+isConcrete :: Ord variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.

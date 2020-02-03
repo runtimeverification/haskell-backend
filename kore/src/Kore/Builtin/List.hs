@@ -225,7 +225,8 @@ expectBuiltinList ctx =
         _ -> empty
 
 expectConcreteBuiltinList
-    :: Monad m
+    :: Ord variable
+    => Monad m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Seq (TermLike Concrete))

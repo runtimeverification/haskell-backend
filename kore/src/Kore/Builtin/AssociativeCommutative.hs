@@ -481,6 +481,7 @@ normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
 -- remains abstract.
 extractConcreteElement
     ::  Domain.AcWrapper collection
+    =>  Ord variable
     =>  Domain.Element collection (TermLike variable)
     ->  Either
             (TermLike Concrete, Domain.Value collection (TermLike variable))
@@ -679,7 +680,9 @@ disjointMap input =
     asMap = Map.fromList input
 
 splitVariableConcrete
-    :: [(TermLike variable, a)]
+    :: forall variable a
+    .  Ord variable
+    =>  [(TermLike variable, a)]
     -> ([(TermLike variable, a)], [(TermLike Concrete, a)])
 splitVariableConcrete terms =
     partitionEithers (map toConcreteEither terms)
