@@ -5,7 +5,7 @@ module Test.Kore.Internal.TermLike
     , test_externalizeFreshVariables
     , test_refreshVariables
     , test_hasConstructorLikeTop
-    , test_mapVariables
+    , test_renaming
     --
     , termLikeGen
     , termLikeChildGen
@@ -18,6 +18,9 @@ import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
 import Control.Monad.Reader as Reader
+import Data.Functor.Identity
+    ( runIdentity
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -361,33 +364,22 @@ x00 = ElementVariable ex { variableName = "x00" }
 x1 :: ElementVariable Variable
 x1 = ElementVariable ex { variableName = "x1" }
 
-test_mapVariables :: [TestTree]
-test_mapVariables =
-    [ testCase "renames \\exists" $ do
-        let original = mkExists Mock.y (mkElemVar Mock.x)
-            renamed = mapVariables (const $ getElementVariable Mock.y) original
-        updatesFreeVariables renamed
-        doesNotCapture (ElemVar Mock.y) renamed
-
-    , testCase "renames \\forall" $ do
-        let original = mkForall Mock.y (mkElemVar Mock.x)
-            renamed = mapVariables (const $ getElementVariable Mock.y) original
-        updatesFreeVariables renamed
-        doesNotCapture (ElemVar Mock.y) renamed
-
-    , testCase "renames \\mu" $ do
-        let original = mkMu Mock.setY (mkSetVar Mock.setX)
-            renamed = mapVariables (const $ getSetVariable Mock.setY) original
-        updatesFreeVariables renamed
-        doesNotCapture (SetVar Mock.setY) renamed
-
-    , testCase "renames \\nu" $ do
-        let original = mkNu Mock.setY (mkSetVar Mock.setX)
-            renamed = mapVariables (const $ getSetVariable Mock.setY) original
-        updatesFreeVariables renamed
-        doesNotCapture (SetVar Mock.setY) renamed
+test_renaming :: [TestTree]
+test_renaming =
+    [ testElement "\\exists" mkExists
+    , testElement "\\forall" mkForall
+    , testSet "\\mu" mkMu
+    , testSet "\\nu" mkNu
     ]
   where
+    mapElementVariables' v = mapVariables (const $ getElementVariable v)
+    mapSetVariables' v = mapVariables (const $ getSetVariable v)
+
+    traverseElementVariables' v =
+        runIdentity . traverseVariables (const . return $ getElementVariable v)
+    traverseSetVariables' v =
+        runIdentity . traverseVariables (const . return $ getSetVariable v)
+
     doesNotCapture
         :: HasCallStack
         => UnifiedVariable Variable
@@ -410,3 +402,39 @@ test_mapVariables =
       where
         resynthesized :: TermLike Variable
         resynthesized = resynthesize renamed
+
+    testElement
+        :: TestName
+        -> (ElementVariable Variable -> TermLike Variable -> TermLike Variable)
+        -> TestTree
+    testElement testName mkBinder =
+        testGroup testName
+            [ testCase "mapVariables" $ do
+                let original = mkBinder Mock.y (mkElemVar Mock.x)
+                    renamed = mapElementVariables' Mock.y original
+                updatesFreeVariables renamed
+                doesNotCapture (ElemVar Mock.y) renamed
+            , testCase "traverseVariables" $ do
+                let original = mkBinder Mock.y (mkElemVar Mock.x)
+                    renamed = traverseElementVariables' Mock.y original
+                updatesFreeVariables renamed
+                doesNotCapture (ElemVar Mock.y) renamed
+            ]
+
+    testSet
+        :: TestName
+        -> (SetVariable Variable -> TermLike Variable -> TermLike Variable)
+        -> TestTree
+    testSet testName mkBinder =
+        testGroup testName
+            [ testCase "mapVariables" $ do
+                let original = mkBinder Mock.setY (mkSetVar Mock.setX)
+                    renamed = mapSetVariables' Mock.setY original
+                updatesFreeVariables renamed
+                doesNotCapture (SetVar Mock.setY) renamed
+            , testCase "traverseVariables" $ do
+                let original = mkBinder Mock.setY (mkSetVar Mock.setX)
+                    renamed = traverseSetVariables' Mock.setY original
+                updatesFreeVariables renamed
+                doesNotCapture (SetVar Mock.setY) renamed
+            ]
