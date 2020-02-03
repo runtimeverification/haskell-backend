@@ -70,9 +70,6 @@ import Data.Void
     ( Void
     )
 import Data.Word
-import Debug.Trace
-    ( traceM
-    )
 import Generics.SOP
     ( All
     , All2

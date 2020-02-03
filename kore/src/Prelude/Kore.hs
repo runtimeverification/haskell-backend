@@ -6,6 +6,7 @@ License   : NCSA
 
 module Prelude.Kore
     ( module Prelude
+    , module Debug.Trace
     -- * Functions
     , (&)
     -- * Maybe
@@ -45,6 +46,7 @@ import Data.Maybe
 import Data.Witherable
     ( Filterable (..)
     )
+import Debug.Trace
 import GHC.Stack
     ( HasCallStack
     )
