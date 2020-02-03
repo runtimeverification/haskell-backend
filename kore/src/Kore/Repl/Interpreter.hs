@@ -449,20 +449,22 @@ showGraph
 showGraph mfile out = do
     let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
-    smoothedOutGraph <-
-            case smoothOutGraph graph of
-                Left str -> do
-                    putStrLn' str
-                    return $ Graph.emap Just graph
-                Right gr -> return gr
+    processedGraph <- processGraph graph
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
        then liftIO $ maybe
-                        (showDotGraph (length axioms) smoothedOutGraph)
-                        (saveDotGraph (length axioms) smoothedOutGraph format)
+                        (showDotGraph (length axioms) processedGraph)
+                        (saveDotGraph (length axioms) processedGraph format)
                         mfile
        else putStrLn' "Graphviz is not installed."
+  where
+    processGraph graph =
+        case smoothOutGraph graph of
+            Left str -> do
+                putStrLn' str
+                return $ Graph.emap Just graph
+            Right gr -> return gr
 
 -- | Smoothes out nodes which have inDegree == outDegree == 1
 -- (with the exception of the direct children of branching nodes).
@@ -1330,7 +1332,7 @@ graphParams
 graphParams len = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
         [ Graph.textLabel (maybe "" (ruleIndex len) l)
-        , Graph.Attr.Style [(maybe (Graph.Attr.SItem Graph.Attr.Dotted mempty) (const $ Graph.Attr.SItem Graph.Attr.Solid mempty) l)]
+        , Graph.Attr.Style [dottedOrSolidEdge l]
         ]
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
@@ -1340,6 +1342,11 @@ graphParams len = Graph.nonClusteredParams
         ]
     }
   where
+    dottedOrSolidEdge lbl =
+        maybe
+            (Graph.Attr.SItem Graph.Attr.Dotted mempty)
+            (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
+            lbl
     ruleIndex ln lbl =
         case listToMaybe . toList $ lbl of
             Nothing -> "Simpl/RD"
