@@ -29,28 +29,28 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 
 import Kore.ASTVerifier.Error
-import Kore.Attribute.Overload
-    ( Overload (..)
-    )
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
     )
 import Kore.Attribute.Hook
+import Kore.Attribute.Overload
+    ( Overload (..)
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Error
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.Resolvers
 import Kore.Internal.ApplicationSorts
     ( symbolOrAliasSorts
     )
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
-import Kore.IndexedModule.IndexedModule
-import Kore.IndexedModule.Resolvers
 import qualified Kore.Verified as Verified
-import qualified Kore.Attribute.Symbol as Attribute
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes

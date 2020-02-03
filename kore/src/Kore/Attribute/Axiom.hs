@@ -138,6 +138,8 @@ instance Diff (Axiom SymbolOrAlias)
 
 instance NFData (Axiom SymbolOrAlias)
 
+instance NFData (Axiom Symbol)
+
 instance Default (Axiom SymbolOrAlias) where
     def =
         Axiom

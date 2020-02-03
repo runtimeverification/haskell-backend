@@ -40,7 +40,6 @@ import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )

@@ -23,7 +23,6 @@ import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -150,7 +149,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
   where
     name = takeFileName test
     setUp :: IO
-                ( VerifiedModule StepperAttributes Attribute.Axiom
+                ( VerifiedModule StepperAttributes
                 , TermLike Variable)
     setUp = do
         kompile
@@ -179,7 +178,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
         return (verifiedModule, verifiedPattern)
     execution
-        ::  ( VerifiedModule StepperAttributes Attribute.Axiom
+        ::  ( VerifiedModule StepperAttributes
             , TermLike Variable
             )
         -> IO (TermLike Variable)

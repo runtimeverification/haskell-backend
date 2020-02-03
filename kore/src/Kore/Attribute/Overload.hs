@@ -17,6 +17,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    )
 import Kore.Debug
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
@@ -44,6 +47,8 @@ instance Default (Overload SymbolOrAlias) where
     def = mempty
 
 instance NFData (Overload SymbolOrAlias)
+
+instance NFData (Overload Symbol)
 
 -- | Kore identifier representing the @overload@ attribute symbol.
 overloadId :: Id

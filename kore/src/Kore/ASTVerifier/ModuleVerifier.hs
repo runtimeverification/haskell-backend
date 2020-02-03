@@ -53,22 +53,10 @@ import Kore.Attribute.Parser
     ( ParseAttributes
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import Kore.Attribute.Symbol
-    ( Symbol (..)
-    )
-import Kore.Attribute.Axiom
-    ( Axiom (..)
-    )
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    )
 import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Verified
-    ( Pattern (..)
-    )
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}
