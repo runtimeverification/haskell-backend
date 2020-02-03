@@ -71,7 +71,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Debug.Trace
 
 import Debug
 
