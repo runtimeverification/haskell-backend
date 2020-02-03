@@ -21,9 +21,6 @@ import Control.Error
     , maybeT
     , throwE
     )
-import Control.Exception
-    ( assert
-    )
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Text

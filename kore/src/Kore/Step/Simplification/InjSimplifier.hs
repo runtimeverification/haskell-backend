@@ -12,7 +12,6 @@ module Kore.Step.Simplification.InjSimplifier
 
 import Prelude.Kore
 
-import qualified Control.Exception as Exception
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -152,8 +151,8 @@ mkInjSimplifier sortGraph =
               | not ignoreUnorderedInj, not (isOrderedInj inj') ->
                 unorderedInj inj
               | otherwise ->
-                Exception.assert sameConstructor
-                . Exception.assert innerSortsAgree
+                assert sameConstructor
+                . assert innerSortsAgree
                 . synthesize . InjF
                 $ Inj
                     { injConstructor = injConstructor inj
@@ -191,19 +190,19 @@ mkInjSimplifier sortGraph =
       | injTo1 /= injTo2 = Left Distinct
 
       | injFrom1 == injFrom2 =
-        Exception.assert (injTo1 == injTo2) $ do
+        assert (injTo1 == injTo2) $ do
             let child1 = injChild inj1
                 child2 = injChild inj2
             pure (Pair child1 child2 <$ inj1)
 
       | injFrom2 `isSubsortOf'` injFrom1 =
-        Exception.assert (injTo1 == injTo2) $ do
+        assert (injTo1 == injTo2) $ do
             let child1' = injChild inj1
                 child2' = evaluateInj inj2 { injTo = injFrom1 }
             pure (Pair child1' child2' <$ inj1)
 
       | injFrom1 `isSubsortOf'` injFrom2 =
-        Exception.assert (injTo1 == injTo2) $ do
+        assert (injTo1 == injTo2) $ do
             let child1' = evaluateInj inj1 { injTo = injFrom2 }
                 child2' = injChild inj2
             pure (Pair child1' child2' <$ inj2)

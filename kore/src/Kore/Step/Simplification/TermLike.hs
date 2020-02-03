@@ -14,7 +14,6 @@ import Prelude.Kore
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
-import qualified Control.Exception as Exception
 import qualified Control.Lens.Combinators as Lens
 import Control.Monad
     ( unless
@@ -375,7 +374,7 @@ simplifyInternal term sideCondition = do
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =
-                Exception.assert
+                assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
