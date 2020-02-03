@@ -1419,21 +1419,16 @@ verify
     :: ParsedDefinition
     -> Either
         (Kore.Error.Error VerifyError)
-        (Map
-            ModuleName
-            (VerifiedModule Attribute.Symbol)
+        (Map ModuleName (VerifiedModule Attribute.Symbol)
         )
 verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
-    :: Map ModuleName
-        (VerifiedModule Attribute.Symbol)
+    :: Map ModuleName (VerifiedModule Attribute.Symbol)
 verifiedModules = Kore.Error.assertRight (verify testDefinition)
 
-verifiedModule
-    :: VerifiedModule Attribute.Symbol
-Just verifiedModule =
-    Map.lookup testModuleName verifiedModules
+verifiedModule :: VerifiedModule Attribute.Symbol
+Just verifiedModule = Map.lookup testModuleName verifiedModules
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build verifiedModule

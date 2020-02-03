@@ -145,9 +145,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
     envWithCleanup setUp cleanUp $ bench name . nfIO . execution
   where
     name = takeFileName test
-    setUp :: IO
-                ( VerifiedModule StepperAttributes
-                , TermLike Variable)
+    setUp :: IO ( VerifiedModule StepperAttributes, TermLike Variable)
     setUp = do
         kompile
         definition <- readFile $ root </> definitionFile
@@ -175,9 +173,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
         return (verifiedModule, verifiedPattern)
     execution
-        ::  ( VerifiedModule StepperAttributes
-            , TermLike Variable
-            )
+        ::  ( VerifiedModule StepperAttributes , TermLike Variable)
         -> IO (TermLike Variable)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig emptyLogger

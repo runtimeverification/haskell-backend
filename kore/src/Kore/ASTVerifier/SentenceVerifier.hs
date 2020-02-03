@@ -352,7 +352,9 @@ verifyAxiomSentence sentence =
         State.modify $ addAxiom verified attrs
   where
     addAxiom verified attrs =
-        Lens.over (field @"indexedModuleAxioms") ((attrs , verified) :)
+        Lens.over
+            (field @"indexedModuleAxioms")
+            ((attrs , verified) :)
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
@@ -383,7 +385,9 @@ verifyClaimSentence sentence =
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
     addClaim verified attrs =
-        Lens.over (field @"indexedModuleClaims") ((attrs, verified) :)
+        Lens.over
+            (field @"indexedModuleClaims")
+            ((attrs, verified) :)
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project

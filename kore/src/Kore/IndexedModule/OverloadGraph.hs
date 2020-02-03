@@ -38,7 +38,6 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , recursiveIndexedModuleAxioms
     )
-import Kore.IndexedModule.MetadataTools as MetadataTools
 import Kore.Internal.Symbol as Internal.Symbol
 
 {- | 'OverloadGraph' maps symbols to symbols overloading them
@@ -95,14 +94,11 @@ associated to overloading equations in a verified module.
 
 Assumes the overloading relation is already transitive.
 
-Currently a 'MetadataTools' helper object is used to look-up
-sort and attribute information for symbols.
 -}
 fromIndexedModule
     :: VerifiedModule Attribute.Symbol
-    -> SmtMetadataTools Attribute.StepperAttributes
     -> OverloadGraph
-fromIndexedModule verifiedModule _ = fromOverloads overloadPairList
+fromIndexedModule verifiedModule = fromOverloads overloadPairList
   where
     overloadPairList = preOverloadPairsList
     preOverloadPairsList =

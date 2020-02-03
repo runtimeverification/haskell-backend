@@ -194,14 +194,11 @@ verify
 verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
-    :: Map
-        ModuleName
-        (VerifiedModule StepperAttributes)
+    :: Map ModuleName (VerifiedModule StepperAttributes)
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule
-    :: VerifiedModule Attribute.Symbol
+verifiedModule :: VerifiedModule Attribute.Symbol
 verifiedModule =
     fromMaybe
         (error $ "Missing module: " ++ show testModuleName)
@@ -245,7 +242,7 @@ testSortGraph = SortGraph.fromIndexedModule verifiedModule
 
 testOverloadGraph :: OverloadGraph.OverloadGraph
 testOverloadGraph =
-    OverloadGraph.fromIndexedModule verifiedModule testMetadataTools
+    OverloadGraph.fromIndexedModule verifiedModule
 
 testInjSimplifier :: InjSimplifier
 testInjSimplifier = mkInjSimplifier testSortGraph

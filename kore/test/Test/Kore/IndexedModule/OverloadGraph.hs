@@ -9,9 +9,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Applicative
-    ( liftA2
-    )
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
@@ -24,19 +21,14 @@ import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Attribute.Overload
     ( overloadAttribute
     )
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
     ( assertRight
-    )
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
     )
 import Kore.IndexedModule.OverloadGraph
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( Sort
-    , SymbolOrAlias
     , mkTop
     )
 import Kore.Syntax.Definition
@@ -50,7 +42,6 @@ import Kore.Syntax.Definition
 
 import Test.Kore
 import qualified Test.Kore.Builtin.Definition as Definition
-import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
@@ -60,9 +51,6 @@ symbolB = Mock.symbol "B" [] Mock.testSort
 symbolC = Mock.symbol "C" [] Mock.testSort
 symbolD = Mock.symbol "D" [] Mock.testSort
 symbolE = Mock.symbol "E" [] Mock.testSort
-
-symbols :: [Symbol]
-symbols = [symbolA, symbolB, symbolC, symbolD, symbolE]
 
 overloadGraph :: OverloadGraph
 overloadGraph =
@@ -127,7 +115,7 @@ test_fromIndexedModule =
     testCase "fromIndexedModule = fromSubsorts"
     $ assertEqual ""
         overloadGraph
-        (fromIndexedModule verifiedModule testMetadataTools)
+        (fromIndexedModule verifiedModule)
   where
     verifiedModules =
         assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers definition
@@ -178,21 +166,4 @@ test_fromIndexedModule =
 
     sortVarR :: Sort
     sortVarR = sortVariableSort "R"
-
-attributesMapping :: [(SymbolOrAlias, Attribute.Symbol)]
-attributesMapping =
-    map (liftA2 (,) toSymbolOrAlias symbolAttributes) symbols
-
-headSortsMapping :: [(SymbolOrAlias, ApplicationSorts)]
-headSortsMapping =
-    map ((,) <$> toSymbolOrAlias <*> symbolSorts) symbols
-
-testMetadataTools :: SmtMetadataTools Attribute.Symbol
-testMetadataTools =
-    Mock.makeMetadataTools
-        attributesMapping
-        [] -- sortAttributesMapping
-        headSortsMapping
-        Mock.emptySmtDeclarations
-        Map.empty -- sortConstructors
 

@@ -160,9 +160,7 @@ testDefinition =
         }
 
 indexedModules
-    :: Map
-        ModuleName
-        (VerifiedModule Attribute.Symbol)
+    :: Map ModuleName (VerifiedModule Attribute.Symbol)
 indexedModules =
     assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 

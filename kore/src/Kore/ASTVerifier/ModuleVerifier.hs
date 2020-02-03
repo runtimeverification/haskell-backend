@@ -135,7 +135,7 @@ newVerifiedModule module' = do
     attrs <- parseAttributes' moduleAttributes
     return
         ( indexedModuleWithDefaultImports moduleName (Just implicitModule')
-         & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
+        & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
         )
 
 {- | Project the 'SentenceImport's out the list and verify them.

@@ -423,7 +423,7 @@ things that are implicitly defined.
 -}
 newtype ImplicitIndexedModule pat declAtts axiomAtts =
     ImplicitIndexedModule (IndexedModule pat declAtts axiomAtts)
-    deriving (Show, Functor)
+    deriving (Show)
 
 type KoreImplicitIndexedModule = ImplicitIndexedModule ParsedPattern
 

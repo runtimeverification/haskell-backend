@@ -470,8 +470,7 @@ mainParse parser fileName = do
         Left err         -> error err
         Right definition -> return definition
 
-type LoadedModule =
-    VerifiedModule Attribute.Symbol
+type LoadedModule = VerifiedModule Attribute.Symbol
 
 type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 

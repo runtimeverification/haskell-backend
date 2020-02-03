@@ -54,8 +54,7 @@ type ImplicitModule =
         Attribute.Symbol
         (Attribute.Axiom SymbolOrAlias)
 
-type VerifiedModule' =
-    VerifiedModule Attribute.Symbol
+type VerifiedModule' = VerifiedModule Attribute.Symbol
 
 data VerifierContext =
     VerifierContext

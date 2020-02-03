@@ -62,15 +62,10 @@ type SmtMetadataTools attributes =
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall declAtts smt sortConstructors.
-        VerifiedModule declAtts
-    ->  (  VerifiedModule declAtts
-        -> Map Id sortConstructors
-        )
-    ->  (  VerifiedModule declAtts
-        -> Map Id sortConstructors
-        -> smt
-        )
+    :: forall declAtts smt sortConstructors.
+       VerifiedModule declAtts
+    -> (VerifiedModule declAtts -> Map Id sortConstructors)
+    -> (VerifiedModule declAtts -> Map Id sortConstructors -> smt)
     -> MetadataTools sortConstructors smt declAtts
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
