@@ -17,6 +17,14 @@ module Kore.Step.EquationalStep
     , recoveryFunctionLikeResults
     ) where
 
+import Prelude.Kore
+
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( maybeT
+    )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -26,6 +34,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -47,10 +56,14 @@ import Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRule
     ( debugAppliedRule
+    )
+import Kore.Step.Axiom.Matcher
+    ( matchIncremental
     )
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
@@ -67,20 +80,27 @@ import Kore.Step.Step
     , Results
     , UnificationProcedure (..)
     , UnifiedRule
+    , UnifyingRule
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
     , checkFunctionLike
     , checkSubstitutionCoverage
+    , matchingPattern
+    , precondition
+    , refreshRule
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
-    , unifyRules
     , wouldNarrowWith
     )
 import qualified Kore.Step.Step as EqualityPattern
     ( toAxiomVariables
     )
+import Kore.Unification.UnifierT
+    ( UnifierT
+    )
+import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
@@ -182,7 +202,7 @@ finalizeAppliedRule sideCondition renamedRule appliedConditions =
     finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
         -- axiom ensures clause. The axiom requires clause is included by
-        -- unifyRule.
+        -- matchRule.
         let
             finalTerm = EqualityPattern.right renamedRule
             ensures = EqualityPattern.ensures renamedRule
@@ -353,22 +373,141 @@ See also: 'applyRewriteRule'
 applyRulesSequence
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => UnificationProcedure
-    -> SideCondition (Target variable)
+    => SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> [EqualityPattern variable]
     -- ^ Rewrite rules
     -> unifier (Results EqualityPattern variable)
 applyRulesSequence
-    unificationProcedure
     sideCondition
     initial
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
     (map EqualityPattern.toAxiomVariables -> rules)
-  = unifyRules unificationProcedure sideCondition initial rules
+  = matchRules sideCondition initial rules
     >>= finalizeRulesSequence sideCondition initial
+
+-- | Matches a list a rules against a configuration. See 'matchRule'.
+matchRules
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => UnifyingRule rule
+    => SideCondition (Target variable)
+    -> Pattern (Target variable)
+    -- ^ Initial configuration
+    -> [rule (Target variable)]
+    -- ^ Rule
+    -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
+matchRules sideCondition initial rules =
+    Monad.Unify.gather $ do
+        rule <- Monad.Unify.scatter rules
+        matchRule sideCondition initial rule
+
+{- | Attempt to match a rule with the initial configuration.
+
+The rule variables are renamed to avoid collision with the configuration. The
+rule's 'RulePattern.requires' clause is combined with the unification
+solution. The combined condition is simplified and checked for
+satisfiability.
+
+If any of these steps produces an error, then @matchRule@ returns that error.
+
+@matchRule@ returns the renamed rule wrapped with the combined conditions on
+unification. The substitution is not applied to the renamed rule.
+
+ -}
+matchRule
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => UnifyingRule rule
+    => SideCondition variable
+    -- ^ Top level condition.
+    -> Pattern variable
+    -- ^ Initial configuration
+    -> rule variable
+    -- ^ Rule
+    -> unifier (UnifiedRule variable (rule variable))
+matchRule sideCondition initial rule = do
+    let (initialTerm, initialCondition) = Pattern.splitTerm initial
+    -- Rename free axiom variables to avoid free variables from the initial
+    -- configuration.
+    let
+        configVariables = TermLike.freeVariables initial
+        (_, rule') = refreshRule configVariables rule
+    -- Unify the left-hand side of the rule with the term of the initial
+    -- configuration.
+    let
+        ruleLeft = matchingPattern rule'
+    unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
+    -- Combine the unification solution with the rule's requirement clause,
+    let
+        requires = precondition rule'
+    unification' <-
+        evaluateRequires sideCondition initialCondition unification requires
+    return (rule' `Conditional.withCondition` unification')
+  where
+    unifyPatterns = ignoreUnificationErrors matchIncremental
+
+    ignoreUnificationErrors unification pattern1 pattern2 =
+        Unifier.runUnifierT (unification pattern1 pattern2)
+        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
+
+    couldNotMatch pattern1 pattern2 _ =
+        Unifier.explainAndReturnBottom
+            "Could not match patterns"
+            pattern1
+            pattern2
+
+{- | Evaluate the pre-condition of a rule, subject to the given constraints.
+ -}
+evaluateRequires
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
+    => SideCondition variable
+    -- ^ the side condition
+    -> Condition variable
+    -- ^ the initial condition, usually from simplifying children
+    -> Condition variable
+    -- ^ the solution used to instantiate the rule
+    -> Predicate variable
+    -- ^ the pre-condition itself (the @requires@ clause)
+    -> unifier (Condition variable)
+evaluateRequires side initial solution requires = do
+    let requires' = solution <> Condition.fromPredicate requires
+    requires'' <-
+        simplifyCondition requires'
+        -- disable function evaluation:
+        & withoutAxioms
+        -- do not propagate unification errors:
+        & Unifier.maybeUnifierT
+        -- if there is a unification error
+        -- then continue with the original requirement,
+        -- else continue with the partially-simplified requirement.
+        & maybeT (return requires') Unifier.scatter
+    simplifyCondition requires''
+  where
+    {- | Evaluate a 'Condition' simplifier without any axiom evaluation.
+
+    The simplified status of the results is reset because any result may be
+    further simplified when axiom evaluation is enabled.
+
+     -}
+    withoutAxioms
+        :: UnifierT unifier (Condition variable)
+        -> UnifierT unifier (Condition variable)
+    withoutAxioms =
+        fmap Condition.forgetSimplified
+        . Simplifier.localSimplifierAxioms (const mempty)
+
+    side' = SideCondition.andCondition side initial
+
+    simplifyCondition
+        :: forall unifier'
+        .  MonadUnify unifier'
+        => Condition variable
+        -> unifier' (Condition variable)
+    simplifyCondition = Branch.alternate . Simplifier.simplifyCondition side'

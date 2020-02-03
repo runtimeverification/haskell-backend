@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     , optional
@@ -108,7 +110,8 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import Kore.Log
-    ( KoreLogOptions (..)
+    ( ExeName (..)
+    , KoreLogOptions (..)
     , LogMessage
     , LoggerT (..)
     , WithLog
@@ -332,7 +335,7 @@ parseKoreExecOptions =
         <*> parseBreadthLimit
         <*> parseDepthLimit
         <*> parseStrategy
-        <*> parseKoreLogOptions
+        <*> parseKoreLogOptions (ExeName "kore-exec")
         <*> pure Nothing
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions

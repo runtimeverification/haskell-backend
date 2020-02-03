@@ -5,6 +5,8 @@ module Test.Data.Limit
     , prop_identity
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty.QuickCheck
 
 import Data.Limit

@@ -2,6 +2,8 @@ module Test.Kore.Internal.ApplicationSorts
     ( test_symbolOrAliasSorts
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

@@ -39,6 +39,8 @@ module Kore.Sort
     , module Kore.Syntax.Id
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

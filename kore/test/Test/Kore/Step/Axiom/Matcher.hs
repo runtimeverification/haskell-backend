@@ -18,27 +18,25 @@ module Test.Kore.Step.Axiom.Matcher
     , matches, doesn'tMatch
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Function
     ( on
     )
-import qualified GHC.Stack as GHC
+import Data.Maybe
+    ( isNothing
+    )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
 import Kore.Internal.Condition
-    ( Conditional (..)
+    ( Condition
+    , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiOr as MultiOr
-    ( make
-    )
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
     ( Predicate
     , makeCeilPredicate_
@@ -49,11 +47,6 @@ import Kore.Internal.TermLike
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
-import Kore.Unification.Error
-    ( UnificationError (..)
-    , UnificationOrSubstitutionError (..)
-    )
-import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -104,19 +97,18 @@ test_matcherEqualHeads =
         ]
 
     , testCase "Bottom" $ do
-        let expect = Just $ OrCondition.fromCondition Condition.topCondition
+        let expect = Just Condition.topCondition
         actual <- matchDefinition mkBottom_ mkBottom_
         assertEqual "" expect actual
 
     , testCase "Ceil" $ do
-        let expect = Just $ MultiOr.make
-                [ Conditional
+        let expect =
+                Just Conditional
                     { term = ()
                     , predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.ElemVar Mock.x, Mock.a)]
                     }
-                ]
         actual <-
             matchDefinition
                 (mkCeil_ (Mock.plain10 (mkElemVar Mock.x)))
@@ -124,15 +116,14 @@ test_matcherEqualHeads =
         assertEqual "" expect actual
 
     , testCase "Equals" $ do
-        let expect = Just $ MultiOr.make
-                [ Conditional
+        let expect =
+                Just Conditional
                     { term = ()
                     , predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ (UnifiedVariable.ElemVar Mock.x, mkElemVar Mock.y)
                         ]
                     }
-                ]
         actual <-
             matchDefinition
                 (mkEquals_ (Mock.plain10 (mkElemVar Mock.x)) (Mock.plain10 Mock.a))
@@ -152,10 +143,9 @@ test_matcherEqualHeads =
                     , domainValueChild = mkStringLiteral "10"
                     }
                 )
-        assertEqual "" topOrPredicate actual
+        assertEqual "" topCondition actual
 
     , testCase "DomainValue" $ do
-        let expect = Just $ OrCondition.fromCondition Condition.topCondition
         actual <-
             matchDefinition
                 (mkDomainValue DomainValue
@@ -168,24 +158,22 @@ test_matcherEqualHeads =
                     , domainValueChild = mkStringLiteral "10"
                     }
                 )
-        assertEqual "" expect actual
+        assertEqual "" topCondition actual
 
 
     , testCase "StringLiteral" $ do
-        let expect = Just $ OrCondition.fromCondition Condition.topCondition
         actual <-
             matchDefinition
                 (mkStringLiteral "10")
                 (mkStringLiteral "10")
-        assertEqual "" expect actual
+        assertEqual "" topCondition actual
 
     , testCase "Top" $ do
-        let expect = Just $ OrCondition.fromCondition Condition.topCondition
         actual <-
             matchDefinition
                 mkTop_
                 mkTop_
-        assertEqual "" expect actual
+        assertEqual "" topCondition actual
 
     , testCase "Iff vs Or" $ do
         let expect = Nothing
@@ -197,14 +185,13 @@ test_matcherEqualHeads =
 
     , testGroup "Simplification"
         [ testCase "same symbol" $ do
-            let expect = Just $ MultiOr.make
-                    [ Conditional
+            let expect =
+                    Just Conditional
                         { term = ()
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.unsafeWrap
                             [(UnifiedVariable.ElemVar Mock.x, Mock.a)]
                         }
-                    ]
             actual <-
                 matchSimplification
                     (Mock.plain10 (mkElemVar Mock.x))
@@ -216,8 +203,8 @@ test_matcherEqualHeads =
 test_matcherVariableFunction :: [TestTree]
 test_matcherVariableFunction =
     [ testCase "Functional" $ do
-        let expect = Just $ MultiOr.make
-                [ Conditional
+        let expect =
+                Just Conditional
                     { predicate = makeTruePredicate_
                     , substitution =
                         Substitution.unsafeWrap
@@ -227,43 +214,39 @@ test_matcherVariableFunction =
                             ]
                     , term = ()
                     }
-                ]
         actual <- matchDefinition (mkElemVar Mock.x) Mock.functional00
         assertEqual "" expect actual
 
     , testCase "SetVariable vs Function" $ do
-        let expect = Just $ MultiOr.make
-                [ Conditional
+        let expect =
+                Just Conditional
                     { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.SetVar Mock.setX, Mock.cf)]
                     , term = ()
                     }
-                ]
         actual <- matchDefinition (mkSetVar Mock.setX) Mock.cf
         assertEqual "" expect actual
 
     , testCase "SetVariable vs Bottom" $ do
-        let expect = Just $ MultiOr.make
-                [ Conditional
+        let expect =
+                Just Conditional
                     { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.SetVar Mock.setX, mkBottom Mock.testSort)]
                     , term = ()
                     }
-                ]
         actual <- matchDefinition (mkSetVar Mock.setX) (mkBottom Mock.testSort)
         assertEqual "" expect actual
 
     , testCase "Function" $ do
-        let expect = Just $ MultiOr.make
-                [ Conditional
+        let expect =
+                Just Conditional
                     { predicate = makeCeilPredicate_ Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.ElemVar Mock.x, Mock.cf)]
                     , term = ()
                     }
-                ]
         actual <- matchDefinition (mkElemVar Mock.x) Mock.cf
         assertEqual "" expect actual
 
@@ -284,8 +267,8 @@ test_matcherVariableFunction =
         let
             a = Mock.functional00SubSubSort
             x = ElementVariable $ Variable (testId "x") mempty Mock.subSort
-            expect = Just $ MultiOr.make
-                [ Conditional
+            expect =
+                Just Conditional
                     { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ ( UnifiedVariable.ElemVar x
@@ -294,7 +277,6 @@ test_matcherVariableFunction =
                         ]
                     , term = ()
                     }
-                ]
         actual <-
             matchDefinition
                 (Mock.sortInjectionSubToTop (mkElemVar x))
@@ -314,8 +296,8 @@ test_matcherVariableFunction =
 
     , testCase "Injection + substitution" $ do
         let
-            expect = Just $ MultiOr.make
-                [ Conditional
+            expect =
+                Just Conditional
                     { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ ( UnifiedVariable.ElemVar xSub
@@ -327,7 +309,6 @@ test_matcherVariableFunction =
                         ]
                     , term = ()
                     }
-                ]
         actual <-
             matchDefinition
                 (Mock.functionalTopConstr20
@@ -342,8 +323,8 @@ test_matcherVariableFunction =
 
     , testCase "substitution + Injection" $ do
         let
-            expect = Just $ MultiOr.make
-                [ Conditional
+            expect =
+                Just Conditional
                     { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ ( UnifiedVariable.ElemVar xSub
@@ -355,7 +336,6 @@ test_matcherVariableFunction =
                         ]
                     , term = ()
                     }
-                ]
         actual <-
             matchDefinition
                 (Mock.functionalTopConstr21
@@ -370,15 +350,14 @@ test_matcherVariableFunction =
 
     , testGroup "Simplification"
         [ testCase "Function" $ do
-            let expect = Just $ MultiOr.make
-                    [ Conditional
+            let expect =
+                    Just Conditional
                         { predicate = makeCeilPredicate_ Mock.cf
                         , substitution =
                             Substitution.unsafeWrap
                                 [(UnifiedVariable.ElemVar Mock.x, Mock.cf)]
                         , term = ()
                         }
-                    ]
             actual <- matchSimplification (mkElemVar Mock.x) Mock.cf
             assertEqual "" expect actual
 
@@ -394,8 +373,7 @@ test_matcherVariableFunction =
         [ testCase "Functional" $ do
             let evaluated = mkEvaluated Mock.functional00
                 expect =
-                    Just . OrCondition.fromCondition
-                    $ Condition.fromSingleSubstitution
+                    (Just . Condition.fromSingleSubstitution)
                         (UnifiedVariable.ElemVar Mock.x, evaluated)
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
             assertEqual "" expect actual
@@ -403,8 +381,7 @@ test_matcherVariableFunction =
         , testCase "Function" $ do
             let evaluated = mkEvaluated Mock.cf
                 expect =
-                    (Just . OrCondition.fromCondition)
-                    (Condition.fromSingleSubstitution
+                    Just (Condition.fromSingleSubstitution
                         (UnifiedVariable.ElemVar Mock.x, evaluated))
                         { predicate = makeCeilPredicate_ evaluated }
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
@@ -429,8 +406,8 @@ test_matcherNonVarToPattern =
 test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults =
     [ testCase "Application" $ do
-        let expect = Just $ MultiOr.make
-                [ Conditional
+        let expect =
+                Just Conditional
                     { predicate = makeCeilPredicate_ Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [ (UnifiedVariable.ElemVar Mock.x, Mock.cf)
@@ -438,7 +415,6 @@ test_matcherMergeSubresults =
                         ]
                     , term = ()
                     }
-                ]
         actual <-
             matchDefinition
                 (Mock.plain20
@@ -482,16 +458,14 @@ test_matching_Bool =
         (mkElemVar Mock.xBool)
     ]
   where
-    top = Just $ OrCondition.fromCondition Condition.topCondition
-    substitution subst = Just $ MultiOr.make
-        [ Conditional
+    top = topCondition
+    substitution subst =
+        Just Conditional
             { term = ()
             , predicate = makeTruePredicate_
             , substitution =
-                Substitution.unsafeWrap
-                    ((fmap . fmap) mkBool subst)
+                Substitution.unsafeWrap ((fmap . fmap) mkBool subst)
             }
-        ]
     mkBool = Bool.asInternal Mock.boolSort
     matchConcrete = matchDefinition `on` mkBool
     matchVariable var val =
@@ -513,16 +487,14 @@ test_matching_Int =
         (mkElemVar xInt)
     ]
   where
-    top = Just $ OrCondition.fromCondition Condition.topCondition
-    substitution subst = Just $ MultiOr.make
-        [ Conditional
+    top = topCondition
+    substitution subst =
+        Just Conditional
             { term = ()
             , predicate = makeTruePredicate_
             , substitution =
-                Substitution.unsafeWrap
-                    ((fmap . fmap) mkInt subst)
+                Substitution.unsafeWrap ((fmap . fmap) mkInt subst)
             }
-        ]
     matchConcrete = matchDefinition `on` mkInt
     matchVariable var val =
         matchDefinition (mkElemVar var) (mkInt val)
@@ -530,7 +502,7 @@ test_matching_Int =
 test_matching_String :: [TestTree]
 test_matching_String =
     [ testCase "concrete top" $ do
-        let expect = topOrPredicate
+        let expect = topCondition
         actual <- matchConcrete "str" "str"
         assertEqual "" expect actual
     , testCase "concrete bottom" $ do
@@ -547,15 +519,13 @@ test_matching_String =
         (mkElemVar Mock.xString)
     ]
   where
-    substitution subst = Just $ MultiOr.make
-        [ Conditional
+    substitution subst =
+        Just Conditional
             { term = ()
             , predicate = makeTruePredicate_
             , substitution =
-                Substitution.unsafeWrap
-                    ((fmap . fmap) mkStr subst)
+                Substitution.unsafeWrap ((fmap . fmap) mkStr subst)
             }
-        ]
     mkStr = String.asInternal Mock.stringSort
     matchConcrete = matchDefinition `on` mkStr
     matchVariable var val =
@@ -824,8 +794,8 @@ test_matching_Pair =
 mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 mkPair = Test.pair
 
-topOrPredicate :: Maybe (OrCondition Variable)
-topOrPredicate = Just $ OrCondition.fromCondition Condition.topCondition
+topCondition :: Maybe (Condition Variable)
+topCondition = Just Condition.topCondition
 
 test_matching_Set :: [TestTree]
 test_matching_Set =
@@ -1023,17 +993,16 @@ mkMap elements opaques =
 matchDefinition
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrCondition Variable))
-matchDefinition term1 term2 =
-    either (const Nothing) Just <$> match term1 term2
+    -> IO (Maybe (Condition Variable))
+matchDefinition = match
 
 matchSimplification
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrCondition Variable))
+    -> IO (Maybe (Condition Variable))
 matchSimplification = matchDefinition
 
-type MatchResult = Either UnificationOrSubstitutionError (OrCondition Variable)
+type MatchResult = Maybe (Condition Variable)
 
 match
     :: TermLike Variable
@@ -1043,10 +1012,7 @@ match first second =
     runSimplifier Mock.env matchResult
   where
     matchResult :: Simplifier MatchResult
-    matchResult =
-        (fmap . fmap) MultiOr.make
-        $ Monad.Unify.runUnifierT
-        $ matchIncremental first second
+    matchResult = matchIncremental first second
 
 withMatch
     :: (MatchResult -> Assertion)
@@ -1060,20 +1026,15 @@ withMatch check comment term1 term2 =
         check actual
 
 doesn'tMatch
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
     -> TestTree
-doesn'tMatch = withMatch (assertBool "" . isUnsupportedPatterns)
-  where
-    isUnsupportedPatterns =
-        \case
-            Left (UnificationError (UnsupportedPatterns !_ !_ !_)) -> True
-            _ -> False
+doesn'tMatch = withMatch (assertBool "" . isNothing)
 
 matches
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -1083,7 +1044,7 @@ matches comment term1 term2 substs =
     matchesAux comment term1 term2 makeTruePredicate_ (Just substs)
 
 matchesP
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -1094,7 +1055,7 @@ matchesP comment term1 term2 predicate substs =
     matchesAux comment term1 term2 predicate (Just substs)
 
 matchesAux
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
@@ -1106,12 +1067,12 @@ matchesAux comment term1 term2 expectPredicate expect =
   where
     solution =
         case expect of
-            Nothing -> OrCondition.bottom
-            Just substs -> OrCondition.fromCondition
+            Nothing -> Condition.bottom
+            Just substs ->
                 Conditional
                     { term = ()
                     , predicate = expectPredicate
                     , substitution = Substitution.unsafeWrap substs
                     }
-    check (Left _) = assertFailure "Expected matching solution."
-    check (Right actual) = assertEqual "" solution actual
+    check Nothing = assertFailure "Expected matching solution."
+    check (Just actual) = assertEqual "" solution actual

@@ -14,6 +14,8 @@ module Kore.Step.Simplification.Equals
     , termEquals
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( MaybeT (..)
     )
@@ -26,7 +28,6 @@ import Data.List
 import Data.Maybe
     ( fromMaybe
     )
-import qualified GHC.Stack as GHC
 
 import Branch
     ( BranchT
@@ -392,7 +393,7 @@ the special cases handled by this.
  -}
 termEquals
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT simplifier (OrCondition variable)
@@ -406,7 +407,7 @@ termEquals first second = MaybeT $ do
 termEqualsAnd
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT (BranchT simplifier) (Pattern variable)

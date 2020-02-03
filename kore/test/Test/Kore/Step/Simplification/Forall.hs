@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Forall
     ( test_forallSimplification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Kore.Internal.OrPattern

@@ -15,6 +15,8 @@ module Kore.Internal.SideCondition
     , toRepresentation
     ) where
 
+import Prelude.Kore
+
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
@@ -109,9 +111,13 @@ andCondition
     => SideCondition variable
     -> Condition variable
     -> SideCondition variable
-andCondition sideCondition@SideCondition {assumedTrue} newCondition =
-    sideCondition
-        { assumedTrue = assumedTrue `Condition.andCondition` newCondition }
+andCondition SideCondition {assumedTrue} newCondition =
+    SideCondition
+        { representation = toRepresentationCondition merged
+        , assumedTrue = merged
+        }
+  where
+    merged = assumedTrue `Condition.andCondition` newCondition
 
 assumeTrueCondition
     :: InternalVariable variable => Condition variable -> SideCondition variable

@@ -2,6 +2,8 @@ module Test.Kore.Strategies.Reachability.Verification
     ( test_reachabilityVerification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default

@@ -9,6 +9,8 @@ module Test.Kore.Parser
     , fails
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     , testGroup

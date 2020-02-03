@@ -5,6 +5,8 @@ module Test.Kore.Builtin.KEqual
     , test_KIte
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty

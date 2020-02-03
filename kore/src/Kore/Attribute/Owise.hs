@@ -8,6 +8,8 @@ module Kore.Attribute.Owise
     , owiseId, owiseSymbol, owiseAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

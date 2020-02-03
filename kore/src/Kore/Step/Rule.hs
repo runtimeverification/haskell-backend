@@ -21,6 +21,8 @@ module Kore.Step.Rule
     , onePathRuleToTerm
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )
@@ -52,7 +54,7 @@ import Kore.Internal.Alias
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-    ( SortedVariable
+    ( InternalVariable
     , Variable
     )
 import Kore.Sort
@@ -95,8 +97,7 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-    ( Unparse
-    , unparse
+    ( unparse
     )
 import qualified Kore.Verified as Verified
 
@@ -366,11 +367,7 @@ termToAxiomPattern attributes pat =
 -}
 
 axiomPatternToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => QualifiedAxiomPattern variable
     -> TermLike.TermLike variable
 axiomPatternToTerm = \case
@@ -436,4 +433,3 @@ mkCeilAxiom child =
   where
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR
-

@@ -21,6 +21,8 @@ module Kore.Step.Simplification.Data
     , evalSimplifier
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.Catch
     ( MonadCatch
     , MonadThrow

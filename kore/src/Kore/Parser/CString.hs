@@ -12,8 +12,9 @@ module Kore.Parser.CString
        , escapeCString
        , escapeCStringT
        , oneCharEscapes
-       , oneCharEscapeDict
        ) where
+
+import Prelude.Kore
 
 import Data.Char
     ( chr
@@ -23,6 +24,10 @@ import Data.Char
     , ord
     , toUpper
     )
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -32,13 +37,11 @@ import Numeric
     , showOct
     )
 
-import Kore.Parser.CharSet as CharSet
+oneCharEscapes :: Set Char
+oneCharEscapes = Set.fromList "'\"?\\abfnrtv"
 
-oneCharEscapes :: [Char]
-oneCharEscapes = "'\"?\\abfnrtv"
-
-oneCharEscapeDict :: CharSet
-oneCharEscapeDict = makeCharSet oneCharEscapes
+isOneCharEscape :: Char -> Bool
+isOneCharEscape c = Set.member c oneCharEscapes
 
 escapeCString :: String -> String
 escapeCString s = foldr ((.) . escapeAndAddChar) id s ""
@@ -116,7 +119,7 @@ i.e. @\@ and continues the unescape of the string.
 -}
 unescapePrefixAndContinue :: String -> Either String String
 unescapePrefixAndContinue (c:cs)
-  | c `CharSet.elem` oneCharEscapeDict =
+  | isOneCharEscape c =
       (:) <$> unescapeOne c <*> unescapeCString cs
   | isOctDigit c =
       let (octs,rest) = span isOctDigit cs

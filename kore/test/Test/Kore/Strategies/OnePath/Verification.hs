@@ -2,6 +2,8 @@ module Test.Kore.Strategies.OnePath.Verification
     ( test_onePathVerification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default

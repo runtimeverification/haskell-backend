@@ -12,6 +12,8 @@ module Kore.ASTVerifier.ModuleVerifier
     , verifyUniqueNames
     ) where
 
+import Prelude.Kore
+
 import Control.Lens
     ( (%=)
     )
@@ -20,7 +22,6 @@ import qualified Control.Monad.Reader.Class as Reader
 import qualified Control.Monad.State.Class as State
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Generics.Product
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map

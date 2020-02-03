@@ -11,6 +11,8 @@ module Kore.Attribute.Comm
     , commId, commSymbol, commAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

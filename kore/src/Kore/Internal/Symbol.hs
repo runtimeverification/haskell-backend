@@ -32,6 +32,8 @@ module Kore.Internal.Symbol
     , module Kore.Internal.ApplicationSorts
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import qualified Control.Lens as Lens hiding
     ( makeLenses

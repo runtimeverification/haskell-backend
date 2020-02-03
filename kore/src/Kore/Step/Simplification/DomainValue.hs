@@ -11,6 +11,8 @@ module Kore.Step.Simplification.DomainValue
     ( simplify
     ) where
 
+import Prelude.Kore
+
 import Kore.Internal.Conditional
     ( Conditional
     )

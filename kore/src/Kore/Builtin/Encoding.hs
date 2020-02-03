@@ -10,6 +10,8 @@ module Kore.Builtin.Encoding
     , toBase16
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

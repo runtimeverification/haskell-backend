@@ -15,6 +15,8 @@ module Kore.ASTVerifier.AttributesVerifier
     , parseAttributes
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 

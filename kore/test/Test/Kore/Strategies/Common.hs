@@ -4,6 +4,8 @@ module Test.Kore.Strategies.Common
     , runVerificationToPattern
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.Trans.Except
     ( runExceptT
     )
@@ -35,7 +37,7 @@ import Kore.Strategies.Verification
     )
 import qualified Kore.Strategies.Verification as Verification
 import Kore.Unparser
-    ( unparseToText
+    ( unparseToText2
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -93,7 +95,7 @@ runVerification breadthLimit depthLimit axioms claims alreadyProven =
         BreadthFirst
         (AllClaims claims)
         (Axioms axioms)
-        (AlreadyProven (map unparseToText alreadyProven))
+        (AlreadyProven (map unparseToText2 alreadyProven))
         (ToProve (map applyDepthLimit . selectUntrusted $ claims))
   where
     mockEnv = Mock.env

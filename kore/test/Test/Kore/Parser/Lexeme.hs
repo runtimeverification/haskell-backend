@@ -1,5 +1,7 @@
 module Test.Kore.Parser.Lexeme (test_koreLexeme) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     , testGroup
@@ -74,7 +76,8 @@ idParserTests =
                 \  |\n\
                 \1 | [\n\
                 \  | ^\n\
-                \genericIdRawParser: Invalid first character '['.\n"
+                \unexpected '['\n\
+                \expecting first identifier character\n"
             }
         , Failure FailureTest
             { failureInput = "module"

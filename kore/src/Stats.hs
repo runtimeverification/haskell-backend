@@ -11,6 +11,8 @@ module Stats
     , readStats
     ) where
 
+import Prelude.Kore
+
 import Data.Aeson
     ( FromJSON
     , ToJSON

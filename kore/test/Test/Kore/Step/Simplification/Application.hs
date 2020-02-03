@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Application
     ( test_applicationSimplification
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.List as List

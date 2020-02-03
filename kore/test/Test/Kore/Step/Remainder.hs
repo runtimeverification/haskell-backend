@@ -2,6 +2,8 @@ module Test.Kore.Step.Remainder
     ( test_existentiallyQuantifyTarget
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Kore.Internal.Predicate

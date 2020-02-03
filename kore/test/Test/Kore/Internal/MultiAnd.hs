@@ -3,6 +3,8 @@ module Test.Kore.Internal.MultiAnd
     , test_multiAndMake
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Generics.SOP as SOP

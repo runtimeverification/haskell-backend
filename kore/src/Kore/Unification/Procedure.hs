@@ -11,6 +11,8 @@ module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( empty
     )

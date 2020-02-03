@@ -10,6 +10,8 @@ module Kore.Step.Remainder
     , ceilChildOfApplicationOrTop
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

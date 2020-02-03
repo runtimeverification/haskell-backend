@@ -2,10 +2,10 @@ module Test.Kore.Attribute.Pattern.Functional
     ( test_instance_Synthetic
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
-
-import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic
@@ -104,7 +104,7 @@ test_instance_Synthetic =
     range = [functional, nonFunctional]
 
     check
-        :: (GHC.HasCallStack, Synthetic Functional term)
+        :: (HasCallStack, Synthetic Functional term)
         => TestName
         -> (Functional -> Bool)
         -> term Functional
@@ -115,21 +115,21 @@ test_instance_Synthetic =
             assertBool "" (checking actual)
 
     is
-        ::  ( GHC.HasCallStack
+        ::  ( HasCallStack
             , Synthetic Functional term
             )
         => term Functional -> TestTree
     is = check "Functional pattern" isFunctional
 
     isn't
-        ::  ( GHC.HasCallStack
+        ::  ( HasCallStack
             , Synthetic Functional term
             )
         => term Functional -> TestTree
     isn't = check "Non-functional pattern" (not . isFunctional)
 
     expect
-        :: GHC.HasCallStack
+        :: HasCallStack
         => Functional
         -> TermLikeF Variable Functional
         -> TestTree

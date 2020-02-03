@@ -20,6 +20,8 @@ module Test.Kore.Builtin.Builtin
     , runSMT
     ) where
 
+import Prelude.Kore
+
 import qualified Hedgehog
 import Test.Tasty
     ( TestTree
@@ -33,9 +35,6 @@ import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
 import qualified Control.Monad.Trans as Trans
-import Data.Function
-    ( (&)
-    )
 import Data.Map.Strict
     ( Map
     )

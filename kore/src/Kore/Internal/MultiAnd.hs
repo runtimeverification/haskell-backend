@@ -18,6 +18,8 @@ module Kore.Internal.MultiAnd
     , toPredicate
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )

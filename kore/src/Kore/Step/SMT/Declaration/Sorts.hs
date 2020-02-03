@@ -10,6 +10,8 @@ module Kore.Step.SMT.Declaration.Sorts
     ( declare
     ) where
 
+import Prelude.Kore
+
 import Data.Either
     ( partitionEithers
     )

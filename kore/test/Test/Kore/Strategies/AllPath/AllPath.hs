@@ -8,6 +8,8 @@ module Test.Kore.Strategies.AllPath.AllPath
     , test_runStrategy
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Applicative
@@ -16,9 +18,6 @@ import Control.Monad.Catch
     , MonadThrow (throwM)
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( (&)
-    )
 import Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
 import Data.Limit

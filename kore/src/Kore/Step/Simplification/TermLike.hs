@@ -9,6 +9,8 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
@@ -25,7 +27,6 @@ import Data.Maybe
     )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import qualified Branch as BranchT
     ( gather
@@ -167,7 +168,7 @@ import Kore.Variables.UnifiedVariable
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    ::  ( GHC.HasCallStack
+    ::  ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -182,7 +183,7 @@ simplify patt sideCondition = do
 'OrPattern'.
 -}
 simplifyToOr
-    ::  ( GHC.HasCallStack
+    ::  ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -198,7 +199,7 @@ simplifyToOr sideCondition term =
 
 simplifyInternal
     ::  forall variable simplifier
-    .   ( GHC.HasCallStack
+    .   ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -217,6 +218,7 @@ simplifyInternal term sideCondition = do
                 , "result = "
                 ]
             ++ map unparseToString (OrPattern.toPatterns result)
+            ++ map show (OrPattern.toPatterns result)
             )
         )
     return result
@@ -351,12 +353,19 @@ simplifyInternal term sideCondition = do
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
           = return
-                (OrPattern.fromTermLike (TermLike.markSimplified resultTerm))
+                (OrPattern.fromTermLike
+                    (TermLike.markSimplifiedConditional
+                        sideConditionRepresentation
+                        resultTerm
+                    )
+                )
           | isTop resultTerm && Right resultPredicate == termAsPredicate
           = return
                 $ OrPattern.fromPattern
                 $ Pattern.fromCondition
-                $ Condition.markPredicateSimplified resultPredicate
+                $ Condition.markPredicateSimplifiedConditional
+                    sideConditionRepresentation
+                    resultPredicate
           | otherwise = continuation
           where
             (resultTerm, resultPredicate) = Pattern.splitTerm result

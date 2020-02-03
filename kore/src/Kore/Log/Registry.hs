@@ -21,6 +21,8 @@ module Kore.Log.Registry
     , warnSimplificationWithRemainderType
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( empty
     )

@@ -20,6 +20,8 @@ module Debug
     , formatExceptionInfo
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
 import Data.ByteString
     ( ByteString
@@ -92,8 +94,7 @@ import Generics.SOP
     )
 import qualified Generics.SOP as SOP
 import GHC.Stack
-    ( HasCallStack
-    , callStack
+    ( callStack
     , prettyCallStack
     )
 import qualified GHC.Stack as GHC

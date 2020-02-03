@@ -2,6 +2,8 @@ module Test.Kore.Step.SMT.Sorts
     ( test_sortDeclaration
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Text

@@ -11,14 +11,13 @@ module Kore.Unification.SubstitutionSimplifier
     , module Kore.Step.Simplification.SubstitutionSimplifier
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
 import Control.Error
     ( maybeT
-    )
-import Data.Function
-    ( (&)
     )
 
 import qualified Branch as BranchT

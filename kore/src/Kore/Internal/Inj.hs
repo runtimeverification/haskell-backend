@@ -12,13 +12,12 @@ module Kore.Internal.Inj
     , unorderedInj
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import Control.Exception
     ( Exception (..)
     , throw
-    )
-import Data.Function
-    ( (&)
     )
 import qualified Data.Function as Function
 import Data.Hashable

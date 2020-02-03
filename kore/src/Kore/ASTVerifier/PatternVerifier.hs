@@ -13,15 +13,14 @@ module Kore.ASTVerifier.PatternVerifier
     , module Kore.ASTVerifier.PatternVerifier.PatternVerifier
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set

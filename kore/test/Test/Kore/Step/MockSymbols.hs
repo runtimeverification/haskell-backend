@@ -23,12 +23,13 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
+import Prelude.Kore
+
 import Control.Applicative
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Either as Either
-import Data.Function
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -37,7 +38,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified GHC.Stack as GHC
 
 import Data.Sup
 import Kore.Attribute.Hook
@@ -723,7 +723,7 @@ e = Internal.mkApplySymbol eSymbol []
 
 f, g, h
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 f arg = Internal.mkApplySymbol fSymbol [arg]
@@ -732,7 +732,7 @@ h arg = Internal.mkApplySymbol hSymbol [arg]
 
 fSort0, gSort0
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 fSort0 arg = Internal.mkApplySymbol fSort0Symbol [arg]
@@ -758,21 +758,21 @@ ch = Internal.mkApplySymbol chSymbol []
 
 fSet
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 fSet arg = Internal.mkApplySymbol fSetSymbol [arg]
 
 fTestInt
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
 
 fInt
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 fInt arg = Internal.mkApplySymbol fIntSymbol [arg]
@@ -794,7 +794,7 @@ plain00SubSubsort = Internal.mkApplySymbol plain00SubSubsortSymbol []
 
 plain10, plain11
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 plain10 arg = Internal.mkApplySymbol plain10Symbol [arg]
@@ -807,12 +807,12 @@ plain20
     -> TermLike variable
 plain20 arg1 arg2 = Internal.mkApplySymbol plain20Symbol [arg1, arg2]
 
-constr00 :: InternalVariable variable => GHC.HasCallStack => TermLike variable
+constr00 :: InternalVariable variable => HasCallStack => TermLike variable
 constr00 = Internal.mkApplySymbol constr00Symbol []
 
 constr10, constr11
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 constr10 arg = Internal.mkApplySymbol constr10Symbol [arg]
@@ -835,7 +835,7 @@ constrFunct20TestMap arg1 arg2 =
 
 function20MapTest
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -850,7 +850,7 @@ functional01 = Internal.mkApplySymbol functional01Symbol []
 
 functional10
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 functional10 arg = Internal.mkApplySymbol functional10Symbol [arg]
@@ -863,7 +863,7 @@ functional11 arg = Internal.mkApplySymbol functional11Symbol [arg]
 
 functional20
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -875,14 +875,14 @@ functional00SubSubSort =
 
 functionalInjective00
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
 functionalInjective00 =
     Internal.mkApplySymbol functionalInjective00Symbol []
 
 functionalConstr10
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 functionalConstr10 arg =
@@ -890,7 +890,7 @@ functionalConstr10 arg =
 
 functionalConstr11
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 functionalConstr11 arg = Internal.mkApplySymbol functionalConstr11Symbol [arg]
@@ -903,7 +903,7 @@ functionalConstr12 arg = Internal.mkApplySymbol functionalConstr12Symbol [arg]
 
 functionalConstr20
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -912,7 +912,7 @@ functionalConstr20 arg1 arg2 =
 
 functionalConstr21
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -930,7 +930,7 @@ functionalConstr30 arg1 arg2 arg3 =
 
 functionalTopConstr20
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -939,7 +939,7 @@ functionalTopConstr20 arg1 arg2 =
 
 functionalTopConstr21
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -948,7 +948,7 @@ functionalTopConstr21 arg1 arg2 =
 
 subsubOverload
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 subsubOverload arg1 =
@@ -956,7 +956,7 @@ subsubOverload arg1 =
 
 subOverload
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 subOverload arg1 =
@@ -964,7 +964,7 @@ subOverload arg1 =
 
 otherOverload
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 otherOverload arg1 =
@@ -972,7 +972,7 @@ otherOverload arg1 =
 
 topOverload
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 topOverload arg1 =
@@ -980,14 +980,14 @@ topOverload arg1 =
 
 injective10
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 injective10 arg = Internal.mkApplySymbol injective10Symbol [arg]
 
 injective11
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 injective11 arg = Internal.mkApplySymbol injective11Symbol [arg]
@@ -1082,7 +1082,7 @@ unitMap = Internal.mkApplySymbol unitMapSymbol []
 
 elementMap
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1090,7 +1090,7 @@ elementMap m1 m2 = Internal.mkApplySymbol elementMapSymbol [m1, m2]
 
 concatMap
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1101,14 +1101,14 @@ unitSet = Internal.mkApplySymbol unitSetSymbol []
 
 elementSet
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 elementSet s1 = Internal.mkApplySymbol elementSetSymbol [s1]
 
 concatSet
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1116,7 +1116,7 @@ concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
 
 lessInt
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1124,7 +1124,7 @@ lessInt i1 i2 = Internal.mkApplySymbol lessIntSymbol [i1, i2]
 
 greaterEqInt
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1132,7 +1132,7 @@ greaterEqInt i1 i2 = Internal.mkApplySymbol greaterEqIntSymbol [i1, i2]
 
 tdivInt
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1140,7 +1140,7 @@ tdivInt i1 i2 = Internal.mkApplySymbol tdivIntSymbol [i1, i2]
 
 concatList
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1148,20 +1148,20 @@ concatList l1 l2 = Internal.mkApplySymbol concatListSymbol [l1, l2]
 
 elementList
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
 elementList element = Internal.mkApplySymbol elementListSymbol [element]
 
 unitList
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
 unitList = Internal.mkApplySymbol unitListSymbol []
 
 sigma
     :: InternalVariable variable
-    => GHC.HasCallStack
+    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1685,7 +1685,7 @@ emptyMetadataTools =
         emptySmtDeclarations
         Map.empty -- sortConstructors
 
-metadataTools :: GHC.HasCallStack => SmtMetadataTools Attribute.Symbol
+metadataTools :: HasCallStack => SmtMetadataTools Attribute.Symbol
 metadataTools =
     Mock.makeMetadataTools
         attributesMapping

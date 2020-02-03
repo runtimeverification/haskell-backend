@@ -2,6 +2,8 @@ module Test.Kore.Builtin.Encoding
     ( test_decodeEncode
     ) where
 
+import Prelude.Kore
+
 import Hedgehog hiding
     ( Concrete
     )

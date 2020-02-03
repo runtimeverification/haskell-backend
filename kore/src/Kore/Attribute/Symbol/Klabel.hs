@@ -9,6 +9,8 @@ module Kore.Attribute.Symbol.Klabel
     , klabelId, klabelSymbol, klabelAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad as Monad
 import qualified Data.Maybe as Maybe
 import Data.Text

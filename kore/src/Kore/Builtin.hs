@@ -34,8 +34,9 @@ module Kore.Builtin
     , renormalize
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
-import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.Map.Strict

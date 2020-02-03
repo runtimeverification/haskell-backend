@@ -5,12 +5,12 @@ module Test.Kore.Step.Simplification.Or
     , test_valueProperties
     ) where
 
+import Prelude.Kore
+
 import Test.Kore
     ( testId
     )
 import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Terse
 
 import qualified Data.List as List
 import Data.Text
@@ -44,6 +44,7 @@ import Kore.Variables.UnifiedVariable
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Terse
 
 -- * Part 1: 'simplifyEvaluated'
 

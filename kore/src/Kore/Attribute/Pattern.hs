@@ -16,6 +16,7 @@ module Kore.Attribute.Pattern
     , isSimplified
     , setSimplified
     , simplifiedAttribute
+    , constructorLikeAttribute
     -- * Re-exports
     , module Kore.Attribute.Pattern.Created
     , module Kore.Attribute.Pattern.Defined
@@ -24,6 +25,8 @@ module Kore.Attribute.Pattern
     , module Kore.Attribute.Pattern.Functional
     , module Kore.Attribute.Pattern.Simplified
     ) where
+
+import Prelude.Kore
 
 import Control.DeepSeq
     ( NFData
@@ -136,6 +139,9 @@ instance HasConstructorLike (Pattern variable) where
 simplifiedAttribute :: HasCallStack => Pattern variable -> Simplified
 simplifiedAttribute patt@Pattern {simplified} =
     assertSimplifiedConsistency patt simplified
+
+constructorLikeAttribute :: Pattern variable -> ConstructorLike
+constructorLikeAttribute Pattern {constructorLike} = constructorLike
 
 {- Checks whether the pattern is simplified relative to the given side
 condition.

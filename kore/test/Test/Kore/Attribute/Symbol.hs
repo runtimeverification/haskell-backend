@@ -7,6 +7,8 @@ module Test.Kore.Attribute.Symbol
     , test_NoEvaluators
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )
@@ -19,9 +21,6 @@ import Test.Tasty.HUnit
 
 import Data.Default
     ( def
-    )
-import Data.Function
-    ( (&)
     )
 import Data.Generics.Product
 

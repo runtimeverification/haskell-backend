@@ -35,6 +35,8 @@ module Kore.Step.Simplification.Simplify
     , isConstructorOrOverloaded
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -63,7 +65,6 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Attribute.Pattern as Attribute
@@ -85,6 +86,9 @@ import Kore.Internal.Pattern
     )
 import Kore.Internal.SideCondition
     ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -264,7 +268,7 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable m
-        . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        . (HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
@@ -274,7 +278,7 @@ newtype TermLikeSimplifier =
  -}
 simplifyConditionalTermToOr
     :: forall variable simplifier
-    .   ( GHC.HasCallStack
+    .   ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -289,7 +293,7 @@ simplifyConditionalTermToOr sideCondition termLike = do
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
-    .   ( GHC.HasCallStack
+    .   ( HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
@@ -308,7 +312,7 @@ simplification, but only attaches it unmodified to the final result.
  -}
 termLikeSimplifier
     ::  ( forall variable m
-        . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        . (HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> m (OrPattern variable)
@@ -319,7 +323,7 @@ termLikeSimplifier simplifier =
   where
     termLikeSimplifierWorker
         :: forall variable m
-        .  (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        .  (HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
@@ -497,9 +501,21 @@ instance Ord variable => Monoid (AttemptedAxiomResults variable) where
 
 {-| 'AttemptedAxiom' holds the result of axiom-based simplification, with
 a case for axioms that can't be applied.
+
+If an axiom does not match, or the requires clause is not satisfiable, then
+the result is NotApplicable.
+
+Otherwise, if the requires clause is satisfiable, but it's not implied by the
+side condition, then, for simplification axioms, the result is
+NotApplicableUntilConditionChanges.
+
+Otherwise, the result is Applied.
 -}
 data AttemptedAxiom variable
     = NotApplicable
+    | NotApplicableUntilConditionChanges !SideCondition.Representation
+    -- ^ The axiom(s) can't be applied with the given side condition, but
+    -- we may be able to apply them when the side condition changes.
     | Applied !(AttemptedAxiomResults variable)
     deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -516,10 +532,12 @@ instance
     => Diff (AttemptedAxiom variable)
 
 isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
-isApplicable (Applied _) = True
-isApplicable _           = False
-isNotApplicable NotApplicable = True
-isNotApplicable _             = False
+isApplicable (Applied _)                            = True
+isApplicable NotApplicable                          = False
+isApplicable (NotApplicableUntilConditionChanges _) = False
+isNotApplicable NotApplicable                          = True
+isNotApplicable (NotApplicableUntilConditionChanges _) = False
+isNotApplicable (Applied _)                            = False
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
@@ -537,6 +555,7 @@ A 'NotApplicable' result is not considered to have remainders.
 hasRemainders :: AttemptedAxiom variable -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
+hasRemainders (NotApplicableUntilConditionChanges _) = False
 
 {- | Return a 'NotApplicable' result for a failing 'MaybeT' action.
  -}

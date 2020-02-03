@@ -39,7 +39,10 @@ module Kore.Internal.Predicate
     , makeTruePredicate_
     , isSimplified
     , markSimplified
+    , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
+    , Kore.Internal.Predicate.forgetSimplified
     , simplifiedAttribute
     , isFreeOf
     , freeElementVariables
@@ -54,6 +57,8 @@ module Kore.Internal.Predicate
     , wrapPredicate
     , substitute
     ) where
+
+import Prelude.Kore
 
 import Control.DeepSeq
     ( NFData
@@ -104,6 +109,8 @@ import Kore.Internal.TermLike hiding
     , isSimplified
     , mapVariables
     , markSimplified
+    , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
     , simplifiedAttribute
     , substitute
@@ -726,11 +733,35 @@ markSimplified
 markSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.markSimplified termLike)
 
+markSimplifiedConditional
+    :: (HasCallStack, InternalVariable variable)
+    => SideCondition.Representation
+    -> Predicate variable
+    -> Predicate variable
+markSimplifiedConditional sideCondition (GenericPredicate termLike) =
+    GenericPredicate
+        (TermLike.markSimplifiedConditional sideCondition termLike)
+
+markSimplifiedMaybeConditional
+    :: (HasCallStack, InternalVariable variable)
+    => Maybe SideCondition.Representation
+    -> Predicate variable
+    -> Predicate variable
+markSimplifiedMaybeConditional maybeSideCondition (GenericPredicate termLike) =
+    GenericPredicate
+        (TermLike.markSimplifiedMaybeConditional maybeSideCondition termLike)
+
 setSimplified
     :: InternalVariable variable
     => Attribute.Simplified -> Predicate variable -> Predicate variable
 setSimplified simplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.setSimplified simplified termLike)
+
+forgetSimplified
+    :: InternalVariable variable
+    => Predicate variable -> Predicate variable
+forgetSimplified (GenericPredicate termLike) =
+    GenericPredicate (TermLike.forgetSimplified termLike)
 
 -- |Is the predicate free of the given variables?
 isFreeOf

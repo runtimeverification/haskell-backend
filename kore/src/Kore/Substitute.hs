@@ -9,11 +9,10 @@ module Kore.Substitute
     , substitute
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( (&)
-    )
 import Data.Functor.Foldable
     ( Corecursive
     , Recursive

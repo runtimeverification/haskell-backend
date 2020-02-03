@@ -1,41 +1,30 @@
 module Test.Kore.Step.EquationalStep
     ( test_applyEquationalRule_
-    , test_applyEquationalRulesSequence
     ) where
+
+import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Control.Exception as Exception
 import Data.Default as Default
     ( def
     )
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.MultiOr
-    ( MultiOr
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate
+    ( makeEqualsPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate_
-    , makeNotPredicate
-    , makeTruePredicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
-    )
-import Kore.Internal.Substitution
-    ( Normalization (..)
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -44,32 +33,21 @@ import Kore.Step.EqualityPattern as EqualityPattern
     , EqualityRule (..)
     , equalityPattern
     )
-import Kore.Step.EquationalStep
-    ( UnificationProcedure (..)
-    )
 import qualified Kore.Step.EquationalStep as Step
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
 import qualified Kore.Step.Step as Step
-    ( gatherResults
-    , remainders
-    , result
+    ( result
     , results
     )
 import Kore.Unification.Error
-    ( SubstitutionError (..)
-    , UnificationOrSubstitutionError (..)
-    , unsupportedPatterns
+    ( UnificationOrSubstitutionError (..)
     )
-import qualified Kore.Unification.Procedure as Unification
 import Kore.Unification.UnifierT
     ( MonadUnify
     , SimplifierVariable
     , runUnifierT
-    )
-import Kore.Variables.Fresh
-    ( nextVariable
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -144,20 +122,13 @@ test_applyEquationalRule_ =
 
     , testCase "merge configuration patterns" $ do
         let term = Mock.functionalConstr10 (mkElemVar Mock.y)
-            expect = Right
-                [ OrPattern.fromPatterns [initial { term, substitution }] ]
-              where
-                substitution = Substitution.wrap [ (ElemVar Mock.x, term) ]
+            expect = Right [] -- rule does not match
             initial = Pattern.fromTermLike (Mock.sigma (mkElemVar Mock.x) term)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
 
     , testCase "substitution with symbol matching" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = fz, substitution }] ]
-              where
-                substitution =
-                    Substitution.wrap [ (ElemVar Mock.y, mkElemVar Mock.z) ]
+        let expect = Right [] -- rule does not match
             fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
             initial = Pattern.fromTermLike (Mock.sigma fy fz)
@@ -165,60 +136,12 @@ test_applyEquationalRule_ =
         assertEqual "" expect actual
 
     , testCase "merge multiple variables" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = yy, substitution }] ]
-              where
-                substitution =
-                    Substitution.wrap [ (ElemVar Mock.x, mkElemVar Mock.y) ]
+        let expect = Right [] -- rule does not match
             xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             yx = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.x)
-            yy = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y)
             initial = Pattern.fromTermLike (Mock.sigma xy yx)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaXXYY
         assertEqual "" expect actual
-
-    , testCase "Apply non-function-like rule in parallel" $ do
-        let
-            initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
-        result <- Exception.try $ applyEquationalRuleParallel_
-                                    initial
-                                    axiomSigmaTopId
-        case result of
-            Left (Exception.ErrorCall _) -> return ()
-            Right _ -> assertFailure "Expected error"
-
-    , testCase "Apply list containing non-function-like rule in parallel" $ do
-        let
-            initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
-        result <- Exception.try $ applyEquationalRules_
-                                    applyEquationalRulesSequence
-                                    initial
-                                    [axiomCaseA, axiomSigmaTopId]
-        case result of
-            Left (Exception.ErrorCall _) -> return ()
-            Right _ -> assertFailure "Expected error"
-
-    , testCase "Apply non-function-like rule in sequence" $ do
-        let
-            initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
-        result <- Exception.try $ applyEquationalRule_
-                                    applyEquationalRulesSequence
-                                    initial
-                                    axiomSigmaTopId
-        case result of
-            Left (Exception.ErrorCall _) -> return ()
-            Right _ -> assertFailure "Expected error"
-
-    , testCase "Apply list containing non-function-like rule in sequence" $ do
-        let
-            initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
-        result <- Exception.try $ applyEquationalRules_
-                                    applyEquationalRulesSequence
-                                    initial
-                                    [axiomCaseA, axiomSigmaTopId]
-        case result of
-            Left (Exception.ErrorCall _) -> return ()
-            Right _ -> assertFailure "Expected error"
 
     , testCase "symbol clash" $ do
         let expect = Right mempty
@@ -261,13 +184,8 @@ test_applyEquationalRule_ =
     -- vs
     -- sigma(a, h(b)) with substitution b=a
     , testCase "circular dependency error" $ do
-        let expect =
-                -- TODO(virgil): This should probably be a normal result with
-                -- b=h(b) in the predicate.
-                Left . SubstitutionError
-                $ SimplifiableCycle [ElemVar Mock.y] normalization
+        let expect = Right []  -- rule does not match
             fy = Mock.functional10 (mkElemVar Mock.y)
-            normalization = mempty { denormalized = [(ElemVar Mock.y, fy)] }
             initial =
                 Conditional
                     { term = Mock.sigma (mkElemVar Mock.x) fy
@@ -282,10 +200,7 @@ test_applyEquationalRule_ =
     -- vs
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
-        let expect = Left $ UnificationError $ unsupportedPatterns
-                "Unknown unification case."
-                (mkElemVar (nextVariable <$> Mock.x))
-                (Mock.plain10 (mkElemVar Mock.y))
+        let expect = Right []  -- rule does not match
             initial = pure $
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
@@ -295,22 +210,9 @@ test_applyEquationalRule_ =
     -- vs
     -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
     , testCase "unify all children" $ do
-        let expect =
-                Right
-                    [ OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.sigma zz zz
-                            , predicate = makeTruePredicate Mock.testSort
-                            , substitution = Substitution.wrap
-                                [ (ElemVar Mock.x, zz)
-                                , (ElemVar Mock.y, mkElemVar Mock.z)
-                                ]
-                            }
-                        ]
-                    ]
+        let expect = Right []  -- rule does not match
             xx = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x)
             yy = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y)
-            zz = Mock.sigma (mkElemVar Mock.z) (mkElemVar Mock.z)
             yz = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z)
             initial = pure $ Mock.sigma xx (Mock.sigma yz yy)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
@@ -323,17 +225,7 @@ test_applyEquationalRule_ =
     , testCase "normalize substitution" $ do
         let
             fb = Mock.functional10 (mkElemVar Mock.y)
-            expect =
-                Right
-                    [ OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.sigma fb fb
-                            , predicate = makeTruePredicate Mock.testSort
-                            , substitution =
-                                Substitution.wrap [(ElemVar Mock.x, fb)]
-                            }
-                        ]
-                    ]
+            expect = Right []  -- rule does not match
             initial = pure $
                 Mock.sigma(Mock.sigma (mkElemVar Mock.x) fb) (mkElemVar Mock.x)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaXXY
@@ -347,20 +239,7 @@ test_applyEquationalRule_ =
         let
             fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
-            expect =
-                Right
-                    [ OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.sigma fz fz
-                            , predicate = makeTruePredicate Mock.testSort
-                            , substitution =
-                                Substitution.wrap
-                                    [ (ElemVar Mock.x, fz)
-                                    , (ElemVar Mock.y, mkElemVar Mock.z)
-                                    ]
-                            }
-                        ]
-                    ]
+            expect = Right []  -- rule does not match
             initial =
                 Conditional
                     { term =
@@ -413,20 +292,7 @@ test_applyEquationalRule_ =
     , testCase "normalize substitution with initial condition" $ do
         let
             fb = Mock.functional10 (mkElemVar Mock.y)
-            expect =
-                Right
-                    [ OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.sigma fb fb
-                            , predicate =
-                                makeEqualsPredicate Mock.testSort
-                                    (Mock.functional11 fb)
-                                    (Mock.functional10 fb)
-                            , substitution =
-                                Substitution.wrap [(ElemVar Mock.x, fb)]
-                            }
-                        ]
-                    ]
+            expect = Right []  -- rule does not match
             initial =
                 Conditional
                     { term =
@@ -551,11 +417,6 @@ test_applyEquationalRule_ =
             (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
             (mkElemVar Mock.x)
 
-    axiomSigmaTopId =
-        EqualityRule $ equalityPattern
-            (Mock.sigma (mkElemVar Mock.x) mkTop_)
-            (mkElemVar Mock.x)
-
     axiomSigmaXXYY =
         EqualityRule $ equalityPattern
             (Mock.sigma
@@ -572,66 +433,20 @@ test_applyEquationalRule_ =
             )
             (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y))
 
-checkResults
-    :: HasCallStack
-    => MultiOr (Pattern Variable)
-    -> Step.Results EqualityPattern Variable
-    -> Assertion
-checkResults expect actual =
-    assertEqual "compare results"
-        expect
-        (Step.gatherResults actual)
-
-checkRemainders
-    :: HasCallStack
-    => MultiOr (Pattern Variable)
-    -> Step.Results EqualityPattern Variable
-    -> Assertion
-checkRemainders expect actual =
-    assertEqual "compare remainders"
-        expect
-        (Step.remainders actual)
-
-axiomCaseA :: EqualityRule Variable
-axiomCaseA =
-    EqualityRule $ equalityPattern
-        (Mock.functionalConstr30
-                Mock.a
-                (mkElemVar Mock.y)
-                (mkElemVar Mock.z)
-        )
-        (mkElemVar Mock.y)
-
-axiomCaseB :: EqualityRule Variable
-axiomCaseB =
-    EqualityRule $ equalityPattern
-        (Mock.functionalConstr30
-                Mock.b
-                (mkElemVar Mock.y)
-                (mkElemVar Mock.z)
-        )
-        (mkElemVar Mock.z)
-
-axiomsCase :: [EqualityRule Variable]
-axiomsCase = [axiomCaseA, axiomCaseB]
-
 applyEquationalRulesSequence_
     :: forall unifier variable
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => UnificationProcedure
-    -> Pattern variable
+    => Pattern variable
     -- ^ Configuration being rewritten
     -> [EqualityRule variable]
     -- ^ Rewrite rules
     -> unifier (Step.Results EqualityPattern variable)
 applyEquationalRulesSequence_
-    unificationProcedure
     (Step.toConfigurationVariables -> initialConfig)
     (map getEqualityRule -> rules)
   = do
     results <- Step.applyRulesSequence
-        unificationProcedure
         SideCondition.top
         (simplifiedPattern initialConfig)
         rules
@@ -654,80 +469,4 @@ applyEquationalRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
     $ runSimplifier Mock.env
     $ runUnifierT
-    $ applyEquationalRulesSequence_ unificationProcedure initial rules
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
-
-test_applyEquationalRulesSequence :: [TestTree]
-test_applyEquationalRulesSequence =
-    [ testCase "case _ of a -> _; b -> _ -- partial" $ do
-        -- This uses `functionalConstr30(x, y, z)` to represent a case
-        -- statement,
-        -- i.e. `case x of 1 -> y; 2 -> z`
-        -- and `a`, `b` as the case labels.
-        --
-        -- Intended:
-        --   term: case x of 1 -> cf; 2 -> cg
-        --   axiom: case 1 of 1 -> cf; 2 -> cg => cf
-        --   axiom: case 2 of 1 -> cf; 2 -> cg => cg
-        -- Actual:
-        --   term: constr30(x, cg, cf)
-        --   axiom: constr30(a, y, z) => y
-        --   axiom: constr30(b, y, z) => z
-        -- Expected:
-        --   rewritten: cf, with (⌈cf⌉ and ⌈cg⌉) and [x=a]
-        --   rewritten: cg, with (⌈cf⌉ and ⌈cg⌉) and [x=b]
-        --   remainder:
-        --     constr20(x, cf, cg)
-        --        with ¬(⌈cf⌉ and [x=a])
-        --         and ¬(⌈cg⌉ and [x=b])
-        let
-            definedBranches =
-                makeAndPredicate
-                    (makeCeilPredicate Mock.testSort Mock.cf)
-                    (makeCeilPredicate_ Mock.cg)
-            results =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = Mock.cf
-                        , predicate = definedBranches
-                        , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.a)]
-                        }
-                    , Conditional
-                        { term = Mock.cg
-                        , predicate = definedBranches
-                        , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.b)]
-                        }
-                    ]
-            remainders =
-                OrPattern.fromPatterns
-                    [ initial
-                        { predicate =
-                            Predicate.makeAndPredicate
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeAndPredicate
-                                        definedBranches
-                                        (Predicate.makeEqualsPredicate_
-                                            (mkElemVar Mock.x)
-                                            Mock.a
-                                        )
-                                )
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeAndPredicate
-                                        definedBranches
-                                        (Predicate.makeEqualsPredicate_
-                                            (mkElemVar Mock.x)
-                                            Mock.b
-                                        )
-                                )
-                        }
-                    ]
-            initialTerm =
-                Mock.functionalConstr30 (mkElemVar Mock.x) Mock.cf Mock.cg
-            initial = pure initialTerm
-        Right actual <- applyEquationalRulesSequence initial axiomsCase
-        checkResults results actual
-        checkRemainders remainders actual
-    ]
+    $ applyEquationalRulesSequence_ initial rules

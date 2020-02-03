@@ -12,6 +12,8 @@ module Kore.Unification.Unifier
     ( module Error
     ) where
 
+import Prelude.Kore ()
+
 import Kore.Unification.Error as Error
     ( UnificationError (..)
     )

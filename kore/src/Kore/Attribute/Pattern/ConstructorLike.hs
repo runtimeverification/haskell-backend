@@ -11,6 +11,8 @@ module Kore.Attribute.Pattern.ConstructorLike
     , assertConstructorLike
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import Data.Hashable
 import qualified Data.Map.Strict as Map

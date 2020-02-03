@@ -1,5 +1,7 @@
 module Test.Kore.Attribute.Symbol.Klabel ( test_Klabel ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

@@ -15,12 +15,15 @@ module Kore.Log.DebugAxiomEvaluation
     , attemptAxiom
     , end
     , notEvaluated
+    , notEvaluatedConditionally
     , reevaluation
     , start
 
     -- * Helpers
     , klabelIdentifier
     ) where
+
+import Prelude.Kore
 
 import Control.Applicative
     ( Alternative (..)
@@ -100,6 +103,7 @@ data AxiomEvaluationState
     = Start
     | AttemptingAxiom SourceLocation
     | NotEvaluated
+    | NotEvaluatedConditionally
     | Reevaluation
     | End
     deriving Eq
@@ -121,6 +125,11 @@ instance Pretty DebugAxiomEvaluation where
                     ]
             NotEvaluated ->
                 Pretty.sep ["No results for:", Pretty.pretty identifier]
+            NotEvaluatedConditionally ->
+                Pretty.sep
+                    [ "Under certain conditions, no results for:"
+                    , Pretty.pretty identifier
+                    ]
             Reevaluation ->
                 Pretty.sep ["Reevaluating:", Pretty.pretty identifier]
             End ->
@@ -155,6 +164,16 @@ notEvaluated
     -> Maybe Text
     -> log ()
 notEvaluated = logState NotEvaluated
+
+{- | Log the start of a term's axiom evaluation.
+-}
+notEvaluatedConditionally
+    :: forall log
+    .  MonadLog log
+    => Maybe AxiomIdentifier
+    -> Maybe Text
+    -> log ()
+notEvaluatedConditionally = logState NotEvaluatedConditionally
 
 {- | Log the start of a term's axiom evaluation.
 -}

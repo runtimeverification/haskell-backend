@@ -7,6 +7,8 @@ module Kore.Step.Simplification.Nu
     , makeEvaluate
     ) where
 
+import Prelude.Kore
+
 import Kore.Internal.OrPattern
     ( OrPattern
     )

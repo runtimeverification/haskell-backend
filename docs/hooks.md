@@ -375,6 +375,15 @@ Convert a base10 string to its integer value.
         [hook{}("STRING.string2int")]
 ~~~
 
+### STRING.int2string
+
+Convert an integer value to its base10 string representation.
+
+~~~
+    hooked-symbol int2string{}(Int{}) : String{}
+        [hook{}("STRING.string2int")]
+~~~
+
 ### STRING.string2base
 
 Takes a string and a base and converts the string from `base` to its integer
@@ -655,6 +664,15 @@ Is a value an element of the given list?
 ~~~
     hooked-symbol in{}(Elem{}, List{}) : Bool{}
         [hook{}("LIST.in")]
+~~~
+
+### LIST.size
+
+The number of elements in the given list.
+
+~~~
+    hooked-symbol size{}(List{}) : Int{}
+        [hook{}("LIST.size")]
 ~~~
 
 ## SET

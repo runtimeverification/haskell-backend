@@ -48,6 +48,16 @@ module Kore.Step.Strategy
     , LimitExceeded (..)
     ) where
 
+import Prelude.Kore hiding
+    ( all
+    , and
+    , any
+    , or
+    , replicate
+    , seq
+    , sequence
+    )
+
 import Control.Applicative
     ( Alternative (empty, (<|>))
     )
@@ -83,15 +93,6 @@ import Kore.Profiler.Data
     )
 import qualified Kore.Profiler.Profile as Profile
     ( executionQueueLength
-    )
-import Prelude hiding
-    ( all
-    , and
-    , any
-    , or
-    , replicate
-    , seq
-    , sequence
     )
 
 import Kore.Step.Transition

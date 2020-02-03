@@ -7,6 +7,8 @@ module Test.Kore.Step.SMT.Evaluator
     , test_Bool_contradictions
     ) where
 
+import Prelude.Kore
+
 
 import Hedgehog hiding
     ( property

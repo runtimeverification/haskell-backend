@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.Top
     ( test_topSimplification
     ) where
 
+import Prelude.Kore ()
+
 import Test.Tasty
 
 import Kore.Internal.OrPattern

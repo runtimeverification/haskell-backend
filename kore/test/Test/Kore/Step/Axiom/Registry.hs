@@ -2,6 +2,8 @@ module Test.Kore.Step.Axiom.Registry
     ( test_functionRegistry
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )
@@ -12,9 +14,6 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.Default as Default
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe

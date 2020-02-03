@@ -3,9 +3,9 @@ module Test.Kore.Step.Simplification.InjSimplifier
     , test_normalize
     ) where
 
-import Test.Tasty
+import Prelude.Kore
 
-import qualified GHC.Stack as GHC
+import Test.Tasty
 
 import Kore.Internal.Inj
 import Kore.Internal.TermLike hiding
@@ -139,7 +139,7 @@ test_unifyInj =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Inj (TermLike Variable)
         -> Inj (TermLike Variable)
@@ -157,7 +157,7 @@ test_normalize =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> TermLike Variable
         -> TermLike Variable

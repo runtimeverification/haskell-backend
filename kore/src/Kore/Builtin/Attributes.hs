@@ -16,6 +16,8 @@ module Kore.Builtin.Attributes
     ( isConstructorModulo_
     ) where
 
+import Prelude.Kore
+
 import qualified Kore.Builtin.List.List as List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set

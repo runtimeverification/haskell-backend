@@ -13,6 +13,8 @@ module Kore.Attribute.SourceLocation
     , Location (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )

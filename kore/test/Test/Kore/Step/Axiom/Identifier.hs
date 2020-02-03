@@ -1,9 +1,9 @@
 module Test.Kore.Step.Axiom.Identifier
     ( test_matchAxiomIdentifier ) where
 
-import Test.Tasty
+import Prelude.Kore
 
-import qualified GHC.Stack as GHC
+import Test.Tasty
 
 import Kore.Internal.TermLike
     ( TermLike
@@ -89,7 +89,7 @@ test_matchAxiomIdentifier =
         ceilName = "ceil " <> name
 
 match
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> Maybe AxiomIdentifier
@@ -100,7 +100,7 @@ match name input expect =
     $ matchAxiomIdentifier input
 
 matches
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> AxiomIdentifier
@@ -108,7 +108,7 @@ matches
 matches name input expect = match ("matches " ++ name) input (Just expect)
 
 notMatches
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> TermLike Variable
     -> TestTree

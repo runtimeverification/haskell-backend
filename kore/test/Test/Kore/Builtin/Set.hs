@@ -56,6 +56,8 @@ module Test.Kore.Builtin.Set
     , asInternal
     ) where
 
+import Prelude.Kore
+
 import Hedgehog hiding
     ( Concrete
     , opaque
@@ -182,7 +184,7 @@ test_unit =
   where
     xSet = elemVarS "xSet" setSort
     becomes
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TermLike Variable
         -> TermLike Variable
         -> TestName

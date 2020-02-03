@@ -60,6 +60,8 @@ module Kore.Debug
     , module Debug
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Data.List
