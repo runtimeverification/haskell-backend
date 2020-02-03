@@ -471,4 +471,4 @@ parseAttributesAndVerify
     -> Attributes
     -> error (Attribute.Axiom Internal.Symbol.Symbol)
 parseAttributesAndVerify indexModule a =
-    parseAttributes' a >>= verifySymbolAttributes indexModule
+    parseAttributes' a >>= verifyAxiomAttributes indexModule

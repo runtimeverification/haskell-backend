@@ -34,7 +34,7 @@ import Data.Text
 import Kore.AST.Error
 import Kore.ASTVerifier.AliasVerifier
 import Kore.ASTVerifier.AttributesVerifier
-    ( verifySymbolAttributes
+    ( verifyAxiomAttributes
     )
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.SentenceVerifier
@@ -127,7 +127,7 @@ and the 'ImplicitModule' import.
 newVerifiedModule :: ParsedModule -> Verifier VerifiedModule'
 newVerifiedModule module' = do
     VerifierContext { implicitModule } <- Reader.ask
-    let implicitModule'= traverse (verifySymbolAttributes undefined) implicitModule
+    let implicitModule'= traverse (verifyAxiomAttributes undefined) implicitModule
         Module { moduleName, moduleAttributes } = module'
         ImplicitIndexedModule indexedModule = implicitModule
     attrs <- parseAttributes' moduleAttributes

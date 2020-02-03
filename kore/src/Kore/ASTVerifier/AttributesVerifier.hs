@@ -128,12 +128,12 @@ verifyNoHookAttribute attributes = do
             koreFail "Unexpected 'hook' attribute"
 
 
-verifySymbolAttributes
+verifyAxiomAttributes
     :: MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol a
     -> Attribute.Axiom SymbolOrAlias
     -> error (Attribute.Axiom Internal.Symbol.Symbol)
-verifySymbolAttributes indexedModule axiom =
+verifyAxiomAttributes indexedModule axiom =
     return $ axiom & field @"overload" Lens.%~ fmap toSymbol
   where
     toSymbol s = 
@@ -150,8 +150,8 @@ verifySymbolAttributes indexedModule axiom =
                 , Internal.Symbol.symbolAttributes = defaultSymbolAttributes
                 }
 
-verifyAxiomAttributes :: a
-verifyAxiomAttributes = undefined
+verifySymbolAttributes :: a
+verifySymbolAttributes = undefined
 
 verifySortAttributes :: a
 verifySortAttributes = undefined
