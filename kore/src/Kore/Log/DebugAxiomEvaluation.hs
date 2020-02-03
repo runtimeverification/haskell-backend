@@ -32,10 +32,6 @@ import Data.Default
 import Data.Function
     ( on
     )
-import Data.Maybe
-    ( catMaybes
-    , fromMaybe
-    )
 import Data.Set
     ( Set
     )

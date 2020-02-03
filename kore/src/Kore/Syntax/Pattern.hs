@@ -48,7 +48,6 @@ import Data.Functor.Identity
 import Data.Hashable
     ( Hashable (..)
     )
-import Data.Maybe
 import Data.Text
     ( Text
     )

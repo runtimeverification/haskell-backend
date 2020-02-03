@@ -66,9 +66,6 @@ import qualified Data.Reflection as Reflection
 import Data.Text.Prettyprint.Doc
     ( Doc
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Branch
 import qualified Kore.Attribute.Pattern.Simplified as Attribute

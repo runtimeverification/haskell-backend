@@ -31,9 +31,6 @@ import Data.Sup
 import Data.Text
     ( Text
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 import Numeric.Natural
     ( Natural
     )

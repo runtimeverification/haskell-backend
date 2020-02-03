@@ -9,10 +9,6 @@ import Test.Tasty
     , testGroup
     )
 
-import GHC.Stack
-    ( HasCallStack
-    )
-
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error

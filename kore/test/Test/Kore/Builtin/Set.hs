@@ -74,15 +74,14 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+    ( fromJust
+    )
 import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import GHC.Stack as GHC
-    ( HasCallStack
-    )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set

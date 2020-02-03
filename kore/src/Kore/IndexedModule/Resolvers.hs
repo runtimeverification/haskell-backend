@@ -40,9 +40,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.AST.Error
     ( koreFailWithLocations

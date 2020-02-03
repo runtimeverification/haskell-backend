@@ -13,7 +13,6 @@ module Kore.Attribute.Location
 
 import Prelude.Kore
 
-import Data.Maybe
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

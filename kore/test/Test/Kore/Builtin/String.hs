@@ -28,9 +28,6 @@ import Test.Tasty
 import Data.Text
     ( Text
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String

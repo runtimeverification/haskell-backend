@@ -18,9 +18,6 @@ import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Witherable
-    ( Filterable (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

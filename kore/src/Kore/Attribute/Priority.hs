@@ -11,7 +11,6 @@ module Kore.Attribute.Priority
 import Prelude.Kore
 
 import qualified Control.Monad as Monad
-import qualified Data.Maybe as Maybe
 import Data.Text
     ( Text
     , pack
@@ -64,7 +63,7 @@ instance ParseAttributes Priority where
             arg <- Parser.getOneArgument args
             stringLiteral <- Parser.getStringLiteral arg
             integer <- Parser.parseInteger stringLiteral
-            Monad.unless (Maybe.isNothing priority) failDuplicate'
+            Monad.unless (isNothing priority) failDuplicate'
             return Priority { getPriority = Just integer }
       where
         withApplication' = Parser.withApplication priorityId

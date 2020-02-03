@@ -20,9 +20,6 @@ import Prelude.Kore
 import Control.DeepSeq
 import Data.Functor.Const
 import Data.Hashable
-import Data.Maybe
-    ( mapMaybe
-    )
 import Data.Set
     ( Set
     )

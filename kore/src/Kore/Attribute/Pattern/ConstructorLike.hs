@@ -16,9 +16,6 @@ import Prelude.Kore
 import Control.DeepSeq
 import Data.Hashable
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( isJust
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

@@ -25,9 +25,6 @@ import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Class
     ( lift
     )
-import Data.Maybe
-    ( catMaybes
-    )
 import Numeric.Natural
     ( Natural
     )

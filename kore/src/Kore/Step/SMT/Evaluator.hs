@@ -25,9 +25,6 @@ import Control.Error
 import qualified Control.Exception as Exception
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( catMaybes
-    )
 import Data.Reflection
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty

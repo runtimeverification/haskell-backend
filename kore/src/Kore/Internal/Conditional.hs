@@ -44,7 +44,6 @@ import Data.Typeable
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
@@ -415,13 +414,13 @@ while the substitution is simplified only for a certain side condition,
 the entire condition is simplified only for that side condition.
 -}
 markPredicateSimplified
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => Conditional variable term -> Conditional variable term
 markPredicateSimplified conditional@Conditional { predicate } =
     conditional { predicate = Predicate.markSimplified predicate }
 
 markPredicateSimplifiedConditional
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => SideCondition.Representation
     -> Conditional variable term
     -> Conditional variable term

@@ -30,9 +30,6 @@ import qualified Data.GraphViz as Graph
 import Data.List
     ( nub
     )
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Text.Megaparsec
