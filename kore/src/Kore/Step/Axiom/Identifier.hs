@@ -26,9 +26,6 @@ module Kore.Step.Axiom.Identifier
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)

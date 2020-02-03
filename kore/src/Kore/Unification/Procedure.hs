@@ -13,9 +13,6 @@ module Kore.Unification.Procedure
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( empty
-    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 

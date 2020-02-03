@@ -15,9 +15,6 @@ module Kore.Step.Axiom.Matcher
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Control.Error as Error
 import Control.Lens
     ( (%=)

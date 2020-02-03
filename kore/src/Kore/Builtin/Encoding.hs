@@ -12,9 +12,6 @@ module Kore.Builtin.Encoding
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Category
     ( (>>>)
     )

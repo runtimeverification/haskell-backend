@@ -25,9 +25,6 @@ module Kore.Log.DebugAxiomEvaluation
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Data.Default
 import Data.Function
     ( on

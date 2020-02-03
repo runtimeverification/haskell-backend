@@ -60,9 +60,6 @@ import Prelude.Kore hiding
     , some
     )
 
-import Control.Applicative
-    ( Alternative (empty, (<|>))
-    )
 import qualified Control.Exception as Exception
 import Control.Monad
     ( when

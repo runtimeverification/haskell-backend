@@ -23,9 +23,6 @@ module Kore.Log.Registry
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( empty
-    )
 import Data.Functor.Classes
     ( eq2
     )

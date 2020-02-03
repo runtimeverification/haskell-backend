@@ -26,9 +26,6 @@ module Kore.Strategies.Goal
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Exception
     ( throw
     )

@@ -17,9 +17,6 @@ module Kore.ModelChecker.Step
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Monad
     ( when
     )

@@ -28,9 +28,6 @@ module Kore.Builtin.Map
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT (MaybeT)
     , fromMaybe
