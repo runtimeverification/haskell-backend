@@ -39,9 +39,6 @@ import Data.Text
     )
 import qualified Data.Text as T
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes

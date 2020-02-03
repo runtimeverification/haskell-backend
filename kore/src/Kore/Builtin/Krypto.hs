@@ -64,9 +64,6 @@ import qualified Data.Text as Text
 import Data.Word
     ( Word8
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 import Kore.Builtin.Encoding
     ( encode8Bit
     )

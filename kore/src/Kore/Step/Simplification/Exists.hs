@@ -23,9 +23,6 @@ import Data.List
     ( sortBy
     )
 import qualified Data.Map.Strict as Map
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Branch
     ( BranchT

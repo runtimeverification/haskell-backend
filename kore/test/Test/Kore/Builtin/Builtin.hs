@@ -42,9 +42,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import qualified Branch
 import Kore.ASTVerifier.DefinitionVerifier

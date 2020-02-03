@@ -25,9 +25,6 @@ import Data.Text
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Attribute.Synthetic
 import Kore.Debug

@@ -17,10 +17,6 @@ module Kore.Builtin.Error
 
 import Prelude.Kore
 
-import GHC.Stack
-    ( HasCallStack
-    )
-
 {- | Abort due to an internal error that should be prevented by the verifier.
 
     Such an error is a bug in Kore that we would like the user to report.

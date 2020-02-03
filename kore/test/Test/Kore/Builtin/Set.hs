@@ -82,9 +82,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import GHC.Stack as GHC
-    ( HasCallStack
-    )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set

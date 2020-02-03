@@ -38,9 +38,6 @@ import Data.Hashable
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
@@ -209,4 +206,3 @@ deleteFreeVariable variable =
 
 instance HasFreeVariables (Pattern variable) variable where
     freeVariables = freeVariables
-

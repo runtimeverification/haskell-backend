@@ -33,9 +33,6 @@ import Data.Stream.Infinite
 import qualified Data.Stream.Infinite as Stream
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
