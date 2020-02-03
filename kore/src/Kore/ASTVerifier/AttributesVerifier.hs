@@ -29,14 +29,19 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 
 import Kore.ASTVerifier.Error
+import Kore.Attribute.Overload
+    ( Overload (..)
+    )
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
     )
 import Kore.Attribute.Hook
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import Kore.Attribute.Symbol
 import Kore.Error
 import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.ApplicationSorts
+    ( symbolOrAliasSorts
+    )
 import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
@@ -129,26 +134,40 @@ verifyNoHookAttribute attributes = do
 
 
 verifyAxiomAttributes
-    :: MonadError (Error VerifyError) error
+    :: forall error a
+    .  MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol a
     -> Attribute.Axiom SymbolOrAlias
     -> error (Attribute.Axiom Internal.Symbol.Symbol)
-verifyAxiomAttributes indexedModule axiom =
-    return $ axiom & field @"overload" Lens.%~ fmap toSymbol
+verifyAxiomAttributes indexedModule axiom = do
+    let overload = axiom Lens.^. field @"overload"
+    case getOverload overload of
+            Nothing -> do
+                let newOverload = Overload Nothing
+                return (axiom & field @"overload" Lens..~ newOverload)
+            Just (symbolOrAlias1, symbolOrAlias2) -> do
+                symbol1 <- toSymbol symbolOrAlias1
+                symbol2 <- toSymbol symbolOrAlias2
+                let newOverload = Overload $ Just (symbol1, symbol2)
+                return (axiom & field @"overload" Lens..~ newOverload)
   where
-    toSymbol s = 
-        let (symbolAttributes, decl) = undefined
-                {-resolveThing
-                    indexedModuleSymbolSentences
-                    indexedModule
-                    (symbolOrAliasConstructor s)-}
-        in
-            Internal.Symbol.Symbol
-                { Internal.Symbol.symbolConstructor = symbolOrAliasConstructor s
-                , Internal.Symbol.symbolParams = symbolOrAliasParams s
-                , Internal.Symbol.symbolSorts = undefined
-                , Internal.Symbol.symbolAttributes = defaultSymbolAttributes
-                }
+    toSymbol :: SymbolOrAlias -> error Internal.Symbol.Symbol
+    toSymbol symbolOrAlias = do
+        (symbolAttributes, decl) <-
+            resolveSymbol indexedModule symbolConstructor
+        symbolSorts <-
+            symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) decl
+        let symbol =
+                Internal.Symbol.Symbol
+                    { symbolConstructor
+                    , symbolParams
+                    , symbolAttributes
+                    , symbolSorts
+                    }
+        return symbol
+      where
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
 
 verifySymbolAttributes :: a
 verifySymbolAttributes = undefined

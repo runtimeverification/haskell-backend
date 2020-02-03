@@ -25,6 +25,7 @@ module Kore.ASTVerifier.PatternVerifier.PatternVerifier
     , lookupSymbol
     , assertExpectedSort
     , assertSameSort
+    , applicationSortsFromSymbolOrAliasSentence
     ) where
 
 import Prelude.Kore

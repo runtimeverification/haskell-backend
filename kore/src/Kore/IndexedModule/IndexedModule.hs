@@ -28,6 +28,7 @@ module Kore.IndexedModule.IndexedModule
     , eraseAttributes
     , eraseAxiomAttributes
     , erasePatterns
+    , emptyIndexedModule
     , mapPatterns
     , indexedModuleRawSentences
     , SortDescription
@@ -151,7 +152,7 @@ data IndexedModule pat declAtts axiomAtts =
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
         -- identifiers
     }
-    deriving (Generic, Show, Functor)
+    deriving (Generic, Show, Functor, Foldable, Traversable)
 
 recursiveIndexedModuleSortDescriptions
     :: forall pat declAtts axiomAtts
