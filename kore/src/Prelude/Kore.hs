@@ -20,6 +20,7 @@ module Prelude.Kore
     -- * Applicative and Alternative
     , Applicative (..)
     , Alternative (..)
+    , optional
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -28,6 +29,7 @@ module Prelude.Kore
 import Control.Applicative
     ( Alternative (..)
     , Applicative (..)
+    , optional
     )
 import Control.Error
     ( headMay
