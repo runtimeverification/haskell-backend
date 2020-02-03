@@ -444,7 +444,8 @@ showGraph
 showGraph mfile out = do
     let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
-    processedGraph <- processGraph graph
+    processedGraph <-
+        maybe (showOriginalGraph graph) return (smoothOutGraph graph)
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
@@ -454,12 +455,11 @@ showGraph mfile out = do
                         mfile
        else putStrLn' "Graphviz is not installed."
   where
-    processGraph graph =
-        case smoothOutGraph graph of
-            Left str -> do
-                putStrLn' str
-                return $ Graph.emap Just graph
-            Right gr -> return gr
+    showOriginalGraph graph = do
+        putStrLn'
+            "Could not process execution graph for visualization.\
+            \ Will default to showing the full graph."
+        return $ Graph.emap Just graph
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps

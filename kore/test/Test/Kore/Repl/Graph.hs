@@ -14,6 +14,9 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import Data.Maybe
+    ( fromJust
+    )
 import Data.Set
     ( Set
     , isSubsetOf
@@ -135,11 +138,11 @@ tree2 =
         ]
 
 g1', g2', chain', tree1', tree2' :: Gr () (Maybe ())
-g1' = either error id $ smoothOutGraph g1
-g2' = either error id $ smoothOutGraph g2
-chain' = either error id $ smoothOutGraph chain
-tree1' = either error id $ smoothOutGraph tree1
-tree2' = either error id $ smoothOutGraph tree2
+g1' = fromJust $ smoothOutGraph g1
+g2' = fromJust $ smoothOutGraph g2
+chain' = fromJust $ smoothOutGraph chain
+tree1' = fromJust $ smoothOutGraph tree1
+tree2' = fromJust $ smoothOutGraph tree2
 
 expectedG1'
   , expectedG2'

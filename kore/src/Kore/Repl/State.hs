@@ -31,9 +31,6 @@ module Kore.Repl.State
     where
 
 import Control.Concurrent.MVar
-import Control.Error.Util
-    ( note
-    )
 import qualified Control.Lens as Lens hiding
     ( makeLenses
     )
@@ -344,7 +341,7 @@ updateExecutionGraph gph = do
 -- This assumes the execution graph is a directed tree
 -- with its edges pointed "downwards" (from the root)
 -- and is partially ordered (parent(node) < node).
-smoothOutGraph :: Gr node edge -> Either String (Gr node (Maybe edge))
+smoothOutGraph :: Gr node edge -> Maybe (Gr node (Maybe edge))
 smoothOutGraph graph = do
     let subGraph = Graph.nfilter inOutDegreeOne graph
         nodesToRemove = Graph.nodes subGraph
@@ -362,7 +359,7 @@ smoothOutGraph graph = do
     componentToEdge
         :: Gr node edge
         -> [Graph.Node]
-        -> Either String (Graph.LEdge (Maybe edge))
+        -> Maybe (Graph.LEdge (Maybe edge))
     componentToEdge subGraph nodes =
         case filter (isTerminalNode subGraph) nodes of
             [node] -> makeNewEdge node node
@@ -370,29 +367,21 @@ smoothOutGraph graph = do
                 if node1 < node2
                     then makeNewEdge node1 node2
                     else makeNewEdge node2 node1
-            _ -> Left processingError
+            _ -> Nothing
     makeNewEdge
         :: Graph.Node
         -> Graph.Node
-        -> Either String (Graph.LEdge (Maybe edge))
+        -> Maybe (Graph.LEdge (Maybe edge))
     makeNewEdge node1 node2 = do
-        nodePre <- extractNewEdgeNode (Graph.pre graph node1)
-        nodeSuc <- extractNewEdgeNode (Graph.suc graph node2)
+        nodePre <- listToMaybe (Graph.pre graph node1)
+        nodeSuc <- listToMaybe (Graph.suc graph node2)
         return (nodePre, nodeSuc, Nothing)
-    extractNewEdgeNode
-        :: [Graph.Node]
-        -> Either String Graph.Node
-    extractNewEdgeNode =
-        note processingError . listToMaybe
     isBranchingNode :: Graph.Node -> Bool
     isBranchingNode node =
         Graph.outdeg graph node > 1
     isTerminalNode :: Gr node edge -> Graph.Node -> Bool
     isTerminalNode graph' node =
         Graph.indeg graph' node == 0 || Graph.outdeg graph' node == 0
-    processingError =
-        "Could not process execution graph for visualization.\
-        \ Will default to showing the full graph."
 
 -- | Get the node labels for the current claim.
 getLabels
