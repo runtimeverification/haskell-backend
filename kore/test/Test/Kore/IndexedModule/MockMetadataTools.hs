@@ -12,12 +12,6 @@ module Test.Kore.IndexedModule.MockMetadataTools
 import Prelude.Kore
 
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function

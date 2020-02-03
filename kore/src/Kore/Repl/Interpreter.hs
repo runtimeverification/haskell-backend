@@ -99,6 +99,8 @@ import Data.List.NonEmpty
     )
 import qualified Data.Map.Strict as Map
 import Data.Maybe
+    ( fromJust
+    )
 import Data.Sequence
     ( Seq
     )
@@ -960,7 +962,7 @@ clear =
     collect f x = x : [ z | y <- f x, z <- collect f y]
 
     prevNode :: InnerGraph axiom -> Graph.Node -> Graph.Node
-    prevNode graph = fromMaybe 0 . listToMaybe . fmap fst . Graph.lpre graph
+    prevNode graph = fromMaybe 0 . headMay . fmap fst . Graph.lpre graph
 
 -- | Save this sessions' commands to the specified file.
 saveSession
@@ -1269,7 +1271,7 @@ graphParams len = Graph.nonClusteredParams
     }
   where
     ruleIndex lbl ln =
-        case listToMaybe . toList $ lbl of
+        case headMay . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
                 maybe

@@ -43,9 +43,6 @@ import Control.Monad.Fail
 import Data.Char
     ( isSpace
     )
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.String
     ( IsString (..)
     )

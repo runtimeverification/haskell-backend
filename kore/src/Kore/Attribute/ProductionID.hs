@@ -14,7 +14,6 @@ module Kore.Attribute.ProductionID
 import Prelude.Kore
 
 import qualified Control.Monad as Monad
-import qualified Data.Maybe as Maybe
 import Data.Text
     ( Text
     )
@@ -65,7 +64,7 @@ instance ParseAttributes ProductionID where
             Parser.getZeroParams params
             arg <- Parser.getOneArgument args
             StringLiteral name <- Parser.getStringLiteral arg
-            Monad.unless (Maybe.isNothing productionID) failDuplicate'
+            Monad.unless (isNothing productionID) failDuplicate'
             return ProductionID { getProductionID = Just name }
       where
         withApplication' = Parser.withApplication productionIDId

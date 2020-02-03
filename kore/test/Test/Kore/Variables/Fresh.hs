@@ -11,7 +11,6 @@ import Test.Tasty.HUnit
 
 import Data.Maybe
     ( fromJust
-    , isJust
     )
 import Data.Set
     ( Set

@@ -25,9 +25,6 @@ import Data.Typeable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
