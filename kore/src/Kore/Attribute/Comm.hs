@@ -59,4 +59,6 @@ commAttribute = attributePattern_ commSymbol
 
 instance ParseAttributes Comm where
     parseAttribute = parseBoolAttribute commId
-    toAttributes = toBoolAttributes commAttribute
+
+instance From Comm Attributes where
+    from = toBoolAttributes commAttribute

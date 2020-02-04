@@ -20,9 +20,6 @@ module Kore.Internal.MultiAnd
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.DeepSeq
     ( NFData
     )

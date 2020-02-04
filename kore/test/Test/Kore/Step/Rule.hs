@@ -72,7 +72,7 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
+                (fromSentence (def, mkRewriteAxiom varI1 varI2 Nothing))
             )
         , testCase "alias as rule LHS"
             (assertEqual ""
@@ -88,7 +88,7 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (fromSentence . SentenceAxiomSentence . mkAxiom_ $
+                (fromSentence . (,) def . SentenceAxiomSentence . mkAxiom_ $
                     mkRewrites
                         applyAliasLHS
                         (mkAnd (mkTop sortAInt) varI2)
@@ -140,13 +140,14 @@ axiomPatternsUnitTests =
                     (mkCeil sortR term)
                     (mkTop sortR)
                 )
-                (fromSentence $ mkCeilAxiom term)
+                (fromSentence . (,) def $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
             $ assertErrorIO
                 (assertSubstring "" "Unsupported pattern type in axiom")
                 (evaluate $ force
                     (fromSentenceAxiom
-                        (mkAxiom_
+                        ( def
+                        , mkAxiom_
                             (applySymbol
                                 symbolInj
                                 [sortAInt, sortKItem]
@@ -167,7 +168,7 @@ axiomPatternsIntegrationTests =
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule rule)
-                (fromSentence $ mkRewriteAxiom left right Nothing)
+                (fromSentence . (,) def $ mkRewriteAxiom left right Nothing)
             )
         ]
   where

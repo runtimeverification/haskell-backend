@@ -103,6 +103,9 @@ instance Unparse Symbol where
     unparse2 Symbol { symbolConstructor } =
         unparse2 symbolConstructor
 
+instance From Symbol SymbolOrAlias where
+    from = toSymbolOrAlias
+
 instance
     Ord variable
     => Synthetic (FreeVariables variable) (Application Symbol)

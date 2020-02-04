@@ -61,9 +61,6 @@ module Kore.Builtin.Int
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT
     )

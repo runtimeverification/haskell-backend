@@ -61,4 +61,6 @@ injectiveAttribute = attributePattern_ injectiveSymbol
 
 instance ParseAttributes Injective where
     parseAttribute = parseBoolAttribute injectiveId
-    toAttributes = toBoolAttributes injectiveAttribute
+
+instance From Injective Attributes where
+    from = toBoolAttributes injectiveAttribute

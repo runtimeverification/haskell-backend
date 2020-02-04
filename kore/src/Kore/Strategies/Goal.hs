@@ -26,9 +26,6 @@ module Kore.Strategies.Goal
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Exception
     ( throw
     )
@@ -86,7 +83,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTrueCondition
     )
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.Symbol
+    ( Symbol
+    )
 import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
@@ -222,19 +221,19 @@ class Goal goal where
 
 class ClaimExtractor claim where
     extractClaim
-        :: Verified.SentenceClaim
-        ->  Maybe claim
+        :: (Attribute.Axiom.Axiom Symbol, Verified.SentenceClaim)
+        -> Maybe (Attribute.Axiom.Axiom Symbol, claim)
 
 -- | Extracts all One-Path claims from a verified module.
 extractClaims
     :: ClaimExtractor claim
     => VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    -> [(Attribute.Axiom.Axiom Internal.Symbol.Symbol, claim)]
+    -> [(Attribute.Axiom.Axiom Symbol, claim)]
 extractClaims idxMod =
     mapMaybe
         -- applying on second component
-        (traverse extractClaim)
+        extractClaim
         (indexedModuleClaims idxMod)
 
 {- NOTE: Non-deterministic semantics
@@ -336,9 +335,9 @@ instance ToRulePattern (Rule (OnePathRule Variable))
 instance FromRulePattern (Rule (OnePathRule Variable))
 
 instance ClaimExtractor (OnePathRule Variable) where
-    extractClaim sentence =
-        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just claim
+    extractClaim (attrs, sentence) =
+        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
+            Right (OnePathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
 
 instance Goal (AllPathRule Variable) where
@@ -398,9 +397,9 @@ instance ToRulePattern (Rule (AllPathRule Variable))
 instance FromRulePattern (Rule (AllPathRule Variable))
 
 instance ClaimExtractor (AllPathRule Variable) where
-    extractClaim sentence =
-        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
-            Right (AllPathClaimPattern claim) -> Just claim
+    extractClaim (attrs, sentence) =
+        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
+            Right (AllPathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
 
 instance Goal (ReachabilityRule Variable) where
@@ -509,10 +508,10 @@ instance ToRulePattern (Rule (ReachabilityRule Variable))
 instance FromRulePattern (Rule (ReachabilityRule Variable))
 
 instance ClaimExtractor (ReachabilityRule Variable) where
-    extractClaim sentence =
-        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just . OnePath $ claim
-            Right (AllPathClaimPattern claim) -> Just . AllPath $ claim
+    extractClaim (attrs, sentence) =
+        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
+            Right (OnePathClaimPattern claim) -> Just (attrs, OnePath claim)
+            Right (AllPathClaimPattern claim) -> Just (attrs, AllPath claim)
             _ -> Nothing
 
 maybeOnePath :: ReachabilityRule Variable -> Maybe (OnePathRule Variable)

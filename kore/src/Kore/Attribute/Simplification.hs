@@ -65,4 +65,6 @@ simplificationAttribute = attributePattern_ simplificationSymbol
 
 instance ParseAttributes Simplification where
     parseAttribute = parseBoolAttribute simplificationId
-    toAttributes = toBoolAttributes simplificationAttribute
+
+instance From Simplification Attributes where
+    from = toBoolAttributes simplificationAttribute

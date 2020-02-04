@@ -45,7 +45,7 @@ verifiers =
             _ -> return termLike
 
     expectInjParams :: [Sort] -> PatternVerifier (Sort, Sort)
-    expectInjParams [from, to] = return (from, to)
+    expectInjParams [fromSort, toSort] = return (fromSort, toSort)
     expectInjParams _ = koreFail "Expected two sort parameters"
 
     expectInjChildren :: [a] -> PatternVerifier a

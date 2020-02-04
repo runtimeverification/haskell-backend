@@ -22,9 +22,6 @@ module Kore.Step.Result
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative ((<|>))
-    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import Data.Sequence

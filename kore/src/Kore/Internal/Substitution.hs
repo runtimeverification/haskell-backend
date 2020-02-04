@@ -82,15 +82,11 @@ import Kore.Internal.TermLike
     , mkVar
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Syntax.Variable
-    ( SortedVariable
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-    ( Unparse
-    , unparseToString
+    ( unparseToString
     )
 import Kore.Variables.Fresh
     ( FreshVariable
@@ -173,6 +169,37 @@ instance Ord variable => Monoid (Substitution variable) where
 instance InternalVariable variable => SQL.Column (Substitution variable) where
     defineColumn _ = SQL.defineColumn (SQL.Proxy @(Predicate variable))
     toColumn = SQL.toColumn . toPredicate
+
+instance
+    From
+        (Map (UnifiedVariable variable) (TermLike variable))
+        (Substitution variable)
+  where
+    from = wrap . Map.toList
+
+instance
+    Ord variable
+    => From (SingleSubstitution variable) (Substitution variable)
+  where
+    from = uncurry singleton
+
+instance From (UnwrappedSubstitution variable) (Substitution variable) where
+    from = wrap
+
+instance
+    Ord variable
+    => From (Substitution variable) (UnwrappedSubstitution variable)
+  where
+    from = unwrap
+
+instance
+    InternalVariable variable
+    => From (Substitution variable) (Predicate variable)
+  where
+    from =
+        Predicate.makeMultipleAndPredicate
+        . fmap Predicate.singleSubstitutionToPredicate
+        . unwrap
 
 type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
 
@@ -260,7 +287,7 @@ orderRenaming subst = subst
 fromMap
     :: Map (UnifiedVariable variable) (TermLike variable)
     -> Substitution variable
-fromMap = wrap . Map.toList
+fromMap = from
 
 {- | Construct substitution for a single variable.
 
@@ -460,10 +487,7 @@ reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
     rhsIsVar _ _ = False
 
 assertNoneAreFreeVarsInRhs
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Set (UnifiedVariable variable)
     -> Map (UnifiedVariable variable) (TermLike variable)
     -> Map (UnifiedVariable variable) (TermLike variable)
@@ -565,7 +589,4 @@ toPredicate
     :: InternalVariable variable
     => Substitution variable
     -> Predicate variable
-toPredicate =
-    Predicate.makeMultipleAndPredicate
-    . fmap Predicate.singleSubstitutionToPredicate
-    . unwrap
+toPredicate = from

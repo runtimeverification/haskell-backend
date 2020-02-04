@@ -24,9 +24,6 @@ module Kore.ASTVerifier.SentenceVerifier
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM

@@ -13,9 +13,6 @@ module Kore.Unification.SubstitutionSimplifier
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( maybeT
     )

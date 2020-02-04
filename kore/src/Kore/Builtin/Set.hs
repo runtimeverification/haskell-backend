@@ -33,9 +33,6 @@ module Kore.Builtin.Set
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT (MaybeT)
     , fromMaybe

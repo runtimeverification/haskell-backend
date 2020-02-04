@@ -30,7 +30,6 @@ module Kore.ASTVerifier.PatternVerifier.PatternVerifier
 
 import Prelude.Kore
 
-import Control.Applicative
 import Control.Monad
     ( (>=>)
     )

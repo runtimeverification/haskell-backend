@@ -37,7 +37,6 @@ import Kore.Attribute.Axiom.Constructor
 import Kore.Attribute.Functional
     ( isDeclaredFunctional
     )
-import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Priority
     ( getPriority
     )
@@ -146,11 +145,10 @@ extractRewriteAxioms
     :: VerifiedModule declAtts
     -> [RewriteRule Variable]
 extractRewriteAxioms idxMod =
-    mapMaybe (extractRewriteAxiomFrom . getIndexedSentence)
-        (indexedModuleAxioms idxMod)
+    mapMaybe extractRewriteAxiomFrom (indexedModuleAxioms idxMod)
 
 extractRewriteAxiomFrom
-    :: Verified.SentenceAxiom
+    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceAxiom)
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (RewriteRule Variable)
 extractRewriteAxiomFrom sentence =
@@ -160,11 +158,11 @@ extractRewriteAxiomFrom sentence =
 
 -- | Extracts a 'ReachabilityRule' axioms from a 'Verified.SentenceClaim'
 extractReachabilityRule
-    :: Verified.SentenceClaim
+    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceClaim)
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (ReachabilityRule Variable)
 extractReachabilityRule sentence =
-    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
+    case fromSentenceAxiom (Syntax.getSentenceClaim <$> sentence) of
         Right (OnePathClaimPattern claim) -> Just (OnePath claim)
         Right (AllPathClaimPattern claim) -> Just (AllPath claim)
         _ -> Nothing
@@ -178,35 +176,32 @@ extractImplicationClaims
 extractImplicationClaims idxMod =
     mapMaybe
         -- applying on second component
-        (traverse extractImplicationClaimFrom)
+        (extractImplicationClaimFrom)
         (indexedModuleClaims idxMod)
 
 extractImplicationClaimFrom
-    :: Verified.SentenceClaim
+    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceClaim)
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (ImplicationRule Variable)
-extractImplicationClaimFrom sentence =
-    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
-        Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
+    -> Maybe (Attribute.Axiom Internal.Symbol.Symbol, ImplicationRule Variable)
+extractImplicationClaimFrom (attrs, sentence) =
+    case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
+        Right (ImplicationAxiomPattern axiomPat) -> Just (attrs, axiomPat)
         _ -> Nothing
 
 -- | Attempts to extract a rule from the 'Verified.Sentence'.
 fromSentence
-    :: Verified.Sentence
+    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.Sentence)
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-fromSentence (Syntax.SentenceAxiomSentence sentenceAxiom) =
-    fromSentenceAxiom sentenceAxiom
+fromSentence (attrs, Syntax.SentenceAxiomSentence sentenceAxiom) =
+    fromSentenceAxiom (attrs, sentenceAxiom)
 fromSentence _ =
     koreFail "Only axiom sentences can be translated to rules"
 
 -- | Attempts to extract a rule from the 'Verified.SentenceAxiom'.
 fromSentenceAxiom
-    :: Verified.SentenceAxiom
+    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceAxiom)
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-fromSentenceAxiom sentenceAxiom = do
-    attributes <-
-        (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
-            (Syntax.sentenceAxiomAttributes sentenceAxiom)
+fromSentenceAxiom (attributes, sentenceAxiom) =
     termToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
 {- | Match a term encoding an 'QualifiedAxiomPattern'.

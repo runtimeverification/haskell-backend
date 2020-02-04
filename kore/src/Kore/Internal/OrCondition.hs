@@ -56,11 +56,8 @@ isSimplified sideCondition = all (Condition.isSimplified sideCondition)
 
 {- | A "disjunction" of one 'Condition'.
  -}
-fromCondition
-    :: Ord variable
-    => Condition variable
-    -> OrCondition variable
-fromCondition = MultiOr.singleton
+fromCondition :: Condition variable -> OrCondition variable
+fromCondition = from
 
 {- | Disjoin a collection of predicates.
  -}
@@ -68,7 +65,7 @@ fromConditions
     :: (Foldable f, Ord variable)
     => f (Condition variable)
     -> OrCondition variable
-fromConditions = MultiOr.make . Foldable.toList
+fromConditions = from . Foldable.toList
 
 {- | @\\bottom@
 

@@ -28,9 +28,6 @@ module Kore.Builtin.InternalBytes
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT
     )
