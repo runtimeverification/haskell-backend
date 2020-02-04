@@ -45,9 +45,6 @@ import Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.Internal.Symbol as Internal.Symbol
     ( Symbol (..)
     )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -55,7 +52,7 @@ type ImplicitModule =
     ImplicitIndexedModule
         Verified.Pattern
         Attribute.Symbol
-        (Attribute.Axiom SymbolOrAlias)
+        (Attribute.Axiom Internal.Symbol.Symbol)
 
 type VerifiedModule' = VerifiedModule Attribute.Symbol
 

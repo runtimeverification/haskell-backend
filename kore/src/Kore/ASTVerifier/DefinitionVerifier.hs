@@ -39,6 +39,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import qualified Kore.Internal.Symbol as Internal.Symbol
+    ( Symbol (..)
+    )
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -115,7 +118,7 @@ verifyAndIndexDefinitionWithBase
             :: ImplicitIndexedModule
                 Verified.Pattern
                 Attribute.Symbol
-                (Attribute.Axiom SymbolOrAlias)
+                (Attribute.Axiom Internal.Symbol.Symbol)
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition

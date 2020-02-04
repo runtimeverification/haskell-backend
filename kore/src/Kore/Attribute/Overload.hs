@@ -98,7 +98,7 @@ instance ParseAttributes (Overload SymbolOrAlias) where
 instance ParseAttributes (Overload Symbol) where
     parseAttribute _                    (Overload Nothing)           =
         return $ Overload Nothing
-        
+
     parseAttribute attrPattern overload@(Overload (Just symbolPair)) = do
         Overload maybeSymbolOrAliasPair <-
             parseAttribute attrPattern (fmap toSymbolOrAlias overload)

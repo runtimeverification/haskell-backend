@@ -31,9 +31,6 @@ import Data.Text
 
 import Kore.AST.Error
 import Kore.ASTVerifier.AliasVerifier
-import Kore.ASTVerifier.AttributesVerifier
-    ( verifyAxiomAttributes
-    )
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.SentenceVerifier
     ( SentenceVerifier
@@ -125,15 +122,9 @@ newVerifiedModule :: ParsedModule -> Verifier VerifiedModule'
 newVerifiedModule module' = do
     VerifierContext { implicitModule } <- Reader.ask
     let Module { moduleName, moduleAttributes } = module'
-        ImplicitIndexedModule indexedModule = implicitModule
-        emptyIM = emptyIndexedModule moduleName
-    indexedModule' <- traverse
-        (verifyAxiomAttributes emptyIM)
-        indexedModule
-    let implicitModule' = ImplicitIndexedModule indexedModule'
     attrs <- parseAttributes' moduleAttributes
     return
-        ( indexedModuleWithDefaultImports moduleName (Just implicitModule')
+        ( indexedModuleWithDefaultImports moduleName (Just implicitModule)
         & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
         )
 

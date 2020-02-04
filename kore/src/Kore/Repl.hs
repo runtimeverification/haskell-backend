@@ -62,13 +62,13 @@ import Text.Megaparsec
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkSortVariable
     , mkTop
-    )
-import Kore.Internal.Symbol
-    ( Symbol (..)
     )
 import qualified Kore.Log as Log
 import Kore.Repl.Data

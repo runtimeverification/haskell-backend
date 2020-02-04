@@ -50,9 +50,6 @@ import Kore.Internal.Variable
 import Kore.Step.Step
     ( UnifyingRule (..)
     )
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
