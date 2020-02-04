@@ -163,6 +163,7 @@ ceilChildOfApplicationOrTop sideCondition patt =
             ceil <-
                 traverse (Ceil.makeEvaluateTerm sideCondition) children
                 >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
+                        sideCondition
                     . MultiAnd.make
                     )
             pure Conditional
