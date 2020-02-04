@@ -10,9 +10,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Set as Set
 
 import Kore.ASTVerifier.DefinitionVerifier
@@ -166,4 +163,3 @@ test_fromIndexedModule =
 
     sortVarR :: Sort
     sortVarR = sortVariableSort "R"
-

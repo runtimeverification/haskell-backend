@@ -17,9 +17,6 @@ import Control.Exception
 import Data.Default
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Text
     ( Text
     )

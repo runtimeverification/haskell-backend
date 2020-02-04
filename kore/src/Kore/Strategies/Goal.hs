@@ -54,9 +54,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
     )
-import Data.Witherable
-    ( mapMaybe
-    )
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 

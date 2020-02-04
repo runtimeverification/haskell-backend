@@ -22,9 +22,6 @@ import Control.Monad
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 

@@ -51,8 +51,6 @@ import Kore.Unparser
     )
 import SMT
 
-import Debug.Trace
-
 oneLiner :: Pretty a => a -> String
 oneLiner =
     Doc.renderString

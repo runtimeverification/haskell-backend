@@ -65,9 +65,6 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables

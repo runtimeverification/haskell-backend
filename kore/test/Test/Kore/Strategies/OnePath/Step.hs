@@ -18,9 +18,6 @@ import Data.List
     ( nub
     , sort
     )
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Reflection
     ( give
     )

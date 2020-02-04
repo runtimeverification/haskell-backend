@@ -18,7 +18,6 @@ import qualified Control.Monad as Monad
 import Data.Hashable
     ( Hashable
     )
-import qualified Data.Maybe as Maybe
 import Data.Text
     ( Text
     )
@@ -61,7 +60,7 @@ instance ParseAttributes Hook where
             getZeroParams params
             arg <- getOneArgument args
             StringLiteral name <- getStringLiteral arg
-            Monad.unless (Maybe.isNothing hook) failDuplicate'
+            Monad.unless (isNothing hook) failDuplicate'
             return Hook { getHook = Just name }
       where
         withApplication' = withApplication hookId

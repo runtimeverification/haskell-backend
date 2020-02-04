@@ -49,10 +49,6 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    , mapMaybe
-    )
 import Data.Text
     ( Text
     )

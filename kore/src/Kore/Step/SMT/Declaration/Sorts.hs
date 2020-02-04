@@ -16,9 +16,6 @@ import Data.Either
     ( partitionEithers
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 
 import qualified Kore.Step.SMT.AST as AST
     ( Declarations (Declarations)

@@ -35,10 +35,6 @@ module Kore.Internal.Pattern
 
 import Prelude.Kore
 
-import GHC.Stack
-    ( HasCallStack
-    )
-
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     , getFreeElementVariables

@@ -46,13 +46,6 @@ import Data.List
     ( intercalate
     )
 import qualified Data.List as List
-import Debug.Trace
-    ( traceIO
-    , traceM
-    )
-import Debug.Trace.String
-    ( traceEventIO
-    )
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec

@@ -9,9 +9,6 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import Numeric.Natural
     ( Natural
     )

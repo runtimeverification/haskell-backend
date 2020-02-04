@@ -13,9 +13,6 @@ import Prelude.Kore
 import Control.Exception
     ( assert
     )
-import Data.Maybe
-    ( listToMaybe
-    )
 
 import Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
@@ -108,7 +105,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
             Symbol.applicationSortsOperands (symbolSorts overloadedHead)
 
     unifyOverloadWithinBound injProto s1 s2 topSort =
-        listToMaybe withinBound
+        headMay withinBound
       where
         injProtoTop = injProto { injTo = topSort }
         withinBound =

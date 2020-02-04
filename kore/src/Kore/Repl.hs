@@ -51,7 +51,6 @@ import Data.List
     ( findIndex
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
 import qualified Data.Sequence as Seq
 import Kore.Attribute.RuleIndex
 import System.IO

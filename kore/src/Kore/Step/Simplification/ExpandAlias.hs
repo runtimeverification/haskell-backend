@@ -20,9 +20,6 @@ import Control.Exception
     ( assert
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 
 import Kore.Internal.Alias
     ( Alias (..)

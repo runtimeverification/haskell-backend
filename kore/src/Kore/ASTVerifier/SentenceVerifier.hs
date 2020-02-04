@@ -41,10 +41,6 @@ import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( isJust
-    , mapMaybe
-    )
 import Data.Set
     ( Set
     )

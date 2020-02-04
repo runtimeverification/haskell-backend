@@ -18,9 +18,6 @@ module Kore.Parser.CharDict
 import Prelude.Kore
 
 import qualified Data.Array as Array
-import Data.Maybe
-    ( fromMaybe
-    )
 
 newtype CharDict a = CharDict { getCharDict :: Array.Array Char a }
 

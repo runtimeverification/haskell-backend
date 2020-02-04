@@ -54,9 +54,6 @@ import Data.Hashable
     ( Hashable
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.These
 import Data.Typeable

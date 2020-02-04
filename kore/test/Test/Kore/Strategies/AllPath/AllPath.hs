@@ -23,7 +23,6 @@ import qualified Data.Graph.Inductive as Gr
 import Data.Limit
     ( Limit (..)
     )
-import qualified Data.Maybe as Maybe
 import Data.Sequence
     ( Seq
     )
@@ -34,9 +33,6 @@ import Data.Stream.Infinite
 import qualified Data.Stream.Infinite as Stream
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -409,7 +405,7 @@ derivePar rules (src, dst) =
     applyRule rule@(Rule (from, _))
       | from `matches` src = Just rule
       | otherwise = Nothing
-    applied = Maybe.mapMaybe applyRule rules
+    applied = mapMaybe applyRule rules
     goals = Foldable.asum (goal <$> applied)
 
 simplify :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal

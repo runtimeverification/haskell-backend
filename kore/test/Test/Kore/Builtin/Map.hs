@@ -71,6 +71,8 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+    ( fromJust
+    )
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
 
@@ -1300,7 +1302,7 @@ asInternal elements =
 unsafeAsConcrete :: TermLike Variable -> TermLike Concrete
 unsafeAsConcrete term =
     TermLike.asConcrete term
-    & Maybe.fromMaybe (error "Expected concrete term.")
+    & fromMaybe (error "Expected concrete term.")
 
 {- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
 

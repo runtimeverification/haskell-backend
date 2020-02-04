@@ -83,9 +83,6 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( simplifiedAttribute

@@ -61,9 +61,6 @@ import Data.List.NonEmpty
 import Data.Map.Strict
     ( Map
     )
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Monoid
     ( First (..)
     )

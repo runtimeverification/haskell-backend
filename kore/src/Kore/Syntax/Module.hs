@@ -17,9 +17,6 @@ import Control.DeepSeq
 import Data.Hashable
     ( Hashable (..)
     )
-import Data.Maybe
-    ( catMaybes
-    )
 import Data.String
     ( IsString
     )
