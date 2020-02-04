@@ -38,7 +38,7 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , recursiveIndexedModuleAxioms
     )
-import Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.Symbol
 
 {- | 'OverloadGraph' maps symbols to symbols overloading them
  -}

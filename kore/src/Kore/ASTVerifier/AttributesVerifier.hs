@@ -134,9 +134,9 @@ verifyNoHookAttribute attributes = do
 
 
 verifyAxiomAttributes
-    :: forall error a
+    :: forall error attrs
     .  MonadError (Error VerifyError) error
-    => IndexedModule Verified.Pattern Attribute.Symbol a
+    => IndexedModule Verified.Pattern Attribute.Symbol attrs
     -> Attribute.Axiom SymbolOrAlias
     -> error (Attribute.Axiom Internal.Symbol.Symbol)
 verifyAxiomAttributes indexedModule axiom = do
@@ -169,8 +169,18 @@ verifyAxiomAttributes indexedModule axiom = do
         symbolConstructor = symbolOrAliasConstructor symbolOrAlias
         symbolParams = symbolOrAliasParams symbolOrAlias
 
-verifySymbolAttributes :: a
-verifySymbolAttributes = undefined
+verifySymbolAttributes
+    :: forall error a
+    .  MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol a
+    -> Attribute.Symbol
+    -> error Attribute.Symbol
+verifySymbolAttributes _ attrs = return attrs
 
-verifySortAttributes :: a
-verifySortAttributes = undefined
+verifySortAttributes
+    :: forall error a
+    .  MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol a
+    -> Attribute.Symbol
+    -> error Attribute.Symbol
+verifySortAttributes _ attrs = return attrs

@@ -128,19 +128,17 @@ data Axiom symbol =
     }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic (Axiom SymbolOrAlias)
+instance SOP.Generic (Axiom symbol)
 
-instance SOP.HasDatatypeInfo (Axiom SymbolOrAlias)
+instance SOP.HasDatatypeInfo (Axiom symbol)
 
-instance Debug (Axiom SymbolOrAlias)
+instance Debug symbol => Debug (Axiom symbol)
 
-instance Diff (Axiom SymbolOrAlias)
+instance (Debug symbol, Diff symbol) => Diff (Axiom symbol)
 
-instance NFData (Axiom SymbolOrAlias)
+instance NFData symbol => NFData (Axiom symbol)
 
-instance NFData (Axiom Symbol)
-
-instance Default (Axiom SymbolOrAlias) where
+instance Default (Axiom symbol) where
     def =
         Axiom
             { heatCool = def
@@ -210,7 +208,57 @@ instance ParseAttributes (Axiom SymbolOrAlias) where
             , toAttributes . owise
             ]
 
+instance ParseAttributes (Axiom Symbol) where
+    parseAttribute attr =
+        typed @HeatCool (parseAttribute attr)
+        Monad.>=> typed @ProductionID (parseAttribute attr)
+        Monad.>=> typed @Priority (parseAttribute attr)
+        Monad.>=> typed @Assoc (parseAttribute attr)
+        Monad.>=> typed @Comm (parseAttribute attr)
+        Monad.>=> typed @Unit (parseAttribute attr)
+        Monad.>=> typed @Idem (parseAttribute attr)
+        Monad.>=> typed @Trusted (parseAttribute attr)
+        Monad.>=> typed @Concrete (parseAttribute attr)
+        Monad.>=> typed @Simplification (parseAttribute attr)
+        Monad.>=> typed @(Overload Symbol) (parseAttribute attr)
+        Monad.>=> typed @SmtLemma (parseAttribute attr)
+        Monad.>=> typed @Label (parseAttribute attr)
+        Monad.>=> typed @SourceLocation (parseAttribute attr)
+        Monad.>=> typed @Constructor (parseAttribute attr)
+        Monad.>=> typed @Functional (parseAttribute attr)
+        Monad.>=> typed @Subsorts (parseAttribute attr)
+        Monad.>=> typed @UniqueId (parseAttribute attr)
+        Monad.>=> typed @Owise (parseAttribute attr)
+
+    toAttributes =
+        mconcat . sequence
+            [ toAttributes . heatCool
+            , toAttributes . productionID
+            , toAttributes . priority
+            , toAttributes . assoc
+            , toAttributes . comm
+            , toAttributes . unit
+            , toAttributes . idem
+            , toAttributes . trusted
+            , toAttributes . concrete
+            , toAttributes . simplification
+            , toAttributes . overload
+            , toAttributes . smtLemma
+            , toAttributes . label
+            , toAttributes . sourceLocation
+            , toAttributes . constructor
+            , toAttributes . functional
+            , toAttributes . subsorts
+            , toAttributes . uniqueId
+            , toAttributes . owise
+            ]
+
 instance SQL.Column (Axiom SymbolOrAlias) where
+    -- TODO (thomas.tuegel): Use a foreign key.
+    defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
+    toColumn = SQL.toColumn . toAttributes
+
+instance SQL.Column (Axiom Symbol) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes

@@ -19,7 +19,7 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyClaims
     , verifyNonHooks
     , verifyAliasSentence
-    , parseAttributesAndVerify
+    , parseAndVerifyAxiomAttributes
     ) where
 
 import Prelude.Kore
@@ -347,7 +347,7 @@ verifyAxiomSentence sentence =
         verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker sentence
         attrs <-
-            parseAttributesAndVerify verifiedModule'
+            parseAndVerifyAxiomAttributes verifiedModule'
             $ sentenceAxiomAttributes sentence
         State.modify $ addAxiom verified attrs
   where
@@ -380,7 +380,7 @@ verifyClaimSentence sentence =
         verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)
         attrs <-
-            parseAttributesAndVerify verifiedModule'
+            parseAndVerifyAxiomAttributes verifiedModule'
             $ sentenceClaimAttributes sentence
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
@@ -451,10 +451,10 @@ parseAttributes'
 parseAttributes' =
     Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
-parseAttributesAndVerify
+parseAndVerifyAxiomAttributes
     :: MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
     -> Attributes
     -> error (Attribute.Axiom Internal.Symbol.Symbol)
-parseAttributesAndVerify indexModule attrs =
+parseAndVerifyAxiomAttributes indexModule attrs =
     parseAttributes' attrs >>= verifyAxiomAttributes indexModule

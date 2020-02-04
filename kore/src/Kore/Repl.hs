@@ -68,6 +68,9 @@ import Kore.Internal.TermLike
     , mkSortVariable
     , mkTop
     )
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    )
 import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
@@ -80,9 +83,6 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 import Kore.Syntax.Variable
 import Kore.Unification.Procedure
     ( unificationProcedure
@@ -211,7 +211,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
-        :: Attribute.Axiom SymbolOrAlias
+        :: Attribute.Axiom Symbol
         -> axiom
         -> axiom
     modifyAttribute att rule =
@@ -222,13 +222,13 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     axiomToRulePatt :: axiom -> Rule.RulePattern Variable
     axiomToRulePatt = toRulePattern
 
-    getAttribute :: axiom -> Attribute.Axiom SymbolOrAlias
+    getAttribute :: axiom -> Attribute.Axiom Symbol
     getAttribute = Rule.attributes . axiomToRulePatt
 
     mapAttribute
         :: Int
-        -> Attribute.Axiom SymbolOrAlias
-        -> Attribute.Axiom SymbolOrAlias
+        -> Attribute.Axiom Symbol
+        -> Attribute.Axiom Symbol
     mapAttribute n attr =
         Lens.over (field @"identifier") (makeRuleIndex n) attr
 

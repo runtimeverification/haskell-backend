@@ -28,27 +28,25 @@ newtype Overload symbol =
         { getOverload :: Maybe (symbol, symbol) }
     deriving (Eq, GHC.Generic, Ord, Show, Functor)
 
-instance SOP.Generic (Overload SymbolOrAlias)
+instance SOP.Generic (Overload symbol)
 
-instance SOP.HasDatatypeInfo (Overload SymbolOrAlias)
+instance SOP.HasDatatypeInfo (Overload symbol)
 
-instance Debug (Overload SymbolOrAlias)
+instance Debug symbol => Debug (Overload symbol)
 
-instance Diff (Overload SymbolOrAlias)
+instance (Debug symbol, Diff symbol) => Diff (Overload symbol)
 
-instance Semigroup (Overload SymbolOrAlias) where
+instance Semigroup (Overload symbol) where
     (<>) a@(Overload (Just _)) _ = a
     (<>) _                     b = b
 
-instance Monoid (Overload SymbolOrAlias) where
+instance Monoid (Overload symbol) where
     mempty = Overload { getOverload = Nothing }
 
-instance Default (Overload SymbolOrAlias) where
+instance Default (Overload symbol) where
     def = mempty
 
-instance NFData (Overload SymbolOrAlias)
-
-instance NFData (Overload Symbol)
+instance NFData symbol => NFData (Overload symbol)
 
 -- | Kore identifier representing the @overload@ attribute symbol.
 overloadId :: Id
@@ -92,3 +90,8 @@ instance ParseAttributes (Overload SymbolOrAlias) where
       where
         toAttribute (symbol1, symbol2) =
             Attributes [overloadAttribute symbol1 symbol2]
+
+instance ParseAttributes (Overload Symbol) where
+    parseAttribute = undefined
+
+    toAttributes = undefined

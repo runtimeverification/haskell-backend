@@ -172,7 +172,7 @@ evaluators builtins indexedModule =
         justAttributes (attrs, _) = attrs
 
     importHookedSymbolAttributes
-        ::  ( a, b, VerifiedModule StepperAttributes)
+        ::  (a, b, VerifiedModule StepperAttributes)
         -> Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 

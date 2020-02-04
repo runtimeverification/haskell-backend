@@ -39,8 +39,7 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
-    ( bimap
-    , first
+    ( first
     , second
     )
 import Data.Coerce
@@ -426,7 +425,6 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         let axioms = fmap Bounded.Axiom rewriteRules
             claims =
                 makeClaim
-                . Bifunctor.first Attribute.axiomSymbolToSymbolOrAlias
                 <$> specClaims
 
         Bounded.checkClaim
@@ -578,7 +576,7 @@ assertSomeClaims claims =
 makeClaim
     :: Goal.FromRulePattern claim
     => Goal.ToRulePattern claim
-    => (Attribute.Axiom SymbolOrAlias, claim) -> claim
+    => (Attribute.Axiom Symbol, claim) -> claim
 makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
     Goal.fromRulePattern ruleType RulePattern
         { attributes = attributes
@@ -590,8 +588,8 @@ makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
 
 simplifyRuleOnSecond
     :: (MonadSimplify simplifier, Claim claim)
-    => (Attribute.Axiom SymbolOrAlias, claim)
-    -> simplifier (Attribute.Axiom SymbolOrAlias, claim)
+    => (Attribute.Axiom Symbol, claim)
+    -> simplifier (Attribute.Axiom Symbol, claim)
 simplifyRuleOnSecond (atts, rule) = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
     return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')
@@ -682,16 +680,10 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
         tools <- Simplifier.askMetadataTools
         let Initialized { rewriteRules } = initialized
             changedSpecClaims
-                ::  [ ( Attribute.Axiom SymbolOrAlias
-                      , MaybeChanged (ReachabilityRule Variable)
-                      )
-                    ]
+                :: [(Attribute.Axiom Symbol, MaybeChanged (ReachabilityRule Variable))]
             changedSpecClaims =
                 map
-                    (Bifunctor.bimap
-                        Attribute.axiomSymbolToSymbolOrAlias
-                        (expandClaim tools)
-                    )
+                    (Bifunctor.second $ expandClaim tools)
                     (Goal.extractClaims specModule)
             mapMSecond
                 :: Monad m
@@ -709,23 +701,16 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
                 return (MultiAnd.extractPatterns simplified)
 
             maybeClaimsAlreadyProven
-                :: Maybe
-                    [ ( Attribute.Axiom SymbolOrAlias
-                      , ReachabilityRule Variable
-                      )
-                    ]
+                :: Maybe [(Attribute.Axiom Symbol, ReachabilityRule Variable)]
             maybeClaimsAlreadyProven =
-                fmap (Bifunctor.first Attribute.axiomSymbolToSymbolOrAlias)
-                . Goal.extractClaims
-                <$> maybeAlreadyProvenModule
+                Goal.extractClaims <$> maybeAlreadyProvenModule
             claimsAlreadyProven
-                :: [(Attribute.Axiom SymbolOrAlias, ReachabilityRule Variable)]
+                :: [(Attribute.Axiom Symbol, ReachabilityRule Variable)]
             claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
 
         mapM_ (logChangedClaim . snd) changedSpecClaims
 
-        let specClaims
-                :: [(Attribute.Axiom SymbolOrAlias, ReachabilityRule Variable)]
+        let specClaims :: [(Attribute.Axiom Symbol, ReachabilityRule Variable)]
             specClaims =
                 map (Bifunctor.second fromMaybeChanged) changedSpecClaims
         -- This assertion should come before simplifying the claims,
