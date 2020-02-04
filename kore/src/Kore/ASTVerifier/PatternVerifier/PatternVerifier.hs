@@ -112,7 +112,8 @@ data Context =
         { declaredVariables :: !DeclaredVariables
         , declaredSortVariables :: !(Set SortVariable)
         -- ^ The sort variables in scope.
-        , indexedModule :: !(IndexedModule Verified.Pattern Attribute.Symbol Attribute.Null)
+        , indexedModule
+            :: !(IndexedModule Verified.Pattern Attribute.Symbol Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
         , patternVerifierHook :: !PatternVerifierHook
         }

@@ -350,7 +350,7 @@ verifyAxiomSentence sentence =
     addAxiom verified attrs =
         Lens.over
             (field @"indexedModuleAxioms")
-            ((attrs , verified) :)
+            ((attrs, verified) :)
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom

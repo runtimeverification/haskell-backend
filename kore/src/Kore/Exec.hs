@@ -419,9 +419,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSomeClaims specClaims
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
-            claims =
-                makeClaim
-                <$> specClaims
+            claims = fmap makeClaim specClaims
 
         Bounded.checkClaim
             breadthLimit

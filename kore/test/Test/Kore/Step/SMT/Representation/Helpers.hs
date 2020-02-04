@@ -34,9 +34,7 @@ import Test.Tasty.HUnit.Ext
 
 testsForModule
     :: String
-    ->  (  VerifiedModule Attribute.Symbol
-        -> AST.Declarations sort symbol name
-        )
+    -> (VerifiedModule Attribute.Symbol -> AST.Declarations sort symbol name)
     -> VerifiedModule Attribute.Symbol
     -> [AST.Declarations sort symbol name -> TestTree]
     -> TestTree
