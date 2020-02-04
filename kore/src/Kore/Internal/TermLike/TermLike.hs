@@ -22,7 +22,6 @@ module Kore.Internal.TermLike.TermLike
 
 import Prelude.Kore
 
-import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
 import qualified Control.Comonad.Trans.Env as Env
@@ -39,6 +38,9 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
     ( Compose (..)
+    )
+import Data.Functor.Const
+    ( Const (..)
     )
 import Data.Functor.Foldable
     ( Base

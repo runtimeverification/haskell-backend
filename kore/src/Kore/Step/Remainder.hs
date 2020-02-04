@@ -12,9 +12,6 @@ module Kore.Step.Remainder
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Condition

@@ -16,7 +16,7 @@ module Branch
     , alternate
     ) where
 
-import Prelude.Kore
+import Prelude
 
 import Control.Applicative
 import qualified Control.Monad as Monad

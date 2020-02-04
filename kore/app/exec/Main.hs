@@ -2,10 +2,6 @@ module Main (main) where
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    , optional
-    )
 import Control.Monad.Catch
     ( MonadCatch
     , SomeException

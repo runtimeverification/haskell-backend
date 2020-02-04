@@ -19,9 +19,6 @@ module Kore.Log.DebugSolver
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Data.Default
 import Data.Text
     ( Text

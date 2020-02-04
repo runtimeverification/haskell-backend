@@ -28,9 +28,6 @@ module Control.Monad.Counter
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative
-    )
 import Control.Monad
     ( MonadPlus
     )

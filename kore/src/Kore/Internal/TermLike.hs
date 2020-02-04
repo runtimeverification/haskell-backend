@@ -177,7 +177,6 @@ module Kore.Internal.TermLike
 
 import Prelude.Kore
 
-import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
 import Data.Align
@@ -186,6 +185,9 @@ import Data.ByteString
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import Data.Functor.Const
+    ( Const (..)
+    )
 import Data.Functor.Foldable
     ( Base
     )

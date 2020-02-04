@@ -5,9 +5,6 @@ module Main (main) where
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( optional
-    )
 import Control.Concurrent.MVar
 import Control.Monad.Trans
     ( lift

@@ -27,9 +27,6 @@ import Prelude.Kore hiding
     ( takeWhile
     )
 
-import Control.Applicative
-    ( (<|>)
-    )
 import Control.Monad
     ( void
     )

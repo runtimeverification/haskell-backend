@@ -13,9 +13,6 @@ module Kore.Step.SMT.Lemma
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( runMaybeT
