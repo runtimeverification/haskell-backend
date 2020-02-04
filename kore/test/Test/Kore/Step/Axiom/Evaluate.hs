@@ -2,16 +2,16 @@ module Test.Kore.Step.Axiom.Evaluate
     ( test_evaluateAxioms
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Axiom.Concrete
 import qualified Kore.Internal.Condition as Condition
@@ -179,7 +179,7 @@ withAttempted check comment axioms termLikeAndPredicate =
     testCase comment (evaluateAxioms axioms termLikeAndPredicate >>= check)
 
 applies
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> [EqualityRule Variable]
     -> (TermLike Variable, Predicate Variable)
@@ -192,7 +192,9 @@ applies testName axioms termLikeAndPredicate results =
         actual <- expectApplied attempted
         expectNoRemainders actual
         expectResults actual
-    expectApplied NotApplicable     = assertFailure "Expected Applied"
+    expectApplied NotApplicable = assertFailure "Expected Applied"
+    expectApplied (NotApplicableUntilConditionChanges _) =
+        assertFailure "Expected Applied"
     expectApplied (Applied actual) = return actual
     expectNoRemainders =
         assertEqualOrPattern "Expected no remainders" OrPattern.bottom
@@ -203,7 +205,7 @@ applies testName axioms termLikeAndPredicate results =
         . Lens.view (field @"results")
 
 assertEqualOrPattern
-    :: GHC.HasCallStack
+    :: HasCallStack
     => String
     -> OrPattern Variable
     -> OrPattern Variable
@@ -220,7 +222,7 @@ assertEqualOrPattern message expect actual
         ]
 
 doesn'tApply
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TestName
     -> [EqualityRule Variable]
     -> (TermLike Variable, Predicate Variable)

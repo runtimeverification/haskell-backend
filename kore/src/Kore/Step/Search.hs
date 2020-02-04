@@ -12,6 +12,8 @@ module Kore.Step.Search
     , matchWith
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( MaybeT (..)
     , nothing
@@ -22,9 +24,6 @@ import Control.Error.Util
 import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Class
     ( lift
-    )
-import Data.Maybe
-    ( catMaybes
     )
 import Numeric.Natural
     ( Natural

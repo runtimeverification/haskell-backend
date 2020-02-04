@@ -4,6 +4,8 @@ module Test.Kore.Unparser
     , test_unparseGeneric
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
     ( Gen
     , Property
@@ -170,10 +172,13 @@ test_unparse =
                 ]
             )
             "\\and{_PREDICATE{}}(\n\
-            \    \\ceil{testSort{}, _PREDICATE{}}(a{}()),\n\
+            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
+                    \/* Fl Fn D Sfa Cl */ a{}()),\n\
             \\\and{_PREDICATE{}}(\n\
-            \    \\ceil{testSort{}, _PREDICATE{}}(b{}()),\n\
-            \    \\ceil{testSort{}, _PREDICATE{}}(c{}())\n\
+            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
+                    \/* Fl Fn D Sfa Cl */ b{}()),\n\
+            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
+                    \/* Fl Fn D Sfa Cl */ c{}())\n\
             \))"
         , unparseTest
             (Pattern.andCondition
@@ -187,16 +192,28 @@ test_unparse =
             )
             "\\and{topSort{}}(\n\
             \    /* term: */\n\
-            \    \\top{topSort{}}(),\n\
+            \    /* D Sfa */ \\top{topSort{}}(),\n\
             \\\and{topSort{}}(\n\
             \    /* predicate: */\n\
-            \    \\top{topSort{}}(),\n\
+            \    /* D Sfa */ \\top{topSort{}}(),\n\
             \    /* substitution: */\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(x:testSort{}, a{}()),\n\
+            \        /* Spa */\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /* Fl Fn D Sfa */ x:testSort{},\n\
+            \            /* Fl Fn D Sfa Cl */ a{}()\n\
+            \        ),\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(y:testSort{}, b{}()),\n\
-            \        \\equals{testSort{}, topSort{}}(z:testSort{}, c{}())\n\
+            \        /* Spa */\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /* Fl Fn D Sfa */ y:testSort{},\n\
+            \            /* Fl Fn D Sfa Cl */ b{}()\n\
+            \        ),\n\
+            \        /* Spa */\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /* Fl Fn D Sfa */ z:testSort{},\n\
+            \            /* Fl Fn D Sfa Cl */ c{}()\n\
+            \        )\n\
             \    ))\n\
             \))"
         , unparseTest
@@ -219,21 +236,36 @@ test_unparse =
             )
             "\\and{topSort{}}(\n\
             \    /* term: */\n\
-            \    \\top{topSort{}}(),\n\
+            \    /* D Sfa */ \\top{topSort{}}(),\n\
             \\\and{topSort{}}(\n\
             \    /* predicate: */\n\
             \    \\and{topSort{}}(\n\
-            \        \\ceil{testSort{}, topSort{}}(a{}()),\n\
+            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
+                        \/* Fl Fn D Sfa Cl */ a{}()),\n\
             \    \\and{topSort{}}(\n\
-            \        \\ceil{testSort{}, topSort{}}(b{}()),\n\
-            \        \\ceil{testSort{}, topSort{}}(c{}())\n\
+            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
+                        \/* Fl Fn D Sfa Cl */ b{}()),\n\
+            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
+                        \/* Fl Fn D Sfa Cl */ c{}())\n\
             \    )),\n\
             \    /* substitution: */\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(x:testSort{}, a{}()),\n\
+            \        /* Spa */\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /* Fl Fn D Sfa */ x:testSort{},\n\
+            \            /* Fl Fn D Sfa Cl */ a{}()\n\
+            \        ),\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(y:testSort{}, b{}()),\n\
-            \        \\equals{testSort{}, topSort{}}(z:testSort{}, c{}())\n\
+            \        /* Spa */\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /* Fl Fn D Sfa */ y:testSort{},\n\
+            \            /* Fl Fn D Sfa Cl */ b{}()\n\
+            \        ),\n\
+            \        /* Spa */\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /* Fl Fn D Sfa */ z:testSort{},\n\
+            \            /* Fl Fn D Sfa Cl */ c{}()\n\
+            \        )\n\
             \    ))\n\
             \))"
         ]
@@ -273,14 +305,15 @@ parse :: Parser a -> String -> Either String a
 parse parser =
     parseOnly (parser <* endOfInput) "<test-string>"
 
-roundtrip :: (Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
+roundtrip
+    :: (HasCallStack, Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
         parse parser (unparseToString generated) === Right generated
 
 unparseParseTest
-    :: (Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
+    :: (HasCallStack, Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
@@ -288,7 +321,7 @@ unparseParseTest parser astInput =
             (Right astInput)
             (parse parser (unparseToString astInput)))
 
-unparseTest :: (Unparse a, Debug a) => a -> String -> TestTree
+unparseTest :: (HasCallStack, Unparse a, Debug a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
         "Unparsing"

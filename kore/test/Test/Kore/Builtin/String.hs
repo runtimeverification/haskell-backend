@@ -8,12 +8,15 @@ module Test.Kore.Builtin.String
     , test_find
     , test_string2Base
     , test_string2Int
+    , test_int2String
     , test_token2String
     , test_string2Token
     --
     , asPattern
     , asInternal
     ) where
+
+import Prelude.Kore
 
 import Hedgehog hiding
     ( Concrete
@@ -24,9 +27,6 @@ import Test.Tasty
 
 import Data.Text
     ( Text
-    )
-import GHC.Stack
-    ( HasCallStack
     )
 
 import qualified Kore.Builtin.Builtin as Builtin
@@ -327,6 +327,20 @@ test_string2Int =
         string2IntStringSymbol
         [asInternal "baad"]
         bottom
+    ]
+
+test_int2String :: [TestTree]
+test_int2String =
+    [ testString
+        "int2String basic example"
+        int2StringStringSymbol
+        [Test.Int.asInternal 42]
+        (asPattern "42")
+    , testString
+        "int2String decimal negative"
+        int2StringStringSymbol
+        [Test.Int.asInternal (-42)]
+        (asPattern "-42")
     ]
 
 test_token2String :: [TestTree]

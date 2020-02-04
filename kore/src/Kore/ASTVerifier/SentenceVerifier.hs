@@ -21,6 +21,8 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyAliasSentence
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -36,13 +38,8 @@ import Control.Monad.State.Strict
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( isJust
-    , mapMaybe
-    )
 import Data.Set
     ( Set
     )

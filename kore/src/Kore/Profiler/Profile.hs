@@ -18,6 +18,8 @@ module Kore.Profiler.Profile
     , timeStrategy
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( when
     )
@@ -48,8 +50,6 @@ import Kore.Unparser
     , unparseToString
     )
 import SMT
-
-import Debug.Trace
 
 oneLiner :: Pretty a => a -> String
 oneLiner =

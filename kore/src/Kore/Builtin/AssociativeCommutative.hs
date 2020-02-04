@@ -37,6 +37,8 @@ module Kore.Builtin.AssociativeCommutative
     , VariableElements (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -63,9 +65,6 @@ import Data.Reflection
 import qualified Data.Reflection as Reflection
 import Data.Text.Prettyprint.Doc
     ( Doc
-    )
-import GHC.Stack
-    ( HasCallStack
     )
 
 import Branch

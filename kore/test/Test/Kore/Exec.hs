@@ -5,6 +5,8 @@ module Test.Kore.Exec
     , test_execGetExitCode
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Applicative
@@ -17,9 +19,6 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Set
     ( Set
     )

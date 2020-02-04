@@ -2,6 +2,8 @@ module Test.Kore.Repl.Graph
     ( test_graph
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit.Ext hiding
     ( assert

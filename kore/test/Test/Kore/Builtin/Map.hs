@@ -44,6 +44,10 @@ module Test.Kore.Builtin.Map
     , asInternal
     ) where
 
+import Prelude.Kore hiding
+    ( concatMap
+    )
+
 import Hedgehog
     ( Gen
     , Property
@@ -61,21 +65,16 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Either as Either
-import Data.Function
-    ( (&)
-    )
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+    ( fromJust
+    )
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
-import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( concatMap
-    )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as Builtin.List
@@ -1189,7 +1188,7 @@ test_renormalize =
     k2 = Test.Int.asInternal 2
 
     becomes
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
         -- ^ original, (possibly) de-normalized map
@@ -1200,14 +1199,14 @@ test_renormalize =
         testCase name $ assertEqual "" (Just expect) (Ac.renormalize origin)
 
     unchanged
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
         -> TestTree
     unchanged name origin = becomes name origin origin
 
     denorm
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
         -> TestTree
@@ -1303,7 +1302,7 @@ asInternal elements =
 unsafeAsConcrete :: TermLike Variable -> TermLike Concrete
 unsafeAsConcrete term =
     TermLike.asConcrete term
-    & Maybe.fromMaybe (error "Expected concrete term.")
+    & fromMaybe (error "Expected concrete term.")
 
 {- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
 

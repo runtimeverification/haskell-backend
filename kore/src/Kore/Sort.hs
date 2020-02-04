@@ -39,6 +39,8 @@ module Kore.Sort
     , module Kore.Syntax.Id
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )
@@ -52,9 +54,6 @@ import Data.Hashable
     ( Hashable
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.These
 import Data.Typeable

@@ -16,6 +16,8 @@ module Test.Kore.Builtin.InternalBytes
     , test_InternalBytes
     ) where
 
+import Prelude.Kore
+
 import qualified Data.ByteString.Char8 as BS
 import Hedgehog hiding
     ( Concrete
@@ -37,9 +39,6 @@ import Data.Text
     )
 import qualified Data.Text as T
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes

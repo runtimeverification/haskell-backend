@@ -20,6 +20,8 @@ module Kore.Syntax.Pattern
     , module Control.Comonad
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
     ( Cofree
@@ -46,7 +48,6 @@ import Data.Functor.Identity
 import Data.Hashable
     ( Hashable (..)
     )
-import Data.Maybe
 import Data.Text
     ( Text
     )

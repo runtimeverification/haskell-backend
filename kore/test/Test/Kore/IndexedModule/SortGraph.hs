@@ -4,12 +4,11 @@ module Test.Kore.IndexedModule.SortGraph
     , test_fromIndexedModule
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Set
     ( Set
     )

@@ -15,13 +15,12 @@ module Kore.Step.Simplification.Ceil
     , Ceil (..)
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
     ( isTotal
@@ -202,10 +201,10 @@ makeEvaluateTerm
                 , substitution = mempty
                 }
             (mkCeil_ term)
-            (OrPattern.fromPattern Conditional
+            (\maybeCondition -> OrPattern.fromPattern Conditional
                 { term = mkTop_
                 , predicate =
-                    Predicate.markSimplified
+                    Predicate.markSimplifiedMaybeConditional maybeCondition
                     $ makeCeilPredicate_ term
                 , substitution = mempty
                 }

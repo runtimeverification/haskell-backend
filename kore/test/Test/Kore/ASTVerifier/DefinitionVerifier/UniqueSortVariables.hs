@@ -2,6 +2,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables
     ( test_uniqueSortVariables
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )

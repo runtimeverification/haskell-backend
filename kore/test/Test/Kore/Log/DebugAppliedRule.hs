@@ -3,6 +3,8 @@ module Test.Kore.Log.DebugAppliedRule
     , test_instance_Table_DebugAppliedRule
     ) where
 
+import Prelude.Kore ()
+
 import Test.Tasty
 
 import Data.Default

@@ -6,6 +6,8 @@ module Test.Kore.Step.Simplification.AndTerms
     , test_functionAnd
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Error

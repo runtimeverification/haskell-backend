@@ -4,6 +4,8 @@ module Test.Kore.Step.Rule.Combine
     , test_combineRulesGrouped
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default

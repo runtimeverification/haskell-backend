@@ -17,6 +17,8 @@ module Kore.ASTVerifier.Error
     , noConstructorWithDomainValues
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )

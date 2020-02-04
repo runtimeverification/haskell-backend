@@ -1,18 +1,14 @@
 module Main (main) where
 
+import Prelude.Kore
+
 import Criterion.Main
 
-import Data.Function
-    ( (&)
-    )
 import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import Numeric.Natural
     ( Natural
     )

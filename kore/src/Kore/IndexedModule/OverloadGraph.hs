@@ -14,6 +14,8 @@ module Kore.IndexedModule.OverloadGraph
     , fromOverloads
     ) where
 
+import Prelude.Kore
+
 import Data.Map.Strict
     ( Map
     )
@@ -26,9 +28,6 @@ import Data.Typeable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Data.Maybe
-    ( mapMaybe
-    )
 import Debug
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute

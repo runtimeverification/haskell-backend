@@ -5,6 +5,8 @@ module Test.ConsistentKore
     , termLikeGen
     ) where
 
+import Prelude.Kore
+
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -26,11 +28,6 @@ import qualified Data.List as List
     ( foldl'
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( catMaybes
-    , fromMaybe
-    , mapMaybe
-    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text

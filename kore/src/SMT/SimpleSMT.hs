@@ -150,6 +150,17 @@ module SMT.SimpleSMT
     , forallQ
     ) where
 
+import Prelude.Kore hiding
+    ( abs
+    , and
+    , concat
+    , const
+    , div
+    , mod
+    , not
+    , or
+    )
+
 import qualified Colog
 import Control.Concurrent
     ( forkIO
@@ -173,21 +184,10 @@ import qualified GHC.Generics as GHC
 import GHC.Stack
     ( callStack
     )
-import qualified GHC.Stack as GHC
 import Numeric
     ( readHex
     , showFFloat
     , showHex
-    )
-import Prelude hiding
-    ( abs
-    , and
-    , concat
-    , const
-    , div
-    , mod
-    , not
-    , or
     )
 import qualified Prelude
 import System.Exit
@@ -284,7 +284,7 @@ newSolver exe opts logger = do
     return solver
 
 logMessageWith
-    :: GHC.HasCallStack
+    :: HasCallStack
     => Log.Severity
     -> Solver
     -> Text
@@ -294,10 +294,10 @@ logMessageWith severity Solver { logger } a =
   where
     message = Log.SomeEntry $ Log.LogMessage a severity callStack
 
-debug :: GHC.HasCallStack => Solver -> Text -> IO ()
+debug :: HasCallStack => Solver -> Text -> IO ()
 debug = logMessageWith Log.Debug
 
-warn :: GHC.HasCallStack => Solver -> Text -> IO ()
+warn :: HasCallStack => Solver -> Text -> IO ()
 warn = logMessageWith Log.Warning
 
 send :: Solver -> SExpr -> IO ()

@@ -6,6 +6,10 @@ module Kore.Step.Simplification.Overloading
     ( overloadedConstructorSortInjectionAndEquals
     ) where
 
+import Prelude.Kore hiding
+    ( concat
+    )
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -16,10 +20,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Text.Prettyprint.Doc
     ( Doc
-    )
-import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( concat
     )
 
 import Kore.Attribute.Synthetic
@@ -50,7 +50,7 @@ otherwise, return bottom, as the constructors are incompatible
  -}
 overloadedConstructorSortInjectionAndEquals
     :: (SimplifierVariable variable, MonadUnify unifier)
-    => GHC.HasCallStack
+    => HasCallStack
     => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -97,7 +97,7 @@ overloadedConstructorSortInjectionAndEquals _ _ _ = empty
 
 overloadedAndEqualsOverloading
     :: (SimplifierVariable variable, MonadUnify unifier)
-    => GHC.HasCallStack
+    => HasCallStack
     => TermSimplifier variable unifier
     -> TermLike variable
     -> Inj (TermLike variable)
@@ -140,4 +140,3 @@ overloadedAndEqualsOverloading
     notUnifiableType (BuiltinString_ _) = Just "injected builtin string"
     notUnifiableType _ = Nothing
 overloadedAndEqualsOverloading _ _ _ = empty
-

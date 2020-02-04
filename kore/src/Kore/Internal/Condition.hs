@@ -7,8 +7,10 @@ module Kore.Internal.Condition
     ( Condition
     , isSimplified
     , simplifiedAttribute
-    , markPredicateSimplified
-    , setPredicateSimplified
+    , forgetSimplified
+    , Conditional.markPredicateSimplified
+    , Conditional.markPredicateSimplifiedConditional
+    , Conditional.setPredicateSimplified
     , eraseConditionalTerm
     , top
     , bottom
@@ -29,7 +31,7 @@ module Kore.Internal.Condition
     , Conditional.andCondition
     ) where
 
-import qualified GHC.Stack as GHC
+import Prelude.Kore
 
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
@@ -81,30 +83,15 @@ simplifiedAttribute Conditional {term = (), predicate, substitution} =
     Predicate.simplifiedAttribute predicate
     <> Substitution.simplifiedAttribute substitution
 
-{-| Marks the condition's predicate as being simplified.
-
-Since the substitution is usually simplified, this usually marks the entire
-condition as simplified. Note however, that the way in which the condition
-is simplified is a combination of the predicate and substitution
-simplifications. As an example, if the predicate is fully simplified,
-while the substitution is simplified only for a certain side condition,
-the entire condition is simplified only for that side condition.
--}
-markPredicateSimplified
-    :: (GHC.HasCallStack, InternalVariable variable)
-    => Condition variable -> Condition variable
-markPredicateSimplified conditional@Conditional { predicate } =
-    conditional { predicate = Predicate.markSimplified predicate }
-
-{-| Sets the simplified attribute for a condition's predicate.
-
-See 'markPredicateSimplified' for details.
--}
-setPredicateSimplified
+forgetSimplified
     :: InternalVariable variable
-    => Attribute.Simplified -> Condition variable -> Condition variable
-setPredicateSimplified simplified conditional@Conditional { predicate } =
-    conditional { predicate = Predicate.setSimplified simplified predicate }
+    => Condition variable -> Condition variable
+forgetSimplified Conditional { term = (), predicate, substitution } =
+    Conditional
+        { term = ()
+        , predicate = Predicate.forgetSimplified predicate
+        , substitution = Substitution.forgetSimplified substitution
+        }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Condition'.
 eraseConditionalTerm
@@ -207,7 +194,7 @@ conditionSort Conditional {term = (), predicate} =
     Predicate.predicateSort predicate
 
 coerceSort
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => Sort -> Condition variable -> Condition variable
 coerceSort
     sort

@@ -2,6 +2,8 @@ module Test.Kore.Step.Simplification.IntegrationProperty
     ( test_simplifiesToSimplified
     ) where
 
+import Prelude.Kore
+
 import Hedgehog
     ( PropertyT
     , annotate
@@ -24,7 +26,6 @@ import Data.List
     ( isInfixOf
     )
 import qualified Data.Map.Strict as Map
-import Debug.Trace
 
 import Kore.Internal.OrPattern
     ( OrPattern

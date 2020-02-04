@@ -2,11 +2,12 @@ module Test.Kore.Step.Simplification.Builtin
     ( test_simplify
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Conditional
@@ -61,7 +62,7 @@ test_simplify =
             , substitution = mempty
             }
     becomes
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Builtin (OrPattern Variable)
         -> [Pattern Variable]

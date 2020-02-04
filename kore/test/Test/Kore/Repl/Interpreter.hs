@@ -2,6 +2,8 @@ module Test.Kore.Repl.Interpreter
     ( test_replInterpreter
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )
@@ -25,7 +27,6 @@ import Data.Coerce
     ( coerce
     )
 import Data.Default
-import Data.Function
 import Data.Generics.Product
 import Data.IORef
     ( IORef

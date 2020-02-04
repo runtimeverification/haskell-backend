@@ -17,7 +17,9 @@ module Kore.Internal.TermLike
     , assertConstructorLikeKeys
     , markSimplified
     , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
+    , forgetSimplified
     , simplifiedAttribute
     , isFunctionPattern
     , isFunctionalPattern
@@ -173,6 +175,8 @@ module Kore.Internal.TermLike
     , module Variable
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
@@ -182,12 +186,10 @@ import Data.ByteString
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Maybe
 import Data.Monoid
     ( Endo (..)
     )
@@ -196,7 +198,6 @@ import Data.Text
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.These
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
@@ -206,9 +207,6 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
-import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
-    ( simplifiedTo
-    )
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness
     ( Endianness
@@ -421,6 +419,19 @@ isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
     Attribute.isSimplified sideCondition . extractAttributes
 
+{- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
+
+@
+isSimplified (forgetSimplified _) == False
+@
+
+ -}
+forgetSimplified
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+forgetSimplified = resynthesize
+
 isFullySimplified :: TermLike variable -> Bool
 isFullySimplified = Attribute.isFullySimplified . extractAttributes
 
@@ -468,7 +479,7 @@ is fully simplified (e.g. if a child is simplified conditionally).
 
 -}
 markSimplified
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => TermLike variable -> TermLike variable
 markSimplified (Recursive.project -> attrs :< termLikeF) =
     Recursive.embed
@@ -478,8 +489,17 @@ markSimplified (Recursive.project -> attrs :< termLikeF) =
         :< termLikeF
         )
 
+markSimplifiedMaybeConditional
+    :: (HasCallStack, InternalVariable variable)
+    => Maybe SideCondition.Representation
+    -> TermLike variable
+    -> TermLike variable
+markSimplifiedMaybeConditional Nothing = markSimplified
+markSimplifiedMaybeConditional (Just condition) =
+    markSimplifiedConditional condition
+
 cannotSimplifyNotSimplifiedError
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => TermLikeF variable (TermLike variable) -> a
 cannotSimplifyNotSimplifiedError termLikeF =
     error
@@ -491,9 +511,12 @@ cannotSimplifyNotSimplifiedError termLikeF =
         )
 
 setSimplified
-    :: InternalVariable variable
+    :: (HasCallStack, InternalVariable variable)
     => Pattern.Simplified -> TermLike variable -> TermLike variable
-setSimplified simplified (Recursive.project -> attrs :< termLikeF) =
+setSimplified
+    simplified
+    (Recursive.project -> attrs :< termLikeF)
+  =
     Recursive.embed
         (  Attribute.setSimplified mergedSimplified attrs
         :< termLikeF
@@ -504,12 +527,18 @@ setSimplified simplified (Recursive.project -> attrs :< termLikeF) =
         (Pattern.NotSimplified, Pattern.NotSimplified) -> Pattern.NotSimplified
         (Pattern.NotSimplified, _) -> cannotSimplifyNotSimplifiedError termLikeF
         (_, Pattern.NotSimplified) -> Pattern.NotSimplified
-        _ -> childSimplified `Attribute.Simplified.simplifiedTo` simplified
+        _ -> childSimplified <> simplified
 
+{-|Marks a term as being simplified as long as the side condition stays
+unchanged.
+-}
 markSimplifiedConditional
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => SideCondition.Representation -> TermLike variable -> TermLike variable
-markSimplifiedConditional condition (Recursive.project -> attrs :< termLikeF) =
+markSimplifiedConditional
+    condition
+    (Recursive.project -> attrs :< termLikeF)
+  =
     Recursive.embed
         (  Attribute.setSimplified
                 (  checkedSimplifiedFromChildren termLikeF
@@ -520,7 +549,8 @@ markSimplifiedConditional condition (Recursive.project -> attrs :< termLikeF) =
         )
 
 simplifiedFromChildren
-    :: TermLikeF variable (TermLike variable) -> Pattern.Simplified
+    :: HasCallStack
+    => TermLikeF variable (TermLike variable) -> Pattern.Simplified
 simplifiedFromChildren termLikeF =
     case mergedSimplified of
         Pattern.NotSimplified -> Pattern.NotSimplified
@@ -530,7 +560,7 @@ simplifiedFromChildren termLikeF =
         foldMap (Attribute.simplifiedAttribute . extractAttributes) termLikeF
 
 checkedSimplifiedFromChildren
-    :: (GHC.HasCallStack, InternalVariable variable)
+    :: (HasCallStack, InternalVariable variable)
     => TermLikeF variable (TermLike variable) -> Pattern.Simplified
 checkedSimplifiedFromChildren termLikeF =
     case simplifiedFromChildren termLikeF of
@@ -543,7 +573,7 @@ termLikeSort = Attribute.patternSort . extractAttributes
 
 -- | Attempts to modify p to have sort s.
 forceSort
-    :: (InternalVariable variable, GHC.HasCallStack)
+    :: (InternalVariable variable, HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -568,7 +598,7 @@ previous sort and without assuming that the pattern's sorts are consistent.
 -}
 fullyOverrideSort
     :: forall variable
-    .  (InternalVariable variable, GHC.HasCallStack)
+    .  (InternalVariable variable, HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -585,7 +615,7 @@ fullyOverrideSort forcedSort = Recursive.apo overrideSortWorker
             (forceSortPredicate forcedSort original)
 
 illSorted
-    :: (InternalVariable variable, GHC.HasCallStack)
+    :: (InternalVariable variable, HasCallStack)
     => Sort -> TermLike variable -> a
 illSorted forcedSort original =
     (error . show . Pretty.vsep)
@@ -600,7 +630,7 @@ illSorted forcedSort original =
     ]
 
 forceSortPredicate
-    :: (InternalVariable variable, GHC.HasCallStack)
+    :: (InternalVariable variable, HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLikeF variable (Either (TermLike variable) (TermLike variable))
@@ -679,7 +709,7 @@ same sort.
 
  -}
 makeSortsAgree
-    :: (InternalVariable variable, GHC.HasCallStack)
+    :: (InternalVariable variable, HasCallStack)
     => (TermLike variable -> TermLike variable -> Sort -> a)
     -> TermLike variable
     -> TermLike variable
@@ -705,7 +735,7 @@ getRigidSort pattern' =
 {- | Construct an 'And' pattern.
  -}
 mkAnd
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -724,7 +754,7 @@ See also: 'forceSort'
 
  -}
 forceSorts
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => [Sort]
     -> [TermLike variable]
@@ -762,7 +792,7 @@ See also: 'applyAlias', 'applySymbol'
 
  -}
 mkApplyAlias
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Alias (TermLike Variable)
     -- ^ Application symbol or alias
@@ -789,7 +819,7 @@ See also: 'applyAlias', 'applySymbol'
 
  -}
 mkApplySymbol
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Symbol
     -- ^ Application symbol or alias
@@ -801,7 +831,7 @@ mkApplySymbol symbol children =
     $ synthesize (ApplySymbolF (symbolApplication symbol children))
 
 symbolApplication
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Symbol
     -- ^ Application symbol or alias
@@ -824,7 +854,7 @@ See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
 
  -}
 applyAlias
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => SentenceAlias (TermLike Variable)
     -- ^ 'Alias' declaration
@@ -882,7 +912,7 @@ See also: 'mkApp', 'applyAlias'
 
  -}
 applyAlias_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => SentenceAlias (TermLike Variable)
     -> [TermLike variable]
@@ -897,7 +927,7 @@ See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 
  -}
 applySymbol
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => SentenceSymbol pattern''
     -- ^ 'Symbol' declaration
@@ -929,7 +959,7 @@ See also: 'mkApplySymbol', 'applySymbol'
 
  -}
 applySymbol_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => SentenceSymbol pattern''
     -> [TermLike variable]
@@ -942,7 +972,7 @@ See also: 'mkBottom_'
 
  -}
 mkBottom
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> TermLike variable
@@ -958,7 +988,7 @@ See also: 'mkBottom'
 
  -}
 mkBottom_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
 mkBottom_ = updateCallStack $ mkBottom predicateSort
@@ -969,7 +999,7 @@ See also: 'mkCeil_'
 
  -}
 mkCeil
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> TermLike variable
@@ -989,7 +1019,7 @@ See also: 'mkCeil'
 
  -}
 mkCeil_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -998,7 +1028,7 @@ mkCeil_ = updateCallStack . mkCeil predicateSort
 {- | Construct a builtin pattern.
  -}
 mkBuiltin
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
@@ -1007,7 +1037,7 @@ mkBuiltin = updateCallStack . synthesize . BuiltinF
 {- | Construct a builtin list pattern.
  -}
 mkBuiltinList
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
@@ -1016,7 +1046,7 @@ mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
 {- | Construct a builtin map pattern.
  -}
 mkBuiltinMap
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
@@ -1025,7 +1055,7 @@ mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
 {- | Construct a builtin set pattern.
  -}
 mkBuiltinSet
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
@@ -1034,7 +1064,7 @@ mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
 {- | Construct a 'DomainValue' pattern.
  -}
 mkDomainValue
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => DomainValue Sort (TermLike variable)
     -> TermLike variable
@@ -1046,7 +1076,7 @@ See also: 'mkEquals_'
 
  -}
 mkEquals
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> TermLike variable
@@ -1075,7 +1105,7 @@ See also: 'mkEquals'
 
  -}
 mkEquals_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1085,7 +1115,7 @@ mkEquals_ t1 t2 = updateCallStack $ mkEquals predicateSort t1 t2
 {- | Construct an 'Exists' pattern.
  -}
 mkExists
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => ElementVariable variable
     -> TermLike variable
@@ -1099,7 +1129,7 @@ mkExists existsVariable existsChild =
 {- | Construct a sequence of 'Exists' patterns over several variables.
  -}
 mkExistsN
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Foldable foldable
     => foldable (ElementVariable variable)
@@ -1113,7 +1143,7 @@ See also: 'mkFloor_'
 
  -}
 mkFloor
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> TermLike variable
@@ -1133,7 +1163,7 @@ See also: 'mkFloor'
 
  -}
 mkFloor_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1142,7 +1172,7 @@ mkFloor_ = updateCallStack . mkFloor predicateSort
 {- | Construct a 'Forall' pattern.
  -}
 mkForall
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => ElementVariable variable
     -> TermLike variable
@@ -1156,7 +1186,7 @@ mkForall forallVariable forallChild =
 {- | Construct a sequence of 'Forall' patterns over several variables.
  -}
 mkForallN
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Foldable foldable
     => foldable (ElementVariable variable)
@@ -1167,7 +1197,7 @@ mkForallN = (updateCallStack .) . appEndo . foldMap (Endo . mkForall)
 {- | Construct an 'Iff' pattern.
  -}
 mkIff
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1180,7 +1210,7 @@ mkIff t1 t2 = updateCallStack $ makeSortsAgree mkIffWorker t1 t2
 {- | Construct an 'Implies' pattern.
  -}
 mkImplies
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1198,7 +1228,7 @@ See also: 'mkIn_'
 
  -}
 mkIn
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> TermLike variable
@@ -1226,7 +1256,7 @@ See also: 'mkIn'
 
  -}
 mkIn_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1236,7 +1266,7 @@ mkIn_ t1 t2 = updateCallStack $ mkIn predicateSort t1 t2
 {- | Construct a 'Mu' pattern.
  -}
 mkMu
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => SetVariable variable
     -> TermLike variable
@@ -1250,7 +1280,7 @@ mkMu muVar = updateCallStack . makeSortsAgree mkMuWorker (mkSetVar muVar)
 {- | Construct a 'Next' pattern.
  -}
 mkNext
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1262,7 +1292,7 @@ mkNext nextChild =
 {- | Construct a 'Not' pattern.
  -}
 mkNot
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1274,7 +1304,7 @@ mkNot notChild =
 {- | Construct a 'Nu' pattern.
  -}
 mkNu
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => SetVariable variable
     -> TermLike variable
@@ -1288,7 +1318,7 @@ mkNu nuVar = updateCallStack . makeSortsAgree mkNuWorker (mkSetVar nuVar)
 {- | Construct an 'Or' pattern.
  -}
 mkOr
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1301,7 +1331,7 @@ mkOr t1 t2 = updateCallStack $ makeSortsAgree mkOrWorker t1 t2
 {- | Construct a 'Rewrites' pattern.
  -}
 mkRewrites
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
@@ -1319,7 +1349,7 @@ See also: 'mkTop_'
 
  -}
 mkTop
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> TermLike variable
@@ -1335,7 +1365,7 @@ See also: 'mkTop'
 
  -}
 mkTop_
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => TermLike variable
 mkTop_ = updateCallStack $ mkTop predicateSort
@@ -1343,7 +1373,7 @@ mkTop_ = updateCallStack $ mkTop predicateSort
 {- | Construct an element variable pattern.
  -}
 mkElemVar
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => ElementVariable variable
     -> TermLike variable
@@ -1352,7 +1382,7 @@ mkElemVar = updateCallStack . mkVar . ElemVar
 {- | Construct a set variable pattern.
  -}
 mkSetVar
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => SetVariable variable
     -> TermLike variable
@@ -1361,7 +1391,7 @@ mkSetVar = updateCallStack . mkVar . SetVar
 {- | Construct a 'StringLiteral' pattern.
  -}
 mkStringLiteral
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Text
     -> TermLike variable
@@ -1369,7 +1399,7 @@ mkStringLiteral =
     updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
 
 mkInternalBytes
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> ByteString
@@ -1382,21 +1412,21 @@ mkInternalBytes sort value =
             }
 
 mkInternalBytes'
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => InternalBytes
     -> TermLike variable
 mkInternalBytes' = updateCallStack . synthesize . InternalBytesF . Const
 
 mkInhabitant
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => Sort
     -> TermLike variable
 mkInhabitant = updateCallStack . synthesize . InhabitantF . Inhabitant
 
 mkEvaluated
-    :: GHC.HasCallStack
+    :: HasCallStack
     => Ord variable
     => SortedVariable variable
     => TermLike variable
@@ -1406,7 +1436,7 @@ mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
 {- | Construct an 'Endianness' pattern.
  -}
 mkEndianness
-    :: GHC.HasCallStack
+    :: HasCallStack
     => Ord variable
     => SortedVariable variable
     => Endianness
@@ -1416,7 +1446,7 @@ mkEndianness = updateCallStack . synthesize . EndiannessF . Const
 {- | Construct an 'Signedness' pattern.
  -}
 mkSignedness
-    :: GHC.HasCallStack
+    :: HasCallStack
     => Ord variable
     => SortedVariable variable
     => Signedness

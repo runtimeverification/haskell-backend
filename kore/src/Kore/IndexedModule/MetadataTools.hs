@@ -15,6 +15,8 @@ module Kore.IndexedModule.MetadataTools
     , findSortConstructors
     ) where
 
+import Prelude.Kore
+
 import Data.Map.Strict
     ( Map
     )

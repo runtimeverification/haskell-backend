@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Prelude.Kore
+
 import Criterion.Main
 
 import System.FilePath
@@ -20,8 +22,6 @@ main :: IO ()
 main =
     defaultMain
     [ bgroup "Parse" (map parse koreFiles)
-    , bgroup "Read and parse" (map readAndParse koreFiles)
-      -- 'kore.kore' cannot be verified
     , bgroup "Verify" (map verify (tail koreFiles))
     ]
 
@@ -32,14 +32,10 @@ The benchmarks in this module test parsing the following list of files.
 koreFiles :: [FilePath]
 koreFiles =
     map Paths.dataFileName
-    [ "../src/main/kore/kore.kore"
-    , "../src/test/resources/bool.kore"
-    , "../src/test/resources/imp.kore"
-    , "../src/test/resources/imp2.kore"
-    , "../src/test/resources/lambda.kore"
-    , "../src/test/resources/list.kore"
-    , "../src/test/resources/nat.kore"
-    , "../src/test/resources/user-meta-nat.kore"
+    [ "../src/main/kore/prelude.kore"
+    , "./test/resources/bool.kore"
+    , "./test/resources/list.kore"
+    , "./test/resources/nat.kore"
     ]
 
 {- | Declare a parser benchmark
@@ -57,20 +53,6 @@ parse filename =
         (readFile filename)
         -- Benchmark parsing step only
         (bench name . nf (parseKoreDefinition filename))
-  where
-    name = takeFileName filename
-
-
-{- | Declare a parser benchmark
-
-The benchmark will parse the contents of the file. This benchmark includes the
-overhead of reading the file, in contrast to 'parse' above.
--}
-readAndParse
-    :: FilePath  -- ^ name of file to parse
-    -> Benchmark
-readAndParse filename =
-    bench name $ nfIO (parseKoreDefinition filename <$> readFile filename)
   where
     name = takeFileName filename
 

@@ -8,13 +8,11 @@ module Kore.Step.Simplification.OverloadSimplifier
     , mkOverloadSimplifier
     ) where
 
+import Prelude.Kore
+
 import Control.Exception
     ( assert
     )
-import Data.Maybe
-    ( listToMaybe
-    )
-import qualified GHC.Stack as GHC
 
 import Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
@@ -40,7 +38,7 @@ data OverloadSimplifier =
         -- ^ Whether the symbol is overloaded
         , resolveOverloading
             :: forall variable
-            .  GHC.HasCallStack
+            .  HasCallStack
             => InternalVariable variable
             => Inj ()
             -> Symbol
@@ -91,7 +89,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
 
     resolveOverloading
         :: forall variable
-        .  GHC.HasCallStack
+        .  HasCallStack
         => InternalVariable variable
         => Inj ()
         -> Symbol
@@ -107,7 +105,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
             Symbol.applicationSortsOperands (symbolSorts overloadedHead)
 
     unifyOverloadWithinBound injProto s1 s2 topSort =
-        listToMaybe withinBound
+        headMay withinBound
       where
         injProtoTop = injProto { injTo = topSort }
         withinBound =

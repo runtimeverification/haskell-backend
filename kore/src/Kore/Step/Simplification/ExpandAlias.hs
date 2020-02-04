@@ -8,6 +8,8 @@ module Kore.Step.Simplification.ExpandAlias
     , substituteInAlias
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( MaybeT
     )
@@ -18,9 +20,6 @@ import Control.Exception
     ( assert
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 
 import Kore.Internal.Alias
     ( Alias (..)

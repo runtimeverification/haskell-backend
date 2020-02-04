@@ -15,9 +15,7 @@ module Kore.Builtin.Error
     , notImplementedInternal
     ) where
 
-import GHC.Stack
-    ( HasCallStack
-    )
+import Prelude.Kore
 
 {- | Abort due to an internal error that should be prevented by the verifier.
 

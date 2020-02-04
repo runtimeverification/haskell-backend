@@ -20,6 +20,8 @@ module Kore.Internal.TermLike.TermLike
     , updateCallStack
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
@@ -70,6 +72,9 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
+import qualified Kore.Attribute.Pattern.Simplified as Simplified
+    ( unparseTag
+    )
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness
     ( Endianness
@@ -282,11 +287,55 @@ instance SortedVariable variable => Unparse (TermLike variable) where
         case Recursive.project freshVarTerm of
             (attrs :< termLikeF)
               | hasKnownCreator created ->
-                Pretty.sep [Pretty.pretty created, unparse termLikeF]
+                Pretty.sep
+                    [ Pretty.pretty created
+                    , attributeRepresentation
+                    , unparse termLikeF
+                    ]
               | otherwise ->
-                unparse termLikeF
+                Pretty.sep [attributeRepresentation, unparse termLikeF]
               where
                 Attribute.Pattern { created } = attrs
+
+                attributeRepresentation = case attrs of
+                    (Attribute.Pattern _ _ _ _ _ _ _ _) ->
+                        Pretty.sep
+                            ( "/*"
+                            : (map Pretty.pretty representation ++ ["*/"])
+                            )
+                  where
+                    representation =
+                        addFunctionalRepresentation
+                        $ addFunctionRepresentation
+                        $ addDefinedRepresentation
+                        $ addSimplifiedRepresentation
+                        $ addConstructorLikeRepresentation []
+                addFunctionalRepresentation
+                  | Pattern.isFunctional $ Attribute.functional attrs = ("Fl" :)
+                  | otherwise = id
+                addFunctionRepresentation
+                  | Pattern.isFunction $ Attribute.function attrs = ("Fn" :)
+                  | otherwise = id
+                addDefinedRepresentation
+                  | Pattern.isDefined $ Attribute.defined attrs = ("D" :)
+                  | otherwise = id
+                addSimplifiedRepresentation =
+                    case simplifiedTag of
+                        Just result -> (result :)
+                        Nothing -> id
+                  where
+                    simplifiedTag =
+                        Simplified.unparseTag
+                            (Attribute.simplifiedAttribute attrs)
+                addConstructorLikeRepresentation =
+                    case constructorLike of
+                        Just Pattern.ConstructorLikeHead -> ("Cl" :)
+                        Just Pattern.SortInjectionHead -> ("Cli" :)
+                        Nothing -> id
+                  where
+                    constructorLike =
+                        Pattern.getConstructorLike
+                            (Attribute.constructorLikeAttribute attrs)
       where
         freshVarTerm =
             externalizeFreshVariables
@@ -686,7 +735,7 @@ externalizeFreshVariables termLike =
 
 updateCallStack
     :: forall variable
-    .  GHC.HasCallStack
+    .  HasCallStack
     => TermLike variable
     -> TermLike variable
 updateCallStack = Lens.set created callstack
@@ -706,7 +755,7 @@ updateCallStack = Lens.set created callstack
 {- | Construct a variable pattern.
  -}
 mkVar
-    :: GHC.HasCallStack
+    :: HasCallStack
     => InternalVariable variable
     => UnifiedVariable variable
     -> TermLike variable

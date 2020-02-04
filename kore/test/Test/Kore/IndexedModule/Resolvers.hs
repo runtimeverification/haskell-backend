@@ -3,6 +3,8 @@ module Test.Kore.IndexedModule.Resolvers
     , test_resolver_undefined_messages
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -12,9 +14,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Ord
 
 import Kore.ASTVerifier.DefinitionVerifier

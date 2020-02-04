@@ -13,6 +13,8 @@ module Kore.Step.Simplification.SubstitutionSimplifier
     , simplifyAnds
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -32,9 +34,6 @@ import Control.Monad.State.Strict
     , runStateT
     )
 import qualified Control.Monad.Trans as Trans
-import Data.Function
-    ( (&)
-    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.List.NonEmpty
@@ -45,9 +44,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( isNothing
-    )
 import Data.Monoid
     ( Any (..)
     )
@@ -356,14 +352,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
               | isSimplified -> return subst
               | otherwise -> do
                 termLike' <- simplifyTermLike termLike
-                -- simplifyTermLike returns the unsimplified input in the event
-                -- that simplification resulted in a disjunction. We may mark
-                -- the result simplified anyway because uVar is singular, so:
-                --   1. termLike is function-like, so
-                --   2. it eventually reduces to a single term, so if it has not
-                --   3. we need a substitution to evaluate it, and
-                --   4. substitution resets the simplified marker.
-                return (uVar, TermLike.markSimplified termLike')
+                return (uVar, termLike')
               where
                 isSimplified = TermLike.isSimplified
                     sideConditionRepresentation
@@ -446,4 +435,3 @@ takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty
     return substitution
-

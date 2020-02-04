@@ -33,9 +33,7 @@ module Kore.Internal.Pattern
     , Condition
     ) where
 
-import GHC.Stack
-    ( HasCallStack
-    )
+import Prelude.Kore
 
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables

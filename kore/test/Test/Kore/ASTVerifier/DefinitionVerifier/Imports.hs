@@ -2,13 +2,11 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.Imports
     ( test_imports
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     , testGroup
-    )
-
-import GHC.Stack
-    ( HasCallStack
     )
 
 import qualified Kore.Attribute.Symbol as Attribute

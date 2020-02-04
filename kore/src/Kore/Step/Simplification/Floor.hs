@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Floor
     , makeEvaluateFloor
     ) where
 
+import Prelude.Kore
+
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )

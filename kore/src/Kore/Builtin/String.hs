@@ -30,6 +30,7 @@ module Kore.Builtin.String
     , ltKey
     , plusKey
     , string2IntKey
+    , int2StringKey
     , substrKey
     , lengthKey
     , findKey
@@ -39,6 +40,8 @@ module Kore.Builtin.String
     , token2StringKey
     , string2TokenKey
     ) where
+
+import Prelude.Kore
 
 import Control.Applicative
     ( Alternative (..)
@@ -136,6 +139,9 @@ symbolVerifiers =
         )
     ,   ( string2IntKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
+        )
+    ,   ( int2StringKey
+        , Builtin.verifySymbol assertSort [Int.assertSort]
         )
     ,   ( chrKey
         , Builtin.verifySymbol assertSort [Int.assertSort]
@@ -322,6 +328,21 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
                 _ ->
                     Builtin.appliedFunction Pattern.bottom
 
+evalInt2String :: Builtin.Function
+evalInt2String = Builtin.functionEvaluator evalInt2String0
+  where
+    evalInt2String0 resultSort arguments =
+        Builtin.getAttemptedAxiom $ do
+            let _int =
+                    case arguments of
+                        [_str] -> _str
+                        _      -> Builtin.wrongArity int2StringKey
+            _int <- Int.expectBuiltinInt int2StringKey _int
+            Builtin.appliedFunction
+                . asPattern resultSort
+                . Text.pack
+                $ show _int
+
 evalChr :: Builtin.Function
 evalChr = Builtin.functionEvaluator evalChr0
   where
@@ -396,6 +417,7 @@ builtinFunctions =
     , (findKey, evalFind)
     , (string2BaseKey, evalString2Base)
     , (string2IntKey, evalString2Int)
+    , (int2StringKey, evalInt2String)
     , (chrKey, evalChr)
     , (ordKey, evalOrd)
     , (token2StringKey, evalToken2String)

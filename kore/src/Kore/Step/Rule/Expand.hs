@@ -7,6 +7,8 @@ module Kore.Step.Rule.Expand
     ( ExpandSingleConstructors (..)
     ) where
 
+import Prelude.Kore
+
 import Data.List
     ( foldl'
     , foldr
@@ -15,9 +17,6 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 import qualified Data.Set as Set
 
 import Kore.Attribute.Pattern.FreeVariables

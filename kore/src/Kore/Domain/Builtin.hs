@@ -35,6 +35,8 @@ module Kore.Domain.Builtin
     , InternalString (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

@@ -41,6 +41,8 @@ module Kore.Builtin.Int.Int
     , log2Key
     ) where
 
+import Prelude.Kore
+
 import Data.String
     ( IsString
     )

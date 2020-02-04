@@ -11,6 +11,8 @@ module Test.Kore.Step.SMT.Representation.Builders
     , unresolvedSortMap
     ) where
 
+import Prelude.Kore
+
 import Test.Kore.Step.SMT.Builders ()
 
 import qualified Data.Map.Strict as Map

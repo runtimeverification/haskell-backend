@@ -26,6 +26,8 @@ module Kore.Builtin.Krypto
     , ecdsaRecoverKey
     ) where
 
+import Prelude.Kore
+
 
 import Control.Exception.Base
     ( assert
@@ -61,9 +63,6 @@ import Data.Text
 import qualified Data.Text as Text
 import Data.Word
     ( Word8
-    )
-import GHC.Stack
-    ( HasCallStack
     )
 import Kore.Builtin.Encoding
     ( encode8Bit

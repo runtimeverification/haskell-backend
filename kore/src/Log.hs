@@ -28,6 +28,8 @@ module Log
     , logWith
     ) where
 
+import Prelude.Kore
+
 import Colog
     ( LogAction (..)
     , Severity (..)
@@ -75,9 +77,6 @@ import Data.Text.Prettyprint.Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
-import Prelude hiding
-    ( log
-    )
 
 import Control.Monad.Counter
     ( CounterT
@@ -139,7 +138,7 @@ logMsg = logM
 -- | Logs a message using given 'Severity'.
 log
     :: forall m
-    . (GHC.HasCallStack, WithLog LogMessage m)
+    . (HasCallStack, WithLog LogMessage m)
     => Severity
     -- ^ If lower than the minimum severity, the message will not be logged
     -> Text

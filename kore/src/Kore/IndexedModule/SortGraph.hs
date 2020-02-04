@@ -14,9 +14,8 @@ module Kore.IndexedModule.SortGraph
     , Subsort (..)
     ) where
 
-import Data.Function
-    ( (&)
-    )
+import Prelude.Kore
+
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
@@ -26,9 +25,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Set
     ( Set
     )

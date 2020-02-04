@@ -2,6 +2,8 @@ module Test.Kore.Strategies.OnePath.Step
     ( test_onePathStrategy
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Coerce
@@ -15,9 +17,6 @@ import qualified Data.Foldable as Foldable
 import Data.List
     ( nub
     , sort
-    )
-import Data.Maybe
-    ( fromMaybe
     )
 import Data.Reflection
     ( give

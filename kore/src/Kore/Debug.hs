@@ -60,6 +60,8 @@ module Kore.Debug
     , module Debug
     ) where
 
+import Prelude.Kore
+
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Data.List
@@ -69,7 +71,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Debug.Trace
 
 import Debug
 

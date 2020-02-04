@@ -16,6 +16,8 @@ module Kore.Step.Simplification.And
     , termAnd
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (empty)
     )
@@ -40,9 +42,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Branch
 import qualified Branch as BranchT

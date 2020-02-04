@@ -2,6 +2,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.SortUsage
     ( test_sortUsage
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     , testGroup
@@ -11,9 +13,6 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.List as List
-import Data.Maybe
-    ( mapMaybe
-    )
 import qualified Data.Text as Text
 
 import Kore.ASTVerifier.Error

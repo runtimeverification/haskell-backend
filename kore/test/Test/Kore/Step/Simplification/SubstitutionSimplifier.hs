@@ -4,9 +4,9 @@ module Test.Kore.Step.Simplification.SubstitutionSimplifier
     ( test_SubstitutionSimplifier
     ) where
 
-import Test.Tasty
+import Prelude.Kore
 
-import qualified GHC.Stack as GHC
+import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
@@ -176,7 +176,7 @@ test_SubstitutionSimplifier =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> [(UnifiedVariable Variable, TermLike Variable)]
         -- ^ Test input

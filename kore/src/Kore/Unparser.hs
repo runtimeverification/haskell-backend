@@ -35,13 +35,12 @@ module Kore.Unparser
     , unparseAssoc'
     ) where
 
+import Prelude.Kore
+
 import Control.Category
     ( (>>>)
     )
 import qualified Data.Char as Char
-import Data.Function
-    ( (&)
-    )
 import Data.Functor.Const
 import Data.Map.Strict
     ( Map

@@ -11,7 +11,8 @@ module Kore.Attribute.Location
     , LineColumn (..)
     ) where
 
-import Data.Maybe
+import Prelude.Kore
+
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

@@ -20,6 +20,7 @@ module Kore.Internal.Substitution
     , mapTerms
     , isNormalized
     , isSimplified
+    , forgetSimplified
     , simplifiedAttribute
     , null
     , variables
@@ -33,10 +34,15 @@ module Kore.Internal.Substitution
     , applyNormalized
     ) where
 
+import Prelude.Kore hiding
+    ( null
+    )
+
 import Control.DeepSeq
     ( NFData
     )
 import qualified Control.Exception as Exception
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import Data.Hashable
@@ -55,12 +61,6 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( HasCallStack
-    )
-import Prelude hiding
-    ( null
-    )
 
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
@@ -352,6 +352,14 @@ isSimplified _ (Substitution _) = False
 isSimplified sideCondition (NormalizedSubstitution normalized) =
     all (TermLike.isSimplified sideCondition) normalized
 
+forgetSimplified
+    :: InternalVariable variable
+    => Substitution variable -> Substitution variable
+forgetSimplified =
+    wrap
+    . map (Bifunctor.second TermLike.forgetSimplified)
+    . unwrap
+
 simplifiedAttribute
     :: Substitution variable -> Attribute.Simplified
 simplifiedAttribute (Substitution _) = Attribute.NotSimplified
@@ -375,7 +383,7 @@ filter
     -> Substitution variable
     -> Substitution variable
 filter filtering =
-    modify (Prelude.filter (filtering . fst))
+    modify (Prelude.Kore.filter (filtering . fst))
 
 {- | Return the pair of substitutions that do and do not satisfy the criterion.
 

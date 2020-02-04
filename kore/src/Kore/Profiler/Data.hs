@@ -11,6 +11,8 @@ module Kore.Profiler.Data
     , Destination (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( when
     )
@@ -44,13 +46,6 @@ import Data.List
     ( intercalate
     )
 import qualified Data.List as List
-import Debug.Trace
-    ( traceIO
-    , traceM
-    )
-import Debug.Trace.String
-    ( traceEventIO
-    )
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec

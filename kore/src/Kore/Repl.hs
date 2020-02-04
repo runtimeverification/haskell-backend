@@ -10,6 +10,8 @@ module Kore.Repl
     ( runRepl
     ) where
 
+import Prelude.Kore
+
 import Control.Concurrent.MVar
 import Control.Exception
     ( AsyncException (UserInterrupt)
@@ -49,7 +51,6 @@ import Data.List
     ( findIndex
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
 import qualified Data.Sequence as Seq
 import Kore.Attribute.RuleIndex
 import System.IO
@@ -162,7 +163,9 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , omit           = mempty
             , labels         = Map.empty
             , aliases        = Map.empty
-            , koreLogOptions = Default.def @Log.KoreLogOptions
+            , koreLogOptions =
+                (Default.def @Log.KoreLogOptions)
+                    { Log.exeName = Log.ExeName "kore-repl" }
             }
 
     config :: Config claim m

@@ -22,6 +22,8 @@ module Kore.Exec
     , Equality
     ) where
 
+import Prelude.Kore
+
 import Control.Concurrent.MVar
 import Control.Error.Util
     ( note
@@ -47,10 +49,6 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    , mapMaybe
-    )
 import Data.Text
     ( Text
     )
@@ -165,6 +163,7 @@ import qualified Kore.Strategies.Verification as StuckVerification
     )
 import Kore.Unparser
     ( unparseToText
+    , unparseToText2
     )
 import qualified Log
 import SMT
@@ -340,7 +339,7 @@ prove
                 searchOrder
                 (AllClaims claims)
                 (Axioms axioms)
-                (AlreadyProven (map unparseToText alreadyProven))
+                (AlreadyProven (map unparseToText2 alreadyProven))
                 (ToProve
                     (map (\x -> (x,depthLimit))
                         (extractUntrustedClaims' claims)

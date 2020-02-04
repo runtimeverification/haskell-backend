@@ -59,6 +59,8 @@ module Kore.Attribute.Parser
     , module Kore.Syntax.Application
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )
@@ -75,7 +77,6 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
-import qualified Data.Maybe as Maybe
 import Data.Text
     ( Text
     )
@@ -355,7 +356,7 @@ instance ParseAttributes Attribute.Smtlib where
             arg <- getOneArgument args
             StringLiteral syntax <- getStringLiteral arg
             sExpr <- parseSExpr syntax
-            Monad.unless (Maybe.isNothing getSmtlib) failDuplicate'
+            Monad.unless (isNothing getSmtlib) failDuplicate'
             return Attribute.Smtlib { getSmtlib = Just sExpr }
       where
         withApplication' = withApplication Attribute.smtlibId

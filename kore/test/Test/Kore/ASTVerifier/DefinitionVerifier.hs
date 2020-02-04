@@ -54,6 +54,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier
     , namedSortVariable
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     , testGroup

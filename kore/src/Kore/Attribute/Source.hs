@@ -10,6 +10,8 @@ module Kore.Attribute.Source
     ( Source (..)
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( many
     )
@@ -17,7 +19,6 @@ import Control.DeepSeq
     ( NFData
     )
 import Data.Default
-import Data.Maybe
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

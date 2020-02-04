@@ -27,8 +27,9 @@ module Kore.Repl.State
     , conjOfOnePathClaims
     , appReplOut
     , replOut, replOutputToString
-    )
-    where
+    ) where
+
+import Prelude.Kore
 
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens hiding
@@ -77,7 +78,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
 import Data.Sequence
     ( Seq
     )
@@ -373,8 +373,8 @@ smoothOutGraph graph = do
         -> Graph.Node
         -> Maybe (Graph.LEdge (Maybe edge))
     makeNewEdge node1 node2 = do
-        nodePre <- listToMaybe (Graph.pre graph node1)
-        nodeSuc <- listToMaybe (Graph.suc graph node2)
+        nodePre <- headMay (Graph.pre graph node1)
+        nodeSuc <- headMay (Graph.suc graph node2)
         return (nodePre, nodeSuc, Nothing)
     isBranchingNode :: Graph.Node -> Bool
     isBranchingNode node =
@@ -450,7 +450,7 @@ getRuleFor maybeNode = do
     getRewriteRule
         :: [(a, b, Seq axiom)]
         -> Maybe axiom
-    getRewriteRule = listToMaybe . concatMap (toList . third)
+    getRewriteRule = headMay . concatMap (toList . third)
 
     third :: forall a b c. (a, b, c) -> c
     third (_, _, c) = c
@@ -467,11 +467,14 @@ liftSimplifierWithLogger
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
     ReplState { koreLogOptions } <- get
-    let Log.KoreLogOptions { logType, timestampsSwitch } = koreLogOptions
+    let Log.KoreLogOptions { logType, timestampsSwitch, exeName } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
             Log.koreLogFilters koreLogOptions
-            $ Log.makeKoreLogger timestampsSwitch textLogger
+            $ Log.makeKoreLogger
+                exeName
+                timestampsSwitch
+                textLogger
     _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
@@ -606,7 +609,7 @@ addOrUpdateAlias alias@AliasDefinition { name, command } = do
     checkCommandExists = do
         cmds <- existingCommands
         let
-            maybeCommand = listToMaybe $ words command
+            maybeCommand = headMay $ words command
             maybeExists = Set.member <$> maybeCommand <*> pure cmds
         maybe
             (Monad.Error.throwError UnknownCommand)

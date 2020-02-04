@@ -13,6 +13,8 @@ module Kore.Step.EqualityPattern
     , getPriorityOfRule
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )
@@ -23,9 +25,6 @@ import Data.Typeable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
@@ -44,7 +43,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
-    , SortedVariable
     )
 import Kore.Step.Step
     ( UnifyingRule (..)
@@ -161,11 +159,7 @@ instance
   Should be the inverse of 'Rule.termToAxiomPattern'.
 -}
 equalityRuleToTerm
-    :: Debug variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    :: InternalVariable variable
     => EqualityRule variable
     -> TermLike.TermLike variable
 equalityRuleToTerm

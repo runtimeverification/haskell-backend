@@ -7,6 +7,8 @@ module Kore.Step.Simplification.OrPattern
     ( simplifyConditionsWithSmt
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Monad.Trans as Monad.Trans
 
 import Branch

@@ -35,6 +35,8 @@ module Kore.Repl.Data
     , makeAuxReplOutput, makeKoreReplOutput
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative
     )
@@ -58,9 +60,6 @@ import Data.List.NonEmpty
     )
 import Data.Map.Strict
     ( Map
-    )
-import Data.Maybe
-    ( fromMaybe
     )
 import Data.Monoid
     ( First (..)

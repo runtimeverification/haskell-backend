@@ -8,6 +8,8 @@ module Test.Kore.Parser.Regression
     , VerifyRequest(..)
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     )
@@ -24,7 +26,6 @@ import Data.ByteString.Lazy
     ( ByteString
     )
 import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy.Char8
-import Data.Function
 import System.Directory
     ( getCurrentDirectory
     , setCurrentDirectory

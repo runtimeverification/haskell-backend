@@ -24,6 +24,8 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -51,9 +53,6 @@ import qualified Data.Stream.Infinite as Stream
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
-    )
-import Data.Witherable
-    ( mapMaybe
     )
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC

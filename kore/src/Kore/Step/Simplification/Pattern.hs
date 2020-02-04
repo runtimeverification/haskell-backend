@@ -8,6 +8,8 @@ module Kore.Step.Simplification.Pattern
     , simplify
     ) where
 
+import Prelude.Kore
+
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
@@ -61,13 +63,15 @@ simplify
     => SideCondition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-simplify sideCondition pattern' = do
-    -- TODO(virgil): simplify the predicate first.
-    orSimplifiedTerms <- simplifyConditionalTermToOr termSideCondition term
+simplify sideCondition pattern' =
     fmap OrPattern.fromPatterns . Branch.gather $ do
+        withSimplifiedCondition <- simplifyCondition sideCondition pattern'
+        let (term, simplifiedCondition) =
+                Conditional.splitTerm withSimplifiedCondition
+            termSideCondition =
+                sideCondition `SideCondition.andCondition` simplifiedCondition
+        orSimplifiedTerms <- simplifyConditionalTermToOr termSideCondition term
         simplifiedTerm <- Branch.scatter orSimplifiedTerms
-        simplifyCondition sideCondition
-            (Conditional.andCondition simplifiedTerm condition)
-  where
-    (term, condition) = Conditional.splitTerm pattern'
-    termSideCondition = sideCondition `SideCondition.andCondition` condition
+        simplifyCondition
+            sideCondition
+            (Conditional.andCondition simplifiedTerm simplifiedCondition)

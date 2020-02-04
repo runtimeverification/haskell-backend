@@ -11,6 +11,8 @@ module Kore.Repl.Parser
     , scriptParser
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( some
     , (<|>)
@@ -28,14 +30,8 @@ import qualified Data.GraphViz as Graph
 import Data.List
     ( nub
     )
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Prelude hiding
-    ( log
-    )
 import Text.Megaparsec
     ( Parsec
     , customFailure

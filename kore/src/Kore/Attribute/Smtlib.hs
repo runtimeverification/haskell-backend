@@ -13,10 +13,9 @@ module Kore.Attribute.Smtlib
     , shortenSExpr
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Error as Error
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Text as Text
 import SMT.SimpleSMT
 

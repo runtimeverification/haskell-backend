@@ -9,6 +9,8 @@ module Kore.Attribute.Symbol.SymbolKywd
     , symbolKywdId, symbolKywdSymbol, symbolKywdAttribute
     ) where
 
+import Prelude.Kore
+
 import Data.Monoid
     ( Any (..)
     )

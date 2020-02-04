@@ -50,6 +50,8 @@ module Kore.IndexedModule.IndexedModule
     , implicitModules
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )
@@ -65,7 +67,6 @@ import Control.Monad.State.Strict
 import qualified Control.Monad.State.Strict as Monad.State
 import Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Map.Strict
     ( Map
     )

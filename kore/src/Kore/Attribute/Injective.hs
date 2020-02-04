@@ -11,6 +11,8 @@ module Kore.Attribute.Injective
     , injectiveId, injectiveSymbol, injectiveAttribute
     ) where
 
+import Prelude.Kore
+
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

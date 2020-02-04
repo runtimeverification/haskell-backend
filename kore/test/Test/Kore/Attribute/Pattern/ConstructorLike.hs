@@ -2,11 +2,9 @@ module Test.Kore.Attribute.Pattern.ConstructorLike
     ( test_TermLike
     ) where
 
-import Test.Tasty
+import Prelude.Kore
 
-import GHC.Stack
-    ( HasCallStack
-    )
+import Test.Tasty
 
 import Kore.Internal.TermLike
 

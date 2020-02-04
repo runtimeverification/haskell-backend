@@ -12,6 +12,8 @@ module Test.Kore.Step.SMT.Helpers
     , testsForModule
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -28,9 +30,6 @@ import Data.Sup
     )
 import Data.Text
     ( Text
-    )
-import GHC.Stack
-    ( HasCallStack
     )
 import Numeric.Natural
     ( Natural

@@ -11,6 +11,8 @@ module Test.Kore.Step.Simplification
     , simplifiedTerm
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )

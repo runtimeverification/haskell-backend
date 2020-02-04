@@ -9,11 +9,12 @@ module Kore.Attribute.Pattern.Created
     , hasKnownCreator
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
 import Data.Hashable
     ( Hashable (hashWithSalt)
     )
-import qualified Data.Maybe as Maybe
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
@@ -36,7 +37,7 @@ newtype Created = Created { getCreated :: Maybe GHC.CallStack }
     deriving (Generic, Show)
 
 hasKnownCreator :: Created -> Bool
-hasKnownCreator = Maybe.isJust . getCallStackHead
+hasKnownCreator = isJust . getCallStackHead
 
 instance Eq Created where
     (==) _ _ = True
@@ -73,4 +74,4 @@ instance Functor pat => Synthetic Created pat where
 
 getCallStackHead :: Created -> Maybe (String, SrcLoc)
 getCallStackHead Created { getCreated } =
-    GHC.getCallStack <$> getCreated >>= Maybe.listToMaybe
+    GHC.getCallStack <$> getCreated >>= headMay

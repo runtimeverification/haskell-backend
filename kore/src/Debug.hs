@@ -20,6 +20,8 @@ module Debug
     , formatExceptionInfo
     ) where
 
+import Prelude.Kore
+
 import Control.Comonad.Trans.Cofree
 import Data.ByteString
     ( ByteString
@@ -41,10 +43,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    , isJust
-    )
 import Data.Proxy
 import Data.Sequence
     ( Seq
@@ -72,9 +70,6 @@ import Data.Void
     ( Void
     )
 import Data.Word
-import Debug.Trace
-    ( traceM
-    )
 import Generics.SOP
     ( All
     , All2
@@ -92,8 +87,7 @@ import Generics.SOP
     )
 import qualified Generics.SOP as SOP
 import GHC.Stack
-    ( HasCallStack
-    , callStack
+    ( callStack
     , prettyCallStack
     )
 import qualified GHC.Stack as GHC

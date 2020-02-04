@@ -11,6 +11,8 @@ module Kore.Variables.Fresh
     , module Kore.Syntax.Variable
     ) where
 
+import Prelude.Kore
+
 import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map

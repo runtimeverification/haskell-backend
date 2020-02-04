@@ -9,14 +9,13 @@ module Kore.Syntax.Module
     , Module (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )
 import Data.Hashable
     ( Hashable (..)
-    )
-import Data.Maybe
-    ( catMaybes
     )
 import Data.String
     ( IsString

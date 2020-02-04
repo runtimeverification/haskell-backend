@@ -9,6 +9,8 @@ module Kore.Log.WarnFunctionWithoutEvaluators
     , warnFunctionWithoutEvaluators
     ) where
 
+import Prelude.Kore
+
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )

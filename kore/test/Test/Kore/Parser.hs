@@ -9,6 +9,8 @@ module Test.Kore.Parser
     , fails
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
     ( TestTree
     , testGroup
@@ -22,9 +24,6 @@ import Test.Tasty.HUnit
 
 import Data.Either
     ( isLeft
-    )
-import GHC.Stack
-    ( HasCallStack
     )
 
 import Kore.Parser.ParserUtils

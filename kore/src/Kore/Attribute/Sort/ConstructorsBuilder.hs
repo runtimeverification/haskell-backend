@@ -8,6 +8,8 @@ module Kore.Attribute.Sort.ConstructorsBuilder
     ( indexBySort
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( when
     )
@@ -15,9 +17,6 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute

@@ -9,6 +9,8 @@ module Kore.Attribute.Symbol.Memo
     , memoId, memoSymbol, memoAttribute
     ) where
 
+import Prelude.Kore
+
 import Data.Monoid
     ( Any (..)
     )

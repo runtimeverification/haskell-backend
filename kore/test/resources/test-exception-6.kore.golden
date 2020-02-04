@@ -2,4 +2,5 @@
   |
 6 |     2:S []
   |     ^
-genericIdRawParser: Invalid first character '2'.
+unexpected '2'
+expecting first identifier character

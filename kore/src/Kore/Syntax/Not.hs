@@ -8,6 +8,8 @@ module Kore.Syntax.Not
     ( Not (..)
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData (..)
     )

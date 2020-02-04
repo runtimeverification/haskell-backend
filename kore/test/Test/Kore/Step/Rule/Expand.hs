@@ -2,13 +2,12 @@ module Test.Kore.Step.Rule.Expand
     ( test_expandRule
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Data.Default
     ( def
-    )
-import Data.Function
-    ( (&)
     )
 import qualified Data.Map.Strict as Map
 

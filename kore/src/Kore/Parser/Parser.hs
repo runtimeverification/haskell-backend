@@ -32,6 +32,8 @@ module Kore.Parser.Parser
     , setVariableParser
     ) where
 
+import Prelude.Kore
+
 import Control.Arrow
     ( (&&&)
     )

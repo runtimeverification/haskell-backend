@@ -11,6 +11,8 @@ module Kore.Attribute.Smtlib.Smthook
     , smthookId, smthookSymbol, smthookAttribute
     ) where
 
+import Prelude.Kore
+
 import Control.DeepSeq
     ( NFData
     )
@@ -18,7 +20,6 @@ import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
-import qualified Data.Maybe as Maybe
 import Data.Text
     ( Text
     )
@@ -87,7 +88,7 @@ instance ParseAttributes Smthook where
             arg <- getOneArgument args
             StringLiteral syntax <- getStringLiteral arg
             sExpr <- parseSExpr syntax
-            Monad.unless (Maybe.isNothing getSmthook) failDuplicate'
+            Monad.unless (isNothing getSmthook) failDuplicate'
             return Smthook { getSmthook = Just sExpr }
       where
         withApplication' = withApplication smthookId

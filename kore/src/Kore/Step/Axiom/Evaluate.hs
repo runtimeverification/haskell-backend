@@ -7,13 +7,14 @@ module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
     ) where
 
+import Prelude.Kore
+
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( maybeT
     )
 import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
-import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 
@@ -42,18 +43,12 @@ import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
     )
-import Kore.Step.Axiom.Matcher
-    ( matchIncremental
-    )
 import Kore.Step.EqualityPattern
     ( EqualityPattern (EqualityPattern)
     , EqualityRule (..)
     )
 import qualified Kore.Step.EqualityPattern as EqualityPattern
     ( EqualityPattern (..)
-    )
-import Kore.Step.EquationalStep
-    ( UnificationProcedure (..)
     )
 import qualified Kore.Step.EquationalStep as Step
 import Kore.Step.Remainder
@@ -167,20 +162,6 @@ evaluateAxioms equalityRules sideCondition termLike
     applyRules (Step.toConfigurationVariables -> initial) rules =
         Unifier.maybeUnifierT
         $ Step.applyRulesSequence
-            unificationProcedure
             targetSideCondition
             initial
             rules
-
-    ignoreUnificationErrors unification _topCondition pattern1 pattern2 =
-        Unifier.runUnifierT (unification pattern1 pattern2)
-        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
-
-    couldNotMatch pattern1 pattern2 _ =
-        Unifier.explainAndReturnBottom
-            "Could not match patterns"
-            pattern1
-            pattern2
-
-    unificationProcedure =
-        UnificationProcedure (ignoreUnificationErrors matchIncremental)

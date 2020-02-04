@@ -10,14 +10,13 @@ module Kore.Step.SMT.Representation.Sorts
     ( buildRepresentations
     ) where
 
+import Prelude.Kore
+
 import Control.Monad
     ( zipWithM
     )
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 

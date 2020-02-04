@@ -43,6 +43,8 @@ module Kore.Builtin.List
     , expectConcreteBuiltinList
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -196,6 +198,9 @@ symbolVerifiers =
       )
     , ( inKey
       , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
+      )
+    , ( sizeKey
+      , Builtin.verifySymbol Int.assertSort [assertSort]
       )
     ]
 
@@ -363,6 +368,19 @@ evalConcat =
                     returnList resultSort (_list1 <> _list2)
             leftIdentity <|> rightIdentity <|> bothConcrete
 
+evalSize :: Builtin.Function
+evalSize =
+    Builtin.functionEvaluator evalSize0
+  where
+    evalSize0 :: Builtin.FunctionImplementation
+    evalSize0 resultSort [_list] =
+        Builtin.getAttemptedAxiom $ do
+            _list <- expectBuiltinList sizeKey _list
+            Seq.length _list
+                & fromIntegral & Int.asPattern resultSort
+                & Builtin.appliedFunction
+    evalSize0 _ _ = Builtin.wrongArity sizeKey
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -374,6 +392,7 @@ builtinFunctions =
         , (getKey, evalGet)
         , (updateKey, evalUpdate)
         , (inKey, evalIn)
+        , (sizeKey, evalSize)
         ]
 
 {- | Simplify the conjunction or equality of two concrete List domain values.

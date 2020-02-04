@@ -5,15 +5,14 @@ module Test.Kore.IndexedModule.OverloadGraph
     , test_fromIndexedModule
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import Control.Applicative
     ( liftA2
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import qualified Data.Set as Set
 
 import Kore.ASTVerifier.DefinitionVerifier
@@ -193,4 +192,3 @@ testMetadataTools =
         headSortsMapping
         Mock.emptySmtDeclarations
         Map.empty -- sortConstructors
-

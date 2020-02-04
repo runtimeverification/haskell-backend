@@ -6,6 +6,8 @@ License     : NCSA
 module Kore.ASTVerifier.AliasVerifier
     ( verifyAliases ) where
 
+import Prelude.Kore
+
 import qualified Control.Lens as Lens
 import Control.Monad.Reader
     ( ReaderT
@@ -15,14 +17,12 @@ import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Class as State
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
-import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
 import Data.Set
     ( Set
     )

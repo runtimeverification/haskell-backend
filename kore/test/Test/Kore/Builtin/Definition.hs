@@ -3,9 +3,10 @@
 
 module Test.Kore.Builtin.Definition where
 
+import Prelude.Kore
+
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import Data.Function
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Text
@@ -657,6 +658,11 @@ string2IntStringSymbol :: Internal.Symbol
 string2IntStringSymbol =
     builtinSymbol "string2intString" intSort [stringSort]
     & hook "STRING.string2int"
+
+int2StringStringSymbol :: Internal.Symbol
+int2StringStringSymbol =
+    builtinSymbol "int2stringString" stringSort [intSort]
+    & hook "STRING.int2string"
 
 token2StringStringSymbol :: Internal.Symbol
 token2StringStringSymbol =
@@ -1420,6 +1426,7 @@ listModule =
             , hookedSymbolDecl getListSymbol
             , hookedSymbolDecl updateListSymbol
             , hookedSymbolDecl inListSymbol
+            , hookedSymbolDecl sizeListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol
@@ -1560,6 +1567,7 @@ stringModule =
             , hookedSymbolDecl findStringSymbol
             , hookedSymbolDecl string2BaseStringSymbol
             , hookedSymbolDecl string2IntStringSymbol
+            , hookedSymbolDecl int2StringStringSymbol
             , hookedSymbolDecl token2StringStringSymbol
             , hookedSymbolDecl string2TokenStringSymbol
             ]

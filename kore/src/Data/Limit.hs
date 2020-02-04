@@ -19,7 +19,7 @@ module Data.Limit
     , withinLimit
     ) where
 
-import Prelude hiding
+import Prelude.Kore hiding
     ( replicate
     )
 

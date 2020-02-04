@@ -3,13 +3,13 @@ module Test.Kore.TopBottom
     , test_Predicate
     ) where
 
-import qualified Test.Tasty as Tasty
-
-import Prelude hiding
+import Prelude.Kore hiding
     ( and
     , floor
     , or
     )
+
+import qualified Test.Tasty as Tasty
 
 import Kore.Internal.Predicate
     ( Predicate

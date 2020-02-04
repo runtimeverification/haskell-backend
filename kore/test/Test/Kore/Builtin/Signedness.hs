@@ -4,9 +4,9 @@ module Test.Kore.Builtin.Signedness
     , test_unify
     ) where
 
-import Test.Tasty
+import Prelude.Kore
 
-import qualified GHC.Stack as GHC
+import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
@@ -46,7 +46,7 @@ test_verify =
     ]
   where
     test
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> Symbol
         -> TermLike Variable
@@ -82,7 +82,7 @@ test_unify =
     ]
   where
     unifies
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> TermLike Variable
         -> TermLike Variable
@@ -96,7 +96,7 @@ test_unify =
             actual <- unify term1 term2
             assertEqual "expected unification solution" (Right [expect]) actual
     doesn'tUnify
-        :: GHC.HasCallStack
+        :: HasCallStack
         => TestName
         -> TermLike Variable
         -> TermLike Variable
@@ -107,7 +107,7 @@ test_unify =
             assertEqual "expected bottom" (Right []) actual
 
 unify
-    :: GHC.HasCallStack
+    :: HasCallStack
     => TermLike Variable
     -> TermLike Variable
     -> IO (Either UnificationOrSubstitutionError [Pattern Variable])

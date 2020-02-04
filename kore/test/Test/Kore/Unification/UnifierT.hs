@@ -3,6 +3,8 @@ module Test.Kore.Unification.UnifierT
     , test_simplifyCondition
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Data.Foldable as Foldable
@@ -256,7 +258,7 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicates actual
 
-    , testCase "zzzConstructor circular dependency?"
+    , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns

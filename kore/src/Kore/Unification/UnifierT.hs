@@ -15,6 +15,8 @@ module Kore.Unification.UnifierT
     , module Kore.Unification.Unify
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative
     )

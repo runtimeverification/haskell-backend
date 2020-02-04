@@ -29,6 +29,8 @@ module SMT.AST
     , SmtFunctionDeclaration
     ) where
 
+import Prelude.Kore
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -40,9 +42,6 @@ import Control.Monad.Fail
     )
 import Data.Char
     ( isSpace
-    )
-import Data.Maybe
-    ( fromMaybe
     )
 import Data.String
     ( IsString (..)
@@ -279,7 +278,7 @@ parseSExpr = parseAtom <|> parseList
     special c = isSpace c || c == '(' || c == ')' || c == ';'
 
     notSpecial :: Char -> Bool
-    notSpecial = Prelude.not . special
+    notSpecial = not . special
 
     lparen :: Parser Char
     lparen = lexeme (Parser.char '(')

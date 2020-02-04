@@ -6,6 +6,8 @@ module Test.Kore.Step
     , test_unificationError
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 
 import qualified Control.Exception as Exception
@@ -13,7 +15,6 @@ import qualified Control.Lens as Lens
 import Data.Default
     ( def
     )
-import Data.Function
 import Data.Generics.Product
 
 import Data.Limit

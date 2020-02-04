@@ -9,6 +9,8 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.SortVerifier (verifySort) where
 
+import Prelude.Kore
+
 import qualified Data.Set as Set
 
 import Kore.AST.Error

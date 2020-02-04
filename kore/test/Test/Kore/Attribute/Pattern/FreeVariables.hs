@@ -3,10 +3,10 @@ module Test.Kore.Attribute.Pattern.FreeVariables
     , test_instance_Synthetic_TermLike
     ) where
 
+import Prelude.Kore
+
 import Test.Tasty
 import Test.Tasty.HUnit
-
-import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
@@ -101,7 +101,7 @@ sy = FreeVariables.freeVariable (SetVar Mock.setY)
 sxy = sx <> sy
 
 gives
-    :: (Synthetic (FreeVariables Variable) base, GHC.HasCallStack)
+    :: (Synthetic (FreeVariables Variable) base, HasCallStack)
     => base (FreeVariables Variable)
     -> FreeVariables Variable
     -> String
