@@ -85,6 +85,9 @@ import Data.Functor
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Graph.Inductive.PatriciaTree
+    ( Gr
+    )
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
 import Data.IORef
@@ -445,14 +448,22 @@ showGraph
 showGraph mfile out = do
     let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
+    processedGraph <-
+        maybe (showOriginalGraph graph) return (smoothOutGraph graph)
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
        then liftIO $ maybe
-                        (showDotGraph (length axioms) graph)
-                        (saveDotGraph (length axioms) graph format)
+                        (showDotGraph (length axioms) processedGraph)
+                        (saveDotGraph (length axioms) processedGraph format)
                         mfile
        else putStrLn' "Graphviz is not installed."
+  where
+    showOriginalGraph graph = do
+        putStrLn'
+            "Could not process execution graph for visualization.\
+            \ Will default to showing the full graph."
+        return $ Graph.emap Just graph
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps
@@ -1225,7 +1236,7 @@ printNotFound = putStrLn' "Variable or index not found"
 -- represents the number of available axioms.
 showDotGraph
     :: ToRulePattern axiom
-    => Int -> InnerGraph axiom -> IO ()
+    => Int -> Gr CommonProofState (Maybe (Seq axiom)) -> IO ()
 showDotGraph len =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
@@ -1233,7 +1244,7 @@ showDotGraph len =
 saveDotGraph
     :: ToRulePattern axiom
     => Int
-    -> InnerGraph axiom
+    -> Gr CommonProofState (Maybe (Seq axiom))
     -> Graph.GraphvizOutput
     -> FilePath
     -> IO ()
@@ -1256,12 +1267,14 @@ graphParams
     -> Graph.GraphvizParams
          Graph.Node
          CommonProofState
-         (Seq axiom)
+         (Maybe (Seq axiom))
          ()
          CommonProofState
 graphParams len = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
-        [ Graph.textLabel (ruleIndex l len)]
+        [ Graph.textLabel (maybe "" (ruleIndex len) l)
+        , Graph.Attr.Style [dottedOrSolidEdge l]
+        ]
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
             $ case ps of
@@ -1270,7 +1283,12 @@ graphParams len = Graph.nonClusteredParams
         ]
     }
   where
-    ruleIndex lbl ln =
+    dottedOrSolidEdge lbl =
+        maybe
+            (Graph.Attr.SItem Graph.Attr.Dotted mempty)
+            (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
+            lbl
+    ruleIndex ln lbl =
         case headMay . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
