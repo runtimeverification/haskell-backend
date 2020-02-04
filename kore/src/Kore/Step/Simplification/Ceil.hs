@@ -363,6 +363,20 @@ makeEvaluateNormalizedAc
   | Map.null concreteElements = Just $ makeEvaluateTerm sideCondition opaqueAc
 makeEvaluateNormalizedAc _  _ = Nothing
 
+{-| This handles the case when we can't simplify a term's ceil.
+
+It returns the ceil of that term.
+
+When the term's ceil implies the ceils of its subterms, this also @and@s
+the subterms' simplified ceils to the result. This is needed because the
+SMT solver can't infer a subterm's ceil from a term's ceil, so we
+have to provide that information.
+
+As an example, if we call @makeSimplifiedCeil@ for @f(g(x))@, and we don't
+know how to simplify @ceil(g(x))@, the return value will be
+@and(ceil(f(g(x))), ceil(g(x)))@.
+
+-}
 makeSimplifiedCeil
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => SideCondition variable
