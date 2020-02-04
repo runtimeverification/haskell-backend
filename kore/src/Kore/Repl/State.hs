@@ -32,9 +32,7 @@ module Kore.Repl.State
 import Prelude.Kore
 
 import Control.Concurrent.MVar
-import qualified Control.Lens as Lens hiding
-    ( makeLenses
-    )
+import qualified Control.Lens as Lens
 import Control.Monad.Error.Class
     ( MonadError
     )

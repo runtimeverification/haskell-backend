@@ -32,9 +32,7 @@ import Control.Lens
     ( (%=)
     , (.=)
     )
-import qualified Control.Lens as Lens hiding
-    ( makeLenses
-    )
+import qualified Control.Lens as Lens
 import Control.Monad
     ( void
     )
