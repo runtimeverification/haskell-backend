@@ -344,10 +344,10 @@ updateExecutionGraph gph = do
 smoothOutGraph :: Gr node edge -> Maybe (Gr node (Maybe edge))
 smoothOutGraph graph = do
     let subGraph = Graph.nfilter inOutDegreeOne graph
-        nodesToRemove = Graph.nodes subGraph
     edgesToAdd <-
         traverse (componentToEdge subGraph) (Graph.components subGraph)
-    let liftedSubGraph = Graph.emap Just (Graph.delNodes nodesToRemove graph)
+    let nodesToRemove = Graph.nodes subGraph
+        liftedSubGraph = Graph.emap Just (Graph.delNodes nodesToRemove graph)
         liftedGraph = Graph.insEdges edgesToAdd liftedSubGraph
     return liftedGraph
   where
