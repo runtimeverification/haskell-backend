@@ -104,10 +104,7 @@ instance MonadTrans SimplifierT where
     lift smt = SimplifierT (lift smt)
     {-# INLINE lift #-}
 
-instance MonadLog log => MonadLog (SimplifierT log) where
-    logScope locally (SimplifierT readerT) =
-        SimplifierT $ Morph.hoist (logScope locally) readerT
-    {-# INLINE logScope #-}
+instance MonadLog log => MonadLog (SimplifierT log)
 
 instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
     profile event duration =
