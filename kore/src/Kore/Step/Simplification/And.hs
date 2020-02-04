@@ -18,9 +18,6 @@ module Kore.Step.Simplification.And
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (empty)
-    )
 import Control.Error
     ( fromMaybe
     , runMaybeT

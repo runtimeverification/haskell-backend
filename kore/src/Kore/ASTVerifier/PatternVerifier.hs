@@ -15,7 +15,6 @@ module Kore.ASTVerifier.PatternVerifier
 
 import Prelude.Kore
 
-import Control.Applicative
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans

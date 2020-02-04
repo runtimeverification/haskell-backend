@@ -52,15 +52,14 @@ import Prelude.Kore hiding
     ( all
     , and
     , any
+    , many
     , or
     , replicate
     , seq
     , sequence
+    , some
     )
 
-import Control.Applicative
-    ( Alternative (empty, (<|>))
-    )
 import qualified Control.Exception as Exception
 import Control.Monad
     ( when

@@ -12,7 +12,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Applicative
 import Control.Monad.Catch
     ( MonadCatch (catch)
     , MonadThrow (throwM)

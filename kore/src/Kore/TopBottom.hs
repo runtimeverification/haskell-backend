@@ -15,9 +15,6 @@ module Kore.TopBottom
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Control.Monad as Monad
 
 {-| Class for types whose values work as top, bottom, or something between.

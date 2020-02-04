@@ -30,9 +30,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Data.Functor.Identity
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Sequence as Seq

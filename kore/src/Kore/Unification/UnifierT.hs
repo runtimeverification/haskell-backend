@@ -17,9 +17,6 @@ module Kore.Unification.UnifierT
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative
-    )
 import Control.Error
 import Control.Monad
     ( MonadPlus

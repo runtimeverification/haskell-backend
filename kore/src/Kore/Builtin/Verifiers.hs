@@ -35,9 +35,6 @@ module Kore.Builtin.Verifiers
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT (..)
     , fromMaybe

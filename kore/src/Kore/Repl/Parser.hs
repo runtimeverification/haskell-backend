@@ -11,12 +11,10 @@ module Kore.Repl.Parser
     , scriptParser
     ) where
 
-import Prelude.Kore
-
-import Control.Applicative
-    ( some
-    , (<|>)
+import Prelude.Kore hiding
+    ( many
     )
+
 import Data.Default
 import qualified Data.Foldable as Foldable
 import Data.Functor

@@ -11,9 +11,6 @@ import Prelude.Kore hiding
     ( concat
     )
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT (..)
     )

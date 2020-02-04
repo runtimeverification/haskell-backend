@@ -14,9 +14,6 @@ module Kore.Log.DebugAppliedRule
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Data.Default
 import Data.Set
     ( Set
