@@ -13,6 +13,9 @@ module Kore.Attribute.Overload
 
 import Prelude.Kore
 
+import qualified Data.Bifunctor as Bifunctor
+    ( bimap
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -20,6 +23,7 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Kore.Internal.Symbol
     ( Symbol (..)
+    , toSymbolOrAlias
     )
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
@@ -92,6 +96,22 @@ instance ParseAttributes (Overload SymbolOrAlias) where
             Attributes [overloadAttribute symbol1 symbol2]
 
 instance ParseAttributes (Overload Symbol) where
-    parseAttribute = undefined
+    parseAttribute _                    (Overload Nothing)           =
+        return $ Overload Nothing
+        
+    parseAttribute attrPattern overload@(Overload (Just symbolPair)) = do
+        Overload maybeSymbolOrAliasPair <-
+            parseAttribute attrPattern (fmap toSymbolOrAlias overload)
+        return $
+            Overload $
+                fmap
+                    (Bifunctor.bimap (toSymbol fst) (toSymbol snd))
+                    maybeSymbolOrAliasPair
+      where
+        toSymbol projection symbolOrAias =
+            (projection symbolPair)
+                { symbolConstructor = symbolOrAliasConstructor symbolOrAias
+                , symbolParams = symbolOrAliasParams symbolOrAias
+                }
 
-    toAttributes = undefined
+    toAttributes = toAttributes . fmap toSymbolOrAlias

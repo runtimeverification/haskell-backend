@@ -42,6 +42,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
+import qualified Kore.Internal.Symbol as Internal.Symbol
+    ( Symbol (..)
+    )
 import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
