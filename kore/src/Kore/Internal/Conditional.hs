@@ -81,7 +81,9 @@ import Kore.Variables.Fresh
     ( FreshVariable
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
+    ( ElementVariable
+    , SetVariable
+    , UnifiedVariable
     )
 import qualified SQL
 
@@ -412,19 +414,22 @@ isPredicate Conditional {term} = isTop term
 -}
 mapVariables
     :: (Ord variableFrom, FreshVariable variableTo)
-    => ((variableFrom -> variableTo) -> termFrom -> termTo)
-    -> (variableFrom -> variableTo)
+    => ((ElementVariable variableFrom -> ElementVariable variableTo) -> (SetVariable variableFrom -> SetVariable variableTo) -> termFrom -> termTo)
+    -> (ElementVariable variableFrom -> ElementVariable variableTo)
+    -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Conditional variableFrom termFrom
     -> Conditional variableTo   termTo
 mapVariables
     mapTermVariables
-    mapVariable
+    mapElemVar
+    mapSetVar
     Conditional { term, predicate, substitution }
   =
     Conditional
-        { term = mapTermVariables mapVariable term
-        , predicate = Predicate.mapVariables mapVariable predicate
-        , substitution = Substitution.mapVariables mapVariable substitution
+        { term = mapTermVariables mapElemVar mapSetVar term
+        , predicate = Predicate.mapVariables mapElemVar mapSetVar predicate
+        , substitution =
+            Substitution.mapVariables mapElemVar mapSetVar substitution
         }
 
 splitTerm :: Conditional variable term -> (term, Conditional variable ())

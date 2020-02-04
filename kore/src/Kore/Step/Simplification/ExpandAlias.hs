@@ -38,6 +38,9 @@ import Kore.Syntax.Variable
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import Kore.Variables.UnifiedVariable
+    ( mapUnifiedVariable
+    )
 
 expandAlias
     :: forall variable unifier
@@ -74,9 +77,10 @@ substituteInAlias
     -> TermLike variable
 substituteInAlias Alias { aliasLeft, aliasRight } children =
     assert (length aliasLeft == length children)
-        $ substitute
-            substitutionMap
-            (mapVariables fromVariable aliasRight)
+    $ substitute substitutionMap
+    $ mapVariables (fmap fromVariable) (fmap fromVariable) aliasRight
   where
+    aliasLeft' =
+        mapUnifiedVariable (fmap fromVariable) (fmap fromVariable) <$> aliasLeft
     substitutionMap =
-        Map.fromList $ zip (fmap fromVariable <$> aliasLeft) children
+        Map.fromList $ zip aliasLeft' children

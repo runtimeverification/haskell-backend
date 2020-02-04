@@ -84,7 +84,9 @@ convertTermLikeVariables
     => TermLike variable
     -> TermLike variable0
 convertTermLikeVariables =
-    TermLike.mapVariables (fromVariable . toVariable)
+    TermLike.mapVariables
+        (fmap $ fromVariable . toVariable)
+        (fmap $ fromVariable . toVariable)
 
 convertPatternVariables
     ::  ( Ord variable
@@ -95,4 +97,6 @@ convertPatternVariables
     => Pattern variable
     -> Pattern variable0
 convertPatternVariables =
-    Pattern.mapVariables (fromVariable . toVariable)
+    Pattern.mapVariables
+        (fmap $ fromVariable . toVariable)
+        (fmap $ fromVariable . toVariable)

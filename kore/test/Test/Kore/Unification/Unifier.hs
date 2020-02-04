@@ -534,7 +534,9 @@ test_unification =
         (assertEqual ""
             [(ElemVar $ ElementVariable $ W "1", war' "2")]
             (Substitution.unwrap
-                . Substitution.mapVariables showVar
+                . Substitution.mapVariables
+                    (fmap showVar)
+                    (fmap showVar)
                 . Substitution.wrap
                 $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
             )

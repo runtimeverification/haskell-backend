@@ -63,5 +63,5 @@ warnBottomHook
     => Text
     -> TermLike variable
     -> logger ()
-warnBottomHook hook (mapVariables toVariable -> term) =
+warnBottomHook hook (mapVariables (fmap toVariable) (fmap toVariable) -> term) =
     logM WarnBottomHook { hook, term }

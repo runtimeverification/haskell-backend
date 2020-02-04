@@ -286,9 +286,8 @@ test_predicate =
     , testCase "freeVariables"
         ( do
             assertBool "top has no free variables"
-                $ (null :: FreeVariables.FreeVariables Variable -> Bool)
-                $ freeVariables
-                    (makeTruePredicate_ :: Predicate Variable)
+                $ FreeVariables.nullFreeVariables @Variable
+                $ freeVariables (makeTruePredicate_ :: Predicate Variable)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
                     [ ElemVar $ a Mock.testSort

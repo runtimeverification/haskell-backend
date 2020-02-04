@@ -201,15 +201,17 @@ equalityRuleToTerm
         )
 
 instance UnifyingRule EqualityPattern where
-    mapRuleVariables mapping rule1@(EqualityPattern _ _ _ _ _) =
+    mapRuleVariables mapElemVar mapSetVar rule1@(EqualityPattern _ _ _ _ _) =
         rule1
-            { requires = Predicate.mapVariables mapping requires
-            , left = TermLike.mapVariables mapping left
-            , right = TermLike.mapVariables mapping right
-            , ensures = Predicate.mapVariables mapping ensures
+            { requires = mapPredicateVariables requires
+            , left = mapTermLikeVariables left
+            , right = mapTermLikeVariables right
+            , ensures = mapPredicateVariables ensures
             }
       where
         EqualityPattern { requires, left, right, ensures } = rule1
+        mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
+        mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
 
     matchingPattern = left
 

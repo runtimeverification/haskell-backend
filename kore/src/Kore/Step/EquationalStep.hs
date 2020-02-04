@@ -156,7 +156,10 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
 
     unwrappedConfig :: Pattern variable
     unwrappedConfig =
-        Pattern.mapVariables Target.unwrapVariable configWithNewSubst
+        Pattern.mapVariables
+            (fmap Target.unwrapVariable)
+            (fmap Target.unwrapVariable)
+            configWithNewSubst
 
     targetVariables :: [ElementVariable variable]
     targetVariables =
@@ -339,7 +342,10 @@ finalizeRulesSequence sideCondition initial unifiedRules
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
+            $ Pattern.mapVariables
+                (fmap Target.unwrapVariable)
+                (fmap Target.unwrapVariable)
+            <$> remainders'
         }
   where
     initialTerm = Conditional.term initial

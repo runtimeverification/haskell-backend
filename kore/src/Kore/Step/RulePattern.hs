@@ -767,15 +767,15 @@ instance UnifyingRule RulePattern where
         originalFreeVariables =
             FreeVariables.getFreeVariables $ freeVariables rule1
 
-    mapRuleVariables mapping rule1@(RulePattern _ _ _ _ _) =
+    mapRuleVariables mapElemVar mapSetVar rule1@(RulePattern _ _ _ _ _) =
         rule1
-            { left = TermLike.mapVariables mapping left
-            , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
-            , requires = Predicate.mapVariables mapping requires
+            { left = mapTermLikeVariables left
+            , antiLeft = mapTermLikeVariables <$> antiLeft
+            , requires = mapPredicateVariables requires
             , rhs = RHS
-                { existentials = fmap mapping <$> existentials
-                , right = TermLike.mapVariables mapping right
-                , ensures = Predicate.mapVariables mapping ensures
+                { existentials = mapElemVar <$> existentials
+                , right = mapTermLikeVariables right
+                , ensures = mapPredicateVariables ensures
                 }
             }
       where
@@ -783,3 +783,5 @@ instance UnifyingRule RulePattern where
             { left, antiLeft, requires
             , rhs = RHS { existentials, right, ensures }
             } = rule1
+        mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
+        mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar

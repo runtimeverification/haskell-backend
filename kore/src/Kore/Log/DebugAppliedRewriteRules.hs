@@ -102,12 +102,11 @@ debugAppliedRewriteRules initial rules =
         , appliedRewriteRules
         }
   where
-    configuration =
-        Conditional.mapVariables
-            TermLike.mapVariables
-            toVariable
-            initial
+    configuration = mapConditionalVariables TermLike.mapVariables initial
     appliedRewriteRules =
-        coerce
-        $ Conditional.mapVariables mapRuleVariables toVariable
-        <$> rules
+        coerce (mapConditionalVariables mapRuleVariables <$> rules)
+    mapConditionalVariables mapTermVariables =
+        Conditional.mapVariables
+            mapTermVariables
+            (fmap toVariable)
+            (fmap toVariable)

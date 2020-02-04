@@ -707,10 +707,12 @@ isPredicate = Either.isRight . makePredicate
 -}
 mapVariables
     :: (Ord from, FreshVariable to)
-    => (from -> to)
+    => (ElementVariable from -> ElementVariable to)
+    -> (SetVariable from -> SetVariable to)
     -> Predicate from
     -> Predicate to
-mapVariables f = fmap (TermLike.mapVariables f)
+mapVariables mapElemVar mapSetVar =
+    fmap (TermLike.mapVariables mapElemVar mapSetVar)
 
 instance HasFreeVariables (Predicate variable) variable where
     freeVariables = freeVariables . unwrapPredicate
@@ -818,5 +820,6 @@ freshVariable
     => Predicate variable
     -> Predicate Variable
 freshVariable predicate =
-    externalizeFreshVariables . TermLike.mapVariables toVariable
+    externalizeFreshVariables
+    . TermLike.mapVariables (fmap toVariable) (fmap toVariable)
     <$> predicate

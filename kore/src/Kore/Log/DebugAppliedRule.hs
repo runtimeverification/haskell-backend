@@ -103,7 +103,10 @@ debugAppliedRule
 debugAppliedRule =
     logM
     . DebugAppliedRule
-    . Conditional.mapVariables Equality.mapRuleVariables toVariable
+    . Conditional.mapVariables
+        Equality.mapRuleVariables
+        (fmap toVariable)
+        (fmap toVariable)
 
 {- | Options (from the command-line) specifying when to log specific rules.
 

@@ -154,7 +154,10 @@ evaluateAxioms equalityRules sideCondition termLike
     maybeNotApplicable = maybeT (return notApplicable) return
 
     unwrapEqualityRule (EqualityRule rule) =
-        EqualityPattern.mapRuleVariables fromVariable rule
+        EqualityPattern.mapRuleVariables
+            (fmap fromVariable)
+            (fmap fromVariable)
+            rule
 
     rejectNarrowing (Result.results -> results) =
         (Monad.guard . not) (any Step.isNarrowingResult results)

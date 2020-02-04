@@ -60,7 +60,7 @@ test_expandedPattern =
                 , substitution = Substitution.wrap
                     [(ElemVar . ElementVariable $ W "4", war "5")]
                 }
-            (Pattern.mapVariables showVar
+            (Pattern.mapVariables (fmap showVar) (fmap showVar)
                 Conditional
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)

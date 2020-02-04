@@ -596,11 +596,15 @@ mockEvaluator
 mockEvaluator evaluation _ _ = return evaluation
 
 mapVariables
-    :: (InternalVariable variable, FreshVariable variable)
+    :: forall variable
+    .  (InternalVariable variable, FreshVariable variable)
     => Pattern Variable
     -> Pattern variable
 mapVariables =
-    Pattern.mapVariables $ \v ->
+    Pattern.mapVariables worker worker
+  where
+    worker :: Functor f => f Variable -> f variable
+    worker = fmap $ \v ->
         fromVariable v { variableCounter = Just (Sup.Element 1) }
 
 makeCeil

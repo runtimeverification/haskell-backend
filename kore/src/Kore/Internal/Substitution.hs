@@ -350,21 +350,17 @@ modify f = wrap . f . unwrap
 mapVariables
     :: forall variableFrom variableTo
     .  (Ord variableFrom, FreshVariable variableTo)
-    => (variableFrom -> variableTo)
+    => (ElementVariable variableFrom -> ElementVariable variableTo)
+    -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Substitution variableFrom
     -> Substitution variableTo
-mapVariables variableMapper =
-    modify (map (mapVariable variableMapper))
+mapVariables mapElemVar mapSetVar  =
+    modify (map mapSingleSubstitution)
   where
-    mapVariable
-        :: (variableFrom -> variableTo)
-        -> (UnifiedVariable variableFrom, TermLike variableFrom)
-        -> (UnifiedVariable variableTo, TermLike variableTo)
-    mapVariable
-        mapper
-        (substVariable, patt)
-      =
-        (mapper <$> substVariable, TermLike.mapVariables mapper patt)
+    mapSingleSubstitution =
+        Bifunctor.bimap
+            (mapUnifiedVariable mapElemVar mapSetVar)
+            (TermLike.mapVariables mapElemVar mapSetVar)
 
 mapTerms
     :: (TermLike variable -> TermLike variable)

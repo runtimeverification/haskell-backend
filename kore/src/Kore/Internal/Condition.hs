@@ -152,10 +152,11 @@ toPredicate = from
 
 mapVariables
     :: (Ord variable1, FreshVariable variable2)
-    => (variable1 -> variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> Condition variable1
     -> Condition variable2
-mapVariables = Conditional.mapVariables (\_ () -> ())
+mapVariables = Conditional.mapVariables (\_ _ () -> ())
 
 {- | Create a new 'Condition' from the 'Normalization' of a substitution.
 

@@ -132,19 +132,19 @@ mapVariablesTests =
     [ testCase "map id over empty is empty"
         $ assertEqual ""
             (wrap mempty)
-            . mapVariables id $ emptySubst
+            . mapVariables id id $ emptySubst
     , testCase "map id over wrap empty is normalized empty"
         $ assertEqual ""
             (wrap mempty)
-            . mapVariables id $ wrap emptyRawSubst
+            . mapVariables id id $ wrap emptyRawSubst
     , testCase "map id over singleton == id"
         $ assertEqual ""
             (wrap singletonSubst)
-            . mapVariables id $ wrap singletonSubst
+            . mapVariables id id $ wrap singletonSubst
     , testCase "map id over normalized singletonSubst"
         $ assertEqual ""
             (wrap singletonSubst)
-            . mapVariables id $ unsafeWrap singletonSubst
+            . mapVariables id id $ unsafeWrap singletonSubst
     ]
 
 isNormalizedTests :: TestTree

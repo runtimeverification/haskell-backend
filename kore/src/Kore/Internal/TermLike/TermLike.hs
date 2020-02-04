@@ -353,7 +353,7 @@ instance InternalVariable variable => Unparse (TermLike variable) where
       where
         freshVarTerm =
             externalizeFreshVariables
-            $ mapVariables toVariable term
+            $ mapVariables (fmap toVariable) (fmap toVariable) term
 
     unparse2 term =
         case Recursive.project freshVarTerm of
@@ -361,7 +361,7 @@ instance InternalVariable variable => Unparse (TermLike variable) where
       where
         freshVarTerm =
             externalizeFreshVariables
-            $ mapVariables toVariable term
+            $ mapVariables (fmap toVariable) (fmap toVariable) term
 
 type instance Base (TermLike variable) =
     CofreeF (TermLikeF variable) (Attribute.Pattern variable)
@@ -515,10 +515,15 @@ not injective!
 
 -}
 mapVariablesF
-    :: (variable1 -> variable2)
+    :: (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> TermLikeF variable1 child
     -> TermLikeF variable2 child
-mapVariablesF mapping = runIdentity . traverseVariablesF (Identity . mapping)
+mapVariablesF mapElemVar mapSetVar =
+    runIdentity . traverseVariablesF trElemVar trSetVar
+  where
+    trElemVar = Identity . mapElemVar
+    trSetVar = Identity . mapSetVar
 
 {- | Use the provided traversal to replace all variables in a 'TermLikeF' head.
 
@@ -528,10 +533,11 @@ traversal is not injective!
 -}
 traverseVariablesF
     :: Applicative f
-    => (variable1 -> f variable2)
+    => (ElementVariable variable1 -> f (ElementVariable variable2))
+    -> (SetVariable variable1 -> f (SetVariable variable2))
     ->    TermLikeF variable1 child
     -> f (TermLikeF variable2 child)
-traverseVariablesF traversing =
+traverseVariablesF trElemVar trSetVar =
     \case
         -- Non-trivial cases
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
@@ -566,19 +572,19 @@ traverseVariablesF traversing =
         InjF inj -> pure (InjF inj)
   where
     traverseConstVariable (Const variable) =
-        Const <$> traverse traversing variable
+        Const <$> traverseUnifiedVariable trElemVar trSetVar variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
-        <$> traverse traversing existsVariable
+        <$> trElemVar existsVariable
         <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
         Forall forallSort
-        <$> traverse traversing forallVariable
+        <$> trElemVar forallVariable
         <*> pure forallChild
     traverseVariablesMu Mu { muVariable, muChild } =
-        Mu <$> traverse traversing muVariable <*> pure muChild
+        Mu <$> trSetVar muVariable <*> pure muChild
     traverseVariablesNu Nu { nuVariable, nuChild } =
-        Nu <$> traverse traversing nuVariable <*> pure nuChild
+        Nu <$> trSetVar nuVariable <*> pure nuChild
 
 extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes = extract . getTermLike
@@ -630,21 +636,22 @@ renameElementVariable variable1 variable2 =
 renameFreeVariables
     :: Ord variable1
     => Monad m
-    => (variable1 -> m variable2)
+    => (ElementVariable variable1 -> m (ElementVariable variable2))
+    -> (SetVariable variable1 -> m (SetVariable variable2))
     -> FreeVariables variable1
     -> m (Renaming variable1 variable2)
-renameFreeVariables rename =
+renameFreeVariables trElemVar trSetVar =
     Monad.foldM worker mempty . getFreeVariables
   where
     worker renaming =
         \case
-            SetVar setVar ->
-                renameSetVariable setVar
-                    <$> traverse rename setVar
-                    <*> pure renaming
             ElemVar elemVar ->
                 renameElementVariable elemVar
-                    <$> traverse rename elemVar
+                    <$> trElemVar elemVar
+                    <*> pure renaming
+            SetVar setVar ->
+                renameSetVariable setVar
+                    <$> trSetVar setVar
                     <*> pure renaming
 
 lookupRenamedElementVariable
@@ -675,14 +682,18 @@ See also: 'traverseVariables'
 mapVariables
     :: forall variable1 variable2
     .  (Ord variable1, FreshVariable variable2)
-    => (variable1 -> variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> TermLike variable1
     -> TermLike variable2
-mapVariables mapping termLike =
+mapVariables mapElemVar mapSetVar termLike =
     Recursive.unfold worker (Env.env freeVariables0 termLike)
   where
     Identity freeVariables0 =
-        renameFreeVariables (Identity . mapping) (freeVariables termLike)
+        renameFreeVariables
+            (Identity . mapElemVar)
+            (Identity . mapSetVar)
+            (freeVariables termLike)
 
     freeUnifiedVariables
         ::  forall variable1' variable2'
@@ -741,7 +752,7 @@ mapVariables mapping termLike =
                 (Env (Renaming variable1 variable2) any)
     renameElementBinder avoiding binder =
         let Binder { binderVariable, binderChild } = binder
-            elementVariable2 = mapping <$> binderVariable
+            elementVariable2 = mapElemVar binderVariable
             binderVariable' =
                 refreshElementVariable avoiding elementVariable2
                 & fromMaybe elementVariable2
@@ -764,7 +775,7 @@ mapVariables mapping termLike =
                 (Env (Renaming variable1 variable2) any)
     renameSetBinder avoiding binder =
         let Binder { binderVariable, binderChild } = binder
-            setVariable2 = mapping <$> binderVariable
+            setVariable2 = mapSetVar binderVariable
             binderVariable' =
                 refreshSetVariable avoiding setVariable2
                 & fromMaybe setVariable2
@@ -816,7 +827,8 @@ mapVariables mapping termLike =
                         -- mapVariablesF will not actually call the mapping
                         -- function because all the cases with variables are
                         -- handled above.
-                        mapVariablesF mapping termLikeF
+                        Env.env renaming
+                        <$> mapVariablesF mapElemVar mapSetVar termLikeF
         in attrs' :< termLikeF'
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
@@ -836,11 +848,16 @@ traverseVariables
     :: forall variable1 variable2 m
     .  (Ord variable1, FreshVariable variable2)
     => Monad m
-    => (variable1 -> m variable2)
+    => (ElementVariable variable1 -> m (ElementVariable variable2))
+    -> (SetVariable variable1 -> m (SetVariable variable2))
     -> TermLike variable1
     -> m (TermLike variable2)
-traverseVariables traversing termLike = do
-    freeVariables0 <- renameFreeVariables traversing (freeVariables termLike)
+traverseVariables trElemVar trSetVar termLike = do
+    freeVariables0 <-
+        renameFreeVariables
+            trElemVar
+            trSetVar
+            (freeVariables termLike)
     Reader.runReaderT (Recursive.fold worker termLike) freeVariables0
   where
     freeUnifiedVariables
@@ -890,7 +907,7 @@ traverseVariables traversing termLike = do
                 (Binder (ElementVariable variable2) (TermLike variable2))
     renameElementBinder avoiding binder = do
         let Binder { binderVariable, binderChild } = binder
-        unifiedVariable2 <- ElemVar <$> Trans.lift (traverse traversing binderVariable)
+        unifiedVariable2 <- ElemVar <$> Trans.lift (trElemVar binderVariable)
         let unifiedVariable2' =
                 Fresh.refreshVariable avoiding unifiedVariable2
                 & fromMaybe unifiedVariable2
@@ -919,7 +936,7 @@ traverseVariables traversing termLike = do
                 (Binder (SetVariable variable2) (TermLike variable2))
     renameSetBinder avoiding binder = do
         let Binder { binderVariable, binderChild } = binder
-        unifiedVariable2 <- SetVar <$> Trans.lift (traverse traversing binderVariable)
+        unifiedVariable2 <- SetVar <$> Trans.lift (trSetVar binderVariable)
         let unifiedVariable2' =
                 Fresh.refreshVariable avoiding unifiedVariable2
                 & fromMaybe unifiedVariable2
@@ -1006,34 +1023,52 @@ externalizeFreshVariables termLike =
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
-    renamedFreeVariables :: Map Variable Variable
+    renamedFreeVariables :: Renaming Variable Variable
     (renamedFreeVariables, _) =
         Foldable.foldl' rename initial generatedFreeVariables
       where
-        initial = (Map.empty, FreeVariables originalFreeVariables)
+        initial = (mempty, FreeVariables originalFreeVariables)
         rename (renaming, avoiding) variable =
             let
-                variable' = safeVariable avoiding variable
-                renaming' =
-                    Map.insert
-                        (asVariable variable)
-                        (asVariable variable')
-                        renaming
+                (variable', renaming') =
+                    case variable of
+                        ElemVar elementVariable ->
+                            ( ElemVar elementVariable'
+                            , renameElementVariable
+                                elementVariable
+                                elementVariable'
+                                renaming
+                            )
+                          where
+                            elementVariable' =
+                                safeElementVariable avoiding elementVariable
+                        SetVar setVariable ->
+                            ( SetVar setVariable'
+                            , renameSetVariable
+                                setVariable
+                                setVariable'
+                                renaming
+                            )
+                          where
+                            setVariable' =
+                                safeSetVariable avoiding setVariable
                 avoiding' = freeVariable variable' <> avoiding
             in
                 (renaming', avoiding')
 
-    {- | Look up a variable renaming.
+    lookupElementVariable
+        :: ElementVariable Variable
+        -> Reader (Renaming Variable Variable) (ElementVariable Variable)
+    lookupElementVariable elementVariable =
+        fromMaybe elementVariable
+        <$> Reader.asks (lookupRenamedElementVariable elementVariable)
 
-    The original (not generated) variables of the pattern are never renamed, so
-    these variables are not present in the Map of renamed variables.
-
-     -}
-    lookupVariable :: Variable ->  Reader (Map Variable Variable) Variable
-    lookupVariable variable =
-        Reader.asks (Map.lookup variable) >>= \case
-            Nothing -> return variable
-            Just variable' -> return variable'
+    lookupSetVariable
+        :: SetVariable Variable
+        -> Reader (Renaming Variable Variable) (SetVariable Variable)
+    lookupSetVariable setVariable =
+        fromMaybe setVariable
+        <$> Reader.asks (lookupRenamedSetVariable setVariable)
 
     {- | Externalize a variable safely.
 
@@ -1041,102 +1076,122 @@ externalizeFreshVariables termLike =
     among the set of avoided variables. The externalized form is returned.
 
      -}
-    safeVariable
+    safeElementVariable
         :: FreeVariables Variable
-        -> UnifiedVariable Variable
-        -> UnifiedVariable Variable
-    safeVariable avoiding variable =
+        -> ElementVariable Variable
+        -> ElementVariable Variable
+    safeElementVariable avoiding variable =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
-        $ fmap Variable.externalizeFreshVariable
-        <$> iterate (fmap Fresh.nextVariable) variable
+        $ externalize
+        <$> iterate nextVariable variable
       where
-        wouldCapture var = isFreeVariable var avoiding
+        wouldCapture var = isFreeVariable (ElemVar var) avoiding
+        nextVariable = fmap Fresh.nextVariable
+        externalize = fmap Variable.externalizeFreshVariable
 
-    underBinder freeVariables' variable child = do
-        let variable' = safeVariable freeVariables' variable
-        child' <- Reader.local
-            (Map.insert (asVariable variable) (asVariable variable'))
-            child
+    safeSetVariable
+        :: FreeVariables Variable
+        -> SetVariable Variable
+        -> SetVariable Variable
+    safeSetVariable avoiding variable =
+        head  -- 'head' is safe because 'iterate' creates an infinite list
+        $ dropWhile wouldCapture
+        $ externalize
+        <$> iterate nextVariable variable
+      where
+        wouldCapture var = isFreeVariable (SetVar var) avoiding
+        nextVariable = fmap Fresh.nextVariable
+        externalize = fmap Variable.externalizeFreshVariable
+
+    underElementBinder freeVariables' variable child = do
+        let variable' = safeElementVariable freeVariables' variable
+        child' <- Reader.local (renameElementVariable variable variable') child
+        return (variable', child')
+
+    underSetBinder freeVariables' variable child = do
+        let variable' = safeSetVariable freeVariables' variable
+        child' <- Reader.local (renameSetVariable variable variable') child
         return (variable', child')
 
     externalizeFreshVariablesWorker
         ::  Base
                 (TermLike Variable)
                 (Reader
-                    (Map Variable Variable)
+                    (Renaming Variable Variable)
                     (TermLike Variable)
                 )
         ->  Reader
-                (Map Variable Variable)
+                (Renaming Variable Variable)
                 (TermLike Variable)
     externalizeFreshVariablesWorker (attrs :< patt) = do
-        attrs' <- Attribute.traverseVariables lookupVariable attrs
+        attrs' <-
+            Attribute.traverseVariables
+                lookupElementVariable
+                lookupSetVariable
+                attrs
         let freeVariables' = Attribute.freeVariables attrs'
         patt' <-
             case patt of
                 ExistsF exists -> do
                     let Exists { existsVariable, existsChild } = exists
                     (existsVariable', existsChild') <-
-                        underBinder
+                        underElementBinder
                             freeVariables'
-                            (ElemVar existsVariable)
+                            existsVariable
                             existsChild
                     let exists' =
                             exists
-                                { existsVariable = ElementVariable
-                                    (asVariable existsVariable')
+                                { existsVariable = existsVariable'
                                 , existsChild = existsChild'
                                 }
                     return (ExistsF exists')
                 ForallF forall -> do
                     let Forall { forallVariable, forallChild } = forall
                     (forallVariable', forallChild') <-
-                        underBinder
+                        underElementBinder
                             freeVariables'
-                            (ElemVar forallVariable)
+                            forallVariable
                             forallChild
                     let forall' =
                             forall
-                                { forallVariable = ElementVariable
-                                    (asVariable forallVariable')
+                                { forallVariable = forallVariable'
                                 , forallChild = forallChild'
                                 }
                     return (ForallF forall')
                 MuF mu -> do
                     let Mu { muVariable, muChild } = mu
                     (muVariable', muChild') <-
-                        underBinder
+                        underSetBinder
                             freeVariables'
-                            (SetVar muVariable)
+                            muVariable
                             muChild
                     let mu' =
                             mu
-                                { muVariable = SetVariable
-                                    (asVariable muVariable')
+                                { muVariable = muVariable'
                                 , muChild = muChild'
                                 }
                     return (MuF mu')
                 NuF nu -> do
                     let Nu { nuVariable, nuChild } = nu
                     (nuVariable', nuChild') <-
-                        underBinder
+                        underSetBinder
                             freeVariables'
-                            (SetVar nuVariable)
+                            nuVariable
                             nuChild
                     let nu' =
                             nu
-                                { nuVariable = SetVariable
-                                    (asVariable nuVariable')
+                                { nuVariable = nuVariable'
                                 , nuChild = nuChild'
                                 }
                     return (NuF nu')
                 _ ->
-                    traverseVariablesF lookupVariable patt >>= sequence
+                    traverseVariablesF
+                        lookupElementVariable
+                        lookupSetVariable
+                        patt
+                    >>= sequence
         (return . Recursive.embed) (attrs' :< patt')
-    --TODO(traiansf): consider removing this usage of asVariable
-    asVariable :: UnifiedVariable variable -> variable
-    asVariable = foldMapVariable id
 
 updateCallStack
     :: forall variable

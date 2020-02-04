@@ -372,13 +372,13 @@ test_renaming =
     , testSet "\\nu" mkNu
     ]
   where
-    mapElementVariables' v = mapVariables (const $ getElementVariable v)
-    mapSetVariables' v = mapVariables (const $ getSetVariable v)
+    mapElementVariables' v = mapVariables (const v) id
+    mapSetVariables' v = mapVariables id (const v)
 
     traverseElementVariables' v =
-        runIdentity . traverseVariables (const . return $ getElementVariable v)
+        runIdentity . traverseVariables (const $ return v) pure
     traverseSetVariables' v =
-        runIdentity . traverseVariables (const . return $ getSetVariable v)
+        runIdentity . traverseVariables pure (const $ return v)
 
     doesNotCapture
         :: HasCallStack

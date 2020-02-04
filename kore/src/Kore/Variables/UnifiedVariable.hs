@@ -5,6 +5,7 @@ License     : NCSA
 -}
 module Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
+    , ElementVariable (..), SetVariable (..)
     , isElemVar
     , expectElemVar
     , isSetVar
@@ -14,6 +15,8 @@ module Kore.Variables.UnifiedVariable
     , unifiedVariableSort
     , refreshElementVariable
     , refreshSetVariable
+    , mapUnifiedVariable
+    , traverseUnifiedVariable
     ) where
 
 import Prelude.Kore
@@ -49,7 +52,7 @@ from element variables (introduced by 'ElemVar').
 data UnifiedVariable variable
     = ElemVar !(ElementVariable variable)
     | SetVar  !(SetVariable variable)
-    deriving (Generic, Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Generic, Eq, Ord, Show)
 
 instance NFData variable => NFData (UnifiedVariable variable)
 
@@ -160,3 +163,22 @@ refreshSetVariable avoiding =
     -- expectElemVar is safe because the FreshVariable instance of
     -- UnifiedVariable (above) conserves the SetVar constructor.
     fmap expectSetVar . refreshVariable avoiding . SetVar
+
+mapUnifiedVariable
+    :: (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
+    -> UnifiedVariable variable1 -> UnifiedVariable variable2
+mapUnifiedVariable mapElemVar mapSetVar =
+    \case
+        ElemVar elemVar -> ElemVar (mapElemVar elemVar)
+        SetVar  setVar  -> SetVar (mapSetVar setVar)
+
+traverseUnifiedVariable
+    :: Functor f
+    => (ElementVariable variable1 -> f (ElementVariable variable2))
+    -> (SetVariable variable1 -> f (SetVariable variable2))
+    -> UnifiedVariable variable1 -> f (UnifiedVariable variable2)
+traverseUnifiedVariable traverseElemVar traverseSetVar =
+    \case
+        ElemVar elemVar -> ElemVar <$> traverseElemVar elemVar
+        SetVar  setVar  -> SetVar <$> traverseSetVar setVar

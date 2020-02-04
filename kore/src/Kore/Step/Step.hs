@@ -78,8 +78,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( FreshVariable
+    ( ElementVariable
+    , FreshVariable
     , InternalVariable
+    , SetVariable
     , SubstitutionVariable
     , TermLike
     )
@@ -159,7 +161,8 @@ class UnifyingRule rule where
     -}
     mapRuleVariables
         :: (Ord variable1, FreshVariable variable2)
-        => (variable1 -> variable2)
+        => (ElementVariable variable1 -> ElementVariable variable2)
+        -> (SetVariable variable1 -> SetVariable variable2)
         -> rule variable1
         -> rule variable2
 
@@ -258,7 +261,7 @@ toAxiomVariables
     => UnifyingRule rule
     => rule variable
     -> rule (Target variable)
-toAxiomVariables = mapRuleVariables Target.Target
+toAxiomVariables = mapRuleVariables (fmap Target.Target) (fmap Target.Target)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
  -}
@@ -266,7 +269,10 @@ unwrapRule
     :: FreshVariable variable
     => UnifyingRule rule
     => rule (Target variable) -> rule variable
-unwrapRule = mapRuleVariables Target.unwrapVariable
+unwrapRule =
+    mapRuleVariables
+        (fmap Target.unwrapVariable)
+        (fmap Target.unwrapVariable)
 
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults
@@ -411,14 +417,16 @@ toConfigurationVariables
     :: FreshVariable variable
     => Pattern variable
     -> Pattern (Target variable)
-toConfigurationVariables = Pattern.mapVariables Target.NonTarget
+toConfigurationVariables =
+    Pattern.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition
     :: (InternalVariable variable, FreshVariable variable)
     => SideCondition variable
     -> SideCondition (Target variable)
-toConfigurationVariablesCondition = SideCondition.mapVariables Target.NonTarget
+toConfigurationVariablesCondition =
+    SideCondition.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
 
 {- | Apply the remainder predicate to the given initial configuration.
 
