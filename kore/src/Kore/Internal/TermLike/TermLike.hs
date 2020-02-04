@@ -25,6 +25,9 @@ import Prelude.Kore
 
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
+import Control.Comonad.Trans.Env
+    ( Env
+    )
 import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
     ( NFData (..)
@@ -511,11 +514,11 @@ __Warning__: @mapVariablesF@ will capture variables if the provided mapping is
 not injective!
 
 -}
--- mapVariablesF
---     :: (variable1 -> variable2)
---     -> TermLikeF variable1 child
---     -> TermLikeF variable2 child
--- mapVariablesF mapping = runIdentity . traverseVariablesF (Identity . mapping)
+mapVariablesF
+    :: (variable1 -> variable2)
+    -> TermLikeF variable1 child
+    -> TermLikeF variable2 child
+mapVariablesF mapping = runIdentity . traverseVariablesF (Identity . mapping)
 
 {- | Use the provided traversal to replace all variables in a 'TermLikeF' head.
 
@@ -666,9 +669,6 @@ lookupRenamedSetVariable variable =
 demanded. Intermediate allocation from composing multiple transformations with
 @mapVariables@ is amortized; the intermediate trees are never fully resident.
 
-__Warning__: @mapVariables@ will capture variables if the provided mapping is
-not injective!
-
 See also: 'traverseVariables'
 
  -}
@@ -679,7 +679,7 @@ mapVariables
     -> TermLike variable1
     -> TermLike variable2
 mapVariables mapping termLike =
-    Reader.runReader (Recursive.fold worker termLike) freeVariables0
+    Recursive.unfold worker (Env.env freeVariables0 termLike)
   where
     Identity freeVariables0 =
         renameFreeVariables (Identity . mapping) (freeVariables termLike)
@@ -696,130 +696,128 @@ mapVariables mapping termLike =
         Lens.Product.field @"freeVariables"
         . Lens.Wrapped._Unwrapped
         . traverseSet
+
     traverseSet f = fmap Set.fromList . traverse f . Set.toList
 
     askUnifiedVariable
-        ::  UnifiedVariable variable1
-        ->  Reader (Renaming variable1 variable2) (UnifiedVariable variable2)
-    askUnifiedVariable =
+        :: Env (Renaming variable1 variable2) any
+        -> UnifiedVariable variable1
+        -> UnifiedVariable variable2
+    askUnifiedVariable env =
         \case
-            SetVar setVar -> SetVar <$> askSetVariable setVar
-            ElemVar elemVar -> ElemVar <$> askElementVariable elemVar
+            ElemVar elementVariable ->
+                ElemVar (askElementVariable env elementVariable)
+            SetVar setVariable ->
+                SetVar (askSetVariable env setVariable)
 
     askElementVariable
-        :: ElementVariable variable1
-        -> Reader (Renaming variable1 variable2) (ElementVariable variable2)
-    askElementVariable =
-        fmap (fromMaybe impossible) . Reader.asks . lookupRenamedElementVariable
+        :: Env (Renaming variable1 variable2) any
+        -> ElementVariable variable1
+        -> ElementVariable variable2
+    askElementVariable env elementVariable1 =
+        fromMaybe impossible
+        $ flip Env.asks env
+        $ lookupRenamedElementVariable elementVariable1
 
     askSetVariable
-        :: SetVariable variable1
-        -> Reader (Renaming variable1 variable2) (SetVariable variable2)
-    askSetVariable =
-        fmap (fromMaybe impossible) . Reader.asks . lookupRenamedSetVariable
+        :: Env (Renaming variable1 variable2) any
+        -> SetVariable variable1
+        -> SetVariable variable2
+    askSetVariable env setVariable1 =
+        fromMaybe impossible
+        $ flip Env.asks env
+        $ lookupRenamedSetVariable setVariable1
 
     impossible = error "The impossible happened!"
+
     renameElementBinder
-        ::  Set.Set (UnifiedVariable variable2)
+        ::  forall any
+        .   Set.Set (UnifiedVariable variable2)
         ->  Binder
                 (ElementVariable variable1)
-                (Reader (Renaming variable1 variable2) (TermLike variable2))
-        ->  Reader
-                (Renaming variable1 variable2)
-                (Binder (ElementVariable variable2) (TermLike variable2))
-    renameElementBinder avoiding binder = do
+                (Env (Renaming variable1 variable2) any)
+        ->  Binder
+                (ElementVariable variable2)
+                (Env (Renaming variable1 variable2) any)
+    renameElementBinder avoiding binder =
         let Binder { binderVariable, binderChild } = binder
-            unifiedVariable2 = ElemVar (mapping <$> binderVariable)
-            unifiedVariable2' =
-                Fresh.refreshVariable avoiding unifiedVariable2
-                & fromMaybe unifiedVariable2
+            elementVariable2 = mapping <$> binderVariable
             binderVariable' =
-                case unifiedVariable2' of
-                    ElemVar elemVar -> elemVar
-                    SetVar _ -> impossible
-        binderChild' <-
-            Reader.local
-                (renameElementVariable binderVariable binderVariable')
-                binderChild
-        let binder' :: Binder (ElementVariable variable2) (TermLike variable2)
+                refreshElementVariable avoiding elementVariable2
+                & fromMaybe elementVariable2
+            addRenaming = renameElementVariable binderVariable binderVariable'
+            binderChild' = Env.local addRenaming binderChild
             binder' = Binder
                 { binderVariable = binderVariable'
                 , binderChild = binderChild'
                 }
-        pure binder'
+        in binder'
+
     renameSetBinder
-        ::  Set.Set (UnifiedVariable variable2)
+        ::  forall any
+        .   Set.Set (UnifiedVariable variable2)
         ->  Binder
                 (SetVariable variable1)
-                (Reader (Renaming variable1 variable2) (TermLike variable2))
-        ->  Reader
-                (Renaming variable1 variable2)
-                (Binder (SetVariable variable2) (TermLike variable2))
-    renameSetBinder avoiding binder = do
+                (Env (Renaming variable1 variable2) any)
+        ->  Binder
+                (SetVariable variable2)
+                (Env (Renaming variable1 variable2) any)
+    renameSetBinder avoiding binder =
         let Binder { binderVariable, binderChild } = binder
-            unifiedVariable2 = SetVar (mapping <$> binderVariable)
-            unifiedVariable2' =
-                Fresh.refreshVariable avoiding unifiedVariable2
-                & fromMaybe unifiedVariable2
+            setVariable2 = mapping <$> binderVariable
             binderVariable' =
-                case unifiedVariable2' of
-                    SetVar setVar -> setVar
-                    ElemVar _ -> impossible
-        binderChild' <-
-            Reader.local
-                (renameSetVariable binderVariable binderVariable')
-                binderChild
-        let binder' :: Binder (SetVariable variable2) (TermLike variable2)
+                refreshSetVariable avoiding setVariable2
+                & fromMaybe setVariable2
+            addRenaming = renameSetVariable binderVariable binderVariable'
+            binderChild' = Env.local addRenaming binderChild
             binder' = Binder
                 { binderVariable = binderVariable'
                 , binderChild = binderChild'
                 }
-        pure binder'
+        in binder'
+
+    renameExists avoiding =
+        Lens.over existsBinder (renameElementBinder avoiding)
+
+    renameForall avoiding =
+        Lens.over forallBinder (renameElementBinder avoiding)
+
+    renameMu avoiding =
+        Lens.over muBinder (renameSetBinder avoiding)
+
+    renameNu avoiding =
+        Lens.over nuBinder (renameSetBinder avoiding)
+
     worker
-        ::  Base
-                (TermLike variable1)
-                (Reader (Renaming variable1 variable2) (TermLike variable2))
-        -> Reader (Renaming variable1 variable2) (TermLike variable2)
-    worker (attrs :< termLikeF) = do
-        attrs' <- Lens.traverseOf freeUnifiedVariables askUnifiedVariable attrs
-        let avoiding = getFreeVariables $ freeVariables attrs'
-        termLikeF' <- case termLikeF of
-            VariableF (Const unifiedVariable) -> do
-                unifiedVariable' <- askUnifiedVariable unifiedVariable
-                (pure . VariableF) (Const unifiedVariable')
-            ExistsF exists ->
-                ExistsF <$> existsBinder (renameElementBinder avoiding) exists
-            ForallF forall ->
-                ForallF <$> forallBinder (renameElementBinder avoiding) forall
-            MuF mu ->
-                MuF <$> muBinder (renameSetBinder avoiding) mu
-            NuF nu ->
-                NuF <$> nuBinder (renameSetBinder avoiding) nu
-            AndF andP -> AndF <$> sequence andP
-            ApplySymbolF applySymbolF -> ApplySymbolF <$> sequence applySymbolF
-            ApplyAliasF applyAliasF -> ApplyAliasF <$> sequence applyAliasF
-            BottomF botP -> BottomF <$> sequence botP
-            BuiltinF builtinP -> BuiltinF <$> sequence builtinP
-            CeilF ceilP -> CeilF <$> sequence ceilP
-            DomainValueF dvP -> DomainValueF <$> sequence dvP
-            EqualsF eqP -> EqualsF <$> sequence eqP
-            FloorF flrP -> FloorF <$> sequence flrP
-            IffF iffP -> IffF <$> sequence iffP
-            ImpliesF impP -> ImpliesF <$> sequence impP
-            InF inP -> InF <$> sequence inP
-            NextF nxtP -> NextF <$> sequence nxtP
-            NotF notP -> NotF <$> sequence notP
-            OrF orP -> OrF <$> sequence orP
-            RewritesF rewP -> RewritesF <$> sequence rewP
-            StringLiteralF strP -> StringLiteralF <$> sequence strP
-            InternalBytesF bytesP -> InternalBytesF <$> sequence bytesP
-            TopF topP -> TopF <$> sequence topP
-            InhabitantF s -> InhabitantF <$> sequence s
-            EvaluatedF childP -> EvaluatedF <$> sequence childP
-            EndiannessF endianness -> EndiannessF <$> sequence endianness
-            SignednessF signedness -> SignednessF <$> sequence signedness
-            InjF inj -> InjF <$> sequence inj
-        (pure . Recursive.embed) (attrs' :< termLikeF')
+        ::  Env (Renaming variable1 variable2) (TermLike variable1)
+        ->  Base
+                (TermLike variable2)
+                (Env (Renaming variable1 variable2) (TermLike variable1))
+    worker env =
+        let attrs :< termLikeF = Recursive.project (extract env)
+            attrs' =
+                Lens.over freeUnifiedVariables
+                    (askUnifiedVariable env)
+                    attrs
+            renaming = Env.ask env
+            avoiding = getFreeVariables $ freeVariables attrs'
+            termLikeF' =
+                case Env.env renaming <$> termLikeF of
+                    VariableF (Const unifiedVariable1) ->
+                        VariableF (Const unifiedVariable2)
+                      where
+                        unifiedVariable2 =
+                            askUnifiedVariable env unifiedVariable1
+                    ExistsF exists -> ExistsF (renameExists avoiding exists)
+                    ForallF forall -> ForallF (renameForall avoiding forall)
+                    MuF mu -> MuF (renameMu avoiding mu)
+                    NuF nu -> NuF (renameNu avoiding nu)
+                    _ ->
+                        -- mapVariablesF will not actually call the mapping
+                        -- function because all the cases with variables are
+                        -- handled above.
+                        mapVariablesF mapping termLikeF
+        in attrs' :< termLikeF'
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
 
