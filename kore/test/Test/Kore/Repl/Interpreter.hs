@@ -13,7 +13,6 @@ import Test.Tasty.HUnit
     , (@?=)
     )
 
-import Control.Applicative
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import Control.Monad.Reader

@@ -32,7 +32,9 @@ module Kore.Parser.Parser
     , setVariableParser
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( Alternative (..)
+    )
 
 import Control.Arrow
     ( (&&&)
