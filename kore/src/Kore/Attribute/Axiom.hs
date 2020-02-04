@@ -55,7 +55,9 @@ import Kore.Attribute.Overload
 import Kore.Attribute.Owise
 import Kore.Attribute.Parser
     ( AttributePattern
+    , Attributes
     , ParseAttributes (..)
+    , toAttributes
     )
 import Kore.Attribute.Priority
 import Kore.Attribute.ProductionID
@@ -175,27 +177,28 @@ instance ParseAttributes Axiom where
         Monad.>=> typed @UniqueId (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
 
-    toAttributes =
+instance From Axiom Attributes where
+    from =
         mconcat . sequence
-            [ toAttributes . heatCool
-            , toAttributes . productionID
-            , toAttributes . priority
-            , toAttributes . assoc
-            , toAttributes . comm
-            , toAttributes . unit
-            , toAttributes . idem
-            , toAttributes . trusted
-            , toAttributes . concrete
-            , toAttributes . simplification
-            , toAttributes . overload
-            , toAttributes . smtLemma
-            , toAttributes . label
-            , toAttributes . sourceLocation
-            , toAttributes . constructor
-            , toAttributes . functional
-            , toAttributes . subsorts
-            , toAttributes . uniqueId
-            , toAttributes . owise
+            [ from . heatCool
+            , from . productionID
+            , from . priority
+            , from . assoc
+            , from . comm
+            , from . unit
+            , from . idem
+            , from . trusted
+            , from . concrete
+            , from . simplification
+            , from . overload
+            , from . smtLemma
+            , from . label
+            , from . sourceLocation
+            , from . constructor
+            , from . functional
+            , from . subsorts
+            , from . uniqueId
+            , from . owise
             ]
 
 instance SQL.Column Axiom where

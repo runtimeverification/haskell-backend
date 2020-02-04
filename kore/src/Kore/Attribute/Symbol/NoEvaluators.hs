@@ -48,4 +48,6 @@ noEvaluatorsAttribute = attributePattern_ noEvaluatorsSymbol
 
 instance ParseAttributes NoEvaluators where
     parseAttribute = parseBoolAttribute noEvaluatorsId
-    toAttributes = toBoolAttributes noEvaluatorsAttribute
+
+instance From NoEvaluators Attributes where
+    from = toBoolAttributes noEvaluatorsAttribute

@@ -55,4 +55,6 @@ unitAttribute = attributePattern_ unitSymbol
 
 instance ParseAttributes Unit where
     parseAttribute = parseBoolAttribute unitId
-    toAttributes = toBoolAttributes unitAttribute
+
+instance From Unit Attributes where
+    from = toBoolAttributes unitAttribute

@@ -73,7 +73,8 @@ instance ParseAttributes Sort where
         Monad.>=> typed @Concat (parseAttribute attr)
         Monad.>=> typed @HasDomainValues (parseAttribute attr)
 
-    toAttributes =
+instance From Sort Attributes where
+    from =
         mconcat . sequence
             [ toAttributes . hook
             , toAttributes . smtlib

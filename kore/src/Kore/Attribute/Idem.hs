@@ -55,4 +55,6 @@ idemAttribute = attributePattern_ idemSymbol
 
 instance ParseAttributes Idem where
     parseAttribute = parseBoolAttribute idemId
-    toAttributes = toBoolAttributes idemAttribute
+
+instance From Idem Attributes where
+    from = toBoolAttributes idemAttribute

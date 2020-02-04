@@ -79,6 +79,7 @@ instance ParseAttributes UniqueId where
         withApplication' = AttributeParser.withApplication uniqueIdId
         failDuplicate' = AttributeParser.failDuplicate uniqueIdId
 
-    toAttributes UniqueId { getUniqueId = Just uniqueId } =
+instance From UniqueId Attributes where
+    from UniqueId { getUniqueId = Just uniqueId } =
         Attributes [uniqueIdAttribute uniqueId]
-    toAttributes UniqueId { getUniqueId = Nothing } = Attributes []
+    from UniqueId { getUniqueId = Nothing } = Attributes []

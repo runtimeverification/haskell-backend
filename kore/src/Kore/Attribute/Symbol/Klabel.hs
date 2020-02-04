@@ -67,7 +67,8 @@ instance ParseAttributes Klabel where
         withApplication' = Parser.withApplication klabelId
         failDuplicate' = Parser.failDuplicate klabelId
 
-    toAttributes =
+instance From Klabel Attributes where
+    from =
         maybe def toAttribute . getKlabel
       where
-        toAttribute = Attributes . (: []) . klabelAttribute
+        toAttribute = from @AttributePattern . klabelAttribute

@@ -82,8 +82,9 @@ instance ParseAttributes Overload where
         withApplication' = Parser.withApplication overloadId
         failDuplicate' = Parser.failDuplicate overloadId
 
-    toAttributes =
+instance From Overload Attributes where
+    from =
         maybe def toAttribute . getOverload
       where
         toAttribute (symbol1, symbol2) =
-            Attributes [overloadAttribute symbol1 symbol2]
+            from @AttributePattern (overloadAttribute symbol1 symbol2)

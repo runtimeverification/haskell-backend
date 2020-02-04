@@ -80,7 +80,8 @@ import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
-    ( ParseAttributes (..)
+    ( Attributes
+    , ParseAttributes (..)
     )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
@@ -150,21 +151,22 @@ instance ParseAttributes Symbol where
         >=> typed @SymbolKywd (parseAttribute attr)
         >=> typed @NoEvaluators (parseAttribute attr)
 
-    toAttributes =
+instance From Symbol Attributes where
+    from =
         mconcat . sequence
-            [ toAttributes . function
-            , toAttributes . functional
-            , toAttributes . constructor
-            , toAttributes . injective
-            , toAttributes . sortInjection
-            , toAttributes . anywhere
-            , toAttributes . hook
-            , toAttributes . smtlib
-            , toAttributes . smthook
-            , toAttributes . memo
-            , toAttributes . klabel
-            , toAttributes . symbolKywd
-            , toAttributes . noEvaluators
+            [ from . function
+            , from . functional
+            , from . constructor
+            , from . injective
+            , from . sortInjection
+            , from . anywhere
+            , from . hook
+            , from . smtlib
+            , from . smthook
+            , from . memo
+            , from . klabel
+            , from . symbolKywd
+            , from . noEvaluators
             ]
 
 type StepperAttributes = Symbol
