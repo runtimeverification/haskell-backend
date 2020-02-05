@@ -16,7 +16,6 @@ module Kore.Step.Axiom.Registry
 
 import Prelude.Kore
 
-import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import Data.List
     ( partition
@@ -214,7 +213,7 @@ ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
  -}
 ignoreDefinition :: EqualityRule Variable -> Bool
 ignoreDefinition (EqualityRule EqualityPattern { left }) =
-    Exception.assert isLeftFunctionLike False
+    assert isLeftFunctionLike False
   where
     isLeftFunctionLike =
         (Pattern.isFunction . Pattern.function) (extractAttributes left)

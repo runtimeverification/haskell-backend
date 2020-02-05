@@ -20,7 +20,6 @@ import Control.Error
     ( MaybeT
     , maybeT
     )
-import Control.Exception as Exception
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
@@ -288,7 +287,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         (Condition.predicate condition, result)
   where
     assertNullSubstitution =
-        Exception.assert . Substitution.null . Condition.substitution
+        assert . Substitution.null . Condition.substitution
 
     loop :: Impl variable simplifier (Normalization variable)
     loop = do

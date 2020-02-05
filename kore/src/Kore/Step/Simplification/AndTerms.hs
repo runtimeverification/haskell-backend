@@ -28,9 +28,6 @@ import Control.Error
     , mapMaybeT
     )
 import qualified Control.Error as Error
-import Control.Exception
-    ( assert
-    )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text

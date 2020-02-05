@@ -10,10 +10,6 @@ module Kore.Step.Simplification.OverloadSimplifier
 
 import Prelude.Kore
 
-import Control.Exception
-    ( assert
-    )
-
 import Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
     )

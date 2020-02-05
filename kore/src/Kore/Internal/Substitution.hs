@@ -41,7 +41,6 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
-import qualified Control.Exception as Exception
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
@@ -322,15 +321,15 @@ unsafeWrap =
   where
     insertNormalized subst (var, termLike) =
         -- The variable must not occur in the substitution
-        Exception.assert (Map.notMember var subst)
+        assert (Map.notMember var subst)
         -- or in the right-hand side of this or any other substitution,
-        $ Exception.assert (not $ occurs termLike)
-        $ Exception.assert (not $ any occurs subst)
+        $ assert (not $ occurs termLike)
+        $ assert (not $ any occurs subst)
         -- this substitution must not depend on any substitution variable,
-        $ Exception.assert (not $ any depends $ Map.keys subst)
+        $ assert (not $ any depends $ Map.keys subst)
         -- and if this is an element variable substitution, the substitution
         -- must be defined.
-        $ Exception.assert (not $ isElemVar var && isBottom termLike)
+        $ assert (not $ isElemVar var && isBottom termLike)
         $ Map.insert var termLike subst
       where
         occurs = TermLike.hasFreeVariable var

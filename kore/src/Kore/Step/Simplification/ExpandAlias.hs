@@ -16,9 +16,6 @@ import Control.Error
 import Control.Error.Util
     ( nothing
     )
-import Control.Exception
-    ( assert
-    )
 import qualified Data.Map.Strict as Map
 
 import Kore.Internal.Alias
