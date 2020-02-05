@@ -171,7 +171,9 @@ test_makeEvaluate =
                     [ Conditional
                         { term = Mock.f gOfA
                         , predicate =
-                            makeCeilPredicate Mock.testSort (Mock.h gOfA)
+                            makeAndPredicate
+                                (makeCeilPredicate Mock.testSort gOfA)
+                                (makeCeilPredicate Mock.testSort (Mock.h gOfA))
                         , substitution = Substitution.unsafeWrap
                             [(ElemVar Mock.y, fOfA)]
                         }

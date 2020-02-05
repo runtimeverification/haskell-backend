@@ -120,7 +120,7 @@ evaluateApplication
             termLike
             unevaluated
             sideCondition
-        & maybeT (return (unevaluated Nothing)) return
+        & maybeT (unevaluated Nothing) return
         & Trans.lift
     Foldable.for_ canMemoize (recordOrPattern results)
     return results
@@ -132,7 +132,8 @@ evaluateApplication
 
     termLike = synthesize (ApplySymbolF application)
     unevaluated maybeSideCondition =
-        OrPattern.fromPattern
+        return
+        $ OrPattern.fromPattern
         $ Pattern.withCondition
             (markSimplifiedIfChildren maybeSideCondition termLike)
             childrenCondition
@@ -191,7 +192,7 @@ evaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> (Maybe SideCondition.Representation -> OrPattern variable)
+    -> (Maybe SideCondition.Representation -> simplifier (OrPattern variable))
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
@@ -205,7 +206,7 @@ evaluatePattern
         patt
         defaultValue
         sideCondition
-    & maybeT (return (defaultValue Nothing)) return
+    & maybeT (defaultValue Nothing) return
 
 {-| Evaluates axioms on patterns.
 
@@ -219,7 +220,7 @@ maybeEvaluatePattern
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> (Maybe SideCondition.Representation -> OrPattern variable)
+    -> (Maybe SideCondition.Representation -> simplifier (OrPattern variable))
     -- ^ The default value
     -> SideCondition variable
     -> MaybeT simplifier (OrPattern variable)
@@ -278,9 +279,9 @@ maybeEvaluatePattern
                     flattened
         case merged of
             AttemptedAxiom.NotApplicable ->
-                return (defaultValue Nothing)
+                defaultValue Nothing
             AttemptedAxiom.NotApplicableUntilConditionChanges c ->
-                return (defaultValue (Just c))
+                defaultValue (Just c)
             AttemptedAxiom.Applied attemptResults ->
                 return $ MultiOr.merge results remainders
               where

@@ -35,9 +35,7 @@ module Kore.Internal.Symbol
 import Prelude.Kore
 
 import Control.DeepSeq
-import qualified Control.Lens as Lens hiding
-    ( makeLenses
-    )
+import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import Data.Generics.Product
