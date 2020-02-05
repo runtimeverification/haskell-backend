@@ -54,4 +54,6 @@ smtLemmaAttribute = attributePattern_ smtLemmaSymbol
 
 instance ParseAttributes SmtLemma where
     parseAttribute = parseBoolAttribute smtLemmaId
-    toAttributes = toBoolAttributes smtLemmaAttribute
+
+instance From SmtLemma Attributes where
+    from = toBoolAttributes smtLemmaAttribute

@@ -10,6 +10,7 @@ module Kore.Step.Transition
     ( TransitionT (..)
     , runTransitionT
     , tryTransitionT
+    , mapTransitionT
     , scatter
     , addRule
     , addRules
@@ -84,10 +85,7 @@ newtype TransitionT rule m a =
         , Typeable
         )
 
-instance MonadLog m => MonadLog (TransitionT rule m) where
-    logScope locally =
-        mapTransitionT (logScope locally)
-    {-# INLINE logScope #-}
+instance MonadLog m => MonadLog (TransitionT rule m)
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift

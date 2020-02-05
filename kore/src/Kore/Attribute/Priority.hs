@@ -69,7 +69,8 @@ instance ParseAttributes Priority where
         withApplication' = Parser.withApplication priorityId
         failDuplicate' = Parser.failDuplicate priorityId
 
-    toAttributes =
-        maybe def (toAttribute . pack . show) . getPriority
+instance From Priority Attributes where
+    from =
+        maybe def toAttribute . getPriority
       where
-        toAttribute = Attributes . (: []) . priorityAttribute
+        toAttribute = from @AttributePattern . priorityAttribute . pack . show

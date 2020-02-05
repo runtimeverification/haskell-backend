@@ -64,4 +64,6 @@ functionalAttribute = attributePattern_ functionalSymbol
 
 instance ParseAttributes Functional where
     parseAttribute = parseBoolAttribute functionalId
-    toAttributes = toBoolAttributes functionalAttribute
+
+instance From Functional Attributes where
+    from = toBoolAttributes functionalAttribute

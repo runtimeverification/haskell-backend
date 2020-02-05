@@ -58,4 +58,6 @@ anywhereAttribute = attributePattern_ anywhereSymbol
 
 instance ParseAttributes Anywhere where
     parseAttribute = parseBoolAttribute anywhereId
-    toAttributes = toBoolAttributes anywhereAttribute
+
+instance From Anywhere Attributes where
+    from = toBoolAttributes anywhereAttribute

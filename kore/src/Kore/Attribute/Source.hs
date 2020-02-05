@@ -77,8 +77,9 @@ instance ParseAttributes Source where
         parseApplication _ _ _ =
             AttributeParser.failDuplicate sourceId
 
+instance From Source Attributes where
     -- TODO (thomas.tuegel): Implement
-    toAttributes _ = def
+    from _ = def
 
 -- | This parser is used to parse the inner representation of the attribute.
 -- The expected format is "Source(path)" where path is a FilePath.

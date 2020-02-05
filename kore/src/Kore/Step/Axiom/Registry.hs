@@ -72,7 +72,7 @@ import qualified Kore.Verified as Verified
 
  -}
 extractEqualityAxioms
-    :: VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes
     -> Map AxiomIdentifier [EqualityRule Variable]
 extractEqualityAxioms =
     Foldable.foldl' extractModuleAxioms Map.empty
@@ -81,7 +81,7 @@ extractEqualityAxioms =
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
         :: Map AxiomIdentifier [EqualityRule Variable]
-        -> VerifiedModule StepperAttributes Attribute.Axiom
+        -> VerifiedModule StepperAttributes
         -> Map AxiomIdentifier [EqualityRule Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
@@ -93,9 +93,9 @@ extractEqualityAxioms =
     -- not a function axiom.
     extractSentenceAxiom
         :: Map AxiomIdentifier [EqualityRule Variable]
-        -> (attrs, Verified.SentenceAxiom)
+        -> (Attribute.Axiom Symbol, Verified.SentenceAxiom)
         -> Map AxiomIdentifier [EqualityRule Variable]
-    extractSentenceAxiom axioms (_, sentence) =
+    extractSentenceAxiom axioms sentence =
         let
             namedAxiom = axiomToIdAxiomPatternPair sentence
         in
@@ -110,7 +110,7 @@ extractEqualityAxioms =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: SentenceAxiom (TermLike Variable)
+    :: (Attribute.Axiom Symbol, SentenceAxiom (TermLike Variable))
     -> Maybe (AxiomIdentifier, EqualityRule Variable)
 axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of

@@ -40,7 +40,6 @@ import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -192,7 +191,7 @@ mainVerify
     -> IO
         (Map.Map
             ModuleName
-            (VerifiedModule StepperAttributes Attribute.Axiom)
+            (VerifiedModule StepperAttributes)
         )
 mainVerify definition = do
     verifyResult <-

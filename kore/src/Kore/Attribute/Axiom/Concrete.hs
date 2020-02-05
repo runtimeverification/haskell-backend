@@ -55,4 +55,6 @@ concreteAttribute = attributePattern_ concreteSymbol
 
 instance ParseAttributes Concrete where
     parseAttribute = parseBoolAttribute concreteId
-    toAttributes = toBoolAttributes concreteAttribute
+
+instance From Concrete Attributes where
+    from = toBoolAttributes concreteAttribute

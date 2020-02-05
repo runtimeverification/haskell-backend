@@ -41,7 +41,7 @@ import Test.Kore.Builtin.Definition
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 
-parseOverload :: Attributes -> Parser Overload
+parseOverload :: Attributes -> Parser (Overload SymbolOrAlias)
 parseOverload = parseAttributes
 
 superId :: Id

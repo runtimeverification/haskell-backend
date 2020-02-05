@@ -65,7 +65,8 @@ instance ParseAttributes Element where
         withApplication' = withApplication elementId
         failDuplicate' = failDuplicate elementId
 
-    toAttributes =
+instance From Element Attributes where
+    from =
         maybe def toAttribute . getElement
       where
-        toAttribute = Attributes . (: []) . elementAttribute
+        toAttribute = from @AttributePattern . elementAttribute

@@ -35,11 +35,7 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , recursiveIndexedModuleAxioms
     )
-import Kore.IndexedModule.MetadataTools as MetadataTools
 import Kore.Internal.Symbol
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
 
 {- | 'OverloadGraph' maps symbols to symbols overloading them
  -}
@@ -95,25 +91,14 @@ associated to overloading equations in a verified module.
 
 Assumes the overloading relation is already transitive.
 
-Currently a 'MetadataTools' helper object is used to look-up
-sort and attribute information for symbols.
 -}
 fromIndexedModule
-    :: VerifiedModule Attribute.Symbol Attribute.Axiom
-    -> SmtMetadataTools Attribute.StepperAttributes
+    :: VerifiedModule Attribute.Symbol
     -> OverloadGraph
-fromIndexedModule verifiedModule tools = fromOverloads overloadPairList
+fromIndexedModule verifiedModule = fromOverloads overloadPairList
   where
-    overloadPairList =
-        map (\(s1, s2) -> (toSymbol s1, toSymbol s2)) preOverloadPairsList
+    overloadPairList = preOverloadPairsList
     preOverloadPairsList =
         mapMaybe
             (Attribute.getOverload . Attribute.overload . fst)
             (recursiveIndexedModuleAxioms verifiedModule)
-    toSymbol s = Symbol
-        { symbolConstructor = sId
-        , symbolParams = symbolOrAliasParams s
-        , symbolSorts = MetadataTools.applicationSorts tools s
-        , symbolAttributes = MetadataTools.symbolAttributes tools sId
-        }
-      where sId = symbolOrAliasConstructor s

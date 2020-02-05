@@ -60,4 +60,6 @@ constructorAttribute = attributePattern_ constructorSymbol
 
 instance ParseAttributes Constructor where
     parseAttribute = parseBoolAttribute constructorId
-    toAttributes = toBoolAttributes constructorAttribute
+
+instance From Constructor Attributes where
+    from = toBoolAttributes constructorAttribute

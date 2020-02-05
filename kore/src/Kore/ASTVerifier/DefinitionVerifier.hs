@@ -39,6 +39,9 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import qualified Kore.Internal.Symbol as Internal.Symbol
+    ( Symbol (..)
+    )
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -78,7 +81,7 @@ verifyAndIndexDefinition
     -> ParsedDefinition
     -> Either
         (Error VerifyError)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
 verifyAndIndexDefinition builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
@@ -112,7 +115,10 @@ verifyAndIndexDefinitionWithBase
 
     let
         implicitModule
-            :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
+            :: ImplicitIndexedModule
+                Verified.Pattern
+                Attribute.Symbol
+                (Attribute.Axiom Internal.Symbol.Symbol)
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition

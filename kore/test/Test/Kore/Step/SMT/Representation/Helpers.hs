@@ -11,9 +11,6 @@ import Test.Tasty
 
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -37,10 +34,8 @@ import Test.Tasty.HUnit.Ext
 
 testsForModule
     :: String
-    ->  (  VerifiedModule Attribute.Symbol Attribute.Axiom
-        -> AST.Declarations sort symbol name
-        )
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> (VerifiedModule Attribute.Symbol -> AST.Declarations sort symbol name)
+    -> VerifiedModule Attribute.Symbol
     -> [AST.Declarations sort symbol name -> TestTree]
     -> TestTree
 testsForModule name functionToTest indexedModule tests =

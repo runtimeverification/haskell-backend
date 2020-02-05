@@ -104,7 +104,8 @@ instance ParseAttributes Subsorts where
       where
         withApplication' = Parser.withApplication subsortId
 
-    toAttributes =
+instance From Subsorts Attributes where
+    from =
         Attributes . map toAttribute . getSubsorts
       where
         toAttribute = subsortAttribute <$> subsort <*> supersort
