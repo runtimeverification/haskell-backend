@@ -63,6 +63,9 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
     )
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
@@ -85,6 +88,7 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
+import Kore.Step.Simplification.OverloadSimplifier
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
@@ -124,6 +128,7 @@ matchOne pair =
     <|> matchBuiltinMap  pair
     <|> matchBuiltinSet  pair
     <|> matchInj         pair
+    <|> matchOverload    pair
     )
     & Error.maybeT (defer pair) return
 
@@ -353,6 +358,54 @@ matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
     InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
     unifyInj inj1 inj2 & either (const empty) (push . injChild)
 matchInj _ = empty
+
+matchOverload
+    :: (MatchingVariable variable, MonadSimplify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchOverload
+    (Pair
+        first@(App_ firstHead _)
+        (Inj_ inj@Inj { injChild = App_ secondHead secondChildren })
+    )
+  = do
+    OverloadSimplifier { isOverloading, resolveOverloading } <-
+        Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloading firstHead secondHead)
+    let injProto = inj { injChild = () }
+        second' = resolveOverloading injProto firstHead secondChildren
+    matchApplication (Pair first second')
+matchOverload
+    (Pair
+        (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
+        second@(App_ secondHead _)
+    )
+  = do
+    OverloadSimplifier { isOverloading, resolveOverloading } <-
+        Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloading secondHead firstHead)
+    let injProto = inj { injChild = () }
+        first' = resolveOverloading injProto secondHead firstChildren
+    matchApplication (Pair first' second)
+matchOverload
+    (Pair
+        (Inj_ inj@Inj { injTo, injChild = App_ firstHead firstChildren })
+        (Inj_ Inj { injChild = App_ secondHead secondChildren })
+    )
+  = do
+    OverloadSimplifier
+        { isOverloaded, resolveOverloading, unifyOverloadWithinBound }
+        <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded firstHead && isOverloaded secondHead)
+    let injProto = inj { injChild = () }
+    (headUnion, maybeInjUnion) <- maybe empty return
+        $ unifyOverloadWithinBound injProto firstHead secondHead injTo
+    let first' = resolveOverloading injProto headUnion firstChildren
+        second' = resolveOverloading injProto headUnion secondChildren
+        mkInj' injChild inj' = (synthesize . InjF) inj' { injChild }
+        mkInj injChild = maybe injChild (mkInj' injChild) maybeInjUnion
+    matchInj (Pair (mkInj first') (mkInj second'))
+matchOverload _ = empty
 
 -- * Implementation
 
