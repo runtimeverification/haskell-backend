@@ -19,9 +19,6 @@ module Kore.Step.EquationalStep
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( maybeT
     )

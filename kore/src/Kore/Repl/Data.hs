@@ -37,9 +37,6 @@ module Kore.Repl.Data
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative
-    )
 import Control.Concurrent.MVar
 import Control.Monad.Trans.Accum
     ( AccumT

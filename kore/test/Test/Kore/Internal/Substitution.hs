@@ -52,13 +52,12 @@ test_substitution =
 propertyTests:: TestTree
 propertyTests =
   testGroup "the three notable kinds of `Substitution` values"
-  [ isTop `gives_`        [(empty, True),  (normalized, False), (unnormalized, False) ]
-  , isBottom `gives_`     [(empty, False), (normalized, False), (unnormalized, False) ]
-  , isNormalized `gives_` [(empty, True),  (normalized, True),  (unnormalized, False) ]
-  , null `gives_`         [(empty, True),  (normalized, False), (unnormalized, False) ]
+  [ isTop `gives_`        [(mempty, True),  (normalized, False), (unnormalized, False) ]
+  , isBottom `gives_`     [(mempty, False), (normalized, False), (unnormalized, False) ]
+  , isNormalized `gives_` [(mempty, True),  (normalized, True),  (unnormalized, False) ]
+  , null `gives_`         [(mempty, True),  (normalized, False), (unnormalized, False) ]
   ]
   where
-    empty = mempty :: Substitution Variable
     normalized = unsafeWrap [(ElemVar Mock.x, Mock.a)]
     unnormalized = wrap [(ElemVar Mock.x, Mock.a)]
 

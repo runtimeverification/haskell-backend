@@ -22,7 +22,6 @@ module Kore.Step.Transition
 
 import Prelude.Kore
 
-import Control.Applicative
 import Control.Monad.Catch
     ( MonadCatch (catch)
     , MonadThrow (throwM)

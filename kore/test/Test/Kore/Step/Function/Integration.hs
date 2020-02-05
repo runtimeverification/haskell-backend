@@ -430,8 +430,11 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.a
-                    , predicate = makeCeilPredicate Mock.testSort
-                        (Mock.plain10 Mock.cf)
+                    , predicate = makeAndPredicate
+                        (makeCeilPredicate Mock.testSort Mock.cf)
+                        (makeCeilPredicate Mock.testSort
+                            (Mock.plain10 Mock.cf)
+                        )
                     , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.var_x_1, Mock.cf)
                         , (ElemVar Mock.var_y_1, Mock.b)

@@ -54,6 +54,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Function.Evaluator as Axiom
@@ -65,6 +68,10 @@ import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
+
+import Kore.Unparser
+    ( unparseToString
+    )
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 
@@ -138,6 +145,7 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
     termCeil <- makeEvaluateTerm sideCondition term
     result <-
         And.simplifyEvaluatedMultiPredicate
+            sideCondition
             (MultiAnd.make
                 [ MultiOr.make [Condition.eraseConditionalTerm patt]
                 , termCeil
@@ -176,11 +184,13 @@ makeEvaluateTerm
             let Application { applicationChildren = children } = app
             simplifiedChildren <- mapM (makeEvaluateTerm sideCondition) children
             let ceils = simplifiedChildren
-            And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
+            And.simplifyEvaluatedMultiPredicate
+                sideCondition
+                (MultiAnd.make ceils)
 
       | BuiltinF child <- projected =
         fromMaybe
-            (return unsimplified)
+            (makeSimplifiedCeil sideCondition Nothing term)
             (makeEvaluateBuiltin sideCondition child)
 
       | InjF inj <- projected = do
@@ -201,13 +211,11 @@ makeEvaluateTerm
                 , substitution = mempty
                 }
             (mkCeil_ term)
-            (\maybeCondition -> OrPattern.fromPattern Conditional
-                { term = mkTop_
-                , predicate =
-                    Predicate.markSimplifiedMaybeConditional maybeCondition
-                    $ makeCeilPredicate_ term
-                , substitution = mempty
-                }
+            (\maybeCondition ->
+                OrPattern.fromPatterns
+                . map Pattern.fromCondition
+                . OrCondition.toConditions
+                <$> makeSimplifiedCeil sideCondition maybeCondition term
             )
         return (fmap toCondition evaluation)
 
@@ -221,10 +229,6 @@ makeEvaluateTerm
             ++ " and predicate symbols are currently unrecognized as such, "
             ++ "and programming errors."
             )
-
-    unsimplified =
-        OrCondition.fromCondition . Condition.fromPredicate
-        . Predicate.markSimplified . makeCeilPredicate_ $ term
 
 {-| Evaluates the ceil of a domain value.
 -}
@@ -249,7 +253,7 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = Just $ do
     let
         ceils :: [OrCondition variable]
         ceils = children
-    And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
+    And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
 makeEvaluateBuiltin
     sideCondition
     (Domain.BuiltinSet Domain.InternalAc
@@ -298,6 +302,7 @@ makeEvaluateNormalizedAc
             ++ variableKeyConditions
             ++ elementsWithVariablesDistinct
     And.simplifyEvaluatedMultiPredicate
+        sideCondition
         (MultiAnd.make allConditions)
   where
     concreteElementsList
@@ -361,3 +366,81 @@ makeEvaluateNormalizedAc
         }
   | Map.null concreteElements = Just $ makeEvaluateTerm sideCondition opaqueAc
 makeEvaluateNormalizedAc _  _ = Nothing
+
+{-| This handles the case when we can't simplify a term's ceil.
+
+It returns the ceil of that term.
+
+When the term's ceil implies the ceils of its subterms, this also @and@s
+the subterms' simplified ceils to the result. This is needed because the
+SMT solver can't infer a subterm's ceil from a term's ceil, so we
+have to provide that information.
+
+As an example, if we call @makeSimplifiedCeil@ for @f(g(x))@, and we don't
+know how to simplify @ceil(g(x))@, the return value will be
+@and(ceil(f(g(x))), ceil(g(x)))@.
+
+-}
+makeSimplifiedCeil
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => SideCondition variable
+    -> Maybe SideCondition.Representation
+    -> TermLike variable
+    -> simplifier (OrCondition variable)
+makeSimplifiedCeil
+    sideCondition
+    maybeCurrentCondition
+    termLike@(Recursive.project -> _ :< termLikeF)
+  = do
+    childCeils <- if needsChildCeils
+        then mapM (makeEvaluateTerm sideCondition) (Foldable.toList termLikeF)
+        else return []
+    And.simplifyEvaluatedMultiPredicate
+        sideCondition
+        (MultiAnd.make (unsimplified : childCeils))
+  where
+    needsChildCeils = case termLikeF of
+        ApplyAliasF _ -> False
+        EvaluatedF  _ -> False
+        EndiannessF _ -> True
+        SignednessF _ -> True
+        AndF _ -> True
+        ApplySymbolF _ -> True
+        InjF _ -> True
+        CeilF _ -> unexpectedError
+        EqualsF _ -> unexpectedError
+        ExistsF _ -> False
+        IffF _ -> False
+        ImpliesF _ -> False
+        InF _ -> False
+        NotF _ -> False
+        BottomF _ -> unexpectedError
+        BuiltinF (Domain.BuiltinMap _) -> True
+        BuiltinF (Domain.BuiltinList _) -> True
+        BuiltinF (Domain.BuiltinSet _) -> True
+        BuiltinF (Domain.BuiltinInt _) -> unexpectedError
+        BuiltinF (Domain.BuiltinBool _) -> unexpectedError
+        BuiltinF (Domain.BuiltinString _) -> unexpectedError
+        DomainValueF _ -> True
+        FloorF _ -> False
+        ForallF _ -> False
+        InhabitantF _ -> False
+        MuF _ -> False
+        NuF _ -> False
+        NextF _ -> True
+        OrF _ -> False
+        RewritesF _ -> False
+        TopF _ -> unexpectedError
+        StringLiteralF _ -> unexpectedError
+        InternalBytesF _ -> unexpectedError
+        VariableF _ -> False
+
+    unsimplified =
+        OrCondition.fromCondition
+        . Condition.fromPredicate
+        . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
+        . makeCeilPredicate_
+        $ termLike
+
+    unexpectedError =
+        error ("Unexpected term type: " ++ unparseToString termLike)

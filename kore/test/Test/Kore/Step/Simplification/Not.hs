@@ -27,6 +27,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Not as Not
@@ -176,6 +179,6 @@ simplifyEvaluated
     :: OrPattern Variable
     -> IO (OrPattern Variable)
 simplifyEvaluated =
-    runSimplifier mockEnv . Not.simplifyEvaluated
+    runSimplifier mockEnv . Not.simplifyEvaluated SideCondition.top
   where
     mockEnv = Mock.env

@@ -31,9 +31,6 @@ module Kore.Internal.MultiOr
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.DeepSeq
     ( NFData
     )

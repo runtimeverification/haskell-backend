@@ -12,9 +12,6 @@ module Kore.Attribute.Source
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( many
-    )
 import Control.DeepSeq
     ( NFData
     )

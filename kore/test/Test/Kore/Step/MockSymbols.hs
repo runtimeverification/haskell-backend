@@ -25,7 +25,6 @@ module Test.Kore.Step.MockSymbols where
 
 import Prelude.Kore
 
-import Control.Applicative
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default

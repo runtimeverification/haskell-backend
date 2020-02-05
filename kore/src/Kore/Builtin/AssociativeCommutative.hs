@@ -39,9 +39,6 @@ module Kore.Builtin.AssociativeCommutative
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT
     , partitionEithers

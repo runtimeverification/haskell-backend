@@ -12,9 +12,6 @@ module Kore.Step.Remainder
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Condition
@@ -163,6 +160,7 @@ ceilChildOfApplicationOrTop sideCondition patt =
             ceil <-
                 traverse (Ceil.makeEvaluateTerm sideCondition) children
                 >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
+                        sideCondition
                     . MultiAnd.make
                     )
             pure Conditional

@@ -14,9 +14,6 @@ module Kore.Builtin.Signedness
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Error
     ( MaybeT
     )

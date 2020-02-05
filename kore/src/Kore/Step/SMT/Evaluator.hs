@@ -14,10 +14,6 @@ module Kore.Step.SMT.Evaluator
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( (<|>)
-    )
-import qualified Control.Applicative as Applicative
 import Control.Error
     ( MaybeT
     , runMaybeT
@@ -141,13 +137,13 @@ decidePredicate korePredicate =
             $ SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
         case result of
             Unsat   -> return False
-            Sat     -> Applicative.empty
+            Sat     -> empty
             Unknown -> do
                 (logWarning . Text.pack . show . Pretty.vsep)
                     [ "Failed to decide predicate:"
                     , Pretty.indent 4 (unparse korePredicate)
                     ]
-                Applicative.empty
+                empty
 
 goTranslatePredicate
     :: forall variable m.
@@ -175,7 +171,7 @@ translateUninterpreted t pat =
   where
     lookupPattern = do
         result <- State.gets $ Map.lookup pat
-        maybe Applicative.empty (return . fst) result
+        maybe empty (return . fst) result
     freeVariable = do
         n <- Counter.increment
         var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
