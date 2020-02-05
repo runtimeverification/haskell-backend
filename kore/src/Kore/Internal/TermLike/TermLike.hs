@@ -695,21 +695,6 @@ mapVariables mapElemVar mapSetVar termLike =
             (Identity . mapSetVar)
             (freeVariables termLike)
 
-    freeUnifiedVariables
-        ::  forall variable1' variable2'
-        .   Ord variable2'
-        =>  Lens.Traversal
-                (Attribute.Pattern variable1')
-                (Attribute.Pattern variable2')
-                (UnifiedVariable variable1')
-                (UnifiedVariable variable2')
-    freeUnifiedVariables =
-        Lens.Product.field @"freeVariables"
-        . Lens.Wrapped._Unwrapped
-        . traverseSet
-
-    traverseSet f = fmap Set.fromList . traverse f . Set.toList
-
     askUnifiedVariable
         :: Env (Renaming variable1 variable2) any
         -> UnifiedVariable variable1
@@ -831,6 +816,21 @@ mapVariables mapElemVar mapSetVar termLike =
                         <$> mapVariablesF mapElemVar mapSetVar termLikeF
         in attrs' :< termLikeF'
 
+freeUnifiedVariables
+    ::  forall variable1' variable2'
+    .   Ord variable2'
+    =>  Lens.Traversal
+            (Attribute.Pattern variable1')
+            (Attribute.Pattern variable2')
+            (UnifiedVariable variable1')
+            (UnifiedVariable variable2')
+freeUnifiedVariables =
+    Lens.Product.field @"freeVariables"
+    . Lens.Wrapped._Unwrapped
+    . traverseSet
+  where
+    traverseSet f = fmap Set.fromList . traverse f . Set.toList
+
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
 
 @traverseVariables@ is strict, i.e. its argument is fully evaluated before it
@@ -852,29 +852,10 @@ traverseVariables
     -> (SetVariable variable1 -> m (SetVariable variable2))
     -> TermLike variable1
     -> m (TermLike variable2)
-traverseVariables trElemVar trSetVar termLike = do
-    freeVariables0 <-
-        renameFreeVariables
-            trElemVar
-            trSetVar
-            (freeVariables termLike)
-    Reader.runReaderT (Recursive.fold worker termLike) freeVariables0
+traverseVariables trElemVar trSetVar termLike =
+    renameFreeVariables trElemVar trSetVar (freeVariables termLike)
+    >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
-    freeUnifiedVariables
-        ::  forall variable1' variable2'
-        .   Ord variable2'
-        =>  Lens.Traversal
-                (Attribute.Pattern variable1')
-                (Attribute.Pattern variable2')
-                (UnifiedVariable variable1')
-                (UnifiedVariable variable2')
-    freeUnifiedVariables =
-        Lens.Product.field @"freeVariables"
-        . Lens.Wrapped._Unwrapped
-        . traverseSet
-
-    traverseSet f = fmap Set.fromList . traverse f . Set.toList
-
     askUnifiedVariable
         ::  UnifiedVariable variable1
         ->  ReaderT (Renaming variable1 variable2) m (UnifiedVariable variable2)
@@ -896,6 +877,7 @@ traverseVariables trElemVar trSetVar termLike = do
         fmap (fromMaybe impossible) . Reader.asks . lookupRenamedSetVariable
 
     impossible = error "The impossible happened!"
+
     renameElementBinder
         ::  Set.Set (UnifiedVariable variable2)
         ->  Binder
@@ -925,6 +907,7 @@ traverseVariables trElemVar trSetVar termLike = do
                 , binderChild = binderChild'
                 }
         pure binder'
+
     renameSetBinder
         ::  Set.Set (UnifiedVariable variable2)
         ->  Binder
@@ -954,6 +937,7 @@ traverseVariables trElemVar trSetVar termLike = do
                 , binderChild = binderChild'
                 }
         pure binder'
+
     worker
         ::  Base
                 (TermLike variable1)
