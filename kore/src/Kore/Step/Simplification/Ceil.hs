@@ -396,6 +396,7 @@ makeSimplifiedCeil
         then mapM (makeEvaluateTerm sideCondition) (Foldable.toList termLikeF)
         else return []
     And.simplifyEvaluatedMultiPredicate
+        sideCondition
         (MultiAnd.make (unsimplified : childCeils))
   where
     needsChildCeils = case termLikeF of
