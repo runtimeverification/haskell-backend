@@ -26,8 +26,8 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
+import Kore.Internal.SideCondition
+    ( SideCondition
     )
 import Kore.Internal.Substitution
     ( Normalization (..)
@@ -66,9 +66,10 @@ substitutionSimplifier =
     wrapper
         :: forall variable
         .  SubstitutionVariable variable
-        => Substitution variable
+        => SideCondition variable
+        -> Substitution variable
         -> unifier (OrCondition variable)
-    wrapper substitution = do
+    wrapper sideCondition substitution = do
         (predicate, result) <- worker substitution & maybeT empty return
         condition <- fromNormalization result
         let condition' = Condition.fromPredicate predicate <> condition
@@ -76,8 +77,7 @@ substitutionSimplifier =
         TopBottom.guardAgainstBottom conditions
         return conditions
       where
-        worker =
-            simplifySubstitutionWorker SideCondition.topTODO unificationMakeAnd
+        worker = simplifySubstitutionWorker sideCondition unificationMakeAnd
 
     fromNormalization
         :: SimplifierVariable variable
