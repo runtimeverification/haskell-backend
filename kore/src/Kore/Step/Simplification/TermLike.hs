@@ -367,6 +367,8 @@ simplifyInternal term sideCondition = do
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
             avoiding = freeVariables termLike <> freeVariables sideCondition
+            refreshElementBinder = TermLike.refreshElementBinder avoiding
+            refreshSetBinder = TermLike.refreshSetBinder avoiding
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
             -- Unimplemented cases
@@ -387,12 +389,11 @@ simplifyInternal term sideCondition = do
                 Ceil.simplify sideCondition =<< simplifyChildren ceilF
             EqualsF equalsF ->
                 Equals.simplify sideCondition =<< simplifyChildren equalsF
-            ExistsF exists -> do
-                let refresh =
-                        (Lens.over Binding.existsBinder)
-                            (TermLike.refreshElementBinder avoiding)
+            ExistsF exists ->
                 Exists.simplify sideCondition
                     =<< simplifyChildren (refresh exists)
+              where
+                refresh = Lens.over Binding.existsBinder refreshElementBinder
             IffF iffF ->
                 Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->
@@ -410,22 +411,19 @@ simplifyInternal term sideCondition = do
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
             ForallF forall ->
-                let refresh =
-                        (Lens.over Binding.forallBinder)
-                            (TermLike.refreshElementBinder avoiding)
-                in  Forall.simplify <$> simplifyChildren (refresh forall)
+                Forall.simplify <$> simplifyChildren (refresh forall)
+              where
+                refresh = Lens.over Binding.forallBinder refreshElementBinder
             InhabitantF inhF ->
                 Inhabitant.simplify <$> simplifyChildren inhF
             MuF mu ->
-                let refresh =
-                        (Lens.over Binding.muBinder)
-                            (TermLike.refreshSetBinder avoiding)
-                in  Mu.simplify <$> simplifyChildren (refresh mu)
+                Mu.simplify <$> simplifyChildren (refresh mu)
+              where
+                refresh = Lens.over Binding.muBinder refreshSetBinder
             NuF nu ->
-                let refresh =
-                        (Lens.over Binding.nuBinder)
-                            (TermLike.refreshSetBinder avoiding)
-                in  Nu.simplify <$> simplifyChildren (refresh nu)
+                Nu.simplify <$> simplifyChildren (refresh nu)
+              where
+                refresh = Lens.over Binding.nuBinder refreshSetBinder
             -- TODO(virgil): Move next up through patterns.
             NextF nextF -> Next.simplify <$> simplifyChildren nextF
             OrF orF -> Or.simplify <$> simplifyChildren orF
