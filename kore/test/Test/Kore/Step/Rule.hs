@@ -14,9 +14,6 @@ import Control.DeepSeq
 import Control.Exception
     ( evaluate
     )
-import Control.Lens
-    ( (.~)
-    )
 import Data.Default
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
@@ -75,7 +72,7 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
+                (fromSentence (def, mkRewriteAxiom varI1 varI2 Nothing))
             )
         , testCase "alias as rule LHS"
             (assertEqual ""
@@ -91,7 +88,7 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (fromSentence . SentenceAxiomSentence . mkAxiom_ $
+                (fromSentence . (,) def . SentenceAxiomSentence . mkAxiom_ $
                     mkRewrites
                         applyAliasLHS
                         (mkAnd (mkTop sortAInt) varI2)
@@ -143,13 +140,14 @@ axiomPatternsUnitTests =
                     (mkCeil sortR term)
                     (mkTop sortR)
                 )
-                (fromSentence $ mkCeilAxiom term)
+                (fromSentence . (,) def $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
             $ assertErrorIO
                 (assertSubstring "" "Unsupported pattern type in axiom")
                 (evaluate $ force
                     (fromSentenceAxiom
-                        (mkAxiom_
+                        ( def
+                        , mkAxiom_
                             (applySymbol
                                 symbolInj
                                 [sortAInt, sortKItem]
@@ -170,7 +168,7 @@ axiomPatternsIntegrationTests =
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule rule)
-                (fromSentence $ mkRewriteAxiom left right Nothing)
+                (fromSentence . (,) def $ mkRewriteAxiom left right Nothing)
             )
         ]
   where
@@ -308,7 +306,7 @@ test_patternToAxiomPatternAndBack =
     requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
     ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
     attributesWithPriority =
-        def & field @"priority" .~ Attribute.Priority (Just 0)
+        def & setField @"priority" (Attribute.Priority (Just 0))
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
 
@@ -416,8 +414,8 @@ extractIndexedModule
     :: Text
     -> Either
         (Error a)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
+    -> VerifiedModule Attribute.Symbol
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

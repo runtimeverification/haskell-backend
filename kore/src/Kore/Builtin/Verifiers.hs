@@ -78,9 +78,6 @@ import qualified Kore.ASTVerifier.PatternVerifier.PatternVerifier as PatternVeri
 import Kore.Attribute.Attributes
     ( Attributes (..)
     )
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import Kore.Attribute.Hook
     ( Hook (..)
     )
@@ -121,7 +118,7 @@ type Parser = Parsec Void Text
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-        VerifiedModule Attribute.Symbol Attribute.Axiom
+        VerifiedModule Attribute.Symbol
     -- ^ Indexed module, to look up sort declarations
     ->  ParsedSentenceSort
     -- ^ Sort declaration to verify

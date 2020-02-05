@@ -14,9 +14,6 @@ import Prelude.Kore ()
 
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
@@ -47,7 +44,7 @@ It may ignore sorts and symbols that it can't handle yet (e.g. parameterized
 sorts).
 -}
 build
-    :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    :: VerifiedModule Attribute.Symbol
     -> Map.Map Id Attribute.Constructors
     -> AST.SmtDeclarations
 build indexedModule sortConstructors =

@@ -60,6 +60,9 @@ import Text.Megaparsec
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkSortVariable
@@ -205,7 +208,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
-        :: Attribute.Axiom
+        :: Attribute.Axiom Symbol
         -> axiom
         -> axiom
     modifyAttribute att rule =
@@ -216,10 +219,13 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     axiomToRulePatt :: axiom -> Rule.RulePattern Variable
     axiomToRulePatt = toRulePattern
 
-    getAttribute :: axiom -> Attribute.Axiom
+    getAttribute :: axiom -> Attribute.Axiom Symbol
     getAttribute = Rule.attributes . axiomToRulePatt
 
-    mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
+    mapAttribute
+        :: Int
+        -> Attribute.Axiom Symbol
+        -> Attribute.Axiom Symbol
     mapAttribute n attr =
         Lens.over (field @"identifier") (makeRuleIndex n) attr
 

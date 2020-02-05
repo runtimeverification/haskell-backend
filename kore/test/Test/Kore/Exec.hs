@@ -33,7 +33,6 @@ import System.Exit
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
@@ -279,7 +278,7 @@ extractSearchResults =
 
 verifiedMyModule
     :: Module Verified.Sentence
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol
 verifiedMyModule module_ = indexedModule
   where
     indexedModule =

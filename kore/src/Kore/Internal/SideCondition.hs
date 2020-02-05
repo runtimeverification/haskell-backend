@@ -3,6 +3,9 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
 
+-- For instance Applicative:
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Internal.SideCondition
     ( SideCondition  -- Constructor not exported on purpose
     , andCondition

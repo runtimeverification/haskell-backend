@@ -84,7 +84,6 @@ import System.IO
     )
 
 import qualified Data.Limit as Limit
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol as Attribute
 import Kore.Error
     ( printError
@@ -531,7 +530,7 @@ koreProve execOptions proveOptions = do
     loadProven
         :: FilePath
         -> Maybe FilePath
-        -> Main (Maybe (VerifiedModule StepperAttributes Attribute.Axiom))
+        -> Main (Maybe (VerifiedModule StepperAttributes))
     loadProven _ Nothing = return Nothing
     loadProven definitionFileName (Just saveProofsFileName) = do
         fileExists <- lift $ doesFileExist saveProofsFileName
@@ -545,7 +544,7 @@ koreProve execOptions proveOptions = do
             else return Nothing
 
     saveProven
-        :: VerifiedModule StepperAttributes Attribute.Axiom
+        :: VerifiedModule StepperAttributes
         -> [ReachabilityRule Variable]
         -> FilePath
         -> IO ()
@@ -696,14 +695,14 @@ renderResult KoreExecOptions { outputFileName } doc =
 -- | IO action that parses a kore pattern from a filename, verifies it,
 -- converts it to a pure pattern, and prints timing information.
 mainPatternParseAndVerify
-    :: VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes
     -> String
     -> Main (TermLike Variable)
 mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 
 mainParseSearchPattern
-    :: VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes
     -> String
     -> Main (Pattern Variable)
 mainParseSearchPattern indexedModule patternFileName = do

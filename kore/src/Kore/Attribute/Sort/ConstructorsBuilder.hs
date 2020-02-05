@@ -72,7 +72,7 @@ import qualified Kore.Verified as Verified
     )
 
 indexBySort
-    :: VerifiedModule symbolAttribute Attribute.Axiom
+    :: VerifiedModule symbolAttribute
     -> Map.Map Id Constructors
 indexBySort indexedModule =
     Map.fromList
@@ -82,7 +82,7 @@ indexBySort indexedModule =
         )
 
 parseNoJunkAxiom
-    ::  ( Attribute.Axiom
+    ::  ( Attribute.Axiom Symbol
         , Verified.SentenceAxiom
         )
     -> Maybe (Id, Constructors)

@@ -108,7 +108,6 @@ import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -389,7 +388,7 @@ clockSomethingIO description something = do
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify
-    :: VerifiedModule Attribute.Symbol axiomAttrs
+    :: VerifiedModule Attribute.Symbol
     -- ^ Module containing definitions visible in the pattern
     -> ParsedPattern -- ^ Parsed pattern to check well-formedness
     -> Main Verified.Pattern
@@ -408,8 +407,8 @@ lookupMainModule
     => ModuleName
     -> Map.Map
         ModuleName
-        (VerifiedModule Attribute.Symbol Attribute.Axiom)
-    -> monad (VerifiedModule Attribute.Symbol Attribute.Axiom)
+        (VerifiedModule Attribute.Symbol)
+    -> monad (VerifiedModule Attribute.Symbol)
 lookupMainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -426,15 +425,14 @@ Also prints timing information; see 'mainParse'.
 
  -}
 verifyDefinitionWithBase
-    ::  ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    ::  ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
     -> Main
-        ( Map.Map ModuleName
-            (VerifiedModule Attribute.Symbol Attribute.Axiom)
+        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase
@@ -472,7 +470,7 @@ mainParse parser fileName = do
         Left err         -> error err
         Right definition -> return definition
 
-type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
+type LoadedModule = VerifiedModule Attribute.Symbol
 
 type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 

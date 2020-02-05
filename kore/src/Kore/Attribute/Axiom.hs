@@ -26,6 +26,7 @@ module Kore.Attribute.Axiom
     , Constructor (..)
     , RuleIndex (..)
     , UniqueId (..)
+    , axiomSymbolToSymbolOrAlias
     ) where
 
 import Prelude.Kore
@@ -33,9 +34,13 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
+    )
+import Data.Function
+    ( (&)
     )
 import Data.Generics.Product
 import Data.Proxy
@@ -57,6 +62,7 @@ import Kore.Attribute.Parser
     ( AttributePattern
     , Attributes
     , ParseAttributes (..)
+    , SymbolOrAlias
     , toAttributes
     )
 import Kore.Attribute.Priority
@@ -69,11 +75,15 @@ import Kore.Attribute.Subsort
 import Kore.Attribute.Trusted
 import Kore.Attribute.UniqueId
 import Kore.Debug
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    , toSymbolOrAlias
+    )
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
  -}
-data Axiom =
+data Axiom symbol =
     Axiom
     { heatCool :: !HeatCool
     -- ^ An axiom may be denoted as a heating or cooling rule.
@@ -96,7 +106,7 @@ data Axiom =
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
-    , overload :: !Overload
+    , overload :: !(Overload symbol)
     -- ^ The axiom is an overloaded-production axiom.
     , smtLemma :: !SmtLemma
     -- ^ The axiom should be sent to SMT as a lemma.
@@ -120,17 +130,17 @@ data Axiom =
     }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic Axiom
+instance SOP.Generic (Axiom symbol)
 
-instance SOP.HasDatatypeInfo Axiom
+instance SOP.HasDatatypeInfo (Axiom symbol)
 
-instance Debug Axiom
+instance Debug symbol => Debug (Axiom symbol)
 
-instance Diff Axiom
+instance (Debug symbol, Diff symbol) => Diff (Axiom symbol)
 
-instance NFData Axiom
+instance NFData symbol => NFData (Axiom symbol)
 
-instance Default Axiom where
+instance Default (Axiom symbol) where
     def =
         Axiom
             { heatCool = def
@@ -155,7 +165,7 @@ instance Default Axiom where
             , owise = def
             }
 
-instance ParseAttributes Axiom where
+instance ParseAttributes (Axiom SymbolOrAlias) where
     parseAttribute attr =
         typed @HeatCool (parseAttribute attr)
         Monad.>=> typed @ProductionID (parseAttribute attr)
@@ -167,7 +177,7 @@ instance ParseAttributes Axiom where
         Monad.>=> typed @Trusted (parseAttribute attr)
         Monad.>=> typed @Concrete (parseAttribute attr)
         Monad.>=> typed @Simplification (parseAttribute attr)
-        Monad.>=> typed @Overload (parseAttribute attr)
+        Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
         Monad.>=> typed @SmtLemma (parseAttribute attr)
         Monad.>=> typed @Label (parseAttribute attr)
         Monad.>=> typed @SourceLocation (parseAttribute attr)
@@ -177,7 +187,7 @@ instance ParseAttributes Axiom where
         Monad.>=> typed @UniqueId (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
 
-instance From Axiom Attributes where
+instance From symbol SymbolOrAlias => From (Axiom symbol) Attributes where
     from =
         mconcat . sequence
             [ from . heatCool
@@ -201,7 +211,16 @@ instance From Axiom Attributes where
             , from . owise
             ]
 
-instance SQL.Column Axiom where
+instance SQL.Column (Axiom SymbolOrAlias) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
+
+instance SQL.Column (Axiom Symbol) where
+    -- TODO (thomas.tuegel): Use a foreign key.
+    defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
+    toColumn = SQL.toColumn . toAttributes
+
+axiomSymbolToSymbolOrAlias :: Axiom Symbol -> Axiom SymbolOrAlias
+axiomSymbolToSymbolOrAlias axiom =
+    axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias

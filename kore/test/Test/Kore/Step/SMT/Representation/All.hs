@@ -11,9 +11,6 @@ import Data.Text
     ( Text
     )
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
     ( indexBySort
     )
@@ -89,7 +86,7 @@ test_symbolParsing =
 
 testsForModule
     :: String
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol
     ->  [  AST.Declarations SMT.SExpr Text Text
         -> TestTree
         ]

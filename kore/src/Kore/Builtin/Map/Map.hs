@@ -105,7 +105,7 @@ valuesKey = "MAP.values"
  -}
 lookupSymbolUpdate
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 
@@ -113,7 +113,7 @@ lookupSymbolUpdate = Builtin.lookupSymbol updateKey
  -}
 lookupSymbolLookup
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 
@@ -121,7 +121,7 @@ lookupSymbolLookup = Builtin.lookupSymbol lookupKey
  -}
 lookupSymbolInKeys
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 
@@ -129,7 +129,7 @@ lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
  -}
 lookupSymbolKeys
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
@@ -137,7 +137,7 @@ lookupSymbolKeys = Builtin.lookupSymbol keysKey
  -}
 lookupSymbolRemove
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolRemove = Builtin.lookupSymbol removeKey
 
@@ -145,7 +145,7 @@ lookupSymbolRemove = Builtin.lookupSymbol removeKey
  -}
 lookupSymbolRemoveAll
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
 
@@ -153,7 +153,7 @@ lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
  -}
 lookupSymbolSize
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolSize = Builtin.lookupSymbol sizeKey
 
@@ -161,7 +161,7 @@ lookupSymbolSize = Builtin.lookupSymbol sizeKey
  -}
 lookupSymbolValues
     :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol
     -> Either (Kore.Error e) Symbol
 lookupSymbolValues = Builtin.lookupSymbol valuesKey
 
