@@ -173,11 +173,8 @@ extractImplicationClaims
     :: VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
     -> [(Attribute.Axiom Internal.Symbol.Symbol, ImplicationRule Variable)]
-extractImplicationClaims idxMod =
-    mapMaybe
-        -- applying on second component
-        (extractImplicationClaimFrom)
-        (indexedModuleClaims idxMod)
+extractImplicationClaims =
+    mapMaybe extractImplicationClaimFrom . indexedModuleClaims
 
 extractImplicationClaimFrom
     :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceClaim)
