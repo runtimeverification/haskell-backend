@@ -503,11 +503,17 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate_
-                        (asInternalSet
-                            ( emptyNormalizedSet
-                            `with` OpaqueSet fOfXset
-                            `with` OpaqueSet fOfYset
+                    , predicate = makeAndPredicate
+                        (makeCeilPredicate_ fOfXset)
+                        (makeAndPredicate
+                           (makeCeilPredicate_ fOfYset)
+                            (makeCeilPredicate_
+                                (asInternalSet
+                                    ( emptyNormalizedSet
+                                    `with` OpaqueSet fOfXset
+                                    `with` OpaqueSet fOfYset
+                                    )
+                                )
                             )
                         )
                     , substitution = mempty

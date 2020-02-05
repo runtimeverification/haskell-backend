@@ -16,9 +16,7 @@ import Control.Concurrent.MVar
 import Control.Exception
     ( AsyncException (UserInterrupt)
     )
-import qualified Control.Lens as Lens hiding
-    ( makeLenses
-    )
+import qualified Control.Lens as Lens
 import Control.Monad
     ( forever
     , void
