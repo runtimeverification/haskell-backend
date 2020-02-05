@@ -44,10 +44,6 @@ import Control.Monad.Except
     )
 import qualified Control.Monad.Except as Except
 import Control.Monad.IO.Class
-import Control.Monad.Morph
-    ( MFunctor
-    )
-import qualified Control.Monad.Morph as Morph
 import Control.Monad.Trans
     ( MonadTrans
     )
@@ -55,7 +51,6 @@ import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
     ( AccumT
     )
-import qualified Control.Monad.Trans.Accum as Accum
 import Control.Monad.Trans.Identity
     ( IdentityT
     )
@@ -65,9 +60,6 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Strict as Strict
     ( StateT
-    )
-import Data.Functor.Contravariant
-    ( contramap
     )
 import Data.Text
     ( Text
@@ -191,18 +183,7 @@ class Monad m => MonadLog m where
     logM = Monad.Trans.lift . logM
     {-# INLINE logM #-}
 
-    logScope :: (SomeEntry -> SomeEntry) -> m a -> m a
-    default logScope
-        :: (MFunctor trans, MonadLog log, m ~ trans log)
-        => (SomeEntry -> SomeEntry)
-        -> m a
-        -> m a
-    logScope locally = Morph.hoist (logScope locally)
-    {-# INLINE logScope #-}
-
-instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log) where
-    logScope locally = Accum.mapAccumT (logScope locally)
-    {-# INLINE logScope #-}
+instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log)
 
 instance MonadLog log => MonadLog (CounterT log)
 
@@ -220,9 +201,7 @@ newtype LoggerT m a =
     deriving (MonadIO, MonadThrow, MonadCatch)
 
 instance Monad m => MonadLog (LoggerT m) where
-    logM entry =
-        LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
-    logScope f = LoggerT . local (contramap f) . getLoggerT
+    logM entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
