@@ -105,6 +105,15 @@ instance TopBottom child => TopBottom (MultiOr child) where
     isBottom (MultiOr []) = True
     isBottom _ = False
 
+instance TopBottom child => From child (MultiOr child) where
+    from = singleton
+
+instance (Ord child, TopBottom child) => From [child] (MultiOr child) where
+    from = make
+
+instance From (MultiOr child) [child] where
+    from = getMultiOr
+
 {-| 'OrBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiOr'.
 -}
@@ -151,10 +160,12 @@ make patts = filterOr (MultiOr patts)
 {- | Construct a normalized 'MultiOr' from a single pattern.
 -}
 singleton
-    :: (Ord term, TopBottom term)
+    :: TopBottom term
     => term
     -> MultiOr term
-singleton patt = make [patt]
+singleton term
+  | isBottom term = MultiOr []
+  | otherwise     = MultiOr [term]
 
 {-| 'extractPatterns' instantiates 'getMultiOr' at 'Pattern'.
 

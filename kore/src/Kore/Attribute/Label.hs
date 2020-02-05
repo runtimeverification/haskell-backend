@@ -73,5 +73,5 @@ instance ParseAttributes Label where
         withApplication' = Parser.withApplication labelId
         failDuplicate' = Parser.failDuplicate labelId
 
-    toAttributes =
-        maybe def (Attributes . (: []) . labelAttribute) . unLabel
+instance From Label Attributes where
+    from = maybe def (from @AttributePattern . labelAttribute) . unLabel

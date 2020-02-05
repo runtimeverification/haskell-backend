@@ -56,4 +56,6 @@ memoAttribute = attributePattern_ memoSymbol
 
 instance ParseAttributes Memo where
     parseAttribute = parseBoolAttribute memoId
-    toAttributes = toBoolAttributes memoAttribute
+
+instance From Memo Attributes where
+    from = toBoolAttributes memoAttribute

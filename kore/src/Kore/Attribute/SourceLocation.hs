@@ -35,7 +35,8 @@ import Kore.Attribute.Location
     , Location (..)
     )
 import Kore.Attribute.Parser
-    ( ParseAttributes (..)
+    ( Attributes
+    , ParseAttributes (..)
     )
 import Kore.Attribute.Source
     ( Source (..)
@@ -65,8 +66,9 @@ instance ParseAttributes SourceLocation where
         typed @Location (parseAttribute attr)
         >=> typed @Source (parseAttribute attr)
 
+instance From SourceLocation Attributes where
     -- TODO (thomas.tuegel): Implement
-    toAttributes _ = def
+    from _ = def
 
 instance Pretty SourceLocation where
     pretty SourceLocation

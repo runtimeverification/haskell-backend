@@ -99,6 +99,16 @@ instance InternalVariable variable => Unparse (SideCondition variable) where
       where
         SideCondition {assumedTrue} = sideCondition
 
+instance
+    InternalVariable variable
+    => From (Condition variable) (SideCondition variable)
+  where
+    from assumedTrue =
+        SideCondition
+            { representation = toRepresentationCondition assumedTrue
+            , assumedTrue
+            }
+
 top :: InternalVariable variable => SideCondition variable
 top = fromCondition Condition.top
 
@@ -152,11 +162,7 @@ mapVariables mapper condition@(SideCondition _ _) =
 
 fromCondition
     :: InternalVariable variable => Condition variable -> SideCondition variable
-fromCondition assumedTrue =
-    SideCondition
-        { representation = toRepresentationCondition assumedTrue
-        , assumedTrue
-        }
+fromCondition = from
 
 toRepresentationCondition
     :: InternalVariable variable

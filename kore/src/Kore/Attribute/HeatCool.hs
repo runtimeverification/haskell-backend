@@ -107,6 +107,7 @@ instance ParseAttributes HeatCool where
             failDuplicate' = Parser.failDuplicate coolId
             failConflicting' = Parser.failConflicting [heatId, coolId]
 
-    toAttributes Heat = Attributes [heatAttribute]
-    toAttributes Cool = Attributes [coolAttribute]
-    toAttributes Normal = def
+instance From HeatCool Attributes where
+    from Heat = from heatAttribute
+    from Cool = from coolAttribute
+    from Normal = def

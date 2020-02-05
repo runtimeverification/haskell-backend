@@ -59,4 +59,6 @@ trustedAttribute = attributePattern_ trustedSymbol
 
 instance ParseAttributes Trusted where
     parseAttribute = parseBoolAttribute trustedId
-    toAttributes = toBoolAttributes trustedAttribute
+
+instance From Trusted Attributes where
+    from = toBoolAttributes trustedAttribute

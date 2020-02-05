@@ -46,5 +46,8 @@ instance Debug Representation
 
 instance Diff Representation
 
+instance From Text Representation where
+    from = Representation . hashed
+
 fromText :: Text -> Representation
-fromText = Representation . hashed
+fromText = from

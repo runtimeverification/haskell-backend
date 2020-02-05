@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 Representation of conditional terms.
+
 -}
 
 module Kore.Internal.Conditional
@@ -61,7 +62,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.Substitution
-    ( Substitution
+    ( SingleSubstitution
+    , Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -199,6 +201,49 @@ instance TopBottom term => TopBottom (Conditional variable term) where
     isBottom Conditional {term, predicate, substitution} =
         isBottom term || isBottom predicate || isBottom substitution
 
+instance
+    InternalVariable variable
+    => From (Conditional variable ()) (Predicate variable)
+  where
+    from Conditional { predicate, substitution } =
+        Predicate.makeAndPredicate predicate (from substitution)
+
+instance
+    Ord variable
+    => From (Predicate variable) (Conditional variable ())
+  where
+    from predicate =
+        Conditional { term = (), predicate, substitution = mempty }
+
+instance
+    InternalVariable variable
+    => From (Substitution variable) (Conditional variable ())
+  where
+    from substitution =
+        Conditional
+            { term = ()
+            , predicate = Predicate.makeTruePredicate_
+            , substitution
+            }
+
+instance
+    InternalVariable variable
+    => From (SingleSubstitution variable) (Conditional variable ())
+  where
+    from = from @(Substitution variable) . from
+
+instance
+    From from to
+    => From (Conditional variable from) (Conditional variable to)
+  where
+    from = fmap from
+
+instance
+    InternalVariable variable
+    => From term (Conditional variable term)
+  where
+    from = pure
+
 unparseConditional
     :: Sort
     -> Doc ann    -- ^ term
@@ -309,8 +354,7 @@ fromPredicate
     :: Ord variable
     => Predicate variable
     -> Conditional variable ()
-fromPredicate predicate =
-    Conditional { term = (), predicate, substitution = mempty }
+fromPredicate = from
 
 {- | Construct a 'Conditional' holding the given 'Substitution'.
 
@@ -321,12 +365,7 @@ fromSubstitution
     :: InternalVariable variable
     => Substitution variable
     -> Conditional variable ()
-fromSubstitution substitution =
-    Conditional
-        { term = ()
-        , predicate = Predicate.makeTruePredicate_
-        , substitution
-        }
+fromSubstitution = from
 
 {- | Construct a 'Conditional' holding a single substitution.
 
@@ -337,12 +376,7 @@ fromSingleSubstitution
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> Conditional variable ()
-fromSingleSubstitution (variable, termLike) =
-    Conditional
-        { term = ()
-        , predicate = Predicate.makeTruePredicate_
-        , substitution = Substitution.singleton variable termLike
-        }
+fromSingleSubstitution = from
 
 {- | Combine the predicate with the conditions of the first argument.
  -}

@@ -316,11 +316,20 @@ data ConcreteOrWithVariable normalized variable
     = ConcretePat (TermLike variable, Domain.Value normalized (TermLike variable))
     | WithVariablePat (TermLike variable, Domain.Value normalized (TermLike variable))
 
+instance
+    From
+        (ConcreteOrWithVariable normalized variable)
+        (TermLike variable, Domain.Value normalized (TermLike variable))
+  where
+    from =
+        \case
+            ConcretePat result -> result
+            WithVariablePat result -> result
+
 fromConcreteOrWithVariable
     :: ConcreteOrWithVariable normalized variable
     -> (TermLike variable, Domain.Value normalized (TermLike variable))
-fromConcreteOrWithVariable (ConcretePat result) = result
-fromConcreteOrWithVariable (WithVariablePat result) = result
+fromConcreteOrWithVariable = from
 
 {- | Particularizes @Domain.NormalizedAc@ to the most common types.
 -}

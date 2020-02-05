@@ -47,4 +47,6 @@ owiseAttribute = attributePattern_ owiseSymbol
 
 instance ParseAttributes Owise where
     parseAttribute = parseBoolAttribute owiseId
-    toAttributes = toBoolAttributes owiseAttribute
+
+instance From Owise Attributes where
+    from = toBoolAttributes owiseAttribute
