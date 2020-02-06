@@ -1,10 +1,10 @@
-One-Path reachability implemented only for deterministic semantics
+One-Path Reachability implemented only for deterministic semantics
 ==================================================================
 
 Background
 ----------
 
-Proving an One-path reachability formula `∀X.φ → ◇w ∃y.ψ` means proving that,
+Proving an one-path reachability formula `∀X.φ → ◇w ∃y.ψ` means proving that,
 for _all_ interpretations `ρ` for the variables in `X`, and all configurations
 `γ` which are matched by `φ` under the interpretation `ρ`, there _exists_
 a path from `γ` to a configuration `γ'` and an interpretation `ρ'` extending
@@ -12,7 +12,7 @@ a path from `γ` to a configuration `γ'` and an interpretation `ρ'` extending
 under the interpretation `ρ'`.
 
 This is implemented as symbolically executing the configuration `φ`,
-potentially coinductively using the formula itself as a rule, while and
+potentially coinductively using the formula itself as a rule, while
 checking (at each step) whether a configuration matching `ψ` has been reached.
 
 The problem
@@ -34,14 +34,14 @@ transitions from the same state to different ones.
 
 The one-path algorithm applies rewrite rules to the goals using the `deriveSeq`
 procedure, which was not designed to consider rule applications where two or
-more rules have the same LHS (as in the case of non-deterministic semantics).
+more rules have the same left hand side (as in the case of non-deterministic semantics).
 These characteristics of the implementation entail that the one-path algorithm,
 while sound, doesn't guarantee full state space coverage.
 
-This is in accord with the original definition of one-path-reachability which
+This is in accord with the original definition of one-path reachability which
 only guaranteed (relative) completeness for (strongly) deterministic
 definitions, and with the fact that for non-deterministic definitions,
-all-path-reachability already provides a (relative) complete verification
+all-path reachability already provides a (relative) complete verification
 procedure.
 
 ### Consequences
@@ -63,10 +63,8 @@ module PATH
 endmodule
 ```
 
-proving the one-path reachability claim `a => c`.
-
-might be not possible, if the prover selects to advance the execution using the
-other rule.
+proving the one-path reachability claim `a => c` might be not possible,
+if the prover selects to advance the execution using the other rule.
 
 #### Example 2
 
@@ -83,13 +81,13 @@ module PATH
 endmodule
 ```
 
-provein the one-path reachability claim 
+the one-path reachability claim 
 ```
 <k> select => ?X </k> <state> SetItem(a) SetItem(b) SetItem(c) </state>
     ensures ?X ==K b orBool ?X ==K c 
 ```
 
-might not be provable because if the prover selects to advance the execution
+might not be provable because the prover selects to advance the execution
 using the `X=a` instance for the `select` rule.
 
 
@@ -115,13 +113,13 @@ module TEST
 endmodule
 ```
 
-together with the claim `test(X) => c \/ e`
+together with the claim `test(X) => c \/ e`.
 
 The idea would be to derive the goal in parallel with each of the rules,
 but to associate a remainder to each particular derivation,
 then we will require that the derived goal and the remainder need to be
 satisfied simultaneously, but that any of thus obtained
-derived goal - remainder pairs is sufficient to prove our original goal
+derived goal - remainder pairs is sufficient to prove our original goal.
 
 Thus, we would replace `test(X) => c \/ e` by the derivation
 ```
@@ -151,11 +149,11 @@ Thus, we would replace `test(X) => c \/ e` by the derivation
 ```
 
 then we can choose any goal in the or-and tree and expand it, and continue to do
-so until all goals are stuck or one of the golbal disjuncts is completely proven
+so until all goals are stuck or one of the global disjuncts is completely proven.
 
 For example, assuming a leftmost, innermost strategy, we could continue
 by first checking `b => c \/ e` and declaring it stuck, meaning that we
-can skip its remainder alltogether, then moving to `c => c \/ e` which
+can skip its remainder altogether, then moving to `c => c \/ e` which
 holds without further expansion, so it can be eliminated, leading us to
 its remainder `test(X) /\ x <> true => c \/ e`.
 
@@ -174,8 +172,8 @@ Following the algorithm, this can be expanded to
 )
 ```
 
-Again, `d => c \/ e` is stuck, so we can skip directly to
-`e => c \/ e`, which holds directly, so it can be eliminated.
+Again, `d => c \/ e` is stuck, so we can skip to
+`e => c \/ e`, which holds immediately, so it can be eliminated.
 Its remainder, too, can be eliminated, as 
 ` x <> true /\ x <> false` is equivalent to `⊥`.
 
@@ -186,7 +184,7 @@ destination for all instances of the input.
 
 When deriving goals, care should be taken about the same rule unifing in
 multiple ways with the same configuration, as in the [Example 2](#example_2)
-above.  In such cases, each of the unification instances should be considered
+above. In such cases, each of the unification instances should be considered
 as a separate rule instance when doing the parallel derivation, and thus a
 separate remainder should be computed for each.
 
