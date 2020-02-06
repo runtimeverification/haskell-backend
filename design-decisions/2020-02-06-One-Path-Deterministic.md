@@ -4,7 +4,7 @@ One-Path Reachability implemented only for deterministic semantics
 Background
 ----------
 
-Proving an one-path reachability formula `∀X.φ → ◇w ∃y.ψ` means proving that,
+Proving an one-path reachability formula `∀X.φ → ◇w ∃Y.ψ` means proving that,
 for _all_ interpretations `ρ` for the variables in `X`, and all configurations
 `γ` which are matched by `φ` under the interpretation `ρ`, there _exists_
 a path from `γ` to a configuration `γ'` and an interpretation `ρ'` extending
@@ -142,9 +142,9 @@ Thus, we would replace `test(X) => c \/ e` by the derivation
 )
 \/
 (
-  e => c \/ e                     -- derivation using 1st rule
+  e => c \/ e                     -- derivation using 4th rule
   /\
-  test(X) /\ x <> false => c \/ e -- remainder after applying  rule
+  test(X) /\ x <> false => c \/ e -- remainder after applying 4th rule
 )
 ```
 
