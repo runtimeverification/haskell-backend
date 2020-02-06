@@ -71,6 +71,9 @@ import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
+import Kore.Internal.Predicate
+    ( unwrapPredicate
+    )
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
     ( containsForall
@@ -393,19 +396,23 @@ verifyClaimSentence sentence =
     addClaim verifiedSentenceClaim@(SentenceClaim verified) attrs =
         case fromSentenceAxiom (attrs, verified) of
             Right (OnePathClaimPattern (OnePathRule rulePattern))
-              | not $ containsForall $ left rulePattern
-              , containsForall $ right $ rhs rulePattern ->
+              | rejectRulePattern rulePattern ->
                     error "Found claim with universally-quantified variables \
                         \appearing only on the right-hand side"
             Right (AllPathClaimPattern (AllPathRule rulePattern))
-              | not $ containsForall $ left rulePattern
-              , containsForall $ right $ rhs rulePattern ->
+              | rejectRulePattern rulePattern ->
                     error "Found claim with universally-quantified variables \
                         \appearing only on the right-hand side"
             _ ->
                 Lens.over
                     (field @"indexedModuleClaims")
                     ((attrs, verifiedSentenceClaim) :)
+    rejectRulePattern
+        RulePattern { left, antiLeft, requires, rhs = RHS { right, ensures } }
+      =
+        (not . any containsForall)
+            (catMaybes [antiLeft] <> [left, unwrapPredicate requires])
+        && any containsForall [right, unwrapPredicate ensures]
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
