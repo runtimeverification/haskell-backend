@@ -72,7 +72,20 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
 import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.TermLike
+    ( containsForall
+    )
 import Kore.Sort
+import Kore.Step.Rule
+    ( QualifiedAxiomPattern(..)
+    , fromSentenceAxiom
+    )
+import Kore.Step.RulePattern
+    ( OnePathRule (..)
+    , AllPathRule (..)
+    , RulePattern (..)
+    , RHS (..)
+    )
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -377,10 +390,22 @@ verifyClaimSentence sentence =
             $ sentenceClaimAttributes sentence
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
-    addClaim verified attrs =
-        Lens.over
-            (field @"indexedModuleClaims")
-            ((attrs, verified) :)
+    addClaim verifiedSentenceClaim@(SentenceClaim verified) attrs =
+        case fromSentenceAxiom (attrs, verified) of
+            Right (OnePathClaimPattern (OnePathRule rulePattern))
+              | not $ containsForall $ left rulePattern
+              , containsForall $ right $ rhs rulePattern ->
+                    error "Found claim with universally-quantified variables \
+                        \appearing only on the right-hand side"
+            Right (AllPathClaimPattern (AllPathRule rulePattern))
+              | not $ containsForall $ left rulePattern
+              , containsForall $ right $ rhs rulePattern ->
+                    error "Found claim with universally-quantified variables \
+                        \appearing only on the right-hand side"
+            _ -> 
+                Lens.over
+                    (field @"indexedModuleClaims")
+                    ((attrs, verifiedSentenceClaim) :)
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
