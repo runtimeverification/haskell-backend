@@ -77,14 +77,14 @@ import Kore.Internal.TermLike
     )
 import Kore.Sort
 import Kore.Step.Rule
-    ( QualifiedAxiomPattern(..)
+    ( QualifiedAxiomPattern (..)
     , fromSentenceAxiom
     )
 import Kore.Step.RulePattern
-    ( OnePathRule (..)
-    , AllPathRule (..)
-    , RulePattern (..)
+    ( AllPathRule (..)
+    , OnePathRule (..)
     , RHS (..)
+    , RulePattern (..)
     )
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
@@ -402,7 +402,7 @@ verifyClaimSentence sentence =
               , containsForall $ right $ rhs rulePattern ->
                     error "Found claim with universally-quantified variables \
                         \appearing only on the right-hand side"
-            _ -> 
+            _ ->
                 Lens.over
                     (field @"indexedModuleClaims")
                     ((attrs, verifiedSentenceClaim) :)
