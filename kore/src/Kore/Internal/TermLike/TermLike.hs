@@ -937,8 +937,10 @@ traverseVariables trElemVar trSetVar termLike =
             MuF mu -> MuF <$> muBinder (renameSetBinder avoiding) mu
             NuF nu -> NuF <$> nuBinder (renameSetBinder avoiding) nu
             _ ->
+                sequence termLikeF >>=
+                -- traverseVariablesF will not actually call the traversals
+                -- because all the cases with variables are handled above.
                 traverseVariablesF askElementVariable askSetVariable
-                =<< sequence termLikeF
         (pure . Recursive.embed) (attrs' :< termLikeF')
 
 {- | Reset the 'variableCounter' of all 'Variables'.
