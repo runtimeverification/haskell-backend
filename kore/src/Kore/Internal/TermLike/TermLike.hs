@@ -25,27 +25,19 @@ import Prelude.Kore
 
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
-import Control.Comonad.Trans.Env
-    ( Env
-    )
 import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
     ( NFData (..)
     )
 import qualified Control.Lens as Lens
 import qualified Control.Lens.Combinators as Lens.Combinators
-import qualified Control.Monad as Monad
 import Control.Monad.Reader
     ( Reader
-    , ReaderT
     )
 import qualified Control.Monad.Reader as Reader
 import Control.Monad.Trans as Trans
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( on
-    )
 import Data.Functor.Adjunction
     ( rightAdjunct
     )
@@ -67,11 +59,6 @@ import Data.Functor.Identity
 import qualified Data.Generics.Product as Lens.Product
 import qualified Data.Generics.Wrapped as Lens.Wrapped
 import Data.Hashable
-import Data.Map.Strict
-    ( Map
-    )
-import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -107,6 +94,7 @@ import Kore.Internal.InternalBytes
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     )
+import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Syntax.And
@@ -141,7 +129,6 @@ import Kore.Variables.Fresh
     ( FreshVariable
     )
 import qualified Kore.Variables.Fresh as Fresh
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 import qualified SQL
 
@@ -595,124 +582,6 @@ extractAttributes = extract . getTermLike
 
 instance HasFreeVariables (TermLike variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes
-
-type VariableMap meta variable1 variable2 =
-    Map (meta variable1) (meta variable2)
-
-data UnifiedVariableMap variable1 variable2 =
-    UnifiedVariableMap
-        { setVariables
-            :: !(VariableMap SetVariable variable1 variable2)
-        , elementVariables
-            :: !(VariableMap ElementVariable variable1 variable2)
-        }
-    deriving (GHC.Generic)
-
-instance
-    Ord variable1 => Semigroup (UnifiedVariableMap variable1 variable2)
-  where
-    (<>) a b =
-        UnifiedVariableMap
-            { setVariables = on (<>) setVariables a b
-            , elementVariables = on (<>) elementVariables a b
-            }
-
-instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
-    mempty = UnifiedVariableMap mempty mempty
-
-type RenamingT variable1 variable2 =
-    ReaderT (UnifiedVariableMap variable1 variable2)
-
-type Renaming variable1 variable2 =
-    Env (UnifiedVariableMap variable1 variable2)
-
-renameSetVariable
-    :: Ord variable1
-    => SetVariable variable1
-    -> SetVariable variable2
-    -> UnifiedVariableMap variable1 variable2
-    -> UnifiedVariableMap variable1 variable2
-renameSetVariable variable1 variable2 =
-    Lens.over
-        (Lens.Product.field @"setVariables")
-        (Map.insert variable1 variable2)
-
-renameElementVariable
-    :: Ord variable1
-    => ElementVariable variable1
-    -> ElementVariable variable2
-    -> UnifiedVariableMap variable1 variable2
-    -> UnifiedVariableMap variable1 variable2
-renameElementVariable variable1 variable2 =
-    Lens.over
-        (Lens.Product.field @"elementVariables")
-        (Map.insert variable1 variable2)
-
-renameFreeVariables
-    :: Ord variable1
-    => Monad m
-    => (ElementVariable variable1 -> m (ElementVariable variable2))
-    -> (SetVariable variable1 -> m (SetVariable variable2))
-    -> FreeVariables variable1
-    -> m (UnifiedVariableMap variable1 variable2)
-renameFreeVariables trElemVar trSetVar =
-    Monad.foldM worker mempty . getFreeVariables
-  where
-    worker renaming =
-        \case
-            ElemVar elemVar ->
-                renameElementVariable elemVar
-                    <$> trElemVar elemVar
-                    <*> pure renaming
-            SetVar setVar ->
-                renameSetVariable setVar
-                    <$> trSetVar setVar
-                    <*> pure renaming
-
-lookupRenamedElementVariable
-    :: Ord variable1
-    => ElementVariable variable1
-    -> UnifiedVariableMap variable1 variable2
-    -> Maybe (ElementVariable variable2)
-lookupRenamedElementVariable variable =
-    Map.lookup variable . elementVariables
-
-lookupRenamedSetVariable
-    :: Ord variable1
-    => SetVariable variable1
-    -> UnifiedVariableMap variable1 variable2
-    -> Maybe (SetVariable variable2)
-lookupRenamedSetVariable variable =
-    Map.lookup variable . setVariables
-
-askUnifiedVariable
-    :: Monad m
-    => Ord variable1
-    => UnifiedVariable variable1
-    -> RenamingT variable1 variable2 m (UnifiedVariable variable2)
-askUnifiedVariable =
-    \case
-        SetVar setVar -> SetVar <$> askSetVariable setVar
-        ElemVar elemVar -> ElemVar <$> askElementVariable elemVar
-
-askElementVariable
-    :: Monad m
-    => Ord variable1
-    => ElementVariable variable1
-    -> RenamingT variable1 variable2 m (ElementVariable variable2)
-askElementVariable elementVariable =
-    -- fromJust is safe because the variable must be renamed
-    fmap Maybe.fromJust
-    $ Reader.asks (lookupRenamedElementVariable elementVariable)
-
-askSetVariable
-    :: Monad m
-    => Ord variable1
-    => SetVariable variable1
-    -> RenamingT variable1 variable2 m (SetVariable variable2)
-askSetVariable setVariable =
-    -- fromJust is safe because the variable must be renamed
-    fmap Maybe.fromJust $ Reader.asks (lookupRenamedSetVariable setVariable)
 
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 

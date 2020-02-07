@@ -17,6 +17,11 @@ module Kore.Variables.UnifiedVariable
     , refreshSetVariable
     , mapUnifiedVariable
     , traverseUnifiedVariable
+    -- * UnifiedVariableMap
+    , VariableMap
+    , UnifiedVariableMap
+    , renameElementVariable, renameSetVariable
+    , lookupRenamedElementVariable, lookupRenamedSetVariable
     ) where
 
 import Prelude.Kore
@@ -24,8 +29,19 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
+import Data.Function
+    ( on
+    )
 import Data.Functor.Const
+import Data.Generics.Product
+    ( field
+    )
 import Data.Hashable
+import Data.Map
+    ( Map
+    )
+import qualified Data.Map as Map
 import Data.Set
     ( Set
     )
@@ -182,3 +198,65 @@ traverseUnifiedVariable traverseElemVar traverseSetVar =
     \case
         ElemVar elemVar -> ElemVar <$> traverseElemVar elemVar
         SetVar  setVar  -> SetVar <$> traverseSetVar setVar
+
+type VariableMap meta variable1 variable2 =
+    Map (meta variable1) (meta variable2)
+
+data UnifiedVariableMap variable1 variable2 =
+    UnifiedVariableMap
+        { setVariables
+            :: !(VariableMap SetVariable variable1 variable2)
+        , elementVariables
+            :: !(VariableMap ElementVariable variable1 variable2)
+        }
+    deriving (Generic)
+
+instance
+    Ord variable1 => Semigroup (UnifiedVariableMap variable1 variable2)
+  where
+    (<>) a b =
+        UnifiedVariableMap
+            { setVariables = on (<>) setVariables a b
+            , elementVariables = on (<>) elementVariables a b
+            }
+
+instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
+    mempty = UnifiedVariableMap mempty mempty
+
+renameSetVariable
+    :: Ord variable1
+    => SetVariable variable1
+    -> SetVariable variable2
+    -> UnifiedVariableMap variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
+renameSetVariable variable1 variable2 =
+    Lens.over
+        (field @"setVariables")
+        (Map.insert variable1 variable2)
+
+renameElementVariable
+    :: Ord variable1
+    => ElementVariable variable1
+    -> ElementVariable variable2
+    -> UnifiedVariableMap variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
+renameElementVariable variable1 variable2 =
+    Lens.over
+        (field @"elementVariables")
+        (Map.insert variable1 variable2)
+
+lookupRenamedElementVariable
+    :: Ord variable1
+    => ElementVariable variable1
+    -> UnifiedVariableMap variable1 variable2
+    -> Maybe (ElementVariable variable2)
+lookupRenamedElementVariable variable =
+    Map.lookup variable . elementVariables
+
+lookupRenamedSetVariable
+    :: Ord variable1
+    => SetVariable variable1
+    -> UnifiedVariableMap variable1 variable2
+    -> Maybe (SetVariable variable2)
+lookupRenamedSetVariable variable =
+    Map.lookup variable . setVariables
