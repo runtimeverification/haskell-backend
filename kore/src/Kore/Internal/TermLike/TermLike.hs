@@ -601,7 +601,7 @@ type VariableMap meta variable1 variable2 =
 
 data UnifiedVariableMap variable1 variable2 =
     UnifiedVariableMap
-        { renamedSetVariables
+        { setVariables
             :: !(VariableMap SetVariable variable1 variable2)
         , renamedElementVariables
             :: !(VariableMap ElementVariable variable1 variable2)
@@ -613,7 +613,7 @@ instance
   where
     (<>) a b =
         UnifiedVariableMap
-            { renamedSetVariables = on (<>) renamedSetVariables a b
+            { setVariables = on (<>) setVariables a b
             , renamedElementVariables = on (<>) renamedElementVariables a b
             }
 
@@ -634,7 +634,7 @@ renameSetVariable
     -> UnifiedVariableMap variable1 variable2
 renameSetVariable variable1 variable2 =
     Lens.over
-        (Lens.Product.field @"renamedSetVariables")
+        (Lens.Product.field @"setVariables")
         (Map.insert variable1 variable2)
 
 renameElementVariable
@@ -683,7 +683,7 @@ lookupRenamedSetVariable
     -> UnifiedVariableMap variable1 variable2
     -> Maybe (SetVariable variable2)
 lookupRenamedSetVariable variable =
-    Map.lookup variable . renamedSetVariables
+    Map.lookup variable . setVariables
 
 askUnifiedVariable
     :: Monad m
