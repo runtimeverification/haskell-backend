@@ -38,10 +38,10 @@ import Data.Generics.Product
     ( field
     )
 import Data.Hashable
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
