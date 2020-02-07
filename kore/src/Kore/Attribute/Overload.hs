@@ -20,30 +20,30 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
-newtype Overload =
+newtype Overload symbol =
     Overload
-        { getOverload :: Maybe (SymbolOrAlias, SymbolOrAlias) }
-    deriving (Eq, GHC.Generic, Ord, Show)
+        { getOverload :: Maybe (symbol, symbol) }
+    deriving (Eq, GHC.Generic, Ord, Show, Functor)
 
-instance SOP.Generic Overload
+instance SOP.Generic (Overload symbol)
 
-instance SOP.HasDatatypeInfo Overload
+instance SOP.HasDatatypeInfo (Overload symbol)
 
-instance Debug Overload
+instance Debug symbol => Debug (Overload symbol)
 
-instance Diff Overload
+instance (Debug symbol, Diff symbol) => Diff (Overload symbol)
 
-instance Semigroup Overload where
+instance Semigroup (Overload symbol) where
     (<>) a@(Overload (Just _)) _ = a
     (<>) _                     b = b
 
-instance Monoid Overload where
+instance Monoid (Overload symbol) where
     mempty = Overload { getOverload = Nothing }
 
-instance Default Overload where
+instance Default (Overload symbol) where
     def = mempty
 
-instance NFData Overload
+instance NFData symbol => NFData (Overload symbol)
 
 -- | Kore identifier representing the @overload@ attribute symbol.
 overloadId :: Id
@@ -68,7 +68,7 @@ overloadAttribute symbol1 symbol2 =
         , attributePattern_ symbol2
         ]
 
-instance ParseAttributes Overload where
+instance ParseAttributes (Overload SymbolOrAlias) where
     parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Overload { getOverload }
@@ -82,8 +82,10 @@ instance ParseAttributes Overload where
         withApplication' = Parser.withApplication overloadId
         failDuplicate' = Parser.failDuplicate overloadId
 
-    toAttributes =
+instance From symbol SymbolOrAlias => From (Overload symbol) Attributes where
+    from =
         maybe def toAttribute . getOverload
       where
         toAttribute (symbol1, symbol2) =
-            Attributes [overloadAttribute symbol1 symbol2]
+            from @AttributePattern
+            $ overloadAttribute (from symbol1) (from symbol2)

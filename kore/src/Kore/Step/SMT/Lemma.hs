@@ -34,6 +34,7 @@ import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
     ( declare
@@ -58,7 +59,7 @@ declareSMTLemmas
         , MonadIO m
         , MonadSMT m
         )
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    => VerifiedModule StepperAttributes
     -> m ()
 declareSMTLemmas m = do
     SMT.All.declare (smtData tools)
@@ -68,7 +69,9 @@ declareSMTLemmas m = do
     tools = given
 
     declareRule
-        :: (Attribute.Axiom, SentenceAxiom (TermLike Variable))
+        ::  ( Attribute.Axiom Internal.Symbol.Symbol
+            , SentenceAxiom (TermLike Variable)
+            )
         -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)

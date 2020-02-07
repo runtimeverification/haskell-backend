@@ -145,10 +145,7 @@ toPredicate
     :: InternalVariable variable
     => Condition variable
     -> Predicate variable
-toPredicate Conditional {predicate, substitution} =
-    Predicate.makeAndPredicate
-        predicate
-        (Substitution.toPredicate substitution)
+toPredicate = from
 
 mapVariables
     :: (Ord variable1, Ord variable2)

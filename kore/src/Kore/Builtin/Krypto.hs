@@ -29,9 +29,6 @@ module Kore.Builtin.Krypto
 import Prelude.Kore
 
 
-import Control.Exception.Base
-    ( assert
-    )
 import Crypto.Hash
     ( HashAlgorithm
     , Keccak_256 (..)

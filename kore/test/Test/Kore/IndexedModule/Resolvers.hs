@@ -17,7 +17,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Ord
 
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -158,12 +157,12 @@ testDefinition =
         }
 
 indexedModules
-    :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    :: Map ModuleName (VerifiedModule Attribute.Symbol)
 indexedModules =
     assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 
 testIndexedModule, testIndexedObjectModule
-    :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    :: VerifiedModule Attribute.Symbol
 testIndexedModule =
     fromMaybe (error $ "Missing module: " ++ show testMainModuleName)
     $ Map.lookup testMainModuleName indexedModules

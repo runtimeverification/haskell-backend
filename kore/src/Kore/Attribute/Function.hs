@@ -60,4 +60,6 @@ functionAttribute = attributePattern_ functionSymbol
 
 instance ParseAttributes Function where
     parseAttribute = parseBoolAttribute functionId
-    toAttributes = toBoolAttributes functionAttribute
+
+instance From Function Attributes where
+    from = toBoolAttributes functionAttribute

@@ -807,7 +807,7 @@ substitute subst (GenericPredicate termLike) =
 
 -}
 freshVariable
-    :: SortedVariable variable
+    :: InternalVariable variable
     => Predicate variable
     -> Predicate Variable
 freshVariable predicate =

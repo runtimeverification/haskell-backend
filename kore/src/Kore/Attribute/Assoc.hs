@@ -55,4 +55,6 @@ assocAttribute = attributePattern_ assocSymbol
 
 instance ParseAttributes Assoc where
     parseAttribute = parseBoolAttribute assocId
-    toAttributes = toBoolAttributes assocAttribute
+
+instance From Assoc Attributes where
+    from = toBoolAttributes assocAttribute

@@ -18,7 +18,6 @@ import Control.Error
     ( MaybeT
     , runMaybeT
     )
-import qualified Control.Exception as Exception
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
 import Data.Reflection
@@ -89,7 +88,7 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
 instance InternalVariable variable => Evaluable (Conditional variable term)
   where
     evaluate conditional =
-        Exception.assert (Conditional.isNormalized conditional)
+        assert (Conditional.isNormalized conditional)
         $ evaluate (Conditional.predicate conditional)
 
 {- | Removes from a MultiOr all items refuted by an external SMT solver. -}

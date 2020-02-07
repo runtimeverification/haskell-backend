@@ -6,9 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
     ( indexBySort
     )
@@ -148,7 +145,7 @@ test_sortParsing =
 
 testsForModule
     :: String
-    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> VerifiedModule Attribute.Symbol
     ->  [  AST.Declarations AST.SortReference AST.SymbolReference AST.Encodable
         -> TestTree
         ]

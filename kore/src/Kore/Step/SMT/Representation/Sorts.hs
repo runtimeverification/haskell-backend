@@ -20,9 +20,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import Kore.Attribute.Hook
     ( Hook (Hook)
     )
@@ -120,7 +117,7 @@ All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations
     :: forall symbolAttribute
-    .  VerifiedModule symbolAttribute Attribute.Axiom
+    .  VerifiedModule symbolAttribute
     -> Map.Map Id Attribute.Constructors
     -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule sortConstructors =

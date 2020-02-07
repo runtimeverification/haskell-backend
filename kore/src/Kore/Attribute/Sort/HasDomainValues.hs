@@ -58,4 +58,6 @@ hasDomainValuesAttribute = attributePattern hasDomainValuesSymbol []
 
 instance ParseAttributes HasDomainValues where
     parseAttribute = parseBoolAttribute hasDomainValuesId
-    toAttributes = toBoolAttributes hasDomainValuesAttribute
+
+instance From HasDomainValues Attributes where
+    from = toBoolAttributes hasDomainValuesAttribute

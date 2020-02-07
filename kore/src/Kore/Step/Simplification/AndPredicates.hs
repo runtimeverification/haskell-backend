@@ -39,6 +39,9 @@ import Kore.Internal.OrCondition
 import Kore.Internal.Pattern
     ( Condition
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
@@ -48,9 +51,10 @@ import qualified Kore.Step.Substitution as Substitution
 simplifyEvaluatedMultiPredicate
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => MultiAnd (OrCondition variable)
+    => SideCondition variable
+    -> MultiAnd (OrCondition variable)
     -> simplifier (OrCondition variable)
-simplifyEvaluatedMultiPredicate predicates = do
+simplifyEvaluatedMultiPredicate sideCondition predicates = do
     let
         crossProduct :: MultiOr [Condition variable]
         crossProduct =
@@ -63,7 +67,8 @@ simplifyEvaluatedMultiPredicate predicates = do
         :: [Condition variable]
         -> BranchT simplifier (Condition variable)
     andConditions predicates' =
-        fmap markSimplified $ Substitution.normalize (Foldable.fold predicates')
+        fmap markSimplified
+        $ Substitution.normalize sideCondition (Foldable.fold predicates')
       where
         markSimplified =
             Condition.setPredicateSimplified

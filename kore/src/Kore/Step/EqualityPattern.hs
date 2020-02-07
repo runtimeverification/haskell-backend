@@ -40,6 +40,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
@@ -66,7 +69,7 @@ data EqualityPattern variable = EqualityPattern
     , left  :: !(TermLike.TermLike variable)
     , right :: !(TermLike.TermLike variable)
     , ensures :: !(Predicate variable)
-    , attributes :: !Attribute.Axiom
+    , attributes :: !(Attribute.Axiom Symbol)
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)

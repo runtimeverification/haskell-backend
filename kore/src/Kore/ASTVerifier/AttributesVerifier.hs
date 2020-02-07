@@ -12,20 +12,45 @@ module Kore.ASTVerifier.AttributesVerifier
     , verifySortHookAttribute
     , verifySymbolHookAttribute
     , verifyNoHookAttribute
+    , verifySymbolAttributes
+    , verifyAxiomAttributes
+    , verifySortAttributes
     , parseAttributes
     ) where
 
+import qualified Control.Lens as Lens
+import Data.Function
+    ( (&)
+    )
+import Data.Generics.Product
 import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
 
 import Kore.ASTVerifier.Error
+import qualified Kore.Attribute.Axiom as Attribute
+    ( Axiom
+    )
 import Kore.Attribute.Hook
+import Kore.Attribute.Overload
+    ( Overload (..)
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Error
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.Resolvers
+import Kore.Internal.ApplicationSorts
+    ( symbolOrAliasSorts
+    )
+import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
+import qualified Kore.Verified as Verified
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -106,3 +131,56 @@ verifyNoHookAttribute attributes = do
             return ()
         Just _ ->
             koreFail "Unexpected 'hook' attribute"
+
+
+verifyAxiomAttributes
+    :: forall error attrs
+    .  MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    -> Attribute.Axiom SymbolOrAlias
+    -> error (Attribute.Axiom Internal.Symbol.Symbol)
+verifyAxiomAttributes indexedModule axiom = do
+    let overload = axiom Lens.^. field @"overload"
+    case getOverload overload of
+            Nothing -> do
+                let newOverload = Overload Nothing
+                return (axiom & field @"overload" Lens..~ newOverload)
+            Just (symbolOrAlias1, symbolOrAlias2) -> do
+                symbol1 <- toSymbol symbolOrAlias1
+                symbol2 <- toSymbol symbolOrAlias2
+                let newOverload = Overload $ Just (symbol1, symbol2)
+                return (axiom & field @"overload" Lens..~ newOverload)
+  where
+    toSymbol :: SymbolOrAlias -> error Internal.Symbol.Symbol
+    toSymbol symbolOrAlias = do
+        (symbolAttributes, decl) <-
+            resolveSymbol indexedModule symbolConstructor
+        symbolSorts <-
+            symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) decl
+        let symbol =
+                Internal.Symbol.Symbol
+                    { symbolConstructor
+                    , symbolParams
+                    , symbolAttributes
+                    , symbolSorts
+                    }
+        return symbol
+      where
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
+
+verifySymbolAttributes
+    :: forall error a
+    .  MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol a
+    -> Attribute.Symbol
+    -> error Attribute.Symbol
+verifySymbolAttributes _ attrs = return attrs
+
+verifySortAttributes
+    :: forall error a
+    .  MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol a
+    -> Attribute.Symbol
+    -> error Attribute.Symbol
+verifySortAttributes _ attrs = return attrs

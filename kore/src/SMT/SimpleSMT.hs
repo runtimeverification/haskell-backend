@@ -150,7 +150,7 @@ module SMT.SimpleSMT
     , forallQ
     ) where
 
-import Prelude.Kore hiding
+import Prelude hiding
     ( abs
     , and
     , concat
@@ -182,7 +182,8 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified GHC.Generics as GHC
 import GHC.Stack
-    ( callStack
+    ( HasCallStack
+    , callStack
     )
 import Numeric
     ( readHex

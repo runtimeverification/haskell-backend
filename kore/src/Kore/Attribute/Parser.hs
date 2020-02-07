@@ -21,6 +21,7 @@ This module is intended to be imported qualified or explicitly:
 module Kore.Attribute.Parser
     ( -- * Parsing attributes
       ParseAttributes (..)
+    , toAttributes
     , Attributes (..)
     , Parser
     , ParseError
@@ -106,14 +107,13 @@ import Kore.Syntax.StringLiteral
 import SMT.SimpleSMT
     ( SExpr
     , readSExprs
-    , showSExpr
     )
 
 data ParseError
 
 type Parser = Either (Error ParseError)
 
-class Default attrs => ParseAttributes attrs where
+class (Default attrs, From attrs Attributes) => ParseAttributes attrs where
     {- | Parse a 'AttributePattern' from 'Attributes' to produce @attrs@.
 
     Attributes are parsed individually and the list of attributes is parsed by
@@ -132,16 +132,15 @@ class Default attrs => ParseAttributes attrs where
         -> attrs  -- ^ partial parsing result
         -> Parser attrs
 
-    toAttributes :: attrs -> Attributes
+toAttributes :: forall attrs. From attrs Attributes => attrs -> Attributes
+toAttributes = from
 
 instance ParseAttributes Attributes where
     parseAttribute attr (Attributes attrs) =
         return (Attributes $ attr : attrs)
-    toAttributes = id
 
 instance ParseAttributes Attribute.Null where
     parseAttribute _ _ = return mempty
-    toAttributes _ = Attributes []
 
 parseAttributesWith
     :: ParseAttributes attrs
@@ -361,8 +360,3 @@ instance ParseAttributes Attribute.Smtlib where
       where
         withApplication' = withApplication Attribute.smtlibId
         failDuplicate' = failDuplicate Attribute.smtlibId
-
-    toAttributes =
-        Attributes
-        . maybe [] ((: []) . Attribute.smtlibAttribute . Text.pack . showSExpr)
-        . Attribute.getSmtlib

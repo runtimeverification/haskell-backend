@@ -70,7 +70,8 @@ instance ParseAttributes ProductionID where
         withApplication' = Parser.withApplication productionIDId
         failDuplicate' = Parser.failDuplicate productionIDId
 
-    toAttributes =
+instance From ProductionID Attributes where
+    from =
         maybe def toAttribute . getProductionID
       where
-        toAttribute = Attributes . (: []) . productionIDAttribute
+        toAttribute = from @AttributePattern . productionIDAttribute

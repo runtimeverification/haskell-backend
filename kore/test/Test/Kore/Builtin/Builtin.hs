@@ -53,7 +53,6 @@ import Kore.ASTVerifier.PatternVerifier
     , verifyStandalonePattern
     )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -185,17 +184,15 @@ verify
     :: ParsedDefinition
     -> Either
         (Kore.Error.Error VerifyError)
-        (Map
-            ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
-        )
+        (Map ModuleName (VerifiedModule StepperAttributes))
 verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
-    :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
+    :: Map ModuleName (VerifiedModule StepperAttributes)
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
+verifiedModule :: VerifiedModule Attribute.Symbol
 verifiedModule =
     fromMaybe
         (error $ "Missing module: " ++ show testModuleName)
@@ -239,7 +236,7 @@ testSortGraph = SortGraph.fromIndexedModule verifiedModule
 
 testOverloadGraph :: OverloadGraph.OverloadGraph
 testOverloadGraph =
-    OverloadGraph.fromIndexedModule verifiedModule testMetadataTools
+    OverloadGraph.fromIndexedModule verifiedModule
 
 testInjSimplifier :: InjSimplifier
 testInjSimplifier = mkInjSimplifier testSortGraph

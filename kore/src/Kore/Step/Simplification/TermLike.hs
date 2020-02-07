@@ -14,7 +14,6 @@ import Prelude.Kore
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
-import qualified Control.Exception as Exception
 import qualified Control.Lens.Combinators as Lens
 import Control.Monad
     ( unless
@@ -375,7 +374,7 @@ simplifyInternal term sideCondition = do
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =
-                Exception.assert
+                assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
@@ -388,7 +387,7 @@ simplifyInternal term sideCondition = do
             SignednessF _ -> doNotSimplify
             --
             AndF andF ->
-                And.simplify =<< simplifyChildren andF
+                And.simplify sideCondition =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
@@ -406,13 +405,13 @@ simplifyInternal term sideCondition = do
                             exists
                 in  Exists.simplify sideCondition =<< simplifyChildren fresh
             IffF iffF ->
-                Iff.simplify =<< simplifyChildren iffF
+                Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->
-                Implies.simplify =<< simplifyChildren impliesF
+                Implies.simplify sideCondition =<< simplifyChildren impliesF
             InF inF ->
                 In.simplify sideCondition =<< simplifyChildren inF
             NotF notF ->
-                Not.simplify =<< simplifyChildren notF
+                Not.simplify sideCondition =<< simplifyChildren notF
             --
             BottomF bottomF ->
                 Bottom.simplify <$> simplifyChildren bottomF

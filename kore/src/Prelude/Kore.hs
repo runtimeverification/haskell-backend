@@ -18,10 +18,13 @@ module Prelude.Kore
     , Filterable (..)
     -- * Errors
     , HasCallStack
+    , assert
     -- * Applicative and Alternative
     , Applicative (..)
     , Alternative (..)
     , optional
+    -- * From
+    , module From
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -35,6 +38,9 @@ import Control.Applicative
 import Control.Error
     ( headMay
     )
+import Control.Exception
+    ( assert
+    )
 import Data.Function
     ( (&)
     )
@@ -47,6 +53,7 @@ import Data.Witherable
     ( Filterable (..)
     )
 import Debug.Trace
+import From
 import GHC.Stack
     ( HasCallStack
     )

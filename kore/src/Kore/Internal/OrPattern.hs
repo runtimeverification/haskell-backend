@@ -66,11 +66,8 @@ isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
 
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}
-fromPattern
-    :: Ord variable
-    => Pattern variable
-    -> OrPattern variable
-fromPattern = MultiOr.singleton
+fromPattern :: Pattern variable -> OrPattern variable
+fromPattern = from
 
 {- | Disjoin a collection of patterns.
  -}
@@ -78,12 +75,12 @@ fromPatterns
     :: (Foldable f, Ord variable)
     => f (Pattern variable)
     -> OrPattern variable
-fromPatterns = MultiOr.make . Foldable.toList
+fromPatterns = from . Foldable.toList
 
 {- | Examine a disjunction of 'Pattern.Pattern's.
  -}
 toPatterns :: OrPattern variable -> [Pattern variable]
-toPatterns = MultiOr.extractPatterns
+toPatterns = from
 
 {- | A "disjunction" of one 'TermLike'.
 
