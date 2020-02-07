@@ -4,8 +4,6 @@ License     : NCSA
 
 -}
 
-{-# LANGUAGE UndecidableInstances #-}
-
 module Kore.Internal.TermLike.Renaming
     ( RenamingT
     , Renaming
