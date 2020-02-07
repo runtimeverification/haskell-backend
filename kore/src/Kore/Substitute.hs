@@ -69,7 +69,7 @@ substitute
         , Corecursive patternType, Recursive patternType
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
-        , VariableType patternType ~ UnifiedVariable variable
+        , VariableType patternType ~ variable
         , Synthetic attribute patternBase
         , HasFreeVariables patternType variable
         )
