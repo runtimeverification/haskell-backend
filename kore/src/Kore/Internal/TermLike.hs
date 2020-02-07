@@ -39,6 +39,8 @@ module Kore.Internal.TermLike
     , fromConcrete
     , Substitute.substitute
     , externalizeFreshVariables
+    , refreshElementBinder
+    , refreshSetBinder
     -- * Utility functions for dealing with sorts
     , forceSort
     , fullyOverrideSort
@@ -193,8 +195,12 @@ import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Map.Strict as Map
 import Data.Monoid
     ( Endo (..)
+    )
+import Data.Set
+    ( Set
     )
 import Data.Text
     ( Text
@@ -264,9 +270,8 @@ import Kore.Unparser
     ( Unparse (..)
     )
 import qualified Kore.Unparser as Unparser
+import Kore.Variables.Binding
 import qualified Kore.Variables.Fresh as Fresh
-    ( refreshVariables
-    )
 import Kore.Variables.UnifiedVariable
 
 hasFreeVariable
@@ -1932,3 +1937,40 @@ pattern Signedness_ signedness <-
 
 pattern Inj_ :: Inj (TermLike child) -> TermLike child
 pattern Inj_ inj <- (Recursive.project -> _ :< InjF inj)
+
+refreshBinder
+    :: Substitute.SubstitutionVariable variable
+    => (Set (UnifiedVariable variable) -> bound -> Maybe bound)
+    -> (bound -> UnifiedVariable variable)
+    -> FreeVariables variable
+    -> Binder bound (TermLike variable)
+    -> Binder bound (TermLike variable)
+refreshBinder refreshBound mkUnified (getFreeVariables -> avoiding) binder =
+    do
+        binderVariable' <- refreshBound avoiding binderVariable
+        let renaming =
+                Map.singleton
+                    (mkUnified binderVariable)
+                    (mkVar $ mkUnified binderVariable')
+            binderChild' = Substitute.substitute renaming binderChild
+        return Binder
+            { binderVariable = binderVariable'
+            , binderChild = binderChild'
+            }
+    & fromMaybe binder
+  where
+    Binder { binderVariable, binderChild } = binder
+
+refreshElementBinder
+    :: Substitute.SubstitutionVariable variable
+    => FreeVariables variable
+    -> Binder (ElementVariable variable) (TermLike variable)
+    -> Binder (ElementVariable variable) (TermLike variable)
+refreshElementBinder = refreshBinder refreshElementVariable ElemVar
+
+refreshSetBinder
+    :: Substitute.SubstitutionVariable variable
+    => FreeVariables variable
+    -> Binder (SetVariable variable) (TermLike variable)
+    -> Binder (SetVariable variable) (TermLike variable)
+refreshSetBinder = refreshBinder refreshSetVariable SetVar

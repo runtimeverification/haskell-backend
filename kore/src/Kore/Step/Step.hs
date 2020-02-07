@@ -35,6 +35,9 @@ import Prelude.Kore
 
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -95,9 +98,6 @@ import qualified Kore.Unification.Unify as Monad.Unify
     , scatter
     )
 import Kore.Unparser
-import Kore.Variables.Fresh
-    ( Renaming
-    )
 import Kore.Variables.Target
     ( Target
     )
@@ -131,6 +131,9 @@ type Results rule variable =
     Step.Results
         (UnifiedRule (Target variable) (rule (Target variable)))
         (Pattern variable)
+
+type Renaming variable =
+    Map (UnifiedVariable variable) (UnifiedVariable variable)
 
 -- | A rule which can be unified against a configuration
 class UnifyingRule rule where
