@@ -721,9 +721,6 @@ returns. When composing multiple transformations with @traverseVariables@, the
 intermediate trees will be fully allocated; @mapVariables@ is more composable in
 this respect.
 
-__Warning__: @traverseVariables@ will capture variables if the provided
-traversal is not injective!
-
 See also: 'mapVariables'
 
  -}
