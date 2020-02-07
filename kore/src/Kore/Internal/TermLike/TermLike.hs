@@ -46,6 +46,9 @@ import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
+import Data.Functor.Adjunction
+    ( rightAdjunct
+    )
 import Data.Functor.Compose
     ( Compose (..)
     )
@@ -68,6 +71,7 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -592,31 +596,42 @@ extractAttributes = extract . getTermLike
 instance HasFreeVariables (TermLike variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes
 
-data Renaming variable1 variable2 =
-    Renaming
+type VariableMap meta variable1 variable2 =
+    Map (meta variable1) (meta variable2)
+
+data UnifiedVariableMap variable1 variable2 =
+    UnifiedVariableMap
         { renamedSetVariables
-            :: !(Map (SetVariable variable1) (SetVariable variable2))
+            :: !(VariableMap SetVariable variable1 variable2)
         , renamedElementVariables
-            :: !(Map (ElementVariable variable1) (ElementVariable variable2))
+            :: !(VariableMap ElementVariable variable1 variable2)
         }
     deriving (GHC.Generic)
 
-instance Ord variable1 => Semigroup (Renaming variable1 variable2) where
+instance
+    Ord variable1 => Semigroup (UnifiedVariableMap variable1 variable2)
+  where
     (<>) a b =
-        Renaming
+        UnifiedVariableMap
             { renamedSetVariables = on (<>) renamedSetVariables a b
             , renamedElementVariables = on (<>) renamedElementVariables a b
             }
 
-instance Ord variable1 => Monoid (Renaming variable1 variable2) where
-    mempty = Renaming mempty mempty
+instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
+    mempty = UnifiedVariableMap mempty mempty
+
+type RenamingT variable1 variable2 =
+    ReaderT (UnifiedVariableMap variable1 variable2)
+
+type Renaming variable1 variable2 =
+    Env (UnifiedVariableMap variable1 variable2)
 
 renameSetVariable
     :: Ord variable1
     => SetVariable variable1
     -> SetVariable variable2
-    -> Renaming variable1 variable2
-    -> Renaming variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
 renameSetVariable variable1 variable2 =
     Lens.over
         (Lens.Product.field @"renamedSetVariables")
@@ -626,8 +641,8 @@ renameElementVariable
     :: Ord variable1
     => ElementVariable variable1
     -> ElementVariable variable2
-    -> Renaming variable1 variable2
-    -> Renaming variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
 renameElementVariable variable1 variable2 =
     Lens.over
         (Lens.Product.field @"renamedElementVariables")
@@ -639,7 +654,7 @@ renameFreeVariables
     => (ElementVariable variable1 -> m (ElementVariable variable2))
     -> (SetVariable variable1 -> m (SetVariable variable2))
     -> FreeVariables variable1
-    -> m (Renaming variable1 variable2)
+    -> m (UnifiedVariableMap variable1 variable2)
 renameFreeVariables trElemVar trSetVar =
     Monad.foldM worker mempty . getFreeVariables
   where
@@ -657,7 +672,7 @@ renameFreeVariables trElemVar trSetVar =
 lookupRenamedElementVariable
     :: Ord variable1
     => ElementVariable variable1
-    -> Renaming variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
     -> Maybe (ElementVariable variable2)
 lookupRenamedElementVariable variable =
     Map.lookup variable . renamedElementVariables
@@ -665,10 +680,39 @@ lookupRenamedElementVariable variable =
 lookupRenamedSetVariable
     :: Ord variable1
     => SetVariable variable1
-    -> Renaming variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
     -> Maybe (SetVariable variable2)
 lookupRenamedSetVariable variable =
     Map.lookup variable . renamedSetVariables
+
+askUnifiedVariable
+    :: Monad m
+    => Ord variable1
+    => UnifiedVariable variable1
+    -> RenamingT variable1 variable2 m (UnifiedVariable variable2)
+askUnifiedVariable =
+    \case
+        SetVar setVar -> SetVar <$> askSetVariable setVar
+        ElemVar elemVar -> ElemVar <$> askElementVariable elemVar
+
+askElementVariable
+    :: Monad m
+    => Ord variable1
+    => ElementVariable variable1
+    -> RenamingT variable1 variable2 m (ElementVariable variable2)
+askElementVariable elementVariable =
+    -- fromJust is safe because the variable must be renamed
+    fmap Maybe.fromJust
+    $ Reader.asks (lookupRenamedElementVariable elementVariable)
+
+askSetVariable
+    :: Monad m
+    => Ord variable1
+    => SetVariable variable1
+    -> RenamingT variable1 variable2 m (SetVariable variable2)
+askSetVariable setVariable =
+    -- fromJust is safe because the variable must be renamed
+    fmap Maybe.fromJust $ Reader.asks (lookupRenamedSetVariable setVariable)
 
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 
@@ -695,46 +739,15 @@ mapVariables mapElemVar mapSetVar termLike =
             (Identity . mapSetVar)
             (freeVariables termLike)
 
-    askUnifiedVariable
-        :: Env (Renaming variable1 variable2) any
-        -> UnifiedVariable variable1
-        -> UnifiedVariable variable2
-    askUnifiedVariable env =
-        \case
-            ElemVar elementVariable ->
-                ElemVar (askElementVariable env elementVariable)
-            SetVar setVariable ->
-                SetVar (askSetVariable env setVariable)
-
-    askElementVariable
-        :: Env (Renaming variable1 variable2) any
-        -> ElementVariable variable1
-        -> ElementVariable variable2
-    askElementVariable env elementVariable1 =
-        fromMaybe impossible
-        $ flip Env.asks env
-        $ lookupRenamedElementVariable elementVariable1
-
-    askSetVariable
-        :: Env (Renaming variable1 variable2) any
-        -> SetVariable variable1
-        -> SetVariable variable2
-    askSetVariable env setVariable1 =
-        fromMaybe impossible
-        $ flip Env.asks env
-        $ lookupRenamedSetVariable setVariable1
-
-    impossible = error "The impossible happened!"
-
     renameElementBinder
         ::  forall any
         .   Set.Set (UnifiedVariable variable2)
         ->  Binder
                 (ElementVariable variable1)
-                (Env (Renaming variable1 variable2) any)
+                (Renaming variable1 variable2 any)
         ->  Binder
                 (ElementVariable variable2)
-                (Env (Renaming variable1 variable2) any)
+                (Renaming variable1 variable2 any)
     renameElementBinder avoiding binder =
         let Binder { binderVariable, binderChild } = binder
             elementVariable2 = mapElemVar binderVariable
@@ -754,10 +767,10 @@ mapVariables mapElemVar mapSetVar termLike =
         .   Set.Set (UnifiedVariable variable2)
         ->  Binder
                 (SetVariable variable1)
-                (Env (Renaming variable1 variable2) any)
+                (Renaming variable1 variable2 any)
         ->  Binder
                 (SetVariable variable2)
-                (Env (Renaming variable1 variable2) any)
+                (Renaming variable1 variable2 any)
     renameSetBinder avoiding binder =
         let Binder { binderVariable, binderChild } = binder
             setVariable2 = mapSetVar binderVariable
@@ -785,15 +798,15 @@ mapVariables mapElemVar mapSetVar termLike =
         Lens.over nuBinder (renameSetBinder avoiding)
 
     worker
-        ::  Env (Renaming variable1 variable2) (TermLike variable1)
+        ::  Renaming variable1 variable2 (TermLike variable1)
         ->  Base
                 (TermLike variable2)
-                (Env (Renaming variable1 variable2) (TermLike variable1))
+                (Renaming variable1 variable2 (TermLike variable1))
     worker env =
         let attrs :< termLikeF = Recursive.project (extract env)
             attrs' =
                 Lens.over freeUnifiedVariables
-                    (askUnifiedVariable env)
+                    (rightAdjunct askUnifiedVariable . (env $>))
                     attrs
             renaming = Env.ask env
             avoiding = getFreeVariables $ freeVariables attrs'
@@ -803,7 +816,8 @@ mapVariables mapElemVar mapSetVar termLike =
                         VariableF (Const unifiedVariable2)
                       where
                         unifiedVariable2 =
-                            askUnifiedVariable env unifiedVariable1
+                            rightAdjunct askUnifiedVariable
+                                (env $> unifiedVariable1)
                     ExistsF exists -> ExistsF (renameExists avoiding exists)
                     ForallF forall -> ForallF (renameForall avoiding forall)
                     MuF mu -> MuF (renameMu avoiding mu)
@@ -856,25 +870,6 @@ traverseVariables trElemVar trSetVar termLike =
     renameFreeVariables trElemVar trSetVar (freeVariables termLike)
     >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
-    askUnifiedVariable
-        ::  UnifiedVariable variable1
-        ->  ReaderT (Renaming variable1 variable2) m (UnifiedVariable variable2)
-    askUnifiedVariable =
-        \case
-            SetVar setVar -> SetVar <$> askSetVariable setVar
-            ElemVar elemVar -> ElemVar <$> askElementVariable elemVar
-
-    askElementVariable
-        :: ElementVariable variable1
-        -> ReaderT (Renaming variable1 variable2) m (ElementVariable variable2)
-    askElementVariable =
-        fmap (fromMaybe impossible) . Reader.asks . lookupRenamedElementVariable
-
-    askSetVariable
-        :: SetVariable variable1
-        -> ReaderT (Renaming variable1 variable2) m (SetVariable variable2)
-    askSetVariable =
-        fmap (fromMaybe impossible) . Reader.asks . lookupRenamedSetVariable
 
     impossible = error "The impossible happened!"
 
@@ -882,10 +877,8 @@ traverseVariables trElemVar trSetVar termLike =
         ::  Set.Set (UnifiedVariable variable2)
         ->  Binder
                 (ElementVariable variable1)
-                (ReaderT (Renaming variable1 variable2) m (TermLike variable2))
-        ->  ReaderT
-                (Renaming variable1 variable2)
-                m
+                (RenamingT variable1 variable2 m (TermLike variable2))
+        ->  RenamingT variable1 variable2 m
                 (Binder (ElementVariable variable2) (TermLike variable2))
     renameElementBinder avoiding binder = do
         let Binder { binderVariable, binderChild } = binder
@@ -912,10 +905,8 @@ traverseVariables trElemVar trSetVar termLike =
         ::  Set.Set (UnifiedVariable variable2)
         ->  Binder
                 (SetVariable variable1)
-                (ReaderT (Renaming variable1 variable2) m (TermLike variable2))
-        ->  ReaderT
-                (Renaming variable1 variable2)
-                m
+                (RenamingT variable1 variable2 m (TermLike variable2))
+        ->  RenamingT variable1 variable2 m
                 (Binder (SetVariable variable2) (TermLike variable2))
     renameSetBinder avoiding binder = do
         let Binder { binderVariable, binderChild } = binder
@@ -941,8 +932,8 @@ traverseVariables trElemVar trSetVar termLike =
     worker
         ::  Base
                 (TermLike variable1)
-                (ReaderT (Renaming variable1 variable2) m (TermLike variable2))
-        -> ReaderT (Renaming variable1 variable2) m (TermLike variable2)
+                (RenamingT variable1 variable2 m (TermLike variable2))
+        ->  RenamingT variable1 variable2 m (TermLike variable2)
     worker (attrs :< termLikeF) = do
         attrs' <- Lens.traverseOf freeUnifiedVariables askUnifiedVariable attrs
         let avoiding = getFreeVariables $ freeVariables attrs'
@@ -1007,7 +998,7 @@ externalizeFreshVariables termLike =
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
-    renamedFreeVariables :: Renaming Variable Variable
+    renamedFreeVariables :: UnifiedVariableMap Variable Variable
     (renamedFreeVariables, _) =
         Foldable.foldl' rename initial generatedFreeVariables
       where
@@ -1042,14 +1033,14 @@ externalizeFreshVariables termLike =
 
     lookupElementVariable
         :: ElementVariable Variable
-        -> Reader (Renaming Variable Variable) (ElementVariable Variable)
+        -> Reader (UnifiedVariableMap Variable Variable) (ElementVariable Variable)
     lookupElementVariable elementVariable =
         fromMaybe elementVariable
         <$> Reader.asks (lookupRenamedElementVariable elementVariable)
 
     lookupSetVariable
         :: SetVariable Variable
-        -> Reader (Renaming Variable Variable) (SetVariable Variable)
+        -> Reader (UnifiedVariableMap Variable Variable) (SetVariable Variable)
     lookupSetVariable setVariable =
         fromMaybe setVariable
         <$> Reader.asks (lookupRenamedSetVariable setVariable)
@@ -1102,11 +1093,11 @@ externalizeFreshVariables termLike =
         ::  Base
                 (TermLike Variable)
                 (Reader
-                    (Renaming Variable Variable)
+                    (UnifiedVariableMap Variable Variable)
                     (TermLike Variable)
                 )
         ->  Reader
-                (Renaming Variable Variable)
+                (UnifiedVariableMap Variable Variable)
                 (TermLike Variable)
     externalizeFreshVariablesWorker (attrs :< patt) = do
         attrs' <-
