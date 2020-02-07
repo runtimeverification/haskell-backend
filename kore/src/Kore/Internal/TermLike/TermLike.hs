@@ -945,34 +945,11 @@ traverseVariables trElemVar trSetVar termLike =
                 ExistsF <$> existsBinder (renameElementBinder avoiding) exists
             ForallF forall ->
                 ForallF <$> forallBinder (renameElementBinder avoiding) forall
-            MuF mu ->
-                MuF <$> muBinder (renameSetBinder avoiding) mu
-            NuF nu ->
-                NuF <$> nuBinder (renameSetBinder avoiding) nu
-            AndF andP -> AndF <$> sequence andP
-            ApplySymbolF applySymbolF -> ApplySymbolF <$> sequence applySymbolF
-            ApplyAliasF applyAliasF -> ApplyAliasF <$> sequence applyAliasF
-            BottomF botP -> BottomF <$> sequence botP
-            BuiltinF builtinP -> BuiltinF <$> sequence builtinP
-            CeilF ceilP -> CeilF <$> sequence ceilP
-            DomainValueF dvP -> DomainValueF <$> sequence dvP
-            EqualsF eqP -> EqualsF <$> sequence eqP
-            FloorF flrP -> FloorF <$> sequence flrP
-            IffF iffP -> IffF <$> sequence iffP
-            ImpliesF impP -> ImpliesF <$> sequence impP
-            InF inP -> InF <$> sequence inP
-            NextF nxtP -> NextF <$> sequence nxtP
-            NotF notP -> NotF <$> sequence notP
-            OrF orP -> OrF <$> sequence orP
-            RewritesF rewP -> RewritesF <$> sequence rewP
-            StringLiteralF strP -> StringLiteralF <$> sequence strP
-            InternalBytesF bytesP -> InternalBytesF <$> sequence bytesP
-            TopF topP -> TopF <$> sequence topP
-            InhabitantF s -> InhabitantF <$> sequence s
-            EvaluatedF childP -> EvaluatedF <$> sequence childP
-            EndiannessF endianness -> EndiannessF <$> sequence endianness
-            SignednessF signedness -> SignednessF <$> sequence signedness
-            InjF inj -> InjF <$> sequence inj
+            MuF mu -> MuF <$> muBinder (renameSetBinder avoiding) mu
+            NuF nu -> NuF <$> nuBinder (renameSetBinder avoiding) nu
+            _ ->
+                traverseVariablesF askElementVariable askSetVariable
+                =<< sequence termLikeF
         (pure . Recursive.embed) (attrs' :< termLikeF')
 
 {- | Reset the 'variableCounter' of all 'Variables'.
