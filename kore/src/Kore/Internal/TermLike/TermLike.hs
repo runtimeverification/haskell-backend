@@ -910,14 +910,10 @@ traverseVariables trElemVar trSetVar termLike =
                 (Binder (SetVariable variable2) (TermLike variable2))
     renameSetBinder avoiding binder = do
         let Binder { binderVariable, binderChild } = binder
-        unifiedVariable2 <- SetVar <$> Trans.lift (trSetVar binderVariable)
-        let unifiedVariable2' =
-                Fresh.refreshVariable avoiding unifiedVariable2
-                & fromMaybe unifiedVariable2
-            binderVariable' =
-                case unifiedVariable2' of
-                    SetVar setVar -> setVar
-                    ElemVar _ -> impossible
+        setVariable2 <- Trans.lift $ trSetVar binderVariable
+        let binderVariable' =
+                refreshSetVariable avoiding setVariable2
+                & fromMaybe setVariable2
         binderChild' <-
             Reader.local
                 (renameSetVariable binderVariable binderVariable')
