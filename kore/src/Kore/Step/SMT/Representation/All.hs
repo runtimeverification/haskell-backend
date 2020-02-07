@@ -10,7 +10,7 @@ module Kore.Step.SMT.Representation.All
     ( build
     ) where
 
-import Prelude.Kore ()
+import Prelude.Kore
 
 import qualified Data.Map.Strict as Map
 
@@ -37,6 +37,8 @@ import Kore.Syntax.Id
     ( Id
     )
 
+import Debug.Trace
+
 {-| Builds a consistent representation of the sorts and symbols in the given
 module and its submodules.
 
@@ -48,7 +50,22 @@ build
     -> Map.Map Id Attribute.Constructors
     -> AST.SmtDeclarations
 build indexedModule sortConstructors =
-    resolve (sorts `AST.mergePreferFirst` symbols)
+    trace
+        (
+            -- "\nSORTS\n"
+            -- <> show sorts
+            -- <>
+            -- "\nSYMBOLS\n"
+            -- <> show symbols
+            -- <>
+            -- "\nRESOLVED\n"
+            -- <> show (resolve (sorts `AST.mergePreferFirst` symbols))
+            -- <>
+            "\nMERGED\n"
+            <> show (sorts `AST.mergePreferFirst` symbols)
+            <> "\n\n"
+        )
+        (resolve (sorts `AST.mergePreferFirst` symbols))
   where
     sorts = Sorts.buildRepresentations indexedModule sortConstructors
     symbols = Symbols.buildRepresentations indexedModule

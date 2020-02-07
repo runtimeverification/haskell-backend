@@ -25,6 +25,10 @@ import qualified Kore.Step.SMT.AST as AST
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified SMT
 
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import qualified SMT.AST as AST
+
 {-| Sends all symbols in the given declarations to the SMT.
 -}
 declare :: SMT.MonadSMT m => AST.SmtDeclarations -> m ()
@@ -40,7 +44,10 @@ declareKoreSymbolDeclaration
 declareKoreSymbolDeclaration
     (AST.SymbolDeclaredDirectly declaration)
   =
-    SMT.declareFun_ declaration
+    case declaration of
+        AST.FunctionDeclaration { name } ->
+            trace (show name) $ SMT.declareFun_ declaration
+        _ -> SMT.declareFun_ declaration
 declareKoreSymbolDeclaration (AST.SymbolBuiltin _) =
     return ()
 declareKoreSymbolDeclaration (AST.SymbolConstructor _) =

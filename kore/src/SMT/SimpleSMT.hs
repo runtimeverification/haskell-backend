@@ -220,6 +220,8 @@ import Kore.Log.DebugSolver
 import qualified Log
 import SMT.AST
 
+import Debug.Trace
+
 -- ---------------------------------------------------------------------
 -- * Features
 
@@ -506,6 +508,7 @@ declareDatatypes proc datatypes = do
 
     declareConstructor :: SExpr -> SmtConstructor -> IO SExpr
     declareConstructor sort Constructor {name, arguments} =
+        trace (show name) $
         declareFun
             proc
             FunctionDeclaration
