@@ -603,7 +603,7 @@ data UnifiedVariableMap variable1 variable2 =
     UnifiedVariableMap
         { setVariables
             :: !(VariableMap SetVariable variable1 variable2)
-        , renamedElementVariables
+        , elementVariables
             :: !(VariableMap ElementVariable variable1 variable2)
         }
     deriving (GHC.Generic)
@@ -614,7 +614,7 @@ instance
     (<>) a b =
         UnifiedVariableMap
             { setVariables = on (<>) setVariables a b
-            , renamedElementVariables = on (<>) renamedElementVariables a b
+            , elementVariables = on (<>) elementVariables a b
             }
 
 instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
@@ -645,7 +645,7 @@ renameElementVariable
     -> UnifiedVariableMap variable1 variable2
 renameElementVariable variable1 variable2 =
     Lens.over
-        (Lens.Product.field @"renamedElementVariables")
+        (Lens.Product.field @"elementVariables")
         (Map.insert variable1 variable2)
 
 renameFreeVariables
@@ -675,7 +675,7 @@ lookupRenamedElementVariable
     -> UnifiedVariableMap variable1 variable2
     -> Maybe (ElementVariable variable2)
 lookupRenamedElementVariable variable =
-    Map.lookup variable . renamedElementVariables
+    Map.lookup variable . elementVariables
 
 lookupRenamedSetVariable
     :: Ord variable1
