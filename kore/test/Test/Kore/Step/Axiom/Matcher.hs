@@ -13,6 +13,7 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matching_Exists
     , test_matching_Forall
     , test_matching_Equals
+    , test_matcherOverloading
     , match
     , MatchResult
     , matches, doesn'tMatch
@@ -966,6 +967,19 @@ test_matching_Map =
         )
         [ (ElemVar yInt, mkInt 2)
         , (ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0)] [mkElemVar nMap])
+        ]
+    ]
+
+test_matcherOverloading :: [TestTree]
+test_matcherOverloading =
+    [ testGroup "Overloading" -- most overloading tests are in AndTerms
+        [ matches "direct overload, left side"
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            (Mock.sortInjectionOtherToTop (Mock.otherOverload Mock.aOtherSort))
+            []
+        , doesn'tMatch "overload vs other constructor"
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            (Mock.sortInjectionOtherToTop Mock.aOtherSort)
         ]
     ]
 

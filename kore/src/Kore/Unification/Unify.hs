@@ -5,10 +5,6 @@ License     : NCSA
 
 module Kore.Unification.Unify
     ( MonadUnify (..), SimplifierVariable
-    , FailedUnificationMessage (..)
-    , ExplainedFailure (..)
-    , explainBottomStructured
-    , explainAndReturnBottomStructured
     ) where
 
 import Prelude.Kore
@@ -81,37 +77,3 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
     explainAndReturnBottom message first second = do
         explainBottom message first second
         empty
-
-data FailedUnificationMessage variable
-  = FailedUnificationMessage
-    { message :: !(Doc ())
-    , firstTerm :: TermLike variable
-    , secondTerm :: TermLike variable
-    }
-
-data ExplainedFailure variable
-  = Failure !(FailedUnificationMessage variable)
-  | NotApplicable
-
-explainBottomStructured
-    :: MonadUnify unifier
-    => SortedVariable variable
-    => Unparse variable
-    => FailedUnificationMessage variable
-    -> unifier ()
-explainBottomStructured
-    FailedUnificationMessage { message, firstTerm, secondTerm }
-  =
-    explainBottom message firstTerm secondTerm
-
-
-explainAndReturnBottomStructured
-    :: MonadUnify unifier
-    => SortedVariable variable
-    => Unparse variable
-    => FailedUnificationMessage variable
-    -> unifier a
-explainAndReturnBottomStructured
-    FailedUnificationMessage { message, firstTerm, secondTerm }
-  =
-    explainAndReturnBottom message firstTerm secondTerm

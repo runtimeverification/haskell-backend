@@ -512,6 +512,9 @@ sortInjectionSubSubToOtherSymbol = sortInjectionSymbol subSubsort otherSort
 sortInjectionSubOtherToOtherSymbol :: Symbol
 sortInjectionSubOtherToOtherSymbol = sortInjectionSymbol subOthersort otherSort
 
+sortInjectionSubOtherToTopSymbol :: Symbol
+sortInjectionSubOtherToTopSymbol = sortInjectionSymbol subOthersort topSort
+
 sortInjectionOtherToTopSymbol :: Symbol
 sortInjectionOtherToTopSymbol = sortInjectionSymbol otherSort topSort
 
@@ -1058,6 +1061,12 @@ sortInjectionSubOtherToOther
     -> TermLike variable
 sortInjectionSubOtherToOther = sortInjection otherSort
 
+sortInjectionSubOtherToTop
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionSubOtherToTop = sortInjection topSort
+
 sortInjectionOtherToTop
     :: InternalVariable variable
     => TermLike variable
@@ -1241,6 +1250,7 @@ symbols =
     , sortInjectionSubSubToSubSymbol
     , sortInjectionSubSubToOtherSymbol
     , sortInjectionSubOtherToOtherSymbol
+    , sortInjectionSubOtherToTopSymbol
     , sortInjectionOtherToTopSymbol
     , sortInjectionSubToOtherTopSymbol
     , sortInjectionOtherToOtherTopSymbol

@@ -32,15 +32,11 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 import Pair
 
-{- | Unify an overloaded constructor application pattern with a sort injection
-pattern over an (overloaded) constructor.
+{- |
+ If the two constructors form an overload pair, apply the overloading axioms
+ on the terms to make the constructors equal, then retry unification on them.
 
 See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
-
-If the two constructors form an overload pair, then use the sorting information
-for the two overloaded constructors to directly derive the new goals
-(apply the overload axiom right-to-left on the right and retry)
-otherwise, return bottom, as the constructors are incompatible
 
  -}
 overloadedConstructorSortInjectionAndEquals
@@ -59,54 +55,81 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
             explainAndReturnBottom message firstTerm secondTerm
         Right Nothing -> empty
 
+{- |
+ Tests whether the pair of terms can be coerced to have the same constructors
+ at the top, and, if so, returns the thus obtained new pair.
+
+ See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
+
+ If the overloading rules are not appliable, it would return @Nothing@.
+ However, if it detects an unification failure, it would return a reason
+ for the failure which can be used as an explanation for it.
+
+ Note: this algorithm is used for both matching and unification; that is why
+ the first and second terms in a pair are not interchangeable.
+-}
 unifyOverloading
     :: MonadSimplify unifier
     => SimplifierVariable variable
     => Pair (TermLike variable)
     -> unifier
         (Either (Doc ()) (Maybe (Pair (TermLike variable))))
-unifyOverloading
-    (Pair
-        firstTerm@(App_ firstHead _)
-        (Inj_ inj@Inj { injChild = App_ secondHead secondChildren })
-    )
-  = do
-    OverloadSimplifier { isOverloaded, isOverloading, resolveOverloading } <-
-        Simplifier.askOverloadSimplifier
-    isSecondHeadConstructor <- isConstructorOrOverloaded secondHead
-    let injProto = inj { injChild = () }
-        secondTerm' = resolveOverloading injProto firstHead secondChildren
-    if isOverloading firstHead secondHead
-        then return . Right . Just $ Pair firstTerm secondTerm'
-        else if isOverloaded firstHead && isSecondHeadConstructor
-            then return $ Left "different injected ctor"
-            else return $ Right Nothing
-unifyOverloading
-    (Pair
+unifyOverloading termPair = case termPair of
+    Pair
         (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
         secondTerm@(App_ secondHead _)
-    )
-  = do
-    OverloadSimplifier { isOverloaded, isOverloading, resolveOverloading } <-
-        Simplifier.askOverloadSimplifier
-    isFirstHeadConstructor <- isConstructorOrOverloaded secondHead
-    let injProto = inj { injChild = () }
-        firstTerm' = resolveOverloading injProto secondHead firstChildren
-    if isOverloading secondHead firstHead
-        then return . Right . Just $ Pair firstTerm' secondTerm
-        else if isOverloaded secondHead && isFirstHeadConstructor
-            then return $ Left "different injected ctor"
-            else return $ Right Nothing
-unifyOverloading
-    (Pair
-        (Inj_ inj@Inj { injTo, injChild = App_ firstHead firstChildren })
+        -> flipPairBack <$> unifyOverloadingVsOverloaded
+            secondHead
+            secondTerm
+            (Application firstHead firstChildren)
+            inj { injChild = () }
+    Pair
+        firstTerm@(App_ firstHead _)
+        (Inj_ inj@Inj { injChild = App_ secondHead secondChildren })
+        -> unifyOverloadingVsOverloaded
+            firstHead
+            firstTerm
+            (Application secondHead secondChildren)
+            inj { injChild = () }
+    Pair
+        (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
         (Inj_ Inj { injChild = App_ secondHead secondChildren })
-    )
+        -> unifyOverloadingCommonOverload
+            (Application firstHead firstChildren)
+            (Application secondHead secondChildren)
+            inj { injChild = () }
+    (Pair (App_ firstHead _) (Inj_ Inj { injChild })) ->
+        notUnifiableTest firstHead injChild
+    (Pair (Inj_ Inj { injChild }) (App_ secondHead _)) ->
+        notUnifiableTest secondHead injChild
+    _ -> return $ Right Nothing
+  where
+    flipPairBack (Right (Just (Pair x y))) = Right (Just (Pair y x))
+    flipPairBack p = p
+    notUnifiableTest termHead child = do
+        OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
+        if isOverloaded termHead
+        then case notUnifiableType child of
+            Just typeName -> return $ Left typeName
+            Nothing -> return $ Right Nothing
+        else return $ Right Nothing
+
+unifyOverloadingCommonOverload
+    :: MonadSimplify unifier
+    => SimplifierVariable variable
+    => Application Symbol (TermLike variable)
+    -> Application Symbol (TermLike variable)
+    -> Inj ()
+    -> unifier
+        (Either (Doc ()) (Maybe (Pair (TermLike variable))))
+unifyOverloadingCommonOverload
+    (Application firstHead firstChildren)
+    (Application secondHead secondChildren)
+    injProto@Inj { injTo }
   = do
     OverloadSimplifier
         { isOverloaded, resolveOverloading, unifyOverloadWithinBound }
         <- Simplifier.askOverloadSimplifier
-    let injProto = inj { injChild = () }
     if not (isOverloaded firstHead && isOverloaded secondHead)
     then return $ Right Nothing
     else case unifyOverloadWithinBound injProto firstHead secondHead injTo of
@@ -117,23 +140,33 @@ unifyOverloading
                 mkInj' injChild inj' = (synthesize . InjF) inj' { injChild }
                 mkInj injChild = maybe injChild (mkInj' injChild) maybeInjUnion
             in return . Right . Just $ Pair (mkInj first') (mkInj second')
-unifyOverloading (Pair firstTerm (Inj_ Inj { injChild = App_ secondHead _ }))
+
+unifyOverloadingVsOverloaded
+    :: MonadSimplify unifier
+    => SimplifierVariable variable
+    => Symbol
+    -> TermLike variable
+    -> Application Symbol (TermLike variable)
+    -> Inj ()
+    -> unifier
+        (Either (Doc ()) (Maybe (Pair (TermLike variable))))
+unifyOverloadingVsOverloaded
+    overloadingHead
+    overloadingTerm
+    (Application overloadedHead overloadedChildren)
+    injProto
   = do
-    OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
-    if isOverloaded secondHead
-    then case notUnifiableType firstTerm of
-        Just typeName -> return $ Left typeName
-        Nothing -> return $ Right Nothing
-    else return $ Right Nothing
-unifyOverloading (Pair (Inj_ Inj { injChild = App_ firstHead _ }) secondTerm)
-  = do
-    OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
-    if isOverloaded firstHead
-    then case notUnifiableType secondTerm of
-        Just typeName -> return $ Left typeName
-        Nothing -> return $ Right Nothing
-    else return $ Right Nothing
-unifyOverloading _ = return $ Right Nothing
+    OverloadSimplifier { isOverloaded, isOverloading, resolveOverloading }
+        <- Simplifier.askOverloadSimplifier
+    isSecondHeadConstructor <- isConstructorOrOverloaded overloadedHead
+    let overloadedTerm' =
+            resolveOverloading injProto overloadingHead overloadedChildren
+    if isOverloading overloadingHead overloadedHead
+        then return . Right . Just
+            $ Pair overloadingTerm overloadedTerm'
+        else if isOverloaded overloadingHead && isSecondHeadConstructor
+            then return $ Left "different injected ctor"
+            else return $ Right Nothing
 
 notUnifiableType :: TermLike variable -> Maybe (Doc ())
 notUnifiableType (DV_ _ _) = Just "injected domain value"
