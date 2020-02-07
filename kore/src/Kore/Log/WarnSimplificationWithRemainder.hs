@@ -111,7 +111,7 @@ warnSimplificationWithRemainder
     (Results . fmap (Pattern.mapVariables toVariable) -> results)
     (Remainders . fmap (Pattern.mapVariables toVariable) -> remainders)
   =
-    logM WarnSimplificationWithRemainder
+    logEntry WarnSimplificationWithRemainder
         { inputPattern
         , sideCondition
         , results

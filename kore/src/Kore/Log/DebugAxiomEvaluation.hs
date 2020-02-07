@@ -75,7 +75,7 @@ import Log
     , MonadLog
     , Severity (..)
     , SomeEntry
-    , logM
+    , logEntry
     )
 import qualified Log as Log.DoNotUse
 
@@ -193,7 +193,7 @@ logState
     -> Maybe Text
     -> log ()
 logState state identifier secondaryIdentifier =
-    logM DebugAxiomEvaluation
+    logEntry DebugAxiomEvaluation
         { identifier
         , secondaryIdentifier
         , state

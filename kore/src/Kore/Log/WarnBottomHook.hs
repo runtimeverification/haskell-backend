@@ -64,4 +64,4 @@ warnBottomHook
     -> TermLike variable
     -> logger ()
 warnBottomHook hook (mapVariables toVariable -> term) =
-    logM WarnBottomHook { hook, term }
+    logEntry WarnBottomHook { hook, term }

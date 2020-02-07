@@ -101,7 +101,7 @@ debugAppliedRule
     => Conditional variable (EqualityPattern variable)
     -> log ()
 debugAppliedRule =
-    logM
+    logEntry
     . DebugAppliedRule
     . Conditional.mapVariables Equality.mapRuleVariables toVariable
 

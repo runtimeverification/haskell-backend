@@ -43,6 +43,10 @@ import Control.Monad.Except
     ( ExceptT
     )
 import qualified Control.Monad.Except as Except
+--import Control.Monad.Morph
+--    ( MFunctor
+--    )
+--import qualified Control.Monad.Morph as Monad.Morph
 import Control.Monad.IO.Class
 import Control.Monad.Trans
     ( MonadTrans
@@ -125,7 +129,7 @@ hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
 
 -- | Log any message.
 logMsg :: (Entry msg, WithLog msg m) => msg -> m ()
-logMsg = logM
+logMsg = logEntry
 
 -- | Logs a message using given 'Severity'.
 log
@@ -174,16 +178,27 @@ logError = log Error
 -- * LoggerT
 
 class Monad m => MonadLog m where
-    logM :: Entry entry => entry -> m ()
-    default logM
+    logEntry :: Entry entry => entry -> m ()
+    default logEntry
         :: Entry entry
         => (MonadTrans trans, MonadLog log, m ~ trans log)
         => entry
         -> m ()
-    logM = Monad.Trans.lift . logM
-    {-# INLINE logM #-}
+    logEntry = Monad.Trans.lift . logEntry
+    {-# INLINE logEntry #-}
 
-instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log)
+--    logWhile :: Entry entry => entry -> m a -> m a
+--    default logWhile
+--        :: Entry entry
+--        => (MFunctor trans, MonadLog log, m ~ trans log)
+--        => entry
+--        -> m a
+--        -> m a
+--    logWhile e = Monad.Morph.hoist (logWhile e)
+--    {-# INLINE logWhile #-}
+
+instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log) where
+--    logWhile = mapAccumT . logWhile
 
 instance MonadLog log => MonadLog (CounterT log)
 
@@ -201,7 +216,8 @@ newtype LoggerT m a =
     deriving (MonadIO, MonadThrow, MonadCatch)
 
 instance Monad m => MonadLog (LoggerT m) where
-    logM entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+    logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+--    logWhile = const id
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift

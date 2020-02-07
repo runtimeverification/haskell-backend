@@ -97,7 +97,7 @@ debugAppliedRewriteRules
     -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
     -> log ()
 debugAppliedRewriteRules initial rules =
-    logM DebugAppliedRewriteRules
+    logEntry DebugAppliedRewriteRules
         { configuration
         , appliedRewriteRules
         }

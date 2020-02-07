@@ -373,7 +373,7 @@ clockSomethingIO description something = do
     start  <- lift $ getTime Monotonic
     x      <- lift   something
     end    <- lift $ getTime Monotonic
-    logM $ logMessage end start
+    logEntry $ logMessage end start
     return x
   where
     logMessage end start =

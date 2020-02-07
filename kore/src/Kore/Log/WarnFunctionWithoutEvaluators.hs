@@ -32,7 +32,7 @@ import Log
     ( Entry (..)
     , MonadLog
     , Severity (Warning)
-    , logM
+    , logEntry
     )
 import qualified SQL
 
@@ -60,4 +60,4 @@ instance SQL.Table WarnFunctionWithoutEvaluators
 warnFunctionWithoutEvaluators :: MonadLog m => Symbol -> m ()
 warnFunctionWithoutEvaluators symbol
   | noEvaluators symbol = return ()
-  | otherwise = logM WarnFunctionWithoutEvaluators { symbol }
+  | otherwise = logEntry WarnFunctionWithoutEvaluators { symbol }
