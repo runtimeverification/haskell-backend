@@ -870,9 +870,6 @@ traverseVariables trElemVar trSetVar termLike =
     renameFreeVariables trElemVar trSetVar (freeVariables termLike)
     >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
-
-    impossible = error "The impossible happened!"
-
     renameElementBinder
         ::  Set.Set (UnifiedVariable variable2)
         ->  Binder
@@ -882,14 +879,10 @@ traverseVariables trElemVar trSetVar termLike =
                 (Binder (ElementVariable variable2) (TermLike variable2))
     renameElementBinder avoiding binder = do
         let Binder { binderVariable, binderChild } = binder
-        unifiedVariable2 <- ElemVar <$> Trans.lift (trElemVar binderVariable)
-        let unifiedVariable2' =
-                Fresh.refreshVariable avoiding unifiedVariable2
-                & fromMaybe unifiedVariable2
-            binderVariable' =
-                case unifiedVariable2' of
-                    ElemVar elemVar -> elemVar
-                    SetVar _ -> impossible
+        elementVariable2 <- Trans.lift $ trElemVar binderVariable
+        let binderVariable' =
+                refreshElementVariable avoiding elementVariable2
+                & fromMaybe elementVariable2
         binderChild' <-
             Reader.local
                 (renameElementVariable binderVariable binderVariable')
