@@ -41,7 +41,6 @@ import qualified Kore.Builtin.External as Builtin
 import Kore.Debug
 import Kore.Internal.TermLike
     ( CofreeF (..)
-    , FreshVariable
     , InternalVariable
     , TermLike
     )
@@ -103,7 +102,7 @@ recognize.
 
  -}
 matchAxiomIdentifier
-    :: (InternalVariable variable, FreshVariable variable)
+    :: InternalVariable variable
     => TermLike variable
     -> Maybe AxiomIdentifier
 matchAxiomIdentifier = Recursive.fold matchWorker . Builtin.externalize

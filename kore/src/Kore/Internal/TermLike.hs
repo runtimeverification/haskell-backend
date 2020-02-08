@@ -143,7 +143,6 @@ module Kore.Internal.TermLike
     , pattern Inj_
     -- * Re-exports
     , module Kore.Internal.Variable
-    , Substitute.SubstitutionVariable
     , FreshVariable (..)
     , Symbol (..)
     , Alias (..)
@@ -285,7 +284,7 @@ hasFreeVariable
 hasFreeVariable variable = isFreeVariable variable . freeVariables
 
 refreshVariables
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => FreeVariables variable
     -> TermLike variable
     -> TermLike variable
@@ -1886,7 +1885,7 @@ pattern Inj_ :: Inj (TermLike child) -> TermLike child
 pattern Inj_ inj <- (Recursive.project -> _ :< InjF inj)
 
 refreshBinder
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => (Set (UnifiedVariable variable) -> bound -> Maybe bound)
     -> (bound -> UnifiedVariable variable)
     -> FreeVariables variable
@@ -1909,14 +1908,14 @@ refreshBinder refreshBound mkUnified (getFreeVariables -> avoiding) binder =
     Binder { binderVariable, binderChild } = binder
 
 refreshElementBinder
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => FreeVariables variable
     -> Binder (ElementVariable variable) (TermLike variable)
     -> Binder (ElementVariable variable) (TermLike variable)
 refreshElementBinder = refreshBinder refreshElementVariable ElemVar
 
 refreshSetBinder
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => FreeVariables variable
     -> Binder (SetVariable variable) (TermLike variable)
     -> Binder (SetVariable variable) (TermLike variable)

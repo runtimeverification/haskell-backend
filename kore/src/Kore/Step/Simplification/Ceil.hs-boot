@@ -20,11 +20,11 @@ import Kore.Internal.TermLike
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
-    , SimplifierVariable
+    , InternalVariable
     )
 
 makeEvaluate
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Pattern variable
@@ -32,7 +32,7 @@ makeEvaluate
 
 makeEvaluateTerm
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> TermLike variable

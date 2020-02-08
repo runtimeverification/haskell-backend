@@ -62,9 +62,6 @@ import qualified Kore.Internal.TermLike as TermLike
     ( simplifiedAttribute
     )
 import Kore.Internal.Variable
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
 import Kore.Syntax
 import Kore.Variables.Fresh
     ( FreshVariable
@@ -165,7 +162,7 @@ The 'normalized' part becomes the normalized 'substitution', while the
 
  -}
 fromNormalizationSimplified
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Normalization variable
     -> Condition variable
 fromNormalizationSimplified Normalization { normalized, denormalized } =

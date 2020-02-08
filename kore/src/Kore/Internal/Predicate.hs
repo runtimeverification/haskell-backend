@@ -805,7 +805,7 @@ contain none of the targeted variables.
 
  -}
 substitute
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable

@@ -82,7 +82,6 @@ import Kore.Internal.TermLike
     , FreshVariable
     , InternalVariable
     , SetVariable
-    , SubstitutionVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -94,7 +93,6 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
     ( MonadUnify
-    , SimplifierVariable
     )
 import qualified Kore.Unification.Unify as Monad.Unify
     ( gather
@@ -116,7 +114,7 @@ import Kore.Variables.UnifiedVariable
 newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier
-        .  (SimplifierVariable variable, MonadUnify unifier)
+        .  (InternalVariable variable, MonadUnify unifier)
         => SideCondition variable
         -> TermLike variable
         -> TermLike variable
@@ -151,7 +149,7 @@ class UnifyingRule rule where
     renamed to avoid collision with any variables in the given set.
      -}
     refreshRule
-        :: SubstitutionVariable variable
+        :: InternalVariable variable
         => FreeVariables variable  -- ^ Variables to avoid
         -> rule variable
         -> (Renaming variable, rule variable)
@@ -169,7 +167,7 @@ class UnifyingRule rule where
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => UnificationProcedure
@@ -198,7 +196,7 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => UnificationProcedure
@@ -276,8 +274,8 @@ unwrapRule =
 
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults
-    :: SimplifierVariable variable
-    => SimplifierVariable variable'
+    :: InternalVariable variable
+    => InternalVariable variable'
     => Monad m
     => UnifyingRule rule
     => Eq (rule (Target variable'))
@@ -337,7 +335,7 @@ the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
     :: forall variable unifier rule
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => Pretty.Pretty (rule (Target variable))
@@ -387,7 +385,7 @@ The rule is considered to apply if the result is not @\\bottom@.
  -}
 applyInitialConditions
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ Top-level conditions
@@ -422,7 +420,7 @@ toConfigurationVariables =
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition
-    :: (InternalVariable variable, FreshVariable variable)
+    :: InternalVariable variable
     => SideCondition variable
     -> SideCondition (Target variable)
 toConfigurationVariablesCondition =
@@ -433,7 +431,7 @@ toConfigurationVariablesCondition =
  -}
 applyRemainder
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ Top level condition
@@ -451,7 +449,7 @@ applyRemainder sideCondition initial remainder = do
 -- | Simplifies the predicate obtained upon matching/unification.
 simplifyPredicate
     :: forall unifier variable term
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -> Maybe (Condition variable)

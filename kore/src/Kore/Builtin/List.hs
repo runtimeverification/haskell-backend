@@ -404,7 +404,7 @@ builtinFunctions =
  -}
 unifyEquals
     :: forall variable unifier
-    .  (SimplifierVariable variable, MonadUnify unifier)
+    .  (InternalVariable variable, MonadUnify unifier)
     => SimplificationType
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable

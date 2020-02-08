@@ -95,7 +95,7 @@ import Kore.Unparser
 -- to add memoization to a function evaluator.
 evaluateApplication
     :: forall variable simplifier
-    .  ( SimplifierVariable variable
+    .  ( InternalVariable variable
        , MonadSimplify simplifier
        )
     => SideCondition variable
@@ -181,7 +181,7 @@ evaluateApplication
 -}
 evaluatePattern
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -- ^ The predicate from the configuration
@@ -211,7 +211,7 @@ Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => Condition variable
     -- ^ Aggregated children predicate and substitution.
@@ -374,7 +374,7 @@ sortInjectionSorts symbol =
 was evaluated.
 -}
 reevaluateFunctions
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Pattern variable
@@ -391,7 +391,7 @@ reevaluateFunctions sideCondition rewriting = do
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -- ^ Top level condition.

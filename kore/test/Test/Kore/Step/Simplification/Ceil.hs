@@ -597,7 +597,7 @@ mockEvaluator evaluation _ _ = return evaluation
 
 mapVariables
     :: forall variable
-    .  (InternalVariable variable, FreshVariable variable)
+    .  InternalVariable variable
     => Pattern Variable
     -> Pattern variable
 mapVariables =

@@ -108,9 +108,6 @@ import Kore.Sort
 import Kore.Step.Step
     ( UnifyingRule (..)
     )
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( AstLocation (..)
@@ -160,7 +157,7 @@ renaming them (if needed) to avoid clashing with the given free variables.
 -}
 topExistsToImplicitForall
     :: forall variable
-    .  SubstitutionVariable variable
+    .  InternalVariable variable
     => FreeVariables variable
     -> RHS variable
     -> Pattern variable
@@ -341,7 +338,7 @@ isFreeOf rule =
 {- | Apply the substitution to the right-hand-side of a rule.
  -}
 rhsSubstitute
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Map (UnifiedVariable variable) (TermLike.TermLike variable)
     -> RHS variable
     -> RHS variable
@@ -357,7 +354,7 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
 {- | Apply the substitution to the rule.
  -}
 substitute
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Map (UnifiedVariable variable) (TermLike.TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
@@ -376,7 +373,7 @@ i.e. there is no substitution variable left in the rule.
 -}
 applySubstitution
     :: HasCallStack
-    => SubstitutionVariable variable
+    => InternalVariable variable
     => Substitution variable
     -> RulePattern variable
     -> RulePattern variable

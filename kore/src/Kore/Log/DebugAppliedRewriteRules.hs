@@ -40,7 +40,7 @@ import Kore.Step.Step
     , mapRuleVariables
     )
 import Kore.Unification.Unify
-    ( SimplifierVariable
+    ( InternalVariable
     )
 import Kore.Unparser
     ( unparse
@@ -92,7 +92,7 @@ instance Entry DebugAppliedRewriteRules where
 
 debugAppliedRewriteRules
     :: MonadLog log
-    => SimplifierVariable variable
+    => InternalVariable variable
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
     -> log ()

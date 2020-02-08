@@ -99,7 +99,7 @@ asTermLike internal =
     Domain.InternalString { internalStringValue } = internal
 
 asPattern
-    :: (InternalVariable variable, FreshVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> Pattern variable
@@ -107,7 +107,7 @@ asPattern resultSort =
     Pattern.fromTermLike . asInternal resultSort
 
 asPartialPattern
-    :: (InternalVariable variable, FreshVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Maybe Text  -- ^ builtin value to render
     -> Pattern variable

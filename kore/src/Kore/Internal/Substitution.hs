@@ -75,7 +75,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
     ( InternalVariable
-    , SubstitutionVariable
+    , InternalVariable
     , TermLike
     , pattern Var_
     , mkVar
@@ -428,9 +428,7 @@ renormalizes, if needed.
 -}
 reverseIfRhsIsVar
     :: forall variable
-    .   ( InternalVariable variable
-        , FreshVariable variable
-        )
+    .  InternalVariable variable
     => UnifiedVariable variable
     -> Substitution variable
     -> Substitution variable
@@ -563,7 +561,7 @@ wrapNormalization Normalization { normalized, denormalized } =
 
 -- | Substitute the 'normalized' part into the 'denormalized' part.
 applyNormalized
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Normalization variable
     -> Normalization variable
 applyNormalized Normalization { normalized, denormalized } =

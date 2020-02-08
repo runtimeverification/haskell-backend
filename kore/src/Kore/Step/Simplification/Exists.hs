@@ -135,7 +135,7 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
     (pat' and (pred' and (exists x . predX and substX)) and subst')
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Exists Sort variable (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -156,7 +156,7 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> ElementVariable variable
     -> OrPattern variable
@@ -177,7 +177,7 @@ See 'simplify' for detailed documentation.
 -}
 makeEvaluate
     :: forall simplifier variable
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> [ElementVariable variable]
     -> Pattern variable
@@ -241,7 +241,7 @@ makeEvaluate sideCondition variables original = do
 
 
 matchesToVariableSubstitution
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> Pattern variable
     -> simplifier Bool
@@ -297,7 +297,7 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundLeft
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> ElementVariable variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
@@ -332,7 +332,7 @@ See also: 'quantifyPattern'
  -}
 makeEvaluateBoundRight
     :: forall variable simplifier
-    . (SimplifierVariable variable, MonadSimplify simplifier)
+    . (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
@@ -369,7 +369,7 @@ The result is a pair of:
 
  -}
 splitSubstitution
-    :: (SimplifierVariable variable, HasCallStack)
+    :: (InternalVariable variable, HasCallStack)
     => ElementVariable variable
     -> Substitution variable
     ->  ( Either (TermLike variable) (Substitution variable)

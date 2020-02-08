@@ -68,8 +68,8 @@ import Kore.Step.Step
     , unifyRules
     )
 import Kore.Unification.Unify
-    ( MonadUnify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
     ( gather
@@ -90,7 +90,7 @@ withoutUnification = Conditional.term
  -}
 unwrapConfiguration
     :: forall variable
-    .  (InternalVariable variable, FreshVariable variable)
+    .  InternalVariable variable
     => Pattern (Target variable)
     -> Pattern variable
 unwrapConfiguration config@Conditional { substitution } =
@@ -120,7 +120,7 @@ See also: 'applyInitialConditions'
  -}
 finalizeAppliedRule
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => RulePattern variable
     -- ^ Applied rule
@@ -155,7 +155,7 @@ finalizeAppliedRule renamedRule appliedConditions =
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeRule
-    ::  ( SimplifierVariable variable
+    ::  ( InternalVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -182,7 +182,7 @@ finalizeRule initial unifiedRule =
 
 finalizeRulesParallel
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
@@ -205,7 +205,7 @@ finalizeRulesParallel initial unifiedRules = do
 
 finalizeRulesSequence
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
@@ -253,7 +253,7 @@ See also: 'applyRewriteRule'
  -}
 applyRulesParallel
     ::  forall unifier variable
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -282,7 +282,7 @@ See also: 'applyRewriteRule'
  -}
 applyRewriteRulesParallel
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => UnificationProcedure
     -> [RewriteRule variable]
@@ -307,7 +307,7 @@ See also: 'applyRewriteRule'
  -}
 applyRulesSequence
     ::  forall unifier variable
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -336,7 +336,7 @@ See also: 'applyRewriteRulesParallel'
  -}
 applyRewriteRulesSequence
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => UnificationProcedure
     -> Pattern variable

@@ -24,7 +24,7 @@ import Kore.Syntax.Variable
     )
 
 mockSimplifier
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockSimplifier values =
@@ -32,7 +32,7 @@ mockSimplifier values =
         $ const $ mockSimplifierHelper Pattern.fromTermLike values
 
 mockConditionSimplifier
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockConditionSimplifier values =
@@ -47,8 +47,8 @@ mockConditionSimplifier values =
         values
 
 mockSimplifierHelper
-    ::  ( SimplifierVariable variable0
-        , SimplifierVariable variable
+    ::  ( InternalVariable variable0
+        , InternalVariable variable
         , MonadSimplify m
         )
     => (TermLike variable -> Pattern variable)

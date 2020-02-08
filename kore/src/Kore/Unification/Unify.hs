@@ -4,7 +4,7 @@ License     : NCSA
 -}
 
 module Kore.Unification.Unify
-    ( MonadUnify (..), SimplifierVariable
+    ( MonadUnify (..), InternalVariable
     ) where
 
 import Prelude.Kore
@@ -22,7 +22,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
-    , SimplifierVariable
     )
 import Kore.Unification.Error
 

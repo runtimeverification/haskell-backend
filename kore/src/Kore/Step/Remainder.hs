@@ -44,8 +44,8 @@ import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify (..)
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify (..)
     )
 import Kore.Variables.Target
     ( Target
@@ -66,7 +66,7 @@ See also: 'remainder\''
 
  -}
 remainder
-    :: (InternalVariable variable, FreshVariable variable)
+    :: InternalVariable variable
     => MultiOr (Condition (Target variable))
     -> Predicate variable
 remainder =
@@ -153,7 +153,7 @@ substitutionConditions subst =
 
 ceilChildOfApplicationOrTop
     :: forall variable m
-    .  (SimplifierVariable variable, MonadSimplify m)
+    .  (InternalVariable variable, MonadSimplify m)
     => SideCondition variable
     -> TermLike variable
     -> m (Condition variable)
