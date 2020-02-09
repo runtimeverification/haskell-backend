@@ -82,8 +82,8 @@ result with 'Kore.Internal.TermLike.mkVar':
 @
 'Kore.Internal.TermLike.substitute'
     ('Kore.Internal.TermLike.mkVar' \<$\> refreshVariables avoid rename)
-    :: 'Kore.Internal.TermLike TermLike' Variable
-    -> 'Kore.Internal.TermLike TermLike' Variable
+    :: 'Kore.Internal.TermLike.TermLike' Variable
+    -> 'Kore.Internal.TermLike.TermLike' Variable
 @
 
  -}
