@@ -42,7 +42,6 @@ import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import GHC.Generics
     ( Generic
@@ -83,15 +82,25 @@ instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = foldMapVariable unparse
     unparse2 = foldMapVariable unparse2
 
-instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
+instance
+    FreshPartialOrd variable => FreshPartialOrd (UnifiedVariable variable)
   where
-    refreshVariable avoid = \case
-        SetVar v -> SetVar <$> refreshVariable setVars v
-        ElemVar v -> ElemVar <$> refreshVariable elemVars v
-      where
-        avoid' = Set.toList avoid
-        setVars = Set.fromList [v | SetVar v <- avoid']
-        elemVars = Set.fromList [v | ElemVar v <- avoid']
+    compareFresh (ElemVar elemVar1) (ElemVar elemVar2) =
+        compareFresh elemVar1 elemVar2
+    compareFresh (SetVar elemVar1) (SetVar elemVar2) =
+        compareFresh elemVar1 elemVar2
+    compareFresh _ _ = Nothing
+
+    supVariable (ElemVar elemVar) = ElemVar (supVariable elemVar)
+    supVariable (SetVar setVar) = SetVar (supVariable setVar)
+
+    nextVariable (ElemVar elemVar1) (ElemVar elemVar2) =
+        ElemVar (nextVariable elemVar1 elemVar2)
+    nextVariable (SetVar setVar1) (SetVar setVar2) =
+        SetVar (nextVariable setVar1 setVar2)
+    nextVariable _ _ = error "The impossible happened!"
+
+instance FreshPartialOrd variable => FreshVariable (UnifiedVariable variable)
 
 isElemVar :: UnifiedVariable variable -> Bool
 isElemVar (ElemVar _) = True

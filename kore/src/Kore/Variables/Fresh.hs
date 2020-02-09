@@ -78,6 +78,11 @@ instance FreshPartialOrd Variable where
                 Just (Element a) -> Just (Element (succ a))
                 Just Sup -> illegalVariableCounter
 
+instance FreshPartialOrd Concrete where
+    compareFresh = \case {}
+    supVariable = \case {}
+    nextVariable = \case {}
+
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (ElementVariable variable)
@@ -130,17 +135,9 @@ class Ord variable => FreshVariable variable where
         largest <- Set.lookupLT (supVariable variable) avoiding
         compareFresh variable largest $> nextVariable variable largest
 
-instance FreshVariable variable => FreshVariable (ElementVariable variable)
-  where
-    refreshVariable avoid = traverse (refreshVariable avoid')
-      where
-        avoid' = Set.map getElementVariable avoid
+instance FreshPartialOrd variable => FreshVariable (ElementVariable variable)
 
-instance FreshVariable variable => FreshVariable (SetVariable variable)
-  where
-    refreshVariable avoid = traverse (refreshVariable avoid')
-      where
-        avoid' = Set.map getSetVariable avoid
+instance FreshPartialOrd variable => FreshVariable (SetVariable variable)
 
 instance FreshVariable Variable
 

@@ -86,7 +86,7 @@ import Kore.Unparser
     ( unparseToString
     )
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
 import qualified SQL
@@ -351,7 +351,7 @@ modify f = wrap . f . unwrap
 -- with the given function.
 mapVariables
     :: forall variableFrom variableTo
-    .  (Ord variableFrom, FreshVariable variableTo)
+    .  (Ord variableFrom, FreshPartialOrd variableTo)
     => (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Substitution variableFrom

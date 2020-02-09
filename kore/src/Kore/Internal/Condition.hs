@@ -64,7 +64,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Syntax
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
@@ -148,7 +148,7 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    :: (Ord variable1, FreshVariable variable2)
+    :: (Ord variable1, FreshPartialOrd variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Condition variable1

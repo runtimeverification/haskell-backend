@@ -79,7 +79,7 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 
 {- | The conjunction of a pattern, predicate, and substitution.
@@ -123,7 +123,7 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    :: (Ord variableFrom, FreshVariable variableTo)
+    :: (Ord variableFrom, FreshPartialOrd variableTo)
     => (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Pattern variableFrom

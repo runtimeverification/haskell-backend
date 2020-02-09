@@ -73,8 +73,7 @@ import Kore.Internal.Symbol hiding
     ( sortInjection
     )
 import Kore.Internal.TermLike
-    ( FreshVariable
-    , InternalVariable
+    ( InternalVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as Internal
@@ -1710,7 +1709,7 @@ builtinSet child =
         }
 
 builtinInt
-    :: FreshVariable variable
+    :: InternalVariable variable
     => Integer
     -> TermLike variable
 builtinInt = Builtin.Int.asInternal intSort
@@ -1722,7 +1721,7 @@ builtinBool
 builtinBool = Builtin.Bool.asInternal boolSort
 
 builtinString
-    :: FreshVariable variable
+    :: InternalVariable variable
     => Text
     -> TermLike variable
 builtinString = Builtin.String.asInternal stringSort

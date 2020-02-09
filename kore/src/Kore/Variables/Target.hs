@@ -37,7 +37,8 @@ import Kore.Unparser
     ( Unparse (..)
     )
 import Kore.Variables.Fresh
-    ( FreshVariable (..)
+    ( FreshPartialOrd (..)
+    , FreshVariable (..)
     )
 import Kore.Variables.UnifiedVariable
     ( ElementVariable
@@ -139,6 +140,17 @@ instance From variable1 variable2 => From variable1 (Target variable2) where
 instance From variable1 variable2 => From (Target variable1) variable2 where
     from = from @variable1 @variable2 . unTarget
     {-# INLINE from #-}
+
+instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
+    compareFresh = on compareFresh unTarget
+    {-# INLINE compareFresh #-}
+
+    supVariable = fmap supVariable
+    {-# INLINE supVariable #-}
+
+    nextVariable variable bound =
+        fmap (flip nextVariable (unTarget bound)) variable
+    {-# INLINE nextVariable #-}
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}

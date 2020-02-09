@@ -94,7 +94,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 import qualified Kore.Variables.Fresh as Variables
 import Kore.Variables.UnifiedVariable
@@ -607,7 +607,7 @@ Returns 'Nothing' if the variable name is already globally-unique.
 
  -}
 liftVariable
-    :: FreshVariable variable
+    :: FreshPartialOrd variable
     => MonadState (MatcherState variable) matcher
     => UnifiedVariable variable
     -> matcher (Maybe (UnifiedVariable variable))

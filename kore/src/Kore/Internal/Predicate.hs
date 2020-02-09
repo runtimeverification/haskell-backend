@@ -121,7 +121,7 @@ import Kore.TopBottom
     )
 import Kore.Unparser
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -706,7 +706,7 @@ isPredicate = Either.isRight . makePredicate
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
 mapVariables
-    :: (Ord from, FreshVariable to)
+    :: (Ord from, FreshPartialOrd to)
     => (ElementVariable from -> ElementVariable to)
     -> (SetVariable from -> SetVariable to)
     -> Predicate from
