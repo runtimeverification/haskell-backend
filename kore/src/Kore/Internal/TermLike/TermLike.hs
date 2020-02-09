@@ -899,7 +899,7 @@ externalizeFreshVariables termLike =
         <$> iterate nextVariable variable
       where
         wouldCapture var = isFreeVariable (ElemVar var) avoiding
-        nextVariable = fmap Fresh.nextVariable
+        nextVariable = Fresh.nextVariable variable
         externalize = fmap Variable.externalizeFreshVariable
 
     safeSetVariable
@@ -913,7 +913,7 @@ externalizeFreshVariables termLike =
         <$> iterate nextVariable variable
       where
         wouldCapture var = isFreeVariable (SetVar var) avoiding
-        nextVariable = fmap Fresh.nextVariable
+        nextVariable = Fresh.nextVariable variable
         externalize = fmap Variable.externalizeFreshVariable
 
     underElementBinder freeVariables' variable child = do

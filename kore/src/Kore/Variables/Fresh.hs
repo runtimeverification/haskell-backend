@@ -3,9 +3,9 @@ Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
  -}
 module Kore.Variables.Fresh
-    ( FreshVariable (..)
+    ( FreshPartialOrd (..)
+    , FreshVariable (..)
     , refreshVariables
-    , nextVariable
     -- * Re-exports
     , module Kore.Syntax.Variable
     ) where
@@ -13,6 +13,12 @@ module Kore.Variables.Fresh
 import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
+import Data.Function
+    ( on
+    )
+import Data.Functor
+    ( ($>)
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -27,6 +33,78 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.Id
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
+
+{- | @FreshPartialOrder@ defines a partial order for renaming variables.
+
+Agreement:
+
+prop> maybe True (== compare a b) (compareFresh a b)
+
+Dominance:
+
+prop> maybe False (\/= GT) (compareFresh a (supVariable a))
+
+Increment:
+
+prop> compareFresh a (nextVariable a x) == Just LT
+
+ -}
+class Ord variable => FreshPartialOrd variable where
+    compareFresh :: variable -> variable -> Maybe Ordering
+    supVariable :: variable -> variable
+    nextVariable
+        :: variable  -- ^ original variable
+        -> variable  -- ^ lower bound
+        -> variable
+
+instance FreshPartialOrd Variable where
+    compareFresh x y
+      | variableName x == variableName y = Just $ compare x y
+      | otherwise = Nothing
+
+    supVariable variable = variable { variableCounter = Just Sup }
+
+    nextVariable variable Variable { variableName, variableCounter } =
+        variable
+            { variableName = variableName'
+            , variableCounter = variableCounter'
+            }
+      where
+        variableName' =
+            variableName { idLocation = AstLocationGeneratedVariable }
+        variableCounter' =
+            case variableCounter of
+                Nothing -> Just (Element 0)
+                Just (Element a) -> Just (Element (succ a))
+                Just Sup -> illegalVariableCounter
+
+instance
+    FreshPartialOrd variable
+    => FreshPartialOrd (ElementVariable variable)
+  where
+    compareFresh = on compareFresh getElementVariable
+    {-# INLINE compareFresh #-}
+
+    supVariable = ElementVariable . supVariable . getElementVariable
+    {-# INLINE supVariable #-}
+
+    nextVariable (ElementVariable variable) (ElementVariable bound) =
+        ElementVariable (nextVariable variable bound)
+    {-# INLINE nextVariable #-}
+
+instance
+    FreshPartialOrd variable
+    => FreshPartialOrd (SetVariable variable)
+  where
+    compareFresh = on compareFresh getSetVariable
+    {-# INLINE compareFresh #-}
+
+    supVariable = SetVariable . supVariable . getSetVariable
+    {-# INLINE supVariable #-}
+
+    nextVariable (SetVariable variable) (SetVariable bound) =
+        SetVariable (nextVariable variable bound)
+    {-# INLINE nextVariable #-}
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
@@ -43,6 +121,14 @@ class Ord variable => FreshVariable variable where
         :: Set variable  -- ^ variables to avoid
         -> variable        -- ^ variable to rename
         -> Maybe variable
+    default refreshVariable
+        :: FreshPartialOrd variable
+        => Set variable
+        -> variable
+        -> Maybe variable
+    refreshVariable avoiding variable = do
+        largest <- Set.lookupLT (supVariable variable) avoiding
+        compareFresh variable largest $> nextVariable variable largest
 
 instance FreshVariable variable => FreshVariable (ElementVariable variable)
   where
@@ -56,16 +142,7 @@ instance FreshVariable variable => FreshVariable (SetVariable variable)
       where
         avoid' = Set.map getSetVariable avoid
 
-instance FreshVariable Variable where
-    refreshVariable avoiding variable = do
-        fixedLargest <- fixSort <$> Set.lookupLT pivotMax avoiding
-        if fixedLargest >= pivotMin
-            then Just (nextVariable fixedLargest)
-            else Nothing
-      where
-        pivotMax = variable { variableCounter = Just Sup }
-        pivotMin = variable { variableCounter = Nothing }
-        fixSort var = var { variableSort = variableSort variable }
+instance FreshVariable Variable
 
 instance FreshVariable Concrete where
     refreshVariable _ = \case {}
@@ -109,19 +186,3 @@ refreshVariables avoid0 =
         -- The variable does not collide with any others, so renaming is not
         -- necessary.
         (Set.insert var avoid, rename)
-
-{- | Increase the 'variableCounter' of a 'Variable'
- -}
-nextVariable :: Variable -> Variable
-nextVariable variable@Variable { variableName, variableCounter } =
-    variable
-        { variableName = variableName'
-        , variableCounter = variableCounter'
-        }
-  where
-    variableName' = variableName { idLocation = AstLocationGeneratedVariable }
-    variableCounter' =
-        case variableCounter of
-            Nothing -> Just (Element 0)
-            Just (Element a) -> Just (Element (succ a))
-            Just Sup -> illegalVariableCounter

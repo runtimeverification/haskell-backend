@@ -351,7 +351,8 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            final = mkElemVar (nextVariable . nextVariable <$> Mock.x)
+            x'' = nextVariable Mock.x . nextVariable Mock.x $ Mock.x
+            final = mkElemVar x''
             initial = pure (mkElemVar Mock.y)
             axiom =
                 RewriteRule $ rulePattern
@@ -467,7 +468,7 @@ test_applyRewriteRule_ =
     , testCase "non-function substitution error" $ do
         let expect = Left $ UnificationError $ unsupportedPatterns
                 "Unknown unification case."
-                (mkElemVar (nextVariable <$> Mock.x))
+                (mkElemVar (nextVariable Mock.x Mock.x))
                 (Mock.plain10 (mkElemVar Mock.y))
             initial = pure $
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))
