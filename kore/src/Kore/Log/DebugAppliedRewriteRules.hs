@@ -46,7 +46,7 @@ import Kore.Unparser
     ( unparse
     )
 import Kore.Variables.Target
-    ( Target (..)
+    ( Target
     )
 import Log
 
