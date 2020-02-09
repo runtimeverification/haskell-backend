@@ -73,13 +73,12 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , InternalVariable
-    , TermLike
+    ( TermLike
     , pattern Var_
     , mkVar
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -246,9 +245,10 @@ toMultiMap =
         let push = (termLike :|) . maybe [] Foldable.toList
         in Map.alter (Just . push) variable multiMap
 
-{- | Apply a normal order to variable-renaming substitutions.
+{- | Apply a normal order to a single substitution.
 
-A variable-renaming substitution has one of the forms,
+In practice, this means sorting variable-renaming substitutions.
+A variable-renaming substitution is one of the forms,
 
 @
 x:S{} = y:S{}
@@ -275,11 +275,13 @@ orderRenaming
 orderRenaming (uVar1, Var_ uVar2)
   | ElemVar eVar1 <- uVar1
   , ElemVar eVar2 <- uVar2
-  , eVar2 < eVar1 = (uVar2, mkVar uVar1)
+  , LT <- compareSubstitution eVar2 eVar1
+  = (uVar2, mkVar uVar1)
 
   | SetVar sVar1 <- uVar1
   , SetVar sVar2 <- uVar2
-  , sVar2 < sVar1 = (uVar2, mkVar uVar1)
+  , LT <- compareSubstitution sVar2 sVar1
+  = (uVar2, mkVar uVar1)
 orderRenaming subst = subst
 
 fromMap
