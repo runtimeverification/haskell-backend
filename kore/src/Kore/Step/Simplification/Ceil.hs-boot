@@ -19,8 +19,8 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , InternalVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 
 makeEvaluate
