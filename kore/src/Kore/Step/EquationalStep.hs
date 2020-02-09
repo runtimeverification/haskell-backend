@@ -85,7 +85,6 @@ import Kore.Step.Step
     , checkSubstitutionCoverage
     , matchingPattern
     , precondition
-    , refreshRule
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
@@ -384,14 +383,12 @@ applyRulesSequence
     -> [EqualityPattern variable]
     -- ^ Rewrite rules
     -> unifier (Results EqualityPattern variable)
-applyRulesSequence
-    sideCondition
-    initial
-    -- Wrap the rules so that unification prefers to substitute
-    -- axiom variables.
-    (map EqualityPattern.toAxiomVariables -> rules)
-  = matchRules sideCondition initial rules
+applyRulesSequence sideCondition initial rules =
+    matchRules sideCondition initial rules'
     >>= finalizeRulesSequence sideCondition initial
+  where
+    avoidConfigVars = freeVariables sideCondition <> freeVariables initial
+    rules' = EqualityPattern.toAxiomVariables avoidConfigVars <$> rules
 
 -- | Matches a list a rules against a configuration. See 'matchRule'.
 matchRules
@@ -435,22 +432,15 @@ matchRule
     -> unifier (UnifiedRule variable (rule variable))
 matchRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-    -- Rename free axiom variables to avoid free variables from the initial
-    -- configuration.
-    let
-        configVariables = TermLike.freeVariables initial
-        (_, rule') = refreshRule configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
-    let
-        ruleLeft = matchingPattern rule'
+    let ruleLeft = matchingPattern rule
     unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
-    let
-        requires = precondition rule'
+    let requires = precondition rule
     unification' <-
         evaluateRequires sideCondition initialCondition unification requires
-    return (rule' `Conditional.withCondition` unification')
+    return (rule `Conditional.withCondition` unification')
   where
     unifyPatterns = ignoreUnificationErrors matchIncremental
 

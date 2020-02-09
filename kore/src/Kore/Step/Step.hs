@@ -216,23 +216,16 @@ unifyRule
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
             sideCondition `SideCondition.andCondition` initialCondition
-    -- Rename free axiom variables to avoid free variables from the initial
-    -- configuration.
-    let
-        configVariables = TermLike.freeVariables initial
-        (_, rule') = refreshRule configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
-    let
-        ruleLeft = matchingPattern rule'
+    let ruleLeft = matchingPattern rule
     unification <- unifyPatterns mergedSideCondition ruleLeft initialTerm
     -- Combine the unification solution with the rule's requirement clause,
-    let
-        ruleRequires = precondition rule'
+    let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         simplifyPredicate mergedSideCondition Nothing (unification <> requires')
-    return (rule' `Conditional.withCondition` unification')
+    return (rule `Conditional.withCondition` unification')
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
@@ -253,13 +246,23 @@ wouldNarrowWith unified =
     Conditional { substitution } = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
--- |Renames variables to be distinguishable from those in configuration
+{- | Prepare an axiom for unification with the configuration.
+
+The axiom's variables are marked with 'Target' so that they are preferred
+targets for substitution and the axiom's variables are renamed to avoid any free
+variables from the configuration and side condition.
+
+ -}
 toAxiomVariables
-    :: FreshVariable variable
+    :: InternalVariable variable
     => UnifyingRule rule
-    => rule variable
+    => FreeVariables (Target variable)
+    -> rule variable
     -> rule (Target variable)
-toAxiomVariables = mapRuleVariables (fmap Target.Target) (fmap Target.Target)
+toAxiomVariables avoiding =
+    snd
+    . refreshRule avoiding
+    . mapRuleVariables Target.mkElementTarget Target.mkSetTarget
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
  -}
@@ -416,7 +419,7 @@ toConfigurationVariables
     => Pattern variable
     -> Pattern (Target variable)
 toConfigurationVariables =
-    Pattern.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
+    Pattern.mapVariables Target.mkElementNonTarget Target.mkSetNonTarget
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition
@@ -424,7 +427,7 @@ toConfigurationVariablesCondition
     => SideCondition variable
     -> SideCondition (Target variable)
 toConfigurationVariablesCondition =
-    SideCondition.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
+    SideCondition.mapVariables Target.mkElementNonTarget Target.mkSetNonTarget
 
 {- | Apply the remainder predicate to the given initial configuration.
 

@@ -263,17 +263,13 @@ applyRulesParallel
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> unifier (Results RulePattern variable)
-applyRulesParallel
-    unificationProcedure
-    -- Wrap the rule and configuration so that unification prefers to substitute
-    -- axiom variables.
-    (map toAxiomVariables -> rules)
-    initial
-  = do
-      results <-
-          unifyRules unificationProcedure SideCondition.topTODO initial rules
-      debugAppliedRewriteRules initial results
-      finalizeRulesParallel initial results
+applyRulesParallel unificationProcedure rules initial = do
+    let sideCondition = SideCondition.topTODO
+        configurationVariables = freeVariables initial
+        rules' = toAxiomVariables configurationVariables <$> rules
+    results <- unifyRules unificationProcedure sideCondition initial rules'
+    debugAppliedRewriteRules initial results
+    finalizeRulesParallel initial results
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -317,17 +313,13 @@ applyRulesSequence
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> unifier (Results RulePattern variable)
-applyRulesSequence
-    unificationProcedure
-    initial
-    -- Wrap the rules so that unification prefers to substitute
-    -- axiom variables.
-    (map toAxiomVariables -> rules)
-  = do
-      results <-
-          unifyRules unificationProcedure SideCondition.topTODO initial rules
-      debugAppliedRewriteRules initial results
-      finalizeRulesSequence initial results
+applyRulesSequence unificationProcedure initial rules = do
+    let sideCondition = SideCondition.topTODO
+        configurationVariables = freeVariables initial
+        rules' = toAxiomVariables configurationVariables <$> rules
+    results <- unifyRules unificationProcedure sideCondition initial rules'
+    debugAppliedRewriteRules initial results
+    finalizeRulesSequence initial results
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
