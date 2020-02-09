@@ -39,7 +39,7 @@ import Control.Monad.Trans as Trans
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Functor.Adjunction
-    ( rightAdjunct
+    ( Adjunction (..)
     )
 import Data.Functor.Compose
     ( Compose (..)
@@ -608,63 +608,40 @@ mapVariables mapElemVar mapSetVar termLike =
             (Identity . mapSetVar)
             (freeVariables termLike)
 
-    renameElementBinder
-        ::  forall any
-        .   Set.Set (UnifiedVariable variable2)
-        ->  Binder
-                (ElementVariable variable1)
-                (Renaming variable1 variable2 any)
-        ->  Binder
-                (ElementVariable variable2)
-                (Renaming variable1 variable2 any)
-    renameElementBinder avoiding binder =
-        let Binder { binderVariable, binderChild } = binder
-            elementVariable2 = mapElemVar binderVariable
-            binderVariable' =
-                refreshElementVariable avoiding elementVariable2
-                & fromMaybe elementVariable2
-            addRenaming = renameElementVariable binderVariable binderVariable'
-            binderChild' = Env.local addRenaming binderChild
-            binder' = Binder
-                { binderVariable = binderVariable'
-                , binderChild = binderChild'
-                }
-        in binder'
+    trElemVar = Identity . mapElemVar
+    trSetVar = Identity . mapSetVar
 
-    renameSetBinder
-        ::  forall any
-        .   Set.Set (UnifiedVariable variable2)
-        ->  Binder
-                (SetVariable variable1)
-                (Renaming variable1 variable2 any)
-        ->  Binder
-                (SetVariable variable2)
-                (Renaming variable1 variable2 any)
-    renameSetBinder avoiding binder =
-        let Binder { binderVariable, binderChild } = binder
-            setVariable2 = mapSetVar binderVariable
-            binderVariable' =
-                refreshSetVariable avoiding setVariable2
-                & fromMaybe setVariable2
-            addRenaming = renameSetVariable binderVariable binderVariable'
-            binderChild' = Env.local addRenaming binderChild
-            binder' = Binder
-                { binderVariable = binderVariable'
-                , binderChild = binderChild'
-                }
-        in binder'
+    mapElementBinder avoiding =
+        sequenceAdjunct (renameElementBinder trElemVar avoiding)
 
-    renameExists avoiding =
-        Lens.over existsBinder (renameElementBinder avoiding)
+    mapSetBinder avoiding =
+        sequenceAdjunct (renameSetBinder trSetVar avoiding)
 
-    renameForall avoiding =
-        Lens.over forallBinder (renameElementBinder avoiding)
+    renameExists renaming avoiding =
+        Lens.over existsBinder
+        $ mapElementBinder avoiding
+        . Env.env renaming
 
-    renameMu avoiding =
-        Lens.over muBinder (renameSetBinder avoiding)
+    renameForall renaming avoiding =
+        Lens.over forallBinder
+        $ mapElementBinder avoiding
+        . Env.env renaming
 
-    renameNu avoiding =
-        Lens.over nuBinder (renameSetBinder avoiding)
+    renameMu renaming avoiding =
+        Lens.over muBinder
+        $ mapSetBinder avoiding
+        . Env.env renaming
+
+    renameNu renaming avoiding =
+        Lens.over nuBinder
+        $ mapSetBinder avoiding
+        . Env.env renaming
+
+    renameVariable renaming variable1 =
+        rightAdjunct askUnifiedVariable (Env.env renaming variable1)
+
+    renameAttrs renaming =
+        Lens.over freeUnifiedVariables (renameVariable renaming)
 
     worker
         ::  Renaming variable1 variable2 (TermLike variable1)
@@ -673,30 +650,26 @@ mapVariables mapElemVar mapSetVar termLike =
                 (Renaming variable1 variable2 (TermLike variable1))
     worker env =
         let attrs :< termLikeF = Recursive.project (extract env)
-            attrs' =
-                Lens.over freeUnifiedVariables
-                    (rightAdjunct askUnifiedVariable . (env $>))
-                    attrs
             renaming = Env.ask env
+            attrs' = renameAttrs renaming attrs
             avoiding = getFreeVariables $ freeVariables attrs'
             termLikeF' =
-                case Env.env renaming <$> termLikeF of
+                case termLikeF of
                     VariableF (Const unifiedVariable1) ->
-                        VariableF (Const unifiedVariable2)
-                      where
-                        unifiedVariable2 =
-                            rightAdjunct askUnifiedVariable
-                                (env $> unifiedVariable1)
-                    ExistsF exists -> ExistsF (renameExists avoiding exists)
-                    ForallF forall -> ForallF (renameForall avoiding forall)
-                    MuF mu -> MuF (renameMu avoiding mu)
-                    NuF nu -> NuF (renameNu avoiding nu)
+                        (VariableF . Const)
+                            (renameVariable renaming unifiedVariable1)
+                    ExistsF exists ->
+                        ExistsF (renameExists renaming avoiding exists)
+                    ForallF forall ->
+                        ForallF (renameForall renaming avoiding forall)
+                    MuF mu -> MuF (renameMu renaming avoiding mu)
+                    NuF nu -> NuF (renameNu renaming avoiding nu)
                     _ ->
                         -- mapVariablesF will not actually call the mapping
                         -- function because all the cases with variables are
                         -- handled above.
-                        Env.env renaming
-                        <$> mapVariablesF mapElemVar mapSetVar termLikeF
+                        mapVariablesF mapElemVar mapSetVar
+                        $ Env.env renaming <$> termLikeF
         in attrs' :< termLikeF'
 
 freeUnifiedVariables
@@ -736,53 +709,14 @@ traverseVariables trElemVar trSetVar termLike =
     renameFreeVariables trElemVar trSetVar (freeVariables termLike)
     >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
-    renameElementBinder
-        ::  Set.Set (UnifiedVariable variable2)
-        ->  Binder
-                (ElementVariable variable1)
-                (RenamingT variable1 variable2 m (TermLike variable2))
-        ->  RenamingT variable1 variable2 m
-                (Binder (ElementVariable variable2) (TermLike variable2))
-    renameElementBinder avoiding binder = do
-        let Binder { binderVariable, binderChild } = binder
-        elementVariable2 <- Trans.lift $ trElemVar binderVariable
-        let binderVariable' =
-                refreshElementVariable avoiding elementVariable2
-                & fromMaybe elementVariable2
-        binderChild' <-
-            Reader.local
-                (renameElementVariable binderVariable binderVariable')
-                binderChild
-        let binder' :: Binder (ElementVariable variable2) (TermLike variable2)
-            binder' = Binder
-                { binderVariable = binderVariable'
-                , binderChild = binderChild'
-                }
-        pure binder'
-
-    renameSetBinder
-        ::  Set.Set (UnifiedVariable variable2)
-        ->  Binder
-                (SetVariable variable1)
-                (RenamingT variable1 variable2 m (TermLike variable2))
-        ->  RenamingT variable1 variable2 m
-                (Binder (SetVariable variable2) (TermLike variable2))
-    renameSetBinder avoiding binder = do
-        let Binder { binderVariable, binderChild } = binder
-        setVariable2 <- Trans.lift $ trSetVar binderVariable
-        let binderVariable' =
-                refreshSetVariable avoiding setVariable2
-                & fromMaybe setVariable2
-        binderChild' <-
-            Reader.local
-                (renameSetVariable binderVariable binderVariable')
-                binderChild
-        let binder' :: Binder (SetVariable variable2) (TermLike variable2)
-            binder' = Binder
-                { binderVariable = binderVariable'
-                , binderChild = binderChild'
-                }
-        pure binder'
+    traverseExists avoiding =
+        existsBinder (renameElementBinder trElemVar avoiding)
+    traverseForall avoiding =
+        forallBinder (renameElementBinder trElemVar avoiding)
+    traverseMu avoiding =
+        muBinder (renameSetBinder trSetVar avoiding)
+    traverseNu avoiding =
+        nuBinder (renameSetBinder trSetVar avoiding)
 
     worker
         ::  Base
@@ -796,18 +730,111 @@ traverseVariables trElemVar trSetVar termLike =
             VariableF (Const unifiedVariable) -> do
                 unifiedVariable' <- askUnifiedVariable unifiedVariable
                 (pure . VariableF) (Const unifiedVariable')
-            ExistsF exists ->
-                ExistsF <$> existsBinder (renameElementBinder avoiding) exists
-            ForallF forall ->
-                ForallF <$> forallBinder (renameElementBinder avoiding) forall
-            MuF mu -> MuF <$> muBinder (renameSetBinder avoiding) mu
-            NuF nu -> NuF <$> nuBinder (renameSetBinder avoiding) nu
+            ExistsF exists -> ExistsF <$> traverseExists avoiding exists
+            ForallF forall -> ForallF <$> traverseForall avoiding forall
+            MuF mu -> MuF <$> traverseMu avoiding mu
+            NuF nu -> NuF <$> traverseNu avoiding nu
             _ ->
                 sequence termLikeF >>=
                 -- traverseVariablesF will not actually call the traversals
                 -- because all the cases with variables are handled above.
                 traverseVariablesF askElementVariable askSetVariable
         (pure . Recursive.embed) (attrs' :< termLikeF')
+
+{- | Transform a 'sequence'-like function into its dual with an 'Adjunction'.
+
+The @sequence@-like argument is a generalization of 'sequence': it lifts a
+functor @g@ over a functor @t1@, allowing @t1@ to be transformed into @t2@ in
+the process. The 'Adjunction' is used to transform the generalized 'sequence'
+into a \"co-sequence\" which /lowers/ the adjoint functor @f@ through @t1@.
+
+In practice,
+
+* @f ~ Env e@ and @g ~ Reader e@
+* the generalized sequence is 'renameElementBinder' or 'renameSetBinder'
+* @t1@ and @t2@ are 'Binder' types with different variable types.
+
+ -}
+sequenceAdjunct
+    :: forall t1 t2 g f any2
+    .  Functor t1
+    => Adjunction f g
+    => (forall any1. t1 (g any1) -> g (t2 any1))  -- ^ 'sequence'-like function
+    -> (f (t1 any2) -> t2 (f any2))
+sequenceAdjunct gsequence =
+    contract
+    . fmap  -- inside @f@
+        ( split  -- split the wrappers by lifting g out of t1
+        . expand  -- wrap all values in t1
+        )
+  where
+    -- "Expand" the values in t1 by constructing a g-f wrapper.
+    -- The Adjunction allows us to "invent" a g-f wrapper for any type.
+    expand :: t1 (  any2) -> t1 (g (f any2))
+    --            ^              ^--^
+    expand = fmap unit
+
+    -- "Split" the g-f wrapper by lifting g over t1.
+    split :: t1 (g (f any2)) -> g (t2 (f any2))
+    --           ^--^           ^------^
+    split = gsequence
+
+    -- "Contract" the outer f-g wrapper to remove it
+    -- The Adjunction allows us to "annihilate" an f-g wrapper.
+    contract :: f (g (t2 (f any2))) ->   (t2 (f any2))
+    --          ^--^                   ^
+    contract = counit
+{-# INLINE sequenceAdjunct #-}
+
+renameElementBinder
+    ::  Monad m
+    =>  (Ord variable1, FreshVariable variable2)
+    =>  (ElementVariable variable1 -> m (ElementVariable variable2))
+    ->  Set.Set (UnifiedVariable variable2)
+    ->  Binder (ElementVariable variable1)
+            (RenamingT variable1 variable2 m any)
+    ->  RenamingT variable1 variable2 m
+            (Binder (ElementVariable variable2) any)
+renameElementBinder trElemVar avoiding binder = do
+    let Binder { binderVariable, binderChild } = binder
+    elementVariable2 <- Trans.lift $ trElemVar binderVariable
+    let binderVariable' =
+            refreshElementVariable avoiding elementVariable2
+            & fromMaybe elementVariable2
+    binderChild' <-
+        Reader.local
+            (renameElementVariable binderVariable binderVariable')
+            binderChild
+    let binder' = Binder
+            { binderVariable = binderVariable'
+            , binderChild = binderChild'
+            }
+    pure binder'
+
+renameSetBinder
+    ::  Monad m
+    =>  (Ord variable1, FreshVariable variable2)
+    =>  (SetVariable variable1 -> m (SetVariable variable2))
+    ->  Set.Set (UnifiedVariable variable2)
+    ->  Binder (SetVariable variable1)
+            (RenamingT variable1 variable2 m any)
+    ->  RenamingT variable1 variable2 m
+            (Binder (SetVariable variable2) any)
+renameSetBinder trSetVar avoiding binder = do
+    let Binder { binderVariable, binderChild } = binder
+    setVariable2 <- Trans.lift $ trSetVar binderVariable
+    let binderVariable' =
+            refreshSetVariable avoiding setVariable2
+            & fromMaybe setVariable2
+    binderChild' <-
+        Reader.local
+            (renameSetVariable binderVariable binderVariable')
+            binderChild
+    let binder' = Binder
+            { binderVariable = binderVariable'
+            , binderChild = binderChild'
+            }
+    pure binder'
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 
