@@ -15,6 +15,9 @@ module Kore.Variables.Target
 
 import Prelude.Kore
 
+import Data.Function
+    ( on
+    )
 import Data.Hashable
     ( Hashable
     )
@@ -23,6 +26,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Internal.Variable
 import Kore.Syntax.Variable
     ( SortedVariable (..)
     )
@@ -60,6 +64,16 @@ instance SOP.HasDatatypeInfo (Target variable)
 instance Debug variable => Debug (Target variable)
 
 instance (Debug variable, Diff variable) => Diff (Target variable)
+
+{- | Prefer substitutions for 'isTarget' variables.
+ -}
+instance
+    SubstitutionOrd variable => SubstitutionOrd (Target variable)
+  where
+    compareSubstitution (Target _) (NonTarget _) = LT
+    compareSubstitution (NonTarget _) (Target _) = GT
+    compareSubstitution variable1 variable2 =
+        on compareSubstitution unwrapVariable variable1 variable2
 
 unwrapVariable :: Target variable -> variable
 unwrapVariable (Target variable) = variable

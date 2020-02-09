@@ -5,13 +5,18 @@ License     : NCSA
 -}
 
 module Kore.Internal.Variable
-    ( InternalVariable
+    ( SubstitutionOrd (..)
+    , InternalVariable
     , module Kore.Syntax.ElementVariable
     , module Kore.Syntax.SetVariable
     , module Kore.Syntax.Variable
     ) where
 
 import Prelude.Kore
+
+import Data.Function
+    ( on
+    )
 
 import Kore.Debug
     ( Debug
@@ -26,6 +31,50 @@ import Kore.Variables.Fresh
     ( FreshVariable
     )
 
+{- | @SubstitutionOrd@ orders variables for substitution.
+
+When unifying or matching two variables @x@ and @y@, we prefer to order the
+solution so that we get a substitution for the lesser of the two, as computed by
+'comparePriority'.
+
+Equality:
+
+prop> (compareSubstitution a b == EQ) = (a == b)
+
+Note: the equality law implies reflexivity.
+
+Antisymmetry:
+
+prop> (compareSubstitution a b == LT) = (compareSubstitution b a == GT)
+
+Transitivity:
+
+prop> (compareSubstitution x y == compareSubstitution y z) == (compareSubstitution x y == compareSubstitution x z)
+
+ -}
+class Eq variable => SubstitutionOrd variable where
+    compareSubstitution :: variable -> variable -> Ordering
+
+instance SubstitutionOrd Variable where
+    compareSubstitution = compare
+    {-# INLINE compareSubstitution #-}
+
+instance SubstitutionOrd Concrete where
+    compareSubstitution = \case {}
+    {-# INLINE compareSubstitution #-}
+
+instance
+    SubstitutionOrd variable => SubstitutionOrd (ElementVariable variable)
+  where
+    compareSubstitution = on compareSubstitution getElementVariable
+    {-# INLINE compareSubstitution #-}
+
+instance
+    SubstitutionOrd variable => SubstitutionOrd (SetVariable variable)
+  where
+    compareSubstitution = on compareSubstitution getSetVariable
+    {-# INLINE compareSubstitution #-}
+
 {- | 'InternalVariable' is the basic constraint on variable types.
 
 All variable types must implement these constraints, and in practice most
@@ -34,7 +83,7 @@ these constraints.
 
  -}
 type InternalVariable variable =
-    ( Ord variable
+    ( Ord variable, SubstitutionOrd variable
     , Debug variable, Show variable, Unparse variable
     , SortedVariable variable, FreshVariable variable
     )

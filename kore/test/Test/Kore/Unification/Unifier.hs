@@ -698,6 +698,9 @@ instance FreshVariable V where
       where
         names' = iterate (+ 1) name
 
+instance SubstitutionOrd V where
+    compareSubstitution = compare
+
 newtype W = W String
     deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -725,6 +728,9 @@ instance FreshVariable W where
         Just ((head . dropWhile (flip Set.member avoiding)) (W <$> names' ))
       where
         names' = iterate (<> "\'") name
+
+instance SubstitutionOrd W where
+    compareSubstitution = compare
 
 showVar :: V -> W
 showVar (V i) = W (show i)
