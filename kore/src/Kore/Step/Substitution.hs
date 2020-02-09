@@ -38,9 +38,6 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Unification.Unify
-    ( InternalVariable
-    )
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
