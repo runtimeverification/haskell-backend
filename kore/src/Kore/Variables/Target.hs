@@ -9,7 +9,11 @@ Target specific variables for unification.
 module Kore.Variables.Target
     ( Target (..)
     , unwrapVariable
+    , mkElementTarget
+    , mkSetTarget
     , isTarget
+    , mkElementNonTarget
+    , mkSetNonTarget
     , isNonTarget
     ) where
 
@@ -35,6 +39,10 @@ import Kore.Unparser
     )
 import Kore.Variables.Fresh
     ( FreshVariable (..)
+    )
+import Kore.Variables.UnifiedVariable
+    ( ElementVariable
+    , SetVariable
     )
 
 {- | Distinguish variables by their source.
@@ -79,9 +87,29 @@ unwrapVariable :: Target variable -> variable
 unwrapVariable (Target variable) = variable
 unwrapVariable (NonTarget variable) = variable
 
+mkElementTarget
+    :: ElementVariable variable
+    -> ElementVariable (Target variable)
+mkElementTarget = fmap Target
+
+mkSetTarget
+    :: SetVariable variable
+    -> SetVariable (Target variable)
+mkSetTarget = fmap Target
+
 isTarget :: Target variable -> Bool
 isTarget (Target _) = True
 isTarget (NonTarget _) = False
+
+mkElementNonTarget
+    :: ElementVariable variable
+    -> ElementVariable (Target variable)
+mkElementNonTarget = fmap NonTarget
+
+mkSetNonTarget
+    :: SetVariable variable
+    -> SetVariable (Target variable)
+mkSetNonTarget = fmap NonTarget
 
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget

@@ -259,7 +259,7 @@ toAxiomVariables
     => UnifyingRule rule
     => rule variable
     -> rule (Target variable)
-toAxiomVariables = mapRuleVariables (fmap Target.Target) (fmap Target.Target)
+toAxiomVariables = mapRuleVariables Target.mkElementTarget Target.mkSetTarget
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
  -}
@@ -416,7 +416,7 @@ toConfigurationVariables
     => Pattern variable
     -> Pattern (Target variable)
 toConfigurationVariables =
-    Pattern.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
+    Pattern.mapVariables Target.mkElementNonTarget Target.mkSetNonTarget
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition
@@ -424,7 +424,7 @@ toConfigurationVariablesCondition
     => SideCondition variable
     -> SideCondition (Target variable)
 toConfigurationVariablesCondition =
-    SideCondition.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
+    SideCondition.mapVariables Target.mkElementNonTarget Target.mkSetNonTarget
 
 {- | Apply the remainder predicate to the given initial configuration.
 
