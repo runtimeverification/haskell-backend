@@ -400,7 +400,6 @@ verifyClaimSentence sentence =
         Lens.over
             (field @"indexedModuleClaims")
             ((attrs, verified) :)
-
     rejectClaim attrs verified =
         case fromSentenceAxiom (attrs, verified) of
             Right (OnePathClaimPattern (OnePathRule rulePattern))
@@ -408,14 +407,12 @@ verifyClaimSentence sentence =
             Right (AllPathClaimPattern (AllPathRule rulePattern))
               | rejectRulePattern rulePattern -> True
             _ -> False
-
     rejectRulePattern
         RulePattern { left, antiLeft, requires, rhs = RHS { right, ensures } }
       =
         (not . any containsForall)
             (catMaybes [antiLeft] <> [left, unwrapPredicate requires])
         && any containsForall [right, unwrapPredicate ensures]
-
     sentenceClaimError sentenceClaim =
         withSentenceClaimContext sentenceClaim $ koreFail "Found claim with \
             \universally-quantified variables appearing only on the right-hand side"
