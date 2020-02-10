@@ -805,6 +805,7 @@ renameElementBinder trElemVar avoiding binder = do
             , binderChild = binderChild'
             }
     pure binder'
+{-# INLINE renameElementBinder #-}
 
 renameSetBinder
     ::  Monad m
@@ -830,6 +831,7 @@ renameSetBinder trSetVar avoiding binder = do
             , binderChild = binderChild'
             }
     pure binder'
+{-# INLINE renameSetBinder #-}
 
 {- | Reset the 'variableCounter' of all 'Variables'.
 
