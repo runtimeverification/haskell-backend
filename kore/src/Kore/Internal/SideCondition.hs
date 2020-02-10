@@ -50,7 +50,6 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( Unparse (..)
-    , unparseToText
     )
 import qualified Pretty
 import qualified SQL
@@ -172,4 +171,7 @@ toRepresentationCondition
     => Condition variable
     -> SideCondition.Representation
 toRepresentationCondition condition =
-    SideCondition.Representation.fromText $ unparseToText condition
+    SideCondition.Representation.fromText
+    $ Pretty.renderText
+    $ Pretty.layoutOneLine
+    $ unparse condition
