@@ -118,8 +118,7 @@ instance MonadTrans ListT where
     lift m = ListT $ \yield next -> m >>= \a -> yield a next
     {-# INLINE lift #-}
 
-instance MonadLog log => MonadLog (ListT log) where
---    logWhile e = mapListT (logWhile e)
+instance MonadLog log => MonadLog (ListT log)
 
 instance MonadReader r m => MonadReader r (ListT m) where
     ask = lift ask

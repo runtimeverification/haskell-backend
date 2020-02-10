@@ -187,18 +187,7 @@ class Monad m => MonadLog m where
     logEntry = Monad.Trans.lift . logEntry
     {-# INLINE logEntry #-}
 
---    logWhile :: Entry entry => entry -> m a -> m a
---    default logWhile
---        :: Entry entry
---        => (MFunctor trans, MonadLog log, m ~ trans log)
---        => entry
---        -> m a
---        -> m a
---    logWhile e = Monad.Morph.hoist (logWhile e)
---    {-# INLINE logWhile #-}
-
-instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log) where
---    logWhile = mapAccumT . logWhile
+instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log)
 
 instance MonadLog log => MonadLog (CounterT log)
 
@@ -217,7 +206,6 @@ newtype LoggerT m a =
 
 instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
---    logWhile = const id
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
