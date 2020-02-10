@@ -85,8 +85,8 @@ import Kore.Internal.TermLike hiding
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
@@ -355,7 +355,7 @@ matchInj _ = empty
 
 -- * Implementation
 
-type MatchingVariable variable = SimplifierVariable variable
+type MatchingVariable variable = InternalVariable variable
 
 {- | The internal state of the matching algorithm.
  -}

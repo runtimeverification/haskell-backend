@@ -74,7 +74,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
     ( InternalVariable
-    , SubstitutionVariable
+    , InternalVariable
     , TermLike
     , pattern Var_
     , mkVar
@@ -348,22 +348,18 @@ modify f = wrap . f . unwrap
 -- with the given function.
 mapVariables
     :: forall variableFrom variableTo
-    .  (Ord variableFrom, Ord variableTo)
-    => (variableFrom -> variableTo)
+    .  (Ord variableFrom, FreshVariable variableTo)
+    => (ElementVariable variableFrom -> ElementVariable variableTo)
+    -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Substitution variableFrom
     -> Substitution variableTo
-mapVariables variableMapper =
-    modify (map (mapVariable variableMapper))
+mapVariables mapElemVar mapSetVar  =
+    modify (map mapSingleSubstitution)
   where
-    mapVariable
-        :: (variableFrom -> variableTo)
-        -> (UnifiedVariable variableFrom, TermLike variableFrom)
-        -> (UnifiedVariable variableTo, TermLike variableTo)
-    mapVariable
-        mapper
-        (substVariable, patt)
-      =
-        (mapper <$> substVariable, TermLike.mapVariables mapper patt)
+    mapSingleSubstitution =
+        Bifunctor.bimap
+            (mapUnifiedVariable mapElemVar mapSetVar)
+            (TermLike.mapVariables mapElemVar mapSetVar)
 
 mapTerms
     :: (TermLike variable -> TermLike variable)
@@ -431,9 +427,7 @@ renormalizes, if needed.
 -}
 reverseIfRhsIsVar
     :: forall variable
-    .   ( InternalVariable variable
-        , FreshVariable variable
-        )
+    .  InternalVariable variable
     => UnifiedVariable variable
     -> Substitution variable
     -> Substitution variable
@@ -566,7 +560,7 @@ wrapNormalization Normalization { normalized, denormalized } =
 
 -- | Substitute the 'normalized' part into the 'denormalized' part.
 applyNormalized
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Normalization variable
     -> Normalization variable
 applyNormalized Normalization { normalized, denormalized } =

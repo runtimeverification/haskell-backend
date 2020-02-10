@@ -99,8 +99,8 @@ import Kore.Unification.UnifierT
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
-    ( MonadUnify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
     ( gather
@@ -156,7 +156,10 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
 
     unwrappedConfig :: Pattern variable
     unwrappedConfig =
-        Pattern.mapVariables Target.unwrapVariable configWithNewSubst
+        Pattern.mapVariables
+            (fmap Target.unwrapVariable)
+            (fmap Target.unwrapVariable)
+            configWithNewSubst
 
     targetVariables :: [ElementVariable variable]
     targetVariables =
@@ -183,7 +186,7 @@ See also: 'applyInitialConditions'
  -}
 finalizeAppliedRule
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ Top level condition
@@ -217,7 +220,7 @@ finalizeAppliedRule sideCondition renamedRule appliedConditions =
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeRule
-    ::  ( SimplifierVariable variable
+    ::  ( InternalVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -255,7 +258,7 @@ implied by the configuration predicate.
 -}
 recoveryFunctionLikeResults
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => Simplifier.MonadSimplify simplifier
     => Pattern (Target variable)
     -> Results EqualityPattern variable
@@ -321,7 +324,7 @@ recoveryFunctionLikeResults initial results = do
 
 finalizeRulesSequence
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition (Target variable)
     -> Pattern (Target variable)
@@ -339,7 +342,10 @@ finalizeRulesSequence sideCondition initial unifiedRules
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
+            $ Pattern.mapVariables
+                (fmap Target.unwrapVariable)
+                (fmap Target.unwrapVariable)
+            <$> remainders'
         }
   where
     initialTerm = Conditional.term initial
@@ -369,7 +375,7 @@ See also: 'applyRewriteRule'
  -}
 applyRulesSequence
     ::  forall unifier variable
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , MonadUnify unifier
         )
     => SideCondition (Target variable)
@@ -389,7 +395,7 @@ applyRulesSequence
 
 -- | Matches a list a rules against a configuration. See 'matchRule'.
 matchRules
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => SideCondition (Target variable)
@@ -417,7 +423,7 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 matchRule
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => SideCondition variable
@@ -462,7 +468,7 @@ matchRule sideCondition initial rule = do
  -}
 evaluateRequires
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ the side condition

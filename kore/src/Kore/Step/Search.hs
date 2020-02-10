@@ -132,7 +132,7 @@ searchGraph Config { searchType, bound } match executionGraph = do
 
 matchWith
     :: forall variable m
-    .  (SimplifierVariable variable, MonadSimplify m)
+    .  (InternalVariable variable, MonadSimplify m)
     => SideCondition variable
     -> Pattern variable
     -> Pattern variable

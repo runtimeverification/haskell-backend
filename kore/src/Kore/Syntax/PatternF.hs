@@ -38,6 +38,7 @@ import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.DomainValue
+import Kore.Syntax.ElementVariable
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
 import Kore.Syntax.Floor
@@ -52,6 +53,7 @@ import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Rewrites
+import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
@@ -116,11 +118,13 @@ not injective!
 
 -}
 mapVariables
-    :: (variable1 -> variable2)
+    :: (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> PatternF variable1 child
     -> PatternF variable2 child
-mapVariables mapping =
-    runIdentity . traverseVariables (Identity . mapping)
+mapVariables mapElemVar mapSetVar =
+    runIdentity
+    . traverseVariables (Identity . mapElemVar) (Identity . mapSetVar)
 {-# INLINE mapVariables #-}
 
 {- | Use the provided traversal to replace all variables in a 'PatternF' head.
@@ -131,10 +135,11 @@ traversal is not injective!
 -}
 traverseVariables
     :: Applicative f
-    => (variable1 -> f variable2)
+    => (ElementVariable variable1 -> f (ElementVariable variable2))
+    -> (SetVariable variable1 -> f (SetVariable variable2))
     -> PatternF variable1 child
     -> f (PatternF variable2 child)
-traverseVariables traversing =
+traverseVariables trElemVar trSetVar =
     \case
         -- Non-trivial cases
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
@@ -162,19 +167,20 @@ traverseVariables traversing =
         InhabitantF s -> pure (InhabitantF s)
   where
     traverseVariable (Const variable) =
-        VariableF . Const <$> traverse traversing variable
+        VariableF . Const
+        <$> traverseUnifiedVariable trElemVar trSetVar variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
-        <$> traverse traversing existsVariable
+        <$> trElemVar existsVariable
         <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
         Forall forallSort
-        <$> traverse traversing forallVariable
+        <$> trElemVar forallVariable
         <*> pure forallChild
     traverseVariablesMu Mu { muVariable, muChild } =
-        Mu <$> traverse traversing muVariable <*> pure muChild
+        Mu <$> trSetVar muVariable <*> pure muChild
     traverseVariablesNu Nu { nuVariable, nuChild } =
-        Nu <$> traverse traversing nuVariable <*> pure nuChild
+        Nu <$> trSetVar nuVariable <*> pure nuChild
 
 -- | Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.

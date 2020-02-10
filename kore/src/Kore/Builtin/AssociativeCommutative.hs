@@ -480,6 +480,7 @@ normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
 -- remains abstract.
 extractConcreteElement
     ::  Domain.AcWrapper collection
+    =>  Ord variable
     =>  Domain.Element collection (TermLike variable)
     ->  Either
             (TermLike Concrete, Domain.Value collection (TermLike variable))
@@ -678,7 +679,9 @@ disjointMap input =
     asMap = Map.fromList input
 
 splitVariableConcrete
-    :: [(TermLike variable, a)]
+    :: forall variable a
+    .  Ord variable
+    =>  [(TermLike variable, a)]
     -> ([(TermLike variable, a)], [(TermLike Concrete, a)])
 splitVariableConcrete terms =
     partitionEithers (map toConcreteEither terms)
@@ -703,7 +706,7 @@ reject the definition.
 -}
 unifyEqualsNormalized
     :: forall normalized unifier variable
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , Traversable (Domain.Value normalized)
         , TermWrapper normalized
         , MonadUnify unifier
@@ -791,7 +794,7 @@ Currently allows at most one opaque term in the two arguments taken together.
 -}
 unifyEqualsNormalizedAc
     ::  forall normalized variable unifier
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , Traversable (Domain.Value normalized)
         , TermWrapper normalized
         , MonadUnify unifier
@@ -1191,7 +1194,7 @@ The keys of the two structures are assumend to be disjoint.
 -}
 unifyEqualsElementLists
     ::  forall normalized variable unifier
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , MonadUnify unifier
         , TermWrapper normalized
         , Traversable (Domain.Value normalized)
@@ -1328,7 +1331,7 @@ unifyEqualsElementLists
 unifyOpaqueVariable
     ::  ( MonadUnify unifier
         , TermWrapper normalized
-        , SimplifierVariable variable
+        , InternalVariable variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> (forall a . Doc () -> unifier a)
@@ -1408,7 +1411,7 @@ unifyEqualsConcreteOrWithVariable
     ::  ( Domain.AcWrapper normalized
         , MonadUnify unifier
         , Traversable (Domain.Value normalized)
-        , SimplifierVariable variable
+        , InternalVariable variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> ConcreteOrWithVariable normalized variable
@@ -1443,7 +1446,7 @@ unifyEqualsPair
     :: forall normalized unifier variable
     .   ( Domain.AcWrapper normalized
         , MonadUnify unifier
-        , SimplifierVariable variable
+        , InternalVariable variable
         , Traversable (Domain.Value normalized)
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
@@ -1487,7 +1490,7 @@ Also returns the non-unified part os the lists (one of the two will be empty).
 unifyEqualsElementPermutations
     ::  ( Alternative unifier
         , Monad unifier
-        , SimplifierVariable variable
+        , InternalVariable variable
         )
     => (a -> b -> unifier (Conditional variable c))
     -> [a]

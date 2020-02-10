@@ -40,8 +40,8 @@ import Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.Simplify
     ( ConditionSimplifier (..)
+    , InternalVariable
     , MonadSimplify (..)
-    , SimplifierVariable
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier

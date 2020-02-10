@@ -5,6 +5,7 @@ License     : NCSA
 -}
 module Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
+    , ElementVariable (..), SetVariable (..)
     , isElemVar
     , expectElemVar
     , isSetVar
@@ -14,6 +15,13 @@ module Kore.Variables.UnifiedVariable
     , unifiedVariableSort
     , refreshElementVariable
     , refreshSetVariable
+    , mapUnifiedVariable
+    , traverseUnifiedVariable
+    -- * UnifiedVariableMap
+    , VariableMap
+    , UnifiedVariableMap
+    , renameElementVariable, renameSetVariable
+    , lookupRenamedElementVariable, lookupRenamedSetVariable
     ) where
 
 import Prelude.Kore
@@ -21,8 +29,19 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
+import Data.Function
+    ( on
+    )
 import Data.Functor.Const
+import Data.Generics.Product
+    ( field
+    )
 import Data.Hashable
+import Data.Map.Strict
+    ( Map
+    )
+import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
@@ -49,7 +68,7 @@ from element variables (introduced by 'ElemVar').
 data UnifiedVariable variable
     = ElemVar !(ElementVariable variable)
     | SetVar  !(SetVariable variable)
-    deriving (Generic, Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Generic, Eq, Ord, Show)
 
 instance NFData variable => NFData (UnifiedVariable variable)
 
@@ -160,3 +179,84 @@ refreshSetVariable avoiding =
     -- expectElemVar is safe because the FreshVariable instance of
     -- UnifiedVariable (above) conserves the SetVar constructor.
     fmap expectSetVar . refreshVariable avoiding . SetVar
+
+mapUnifiedVariable
+    :: (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
+    -> UnifiedVariable variable1 -> UnifiedVariable variable2
+mapUnifiedVariable mapElemVar mapSetVar =
+    \case
+        ElemVar elemVar -> ElemVar (mapElemVar elemVar)
+        SetVar  setVar  -> SetVar (mapSetVar setVar)
+
+traverseUnifiedVariable
+    :: Functor f
+    => (ElementVariable variable1 -> f (ElementVariable variable2))
+    -> (SetVariable variable1 -> f (SetVariable variable2))
+    -> UnifiedVariable variable1 -> f (UnifiedVariable variable2)
+traverseUnifiedVariable traverseElemVar traverseSetVar =
+    \case
+        ElemVar elemVar -> ElemVar <$> traverseElemVar elemVar
+        SetVar  setVar  -> SetVar <$> traverseSetVar setVar
+
+type VariableMap meta variable1 variable2 =
+    Map (meta variable1) (meta variable2)
+
+data UnifiedVariableMap variable1 variable2 =
+    UnifiedVariableMap
+        { setVariables
+            :: !(VariableMap SetVariable variable1 variable2)
+        , elementVariables
+            :: !(VariableMap ElementVariable variable1 variable2)
+        }
+    deriving (Generic)
+
+instance
+    Ord variable1 => Semigroup (UnifiedVariableMap variable1 variable2)
+  where
+    (<>) a b =
+        UnifiedVariableMap
+            { setVariables = on (<>) setVariables a b
+            , elementVariables = on (<>) elementVariables a b
+            }
+
+instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
+    mempty = UnifiedVariableMap mempty mempty
+
+renameSetVariable
+    :: Ord variable1
+    => SetVariable variable1
+    -> SetVariable variable2
+    -> UnifiedVariableMap variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
+renameSetVariable variable1 variable2 =
+    Lens.over
+        (field @"setVariables")
+        (Map.insert variable1 variable2)
+
+renameElementVariable
+    :: Ord variable1
+    => ElementVariable variable1
+    -> ElementVariable variable2
+    -> UnifiedVariableMap variable1 variable2
+    -> UnifiedVariableMap variable1 variable2
+renameElementVariable variable1 variable2 =
+    Lens.over
+        (field @"elementVariables")
+        (Map.insert variable1 variable2)
+
+lookupRenamedElementVariable
+    :: Ord variable1
+    => ElementVariable variable1
+    -> UnifiedVariableMap variable1 variable2
+    -> Maybe (ElementVariable variable2)
+lookupRenamedElementVariable variable =
+    Map.lookup variable . elementVariables
+
+lookupRenamedSetVariable
+    :: Ord variable1
+    => SetVariable variable1
+    -> UnifiedVariableMap variable1 variable2
+    -> Maybe (SetVariable variable2)
+lookupRenamedSetVariable variable =
+    Map.lookup variable . setVariables

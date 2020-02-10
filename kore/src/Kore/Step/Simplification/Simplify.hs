@@ -5,7 +5,7 @@ License     : NCSA
 -}
 
 module Kore.Step.Simplification.Simplify
-    ( SimplifierVariable
+    ( InternalVariable
     , MonadSimplify (..)
     , simplifyConditionalTerm
     , simplifyConditionalTermToOr
@@ -90,7 +90,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    , SubstitutionVariable
+    , InternalVariable
     , Symbol
     , TermLike
     , TermLikeF (..)
@@ -124,16 +124,6 @@ import SMT
     ( MonadSMT (..)
     )
 
-{- | 'SimplifierVariable' constrains variables that are used in the simplifier.
-
-'SimplifierVariable' requires only that the variable be a 'SubstitutionVariable'
-(and in turn, an 'InternalVariable'), but simplifier functions should use this
-constraint instead of either "lesser" constraint in case that changes in the
-future.
-
- -}
-type SimplifierVariable variable = SubstitutionVariable variable
-
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
@@ -165,12 +155,12 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     {-# INLINE localSimplifierTermLike #-}
 
     simplifyCondition
-        :: SimplifierVariable variable
+        :: InternalVariable variable
         => SideCondition variable
         -> Conditional variable term
         -> BranchT m (Conditional variable term)
     default simplifyCondition
-        ::  ( SimplifierVariable variable
+        ::  ( InternalVariable variable
             , MonadTrans trans
             , MonadSimplify n
             , m ~ trans n
@@ -265,7 +255,7 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable m
-        . (HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        . (HasCallStack, InternalVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
@@ -276,7 +266,7 @@ newtype TermLikeSimplifier =
 simplifyConditionalTermToOr
     :: forall variable simplifier
     .   ( HasCallStack
-        , SimplifierVariable variable
+        , InternalVariable variable
         , MonadSimplify simplifier
         )
     => SideCondition variable
@@ -291,7 +281,7 @@ simplifyConditionalTermToOr sideCondition termLike = do
 simplifyConditionalTerm
     :: forall variable simplifier
     .   ( HasCallStack
-        , SimplifierVariable variable
+        , InternalVariable variable
         , MonadSimplify simplifier
         )
     => SideCondition variable
@@ -309,7 +299,7 @@ simplification, but only attaches it unmodified to the final result.
  -}
 termLikeSimplifier
     ::  ( forall variable m
-        . (HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        . (HasCallStack, InternalVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> m (OrPattern variable)
@@ -320,7 +310,7 @@ termLikeSimplifier simplifier =
   where
     termLikeSimplifierWorker
         :: forall variable m
-        .  (HasCallStack, SimplifierVariable variable, MonadSimplify m)
+        .  (HasCallStack, InternalVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
@@ -341,7 +331,7 @@ newtype ConditionSimplifier monad =
     ConditionSimplifier
         { getConditionSimplifier
             :: forall variable term
-            .  SimplifierVariable variable
+            .  InternalVariable variable
             => SideCondition variable
             -> Conditional variable term
             -> BranchT monad (Conditional variable term)
@@ -391,7 +381,7 @@ newtype BuiltinAndAxiomSimplifier =
     BuiltinAndAxiomSimplifier
         { runBuiltinAndAxiomSimplifier
             :: forall variable simplifier
-            .  (SimplifierVariable variable, MonadSimplify simplifier)
+            .  (InternalVariable variable, MonadSimplify simplifier)
             => TermLike variable
             -> SideCondition variable
             -> simplifier (AttemptedAxiom variable)
@@ -595,7 +585,7 @@ purePatternAxiomEvaluator p =
 -}
 applicationAxiomSimplifier
     ::  (  forall variable simplifier
-        .  (SimplifierVariable variable, MonadSimplify simplifier)
+        .  (InternalVariable variable, MonadSimplify simplifier)
         => CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
@@ -608,7 +598,7 @@ applicationAxiomSimplifier applicationSimplifier =
   where
     helper
         :: forall variable simplifier
-        .  (SimplifierVariable variable, MonadSimplify simplifier)
+        .  (InternalVariable variable, MonadSimplify simplifier)
         => TermLike variable
         -> SideCondition variable
         -> simplifier (AttemptedAxiom variable)

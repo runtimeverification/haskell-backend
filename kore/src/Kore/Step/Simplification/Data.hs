@@ -11,7 +11,7 @@ Portability : portable
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Step.Simplification.Data
-    ( MonadSimplify (..), SimplifierVariable
+    ( MonadSimplify (..), InternalVariable
     , Simplifier
     , TermSimplifier
     , SimplifierT, runSimplifierT

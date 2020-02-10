@@ -363,7 +363,7 @@ intLiteral :: Integer -> TermLike Variable
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
-asInternal :: Ord variable => Integer -> TermLike variable
+asInternal :: FreshVariable variable => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 -- | Specialize 'asInternal' to the builtin sort 'intSort'.

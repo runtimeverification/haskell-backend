@@ -43,14 +43,14 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Substitution as Substitution
 
 simplifyEvaluatedMultiPredicate
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> MultiAnd (OrCondition variable)
     -> simplifier (OrCondition variable)

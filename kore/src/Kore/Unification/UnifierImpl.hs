@@ -53,8 +53,8 @@ import Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
     )
 import Kore.Unification.Unify
-    ( MonadUnify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadUnify
     )
 import qualified Kore.Unification.Unify as Unifier
 import Kore.Variables.UnifiedVariable
@@ -63,7 +63,7 @@ import Kore.Variables.UnifiedVariable
 
 simplifyAnds
     :: forall variable unifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
@@ -90,7 +90,7 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
 
 deduplicateSubstitution
     ::  forall variable unifier
-    .   SimplifierVariable variable
+    .   InternalVariable variable
     =>  MonadUnify unifier
     =>  Substitution variable
     ->  unifier
@@ -141,7 +141,7 @@ deduplicateSubstitution =
 
 normalizeOnce
     :: forall unifier variable term
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => Conditional variable term
     -> unifier (Conditional variable term)
@@ -172,7 +172,7 @@ normalizeOnce Conditional { term, predicate, substitution } = do
 
 normalizeExcept
     :: forall unifier variable term
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => Conditional variable term
     -> unifier (Conditional variable term)

@@ -45,8 +45,8 @@ import Kore.Unification.Error
     ( UnificationOrSubstitutionError (..)
     )
 import Kore.Unification.UnifierT
-    ( MonadUnify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadUnify
     , runUnifierT
     )
 import Kore.Variables.UnifiedVariable
@@ -435,7 +435,7 @@ test_applyEquationalRule_ =
 
 applyEquationalRulesSequence_
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => Pattern variable
     -- ^ Configuration being rewritten
