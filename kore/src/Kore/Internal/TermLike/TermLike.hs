@@ -57,7 +57,6 @@ import Data.Functor.Identity
     ( Identity (..)
     )
 import qualified Data.Generics.Product as Lens.Product
-import qualified Data.Generics.Wrapped as Lens.Wrapped
 import Data.Hashable
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -602,18 +601,17 @@ mapVariables
 mapVariables mapElemVar mapSetVar termLike =
     Recursive.unfold worker (Env.env freeVariables0 termLike)
   where
-    Identity freeVariables0 =
-        renameFreeVariables
-            (Identity . mapElemVar)
-            (Identity . mapSetVar)
-            (freeVariables termLike)
-
     trElemVar = Identity . mapElemVar
     trSetVar = Identity . mapSetVar
 
+    Identity freeVariables0 =
+        renameFreeVariables
+            trElemVar
+            trSetVar
+            (freeVariables termLike)
+
     mapElementBinder avoiding =
         sequenceAdjunct (renameElementBinder trElemVar avoiding)
-
     mapSetBinder avoiding =
         sequenceAdjunct (renameSetBinder trSetVar avoiding)
 
@@ -637,11 +635,19 @@ mapVariables mapElemVar mapSetVar termLike =
         $ mapSetBinder avoiding
         . Env.env renaming
 
-    renameVariable renaming variable1 =
-        rightAdjunct askUnifiedVariable (Env.env renaming variable1)
+    askUnifiedVariable' renaming =
+        rightAdjunct askUnifiedVariable . Env.env renaming
+
+    askElementVariable' renaming =
+        rightAdjunct askElementVariable . Env.env renaming
+
+    askSetVariable' renaming =
+        rightAdjunct askSetVariable . Env.env renaming
 
     renameAttrs renaming =
-        Lens.over freeUnifiedVariables (renameVariable renaming)
+        Attribute.mapVariables
+            (askElementVariable' renaming)
+            (askSetVariable' renaming)
 
     worker
         ::  Renaming variable1 variable2 (TermLike variable1)
@@ -657,7 +663,7 @@ mapVariables mapElemVar mapSetVar termLike =
                 case termLikeF of
                     VariableF (Const unifiedVariable1) ->
                         (VariableF . Const)
-                            (renameVariable renaming unifiedVariable1)
+                            (askUnifiedVariable' renaming unifiedVariable1)
                     ExistsF exists ->
                         ExistsF (renameExists renaming avoiding exists)
                     ForallF forall ->
@@ -671,21 +677,6 @@ mapVariables mapElemVar mapSetVar termLike =
                         mapVariablesF mapElemVar mapSetVar
                         $ Env.env renaming <$> termLikeF
         in attrs' :< termLikeF'
-
-freeUnifiedVariables
-    ::  forall variable1' variable2'
-    .   Ord variable2'
-    =>  Lens.Traversal
-            (Attribute.Pattern variable1')
-            (Attribute.Pattern variable2')
-            (UnifiedVariable variable1')
-            (UnifiedVariable variable2')
-freeUnifiedVariables =
-    Lens.Product.field @"freeVariables"
-    . Lens.Wrapped._Unwrapped
-    . traverseSet
-  where
-    traverseSet f = fmap Set.fromList . traverse f . Set.toList
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
 
@@ -724,7 +715,11 @@ traverseVariables trElemVar trSetVar termLike =
                 (RenamingT variable1 variable2 m (TermLike variable2))
         ->  RenamingT variable1 variable2 m (TermLike variable2)
     worker (attrs :< termLikeF) = do
-        attrs' <- Lens.traverseOf freeUnifiedVariables askUnifiedVariable attrs
+        attrs' <-
+            Attribute.traverseVariables
+                askElementVariable
+                askSetVariable
+                attrs
         let avoiding = getFreeVariables $ freeVariables attrs'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
