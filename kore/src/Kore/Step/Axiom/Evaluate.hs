@@ -57,8 +57,8 @@ import Kore.Step.Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Step as EqualityPattern
     ( mapRuleVariables
@@ -71,7 +71,7 @@ import Log
 
 evaluateAxioms
     :: forall variable simplifier
-    .  ( SimplifierVariable variable
+    .  ( InternalVariable variable
        , MonadSimplify simplifier
        )
     => [EqualityRule Variable]
@@ -154,7 +154,10 @@ evaluateAxioms equalityRules sideCondition termLike
     maybeNotApplicable = maybeT (return notApplicable) return
 
     unwrapEqualityRule (EqualityRule rule) =
-        EqualityPattern.mapRuleVariables fromVariable rule
+        EqualityPattern.mapRuleVariables
+            (fmap fromVariable)
+            (fmap fromVariable)
+            rule
 
     rejectNarrowing (Result.results -> results) =
         (Monad.guard . not) (any Step.isNarrowingResult results)

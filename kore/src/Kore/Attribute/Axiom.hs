@@ -39,9 +39,6 @@ import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
-import Data.Function
-    ( (&)
-    )
 import Data.Generics.Product
 import Data.Proxy
 import qualified Generics.SOP as SOP

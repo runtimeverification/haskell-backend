@@ -39,8 +39,8 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
-    ( MonadUnify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser
@@ -51,7 +51,7 @@ import qualified Log
 -- If successful, it also produces a proof of how the substitution was obtained.
 -- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedure
-    ::  ( SimplifierVariable variable
+    ::  ( InternalVariable variable
         , MonadUnify unifier
         )
     => SideCondition variable

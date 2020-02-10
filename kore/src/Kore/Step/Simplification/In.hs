@@ -47,7 +47,7 @@ Right now this uses the following simplifications:
 TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> In Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -72,7 +72,7 @@ carry around.
 -}
 simplifyEvaluatedIn
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
@@ -89,7 +89,7 @@ simplifyEvaluatedIn sideCondition first second
                             (makeEvaluateIn sideCondition <$> first <*> second)
 
 makeEvaluateIn
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Pattern variable
     -> Pattern variable

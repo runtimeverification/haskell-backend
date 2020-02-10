@@ -115,7 +115,7 @@ Also, we have
     the same for two string literals and two chars
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -140,7 +140,7 @@ to carry around.
 
 -}
 simplifyEvaluated
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
@@ -159,7 +159,7 @@ simplifyEvaluated sideCondition first second
     return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> [OrPattern variable]
     -> simplifier (OrPattern variable)
@@ -172,7 +172,7 @@ simplifyEvaluatedMultiple sideCondition (pat : patterns) =
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate
-    ::  ( SimplifierVariable variable
+    ::  ( InternalVariable variable
         , HasCallStack
         , MonadSimplify simplifier
         )
@@ -187,7 +187,7 @@ makeEvaluate sideCondition first second
   | otherwise = makeEvaluateNonBool sideCondition first second
 
 makeEvaluateNonBool
-    ::  ( SimplifierVariable variable
+    ::  ( InternalVariable variable
         , HasCallStack
         , MonadSimplify simplifier
         )
@@ -264,7 +264,7 @@ The comment for 'simplify' describes all the special cases handled by this.
 -}
 termAnd
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => HasCallStack
     => TermLike variable
     -> TermLike variable

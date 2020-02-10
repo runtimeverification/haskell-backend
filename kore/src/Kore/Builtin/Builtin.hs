@@ -114,8 +114,8 @@ import Kore.Step.Simplification.Simplify
     ( AttemptedAxiom (..)
     , AttemptedAxiomResults (AttemptedAxiomResults)
     , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
+    , InternalVariable
     , MonadSimplify
-    , SimplifierVariable
     , applicationAxiomSimplifier
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
@@ -128,6 +128,8 @@ import qualified Kore.Unification.Unify as Monad.Unify
     ( scatter
     )
 import Kore.Unparser
+
+-- TODO (thomas.tuegel): Include hook name here.
 
 type Function = BuiltinAndAxiomSimplifier
 
@@ -175,12 +177,7 @@ unaryOperator
     -> (a -> b)
     -- ^ Operation on builtin types
     -> Function
-unaryOperator
-    extractVal
-    asPattern
-    ctx
-    op
-  =
+unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
@@ -223,18 +220,13 @@ binaryOperator
     -> (a -> a -> b)
     -- ^ Operation on builtin types
     -> Function
-binaryOperator
-    extractVal
-    asPattern
-    ctx
-    op
-  =
+binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: SimplifierVariable variable
+        :: InternalVariable variable
         => MonadSimplify m
         => Sort
         -> [TermLike variable]
@@ -271,18 +263,13 @@ ternaryOperator
     -> (a -> a -> a -> b)
     -- ^ Operation on builtin types
     -> Function
-ternaryOperator
-    extractVal
-    asPattern
-    ctx
-    op
-  =
+ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: SimplifierVariable variable
+        :: InternalVariable variable
         => MonadSimplify m
         => Sort
         -> [TermLike variable]
@@ -298,7 +285,7 @@ ternaryOperator
 
 type FunctionImplementation
     = forall variable simplifier
-        .  SimplifierVariable variable
+        .  InternalVariable variable
         => MonadSimplify simplifier
         => Sort
         -> [TermLike variable]
@@ -309,7 +296,7 @@ functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: SimplifierVariable variable
+        :: InternalVariable variable
         => MonadSimplify simplifier
         => CofreeF
             (Application Symbol)
@@ -494,7 +481,7 @@ If the pattern is not concrete and normalized, the function is
 See also: 'Kore.Proof.Value.Value'
 
  -}
-toKey :: TermLike variable -> Maybe (TermLike Concrete)
+toKey :: Ord variable => TermLike variable -> Maybe (TermLike Concrete)
 toKey purePattern = do
     p <- TermLike.asConcrete purePattern
     -- TODO (thomas.tuegel): Use the return value as the term.
@@ -513,7 +500,7 @@ getAttemptedAxiom attempt =
 
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
-    :: (MonadUnify unifier, SimplifierVariable variable)
+    :: (MonadUnify unifier, InternalVariable variable)
     => SimplificationType
     -> TermLike variable
     -> TermLike variable

@@ -43,7 +43,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.Variable
-    ( InternalVariable
+    ( ElementVariable
+    , InternalVariable
+    , SetVariable
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -155,11 +157,12 @@ toRepresentation SideCondition { representation } = representation
 
 mapVariables
     :: (Ord variable1, InternalVariable variable2)
-    => (variable1 -> variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables mapper condition@(SideCondition _ _) =
-    fromCondition (Condition.mapVariables mapper assumedTrue)
+mapVariables mapElemVar mapSetVar condition@(SideCondition _ _) =
+    fromCondition (Condition.mapVariables mapElemVar mapSetVar assumedTrue)
   where
     SideCondition { assumedTrue } = condition
 

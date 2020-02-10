@@ -41,6 +41,7 @@ import Kore.ASTVerifier.SortVerifier
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , freeVariables
+    , nullFreeVariables
     )
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
@@ -493,7 +494,7 @@ verifyDomainValue domain = do
     let freeVariables' :: FreeVariables Variable =
             foldMap freeVariables
                 (Internal.extractAttributes <$> verified)
-    Monad.unless (null freeVariables')
+    Monad.unless (nullFreeVariables freeVariables')
         (koreFail "Domain value must not contain free variables.")
     return verified
 

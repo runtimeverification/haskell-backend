@@ -37,7 +37,7 @@ See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
 
  -}
 equalInjectiveHeadsAndEquals
-    ::  ( SimplifierVariable variable
+    ::  ( InternalVariable variable
         , MonadUnify unifier
         )
     => HasCallStack
