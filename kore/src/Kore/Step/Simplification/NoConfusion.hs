@@ -28,6 +28,9 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 
+newtype BottomT m a = BottomT { unBottomT :: MaybeT m a }
+    deriving (Functor, Applicative, Monad, Monad.Trans.MonadTrans)
+
 {- | Unify two application patterns with equal, injective heads.
 
 This includes constructors and sort injections.
@@ -37,7 +40,8 @@ See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
 
  -}
 equalInjectiveHeadsAndEquals
-    ::  ( SimplifierVariable variable
+    :: forall variable unifier .
+        ( SimplifierVariable variable
         , MonadUnify unifier
         )
     => HasCallStack
@@ -51,8 +55,26 @@ equalInjectiveHeadsAndEquals
     (App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
-    Monad.Trans.lift $ do
-        children <- Monad.zipWithM termMerger firstChildren secondChildren
+      unBottomT unifyChildren
+  where
+    isFirstInjective = Symbol.isInjective firstHead
+    isSecondInjective = Symbol.isInjective secondHead
+
+    toBottomT :: unifier (Pattern variable) -> BottomT unifier (Pattern variable)
+    toBottomT unifier = do
+        p <- Monad.Trans.lift unifier
+        if Pattern.isBottom p then
+            BottomT $ MaybeT $ pure Nothing
+        else
+            Monad.Trans.lift unifier
+
+    unifyChildren :: BottomT unifier (Pattern variable)
+    unifyChildren = do
+        children <-
+            Monad.zipWithM
+                ((toBottomT .) . termMerger)
+                firstChildren
+                secondChildren
         let merged = Foldable.foldMap Pattern.withoutTerm children
             -- TODO (thomas.tuegel): This is tricky!
             -- Unifying the symbol's children may have produced new patterns
@@ -62,9 +84,7 @@ equalInjectiveHeadsAndEquals
                 (markSimplified . mkApplySymbol firstHead)
                     (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
-  where
-    isFirstInjective = Symbol.isInjective firstHead
-    isSecondInjective = Symbol.isInjective secondHead
+
 equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
 
 {-| Unify two constructor application patterns.
