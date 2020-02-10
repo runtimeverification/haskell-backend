@@ -40,7 +40,7 @@ declareKoreSymbolDeclaration
 declareKoreSymbolDeclaration
     (AST.SymbolDeclaredDirectly declaration)
   =
-      SMT.declareFun_ declaration
+    SMT.declareFun_ declaration
 declareKoreSymbolDeclaration (AST.SymbolBuiltin _) =
     return ()
 declareKoreSymbolDeclaration (AST.SymbolConstructor _) =

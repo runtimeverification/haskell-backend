@@ -220,8 +220,6 @@ import Kore.Log.DebugSolver
 import qualified Log
 import SMT.AST
 
-import Debug.Trace
-
 -- ---------------------------------------------------------------------
 -- * Features
 
