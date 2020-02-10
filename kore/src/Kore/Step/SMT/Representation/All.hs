@@ -44,8 +44,6 @@ import Kore.Syntax.Id
     )
 import qualified SMT.AST
 
-import Debug.Trace
-
 {-| Builds a consistent representation of the sorts and symbols in the given
 module and its submodules.
 
@@ -64,26 +62,33 @@ build indexedModule sortConstructors =
 
 removeDuplicates :: Step.AST.SmtDeclarations -> Step.AST.SmtDeclarations
 removeDuplicates Step.AST.Declarations { sorts, symbols } =
-    let x = join $ mapMaybe g (Map.elems sorts)
+    let constructorSymbols =
+            join $ mapMaybe getConstructorNames (Map.elems sorts)
      in Step.AST.Declarations
          { sorts
-         , symbols = filter (f x) symbols
+         , symbols = filter (isDuplicate constructorSymbols) symbols
          }
   where
-    g :: Step.AST.Sort SMT.AST.SExpr Text Text -> Maybe [Text]
-    g Step.AST.Sort { declaration } =
+    getConstructorNames
+        :: Step.AST.Sort SMT.AST.SExpr Text Text
+        -> Maybe [Text]
+    getConstructorNames Step.AST.Sort { declaration } =
         case declaration of
             Step.AST.SortDeclarationDataType
                 ( SMT.AST.DataTypeDeclaration { constructors }
                 ) ->
                     Just $ fmap getName constructors
             _ -> Nothing
-    f xs Step.AST.Symbol { declaration } =
+    isDuplicate
+        :: [Text]
+        -> Step.AST.Symbol SMT.AST.SExpr Text
+        -> Bool
+    isDuplicate constructorSymbols Step.AST.Symbol { declaration } =
         case declaration of
             Step.AST.SymbolDeclaredDirectly
                 ( SMT.AST.FunctionDeclaration { name }
                 ) ->
-                    name `notElem` xs
+                    name `notElem` constructorSymbols
             _ -> True
     getName :: SMT.AST.Constructor sort symbol name -> symbol
     getName = SMT.AST.name
