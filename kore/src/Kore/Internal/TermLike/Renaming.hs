@@ -66,6 +66,7 @@ askUnifiedVariable =
     \case
         SetVar setVar -> SetVar <$> askSetVariable setVar
         ElemVar elemVar -> ElemVar <$> askElementVariable elemVar
+{-# INLINE askUnifiedVariable #-}
 
 askElementVariable
     :: Monad m
@@ -76,6 +77,7 @@ askElementVariable elementVariable =
     -- fromJust is safe because the variable must be renamed
     fmap Maybe.fromJust
     $ Reader.asks (lookupRenamedElementVariable elementVariable)
+{-# INLINE askElementVariable #-}
 
 askSetVariable
     :: Monad m
@@ -85,3 +87,4 @@ askSetVariable
 askSetVariable setVariable =
     -- fromJust is safe because the variable must be renamed
     fmap Maybe.fromJust $ Reader.asks (lookupRenamedSetVariable setVariable)
+{-# INLINE askSetVariable #-}
