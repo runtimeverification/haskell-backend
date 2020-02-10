@@ -610,44 +610,23 @@ mapVariables mapElemVar mapSetVar termLike =
             trSetVar
             (freeVariables termLike)
 
-    mapElementBinder avoiding =
-        sequenceAdjunct (renameElementBinder trElemVar avoiding)
-    mapSetBinder avoiding =
-        sequenceAdjunct (renameSetBinder trSetVar avoiding)
+    mapExists avoiding =
+        sequenceAdjunct $ existsBinder $ renameElementBinder trElemVar avoiding
+    mapForall avoiding =
+        sequenceAdjunct $ forallBinder $ renameElementBinder trElemVar avoiding
+    mapMu avoiding =
+        sequenceAdjunct $ muBinder $ renameSetBinder trSetVar avoiding
+    mapNu avoiding =
+        sequenceAdjunct $ nuBinder $ renameSetBinder trSetVar avoiding
 
-    renameExists renaming avoiding =
-        Lens.over existsBinder
-        $ mapElementBinder avoiding
-        . Env.env renaming
-
-    renameForall renaming avoiding =
-        Lens.over forallBinder
-        $ mapElementBinder avoiding
-        . Env.env renaming
-
-    renameMu renaming avoiding =
-        Lens.over muBinder
-        $ mapSetBinder avoiding
-        . Env.env renaming
-
-    renameNu renaming avoiding =
-        Lens.over nuBinder
-        $ mapSetBinder avoiding
-        . Env.env renaming
-
-    askUnifiedVariable' renaming =
-        rightAdjunct askUnifiedVariable . Env.env renaming
-
-    askElementVariable' renaming =
-        rightAdjunct askElementVariable . Env.env renaming
-
-    askSetVariable' renaming =
-        rightAdjunct askSetVariable . Env.env renaming
+    askUnifiedVariable' = rightAdjunct askUnifiedVariable
+    askElementVariable' = rightAdjunct askElementVariable
+    askSetVariable' = rightAdjunct askSetVariable
 
     renameAttrs renaming =
         Attribute.mapVariables
-            (askElementVariable' renaming)
-            (askSetVariable' renaming)
+            (askElementVariable' . Env.env renaming)
+            (askSetVariable' . Env.env renaming)
 
     worker
         ::  Renaming variable1 variable2 (TermLike variable1)
@@ -663,13 +642,13 @@ mapVariables mapElemVar mapSetVar termLike =
                 case termLikeF of
                     VariableF (Const unifiedVariable1) ->
                         (VariableF . Const)
-                            (askUnifiedVariable' renaming unifiedVariable1)
+                            (askUnifiedVariable' (env $> unifiedVariable1))
                     ExistsF exists ->
-                        ExistsF (renameExists renaming avoiding exists)
+                        ExistsF (mapExists avoiding (env $> exists))
                     ForallF forall ->
-                        ForallF (renameForall renaming avoiding forall)
-                    MuF mu -> MuF (renameMu renaming avoiding mu)
-                    NuF nu -> NuF (renameNu renaming avoiding nu)
+                        ForallF (mapForall avoiding (env $> forall))
+                    MuF mu -> MuF (mapMu avoiding (env $> mu))
+                    NuF nu -> NuF (mapNu avoiding (env $> nu))
                     _ ->
                         -- mapVariablesF will not actually call the mapping
                         -- function because all the cases with variables are
