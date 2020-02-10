@@ -49,7 +49,6 @@ import Control.Monad
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import qualified Data.List as List
 import qualified Data.List
 import Data.Map.Strict
@@ -393,7 +392,7 @@ concatNormalized normalized1 normalized2 = do
             ->  a
             )
         -> r
-    onBoth f g = Function.on f (g . Domain.unwrapAc) normalized1 normalized2
+    onBoth f g = on f (g . Domain.unwrapAc) normalized1 normalized2
     disjointConcreteElements =
         null $ onBoth Map.intersection Domain.concreteElements
 

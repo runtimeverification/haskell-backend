@@ -23,7 +23,6 @@ module Kore.Step.Result
 import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import Data.Sequence
     ( Seq
     )
@@ -80,8 +79,8 @@ data Results rule config =
 instance (Ord config, TopBottom config) => Semigroup (Results rule config) where
     (<>) results1 results2 =
         Results
-            { results = Function.on (<>) results results1 results2
-            , remainders = Function.on (<>) remainders results1 results2
+            { results = on (<>) results results1 results2
+            , remainders = on (<>) remainders results1 results2
             }
 
 instance (Ord config, TopBottom config) => Monoid (Results rule config) where
