@@ -75,8 +75,7 @@ removeDuplicates Step.AST.Declarations { sorts, symbols } =
     getConstructorNames Step.AST.Sort { declaration } =
         case declaration of
             Step.AST.SortDeclarationDataType
-                ( SMT.AST.DataTypeDeclaration { constructors }
-                ) ->
+                SMT.AST.DataTypeDeclaration { constructors } ->
                     Just $ fmap getName constructors
             _ -> Nothing
     isDuplicate
@@ -86,8 +85,7 @@ removeDuplicates Step.AST.Declarations { sorts, symbols } =
     isDuplicate constructorSymbols Step.AST.Symbol { declaration } =
         case declaration of
             Step.AST.SymbolDeclaredDirectly
-                ( SMT.AST.FunctionDeclaration { name }
-                ) ->
+                SMT.AST.FunctionDeclaration { name } ->
                     name `notElem` constructorSymbols
             _ -> True
     getName :: SMT.AST.Constructor sort symbol name -> symbol
