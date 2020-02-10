@@ -506,7 +506,6 @@ declareDatatypes proc datatypes = do
 
     declareConstructor :: SExpr -> SmtConstructor -> IO SExpr
     declareConstructor sort Constructor {name, arguments} =
-        trace (show name) $
         declareFun
             proc
             FunctionDeclaration
