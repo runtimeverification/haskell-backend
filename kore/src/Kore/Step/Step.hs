@@ -16,7 +16,7 @@ module Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , simplifyPredicate
-    , toAxiomVariables
+    , renameRuleVariables
     , toConfigurationVariables
     , toConfigurationVariablesCondition
     , unwrapRule
@@ -253,18 +253,18 @@ targets for substitution and the axiom's variables are renamed to avoid any free
 variables from the configuration and side condition.
 
  -}
-toAxiomVariables
+renameRuleVariables
     :: InternalVariable variable
     => UnifyingRule rule
     => FreeVariables (Target variable)
     -> rule variable
     -> rule (Target variable)
-toAxiomVariables avoiding =
+renameRuleVariables avoiding =
     snd
     . refreshRule avoiding
     . mapRuleVariables Target.mkElementTarget Target.mkSetTarget
 
-{- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
+{- | Unwrap the variables in a 'RulePattern'. Inverse of 'renameRuleVariables'.
  -}
 unwrapRule
     :: FreshVariable variable

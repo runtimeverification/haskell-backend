@@ -91,7 +91,7 @@ import Kore.Step.Step
     , wouldNarrowWith
     )
 import qualified Kore.Step.Step as EqualityPattern
-    ( toAxiomVariables
+    ( renameRuleVariables
     )
 import Kore.Unification.UnifierT
     ( UnifierT
@@ -388,7 +388,7 @@ applyRulesSequence sideCondition initial rules =
     >>= finalizeRulesSequence sideCondition initial
   where
     avoidConfigVars = freeVariables sideCondition <> freeVariables initial
-    rules' = EqualityPattern.toAxiomVariables avoidConfigVars <$> rules
+    rules' = EqualityPattern.renameRuleVariables avoidConfigVars <$> rules
 
 -- | Matches a list a rules against a configuration. See 'matchRule'.
 matchRules

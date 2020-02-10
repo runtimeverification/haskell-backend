@@ -1,6 +1,6 @@
 module Test.Kore.Step.RewriteStep
     ( test_applyInitialConditions
-    , test_toAxiomVariables
+    , test_renameRuleVariables
     , test_unifyRule
     , test_applyRewriteRule_
     , test_applyRewriteRulesParallel
@@ -170,8 +170,8 @@ unifyRule initial rule =
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
 
-test_toAxiomVariables :: [TestTree]
-test_toAxiomVariables =
+test_renameRuleVariables :: [TestTree]
+test_renameRuleVariables =
     [ testCase "renames axiom left variables" $ do
         let initial =
                 Step.toConfigurationVariables
@@ -186,7 +186,7 @@ test_toAxiomVariables =
                     , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
                     , attributes = Default.def
                     }
-            actual = Step.toAxiomVariables initialFreeVariables axiom
+            actual = Step.renameRuleVariables initialFreeVariables axiom
             initialFreeVariables = freeVariables initial
             actualFreeVariables = freeVariables actual
         assertEqual "Expected no common free variables"

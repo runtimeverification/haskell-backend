@@ -62,8 +62,8 @@ import Kore.Step.Step
     , applyRemainder
     , assertFunctionLikeResults
     , checkSubstitutionCoverage
+    , renameRuleVariables
     , simplifyPredicate
-    , toAxiomVariables
     , toConfigurationVariables
     , unifyRules
     )
@@ -266,7 +266,7 @@ applyRulesParallel
 applyRulesParallel unificationProcedure rules initial = do
     let sideCondition = SideCondition.topTODO
         configurationVariables = freeVariables initial
-        rules' = toAxiomVariables configurationVariables <$> rules
+        rules' = renameRuleVariables configurationVariables <$> rules
     results <- unifyRules unificationProcedure sideCondition initial rules'
     debugAppliedRewriteRules initial results
     finalizeRulesParallel initial results
@@ -316,7 +316,7 @@ applyRulesSequence
 applyRulesSequence unificationProcedure initial rules = do
     let sideCondition = SideCondition.topTODO
         configurationVariables = freeVariables initial
-        rules' = toAxiomVariables configurationVariables <$> rules
+        rules' = renameRuleVariables configurationVariables <$> rules
     results <- unifyRules unificationProcedure sideCondition initial rules'
     debugAppliedRewriteRules initial results
     finalizeRulesSequence initial results
