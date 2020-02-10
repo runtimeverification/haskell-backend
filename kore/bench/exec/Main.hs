@@ -17,7 +17,6 @@ import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -143,9 +142,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
     envWithCleanup setUp cleanUp $ bench name . nfIO . execution
   where
     name = takeFileName test
-    setUp :: IO
-                ( VerifiedModule StepperAttributes Attribute.Axiom
-                , TermLike Variable)
+    setUp :: IO (VerifiedModule StepperAttributes, TermLike Variable)
     setUp = do
         kompile
         definition <- readFile $ root </> definitionFile
@@ -173,9 +170,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
         return (verifiedModule, verifiedPattern)
     execution
-        ::  ( VerifiedModule StepperAttributes Attribute.Axiom
-            , TermLike Variable
-            )
+        :: (VerifiedModule StepperAttributes, TermLike Variable)
         -> IO (TermLike Variable)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig emptyLogger

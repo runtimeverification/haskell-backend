@@ -35,9 +35,6 @@ import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
 
 import Branch
-import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
-    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -104,10 +101,7 @@ instance MonadTrans SimplifierT where
     lift smt = SimplifierT (lift smt)
     {-# INLINE lift #-}
 
-instance MonadLog log => MonadLog (SimplifierT log) where
-    logScope locally (SimplifierT readerT) =
-        SimplifierT $ Morph.hoist (logScope locally) readerT
-    {-# INLINE logScope #-}
+instance MonadLog log => MonadLog (SimplifierT log)
 
 instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
     profile event duration =
@@ -186,7 +180,7 @@ evalSimplifier
     :: forall smt a
     .  WithLog LogMessage smt
     => (MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
-    => VerifiedModule Attribute.Symbol Attribute.Axiom
+    => VerifiedModule Attribute.Symbol
     -> SimplifierT smt a
     -> smt a
 evalSimplifier verifiedModule simplifier = do
@@ -220,7 +214,7 @@ evalSimplifier verifiedModule simplifier = do
             (Builtin.internalize earlyMetadataTools)
             verifiedModule
     metadataTools = MetadataTools.build verifiedModule'
-    overloadGraph = OverloadGraph.fromIndexedModule verifiedModule metadataTools
+    overloadGraph = OverloadGraph.fromIndexedModule verifiedModule
     overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
     initialize :: SimplifierT smt (Env (SimplifierT smt))

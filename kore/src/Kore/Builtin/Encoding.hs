@@ -12,13 +12,9 @@ module Kore.Builtin.Encoding
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import Control.Category
     ( (>>>)
     )
-import qualified Control.Exception as Exception
 import qualified Data.Bits as Bits
 import Data.ByteString
     ( ByteString
@@ -95,7 +91,7 @@ toBase16 byteString =
             hi = Bits.shiftR byte 4
         pure ([encode hi, encode lo], bytes')
     encode half =
-        Exception.assert (0 <= half && half < 16)
+        assert (0 <= half && half < 16)
         $ (Vector.!) encodingBase16 (fromEnum half)
 
 encodingBase16 :: Vector Char

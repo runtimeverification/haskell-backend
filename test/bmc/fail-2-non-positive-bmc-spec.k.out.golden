@@ -12,3 +12,9 @@
   #Equals
     true
   }
+#And
+  {
+    X >Int 0
+  #Equals
+    false
+  }

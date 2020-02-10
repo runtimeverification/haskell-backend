@@ -94,7 +94,9 @@ instance ParseAttributes Smthook where
         withApplication' = withApplication smthookId
         failDuplicate' = failDuplicate smthookId
 
-    toAttributes =
-        Attributes
-        . maybe [] ((: []) . smthookAttribute . Text.pack . showSExpr)
-        . getSmthook
+instance From Smthook Attributes where
+    from =
+        maybe def toAttribute . getSmthook
+      where
+        toAttribute =
+            from @AttributePattern . smthookAttribute . Text.pack . showSExpr

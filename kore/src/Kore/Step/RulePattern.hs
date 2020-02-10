@@ -92,6 +92,9 @@ import qualified Kore.Internal.Substitution as Substitution
     ( toMap
     , variables
     )
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -193,7 +196,7 @@ data RulePattern variable = RulePattern
     , antiLeft :: !(Maybe (TermLike.TermLike variable))
     , requires :: !(Predicate variable)
     , rhs :: !(RHS variable)
-    , attributes :: !Attribute.Axiom
+    , attributes :: !(Attribute.Axiom Symbol)
     }
     deriving (GHC.Generic)
 

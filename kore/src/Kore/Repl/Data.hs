@@ -37,9 +37,6 @@ module Kore.Repl.Data
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative
-    )
 import Control.Concurrent.MVar
 import Control.Monad.Trans.Accum
     ( AccumT
@@ -488,10 +485,6 @@ deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     logM entry = UnifierWithExplanation $ logM entry
     {-# INLINE logM #-}
-
-    logScope locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation (logScope locally unifierT)
-    {-# INLINE logScope #-}
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 

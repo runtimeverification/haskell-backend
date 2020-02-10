@@ -52,10 +52,11 @@ instance ParseAttributes Concat where
         withApplication' = withApplication concatId
         failDuplicate' = failDuplicate concatId
 
-    toAttributes =
+instance From Concat Attributes where
+    from =
         maybe def toAttribute . getConcat
       where
-        toAttribute = Attributes . (: []) . concatAttribute
+        toAttribute = from @AttributePattern . concatAttribute
 
 -- | Kore identifier representing the @concat@ attribute symbol.
 concatId :: Id

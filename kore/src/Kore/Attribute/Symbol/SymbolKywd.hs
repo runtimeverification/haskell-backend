@@ -56,4 +56,6 @@ symbolKywdAttribute = attributePattern_ symbolKywdSymbol
 
 instance ParseAttributes SymbolKywd where
     parseAttribute = parseBoolAttribute symbolKywdId
-    toAttributes = toBoolAttributes symbolKywdAttribute
+
+instance From SymbolKywd Attributes where
+    from = toBoolAttributes symbolKywdAttribute

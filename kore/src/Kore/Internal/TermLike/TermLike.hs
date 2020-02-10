@@ -22,7 +22,6 @@ module Kore.Internal.TermLike.TermLike
 
 import Prelude.Kore
 
-import Control.Applicative
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
 import qualified Control.Comonad.Trans.Env as Env
@@ -39,6 +38,9 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
     ( Compose (..)
+    )
+import Data.Functor.Const
+    ( Const (..)
     )
 import Data.Functor.Foldable
     ( Base
@@ -447,21 +449,38 @@ instance TopBottom (TermLike variable) where
     isBottom _ = False
 
 instance InternalVariable variable => Binding (TermLike variable) where
-    type VariableType (TermLike variable) = UnifiedVariable variable
+    type VariableType (TermLike variable) = variable
 
-    traverseVariable match termLike =
+    traverseElementVariable traversal termLike =
         case termLikeF of
-            VariableF (Const variable) -> mkVar <$> match variable
+            VariableF (Const (ElemVar elementVariable)) ->
+                mkVar . ElemVar <$> traversal elementVariable
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
 
-    traverseBinder match termLike =
+    traverseSetVariable traversal termLike =
         case termLikeF of
-            ExistsF exists -> synthesize . ExistsF <$> existsBinder match exists
-            ForallF forall -> synthesize . ForallF <$> forallBinder match forall
-            MuF mu -> synthesize . MuF <$> muBinder match mu
-            NuF nu -> synthesize . NuF <$> nuBinder match nu
+            VariableF (Const (SetVar setVariable)) ->
+                mkVar . SetVar <$> traversal setVariable
+            _ -> pure termLike
+      where
+        _ :< termLikeF = Recursive.project termLike
+
+    traverseSetBinder traversal termLike =
+        case termLikeF of
+            MuF mu -> synthesize . MuF <$> muBinder traversal mu
+            NuF nu -> synthesize . NuF <$> nuBinder traversal nu
+            _ -> pure termLike
+      where
+        _ :< termLikeF = Recursive.project termLike
+
+    traverseElementBinder traversal termLike =
+        case termLikeF of
+            ExistsF exists ->
+                synthesize . ExistsF <$> existsBinder traversal exists
+            ForallF forall ->
+                synthesize . ForallF <$> forallBinder traversal forall
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike

@@ -24,6 +24,7 @@ import Data.Default
 import Data.Text
     ( Text
     )
+import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -37,6 +38,7 @@ import Kore.Syntax.Id
     )
 import SMT.SimpleSMT
     ( SExpr
+    , showSExpr
     )
 
 {- | The @smtlib@ attribute for symbols.
@@ -70,6 +72,12 @@ instance SOP.HasDatatypeInfo Smtlib
 instance Debug Smtlib
 
 instance Diff Smtlib
+
+instance From Smtlib Attributes where
+    from =
+        Attributes
+        . maybe [] ((: []) . smtlibAttribute . Text.pack . showSExpr)
+        . getSmtlib
 
 -- | Kore identifier representing the @smtlib@ attribute symbol.
 smtlibId :: Id

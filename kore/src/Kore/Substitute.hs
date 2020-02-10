@@ -11,7 +11,6 @@ module Kore.Substitute
 
 import Prelude.Kore
 
-import Control.Applicative
 import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
     ( Corecursive
@@ -70,7 +69,7 @@ substitute
         , Corecursive patternType, Recursive patternType
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
-        , VariableType patternType ~ UnifiedVariable variable
+        , VariableType patternType ~ variable
         , Synthetic attribute patternBase
         , HasFreeVariables patternType variable
         )

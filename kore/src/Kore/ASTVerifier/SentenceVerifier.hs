@@ -19,13 +19,11 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyClaims
     , verifyNonHooks
     , verifyAliasSentence
+    , parseAndVerifyAxiomAttributes
     ) where
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative (..)
-    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
@@ -54,6 +52,9 @@ import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.ASTVerifier.SortVerifier
 import Kore.ASTVerifier.Verifier
+import qualified Kore.Attribute.Axiom as Attribute
+    ( Axiom
+    )
 import qualified Kore.Attribute.Hook as Attribute
 import Kore.Attribute.Parser
     ( ParseAttributes
@@ -65,9 +66,12 @@ import qualified Kore.Attribute.Sort as Attribute
     )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
+import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
+import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Sort
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
@@ -333,8 +337,11 @@ verifyAxioms =
 verifyAxiomSentence :: SentenceAxiom ParsedPattern -> SentenceVerifier ()
 verifyAxiomSentence sentence =
     withSentenceAxiomContext sentence $ do
+        verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker sentence
-        attrs <- parseAttributes' $ sentenceAxiomAttributes sentence
+        attrs <-
+            parseAndVerifyAxiomAttributes verifiedModule'
+            $ sentenceAxiomAttributes sentence
         State.modify $ addAxiom verified attrs
   where
     addAxiom verified attrs =
@@ -363,8 +370,11 @@ verifyClaims =
 verifyClaimSentence :: SentenceClaim ParsedPattern -> SentenceVerifier ()
 verifyClaimSentence sentence =
     withSentenceClaimContext sentence $ do
+        verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)
-        attrs <- parseAttributes' $ sentenceClaimAttributes sentence
+        attrs <-
+            parseAndVerifyAxiomAttributes verifiedModule'
+            $ sentenceClaimAttributes sentence
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
     addClaim verified attrs =
@@ -433,3 +443,11 @@ parseAttributes'
     -> error attrs
 parseAttributes' =
     Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
+
+parseAndVerifyAxiomAttributes
+    :: MonadError (Error VerifyError) error
+    => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    -> Attributes
+    -> error (Attribute.Axiom Internal.Symbol.Symbol)
+parseAndVerifyAxiomAttributes indexModule attrs =
+    parseAttributes' attrs >>= verifyAxiomAttributes indexModule

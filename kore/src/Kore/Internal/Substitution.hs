@@ -41,7 +41,6 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
-import qualified Control.Exception as Exception
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
@@ -82,15 +81,11 @@ import Kore.Internal.TermLike
     , mkVar
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Syntax.Variable
-    ( SortedVariable
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-    ( Unparse
-    , unparseToString
+    ( unparseToString
     )
 import Kore.Variables.Fresh
     ( FreshVariable
@@ -173,6 +168,37 @@ instance Ord variable => Monoid (Substitution variable) where
 instance InternalVariable variable => SQL.Column (Substitution variable) where
     defineColumn _ = SQL.defineColumn (SQL.Proxy @(Predicate variable))
     toColumn = SQL.toColumn . toPredicate
+
+instance
+    From
+        (Map (UnifiedVariable variable) (TermLike variable))
+        (Substitution variable)
+  where
+    from = wrap . Map.toList
+
+instance
+    Ord variable
+    => From (SingleSubstitution variable) (Substitution variable)
+  where
+    from = uncurry singleton
+
+instance From (UnwrappedSubstitution variable) (Substitution variable) where
+    from = wrap
+
+instance
+    Ord variable
+    => From (Substitution variable) (UnwrappedSubstitution variable)
+  where
+    from = unwrap
+
+instance
+    InternalVariable variable
+    => From (Substitution variable) (Predicate variable)
+  where
+    from =
+        Predicate.makeMultipleAndPredicate
+        . fmap Predicate.singleSubstitutionToPredicate
+        . unwrap
 
 type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
 
@@ -260,7 +286,7 @@ orderRenaming subst = subst
 fromMap
     :: Map (UnifiedVariable variable) (TermLike variable)
     -> Substitution variable
-fromMap = wrap . Map.toList
+fromMap = from
 
 {- | Construct substitution for a single variable.
 
@@ -295,15 +321,15 @@ unsafeWrap =
   where
     insertNormalized subst (var, termLike) =
         -- The variable must not occur in the substitution
-        Exception.assert (Map.notMember var subst)
+        assert (Map.notMember var subst)
         -- or in the right-hand side of this or any other substitution,
-        $ Exception.assert (not $ occurs termLike)
-        $ Exception.assert (not $ any occurs subst)
+        $ assert (not $ occurs termLike)
+        $ assert (not $ any occurs subst)
         -- this substitution must not depend on any substitution variable,
-        $ Exception.assert (not $ any depends $ Map.keys subst)
+        $ assert (not $ any depends $ Map.keys subst)
         -- and if this is an element variable substitution, the substitution
         -- must be defined.
-        $ Exception.assert (not $ isElemVar var && isBottom termLike)
+        $ assert (not $ isElemVar var && isBottom termLike)
         $ Map.insert var termLike subst
       where
         occurs = TermLike.hasFreeVariable var
@@ -460,10 +486,7 @@ reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
     rhsIsVar _ _ = False
 
 assertNoneAreFreeVarsInRhs
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Set (UnifiedVariable variable)
     -> Map (UnifiedVariable variable) (TermLike variable)
     -> Map (UnifiedVariable variable) (TermLike variable)
@@ -565,7 +588,4 @@ toPredicate
     :: InternalVariable variable
     => Substitution variable
     -> Predicate variable
-toPredicate =
-    Predicate.makeMultipleAndPredicate
-    . fmap Predicate.singleSubstitutionToPredicate
-    . unwrap
+toPredicate = from

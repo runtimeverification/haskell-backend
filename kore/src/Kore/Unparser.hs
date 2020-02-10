@@ -61,6 +61,12 @@ import Data.Text.Prettyprint.Doc.Render.Text
     )
 import Data.Void
 import Generics.SOP
+    ( All2
+    , Code
+    , Generic
+    , Proxy (..)
+    )
+import qualified Generics.SOP as SOP
 import qualified Numeric
 
 {- | Class of types that can be rendered in concrete Kore syntax.
@@ -127,7 +133,7 @@ unparseGenericWith
     -> a
     -> Doc ann
 unparseGenericWith helper =
-    sep . hcollapse . hcmap constraint (mapIK helper) . from
+    sep . SOP.hcollapse . SOP.hcmap constraint (SOP.mapIK helper) . SOP.from
   where
     constraint = Proxy :: Proxy Unparse
 {-# INLINE unparseGenericWith #-}

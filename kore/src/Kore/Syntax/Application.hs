@@ -67,6 +67,9 @@ instance Unparse SymbolOrAlias where
     unparse2 SymbolOrAlias { symbolOrAliasConstructor } =
         Pretty.parens $ Pretty.fillSep [ unparse2 symbolOrAliasConstructor ]
 
+instance From SymbolOrAlias SymbolOrAlias where
+    from = id
+
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @pattern@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 

@@ -14,15 +14,12 @@ import Prelude.Kore
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
-import qualified Control.Exception as Exception
 import qualified Control.Lens.Combinators as Lens
 import Control.Monad
     ( unless
     )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
@@ -31,7 +28,6 @@ import qualified Branch as BranchT
     )
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
-    , getFreeVariables
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -152,12 +148,6 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Kore.Variables.Binding as Binding
-import Kore.Variables.Fresh
-    ( refreshVariable
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -223,8 +213,6 @@ simplifyInternal term sideCondition = do
     tracer termLike =
         maybe id Profiler.identifierSimplification
         $ AxiomIdentifier.matchAxiomIdentifier termLike
-
-    sideConditionFreeVars = getFreeVariables $ freeVariables sideCondition
 
     simplifyChildren
         :: Traversable t
@@ -375,9 +363,12 @@ simplifyInternal term sideCondition = do
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =
-                Exception.assert
+                assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
+            avoiding = freeVariables termLike <> freeVariables sideCondition
+            refreshElementBinder = TermLike.refreshElementBinder avoiding
+            refreshSetBinder = TermLike.refreshSetBinder avoiding
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
             -- Unimplemented cases
@@ -388,7 +379,7 @@ simplifyInternal term sideCondition = do
             SignednessF _ -> doNotSimplify
             --
             AndF andF ->
-                And.simplify =<< simplifyChildren andF
+                And.simplify sideCondition =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
@@ -399,20 +390,18 @@ simplifyInternal term sideCondition = do
             EqualsF equalsF ->
                 Equals.simplify sideCondition =<< simplifyChildren equalsF
             ExistsF exists ->
-                let fresh =
-                        Lens.over
-                            Binding.existsBinder
-                            refreshBinder
-                            exists
-                in  Exists.simplify sideCondition =<< simplifyChildren fresh
+                Exists.simplify sideCondition
+                    =<< simplifyChildren (refresh exists)
+              where
+                refresh = Lens.over Binding.existsBinder refreshElementBinder
             IffF iffF ->
-                Iff.simplify =<< simplifyChildren iffF
+                Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->
-                Implies.simplify =<< simplifyChildren impliesF
+                Implies.simplify sideCondition =<< simplifyChildren impliesF
             InF inF ->
                 In.simplify sideCondition =<< simplifyChildren inF
             NotF notF ->
-                Not.simplify =<< simplifyChildren notF
+                Not.simplify sideCondition =<< simplifyChildren notF
             --
             BottomF bottomF ->
                 Bottom.simplify <$> simplifyChildren bottomF
@@ -422,20 +411,19 @@ simplifyInternal term sideCondition = do
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
             ForallF forall ->
-                let fresh =
-                        Lens.over
-                            Binding.forallBinder
-                            refreshBinder
-                            forall
-                in  Forall.simplify <$> simplifyChildren fresh
+                Forall.simplify <$> simplifyChildren (refresh forall)
+              where
+                refresh = Lens.over Binding.forallBinder refreshElementBinder
             InhabitantF inhF ->
                 Inhabitant.simplify <$> simplifyChildren inhF
             MuF mu ->
-                let fresh = Lens.over Binding.muBinder refreshBinder mu
-                in  Mu.simplify <$> simplifyChildren fresh
+                Mu.simplify <$> simplifyChildren (refresh mu)
+              where
+                refresh = Lens.over Binding.muBinder refreshSetBinder
             NuF nu ->
-                let fresh = Lens.over Binding.nuBinder refreshBinder nu
-                in  Nu.simplify <$> simplifyChildren fresh
+                Nu.simplify <$> simplifyChildren (refresh nu)
+              where
+                refresh = Lens.over Binding.nuBinder refreshSetBinder
             -- TODO(virgil): Move next up through patterns.
             NextF nextF -> Next.simplify <$> simplifyChildren nextF
             OrF orF -> Or.simplify <$> simplifyChildren orF
@@ -449,29 +437,5 @@ simplifyInternal term sideCondition = do
                 return $ InternalBytes.simplify (getConst internalBytesF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
-
-    refreshBinder
-        :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
-        -> Binding.Binder (UnifiedVariable variable) (TermLike variable)
-    refreshBinder binder@Binding.Binder { binderVariable, binderChild }
-      | binderVariable `Set.member` sideConditionFreeVars =
-        let existsFreeVars = getFreeVariables $ freeVariables binderChild
-            fresh =
-                fromMaybe (error "guard above ensures result <> Nothing")
-                    $ refreshVariable
-                        (sideConditionFreeVars <> existsFreeVars)
-                        binderVariable
-            freshChild =
-                TermLike.substitute
-                    (Map.singleton
-                        binderVariable
-                        (TermLike.mkVar fresh)
-                    )
-                    binderChild
-        in Binding.Binder
-            { binderVariable = fresh
-            , binderChild = freshChild
-            }
-      | otherwise = binder
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition

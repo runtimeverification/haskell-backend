@@ -58,6 +58,10 @@ module Test.Terse
 import Prelude.Kore
 
 import Control.Exception
+    ( ErrorCall (..)
+    , catch
+    , evaluate
+    )
 import Data.Foldable
     ( traverse_
     )

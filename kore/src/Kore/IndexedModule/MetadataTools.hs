@@ -22,7 +22,6 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
@@ -63,15 +62,10 @@ type SmtMetadataTools attributes =
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall declAtts smt sortConstructors.
-        VerifiedModule declAtts Attribute.Axiom
-    ->  (  VerifiedModule declAtts Attribute.Axiom
-        -> Map Id sortConstructors
-        )
-    ->  (  VerifiedModule declAtts Attribute.Axiom
-        -> Map Id sortConstructors
-        -> smt
-        )
+    :: forall declAtts smt sortConstructors.
+       VerifiedModule declAtts
+    -> (VerifiedModule declAtts -> Map Id sortConstructors)
+    -> (VerifiedModule declAtts -> Map Id sortConstructors -> smt)
     -> MetadataTools sortConstructors smt declAtts
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools

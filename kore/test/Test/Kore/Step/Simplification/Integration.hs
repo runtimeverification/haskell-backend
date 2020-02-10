@@ -168,10 +168,21 @@ test_simplificationIntegration =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
-                        , predicate = makeCeilPredicate_
-                            (mkAnd
-                                (Mock.plain10 Mock.cf)
-                                (Mock.plain10 (mkElemVar Mock.x))
+                        , predicate = makeAndPredicate
+                            (makeAndPredicate
+                                (makeCeilPredicate_ Mock.cf)
+                                (makeCeilPredicate_ (Mock.plain10 Mock.cf))
+                            )
+                            (makeAndPredicate
+                                (makeCeilPredicate_
+                                    (mkAnd
+                                        (Mock.plain10 Mock.cf)
+                                        (Mock.plain10 (mkElemVar Mock.x))
+                                    )
+                                )
+                                (makeCeilPredicate_
+                                    (Mock.plain10 (mkElemVar Mock.x))
+                                )
                             )
                         , substitution = Substitution.unsafeWrap
                             [(ElemVar Mock.y, Mock.b)]

@@ -28,6 +28,7 @@ module Kore.IndexedModule.IndexedModule
     , eraseAttributes
     , eraseAxiomAttributes
     , erasePatterns
+    , emptyIndexedModule
     , mapPatterns
     , indexedModuleRawSentences
     , SortDescription
@@ -55,9 +56,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
-import qualified Control.Lens as Lens hiding
-    ( makeLenses
-    )
+import qualified Control.Lens as Lens
 import Control.Monad.Extra
     ( unlessM
     )
@@ -82,6 +81,7 @@ import GHC.Generics
     ( Generic
     )
 
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
@@ -92,6 +92,7 @@ import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import Kore.Error
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Parser
     ( ParsedPattern
     )
@@ -148,7 +149,7 @@ data IndexedModule pat declAtts axiomAtts =
         -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
         -- identifiers
     }
-    deriving (Generic, Show)
+    deriving (Generic, Show, Functor, Foldable, Traversable)
 
 recursiveIndexedModuleSortDescriptions
     :: forall pat declAtts axiomAtts
@@ -320,7 +321,11 @@ mapPatterns mapping indexedModule =
 
 type KoreIndexedModule = IndexedModule ParsedPattern
 
-type VerifiedModule = IndexedModule Verified.Pattern
+type VerifiedModule declAtts
+    = IndexedModule
+        Verified.Pattern
+        declAtts
+        (Attribute.Axiom Internal.Symbol.Symbol)
 
 {- | Convert a 'IndexedModule' back into a 'Module'.
 
@@ -343,7 +348,7 @@ The original module attributes /are/ preserved.
 
  -}
 toVerifiedModule
-    :: VerifiedModule declAtts axiomAtts
+    :: VerifiedModule declAtts
     -> Module Verified.Sentence
 toVerifiedModule = toModule
 
@@ -360,7 +365,7 @@ See also: 'toVerifiedPureModule'
  -}
 toVerifiedDefinition
     :: Foldable t
-    => t (VerifiedModule declAtts axiomAtts)
+    => t (VerifiedModule declAtts)
     -> Definition Verified.Sentence
 toVerifiedDefinition idx =
     Definition

@@ -9,10 +9,6 @@ module Kore.Unification.Unify
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( Alternative
-    , empty
-    )
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )

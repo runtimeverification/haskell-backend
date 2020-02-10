@@ -11,9 +11,6 @@ module Kore.Step.Rule.Combine
 
 import Prelude.Kore
 
-import Control.Applicative
-    ( empty
-    )
 import Data.Default
     ( Default (..)
     )

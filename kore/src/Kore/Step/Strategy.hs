@@ -52,15 +52,14 @@ import Prelude.Kore hiding
     ( all
     , and
     , any
+    , many
     , or
     , replicate
     , seq
     , sequence
+    , some
     )
 
-import Control.Applicative
-    ( Alternative (empty, (<|>))
-    )
 import qualified Control.Exception as Exception
 import Control.Monad
     ( when
@@ -99,9 +98,6 @@ import qualified Kore.Profiler.Profile as Profile
 
 import Kore.Step.Transition
 import Numeric.Natural
-
-assert :: Bool -> a -> a
-assert b a = if b then a else error "assertion failed"
 
 {- | An execution strategy.
 

@@ -103,6 +103,15 @@ instance Unparse Attributes where
 instance Default Attributes where
     def = Attributes []
 
+instance From Attribute.Null Attributes where
+    from _ = Attributes []
+
+instance From AttributePattern Attributes where
+    from = Attributes . (: [])
+
+instance From Attributes Attributes where
+    from = id
+
 instance SQL.Column Attributes where
     defineColumn = SQL.defineTextColumn
     -- TODO (thomas.tuegel): Use a better toColumn for lists.
