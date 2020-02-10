@@ -4,7 +4,6 @@ License     : UIUC/NCSA
  -}
 module Kore.Variables.Fresh
     ( FreshVariable (..)
-    , Renaming
     , refreshVariables
     , nextVariable
     -- * Re-exports
@@ -28,9 +27,6 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.Id
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
@@ -48,10 +44,6 @@ class Ord variable => FreshVariable variable where
         -> variable        -- ^ variable to rename
         -> Maybe variable
 
-
-type Renaming variable =
-    Map (UnifiedVariable variable) (UnifiedVariable variable)
-
 instance FreshVariable variable => FreshVariable (ElementVariable variable)
   where
     refreshVariable avoid = traverse (refreshVariable avoid')
@@ -63,16 +55,6 @@ instance FreshVariable variable => FreshVariable (SetVariable variable)
     refreshVariable avoid = traverse (refreshVariable avoid')
       where
         avoid' = Set.map getSetVariable avoid
-
-instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
-  where
-    refreshVariable avoid = \case
-        SetVar v -> SetVar <$> refreshVariable setVars v
-        ElemVar v -> ElemVar <$> refreshVariable elemVars v
-      where
-        avoid' = Set.toList avoid
-        setVars = Set.fromList [v | SetVar v <- avoid']
-        elemVars = Set.fromList [v | ElemVar v <- avoid']
 
 instance FreshVariable Variable where
     refreshVariable avoiding variable = do

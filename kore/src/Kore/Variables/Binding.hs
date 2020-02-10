@@ -7,6 +7,9 @@ License     : NCSA
 module Kore.Variables.Binding
     ( Binding (..)
     , matchWith
+    , UnifiedVariableType
+    , ElementVariableType
+    , SetVariableType
     -- * Binders
     , Binder (..)
     , existsBinder
@@ -18,18 +21,29 @@ module Kore.Variables.Binding
 import Prelude.Kore
 
 import Control.Comonad.Trans.Env
+import Control.Lens
+    ( (%~)
+    )
 import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import Data.Monoid
     ( Any (..)
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Generics as GHC
 
+import Kore.Syntax.ElementVariable
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
-import Kore.Unparser
+import Kore.Syntax.SetVariable
 import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    , expectElemVar
+    , expectSetVar
+    )
 
 {- | @Binding@ defines traversals for patterns with binders.
 
@@ -37,20 +51,61 @@ import Kore.Variables.UnifiedVariable
 respectively a binder or a variable at the top level.
 
  -}
-class Show patternType => Binding patternType where
-    -- | The type of variables bound in @patternType@.
-    type VariableType patternType
+class Binding binding where
+    type VariableType binding
 
     -- | Traverse the binder at the top of a pattern.
     traverseBinder
-        ::  Lens.Traversal' patternType
-                (Binder (VariableType patternType) patternType)
+        ::  Lens.Traversal'
+                binding
+                (Binder (UnifiedVariableType binding) binding)
+    traverseBinder traversal binding =
+        fromMaybe (pure binding) (matchElem <|> matchSet)
+      where
+        matchSet = matchWith traverseSetBinder traversalSet binding
+        matchElem = matchWith traverseElementBinder traversalElem binding
+        traversalSet =
+            fmap (field @"binderVariable" %~ expectSetVar)
+            . traversal
+            . (field @"binderVariable" %~ SetVar)
+        traversalElem =
+            fmap (field @"binderVariable" %~ expectElemVar)
+            . traversal
+            . (field @"binderVariable" %~ ElemVar)
+
+    -- | Traverse the element variable binder at the top of a pattern.
+    traverseElementBinder
+        ::  Lens.Traversal'
+                binding
+                (Binder (ElementVariableType binding) binding)
+
+    -- | Traverse the set variable binder at the top of a pattern.
+    traverseSetBinder
+        ::  Lens.Traversal'
+                binding
+                (Binder (SetVariableType binding) binding)
 
     -- | Traverse the variable at the top of a pattern.
-    traverseVariable
-        :: Lens.Traversal'
-            patternType
-            (VariableType patternType)
+    traverseVariable :: Lens.Traversal' binding (UnifiedVariableType binding)
+    traverseVariable traversal binding =
+        fromMaybe (pure binding) (matchElem <|> matchSet)
+      where
+        matchSet = matchWith traverseSetVariable traversalSet binding
+        matchElem = matchWith traverseElementVariable traversalElem binding
+        traversalSet = fmap expectSetVar . traversal . SetVar
+        traversalElem = fmap expectElemVar . traversal . ElemVar
+
+    -- | Traverse the element variable at the top of a pattern.
+    traverseElementVariable
+        :: Lens.Traversal' binding (ElementVariableType binding)
+
+    -- | Traverse the element variable at the top of a pattern.
+    traverseSetVariable
+        :: Lens.Traversal' binding (SetVariableType binding)
+
+type UnifiedVariableType binding = UnifiedVariable (VariableType binding)
+type ElementVariableType binding = ElementVariable (VariableType binding)
+type SetVariableType     binding = SetVariable     (VariableType binding)
 
 {- | Apply a traversing function while distinguishing an empty 'Lens.Traversal'.
 
@@ -68,8 +123,12 @@ matchWith (Lens.cloneTraversal -> traverse') = \afb s ->
     in if matched then Just ft else Nothing
 
 -- | @Binder@ abstracts over binders such as 'Exists' and 'Forall'.
-data Binder variable child = Binder
-    { binderVariable :: variable, binderChild :: !child }
+data Binder variable child =
+    Binder
+        { binderVariable :: variable
+        , binderChild :: !child
+        }
+    deriving (GHC.Generic)
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 
@@ -79,31 +138,23 @@ See also: 'forallBinder'.
 
  -}
 existsBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Exists sort variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Exists sort variable1 child1)
+            (Exists sort variable2 child2)
+            (Binder (ElementVariable variable1) child1)
+            (Binder (ElementVariable variable2) child2)
 existsBinder mapping exists =
     finish <$> mapping binder
   where
     binder =
         Binder
-            { binderVariable = ElemVar existsVariable
+            { binderVariable = existsVariable
             , binderChild = existsChild
             }
       where
         Exists { existsVariable, existsChild } = exists
     finish Binder { binderVariable, binderChild } =
-        exists { existsVariable, existsChild = binderChild }
-      where
-        existsVariable =
-            case binderVariable of
-                ElemVar eVar -> eVar
-                SetVar sVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected an element variable, but found:"
-                        , Pretty.indent 4 (unparse sVar)
-                        ]
+        exists { existsVariable = binderVariable, existsChild = binderChild }
 
 {- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
 
@@ -113,29 +164,21 @@ See also: 'existsBinder'.
 
  -}
 forallBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Forall sort variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Forall sort variable1 child1)
+            (Forall sort variable2 child2)
+            (Binder (ElementVariable variable1) child1)
+            (Binder (ElementVariable variable2) child2)
 forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = ElemVar forallVariable, binderChild }
+        Binder { binderVariable = forallVariable, binderChild }
       where
         Forall { forallVariable } = forall
         Forall { forallChild    = binderChild    } = forall
     finish Binder { binderVariable, binderChild } =
-        forall { forallVariable, forallChild = binderChild }
-      where
-        forallVariable =
-            case binderVariable of
-                ElemVar eVar -> eVar
-                SetVar sVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected an element variable, but found:"
-                        , Pretty.indent 4 (unparse sVar)
-                        ]
+        forall { forallVariable = binderVariable, forallChild = binderChild }
 
 {- | A 'Lens.Lens' to view a 'Mu' as a 'Binder'.
 
@@ -145,29 +188,21 @@ See also: 'nuBinder'.
 
  -}
 muBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Mu variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Mu variable1 child1)
+            (Mu variable2 child2)
+            (Binder (SetVariable variable1) child1)
+            (Binder (SetVariable variable2) child2)
 muBinder mapping mu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = SetVar muVariable, binderChild }
+        Binder { binderVariable = muVariable, binderChild }
       where
         Mu { muVariable } = mu
         Mu { muChild    = binderChild    } = mu
     finish Binder { binderVariable, binderChild } =
-        mu { muVariable, muChild = binderChild }
-      where
-        muVariable =
-            case binderVariable of
-                SetVar sVar -> sVar
-                ElemVar eVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected a set variable, but found:"
-                        , Pretty.indent 4 (unparse eVar)
-                        ]
+        mu { muVariable = binderVariable, muChild = binderChild }
 
 {- | A 'Lens.Lens' to view a 'Nu' as a 'Binder'.
 
@@ -177,26 +212,18 @@ See also: 'muBinder'.
 
  -}
 nuBinder
-    ::  Unparse variable
-    =>  Lens.Lens'
-            (Nu variable child)
-            (Binder (UnifiedVariable variable) child)
+    ::  Lens.Lens
+            (Nu variable1 child1)
+            (Nu variable2 child2)
+            (Binder (SetVariable variable1) child1)
+            (Binder (SetVariable variable2) child2)
 nuBinder mapping nu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = SetVar nuVariable, binderChild }
+        Binder { binderVariable = nuVariable, binderChild }
       where
         Nu { nuVariable } = nu
         Nu { nuChild    = binderChild    } = nu
     finish Binder { binderVariable, binderChild } =
-        nu { nuVariable, nuChild = binderChild }
-      where
-        nuVariable =
-            case binderVariable of
-                SetVar sVar -> sVar
-                ElemVar eVar ->
-                    (error . show . Pretty.vsep)
-                        [ "Expected a set variable, but found:"
-                        , Pretty.indent 4 (unparse eVar)
-                        ]
+        nu { nuVariable = binderVariable, nuChild = binderChild }
