@@ -115,6 +115,7 @@
       - Test.Terse
       - Test.Kore.Step.Axiom.Evaluate
       - Test.Kore.Step.Axiom.Matcher
+      - Test.Kore.Step.Simplification.Overloading
 
 
 # Unsuitable suggestions

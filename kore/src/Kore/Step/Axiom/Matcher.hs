@@ -29,6 +29,9 @@ import Control.Monad.State.Strict
     )
 import qualified Control.Monad.State.Strict as Monad.State
 import qualified Control.Monad.Trans as Monad.Trans
+import Control.Monad.Trans.Except
+    ( runExceptT
+    )
 import Control.Monad.Trans.Maybe
     ( MaybeT (..)
     )
@@ -363,9 +366,9 @@ matchOverload
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchOverload termPair = do
-    termPair' <- Monad.Trans.lift $ unifyOverloading termPair
+    termPair' <- Monad.Trans.lift . runExceptT $ unifyOverloading termPair
     case termPair' of
-        Right (Just p') -> Monad.Trans.lift (matchOne p')
+        Right p' -> Monad.Trans.lift (matchOne p')
         _ -> empty
 
 -- * Implementation

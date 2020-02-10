@@ -977,9 +977,36 @@ test_matcherOverloading =
             (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
             (Mock.sortInjectionOtherToTop (Mock.otherOverload Mock.aOtherSort))
             []
+        , matches "direct overload, right side"
+            (Mock.sortInjectionOtherToTop (Mock.otherOverload Mock.aOtherSort))
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            []
+        , matches "overload, both sides, unifiable"
+            (Mock.sortInjectionOtherToTop
+               (Mock.otherOverload
+                   (Mock.sortInjectionSubSubToOther Mock.aSubSubsort)
+               )
+            )
+            (Mock.sortInjectionSubToTop
+               (Mock.subOverload
+                   (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+               )
+            )
+            []
         , doesn'tMatch "overload vs other constructor"
             (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
             (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+        , doesn'tMatch "overload, both sides, not unifiable"
+            (Mock.sortInjectionOtherToOtherTop
+                 (Mock.otherOverload
+                     (Mock.sortInjectionSubSubToOther Mock.aSubSubsort)
+                 )
+            )
+            (Mock.sortInjectionSubToOtherTop
+                 (Mock.subOverload
+                     (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                 )
+            )
         ]
     ]
 

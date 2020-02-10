@@ -518,6 +518,16 @@ sortInjectionSubOtherToTopSymbol = sortInjectionSymbol subOthersort topSort
 sortInjectionOtherToTopSymbol :: Symbol
 sortInjectionOtherToTopSymbol = sortInjectionSymbol otherSort topSort
 
+sortInjectionOtherToOverTheTopSymbol :: Symbol
+sortInjectionOtherToOverTheTopSymbol =
+    sortInjectionSymbol otherSort overTheTopSort
+
+sortInjectionSubToOverTheTopSymbol :: Symbol
+sortInjectionSubToOverTheTopSymbol = sortInjectionSymbol subSort overTheTopSort
+
+sortInjectionTopToOverTheTopSymbol :: Symbol
+sortInjectionTopToOverTheTopSymbol = sortInjectionSymbol topSort overTheTopSort
+
 sortInjectionOtherToOtherTopSymbol :: Symbol
 sortInjectionOtherToOtherTopSymbol = sortInjectionSymbol otherSort otherTopSort
 
@@ -1067,6 +1077,24 @@ sortInjectionSubOtherToTop
     -> TermLike variable
 sortInjectionSubOtherToTop = sortInjection topSort
 
+sortInjectionOtherToOverTheTop
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionOtherToOverTheTop = sortInjection overTheTopSort
+
+sortInjectionSubToOverTheTop
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionSubToOverTheTop = sortInjection overTheTopSort
+
+sortInjectionTopToOverTheTop
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionTopToOverTheTop = sortInjection overTheTopSort
+
 sortInjectionOtherToTop
     :: InternalVariable variable
     => TermLike variable
@@ -1252,6 +1280,9 @@ symbols =
     , sortInjectionSubOtherToOtherSymbol
     , sortInjectionSubOtherToTopSymbol
     , sortInjectionOtherToTopSymbol
+    , sortInjectionOtherToOverTheTopSymbol
+    , sortInjectionSubToOverTheTopSymbol
+    , sortInjectionTopToOverTheTopSymbol
     , sortInjectionSubToOtherTopSymbol
     , sortInjectionOtherToOtherTopSymbol
     , unitMapSymbol
@@ -1457,6 +1488,8 @@ testSort1Id :: Id
 testSort1Id = testId "testSort1"
 topSortId :: Id
 topSortId = testId "topSort"
+overTheTopSortId :: Id
+overTheTopSortId = testId "overTheTopSort"
 subSortId :: Id
 subSortId = testId "subSort"
 subOthersortId :: Id
@@ -1499,6 +1532,13 @@ topSort :: Sort
 topSort =
     SortActualSort SortActual
         { sortActualName  = topSortId
+        , sortActualSorts = []
+        }
+
+overTheTopSort :: Sort
+overTheTopSort =
+    SortActualSort SortActual
+        { sortActualName  = overTheTopSortId
         , sortActualSorts = []
         }
 
@@ -1594,6 +1634,7 @@ subsorts =
     , (testSort0, testSort)
     , (mapSort, testSort)
     , (listSort, testSort)
+    , (topSort, overTheTopSort)
     ]
 
 overloads :: [(Symbol, Symbol)]
