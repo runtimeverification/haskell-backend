@@ -10,9 +10,15 @@ module Kore.Step.SMT.Representation.All
     ( build
     ) where
 
-import Prelude.Kore ()
+import Prelude.Kore
 
+import Control.Monad
+    ( join
+    )
 import qualified Data.Map.Strict as Map
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
@@ -23,7 +29,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import qualified Kore.Step.SMT.AST as AST
+import qualified Kore.Step.SMT.AST as Step.AST
 import Kore.Step.SMT.Representation.Resolve
     ( resolve
     )
@@ -36,6 +42,7 @@ import qualified Kore.Step.SMT.Representation.Symbols as Symbols
 import Kore.Syntax.Id
     ( Id
     )
+import qualified SMT.AST
 
 {-| Builds a consistent representation of the sorts and symbols in the given
 module and its submodules.
@@ -46,9 +53,40 @@ sorts).
 build
     :: VerifiedModule Attribute.Symbol
     -> Map.Map Id Attribute.Constructors
-    -> AST.SmtDeclarations
+    -> Step.AST.SmtDeclarations
 build indexedModule sortConstructors =
-    resolve (sorts `AST.mergePreferFirst` symbols)
+    removeDuplicates $ resolve (sorts `Step.AST.mergePreferFirst` symbols)
   where
     sorts = Sorts.buildRepresentations indexedModule sortConstructors
     symbols = Symbols.buildRepresentations indexedModule
+
+removeDuplicates :: Step.AST.SmtDeclarations -> Step.AST.SmtDeclarations
+removeDuplicates Step.AST.Declarations { sorts, symbols } =
+    let constructorSymbols =
+            join $ mapMaybe getConstructorNames (Map.elems sorts)
+     in Step.AST.Declarations
+         { sorts
+         , symbols = filter (isDuplicate constructorSymbols) symbols
+         }
+  where
+    getConstructorNames
+        :: Step.AST.Sort SMT.AST.SExpr Text Text
+        -> Maybe [Text]
+    getConstructorNames Step.AST.Sort { declaration } =
+        case declaration of
+            Step.AST.SortDeclarationDataType
+                SMT.AST.DataTypeDeclaration { constructors } ->
+                    Just $ fmap getName constructors
+            _ -> Nothing
+    isDuplicate
+        :: [Text]
+        -> Step.AST.Symbol SMT.AST.SExpr Text
+        -> Bool
+    isDuplicate constructorSymbols Step.AST.Symbol { declaration } =
+        case declaration of
+            Step.AST.SymbolDeclaredDirectly
+                SMT.AST.FunctionDeclaration { name } ->
+                    name `notElem` constructorSymbols
+            _ -> True
+    getName :: SMT.AST.Constructor sort symbol name -> symbol
+    getName = SMT.AST.name
