@@ -18,9 +18,6 @@ module Kore.Unification.Error
 
 import Prelude.Kore
 
-import Data.Function
-    ( on
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )

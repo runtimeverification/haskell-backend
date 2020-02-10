@@ -9,6 +9,7 @@ module Prelude.Kore
     , module Debug.Trace
     -- * Functions
     , (&)
+    , on
     -- * Maybe
     , isJust
     , isNothing
@@ -42,7 +43,8 @@ import Control.Exception
     ( assert
     )
 import Data.Function
-    ( (&)
+    ( on
+    , (&)
     )
 import Data.Maybe
     ( fromMaybe

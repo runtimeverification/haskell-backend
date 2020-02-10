@@ -43,7 +43,6 @@ import Control.Monad
     ( zipWithM_
     )
 import qualified Control.Monad as Monad
-import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Hashable
     ( Hashable

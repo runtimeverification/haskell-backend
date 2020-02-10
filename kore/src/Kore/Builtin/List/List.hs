@@ -28,7 +28,6 @@ module Kore.Builtin.List.List
 
 import Prelude.Kore
 
-import qualified Data.Function as Function
 import Data.Reflection
     ( Given
     )
@@ -149,7 +148,7 @@ internalize tools termLike@(App_ symbol args)
         [arg1              , BuiltinList_ list2]
           | (null . Domain.builtinListChild) list2 -> arg1
         [BuiltinList_ list1, BuiltinList_ list2] ->
-            asInternal' (Function.on (<>) Domain.builtinListChild list1 list2)
+            asInternal' (on (<>) Domain.builtinListChild list1 list2)
         _ -> termLike
   where
     asInternal' = asInternal tools (termLikeSort termLike)

@@ -36,7 +36,6 @@ import qualified Data.Align as Align
     ( align
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Generics.Product
 import Data.List
     ( foldl'
