@@ -16,17 +16,13 @@ module Kore.Unification.Error
     , unsupportedPatterns
     ) where
 
-import Prelude.Kore
-
-import Data.Function
-    ( on
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import Prelude.Kore
 
 import Kore.Debug
 import Kore.Internal.Substitution
