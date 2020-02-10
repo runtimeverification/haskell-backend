@@ -27,6 +27,7 @@ import Prelude.Kore
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
+    , when
     )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
@@ -391,28 +392,33 @@ verifyClaimSentence sentence =
         attrs <-
             parseAndVerifyAxiomAttributes verifiedModule'
             $ sentenceClaimAttributes sentence
+        when (rejectClaim attrs verified)
+            $ sentenceClaimError (SentenceClaim verified)
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
-    addClaim verifiedSentenceClaim@(SentenceClaim verified) attrs =
+    addClaim verified attrs =
+        Lens.over
+            (field @"indexedModuleClaims")
+            ((attrs, verified) :)
+
+    rejectClaim attrs verified =
         case fromSentenceAxiom (attrs, verified) of
             Right (OnePathClaimPattern (OnePathRule rulePattern))
-              | rejectRulePattern rulePattern ->
-                    error "Found claim with universally-quantified variables \
-                        \appearing only on the right-hand side"
+              | rejectRulePattern rulePattern -> True
             Right (AllPathClaimPattern (AllPathRule rulePattern))
-              | rejectRulePattern rulePattern ->
-                    error "Found claim with universally-quantified variables \
-                        \appearing only on the right-hand side"
-            _ ->
-                Lens.over
-                    (field @"indexedModuleClaims")
-                    ((attrs, verifiedSentenceClaim) :)
+              | rejectRulePattern rulePattern -> True
+            _ -> False
+
     rejectRulePattern
         RulePattern { left, antiLeft, requires, rhs = RHS { right, ensures } }
       =
         (not . any containsForall)
             (catMaybes [antiLeft] <> [left, unwrapPredicate requires])
         && any containsForall [right, unwrapPredicate ensures]
+
+    sentenceClaimError sentenceClaim =
+        withSentenceClaimContext sentenceClaim $ koreFail "Found claim with \
+            \universally-quantified variables appearing only on the right-hand side"
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
