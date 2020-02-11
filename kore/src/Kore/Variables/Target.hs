@@ -19,9 +19,6 @@ module Kore.Variables.Target
 
 import Prelude.Kore
 
-import Data.Function
-    ( on
-    )
 import Data.Hashable
     ( Hashable
     )

@@ -14,10 +14,6 @@ module Kore.Internal.Variable
 
 import Prelude.Kore
 
-import Data.Function
-    ( on
-    )
-
 import Kore.Debug
     ( Debug
     )

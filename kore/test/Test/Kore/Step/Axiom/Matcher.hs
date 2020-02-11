@@ -22,10 +22,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Function
-    ( on
-    )
-
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
