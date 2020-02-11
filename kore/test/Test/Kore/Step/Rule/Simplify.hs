@@ -10,6 +10,9 @@ import Data.Default
     ( def
     )
 
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
@@ -31,7 +34,10 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log
-    ( emptyLogger
+    ( ExeName (..)
+    , TimestampsSwitch (..)
+    , emptyLogger
+    , stderrLogger
     )
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
@@ -41,8 +47,10 @@ import Kore.Step.RulePattern
     )
 import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Step.Simplification.Data
-    ( runSimplifier
+    ( SimplifierT
+    , runSimplifier
     )
+import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -107,7 +115,7 @@ test_simplifyRule =
 
         assertEqual "" expected actual
 
-    , testCase "Substitution in lhs term" $ do
+    , testCase "TESTING Substitution in lhs term" $ do
         let expected = [Mock.a `rewritesTo` Mock.f Mock.b]
 
         actual <- runSimplifyRule
@@ -218,6 +226,11 @@ runSimplifyRule
     -> IO [OnePathRule Variable]
 runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ SMT.runSMT SMT.defaultConfig (stderrLogger (ExeName "kore-test") TimestampsEnable)
     $ runSimplifier Mock.env
-    $ simplifyRuleLhs rule
+    $ f rule
+
+f :: OnePathRule Variable -> SimplifierT SMT.SMT (MultiAnd (OnePathRule Variable))
+f rule = do
+    SMT.All.declare Mock.smtDeclarations
+    simplifyRuleLhs rule

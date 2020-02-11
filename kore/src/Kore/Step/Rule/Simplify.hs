@@ -85,6 +85,7 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate
+        traceM "\n\nsimplifyRuleLhs\n\n"
         fullySimplified <-
             simplifyConditionsWithSmt
                 SideCondition.top

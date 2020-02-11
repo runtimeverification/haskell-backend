@@ -139,6 +139,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                         (makeNotPredicate $ Condition.toPredicate condition)
                     )
                 )
+        traceM "\n\npruneCondition\n\n"
         filteredConditions <- SMT.Evaluator.filterMultiOr implicationNegation
         if isTop filteredConditions
             then return (Just False)

@@ -83,7 +83,7 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate predicate
+            _ -> trace "\n\nevaluate predicate\n\n" $ decidePredicate predicate
 
 instance InternalVariable variable => Evaluable (Conditional variable term)
   where
@@ -102,6 +102,7 @@ filterMultiOr
     => MultiOr (Conditional variable term)
     -> simplifier (MultiOr (Conditional variable term))
 filterMultiOr multiOr = do
+    traceM "\n\nfilterMultiOr\n\n"
     elements <- mapM refute (MultiOr.extractPatterns multiOr)
     return (MultiOr.make (catMaybes elements))
   where
@@ -130,6 +131,7 @@ decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
         debugEvaluateCondition korePredicate
         tools <- Simplifier.askMetadataTools
+        traceM "\n\ndecidePredicate\n\n"
         smtPredicate <- goTranslatePredicate tools korePredicate
         result <-
             Profile.smtDecision smtPredicate
@@ -152,7 +154,7 @@ goTranslatePredicate
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
     -> MaybeT m SExpr
-goTranslatePredicate tools predicate = evalTranslator translator
+goTranslatePredicate tools predicate = trace "\n\ngoTranslatePredicate\n\n" $ evalTranslator translator
   where
     translator =
         give tools $ translatePredicate translateUninterpreted predicate
@@ -173,6 +175,7 @@ translateUninterpreted t pat =
         maybe empty (return . fst) result
     freeVariable = do
         n <- Counter.increment
+        traceM "\n\ntranslate uninterpreted\n\n"
         var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
         State.modify' (Map.insert pat (var, t))
         logVariableAssignment n
