@@ -66,7 +66,7 @@ removeDuplicates Step.AST.Declarations { sorts, symbols } =
             join $ mapMaybe getConstructorNames (Map.elems sorts)
      in Step.AST.Declarations
          { sorts
-         , symbols = filter (isDuplicate constructorSymbols) symbols
+         , symbols = filter (isNotDuplicate constructorSymbols) symbols
          }
   where
     getConstructorNames
@@ -78,11 +78,11 @@ removeDuplicates Step.AST.Declarations { sorts, symbols } =
                 SMT.AST.DataTypeDeclaration { constructors } ->
                     Just $ fmap getName constructors
             _ -> Nothing
-    isDuplicate
+    isNotDuplicate
         :: [Text]
         -> Step.AST.Symbol SMT.AST.SExpr Text
         -> Bool
-    isDuplicate constructorSymbols Step.AST.Symbol { declaration } =
+    isNotDuplicate constructorSymbols Step.AST.Symbol { declaration } =
         case declaration of
             Step.AST.SymbolDeclaredDirectly
                 SMT.AST.FunctionDeclaration { name } ->
@@ -90,5 +90,3 @@ removeDuplicates Step.AST.Declarations { sorts, symbols } =
             _ -> True
     getName :: SMT.AST.Constructor sort symbol name -> symbol
     getName = SMT.AST.name
-
-
