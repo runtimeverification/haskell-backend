@@ -477,7 +477,7 @@ internalize tools termLike
  -}
 unifyEquals
     :: forall variable unifier
-    .  (SimplifierVariable variable, MonadUnify unifier)
+    .  (InternalVariable variable, MonadUnify unifier)
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
     -> TermLike variable

@@ -167,6 +167,7 @@ asTermLike builtin =
         :: (TermLike Concrete, Domain.SetValue (TermLike variable))
         -> TermLike variable
     concreteElement (key, value) = element (TermLike.fromConcrete key, value)
+
     element
         :: (TermLike variable, Domain.SetValue (TermLike variable))
         -> TermLike variable

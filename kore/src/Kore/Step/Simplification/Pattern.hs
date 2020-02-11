@@ -31,8 +31,8 @@ import Kore.Internal.TermLike
     ( pattern Exists_
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     , simplifyCondition
     , simplifyConditionalTermToOr
     )
@@ -42,7 +42,7 @@ and removes the exists quantifiers at the top.
 -}
 simplifyTopConfiguration
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => Pattern variable
     -> simplifier (OrPattern variable)
@@ -58,7 +58,7 @@ simplifyTopConfiguration patt = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Pattern variable

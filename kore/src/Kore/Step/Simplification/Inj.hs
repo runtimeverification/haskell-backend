@@ -31,7 +31,7 @@ import Kore.Step.Simplification.Simplify as Simplifier
 
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => Inj (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify injOrPattern = do

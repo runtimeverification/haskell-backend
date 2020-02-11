@@ -74,9 +74,6 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( on
-    )
 import Data.Functor
     ( ($>)
     )

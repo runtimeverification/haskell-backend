@@ -86,6 +86,7 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
+    , InternalVariable
     , TermLike
     , TermLikeF (..)
     , mkAnd
@@ -95,9 +96,6 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
     , simplifyConditionalTermToOr
-    )
-import Kore.Substitute
-    ( SubstitutionVariable
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization
@@ -112,7 +110,7 @@ newtype SubstitutionSimplifier simplifier =
     SubstitutionSimplifier
         { simplifySubstitution
             :: forall variable
-            .  SubstitutionVariable variable
+            .  InternalVariable variable
             => SideCondition variable
             -> Substitution variable
             -> simplifier (OrCondition variable)
@@ -134,7 +132,7 @@ substitutionSimplifier =
   where
     wrapper
         :: forall variable
-        .  SubstitutionVariable variable
+        .  InternalVariable variable
         => SideCondition variable
         -> Substitution variable
         -> simplifier (OrCondition variable)
@@ -155,7 +153,7 @@ newtype MakeAnd monad =
     MakeAnd
         { makeAnd
             :: forall variable
-            .  SubstitutionVariable variable
+            .  InternalVariable variable
             => TermLike variable
             -> TermLike variable
             -> SideCondition variable
@@ -177,7 +175,7 @@ simplifierMakeAnd =
 
 simplifyAnds
     ::  forall variable monad
-    .   ( SubstitutionVariable variable
+    .   ( InternalVariable variable
         , Monad monad
         )
     => MakeAnd monad
@@ -210,7 +208,7 @@ simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
 
 deduplicateSubstitution
     :: forall variable monad
-    .   ( SubstitutionVariable variable
+    .   ( InternalVariable variable
         , Monad monad
         )
     =>  MakeAnd monad
@@ -271,7 +269,7 @@ deduplicateSubstitution makeAnd' =
 
 simplifySubstitutionWorker
     :: forall variable simplifier
-    .  SubstitutionVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> MakeAnd simplifier
@@ -401,7 +399,7 @@ substitution in unsatisfiable (@\\bottom@) then the entire substitution is also.
 type Impl variable simplifier = StateT (Private variable) (MaybeT simplifier)
 
 addCondition
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Monad simplifier
     => Condition variable
     -> Impl variable simplifier ()
@@ -411,21 +409,21 @@ addCondition condition
     Lens.modifying (field @"accum") (mappend condition)
 
 addPredicate
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Monad simplifier
     => Predicate variable
     -> Impl variable simplifier ()
 addPredicate = addCondition . Condition.fromPredicate
 
 addSubstitution
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Monad simplifier
     => Substitution variable
     -> Impl variable simplifier ()
 addSubstitution = addCondition . Condition.fromSubstitution
 
 takeSubstitution
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Monad simplifier
     => Impl variable simplifier (Substitution variable)
 takeSubstitution = do

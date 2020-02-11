@@ -54,6 +54,9 @@ import qualified Data.Text as Text
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -69,7 +72,7 @@ See also: 'sort'
 
  -}
 asInternal
-    :: Ord variable
+    :: FreshVariable variable
     => Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> TermLike variable

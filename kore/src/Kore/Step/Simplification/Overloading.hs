@@ -46,7 +46,7 @@ otherwise, return bottom, as the constructors are incompatible
 
  -}
 overloadedConstructorSortInjectionAndEquals
-    :: (SimplifierVariable variable, MonadUnify unifier)
+    :: (InternalVariable variable, MonadUnify unifier)
     => HasCallStack
     => TermSimplifier variable unifier
     -> TermLike variable
@@ -93,7 +93,7 @@ overloadedConstructorSortInjectionAndEquals
 overloadedConstructorSortInjectionAndEquals _ _ _ = empty
 
 overloadedAndEqualsOverloading
-    :: (SimplifierVariable variable, MonadUnify unifier)
+    :: (InternalVariable variable, MonadUnify unifier)
     => HasCallStack
     => TermSimplifier variable unifier
     -> TermLike variable

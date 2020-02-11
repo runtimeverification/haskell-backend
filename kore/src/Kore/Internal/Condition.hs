@@ -62,10 +62,10 @@ import qualified Kore.Internal.TermLike as TermLike
     ( simplifiedAttribute
     )
 import Kore.Internal.Variable
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
 import Kore.Syntax
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -148,11 +148,12 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    :: (Ord variable1, Ord variable2)
-    => (variable1 -> variable2)
+    :: (Ord variable1, FreshVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> Condition variable1
     -> Condition variable2
-mapVariables = Conditional.mapVariables (\_ () -> ())
+mapVariables = Conditional.mapVariables (\_ _ () -> ())
 
 {- | Create a new 'Condition' from the 'Normalization' of a substitution.
 
@@ -161,7 +162,7 @@ The 'normalized' part becomes the normalized 'substitution', while the
 
  -}
 fromNormalizationSimplified
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Normalization variable
     -> Condition variable
 fromNormalizationSimplified Normalization { normalized, denormalized } =
