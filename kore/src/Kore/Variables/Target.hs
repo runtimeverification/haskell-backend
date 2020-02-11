@@ -20,7 +20,7 @@ module Kore.Variables.Target
 import Prelude.Kore
 
 import Data.Hashable
-    ( Hashable
+    ( Hashable (hashWithSalt)
     )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -52,15 +52,19 @@ instead of 'NonTarget' variables.
 data Target variable
     = Target !variable
     | NonTarget !variable
-    deriving (Eq, GHC.Generic, Show, Functor)
+    deriving (GHC.Generic, Show, Functor)
+
+instance Eq variable => Eq (Target variable) where
+    (==) = on (==) unwrapVariable
+    {-# INLINE (==) #-}
 
 instance Ord variable => Ord (Target variable) where
-    compare (Target var1) (Target var2) = compare var1 var2
-    compare (Target _) (NonTarget _) = LT
-    compare (NonTarget var1) (NonTarget var2) = compare var1 var2
-    compare (NonTarget _) (Target _) = GT
+    compare = on compare unwrapVariable
+    {-# INLINE compare #-}
 
-instance Hashable variable => Hashable (Target variable)
+instance Hashable variable => Hashable (Target variable) where
+    hashWithSalt salt target = hashWithSalt salt (unwrapVariable target)
+    {-# INLINE hashWithSalt #-}
 
 instance SOP.Generic (Target variable)
 
