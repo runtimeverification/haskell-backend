@@ -365,11 +365,7 @@ matchOverload
     :: (MatchingVariable variable, MonadSimplify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchOverload termPair = do
-    termPair' <- Monad.Trans.lift . runExceptT $ unifyOverloading termPair
-    case termPair' of
-        Right p' -> Monad.Trans.lift (matchOne p')
-        _ -> empty
+matchOverload termPair = Error.hushT (unifyOverloading termPair) >>= push
 
 -- * Implementation
 

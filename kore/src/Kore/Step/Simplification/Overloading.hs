@@ -48,16 +48,14 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 import Pair
 
-{- | Describes the possible errors encountered during unification:
-
-- current procedure not applicable
-
-- There was a clash, which means unification would be bottom. Reason for clash
-  is included.
--}
+-- | Describes the possible errors encountered during unification.
 data UnifyOverloadingError
     = NotApplicable
+    -- ^ the unification problem could not be solved by the current method
     | Clash !String
+    {- ^ There was a clash, unification will fail.
+         Reason for the clash is included.
+    -}
   deriving (GHC.Generic, Show)
 
 instance Semigroup UnifyOverloadingError where
@@ -145,7 +143,8 @@ unifyOverloading termPair = case termPair of
             inj { injChild = () }
     Pair
         (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
-        (Inj_ Inj { injChild = App_ secondHead secondChildren })
+        (Inj_ inj'@Inj { injChild = App_ secondHead secondChildren })
+      | injFrom inj /= injFrom inj' -- this case should have been handled by now
         -> unifyOverloadingCommonOverload
             (Application firstHead firstChildren)
             (Application secondHead secondChildren)

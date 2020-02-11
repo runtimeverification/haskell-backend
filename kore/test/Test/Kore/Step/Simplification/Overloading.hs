@@ -114,7 +114,35 @@ test_unifyOverloading =
         , notApplicable "unrelated"
             Mock.aOtherSort
             Mock.plain00OtherSort
-        ]
+        , notApplicableTwice "direct overload, left side"
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            (Mock.sortInjectionOtherToTop (Mock.otherOverload Mock.aOtherSort))
+        , notApplicableTwice "direct overload, right side"
+            (Mock.sortInjectionOtherToTop (Mock.otherOverload Mock.aOtherSort))
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+        , notApplicableTwice "overload, both sides, unifiable"
+            (Mock.sortInjectionOtherToTop
+               (Mock.otherOverload
+                   (Mock.sortInjectionSubSubToOther Mock.aSubSubsort)
+               )
+            )
+            (Mock.sortInjectionSubToTop
+               (Mock.subOverload
+                   (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+               )
+            )
+        , notApplicableTwice "overload, both sides, unifiable, with injection"
+            (Mock.sortInjectionOtherToOverTheTop
+               (Mock.otherOverload
+                   (Mock.sortInjectionSubSubToOther Mock.aSubSubsort)
+               )
+            )
+            (Mock.sortInjectionSubToOverTheTop
+               (Mock.subOverload
+                   (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+               )
+            )
+         ]
     ]
 
 otherDomainValue :: TermLike Variable
@@ -161,6 +189,18 @@ notApplicable comment term1 term2
         comment
         (Pair term1 term2)
 
+notApplicableTwice
+    :: HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TestTree
+notApplicableTwice comment term1 term2
+    = withUnificationTwice
+        (assertEqual "" (Left NotApplicable))
+        comment
+        (Pair term1 term2)
+
 type UnifyResult = Either UnifyOverloadingError (Pair (TermLike Variable))
 
 unify
@@ -180,3 +220,17 @@ withUnification check comment termPair =
     testCase comment $ do
         actual <- unify termPair
         check actual
+
+withUnificationTwice
+    :: (UnifyResult -> Assertion)
+    -> TestName
+    -> Pair (TermLike Variable)
+    -> TestTree
+withUnificationTwice check comment termPair =
+    testCase comment $ do
+        actual <- unify termPair
+        case actual of
+            Left _ -> assertFailure "Expected unification solution."
+            Right termPair' -> do
+                actual' <- unify termPair'
+                check actual'
