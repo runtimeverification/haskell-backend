@@ -155,8 +155,14 @@ instance Unparse V where
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVariable
-    fromVariable = undefined
-    toVariable = undefined
+
+instance From Variable V where
+    from = error "Not implemented"
+
+instance From V Variable where
+    from = error "Not implemented"
+
+instance VariableName V
 
 instance FreshVariable V where
     refreshVariable avoiding v@(V name)
@@ -186,8 +192,14 @@ instance Unparse W where
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVariable
-    fromVariable = undefined
-    toVariable = undefined
+
+instance From Variable W where
+    from = error "Not implemented"
+
+instance From W Variable where
+    from = error "Not implemented"
+
+instance VariableName W
 
 instance FreshVariable W where
     refreshVariable avoiding w@(W name)

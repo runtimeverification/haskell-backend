@@ -81,5 +81,5 @@ these constraints.
 type InternalVariable variable =
     ( Ord variable, SubstitutionOrd variable
     , Debug variable, Show variable, Unparse variable
-    , SortedVariable variable, FreshVariable variable
+    , VariableName variable, SortedVariable variable, FreshVariable variable
     )

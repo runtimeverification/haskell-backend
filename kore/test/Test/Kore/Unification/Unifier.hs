@@ -683,8 +683,14 @@ instance Diff V
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVar
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
+
+instance From Variable V where
+    from = error "Not implemented"
+
+instance From V Variable where
+    from = error "Not implemented"
+
+instance VariableName V
 
 instance Unparse V where
     unparse = error "Not implemented"
@@ -714,8 +720,14 @@ instance Diff W
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVar
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
+
+instance From Variable W where
+    from = error "Not implemented"
+
+instance From W Variable where
+    from = error "Not implemented"
+
+instance VariableName W
 
 instance Unparse W where
     unparse = error "Not implemented"

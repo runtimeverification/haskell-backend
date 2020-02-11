@@ -129,9 +129,16 @@ instance
   where
     sortedVariableSort (Target variable) = sortedVariableSort variable
     sortedVariableSort (NonTarget variable) = sortedVariableSort variable
-    fromVariable = Target . fromVariable
-    toVariable (Target var) = toVariable var
-    toVariable (NonTarget var) = toVariable var
+
+instance VariableName variable => VariableName (Target variable)
+
+instance From variable1 variable2 => From variable1 (Target variable2) where
+    from = Target . from @variable1 @variable2
+    {-# INLINE from #-}
+
+instance From variable1 variable2 => From (Target variable1) variable2 where
+    from = from @variable1 @variable2 . unTarget
+    {-# INLINE from #-}
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
