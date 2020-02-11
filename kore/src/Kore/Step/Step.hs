@@ -19,7 +19,7 @@ module Kore.Step.Step
     , targetRuleVariables
     , toConfigurationVariables
     , toConfigurationVariablesCondition
-    , unwrapRule
+    , unTargetRule
     , assertFunctionLikeResults
     , checkFunctionLike
     , checkSubstitutionCoverage
@@ -267,14 +267,11 @@ targetRuleVariables avoiding =
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
-unwrapRule
+unTargetRule
     :: FreshVariable variable
     => UnifyingRule rule
     => rule (Target variable) -> rule variable
-unwrapRule =
-    mapRuleVariables
-        (fmap Target.unwrapVariable)
-        (fmap Target.unwrapVariable)
+unTargetRule = mapRuleVariables Target.unTargetElement Target.unTargetSet
 
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults

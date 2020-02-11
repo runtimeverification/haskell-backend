@@ -8,7 +8,9 @@ Target specific variables for unification.
 
 module Kore.Variables.Target
     ( Target (..)
-    , unwrapVariable
+    , unTarget
+    , unTargetElement
+    , unTargetSet
     , mkElementTarget
     , mkSetTarget
     , isTarget
@@ -55,15 +57,15 @@ data Target variable
     deriving (GHC.Generic, Show, Functor)
 
 instance Eq variable => Eq (Target variable) where
-    (==) = on (==) unwrapVariable
+    (==) = on (==) unTarget
     {-# INLINE (==) #-}
 
 instance Ord variable => Ord (Target variable) where
-    compare = on compare unwrapVariable
+    compare = on compare unTarget
     {-# INLINE compare #-}
 
 instance Hashable variable => Hashable (Target variable) where
-    hashWithSalt salt target = hashWithSalt salt (unwrapVariable target)
+    hashWithSalt salt target = hashWithSalt salt (unTarget target)
     {-# INLINE hashWithSalt #-}
 
 instance SOP.Generic (Target variable)
@@ -82,11 +84,17 @@ instance
     compareSubstitution (Target _) (NonTarget _) = LT
     compareSubstitution (NonTarget _) (Target _) = GT
     compareSubstitution variable1 variable2 =
-        on compareSubstitution unwrapVariable variable1 variable2
+        on compareSubstitution unTarget variable1 variable2
 
-unwrapVariable :: Target variable -> variable
-unwrapVariable (Target variable) = variable
-unwrapVariable (NonTarget variable) = variable
+unTarget :: Target variable -> variable
+unTarget (Target variable) = variable
+unTarget (NonTarget variable) = variable
+
+unTargetElement :: ElementVariable (Target variable) -> ElementVariable variable
+unTargetElement = fmap unTarget
+
+unTargetSet :: SetVariable (Target variable) -> SetVariable variable
+unTargetSet = fmap unTarget
 
 mkElementTarget
     :: ElementVariable variable
@@ -128,7 +136,7 @@ instance
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
 instance FreshVariable variable => FreshVariable (Target variable) where
-    refreshVariable (Set.map unwrapVariable -> avoiding) =
+    refreshVariable (Set.map unTarget -> avoiding) =
         \case
             Target variable ->
                 Target <$> refreshVariable avoiding variable

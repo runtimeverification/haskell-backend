@@ -95,8 +95,8 @@ unwrapConfiguration
     -> Pattern variable
 unwrapConfiguration config@Conditional { substitution } =
     Pattern.mapVariables
-        (fmap Target.unwrapVariable)
-        (fmap Target.unwrapVariable)
+        Target.unTargetElement
+        Target.unTargetSet
         configWithNewSubst
   where
     substitution' =
@@ -197,9 +197,7 @@ finalizeRulesParallel initial unifiedRules = do
         { results = Seq.fromList results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables
-                (fmap Target.unwrapVariable)
-                (fmap Target.unwrapVariable)
+            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
             <$> remainders'
         }
 
@@ -222,9 +220,7 @@ finalizeRulesSequence initial unifiedRules
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables
-                (fmap Target.unwrapVariable)
-                (fmap Target.unwrapVariable)
+            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
             <$> remainders'
         }
   where
