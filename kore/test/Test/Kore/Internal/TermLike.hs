@@ -5,6 +5,7 @@ module Test.Kore.Internal.TermLike
     , test_externalizeFreshVariables
     , test_refreshVariables
     , test_hasConstructorLikeTop
+    , test_renaming
     --
     , termLikeGen
     , termLikeChildGen
@@ -17,12 +18,18 @@ import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
 import Control.Monad.Reader as Reader
+import Data.Functor.Identity
+    ( runIdentity
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Data.Sup
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (FreeVariables)
+    )
+import Kore.Attribute.Synthetic
+    ( resynthesize
     )
 import Kore.Domain.Builtin
     ( Builtin (..)
@@ -356,3 +363,78 @@ x00 = ElementVariable ex { variableName = "x00" }
 
 x1 :: ElementVariable Variable
 x1 = ElementVariable ex { variableName = "x1" }
+
+test_renaming :: [TestTree]
+test_renaming =
+    [ testElement "\\exists" mkExists
+    , testElement "\\forall" mkForall
+    , testSet "\\mu" mkMu
+    , testSet "\\nu" mkNu
+    ]
+  where
+    mapElementVariables' v = mapVariables (const v) id
+    mapSetVariables' v = mapVariables id (const v)
+
+    traverseElementVariables' v =
+        runIdentity . traverseVariables (const $ return v) pure
+    traverseSetVariables' v =
+        runIdentity . traverseVariables pure (const $ return v)
+
+    doesNotCapture
+        :: HasCallStack
+        => UnifiedVariable Variable
+        -> TermLike Variable
+        -> Assertion
+    doesNotCapture unifiedVariable renamed =
+        assertBool
+            "does not capture free variables"
+            (hasFreeVariable unifiedVariable renamed)
+
+    updatesFreeVariables
+        :: HasCallStack
+        => TermLike Variable
+        -> Assertion
+    updatesFreeVariables renamed =
+        assertEqual
+            "updates the FreeVariables attribute"
+            (freeVariables resynthesized :: FreeVariables Variable)
+            (freeVariables       renamed)
+      where
+        resynthesized :: TermLike Variable
+        resynthesized = resynthesize renamed
+
+    testElement
+        :: TestName
+        -> (ElementVariable Variable -> TermLike Variable -> TermLike Variable)
+        -> TestTree
+    testElement testName mkBinder =
+        testGroup testName
+            [ testCase "mapVariables" $ do
+                let original = mkBinder Mock.y (mkElemVar Mock.x)
+                    renamed = mapElementVariables' Mock.y original
+                updatesFreeVariables renamed
+                doesNotCapture (ElemVar Mock.y) renamed
+            , testCase "traverseVariables" $ do
+                let original = mkBinder Mock.y (mkElemVar Mock.x)
+                    renamed = traverseElementVariables' Mock.y original
+                updatesFreeVariables renamed
+                doesNotCapture (ElemVar Mock.y) renamed
+            ]
+
+    testSet
+        :: TestName
+        -> (SetVariable Variable -> TermLike Variable -> TermLike Variable)
+        -> TestTree
+    testSet testName mkBinder =
+        testGroup testName
+            [ testCase "mapVariables" $ do
+                let original = mkBinder Mock.setY (mkSetVar Mock.setX)
+                    renamed = mapSetVariables' Mock.setY original
+                updatesFreeVariables renamed
+                doesNotCapture (SetVar Mock.setY) renamed
+            , testCase "traverseVariables" $ do
+                let original = mkBinder Mock.setY (mkSetVar Mock.setX)
+                    renamed = traverseSetVariables' Mock.setY original
+                updatesFreeVariables renamed
+                doesNotCapture (SetVar Mock.setY) renamed
+            ]

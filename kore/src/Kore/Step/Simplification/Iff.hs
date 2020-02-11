@@ -43,7 +43,7 @@ Right now this has special cases only for top and bottom children
 and for children with top terms.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Iff Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -68,7 +68,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> OrPattern variable

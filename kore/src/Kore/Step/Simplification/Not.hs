@@ -76,7 +76,7 @@ Right now this uses the following:
 
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Not Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -102,7 +102,7 @@ to carry around.
 
 -}
 simplifyEvaluated
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -113,7 +113,7 @@ simplifyEvaluated sideCondition simplified =
         mkMultiAndPattern sideCondition andPattern
 
 simplifyEvaluatedPredicate
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => OrCondition variable
     -> simplifier (OrCondition variable)
 simplifyEvaluatedPredicate notChild =
@@ -228,7 +228,7 @@ scatterAnd = scatter . distributeAnd
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}
 mkMultiAndPattern
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
@@ -238,7 +238,7 @@ mkMultiAndPattern sideCondition patterns =
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
 mkMultiAndPredicate
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MultiAnd (Condition variable)
     -> BranchT simplifier (Condition variable)
 mkMultiAndPredicate predicates =

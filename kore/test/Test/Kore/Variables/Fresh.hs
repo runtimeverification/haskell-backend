@@ -30,6 +30,7 @@ import Kore.Variables.Target
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
+    , mapUnifiedVariable
     )
 
 import Test.Kore
@@ -288,10 +289,13 @@ test_refreshVariable =
     setNonTargetOriginal  = NonTarget <$> setOriginal
     avoidST = Set.singleton setTargetOriginal
 
+    unifiedTarget = mapUnifiedVariable (fmap Target) (fmap Target)
+    unifiedNonTarget = mapUnifiedVariable (fmap NonTarget) (fmap NonTarget)
+
     -- UnifiedVariable (Target Variable)
-    unifiedElemTargetOriginal    = Target <$> unifiedElemOriginal
-    unifiedElemNonTargetOriginal = NonTarget <$> unifiedElemOriginal
-    unifiedSetTargetOriginal     = Target <$> unifiedSetOriginal
-    unifiedSetNonTargetOriginal  = NonTarget <$> unifiedSetOriginal
+    unifiedElemTargetOriginal    = unifiedTarget unifiedElemOriginal
+    unifiedElemNonTargetOriginal = unifiedNonTarget unifiedElemOriginal
+    unifiedSetTargetOriginal     = unifiedTarget  unifiedSetOriginal
+    unifiedSetNonTargetOriginal  = unifiedNonTarget unifiedSetOriginal
     avoidUET = Set.singleton unifiedElemNonTargetOriginal
     avoidUST = Set.singleton unifiedSetTargetOriginal

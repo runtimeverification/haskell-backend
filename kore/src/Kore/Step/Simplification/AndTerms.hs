@@ -108,7 +108,7 @@ the special cases handled by this.
 -}
 termUnification
     :: forall variable unifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
     => TermLike variable
@@ -135,7 +135,7 @@ termUnification =
         Error.maybeT unsupportedPatternsError pure maybeTermUnification
 
 maybeTermEquals
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
     => TermSimplifier variable unifier
@@ -146,7 +146,7 @@ maybeTermEquals
 maybeTermEquals = maybeTransformTerm equalsFunctions
 
 maybeTermAnd
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
     => TermSimplifier variable unifier
@@ -158,7 +158,7 @@ maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
     :: forall variable unifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
     => [TermTransformationOld variable unifier]
@@ -177,7 +177,7 @@ andFunctions =
 
 equalsFunctions
     :: forall variable unifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
     => [TermTransformationOld variable unifier]
@@ -196,7 +196,7 @@ equalsFunctions =
 
 andEqualsFunctions
     :: forall variable unifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
     => [(SimplificationTarget, TermTransformation variable unifier)]
@@ -312,7 +312,7 @@ maybeTransformTerm topTransformers childTransformers first second =
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
     :: MonadUnify unifier
-    => SimplifierVariable variable
+    => InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -329,7 +329,7 @@ boolAnd first second
 
 explainBoolAndBottom
     :: MonadUnify unifier
-    => SimplifierVariable variable
+    => InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier ()
@@ -338,7 +338,7 @@ explainBoolAndBottom term1 term2 =
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => Monad unifier
     => TermLike variable
     -> TermLike variable
@@ -350,7 +350,7 @@ equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
 bottomTermEquals
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -> TermLike variable
@@ -389,7 +389,7 @@ See also: 'bottomTermEquals'
 
  -}
 termBottomEquals
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -> TermLike variable
@@ -404,7 +404,7 @@ See also: 'isFunctionPattern'
 
  -}
 variableFunctionAndEquals
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -> SimplificationType
@@ -460,7 +460,7 @@ See also: 'variableFunctionAndEquals'
 
  -}
 functionVariableAndEquals
-    :: (SimplifierVariable variable, MonadUnify unifier)
+    :: (InternalVariable variable, MonadUnify unifier)
     => SideCondition variable
     -> SimplificationType
     -> TermLike variable
@@ -517,7 +517,7 @@ returns @\\bottom@.
 
  -}
 constructorSortInjectionAndEquals
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
@@ -531,7 +531,7 @@ constructorSortInjectionAndEquals first@(App_ symbol1 _) second@(Inj_ _)
 constructorSortInjectionAndEquals _ _ = empty
 
 noConfusionInjectionConstructor
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
@@ -547,7 +547,7 @@ sort with constructors.
 
 -}
 domainValueAndConstructorErrors
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => Monad unifier
     => HasCallStack
     => TermLike variable
@@ -602,11 +602,9 @@ See also: 'equalAndEquals'
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
 domainValueAndEqualsAssumesDifferent
-    :: Eq variable
-    => SortedVariable variable
-    => Unparse variable
+    :: HasCallStack
+    => InternalVariable variable
     => MonadUnify unifier
-    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a
@@ -632,11 +630,9 @@ cannotUnifyDistinctDomainValues :: Pretty.Doc ()
 cannotUnifyDistinctDomainValues = "Cannot unify distinct domain values."
 
 cannotUnifyDomainValues
-    :: Eq variable
-    => SortedVariable variable
-    => Unparse variable
+    :: HasCallStack
+    => InternalVariable variable
     => MonadUnify unifier
-    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> unifier a
@@ -657,11 +653,9 @@ See also: 'equalAndEquals'
 
  -}
 stringLiteralAndEqualsAssumesDifferent
-    :: Eq variable
-    => SortedVariable variable
-    => Unparse variable
+    :: HasCallStack
+    => InternalVariable variable
     => MonadUnify unifier
-    => HasCallStack
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a
@@ -677,7 +671,7 @@ The function patterns are unified by creating an @\\equals@ predicate.
 
 -}
 functionAnd
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> Maybe (Pattern variable)

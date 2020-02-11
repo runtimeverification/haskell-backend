@@ -222,7 +222,7 @@ test_applicationSimplification =
                     zvar = fromVariable <$> z'
                     result
                         :: forall variable
-                        .  SimplifierVariable variable
+                        .  InternalVariable variable
                         => AttemptedAxiom variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns

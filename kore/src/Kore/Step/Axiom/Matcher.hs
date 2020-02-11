@@ -29,9 +29,6 @@ import Control.Monad.State.Strict
     )
 import qualified Control.Monad.State.Strict as Monad.State
 import qualified Control.Monad.Trans as Monad.Trans
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
 import Control.Monad.Trans.Maybe
     ( MaybeT (..)
     )
@@ -39,7 +36,6 @@ import qualified Data.Align as Align
     ( align
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Generics.Product
 import Data.List
     ( foldl'
@@ -92,8 +88,8 @@ import Kore.Step.Simplification.Overloading
     ( unifyOverloading
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
@@ -369,7 +365,7 @@ matchOverload termPair = Error.hushT (unifyOverloading termPair) >>= push
 
 -- * Implementation
 
-type MatchingVariable variable = SimplifierVariable variable
+type MatchingVariable variable = InternalVariable variable
 
 {- | The internal state of the matching algorithm.
  -}

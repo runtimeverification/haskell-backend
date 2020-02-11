@@ -22,6 +22,9 @@ import Kore.Syntax.Variable
 import Kore.Unparser
     ( Unparse
     )
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 
 {- | 'InternalVariable' is the basic constraint on variable types.
 
@@ -33,5 +36,5 @@ these constraints.
 type InternalVariable variable =
     ( Ord variable
     , Debug variable, Show variable, Unparse variable
-    , SortedVariable variable
+    , SortedVariable variable, FreshVariable variable
     )

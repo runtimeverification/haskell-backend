@@ -163,7 +163,7 @@ Normalization of the compared terms is not implemented yet, so
 Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -184,7 +184,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
@@ -217,7 +217,7 @@ simplifyEvaluated sideCondition first second
 
 makeEvaluateFunctionalOr
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Pattern variable
     -> [Pattern variable]
@@ -257,7 +257,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => Pattern variable
     -> Pattern variable
     -> SideCondition variable
@@ -311,7 +311,7 @@ makeEvaluate
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
@@ -335,7 +335,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
     -> MaybeT simplifier (OrPattern variable)
@@ -354,7 +354,7 @@ because it returns an 'or').
 See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
     -> SideCondition variable
@@ -390,7 +390,7 @@ the special cases handled by this.
 
  -}
 termEquals
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -404,7 +404,7 @@ termEquals first second = MaybeT $ do
 
 termEqualsAnd
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => HasCallStack
     => TermLike variable
     -> TermLike variable

@@ -125,7 +125,7 @@ builtinFunctions =
     ]
 
 evalKEq
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => Bool
     -> CofreeF
         (Application Symbol)
@@ -170,7 +170,7 @@ evalKEq true (valid :< app) =
 
 evalKIte
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => CofreeF
         (Application Symbol)
         (Attribute.Pattern variable)

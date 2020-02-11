@@ -90,7 +90,7 @@ See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-
 
  -}
 overloadedConstructorSortInjectionAndEquals
-    :: (SimplifierVariable variable, MonadUnify unifier)
+    :: (InternalVariable variable, MonadUnify unifier)
     => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -121,7 +121,7 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
 -}
 unifyOverloading
     :: MonadSimplify unifier
-    => SimplifierVariable variable
+    => InternalVariable variable
     => Pair (TermLike variable)
     -> UnifyOverloading unifier (TermLike variable)
 unifyOverloading termPair = case termPair of
@@ -179,7 +179,7 @@ unifyOverloading termPair = case termPair of
 -}
 unifyOverloadingCommonOverload
     :: MonadSimplify unifier
-    => SimplifierVariable variable
+    => InternalVariable variable
     => Application Symbol (TermLike variable)
     -> Application Symbol (TermLike variable)
     -> Inj ()
@@ -217,7 +217,7 @@ unifyOverloadingCommonOverload
 -}
 unifyOverloadingVsOverloaded
     :: MonadSimplify unifier
-    => SimplifierVariable variable
+    => InternalVariable variable
     => Symbol
     -> TermLike variable
     -> Application Symbol (TermLike variable)

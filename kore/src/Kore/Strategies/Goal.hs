@@ -115,8 +115,8 @@ import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
 import Kore.Step.Simplification.Data
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
@@ -955,7 +955,7 @@ withConfiguration goal = handle (throw . WithConfiguration configuration)
  -}
 removalPredicate
     :: forall variable m
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify m
     => Pattern variable
     -- ^ Destination

@@ -43,7 +43,6 @@ import Control.DeepSeq
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import Data.Hashable
 import qualified Data.List as List
 import Data.List.NonEmpty
@@ -75,7 +74,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
     ( InternalVariable
-    , SubstitutionVariable
+    , InternalVariable
     , TermLike
     , pattern Var_
     , mkVar
@@ -118,11 +117,11 @@ data Substitution variable
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
 instance Ord variable => Eq (Substitution variable) where
-    (==) = Function.on (==) unwrap
+    (==) = on (==) unwrap
 
 -- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
 instance Ord variable => Ord (Substitution variable) where
-    compare = Function.on compare unwrap
+    compare = on compare unwrap
 
 instance SOP.Generic (Substitution variable)
 
@@ -135,7 +134,7 @@ instance
     => Diff (Substitution variable)
   where
     diffPrec a b =
-        wrapDiffPrec <$> Function.on diffPrec unwrap a b
+        wrapDiffPrec <$> on diffPrec unwrap a b
       where
         wrapDiffPrec diff' = \precOut ->
             (if precOut >= 10 then Pretty.parens else id)
@@ -209,7 +208,7 @@ unwrap
     :: Ord variable
     => Substitution variable
     -> [(UnifiedVariable variable, TermLike variable)]
-unwrap (Substitution xs) = List.sortBy (Function.on compare fst) xs
+unwrap (Substitution xs) = List.sortBy (on compare fst) xs
 unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
 {- | Convert a normalized substitution to a 'Map'.
@@ -349,22 +348,18 @@ modify f = wrap . f . unwrap
 -- with the given function.
 mapVariables
     :: forall variableFrom variableTo
-    .  (Ord variableFrom, Ord variableTo)
-    => (variableFrom -> variableTo)
+    .  (Ord variableFrom, FreshVariable variableTo)
+    => (ElementVariable variableFrom -> ElementVariable variableTo)
+    -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Substitution variableFrom
     -> Substitution variableTo
-mapVariables variableMapper =
-    modify (map (mapVariable variableMapper))
+mapVariables mapElemVar mapSetVar  =
+    modify (map mapSingleSubstitution)
   where
-    mapVariable
-        :: (variableFrom -> variableTo)
-        -> (UnifiedVariable variableFrom, TermLike variableFrom)
-        -> (UnifiedVariable variableTo, TermLike variableTo)
-    mapVariable
-        mapper
-        (substVariable, patt)
-      =
-        (mapper <$> substVariable, TermLike.mapVariables mapper patt)
+    mapSingleSubstitution =
+        Bifunctor.bimap
+            (mapUnifiedVariable mapElemVar mapSetVar)
+            (TermLike.mapVariables mapElemVar mapSetVar)
 
 mapTerms
     :: (TermLike variable -> TermLike variable)
@@ -432,9 +427,7 @@ renormalizes, if needed.
 -}
 reverseIfRhsIsVar
     :: forall variable
-    .   ( InternalVariable variable
-        , FreshVariable variable
-        )
+    .  InternalVariable variable
     => UnifiedVariable variable
     -> Substitution variable
     -> Substitution variable
@@ -554,8 +547,8 @@ instance (Debug variable, Diff variable) => Diff (Normalization variable)
 instance Semigroup (Normalization variable) where
     (<>) a b =
         Normalization
-            { normalized = Function.on (<>) normalized a b
-            , denormalized = Function.on (<>) denormalized a b
+            { normalized = on (<>) normalized a b
+            , denormalized = on (<>) denormalized a b
             }
 
 instance Monoid (Normalization variable) where
@@ -567,7 +560,7 @@ wrapNormalization Normalization { normalized, denormalized } =
 
 -- | Substitute the 'normalized' part into the 'denormalized' part.
 applyNormalized
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Normalization variable
     -> Normalization variable
 applyNormalized Normalization { normalized, denormalized } =
