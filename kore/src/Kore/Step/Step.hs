@@ -16,7 +16,7 @@ module Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , simplifyPredicate
-    , toAxiomVariables
+    , targetRuleVariables
     , toConfigurationVariables
     , toConfigurationVariablesCondition
     , unwrapRule
@@ -216,23 +216,16 @@ unifyRule
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
             sideCondition `SideCondition.andCondition` initialCondition
-    -- Rename free axiom variables to avoid free variables from the initial
-    -- configuration.
-    let
-        configVariables = TermLike.freeVariables initial
-        (_, rule') = refreshRule configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
-    let
-        ruleLeft = matchingPattern rule'
+    let ruleLeft = matchingPattern rule
     unification <- unifyPatterns mergedSideCondition ruleLeft initialTerm
     -- Combine the unification solution with the rule's requirement clause,
-    let
-        ruleRequires = precondition rule'
+    let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         simplifyPredicate mergedSideCondition Nothing (unification <> requires')
-    return (rule' `Conditional.withCondition` unification')
+    return (rule `Conditional.withCondition` unification')
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
@@ -253,15 +246,26 @@ wouldNarrowWith unified =
     Conditional { substitution } = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
--- |Renames variables to be distinguishable from those in configuration
-toAxiomVariables
-    :: FreshVariable variable
-    => UnifyingRule rule
-    => rule variable
-    -> rule (Target variable)
-toAxiomVariables = mapRuleVariables Target.mkElementTarget Target.mkSetTarget
+{- | Prepare a rule for unification or matching with the configuration.
 
-{- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
+The rule's variables are:
+
+* marked with 'Target' so that they are preferred targets for substitution, and
+* renamed to avoid any free variables from the configuration and side condition.
+
+ -}
+targetRuleVariables
+    :: InternalVariable variable
+    => UnifyingRule rule
+    => FreeVariables (Target variable)
+    -> rule variable
+    -> rule (Target variable)
+targetRuleVariables avoiding =
+    snd
+    . refreshRule avoiding
+    . mapRuleVariables Target.mkElementTarget Target.mkSetTarget
+
+{- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
 unwrapRule
     :: FreshVariable variable

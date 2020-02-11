@@ -1,5 +1,6 @@
 module Test.Kore.Step.RewriteStep
     ( test_applyInitialConditions
+    , test_renameRuleVariables
     , test_unifyRule
     , test_applyRewriteRule_
     , test_applyRewriteRulesParallel
@@ -15,6 +16,10 @@ import Data.Default as Default
     ( def
     )
 import qualified Data.Foldable as Foldable
+import Data.Function
+    ( on
+    )
+import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Condition as Condition
@@ -165,10 +170,13 @@ unifyRule initial rule =
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
 
-test_unifyRule :: [TestTree]
-test_unifyRule =
+test_renameRuleVariables :: [TestTree]
+test_renameRuleVariables =
     [ testCase "renames axiom left variables" $ do
-        let initial = pure (Mock.f (mkElemVar Mock.x))
+        let initial =
+                Step.toConfigurationVariables
+                $ Pattern.fromTermLike
+                $ Mock.f (mkElemVar Mock.x)
             axiom =
                 RulePattern
                     { left = Mock.f (mkElemVar Mock.x)
@@ -178,13 +186,20 @@ test_unifyRule =
                     , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
                     , attributes = Default.def
                     }
-        Right unified <- unifyRule initial axiom
-        let actual = Conditional.term <$> unified
-        assertBool ""
-            $ Foldable.all (not . FreeVariables.isFreeVariable (ElemVar Mock.x))
-            $ freeVariables <$> actual
+            actual = Step.targetRuleVariables initialFreeVariables axiom
+            initialFreeVariables = freeVariables initial
+            actualFreeVariables = freeVariables actual
+        assertEqual "Expected no common free variables"
+            Set.empty
+            $ on Set.intersection FreeVariables.getFreeVariables
+                initialFreeVariables
+                actualFreeVariables
 
-    , testCase "performs unification with initial term" $ do
+    ]
+
+test_unifyRule :: [TestTree]
+test_unifyRule =
+    [ testCase "performs unification with initial term" $ do
         let initial = pure (Mock.functionalConstr10 Mock.a)
             axiom =
                 RulePattern
