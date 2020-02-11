@@ -13,6 +13,7 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matching_Exists
     , test_matching_Forall
     , test_matching_Equals
+    , test_matcherOverloading
     , match
     , MatchResult
     , matches, doesn'tMatch
@@ -962,6 +963,46 @@ test_matching_Map =
         )
         [ (ElemVar yInt, mkInt 2)
         , (ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0)] [mkElemVar nMap])
+        ]
+    ]
+
+test_matcherOverloading :: [TestTree]
+test_matcherOverloading =
+    [ testGroup "Overloading" -- most overloading tests are in AndTerms
+        [ matches "direct overload, left side"
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            (Mock.sortInjectionOtherToTop (Mock.otherOverload Mock.aOtherSort))
+            []
+        , matches "direct overload, right side"
+            (Mock.sortInjectionOtherToTop (Mock.otherOverload Mock.aOtherSort))
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            []
+        , matches "overload, both sides, unifiable"
+            (Mock.sortInjectionOtherToTop
+               (Mock.otherOverload
+                   (Mock.sortInjectionSubSubToOther Mock.aSubSubsort)
+               )
+            )
+            (Mock.sortInjectionSubToTop
+               (Mock.subOverload
+                   (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+               )
+            )
+            []
+        , doesn'tMatch "overload vs other constructor"
+            (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
+            (Mock.sortInjectionOtherToTop Mock.aOtherSort)
+        , doesn'tMatch "overload, both sides, not unifiable"
+            (Mock.sortInjectionOtherToOtherTop
+                 (Mock.otherOverload
+                     (Mock.sortInjectionSubSubToOther Mock.aSubSubsort)
+                 )
+            )
+            (Mock.sortInjectionSubToOtherTop
+                 (Mock.subOverload
+                     (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                 )
+            )
         ]
     ]
 
