@@ -108,7 +108,7 @@ test_simplifyRule =
 
         assertEqual "" expected actual
 
-    , testCase "TESTING Substitution in lhs term" $ do
+    , testCase "Substitution in lhs term" $ do
         let expected = [Mock.a `rewritesTo` Mock.f Mock.b]
 
         actual <- runSimplifyRule
