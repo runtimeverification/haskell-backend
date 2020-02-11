@@ -70,12 +70,17 @@ rule lengthBytes(B:BS) ==Int 1 +Int lengthBytes(BS)
 We would prove them by induction on BS. The set of constructors/generators, is,
 of course, `nilBytes` and `:`.
 
-Let’s start with the first claim. We will start by defining a macro:
+Let’s start with the first claim. We can write it as
+```
+forall BS . forall i . lengthBytes(BS, i) ==Int i +Int lengthBytes(BS)
+```
+We will prove it by structural induction on `BS`. To do that, let us define
+a macro:
 ```
 P(i, BS) :=  lengthBytes(BS, i) ==Int i +Int lengthBytes(BS)
 ```
 
-Next, we will attempt to prove `P(i, nilBytes)` and
+Next, we will attempt to prove `forall i . P(i, nilBytes)` and
 `P(i, B:BS) if (forall j . P(j, BS))`.
 To do that, we will use the following rewrite rule: `start(X) => end(X)`
 and the following hand-written claims:
