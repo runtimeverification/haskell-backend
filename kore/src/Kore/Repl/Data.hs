@@ -483,8 +483,8 @@ deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
 instance MonadLog m => MonadLog (UnifierWithExplanation m) where
-    logM entry = UnifierWithExplanation $ logM entry
-    {-# INLINE logM #-}
+    logEntry entry = UnifierWithExplanation $ logEntry entry
+    {-# INLINE logEntry #-}
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 

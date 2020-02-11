@@ -40,7 +40,7 @@ import qualified Data.Typeable
     )
 import qualified Type.Reflection as Reflection
 
-class (Pretty entry, Typeable entry) => Entry entry where
+class Typeable entry => Entry entry where
     toEntry :: entry -> SomeEntry
     toEntry = SomeEntry
 
@@ -49,6 +49,13 @@ class (Pretty entry, Typeable entry) => Entry entry where
 
     entrySeverity :: entry -> Severity
 
+    longDoc :: entry -> Pretty.Doc ann
+    default longDoc :: Pretty entry => entry -> Pretty.Doc ann
+    longDoc = Pretty.pretty
+
+    shortDoc :: entry -> Maybe (Pretty.Doc ann)
+    shortDoc = const Nothing
+
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
@@ -56,9 +63,7 @@ instance Entry SomeEntry where
     toEntry = id
     fromEntry = Just
     entrySeverity (SomeEntry entry) = entrySeverity entry
-
-instance Pretty SomeEntry where
-    pretty (SomeEntry entry) = Pretty.pretty entry
+    longDoc (SomeEntry entry) = longDoc entry
 
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry

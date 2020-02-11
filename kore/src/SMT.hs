@@ -226,7 +226,7 @@ runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 
 instance MonadLog NoSMT where
-    logM entry =
+    logEntry entry =
         NoSMT $ ReaderT $ \logger ->
             Colog.unLogAction logger (Log.toEntry entry)
 
@@ -289,7 +289,7 @@ withSolverT' action = SmtT $ do
     Trans.lift $ withRunInIO $ \runInIO -> withMVar mvar (runInIO . action)
 
 instance MonadUnliftIO m => MonadLog (SmtT m) where
-    logM entry = withSolverT' $ \solver -> do
+    logEntry entry = withSolverT' $ \solver -> do
         let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
         liftIO $ Colog.unLogAction logAction entry
 

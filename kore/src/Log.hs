@@ -125,7 +125,7 @@ hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
 
 -- | Log any message.
 logMsg :: (Entry msg, WithLog msg m) => msg -> m ()
-logMsg = logM
+logMsg = logEntry
 
 -- | Logs a message using given 'Severity'.
 log
@@ -174,14 +174,14 @@ logError = log Error
 -- * LoggerT
 
 class Monad m => MonadLog m where
-    logM :: Entry entry => entry -> m ()
-    default logM
+    logEntry :: Entry entry => entry -> m ()
+    default logEntry
         :: Entry entry
         => (MonadTrans trans, MonadLog log, m ~ trans log)
         => entry
         -> m ()
-    logM = Monad.Trans.lift . logM
-    {-# INLINE logM #-}
+    logEntry = Monad.Trans.lift . logEntry
+    {-# INLINE logEntry #-}
 
 instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log)
 
@@ -201,7 +201,7 @@ newtype LoggerT m a =
     deriving (MonadIO, MonadThrow, MonadCatch)
 
 instance Monad m => MonadLog (LoggerT m) where
-    logM entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+    logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
