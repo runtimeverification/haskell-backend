@@ -137,6 +137,10 @@
       - Kore.Step.Step
       - SQL.SOP
 - ignore: {name: "Avoid lambda", within: [Kore.Step.Function.Memo]}
+- ignore:
+    name: "Redundant bracket"
+    within:
+      - Kore.Internal.TermLike.TermLike
 
 
 # Haskell names match K names

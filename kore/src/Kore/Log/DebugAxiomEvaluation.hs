@@ -26,9 +26,6 @@ module Kore.Log.DebugAxiomEvaluation
 import Prelude.Kore
 
 import Data.Default
-import Data.Function
-    ( on
-    )
 import Data.Set
     ( Set
     )

@@ -122,7 +122,7 @@ totalDefinitionEvaluation rules =
   where
     totalDefinitionEvaluationWorker
         :: forall variable simplifier
-        .  ( SimplifierVariable variable
+        .  ( InternalVariable variable
            , MonadSimplify simplifier
            )
         => TermLike variable
@@ -173,7 +173,7 @@ builtinEvaluation evaluator =
 
 evaluateBuiltin
     :: forall variable simplifier
-    .  ( SimplifierVariable variable
+    .  ( InternalVariable variable
        , MonadSimplify simplifier
        )
     => BuiltinAndAxiomSimplifier
@@ -238,7 +238,7 @@ data NonSimplifiability
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
-    .  ( SimplifierVariable variable
+    .  ( InternalVariable variable
        , MonadSimplify simplifier
        )
     => [BuiltinAndAxiomSimplifier]
@@ -251,7 +251,7 @@ applyFirstSimplifierThatWorks evaluators multipleResults =
 
 applyFirstSimplifierThatWorksWorker
     :: forall variable simplifier
-    .  ( SimplifierVariable variable
+    .  ( InternalVariable variable
        , MonadSimplify simplifier
        )
     => [BuiltinAndAxiomSimplifier]

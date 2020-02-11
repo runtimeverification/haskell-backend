@@ -36,7 +36,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
-    ( SimplifierVariable
+    ( InternalVariable
     )
 import Kore.Syntax.Application
     ( Application (..)
@@ -89,7 +89,7 @@ unsignedVerifier :: ApplicationVerifier Verified.Pattern
 unsignedVerifier = signednessVerifier Unsigned
 
 unifyEquals
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable

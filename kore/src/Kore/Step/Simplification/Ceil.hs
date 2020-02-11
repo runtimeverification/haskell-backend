@@ -82,7 +82,7 @@ A ceil(or) is equal to or(ceil). We also take into account that
 * ceil transforms terms into predicates
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Ceil Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -109,7 +109,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> OrPattern variable
@@ -121,7 +121,7 @@ simplifyEvaluated sideCondition child =
 for details.
 -}
 makeEvaluate
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Pattern variable
@@ -132,7 +132,7 @@ makeEvaluate sideCondition child
   | otherwise              = makeEvaluateNonBoolCeil sideCondition child
 
 makeEvaluateNonBoolCeil
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Pattern variable
@@ -161,7 +161,7 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
 -- signature.
 makeEvaluateTerm
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> TermLike variable
@@ -234,7 +234,7 @@ makeEvaluateTerm
 -}
 makeEvaluateBuiltin
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Builtin (TermLike variable)
@@ -269,7 +269,7 @@ makeEvaluateBuiltin _ (Domain.BuiltinString _) = Just $ return OrCondition.top
 
 makeEvaluateNormalizedAc
     :: forall normalized variable simplifier
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , MonadSimplify simplifier
         , Traversable (Domain.Value normalized)
         , Domain.AcWrapper normalized
@@ -382,7 +382,7 @@ know how to simplify @ceil(g(x))@, the return value will be
 
 -}
 makeSimplifiedCeil
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Maybe SideCondition.Representation
     -> TermLike variable

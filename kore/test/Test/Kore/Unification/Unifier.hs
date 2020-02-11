@@ -19,6 +19,7 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -533,7 +534,9 @@ test_unification =
         (assertEqual ""
             [(ElemVar $ ElementVariable $ W "1", war' "2")]
             (Substitution.unwrap
-                . Substitution.mapVariables showVar
+                . Substitution.mapVariables
+                    (fmap showVar)
+                    (fmap showVar)
                 . Substitution.wrap
                 $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
             )
@@ -687,6 +690,14 @@ instance Unparse V where
     unparse = error "Not implemented"
     unparse2 = error "Not implemented"
 
+instance FreshVariable V where
+    refreshVariable avoiding v@(V name)
+      | Set.notMember v avoiding = Nothing
+      | otherwise =
+        Just ((head . dropWhile (flip Set.member avoiding)) (V <$> names' ))
+      where
+        names' = iterate (+ 1) name
+
 newtype W = W String
     deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -706,6 +717,14 @@ instance SortedVariable W where
 instance Unparse W where
     unparse = error "Not implemented"
     unparse2 = error "Not implemented"
+
+instance FreshVariable W where
+    refreshVariable avoiding w@(W name)
+      | Set.notMember w avoiding = Nothing
+      | otherwise =
+        Just ((head . dropWhile (flip Set.member avoiding)) (W <$> names' ))
+      where
+        names' = iterate (<> "\'") name
 
 showVar :: V -> W
 showVar (V i) = W (show i)

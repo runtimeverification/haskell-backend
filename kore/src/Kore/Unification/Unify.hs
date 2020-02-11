@@ -4,7 +4,7 @@ License     : NCSA
 -}
 
 module Kore.Unification.Unify
-    ( MonadUnify (..), SimplifierVariable
+    ( MonadUnify (..), InternalVariable
     ) where
 
 import Prelude.Kore
@@ -17,17 +17,13 @@ import Data.Text.Prettyprint.Doc
     )
 
 import Kore.Internal.TermLike
-    ( SortedVariable
+    ( InternalVariable
     , TermLike
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
-    , SimplifierVariable
     )
 import Kore.Unification.Error
-import Kore.Unparser
-    ( Unparse
-    )
 
 -- | @MonadUnify@ is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationOrSubstitutionError'
@@ -61,7 +57,7 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
     scatter :: Traversable t => t a -> unifier a
 
     explainBottom
-        :: (SortedVariable variable, Unparse variable)
+        :: InternalVariable variable
         => Doc ()
         -> TermLike variable
         -> TermLike variable
@@ -69,7 +65,7 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
     explainBottom _ _ _ = pure ()
 
     explainAndReturnBottom
-        :: (SortedVariable variable, Unparse variable)
+        :: InternalVariable variable
         => Doc ()
         -> TermLike variable
         -> TermLike variable

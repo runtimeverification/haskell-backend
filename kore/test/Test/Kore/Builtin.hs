@@ -115,10 +115,10 @@ test_internalize =
     mkSet = Set.asInternal . Data.Set.fromList
     s = mkElemVar (elemVarS "s" setSort)
 
-    mkInt :: Ord variable => Integer -> TermLike variable
+    mkInt :: FreshVariable variable => Integer -> TermLike variable
     mkInt = Int.asInternal
     intSort = Builtin.intSort
-    zero, one :: Ord variable => TermLike variable
+    zero, one :: FreshVariable variable => TermLike variable
     zero = mkInt 0
     one = mkInt 1
     x = mkElemVar (elemVarS "x" intSort)

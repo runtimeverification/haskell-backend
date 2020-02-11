@@ -43,10 +43,6 @@ import Control.Monad.Except
     ( ExceptT
     )
 import qualified Control.Monad.Except as Except
---import Control.Monad.Morph
---    ( MFunctor
---    )
---import qualified Control.Monad.Morph as Monad.Morph
 import Control.Monad.IO.Class
 import Control.Monad.Trans
     ( MonadTrans

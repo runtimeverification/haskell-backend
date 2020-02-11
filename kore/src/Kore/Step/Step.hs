@@ -35,6 +35,9 @@ import Prelude.Kore
 
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -75,8 +78,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , SubstitutionVariable
+    ( ElementVariable
+    , FreshVariable
+    , InternalVariable
+    , SetVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -88,16 +93,12 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
     ( MonadUnify
-    , SimplifierVariable
     )
 import qualified Kore.Unification.Unify as Monad.Unify
     ( gather
     , scatter
     )
 import Kore.Unparser
-import Kore.Variables.Fresh
-    ( Renaming
-    )
 import Kore.Variables.Target
     ( Target
     )
@@ -113,7 +114,7 @@ import Kore.Variables.UnifiedVariable
 newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier
-        .  (SimplifierVariable variable, MonadUnify unifier)
+        .  (InternalVariable variable, MonadUnify unifier)
         => SideCondition variable
         -> TermLike variable
         -> TermLike variable
@@ -132,6 +133,9 @@ type Results rule variable =
         (UnifiedRule (Target variable) (rule (Target variable)))
         (Pattern variable)
 
+type Renaming variable =
+    Map (UnifiedVariable variable) (UnifiedVariable variable)
+
 -- | A rule which can be unified against a configuration
 class UnifyingRule rule where
     -- | The pattern used for matching/unifying the rule with the configuration.
@@ -145,7 +149,7 @@ class UnifyingRule rule where
     renamed to avoid collision with any variables in the given set.
      -}
     refreshRule
-        :: SubstitutionVariable variable
+        :: InternalVariable variable
         => FreeVariables variable  -- ^ Variables to avoid
         -> rule variable
         -> (Renaming variable, rule variable)
@@ -154,15 +158,16 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        :: Ord variable2
-        => (variable1 -> variable2)
+        :: (Ord variable1, FreshVariable variable2)
+        => (ElementVariable variable1 -> ElementVariable variable2)
+        -> (SetVariable variable1 -> SetVariable variable2)
         -> rule variable1
         -> rule variable2
 
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => UnificationProcedure
@@ -191,7 +196,7 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => UnificationProcedure
@@ -250,24 +255,27 @@ wouldNarrowWith unified =
 
 -- |Renames variables to be distinguishable from those in configuration
 toAxiomVariables
-    :: Ord variable
+    :: FreshVariable variable
     => UnifyingRule rule
     => rule variable
     -> rule (Target variable)
-toAxiomVariables = mapRuleVariables Target.Target
+toAxiomVariables = mapRuleVariables (fmap Target.Target) (fmap Target.Target)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
  -}
 unwrapRule
-    :: Ord variable
+    :: FreshVariable variable
     => UnifyingRule rule
     => rule (Target variable) -> rule variable
-unwrapRule = mapRuleVariables Target.unwrapVariable
+unwrapRule =
+    mapRuleVariables
+        (fmap Target.unwrapVariable)
+        (fmap Target.unwrapVariable)
 
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults
-    :: SimplifierVariable variable
-    => SimplifierVariable variable'
+    :: InternalVariable variable
+    => InternalVariable variable'
     => Monad m
     => UnifyingRule rule
     => Eq (rule (Target variable'))
@@ -327,7 +335,7 @@ the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
     :: forall variable unifier rule
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => Pretty.Pretty (rule (Target variable))
@@ -377,7 +385,7 @@ The rule is considered to apply if the result is not @\\bottom@.
  -}
 applyInitialConditions
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ Top-level conditions
@@ -404,24 +412,26 @@ applyInitialConditions sideCondition initial unification = do
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariables
-    :: Ord variable
+    :: FreshVariable variable
     => Pattern variable
     -> Pattern (Target variable)
-toConfigurationVariables = Pattern.mapVariables Target.NonTarget
+toConfigurationVariables =
+    Pattern.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition
     :: InternalVariable variable
     => SideCondition variable
     -> SideCondition (Target variable)
-toConfigurationVariablesCondition = SideCondition.mapVariables Target.NonTarget
+toConfigurationVariablesCondition =
+    SideCondition.mapVariables (fmap Target.NonTarget) (fmap Target.NonTarget)
 
 {- | Apply the remainder predicate to the given initial configuration.
 
  -}
 applyRemainder
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ Top level condition
@@ -439,7 +449,7 @@ applyRemainder sideCondition initial remainder = do
 -- | Simplifies the predicate obtained upon matching/unification.
 simplifyPredicate
     :: forall unifier variable term
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -> Maybe (Condition variable)

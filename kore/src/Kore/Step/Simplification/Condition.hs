@@ -59,7 +59,7 @@ unmodified.
 simplify
     ::  forall simplifier variable any
     .   ( HasCallStack
-        , SimplifierVariable variable
+        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  SubstitutionSimplifier simplifier
@@ -109,7 +109,7 @@ See also: 'simplify'
 -}
 simplifyPredicate
     ::  ( HasCallStack
-        , SimplifierVariable variable
+        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  SideCondition variable
