@@ -84,6 +84,9 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
+import Kore.Step.Simplification.Overloading
+    ( unifyOverloading
+    )
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
@@ -123,6 +126,7 @@ matchOne pair =
     <|> matchBuiltinMap  pair
     <|> matchBuiltinSet  pair
     <|> matchInj         pair
+    <|> matchOverload    pair
     )
     & Error.maybeT (defer pair) return
 
@@ -352,6 +356,12 @@ matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
     InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
     unifyInj inj1 inj2 & either (const empty) (push . injChild)
 matchInj _ = empty
+
+matchOverload
+    :: (MatchingVariable variable, MonadSimplify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchOverload termPair = Error.hushT (unifyOverloading termPair) >>= push
 
 -- * Implementation
 
