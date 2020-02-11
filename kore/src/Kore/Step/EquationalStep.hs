@@ -385,8 +385,7 @@ applyRulesSequence sideCondition initial rules =
     matchRules sideCondition initial rules'
     >>= finalizeRulesSequence sideCondition initial
   where
-    avoidConfigVars = freeVariables sideCondition <> freeVariables initial
-    rules' = EqualityPattern.targetRuleVariables avoidConfigVars <$> rules
+    rules' = EqualityPattern.targetRuleVariables sideCondition initial <$> rules
 
 -- | Matches a list a rules against a configuration. See 'matchRule'.
 matchRules

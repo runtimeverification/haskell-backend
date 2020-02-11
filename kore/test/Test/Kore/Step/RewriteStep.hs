@@ -21,6 +21,9 @@ import Data.Function
     )
 import qualified Data.Set as Set
 
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
@@ -80,6 +83,9 @@ import Kore.Unification.UnifierT
     )
 import Kore.Variables.Fresh
     ( nextVariable
+    )
+import Kore.Variables.Target
+    ( Target
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -186,7 +192,8 @@ test_renameRuleVariables =
                     , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
                     , attributes = Default.def
                     }
-            actual = Step.targetRuleVariables initialFreeVariables axiom
+            actual = Step.targetRuleVariables SideCondition.top initial axiom
+            initialFreeVariables :: FreeVariables (Target Variable)
             initialFreeVariables = freeVariables initial
             actualFreeVariables = freeVariables actual
         assertEqual "Expected no common free variables"
