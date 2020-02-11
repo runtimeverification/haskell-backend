@@ -426,7 +426,7 @@ newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
     deriving (Functor, Applicative, Monad)
 
 instance MonadLog AllPathIdentity where
-    logM = undefined
+    logEntry = undefined
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined

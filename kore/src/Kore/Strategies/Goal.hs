@@ -1112,7 +1112,7 @@ debugProofStateBracket
     action
   = do
     result <- action
-    logM DebugProofState
+    logEntry DebugProofState
         { proofState
         , transition
         , result = Just $ toReachabilityRule <$> result
@@ -1136,7 +1136,7 @@ debugProofStateFinal
     (fmap toReachabilityRule -> proofState)
     (coerce -> transition)
   = do
-    logM DebugProofState
+    logEntry DebugProofState
         { proofState
         , transition
         , result = Nothing

@@ -117,7 +117,7 @@ warnSimplificationWithRemainder
         -> remainders
     )
   =
-    logM WarnSimplificationWithRemainder
+    logEntry WarnSimplificationWithRemainder
         { inputPattern
         , sideCondition
         , results
