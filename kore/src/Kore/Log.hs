@@ -278,7 +278,7 @@ swappableLogger mvar =
 
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
 defaultLogPretty (SomeEntry entry) =
-    header Pretty.<+> Pretty.pretty entry
+    header Pretty.<+> longDoc entry
   where
     severity = prettySeverity (entrySeverity entry)
     type' = Pretty.pretty (lookupTextFromTypeWithError $ toSomeEntryType entry)
