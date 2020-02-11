@@ -10,7 +10,7 @@ module Kore.Step.SMT.Declaration.All
     ( declare
     ) where
 
-import Prelude.Kore
+import Prelude.Kore ()
 
 import qualified Kore.Step.SMT.AST as AST
     ( SmtDeclarations

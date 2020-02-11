@@ -150,8 +150,6 @@ module SMT.SimpleSMT
     , forallQ
     ) where
 
-import Debug.Trace
-
 import Prelude hiding
     ( abs
     , and
@@ -452,13 +450,12 @@ inNewScope s m = do
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns an the declared name as a constant expression.
 declare :: Solver -> Text -> SExpr -> IO SExpr
-declare proc f t = trace ("\n\nsimplesmt declare\n\n") $ declareFun proc (FunctionDeclaration f [] t)
+declare proc f t = declareFun proc (FunctionDeclaration f [] t)
 
 -- | Declare a function or a constant.
 -- For convenience, returns an the declared name as a constant expression.
 declareFun :: Solver -> SmtFunctionDeclaration -> IO SExpr
 declareFun proc FunctionDeclaration {name, inputSorts, resultSort} = do
-    traceM $ "\n\n" <> show name <> "\n\n"
     ackCommand proc
         $ fun "declare-fun" [ Atom name, List inputSorts, resultSort ]
     return (const name)
@@ -468,7 +465,6 @@ declareSort
     proc
     SortDeclaration {name, arity}
   = do
-    traceM "\n\nhello\n\n"
     ackCommand proc
         $ fun "declare-sort" [ Atom name, (Atom . Text.pack . show) arity ]
     pure (const name)

@@ -76,7 +76,6 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
         Left stuckDescription
     toPattern (Right a) = Right a
 
-
 runVerification
     :: Verification.Claim claim
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState

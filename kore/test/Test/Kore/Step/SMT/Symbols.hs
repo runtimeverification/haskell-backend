@@ -95,6 +95,6 @@ test_sortDeclaration =
         :: SMT.MonadSMT m
         => VerifiedModule Attribute.Symbol
         -> m ()
-    declareSymbolsAndSorts m = do
+    declareSymbolsAndSorts m =
         Declaration.declare
             (Representation.build m (Attribute.Constructors.indexBySort m))

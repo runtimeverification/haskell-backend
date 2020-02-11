@@ -10,9 +10,6 @@ import Data.Default
     ( def
     )
 
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
@@ -34,10 +31,7 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log
-    ( ExeName (..)
-    , TimestampsSwitch (..)
-    , emptyLogger
-    , stderrLogger
+    ( emptyLogger
     )
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
@@ -47,8 +41,7 @@ import Kore.Step.RulePattern
     )
 import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Step.Simplification.Data
-    ( SimplifierT
-    , runSimplifier
+    ( runSimplifier
     )
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import Kore.Syntax.Variable
@@ -226,11 +219,7 @@ runSimplifyRule
     -> IO [OnePathRule Variable]
 runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
-    $ SMT.runSMT SMT.defaultConfig (stderrLogger (ExeName "kore-test") TimestampsEnable)
-    $ runSimplifier Mock.env
-    $ f rule
-
-f :: OnePathRule Variable -> SimplifierT SMT.SMT (MultiAnd (OnePathRule Variable))
-f rule = do
-    SMT.All.declare Mock.smtDeclarations
-    simplifyRuleLhs rule
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ runSimplifier Mock.env $ do
+        SMT.All.declare Mock.smtDeclarations
+        simplifyRuleLhs rule
