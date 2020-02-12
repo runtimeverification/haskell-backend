@@ -48,6 +48,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
+    , HasFreeVariables (freeVariables)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Condition
@@ -257,13 +258,16 @@ The rule's variables are:
 targetRuleVariables
     :: InternalVariable variable
     => UnifyingRule rule
-    => FreeVariables (Target variable)
+    => SideCondition (Target variable)
+    -> Pattern (Target variable)
     -> rule variable
     -> rule (Target variable)
-targetRuleVariables avoiding =
+targetRuleVariables sideCondition initial =
     snd
     . refreshRule avoiding
     . mapRuleVariables Target.mkElementTarget Target.mkSetTarget
+  where
+    avoiding = freeVariables sideCondition <> freeVariables initial
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}

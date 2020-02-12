@@ -251,8 +251,7 @@ applyRulesWithFinalizer
     -> unifier (Results RulePattern variable)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     let sideCondition = SideCondition.topTODO
-        configurationVariables = freeVariables initial
-        rules' = targetRuleVariables configurationVariables <$> rules
+        rules' = targetRuleVariables sideCondition initial <$> rules
     results <- unifyRules unificationProcedure sideCondition initial rules'
     debugAppliedRewriteRules initial results
     finalize initial results
