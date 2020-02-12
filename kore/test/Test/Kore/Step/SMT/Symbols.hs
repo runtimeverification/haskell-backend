@@ -39,8 +39,12 @@ import Test.Kore.Step.SMT.Helpers
     ( atom
     , constructorAxiom
     , eq
+    , gt
     , isError
+    , isNotSatisfiable
     , isSatisfiable
+    , lt
+    , ofType
     )
 import qualified Test.Kore.Step.SMT.Helpers as Helpers
     ( testsForModule
@@ -51,7 +55,29 @@ import Test.Kore.With
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =
-    [ testsForModule "Constructors work (declared with sorts)"
+    [ testsForModule "Empty definition"
+        (indexModule $ emptyModule "m")
+        [ isSatisfiable
+            [ "i" `ofType` "Int"
+            ]
+        , isSatisfiable
+            [ "i" `ofType` "Int"
+            , SMT.assert (atom "i" `gt` atom "0")
+            ]
+        , isNotSatisfiable
+            [ "i" `ofType` "Int"
+            , SMT.assert (atom "i" `gt` atom "0")
+            , SMT.assert (atom "i" `lt` atom "0")
+            ]
+        , isError
+            [ "x" `ofType` "S"
+            ]
+        , isError
+            [ "x" `ofType` "S"
+            , SMT.assert (atom "x" `eq` atom "C")
+            ]
+        ]
+    , testsForModule "Constructors work (declared with sorts)"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
             `with`
