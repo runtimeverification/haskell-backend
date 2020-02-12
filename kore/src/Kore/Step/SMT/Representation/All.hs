@@ -12,10 +12,14 @@ module Kore.Step.SMT.Representation.All
 
 import Prelude.Kore
 
-import Control.Monad
-    ( join
+import Data.List
+    ( foldl'
     )
 import qualified Data.Map.Strict as Map
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -55,31 +59,37 @@ build
     -> Map.Map Id Attribute.Constructors
     -> Step.AST.SmtDeclarations
 build indexedModule sortConstructors =
-    removeDuplicates $ resolve (sorts `Step.AST.mergePreferFirst` symbols)
+    removeDuplicateConstructorDeclarations
+    $ resolve (sorts `Step.AST.mergePreferFirst` symbols)
   where
     sorts = Sorts.buildRepresentations indexedModule sortConstructors
     symbols = Symbols.buildRepresentations indexedModule
 
-removeDuplicates :: Step.AST.SmtDeclarations -> Step.AST.SmtDeclarations
-removeDuplicates Step.AST.Declarations { sorts, symbols } =
+removeDuplicateConstructorDeclarations
+    :: Step.AST.SmtDeclarations
+    -> Step.AST.SmtDeclarations
+removeDuplicateConstructorDeclarations
+    Step.AST.Declarations { sorts, symbols }
+  =
     let constructorSymbols =
-            join $ mapMaybe getConstructorNames (Map.elems sorts)
+            foldl' getConstructorNames Set.empty (Map.elems sorts)
      in Step.AST.Declarations
          { sorts
          , symbols = filter (isNotDuplicate constructorSymbols) symbols
          }
   where
     getConstructorNames
-        :: Step.AST.Sort SMT.AST.SExpr Text Text
-        -> Maybe [Text]
-    getConstructorNames Step.AST.Sort { declaration } =
+        :: Set Text
+        -> Step.AST.Sort SMT.AST.SExpr Text Text
+        -> Set Text
+    getConstructorNames names Step.AST.Sort { declaration } =
         case declaration of
             Step.AST.SortDeclarationDataType
                 SMT.AST.DataTypeDeclaration { constructors } ->
-                    Just $ fmap getName constructors
-            _ -> Nothing
+                    names <> Set.fromList (getName <$> constructors)
+            _ -> names
     isNotDuplicate
-        :: [Text]
+        :: Set Text
         -> Step.AST.Symbol SMT.AST.SExpr Text
         -> Bool
     isNotDuplicate constructorSymbols Step.AST.Symbol { declaration } =
