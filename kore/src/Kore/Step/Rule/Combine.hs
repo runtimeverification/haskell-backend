@@ -177,7 +177,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
 
         return (RewriteRule finalRule)
   where
-    mergedPredicate = mergeRulesPredicate rules
+    mergedPredicate = mergeDisjointVarRulesPredicate rules
     firstRule = head rules
     RewriteRule RulePattern
         {left = firstLeft, requires = firstRequires, antiLeft = firstAntiLeft}
