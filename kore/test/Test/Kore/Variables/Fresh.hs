@@ -3,12 +3,9 @@
 module Test.Kore.Variables.Fresh
     ( test_refreshVariable
     , test_FreshPartialOrd_Variable
-    -- * Test patterns
-    , testFreshPartialOrd
-    , variableGen
-    , counterGen
-    , sortGen
-    , idGen
+    , test_FreshPartialOrd_ElementVariable
+    , test_FreshPartialOrd_SetVariable
+    , test_FreshPartialOrd_UnifiedVariable
     ) where
 
 import Prelude.Kore
@@ -366,6 +363,21 @@ test_FreshPartialOrd_Variable =
     testGroup "instance FreshPartialOrd Variable"
     $ testFreshPartialOrd variableGen
 
+test_FreshPartialOrd_ElementVariable :: TestTree
+test_FreshPartialOrd_ElementVariable =
+    testGroup "instance FreshPartialOrd (ElementVariable Variable)"
+    $ testFreshPartialOrd elementVariableGen
+
+test_FreshPartialOrd_SetVariable :: TestTree
+test_FreshPartialOrd_SetVariable =
+    testGroup "instance FreshPartialOrd (SetVariable Variable)"
+    $ testFreshPartialOrd setVariableGen
+
+test_FreshPartialOrd_UnifiedVariable :: TestTree
+test_FreshPartialOrd_UnifiedVariable =
+    testGroup "instance FreshPartialOrd (UnifiedVariable Variable)"
+    $ testFreshPartialOrd unifiedVariableGen
+
 variableGen :: MonadGen gen => gen Variable
 variableGen = Variable <$> idGen <*> counterGen <*> sortGen
 
@@ -379,3 +391,16 @@ counterGen =
 
 sortGen :: MonadGen gen => gen Sort
 sortGen = Gen.element [testSort, topSort, subSort]
+
+elementVariableGen :: MonadGen gen => gen (ElementVariable Variable)
+elementVariableGen = ElementVariable <$> variableGen
+
+setVariableGen :: MonadGen gen => gen (SetVariable Variable)
+setVariableGen = SetVariable <$> variableGen
+
+unifiedVariableGen :: MonadGen gen => gen (UnifiedVariable Variable)
+unifiedVariableGen =
+    Gen.choice
+        [ ElemVar <$> elementVariableGen
+        , SetVar <$> setVariableGen
+        ]
