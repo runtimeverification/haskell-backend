@@ -140,13 +140,12 @@ renameRulesVariables
 renameRulesVariables rules =
     evalState (traverse renameRule rules) mempty
   where
-    -- TODO (thomas.tuegel): instance UnifyingRule RewriteRule
     renameRule
         :: RewriteRule variable
         -> State (FreeVariables variable) (RewriteRule variable)
-    renameRule (RewriteRule rulePattern) = State.state $ \used ->
-        let (_, rulePattern') = refreshRule used rulePattern in
-        (RewriteRule rulePattern', used <> freeVariables rulePattern')
+    renameRule rewriteRule = State.state $ \used ->
+        let (_, rewriteRule') = refreshRule used rewriteRule in
+        (rewriteRule', used <> freeVariables rewriteRule')
 
 mergeRules
     :: (MonadSimplify simplifier, InternalVariable variable)
