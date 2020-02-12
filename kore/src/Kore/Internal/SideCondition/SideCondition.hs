@@ -5,7 +5,6 @@ License     : NCSA
 
 module Kore.Internal.SideCondition.SideCondition
     ( Representation
-    , fromText
     ) where
 
 import Prelude.Kore
@@ -17,9 +16,6 @@ import Data.Hashable
     ( Hashable (..)
     , Hashed
     , hashed
-    )
-import Data.Text
-    ( Text
     )
 
 import Data.Type.Equality
@@ -86,6 +82,3 @@ instance Diff Representation where
 instance (Ord a, Hashable a, Typeable a) => From a Representation where
     from = mkRepresentation
     {-# INLINE from #-}
-
-fromText :: Text -> Representation
-fromText = from
