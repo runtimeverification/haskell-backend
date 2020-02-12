@@ -2,13 +2,27 @@
 
 module Test.Kore.Variables.Fresh
     ( test_refreshVariable
+    , test_FreshPartialOrd_Variable
+    -- * Test patterns
+    , testFreshPartialOrd
+    , variableGen
+    , counterGen
+    , sortGen
+    , idGen
     ) where
 
 import Prelude.Kore
 
+import Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import Test.Tasty
+import Test.Tasty.Hedgehog
 import Test.Tasty.HUnit
 
+import Control.Monad
+    ( when
+    )
 import Data.Maybe
     ( fromJust
     )
@@ -16,7 +30,9 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Numeric.Natural
 
+import Data.Sup
 import Kore.Sort
 import Kore.Syntax.ElementVariable
     ( ElementVariable (..)
@@ -32,6 +48,14 @@ import Kore.Variables.UnifiedVariable
     )
 
 import Test.Kore
+    ( idGen
+    , testId
+    )
+import Test.Kore.Step.MockSymbols
+    ( subSort
+    , testSort
+    , topSort
+    )
 
 metaVariable :: Variable
 metaVariable = Variable
@@ -296,3 +320,62 @@ test_refreshVariable =
     unifiedSetNonTargetOriginal  = unifiedNonTarget unifiedSetOriginal
     avoidUET = Set.singleton unifiedElemNonTargetOriginal
     avoidUST = Set.singleton unifiedSetTargetOriginal
+
+-- | Property tests of a 'FreshPartialOrd' instance using the given generator.
+testFreshPartialOrd
+    :: (Show variable, FreshPartialOrd variable)
+    => Gen variable
+    -> [TestTree]
+testFreshPartialOrd gen =
+    [ testProperty "supVariable is relevant" $ property $ do
+        x <- forAll gen
+        compareFresh x (supVariable x) /== Nothing
+    , testProperty "supVariable is idempotent" $ property $ do
+        x <- forAll gen
+        let xSup = supVariable x
+            xSupSup = supVariable xSup
+        xSup === xSupSup
+    , testProperty "supVariable dominates other variables" $ property $ do
+        x <- forAll gen
+        let sup = supVariable x
+        when (x == sup) discard
+        compareFresh x (supVariable x) === Just LT
+    , testProperty "nextVariable is relevant" $ property $ do
+        x <- forAll gen
+        y <- forAll gen
+        when (x == supVariable x) discard
+        when (y == supVariable y) discard
+        let x' = nextVariable x y
+        annotateShow x'
+        compareFresh x x' /== Nothing
+    , testProperty "nextVariable is monotonic" $ property $ do
+        x <- forAll gen
+        y <- forAll gen
+        when (x == supVariable x) discard
+        when (y == supVariable y) discard
+        let x' = nextVariable x y
+        annotateShow x'
+        compareFresh x x' === Just LT
+        case compareFresh y x' of
+            Nothing -> return ()
+            Just ordering -> ordering === LT
+    ]
+
+test_FreshPartialOrd_Variable :: TestTree
+test_FreshPartialOrd_Variable =
+    testGroup "instance FreshPartialOrd Variable"
+    $ testFreshPartialOrd variableGen
+
+variableGen :: MonadGen gen => gen Variable
+variableGen = Variable <$> idGen <*> counterGen <*> sortGen
+
+counterGen :: MonadGen gen => gen (Maybe (Sup Natural))
+counterGen =
+    Gen.frequency
+        [ (2, pure Nothing)
+        , (4, Just . Element <$> Gen.integral (Range.linear 0 256))
+        , (1, pure $ Just Sup)
+        ]
+
+sortGen :: MonadGen gen => gen Sort
+sortGen = Gen.element [testSort, topSort, subSort]

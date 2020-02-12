@@ -12,12 +12,16 @@ module Kore.Variables.Fresh
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
 import Data.Functor
     ( ($>)
+    )
+import Data.Generics.Product
+    ( field
     )
 import Data.Map.Strict
     ( Map
@@ -40,13 +44,28 @@ Agreement:
 
 prop> maybe True (== compare a b) (compareFresh a b)
 
+Relevance:
+
+prop> compareFresh a (supVariable a) \/= Nothing
+
+prop> a \/= supVariable a && x \/= supVariable x ==> compareFresh a (nextVariable a x) \/= Nothing
+
+Idempotence:
+
+prop> supVariable a == supVariable (supVariable a)
+
 Dominance:
 
-prop> maybe False (\/= GT) (compareFresh a (supVariable a))
+prop> a \/= supVariable a ==> compareFresh a (supVariable a) == Just LT
 
-Increment:
+Monotonicity:
 
-prop> compareFresh a (nextVariable a x) == Just LT
+prop> a \/= supVariable a && x \/= supVariable x ==> compareFresh a (nextVariable a x) == Just LT
+
+Note: The monotonicity property of 'nextVariable' implies the relevance
+property.
+
+prop> a \/= supVariable a && x \/= supVariable x ==> maybe True (== LT) (compareFresh x (nextVariable a x))
 
  -}
 class Ord variable => FreshPartialOrd variable where
@@ -61,22 +80,23 @@ instance FreshPartialOrd Variable where
     compareFresh x y
       | variableName x == variableName y = Just $ compare x y
       | otherwise = Nothing
+    {-# INLINE compareFresh #-}
 
     supVariable variable = variable { variableCounter = Just Sup }
+    {-# INLINE supVariable #-}
 
-    nextVariable variable Variable { variableName, variableCounter } =
+    nextVariable variable Variable { variableCounter = boundary } =
         variable
-            { variableName = variableName'
-            , variableCounter = variableCounter'
-            }
+        & Lens.set (field @"variableName" . field @"idLocation") generated
+        & Lens.over (field @"variableCounter") (increment . max boundary)
       where
-        variableName' =
-            variableName { idLocation = AstLocationGeneratedVariable }
-        variableCounter' =
-            case variableCounter of
+        generated = AstLocationGeneratedVariable
+        increment =
+            \case
                 Nothing -> Just (Element 0)
                 Just (Element a) -> Just (Element (succ a))
                 Just Sup -> illegalVariableCounter
+    {-# INLINE nextVariable #-}
 
 instance FreshPartialOrd Concrete where
     compareFresh = \case {}
