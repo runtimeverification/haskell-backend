@@ -12,22 +12,22 @@ module Kore.Step.Rule.Combine
 
 import Prelude.Kore
 
+import Control.Monad.State.Strict
+    ( State
+    , evalState
+    )
+import qualified Control.Monad.State.Strict as State
 import Data.Default
     ( Default (..)
     )
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
-import Data.Set
-    ( Set
-    )
-import qualified Data.Set as Set
 
 import qualified Branch as BranchT
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (FreeVariables)
+    ( FreeVariables
     , freeVariables
     )
 import qualified Kore.Internal.Condition as Condition
@@ -71,9 +71,6 @@ import qualified Kore.Step.SMT.Evaluator as SMT
     )
 import Kore.Step.Step
     ( refreshRule
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
     )
 
 {-
@@ -136,33 +133,20 @@ mergeRulePairPredicate
     error "AntiLeft(priority-based rules) not handled when merging yet."
 
 renameRulesVariables
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => [RewriteRule variable]
     -> [RewriteRule variable]
-renameRulesVariables
-    = List.reverse . snd . List.foldl' renameRuleVariable (Set.empty, [])
-
-renameRuleVariable
-    :: InternalVariable variable
-    => (Set (UnifiedVariable variable), [RewriteRule variable])
-    -> RewriteRule variable
-    -> (Set (UnifiedVariable variable), [RewriteRule variable])
-renameRuleVariable
-    (usedVariables, processedRules)
-    (RewriteRule rulePattern)
-  = (newUsedVariables, RewriteRule newRulePattern : processedRules)
+renameRulesVariables rules =
+    evalState (traverse renameRule rules) mempty
   where
-    newUsedVariables =
-        usedVariables
-        `Set.union` ruleVariables
-        `Set.union` newRuleVariables
-
-    (FreeVariables ruleVariables) = freeVariables rulePattern
-
-    (FreeVariables newRuleVariables) = freeVariables newRulePattern
-
-    (_, newRulePattern) =
-        refreshRule (FreeVariables usedVariables) rulePattern
+    -- TODO (thomas.tuegel): instance UnifyingRule RewriteRule
+    renameRule
+        :: RewriteRule variable
+        -> State (FreeVariables variable) (RewriteRule variable)
+    renameRule (RewriteRule rulePattern) = State.state $ \used ->
+        let (_, rulePattern') = refreshRule used rulePattern in
+        (RewriteRule rulePattern', used <> freeVariables rulePattern')
 
 mergeRules
     :: (MonadSimplify simplifier, InternalVariable variable)
