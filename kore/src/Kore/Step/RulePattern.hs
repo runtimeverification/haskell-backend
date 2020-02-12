@@ -432,6 +432,13 @@ instance
     unparse = unparse . rewriteRuleToTerm
     unparse2 = unparse2 . rewriteRuleToTerm
 
+instance
+    InternalVariable variable
+    => HasFreeVariables (RewriteRule variable) variable
+  where
+    freeVariables (RewriteRule rule) = freeVariables rule
+    {-# INLINE freeVariables #-}
+
 {-  | Implication-based pattern.
 -}
 newtype ImplicationRule variable =
