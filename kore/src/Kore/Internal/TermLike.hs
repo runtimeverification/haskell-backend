@@ -11,7 +11,6 @@ module Kore.Internal.TermLike
     , TermLike (..)
     , Evaluated (..)
     , Builtin
-    , containsForall
     , extractAttributes
     , isSimplified
     , Pattern.isConstructorLike
@@ -419,33 +418,6 @@ isFullySimplified = Attribute.isFullySimplified . extractAttributes
 
 simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
-
-containsForall :: TermLike variable -> Bool
-containsForall = Recursive.cata containsForall0
-  where
-    containsForall0 :: Base (TermLike variable) Bool -> Bool
-    containsForall0 (_ :< termLikeF) = case termLikeF of
-        ForallF _                             -> True
-        AndF (And _ first second)             -> first || second
-        ApplySymbolF (Application _ children) -> or children
-        ApplyAliasF (Application _ children)  -> or children
-        CeilF (Ceil _ _ child)                -> child
-        DomainValueF (DomainValue _ child)    -> child
-        EqualsF (Equals _ _ first second)     -> first || second
-        ExistsF (Exists _ _ child)            -> child
-        FloorF (Floor _ _ child)              -> child
-        IffF (Iff _ first second)             -> first || second
-        ImpliesF (Implies _ first second)     -> first || second
-        InF (In _ _ contained containing)     -> contained || containing
-        MuF (Mu _ child)                      -> child
-        NextF (Next _ child)                  -> child
-        NotF (Not _ child)                    -> child
-        NuF (Nu _ child)                      -> child
-        OrF (Or _ first second)               -> first || second
-        RewritesF (Rewrites _ first second)   -> first || second
-        EvaluatedF (Evaluated child)          -> child
-        InjF (Inj _ _ _ _ child)              -> child
-        _                                     -> False
 
 assertConstructorLikeKeys
     :: InternalVariable variable

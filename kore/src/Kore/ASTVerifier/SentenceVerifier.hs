@@ -41,6 +41,7 @@ import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
+    , isSubsetOf
     )
 import qualified Data.Set as Set
 import Data.Text
@@ -61,6 +62,10 @@ import Kore.Attribute.Parser
     ( ParseAttributes
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
+    , getFreeVariables
+    )
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
     ( Sort
@@ -76,8 +81,8 @@ import Kore.Internal.Predicate
     ( unwrapPredicate
     )
 import qualified Kore.Internal.Symbol as Internal.Symbol
-import Kore.Internal.TermLike
-    ( containsForall
+import Kore.Internal.TermLike.TermLike
+    ( freeVariables
     )
 import Kore.Sort
 import Kore.Step.Rule
@@ -91,6 +96,9 @@ import Kore.Step.RulePattern
     , RulePattern (..)
     )
 import Kore.Syntax.Definition
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -393,7 +401,8 @@ verifyClaimSentence sentence =
             parseAndVerifyAxiomAttributes verifiedModule'
             $ sentenceClaimAttributes sentence
         when (rejectClaim attrs verified)
-            $ sentenceClaimError (SentenceClaim verified)
+            $ koreFail "Found claim with universally-quantified variables\
+                        \ appearing only on the right-hand side"
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
     addClaim verified attrs =
@@ -409,13 +418,14 @@ verifyClaimSentence sentence =
             _ -> False
     rejectRulePattern
         RulePattern { left, antiLeft, requires, rhs = RHS { right, ensures } }
-      =
-        (not . any containsForall)
-            (catMaybes [antiLeft] <> [left, unwrapPredicate requires])
-        && any containsForall [right, unwrapPredicate ensures]
-    sentenceClaimError sentenceClaim =
-        withSentenceClaimContext sentenceClaim $ koreFail "Found claim with \
-            \universally-quantified variables appearing only on the right-hand side"
+      = 
+        let lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
+            rhs = [right, unwrapPredicate ensures]
+            freeVariablesUnion terms
+                = getFreeVariables
+                    (foldMap freeVariables terms :: FreeVariables Variable)
+        in
+            not $ isSubsetOf (freeVariablesUnion rhs) (freeVariablesUnion lhs)
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
