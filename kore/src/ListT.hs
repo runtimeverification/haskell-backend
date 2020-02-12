@@ -119,7 +119,7 @@ instance MonadTrans ListT where
     {-# INLINE lift #-}
 
 instance MonadLog log => MonadLog (ListT log) where
---    logWhile e = mapListT (logWhile e)
+    logWhile e = mapListT (logWhile e)
 
 instance MonadReader r m => MonadReader r (ListT m) where
     ask = lift ask

@@ -427,6 +427,7 @@ newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
 
 instance MonadLog AllPathIdentity where
     logEntry = undefined
+    logWhile = const id
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined

@@ -108,7 +108,6 @@ import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
     , LogMessage
-    , LoggerT (..)
     , WithLog
     , parseKoreLogOptions
     , runLoggerT
@@ -658,7 +657,7 @@ execute
     -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
     -> Main r
 execute options mainModule worker = do
-    logger <- LoggerT Reader.ask
+    logger <- Reader.ask
     clockSomethingIO "Executing"
         $ case smtSolver of
             Z3   -> withZ3 logger

@@ -65,7 +65,7 @@ import qualified Kore.Step.Simplification.SubstitutionSimplifier as Substitution
 import Log
 import SMT
     ( MonadSMT (..)
-    , SmtT (..)
+    , SMT
     )
 
 -- * Simplifier
@@ -94,14 +94,13 @@ newtype SimplifierT smt a = SimplifierT
     deriving (Functor, Applicative, Monad, MonadSMT)
     deriving (MonadIO, MonadCatch, MonadThrow)
     deriving (MonadReader (Env (SimplifierT smt)))
+    deriving (MonadLog)
 
-type Simplifier = SimplifierT (SmtT IO)
+type Simplifier = SimplifierT SMT
 
 instance MonadTrans SimplifierT where
     lift smt = SimplifierT (lift smt)
     {-# INLINE lift #-}
-
-instance MonadLog log => MonadLog (SimplifierT log)
 
 instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
     profile event duration =

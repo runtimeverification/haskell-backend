@@ -92,7 +92,6 @@ import Kore.Log.DebugAxiomEvaluation
     )
 import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
-    , solverTranscriptLogger
     )
 import qualified Kore.Log.DebugSolver as DebugSolver.DoNotUse
 import Kore.Log.KoreLogOptions as KoreLogOptions
@@ -146,7 +145,7 @@ withSmtSolverLogger DebugSolverOptions {logFile} continue =
     case logFile of
         Nothing -> continue mempty
         Just filename -> Colog.withLogTextFile filename
-            $ continue . solverTranscriptLogger
+            $ continue . transcriptLogger
 
 koreLogTransformer
     :: KoreLogOptions

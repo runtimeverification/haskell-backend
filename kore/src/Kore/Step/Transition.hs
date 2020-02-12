@@ -83,9 +83,8 @@ newtype TransitionT rule m a =
         , MonadIO
         , MonadPlus
         , Typeable
+        , MonadLog
         )
-
-instance MonadLog m => MonadLog (TransitionT rule m)
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift

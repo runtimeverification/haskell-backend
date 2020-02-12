@@ -13,8 +13,6 @@ module Kore.Log.DebugSolver
     , DebugSolverOptions (..)
     , emptyDebugSolverOptions
     , parseDebugSolverOptions
-
-    , solverTranscriptLogger
     ) where
 
 import Prelude.Kore
@@ -26,13 +24,6 @@ import Data.Text
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-    ( defaultLayoutOptions
-    , layoutPretty
-    )
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
-    ( renderStrict
-    )
 import Options.Applicative
     ( Parser
     , help
@@ -42,10 +33,9 @@ import Options.Applicative
 
 import Log
     ( Entry (..)
-    , LogAction (..)
+    , MonadLog
     , Severity (Debug)
-    , SomeEntry
-    , logWith
+    , logEntry
     )
 import SMT.AST
     ( SExpr (..)
@@ -76,38 +66,13 @@ instance Entry DebugSolverSend where
 instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
 
-logDebugSolverSendWith
-    :: LogAction m SomeEntry
-    -> SExpr
-    -> m ()
-logDebugSolverSendWith logger sExpr =
-    logWith logger $ DebugSolverSend sExpr
+logDebugSolverSendWith :: MonadLog m => SExpr -> m ()
+logDebugSolverSendWith sExpr =
+    logEntry $ DebugSolverSend sExpr
 
-logDebugSolverRecvWith
-    :: LogAction m SomeEntry
-    -> Text
-    -> m ()
-logDebugSolverRecvWith logger smtText =
-    logWith logger $ DebugSolverRecv smtText
-
-solverTranscriptLogger
-    :: Applicative m
-    => LogAction m Text
-    -> LogAction m SomeEntry
-solverTranscriptLogger textLogger =
-    LogAction
-    $ \entry -> case matchDebugSolverSend entry of
-        Just sendEntry -> unLogAction textLogger (messageToText sendEntry)
-        Nothing -> unLogAction mempty entry
-  where
-    messageToText :: DebugSolverSend -> Text
-    messageToText =
-        Pretty.renderStrict
-        . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        . pretty
-
-matchDebugSolverSend :: SomeEntry -> Maybe DebugSolverSend
-matchDebugSolverSend = fromEntry
+logDebugSolverRecvWith :: MonadLog m => Text -> m ()
+logDebugSolverRecvWith smtText =
+    logEntry $ DebugSolverRecv smtText
 
 {- | Options (from the command-line) specifying where to create a solver
 transcript.

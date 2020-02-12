@@ -26,6 +26,7 @@ module Log
     , logWarning
     , logError
     , logWith
+    , transcriptLogger
     ) where
 
 import Prelude.Kore
@@ -44,12 +45,25 @@ import Control.Monad.Except
     )
 import qualified Control.Monad.Except as Except
 import Control.Monad.IO.Class
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO (..)
+    , UnliftIO (..)
+    , withUnliftIO
+    )
+import Control.Monad.Morph
+    ( MFunctor
+    )
+import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.Reader.Class
+    ( MonadReader
+    )
 import Control.Monad.Trans
     ( MonadTrans
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
     ( AccumT
+    , mapAccumT
     )
 import Control.Monad.Trans.Identity
     ( IdentityT
@@ -68,6 +82,9 @@ import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
+    ( renderStrict
+    )
 import qualified GHC.Stack as GHC
 
 import Control.Monad.Counter
@@ -183,18 +200,18 @@ class Monad m => MonadLog m where
     logEntry = Monad.Trans.lift . logEntry
     {-# INLINE logEntry #-}
 
---    logWhile :: Entry entry => entry -> m a -> m a
---    default logWhile
---        :: Entry entry
---        => (MFunctor trans, MonadLog log, m ~ trans log)
---        => entry
---        -> m a
---        -> m a
---    logWhile e = Monad.Morph.hoist (logWhile e)
---    {-# INLINE logWhile #-}
+    logWhile :: Entry entry => entry -> m a -> m a
+    default logWhile
+        :: Entry entry
+        => (MFunctor trans, MonadLog log, m ~ trans log)
+        => entry
+        -> m a
+        -> m a
+    logWhile e = Monad.Morph.hoist (logWhile e)
+    {-# INLINE logWhile #-}
 
 instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log) where
---    logWhile = mapAccumT . logWhile
+    logWhile = mapAccumT . logWhile
 
 instance MonadLog log => MonadLog (CounterT log)
 
@@ -206,14 +223,22 @@ instance MonadLog log => MonadLog (MaybeT log)
 
 instance MonadLog log => MonadLog (Strict.StateT state log)
 
+instance MonadLog log => MonadLog (ReaderT state log)
+
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
-    deriving (Functor, Applicative, Monad)
+    deriving (Functor, Applicative, Monad, MonadReader (LogAction m SomeEntry))
     deriving (MonadIO, MonadThrow, MonadCatch)
+
+instance MonadUnliftIO m => MonadUnliftIO (LoggerT m) where
+    askUnliftIO =
+        LoggerT $ ReaderT $ \r ->
+            withUnliftIO $ \u ->
+                return (UnliftIO (unliftIO u . flip runReaderT r . getLoggerT))
 
 instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
---    logWhile = const id
+    logWhile = const id
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
@@ -226,3 +251,15 @@ logWith
     -> m ()
 logWith logger entry =
     logger Colog.<& toEntry entry
+
+transcriptLogger
+    :: LogAction m Text
+    -> LogAction m SomeEntry
+transcriptLogger textLogger =
+    LogAction $ unLogAction textLogger . messageToText
+  where
+    messageToText =
+        Pretty.renderStrict
+        . Pretty.layoutPretty Pretty.defaultLayoutOptions
+        . longDoc
+
