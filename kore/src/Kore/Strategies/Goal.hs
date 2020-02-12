@@ -929,7 +929,7 @@ deriveResults goal results = do
     let mapRules =
             Result.mapRules
             $ (fromRulePattern . goalToRule $ goal)
-            . Step.unwrapRule
+            . Step.unTargetRule
             . Step.withoutUnification
         traverseConfigs =
             Result.traverseConfigs

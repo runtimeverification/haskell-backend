@@ -27,7 +27,6 @@ import Control.Monad.Reader
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import Data.Functor.Identity
 
 import ListT
@@ -55,7 +54,7 @@ toList :: ListT Identity a -> [a]
 toList = Foldable.toList
 
 onList :: ([a] -> [a] -> r) -> ListT Identity a -> ListT Identity a -> r
-onList f = Function.on f toList
+onList f = on f toList
 
 hprop_Functor_Identity :: Property
 hprop_Functor_Identity = property $ do

@@ -51,7 +51,6 @@ import Kore.Internal.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate_
     , makeNotPredicate
-    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -60,7 +59,6 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
-import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.ExpandAlias
@@ -417,14 +415,17 @@ variableFunctionAndEquals
     first@(ElemVar_ v1)
     second@(ElemVar_ v2)
   =
-    return Conditional
-        { term = if v2 > v1 then second else first
-        , predicate = makeTruePredicate_
-        , substitution =
-            Substitution.wrap
-                [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first)
-                ]
-        }
+    -- TODO (thomas.tuegel): Remove this use of compareSubstitution; it violates
+    -- the boundary of the Substitution context.
+    case compareSubstitution v1 v2 of
+        LT ->
+            return
+            $ Pattern.withCondition second
+            $ Condition.fromSingleSubstitution (ElemVar v1, second)
+        _ ->
+            return
+            $ Pattern.withCondition first
+            $ Condition.fromSingleSubstitution (ElemVar v2, first)
 variableFunctionAndEquals
     sideCondition
     simplificationType
