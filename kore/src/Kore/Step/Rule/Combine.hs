@@ -7,6 +7,7 @@ module Kore.Step.Rule.Combine
     ( mergeRules
     , mergeRulesConsecutiveBatches
     , mergeRulesPredicate
+    , renameRulesVariables
     ) where
 
 import Prelude.Kore
