@@ -30,9 +30,6 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Control.Lens as Lens
-import Data.Function
-    ( on
-    )
 import Data.Functor.Const
 import Data.Generics.Product
     ( field

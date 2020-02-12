@@ -33,7 +33,7 @@ import Kore.Internal.TermLike
     , substitute
     )
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
+    ( fromVariable
     )
 import Kore.Unification.Unify
     ( MonadUnify
