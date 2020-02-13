@@ -91,6 +91,40 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
 import qualified SQL
 
+data Assignment variable =
+    Assignment !(UnifiedVariable variable) !(TermLike variable)
+    deriving (Show, Eq, Ord, GHC.Generic)
+
+instance SOP.Generic (Assignment variable)
+
+instance SOP.HasDatatypeInfo (Assignment variable)
+
+instance Debug variable => Debug (Assignment variable)
+
+instance
+    ( Debug variable, Diff variable, Ord variable )
+    => Diff (Assignment variable)
+
+instance NFData variable => NFData (Assignment variable)
+
+instance Hashable variable => Hashable (Assignment variable)
+
+assign
+    :: InternalVariable variable
+    => UnifiedVariable variable
+    -> TermLike variable
+    -> Assignment variable
+assign variable term =
+    uncurry Assignment $ curry orderRenaming variable term
+
+-- TODO: docs
+pattern Assignment_
+    :: UnifiedVariable variable
+    -> TermLike variable
+    -> Assignment variable
+pattern Assignment_ variable term <-
+    Assignment variable term
+
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
 Individual substitutions are a pair of type
@@ -109,7 +143,7 @@ data Substitution variable
     -- normalized and denormalized parts of the substitution together. That
     -- would enable us to keep more substitutions normalized in the Semigroup
     -- instance below.
-    = Substitution ![(UnifiedVariable variable, TermLike variable)]
+    = Substitution ![Assignment variable]
     | NormalizedSubstitution
         !(Map (UnifiedVariable variable) (TermLike variable))
     deriving GHC.Generic
@@ -176,7 +210,7 @@ instance
 
 instance
     Ord variable
-    => From (SingleSubstitution variable) (Substitution variable)
+    => From (UnifiedVariable variable, TermLike variable) (Substitution variable)
   where
     from = uncurry singleton
 
@@ -198,15 +232,13 @@ instance
         . fmap Predicate.singleSubstitutionToPredicate
         . unwrap
 
-type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
-
-type UnwrappedSubstitution variable = [SingleSubstitution variable]
+type UnwrappedSubstitution variable = [Assignment variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
     :: Ord variable
     => Substitution variable
-    -> [(UnifiedVariable variable, TermLike variable)]
+    -> [Assignment variable]
 unwrap (Substitution xs) = List.sortBy (on compare fst) xs
 unwrap (NormalizedSubstitution xs)  = Map.toList xs
 
@@ -300,7 +332,8 @@ singleton
     -> TermLike variable
     -> Substitution variable
 singleton var termLike
-  | TermLike.hasFreeVariable var termLike = Substitution [(var, termLike)]
+  | TermLike.hasFreeVariable var termLike =
+      Substitution [assign var termLike]
   | otherwise = NormalizedSubstitution (Map.singleton var termLike)
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
