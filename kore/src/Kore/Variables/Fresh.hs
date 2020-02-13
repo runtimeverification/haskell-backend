@@ -200,7 +200,6 @@ class Ord variable => FreshVariable variable where
         -> Maybe variable
     refreshVariable avoiding original = do
         largest <- Set.lookupLT (supVariable original) avoiding
-        _ <- compareFresh original largest
         nextVariable largest original
     {-# INLINE refreshVariable #-}
 
