@@ -23,10 +23,12 @@ import Control.Error
     )
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import Data.Text
     ( Text
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+
 
 import qualified Branch as BranchT
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
@@ -58,6 +60,8 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
     ( end
+    , endNotApplicable
+    , endNotApplicableConditionally
     , klabelIdentifier
     , notEvaluated
     , notEvaluatedConditionally
@@ -252,6 +256,9 @@ maybeEvaluatePattern
                     , remainders = orRemainders
                     } -> do
                         DebugAxiomEvaluation.reevaluation
+                            ( OrPattern.toPatterns
+                            $ MultiOr.merge orResults orRemainders
+                            )
                             identifier
                             klabelIdentifier
                         simplified <-
@@ -293,13 +300,32 @@ maybeEvaluatePattern
 
     tracing = Profile.equalitySimplification identifier termLike
 
+    children = case Recursive.project termLike of
+        (_ :< termLikeF) -> Foldable.toList termLikeF
+
     bracketAxiomEvaluationLog
         :: simplifier (AttemptedAxiom variable)
         -> simplifier (AttemptedAxiom variable)
     bracketAxiomEvaluationLog action = do
-        DebugAxiomEvaluation.start identifier klabelIdentifier
+        DebugAxiomEvaluation.start children identifier klabelIdentifier
         result <- action
-        DebugAxiomEvaluation.end identifier klabelIdentifier
+        case result of
+            AttemptedAxiom.NotApplicable ->
+                DebugAxiomEvaluation.endNotApplicable
+                    identifier
+                    klabelIdentifier
+            AttemptedAxiom.NotApplicableUntilConditionChanges _ ->
+                DebugAxiomEvaluation.endNotApplicableConditionally
+                    identifier
+                    klabelIdentifier
+            AttemptedAxiom.Applied attemptResults ->
+                DebugAxiomEvaluation.end
+                    (OrPattern.toPatterns $ MultiOr.merge results remainders)
+                    identifier
+                    klabelIdentifier
+              where
+                AttemptedAxiomResults { results, remainders } =
+                    attemptResults
         return result
 
     unchangedPatt =

@@ -683,8 +683,14 @@ instance Diff V
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVar
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
+
+instance From Variable V where
+    from = error "Not implemented"
+
+instance From V Variable where
+    from = error "Not implemented"
+
+instance VariableName V
 
 instance Unparse V where
     unparse = error "Not implemented"
@@ -697,6 +703,9 @@ instance FreshVariable V where
         Just ((head . dropWhile (flip Set.member avoiding)) (V <$> names' ))
       where
         names' = iterate (+ 1) name
+
+instance SubstitutionOrd V where
+    compareSubstitution = compare
 
 newtype W = W String
     deriving (Eq, GHC.Generic, Ord, Show)
@@ -711,8 +720,14 @@ instance Diff W
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVar
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
+
+instance From Variable W where
+    from = error "Not implemented"
+
+instance From W Variable where
+    from = error "Not implemented"
+
+instance VariableName W
 
 instance Unparse W where
     unparse = error "Not implemented"
@@ -725,6 +740,9 @@ instance FreshVariable W where
         Just ((head . dropWhile (flip Set.member avoiding)) (W <$> names' ))
       where
         names' = iterate (<> "\'") name
+
+instance SubstitutionOrd W where
+    compareSubstitution = compare
 
 showVar :: V -> W
 showVar (V i) = W (show i)

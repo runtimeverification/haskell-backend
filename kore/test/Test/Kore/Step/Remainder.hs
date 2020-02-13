@@ -16,8 +16,6 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Variables.Target
-    ( Target (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Terse
@@ -33,14 +31,14 @@ test_existentiallyQuantifyTarget =
 target :: Predicate (Target Variable)
 target =
     Predicate.makeEqualsPredicate_
-        (mkElemVar $ NonTarget <$> Mock.x)
+        (mkElemVar $ mkElementNonTarget Mock.x)
         (Mock.sigma
-            (mkElemVar $ Target <$> Mock.y)
-            (mkElemVar $ Target <$> Mock.z)
+            (mkElemVar $ mkElementTarget Mock.y)
+            (mkElemVar $ mkElementTarget Mock.z)
         )
 
 quantified :: Predicate (Target Variable)
 quantified =
     Predicate.makeMultipleExists
-        [Target <$> Mock.y, Target <$> Mock.z]
+        [mkElementTarget Mock.y, mkElementTarget Mock.z]
         target

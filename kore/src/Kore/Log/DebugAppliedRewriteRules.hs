@@ -46,7 +46,7 @@ import Kore.Unparser
     ( unparse
     )
 import Kore.Variables.Target
-    ( Target (..)
+    ( Target
     )
 import Log
 
@@ -97,7 +97,7 @@ debugAppliedRewriteRules
     -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
     -> log ()
 debugAppliedRewriteRules initial rules =
-    logM DebugAppliedRewriteRules
+    logEntry DebugAppliedRewriteRules
         { configuration
         , appliedRewriteRules
         }

@@ -165,7 +165,7 @@ equalitiesToEvaluators
         (Just evaluator, Nothing) -> Just evaluator
         (Nothing, Just evaluator) -> Just evaluator
         (Just sEvaluator, Just dEvaluator) ->
-            Just (simplifierWithFallback sEvaluator dEvaluator)
+            Just (simplifierWithFallback dEvaluator sEvaluator)
   where
     simplificationEvaluator =
         if null simplificationRules

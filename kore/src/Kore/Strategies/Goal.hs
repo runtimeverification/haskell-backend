@@ -929,7 +929,7 @@ deriveResults goal results = do
     let mapRules =
             Result.mapRules
             $ (fromRulePattern . goalToRule $ goal)
-            . Step.unwrapRule
+            . Step.unTargetRule
             . Step.withoutUnification
         traverseConfigs =
             Result.traverseConfigs
@@ -1112,7 +1112,7 @@ debugProofStateBracket
     action
   = do
     result <- action
-    logM DebugProofState
+    logEntry DebugProofState
         { proofState
         , transition
         , result = Just $ toReachabilityRule <$> result
@@ -1136,7 +1136,7 @@ debugProofStateFinal
     (fmap toReachabilityRule -> proofState)
     (coerce -> transition)
   = do
-    logM DebugProofState
+    logEntry DebugProofState
         { proofState
         , transition
         , result = Nothing

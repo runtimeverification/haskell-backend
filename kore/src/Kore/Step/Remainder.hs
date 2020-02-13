@@ -70,9 +70,7 @@ remainder
     => MultiOr (Condition (Target variable))
     -> Predicate variable
 remainder =
-    Predicate.mapVariables
-        (fmap Target.unwrapVariable)
-        (fmap Target.unwrapVariable)
+    Predicate.mapVariables Target.unTargetElement Target.unTargetSet
     . remainder'
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.

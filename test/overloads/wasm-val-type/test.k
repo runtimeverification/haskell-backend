@@ -15,5 +15,8 @@ module TEST
     syntax Instr ::= PlainInstr
     rule <k> < TYPE:AValType > VAL:Number => .K ... </k>
     rule <k> ITYPE:IValType . const VAL => < ITYPE > VAL ... </k>
-    configuration <k> $PGM:Val </k>
+    configuration <k> $PGM:Number </k>
+
+    syntax Number ::= extractNumber(Val) [function]
+    rule extractNumber( < TYPE > N:Number ) => N
 endmodule

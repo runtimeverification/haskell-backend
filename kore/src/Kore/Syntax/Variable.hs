@@ -13,6 +13,9 @@ module Kore.Syntax.Variable
     , isOriginalVariable
     , illegalVariableCounter
     , externalizeFreshVariable
+    , VariableName
+    , toVariable
+    , fromVariable
     , SortedVariable (..)
     , unparse2SortedVariable
     , Concrete
@@ -78,6 +81,12 @@ instance Unparse Variable where
         unparse2 variableName
         <> Pretty.pretty variableCounter
 
+instance From Variable Variable where
+    from = id
+    {-# INLINE from #-}
+
+instance VariableName Variable
+
 {- | Is the variable original (as opposed to generated)?
  -}
 isOriginalVariable :: Variable -> Bool
@@ -112,37 +121,41 @@ externalizeFreshVariable variable@Variable { variableName, variableCounter } =
             , idLocation = AstLocationGeneratedVariable
             }
 
+{- | 'VariableName' is the name of a Kore variable.
+
+A 'VariableName' has instances:
+
+* @'From' variable 'Variable'@
+* @'From' 'Variable' variable@
+
+such that both implementations of 'from' are injective,
+
+prop> (==) (fromVariable x) (fromVariable y) === (==) x y
+
+prop> (==) x y === (==) (toVariable x) (toVariable y)
+
+ -}
+class
+    (Ord variable, From variable Variable, From Variable variable)
+    => VariableName variable
+
+-- | An injection from 'Variable' to any 'VariableName'.
+fromVariable :: forall variable. VariableName variable => Variable -> variable
+fromVariable = from @Variable @variable
+
+-- | An injection from any 'VariableName' to 'Variable'.
+toVariable :: forall variable. VariableName variable => variable -> Variable
+toVariable = from @variable @Variable
+
 {- | 'SortedVariable' is a Kore variable with a known sort.
-
-The instances of @SortedVariable@ must encompass the 'Variable' type by
-implementing 'fromVariable', i.e. we must be able to construct a
-@SortedVariable@ given a parsed 'Variable'.
-
-'toVariable' may delete information so that
-
-> toVariable . fromVariable === id :: Variable -> Variable
-
-but the reverse is not required.
 
  -}
 class SortedVariable variable where
     -- | The known 'Sort' of the given variable.
     sortedVariableSort :: variable -> Sort
-    sortedVariableSort variable =
-        variableSort
-      where
-        Variable { variableSort } = toVariable variable
-
-    -- | Convert a variable from the parsed syntax of Kore.
-    fromVariable :: Variable -> variable
-    -- | Extract the parsed syntax of a Kore variable.
-    toVariable :: variable -> Variable
--- TODO(traiansf): the 'SortedVariable' class mixes different concerns.
 
 instance SortedVariable Variable where
     sortedVariableSort = variableSort
-    fromVariable = id
-    toVariable = id
 
 {- | Unparse any 'SortedVariable' in an Applicative Kore binder.
 
@@ -188,5 +201,13 @@ instance Unparse Concrete where
 
 instance SortedVariable Concrete where
     sortedVariableSort = \case {}
-    toVariable = \case {}
-    fromVariable = error "Cannot construct a variable in a concrete term!"
+
+instance VariableName Concrete
+
+instance From Variable Concrete where
+    from = error "Cannot construct a variable in a concrete term!"
+    {-# INLINE from #-}
+
+instance From Concrete Variable where
+    from = \case {}
+    {-# INLINE from #-}
