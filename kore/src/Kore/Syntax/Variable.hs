@@ -56,9 +56,33 @@ data Variable = Variable
     , variableCounter :: !(Maybe (Sup Natural))
     , variableSort :: !Sort
     }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (GHC.Generic, Show)
 
-instance Hashable Variable
+-- TODO (thomas.tuegel): Move variableSort out of Variable entirely, so that
+-- only the identifiers remain.
+
+instance Eq Variable where
+    (==) a b =
+            on (==) variableName a b
+        &&  on (==) variableCounter a b
+    {-# INLINE (==) #-}
+
+{- | 'Variable' is uniquely identified by 'variableName' and 'variableCounter'.
+
+Two 'Variable's with the same 'variableName' and 'variableCounter' but different
+'variableSort's are not different so much as they are /inconsistent/.
+
+ -}
+instance Ord Variable where
+    compare a b =
+            on compare variableName a b
+        <>  on compare variableCounter a b
+    {-# INLINE compare #-}
+
+instance Hashable Variable where
+    hashWithSalt salt Variable { variableName, variableCounter } =
+        salt `hashWithSalt` variableName `hashWithSalt` variableCounter
+    {-# INLINE hashWithSalt #-}
 
 instance NFData Variable
 
