@@ -42,7 +42,7 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import Kore.Step.EqualityPattern
-    ( EqualityPattern
+    ( EqualityRule
     )
 import qualified Kore.Step.EqualityPattern as Equality
 import qualified Kore.Step.Step as Equality
@@ -67,7 +67,7 @@ We will log the applied rule and its unification or matching condition.
 
  -}
 newtype DebugAppliedRule =
-    DebugAppliedRule { appliedRule :: Unified (EqualityPattern Variable) }
+    DebugAppliedRule { appliedRule :: Unified (EqualityRule Variable) }
     deriving (Eq)
     deriving (GHC.Generic)
 
@@ -98,7 +98,7 @@ instance SQL.Table DebugAppliedRule
 debugAppliedRule
     :: MonadLog log
     => InternalVariable variable
-    => Conditional variable (EqualityPattern variable)
+    => Conditional variable (EqualityRule variable)
     -> log ()
 debugAppliedRule =
     logEntry
@@ -151,7 +151,7 @@ filterDebugAppliedRule debugAppliedRuleOptions entry
 
 isSelectedRule
     :: DebugAppliedRuleOptions
-    -> Unified (EqualityPattern Variable)
+    -> Unified (EqualityRule Variable)
     -> Bool
 isSelectedRule debugAppliedRuleOptions =
     maybe False (`Set.member` debugAppliedRules) . appliedRuleId

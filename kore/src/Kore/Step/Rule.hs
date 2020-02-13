@@ -61,8 +61,7 @@ import Kore.Sort
     , SortVariable (SortVariable)
     )
 import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (..)
+    ( EqualityRule (..)
     , equalityRuleToTerm
     )
 import Kore.Step.RulePattern
@@ -283,7 +282,7 @@ termToAxiomPattern attributes pat =
             )
           | isTop ensures || ensures == requires
           ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
+            pure $ FunctionAxiomPattern $ EqualityRule
                 { requires = Predicate.wrapPredicate requires
                 , left
                 , right
@@ -297,7 +296,7 @@ termToAxiomPattern attributes pat =
                 ensures
             )
           ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
+            pure $ FunctionAxiomPattern $ EqualityRule
                 { requires = Predicate.wrapPredicate requires
                 , left
                 , right
@@ -307,7 +306,7 @@ termToAxiomPattern attributes pat =
 
         -- function axioms: trivial pre- and post-conditions
         TermLike.Equals_ _ _ left right ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
+            pure $ FunctionAxiomPattern $ EqualityRule
                 { requires = Predicate.makeTruePredicate_
                 , left
                 , right
@@ -316,7 +315,7 @@ termToAxiomPattern attributes pat =
                 }
         -- definedness axioms
         left@(TermLike.Ceil_ _ resultSort _) ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
+            pure $ FunctionAxiomPattern $ EqualityRule
                 { requires = Predicate.makeTruePredicate_
                 , left
                 , right = TermLike.mkTop resultSort

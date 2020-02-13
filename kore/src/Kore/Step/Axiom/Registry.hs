@@ -51,8 +51,7 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (EqualityRule)
+    ( EqualityRule (..)
     , getPriorityOfRule
     , isSimplificationRule
     )
@@ -117,7 +116,7 @@ axiomToIdAxiomPatternPair axiom =
         Left _ -> Nothing
         Right
             (FunctionAxiomPattern
-                axiomPat@(EqualityRule EqualityPattern { left })
+                axiomPat@(EqualityRule { left })
             )
           -> do
             identifier <- AxiomIdentifier.matchAxiomIdentifier left
@@ -193,7 +192,7 @@ axiom.
 
  -}
 ignoreEqualityRule :: EqualityRule Variable -> Bool
-ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
+ignoreEqualityRule (EqualityRule { attributes })
   | isAssoc = True
   | isComm = True
   -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
@@ -212,7 +211,7 @@ ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
 ignoreDefinition :: EqualityRule Variable -> Bool
-ignoreDefinition (EqualityRule EqualityPattern { left }) =
+ignoreDefinition (EqualityRule { left }) =
     assert isLeftFunctionLike False
   where
     isLeftFunctionLike =

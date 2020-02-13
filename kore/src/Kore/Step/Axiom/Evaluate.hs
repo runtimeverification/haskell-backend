@@ -44,12 +44,9 @@ import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
     )
 import Kore.Step.EqualityPattern
-    ( EqualityPattern (EqualityPattern)
-    , EqualityRule (..)
+    ( EqualityRule (..)
     )
-import qualified Kore.Step.EqualityPattern as EqualityPattern
-    ( EqualityPattern (..)
-    )
+import qualified Kore.Step.EqualityPattern as EqualityRule
 import qualified Kore.Step.EquationalStep as Step
 import Kore.Step.Remainder
     ( ceilChildOfApplicationOrTop
@@ -77,7 +74,7 @@ evaluateAxioms
     => [EqualityRule Variable]
     -> SideCondition variable
     -> TermLike variable
-    -> simplifier (Step.Results EqualityPattern variable)
+    -> simplifier (Step.Results EqualityRule variable)
 evaluateAxioms equalityRules sideCondition termLike
   | any ruleIsConcrete equalityRules
   -- All of the current pattern's children (most likely an ApplicationF)
@@ -130,7 +127,7 @@ evaluateAxioms equalityRules sideCondition termLike
 
     logAppliedRule :: MonadLog log => EqualityRule Variable -> log ()
     logAppliedRule
-        (EqualityRule EqualityPattern
+        (EqualityRule
             {left, attributes = Attribute.Axiom {sourceLocation}}
         )
       =
@@ -142,8 +139,7 @@ evaluateAxioms equalityRules sideCondition termLike
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete
         . Attribute.Axiom.concrete
-        . EqualityPattern.attributes
-        . getEqualityRule
+        . EqualityRule.attributes
 
     notApplicable =
         Result.Results
@@ -153,11 +149,10 @@ evaluateAxioms equalityRules sideCondition termLike
 
     maybeNotApplicable = maybeT (return notApplicable) return
 
-    unwrapEqualityRule (EqualityRule rule) =
+    unwrapEqualityRule =
         EqualityPattern.mapRuleVariables
             (fmap fromVariable)
             (fmap fromVariable)
-            rule
 
     rejectNarrowing (Result.results -> results) =
         (Monad.guard . not) (any Step.isNarrowingResult results)

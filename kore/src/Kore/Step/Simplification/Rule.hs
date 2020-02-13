@@ -35,8 +35,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (..)
+    ( EqualityRule (..)
     )
 import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -59,25 +58,18 @@ simplifyFunctionAxioms
 simplifyFunctionAxioms =
     (traverse . traverse) simplifyEqualityRule
 
-simplifyEqualityRule
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => EqualityRule variable
-    -> simplifier (EqualityRule variable)
-simplifyEqualityRule (EqualityRule rule) =
-    EqualityRule <$> simplifyEqualityPattern rule
-
 {- | Simplify an 'EqualityPattern' using only matching logic rules.
 
 The original rule is returned unless the simplification result matches certain
 narrowly-defined criteria.
 
  -}
-simplifyEqualityPattern
+simplifyEqualityRule
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => EqualityPattern variable
-    -> simplifier (EqualityPattern variable)
-simplifyEqualityPattern rule = do
-    let EqualityPattern { left } = rule
+    => EqualityRule variable
+    -> simplifier (EqualityRule variable)
+simplifyEqualityRule rule = do
+    let EqualityRule { left } = rule
     simplifiedLeft <- simplifyPattern left
     case OrPattern.toPatterns simplifiedLeft of
         [ Conditional { term, predicate, substitution } ]
@@ -86,15 +78,15 @@ simplifyEqualityPattern rule = do
                 left' = TermLike.substitute subst term
                 requires' = TermLike.substitute subst <$> requires
                   where
-                    EqualityPattern { requires = requires } = rule
+                    EqualityRule { requires = requires } = rule
                 rhs' = TermLike.substitute subst rhs
                   where
-                    EqualityPattern { right = rhs } = rule
+                    EqualityRule { right = rhs } = rule
                 ensures' = TermLike.substitute subst <$> ensures
                   where
-                    EqualityPattern { ensures = ensures } = rule
-                EqualityPattern { attributes } = rule
-            return EqualityPattern
+                    EqualityRule { ensures = ensures } = rule
+                EqualityRule { attributes } = rule
+            return EqualityRule
                 { left = left'
                 , requires = requires'
                 , right = rhs'

@@ -58,9 +58,9 @@ import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
 import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
+    ( EqualityRule (..)
     )
-import qualified Kore.Step.EqualityPattern as EqualityPattern
+import qualified Kore.Step.EqualityPattern as EqualityRule
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
@@ -78,7 +78,6 @@ import Kore.Step.Step
     , Results
     , UnificationProcedure (..)
     , UnifiedRule
-    , UnifyingRule
     , assertFunctionLikeResults
     , checkFunctionLike
     , matchingPattern
@@ -110,7 +109,7 @@ from the left-hand side of the rule.
  -}
 isNarrowingResult
     :: Ord variable
-    => Result EqualityPattern variable
+    => Result EqualityRule variable
     -> Bool
 isNarrowingResult Step.Result { appliedRule } =
     (not . Set.null) (wouldNarrowWith appliedRule)
@@ -170,7 +169,7 @@ recoveryFunctionLikeResults
     .  InternalVariable variable
     => Simplifier.MonadSimplify simplifier
     => Pattern (Target variable)
-    -> Results EqualityPattern variable
+    -> Results EqualityRule variable
     -> simplifier ()
 recoveryFunctionLikeResults initial results = do
     let appliedRules = Result.appliedRule <$> Results.results results
@@ -193,7 +192,7 @@ recoveryFunctionLikeResults initial results = do
 
             Conditional { term = ruleTerm, substitution = ruleSubstitution } =
                 appliedRule
-            EqualityPattern { left = alpha_t', requires = alpha_p'} = ruleTerm
+            EqualityRule { left = alpha_t', requires = alpha_p'} = ruleTerm
 
             substitution' = Substitution.toMap ruleSubstitution
 
@@ -244,9 +243,9 @@ applyRulesSequence
     => SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> [EqualityPattern variable]
+    -> [EqualityRule variable]
     -- ^ Rewrite rules
-    -> unifier (Results EqualityPattern variable)
+    -> unifier (Results EqualityRule variable)
 applyRulesSequence sideCondition initial rules =
     Foldable.asum (matchRule sideCondition initial <$> rules')
         & maybeT noResults finalize
@@ -254,19 +253,19 @@ applyRulesSequence sideCondition initial rules =
     rules' = EqualityPattern.targetRuleVariables sideCondition initial <$> rules
 
     finalize
-        :: UnifiedRule (Target variable) (EqualityPattern (Target variable))
-        -> unifier (Results EqualityPattern variable)
+        :: UnifiedRule (Target variable) (EqualityRule (Target variable))
+        -> unifier (Results EqualityRule variable)
     finalize unifiedRule = do
         let (renamedRule, solution) = Conditional.splitTerm unifiedRule
             Conditional { substitution } = solution
             substitution' = Substitution.toMap substitution
             term' =
                 TermLike.substitute substitution'
-                $ EqualityPattern.right renamedRule
+                $ EqualityRule.right renamedRule
             ensures =
                 Condition.fromPredicate
                 $ Predicate.substitute substitution'
-                $ EqualityPattern.ensures renamedRule
+                $ EqualityRule.ensures renamedRule
         return Step.Results
             { remainders = mempty
             , results =
@@ -279,7 +278,7 @@ applyRulesSequence sideCondition initial rules =
                     }
             }
 
-    noResults :: unifier (Results EqualityPattern variable)
+    noResults :: unifier (Results EqualityRule variable)
     noResults =
         return Step.Results
             { results = mempty
@@ -307,15 +306,14 @@ unification. The substitution is not applied to the renamed rule.
 matchRule
     :: InternalVariable variable
     => MonadSimplify simplifier
-    => UnifyingRule rule
     => SideCondition (Target variable)
     -- ^ Top level condition.
     -> Pattern (Target variable)
     -- ^ Initial configuration
-    -> rule (Target variable)
+    -> EqualityRule (Target variable)
     -- ^ Rule
     ->  MaybeT simplifier
-            (UnifiedRule (Target variable) (rule (Target variable)))
+            (UnifiedRule (Target variable) (EqualityRule (Target variable)))
 matchRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
     -- Match the left-hand side of the rule with the term of the initial
