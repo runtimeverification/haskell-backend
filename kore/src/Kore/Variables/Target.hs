@@ -55,7 +55,8 @@ instead of 'NonTarget' variables.
 data Target variable
     = Target !variable
     | NonTarget !variable
-    deriving (GHC.Generic, Show, Functor)
+    deriving (GHC.Generic, Show)
+    deriving (Functor, Foldable, Traversable)
 
 instance Eq variable => Eq (Target variable) where
     (==) = on (==) unTarget
@@ -148,8 +149,7 @@ instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
     supVariable = fmap supVariable
     {-# INLINE supVariable #-}
 
-    nextVariable variable bound =
-        fmap (flip nextVariable (unTarget bound)) variable
+    nextVariable (unTarget -> bound) = traverse (nextVariable bound)
     {-# INLINE nextVariable #-}
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.

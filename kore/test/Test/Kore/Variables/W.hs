@@ -5,6 +5,9 @@ module Test.Kore.Variables.W
 
 import Prelude.Kore
 
+import Data.Generics.Product
+    ( field
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -52,14 +55,14 @@ instance FreshPartialOrd W where
       | a == b = Just (compare an bn)
       | otherwise = Nothing
     supVariable w = w { counter = Just Sup }
-    nextVariable w W { counter } =
-        w { counter = counter' }
+    nextVariable W { counter = bound } =
+        field @"counter" (increment . max bound)
       where
-        counter' =
-            case counter of
-                Nothing -> Just (Element 0)
-                Just (Element a) -> Just (Element (succ a))
-                Just Sup -> illegalVariableCounter
+        increment =
+            \case
+                Nothing -> pure $ Just (Element 0)
+                Just (Element a) -> pure $ Just (Element (succ a))
+                Just Sup -> empty
 
 instance FreshVariable W
 

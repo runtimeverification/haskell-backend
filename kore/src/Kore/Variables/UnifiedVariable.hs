@@ -94,11 +94,14 @@ instance
     supVariable (ElemVar elemVar) = ElemVar (supVariable elemVar)
     supVariable (SetVar setVar) = SetVar (supVariable setVar)
 
-    nextVariable (ElemVar elemVar1) (ElemVar elemVar2) =
-        ElemVar (nextVariable elemVar1 elemVar2)
-    nextVariable (SetVar setVar1) (SetVar setVar2) =
-        SetVar (nextVariable setVar1 setVar2)
-    nextVariable _ _ = error "The impossible happened!"
+    nextVariable (ElemVar bound) (ElemVar original) =
+        ElemVar <$> nextVariable bound original
+    nextVariable (SetVar bound) (SetVar original) =
+        SetVar <$> nextVariable bound original
+    nextVariable _ _ =
+        -- There is never a need to rename a SetVariable to avoid an
+        -- ElementVariable, and vice versa.
+        empty
 
 instance FreshPartialOrd variable => FreshVariable (UnifiedVariable variable)
 

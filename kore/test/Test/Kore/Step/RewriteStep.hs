@@ -82,7 +82,7 @@ import Kore.Unification.UnifierT
     , runUnifierT
     )
 import Kore.Variables.Fresh
-    ( nextVariable
+    ( incrementVariable
     )
 import Kore.Variables.Target
     ( Target
@@ -351,7 +351,7 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            x'' = nextVariable Mock.x . nextVariable Mock.x $ Mock.x
+            x'' = incrementVariable . incrementVariable $ Mock.x
             final = mkElemVar x''
             initial = pure (mkElemVar Mock.y)
             axiom =
@@ -466,9 +466,10 @@ test_applyRewriteRule_ =
     -- vs
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
-        let expect = Left $ UnificationError $ unsupportedPatterns
+        let x' = incrementVariable Mock.x
+            expect = Left $ UnificationError $ unsupportedPatterns
                 "Unknown unification case."
-                (mkElemVar (nextVariable Mock.x Mock.x))
+                (mkElemVar x')
                 (Mock.plain10 (mkElemVar Mock.y))
             initial = pure $
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))

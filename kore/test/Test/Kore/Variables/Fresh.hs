@@ -342,20 +342,24 @@ testFreshPartialOrd gen =
         y <- forAll gen
         when (x == supVariable x) discard
         when (y == supVariable y) discard
-        let x' = nextVariable x y
-        annotateShow x'
-        compareFresh x x' /== Nothing
+        case nextVariable y x of
+            Nothing -> discard
+            Just x' -> do
+                annotateShow x'
+                compareFresh x x' /== Nothing
     , testProperty "nextVariable is monotonic" $ property $ do
         x <- forAll gen
         y <- forAll gen
         when (x == supVariable x) discard
         when (y == supVariable y) discard
-        let x' = nextVariable x y
-        annotateShow x'
-        compareFresh x x' === Just LT
-        case compareFresh y x' of
-            Nothing -> return ()
-            Just ordering -> ordering === LT
+        case nextVariable y x of
+            Nothing -> discard
+            Just x' -> do
+                annotateShow x'
+                compareFresh x x' === Just LT
+                case compareFresh y x' of
+                    Nothing -> return ()
+                    Just ordering -> ordering === LT
     ]
 
 test_FreshPartialOrd_Variable :: TestTree

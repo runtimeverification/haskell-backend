@@ -888,33 +888,32 @@ externalizeFreshVariables termLike =
     among the set of avoided variables. The externalized form is returned.
 
      -}
+    safeVariable
+        :: (Functor f, FreshPartialOrd (f Variable))
+        => (f Variable -> UnifiedVariable Variable)
+        -> FreeVariables Variable
+        -> f Variable
+        -> f Variable
+    safeVariable mk avoiding variable =
+        head
+        $ dropWhile wouldCapture
+        $ externalize
+        <$> iterate Fresh.incrementVariable variable
+      where
+        wouldCapture var = isFreeVariable (mk var) avoiding
+        externalize = fmap Variable.externalizeFreshVariable
+
     safeElementVariable
         :: FreeVariables Variable
         -> ElementVariable Variable
         -> ElementVariable Variable
-    safeElementVariable avoiding variable =
-        head  -- 'head' is safe because 'iterate' creates an infinite list
-        $ dropWhile wouldCapture
-        $ externalize
-        <$> iterate nextVariable variable
-      where
-        wouldCapture var = isFreeVariable (ElemVar var) avoiding
-        nextVariable = Fresh.nextVariable variable
-        externalize = fmap Variable.externalizeFreshVariable
+    safeElementVariable = safeVariable ElemVar
 
     safeSetVariable
         :: FreeVariables Variable
         -> SetVariable Variable
         -> SetVariable Variable
-    safeSetVariable avoiding variable =
-        head  -- 'head' is safe because 'iterate' creates an infinite list
-        $ dropWhile wouldCapture
-        $ externalize
-        <$> iterate nextVariable variable
-      where
-        wouldCapture var = isFreeVariable (SetVar var) avoiding
-        nextVariable = Fresh.nextVariable variable
-        externalize = fmap Variable.externalizeFreshVariable
+    safeSetVariable = safeVariable SetVar
 
     underElementBinder freeVariables' variable child = do
         let variable' = safeElementVariable freeVariables' variable
