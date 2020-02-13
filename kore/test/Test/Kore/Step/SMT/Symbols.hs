@@ -15,6 +15,10 @@ import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkApplySymbol
+    )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
     ( declare
     )
@@ -23,6 +27,12 @@ import Kore.Step.SMT.Encoder
     )
 import qualified Kore.Step.SMT.Representation.All as Representation
     ( build
+    )
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Kore.Variables.UnifiedVariable
+    ( ElementVariable
     )
 import qualified SMT
 
@@ -113,9 +123,85 @@ test_sortDeclaration =
             [ SMT.assert (atom (encodeName "C") `eq` atom (encodeName "C"))
             ]
         ]
+    , testsForModule "Encodes smtlib name for constructor"
+        (indexModule $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with`
+                (symbolDeclaration "C" "S" []
+                    `with` smtlib "D"
+                    `with` constructor
+                )
+        )
+        [ isSatisfiable
+            [ encodePredicate
+                (makeEqualsPredicate
+                    (mkElemVar x)
+                    c
+                )
+            ]
+        , isNotSatisfiable
+            [ encodePredicate
+                (makeNotPredicate
+                    (makeEqualsPredicate
+                        (mkElemVar x)
+                        c
+                    )
+                )
+            ]
+        ]
     ]
   where
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
+
+    maybeEncodePredicate
+        :: forall variable m.
+            ( InternalVariable variable
+            , Monad m
+            )
+        => SmtMetadataTools Attribute.Symbol
+        -> Predicate variable
+        -> MaybeT m SExpr
+    maybeEncodePredicate tools predicate = evalTranslator translator
+      where
+        translator =
+            give tools $ translatePredicate translateUninterpreted predicate
+
+    translateUninterpreted
+        ::  ( InternalVariable variable
+            , p ~ TermLike variable
+            )
+        => MonadSimplify m
+        => SExpr  -- ^ type name
+        -> p  -- ^ uninterpreted pattern
+        -> Translator m p SExpr
+    translateUninterpreted t pat = error "Unexpected uninterpreted pattern."
+
+    encodePredicate :: Predicate Variable -> SExpr
+    encodePredicate =
+        evalTranslator
+            (give tools $ translatePredicate translateUninterpreted predicate)
+
+    sSortId :: Id
+    sSortId = testId "S"
+
+    sSort :: Sort
+    sSort =
+        SortActualSort SortActual
+            { sortActualName  = sSortId
+            , sortActualSorts = []
+            }
+
+    cId :: Id
+    cId = testId "C"
+
+    cSymbol :: Symbol
+    cSymbol = Mock.symbol cId [] sSort & constructor
+
+    c :: InternalVariable variable => TermLike variable
+    c = mkApplySymbol cSymbol []
+
+    x :: ElementVariable Variable
+    x = ElementVariable $ Variable (testId "x") mempty sSort
 
     declareSymbolsAndSorts
         :: SMT.MonadSMT m
