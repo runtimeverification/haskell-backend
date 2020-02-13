@@ -314,24 +314,25 @@ wrap xs = Substitution xs
 -- | Wrap the list of substitutions to a normalized substitution. Do not use
 -- this unless you are sure you need it.
 unsafeWrap
-    :: Ord variable
+    :: HasCallStack
+    => Ord variable
     => [(UnifiedVariable variable, TermLike variable)]
     -> Substitution variable
 unsafeWrap =
     NormalizedSubstitution . List.foldl' insertNormalized Map.empty
   where
     insertNormalized subst (var, termLike) =
+        Map.insert var termLike subst
         -- The variable must not occur in the substitution
-        assert (Map.notMember var subst)
+        & assert (Map.notMember var subst)
         -- or in the right-hand side of this or any other substitution,
-        $ assert (not $ occurs termLike)
-        $ assert (not $ any occurs subst)
+        & assert (not $ occurs termLike)
+        & assert (not $ any occurs subst)
         -- this substitution must not depend on any substitution variable,
-        $ assert (not $ any depends $ Map.keys subst)
+        & assert (not $ any depends $ Map.keys subst)
         -- and if this is an element variable substitution, the substitution
         -- must be defined.
-        $ assert (not $ isElemVar var && isBottom termLike)
-        $ Map.insert var termLike subst
+        & assert (not $ isElemVar var && isBottom termLike)
       where
         occurs = TermLike.hasFreeVariable var
         depends var' = TermLike.hasFreeVariable var' termLike
