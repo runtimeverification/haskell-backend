@@ -34,7 +34,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -43,13 +42,13 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Substitution
     ( Substitution
     )
@@ -62,9 +61,13 @@ import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     )
 import qualified Kore.Step.EqualityPattern as EqualityPattern
+import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import Kore.Step.Simplification.OrPattern
+    ( simplifyConditionsWithSmt
+    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -87,7 +90,6 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as EqualityPattern
     ( targetRuleVariables
     )
-import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
     ( InternalVariable
     )
@@ -334,28 +336,19 @@ guardImplies
     -> Predicate (Target variable)
     -> MaybeT simplifier ()
 guardImplies sideCondition initial solution requires1 = do
-    let Conditional { predicate = requires2, substitution } = solution
+    let Conditional { substitution } = solution
     Exception.assert (isMatchingSubstitution substitution) $ return ()
-    notRequires <- Branch.gather $ do
-        let notRequires =
-                Condition.fromPredicate
-                $ Predicate.makeNotPredicate
-                $ Predicate.makeAndPredicate requires1 requires2
-            -- The substitution does not go under the negation: if the
-            -- implication holds only under the negation of the substitution,
-            -- then we say the rule does not apply.
-            instantiation = Condition.fromSubstitution substitution
-        simplified <-
-            Simplifier.simplifyCondition sideCondition
-            $ initial <> instantiation <> notRequires
-        TopBottom.guardAgainstBottom simplified
-        evaluated <- SMT.Evaluator.evaluate (withSideCondition simplified)
-        case evaluated of
-            Just False -> empty
-            _          -> return simplified
-    Monad.guard (null notRequires)
-  where
-    withSideCondition = (<>) (SideCondition.assumedTrue sideCondition)
+    let remainder =
+            Remainder.remainder'
+            $ OrCondition.fromCondition
+            $ Condition.andCondition solution
+            $ Condition.fromPredicate requires1
+    notRequires <-
+        simplifyConditionsWithSmt sideCondition
+        $ OrCondition.fromCondition
+        $ Condition.andCondition initial
+        $ Condition.fromPredicate remainder
+    Monad.guard (isBottom notRequires)
 
 isMatchingSubstitution :: Ord variable => Substitution (Target variable) -> Bool
 isMatchingSubstitution =
