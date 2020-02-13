@@ -343,12 +343,23 @@ guardImplies sideCondition initial solution requires1 = do
             $ OrCondition.fromCondition
             $ Condition.andCondition solution
             $ Condition.fromPredicate requires1
+        initialAndRemainder =
+            Condition.andCondition initial
+            $ Condition.fromPredicate remainder
     notRequires <-
         simplifyConditionsWithSmt sideCondition
-        $ OrCondition.fromCondition
-        $ Condition.andCondition initial
-        $ Condition.fromPredicate remainder
-    Monad.guard (isBottom notRequires)
+        $ OrCondition.fromCondition initialAndRemainder
+    let message =
+            Pretty.vsep
+            [ "initialAndRemainder:"
+            , Pretty.indent 4 (unparse initialAndRemainder)
+            , "notRequires:"
+            , (Pretty.indent 4 . Pretty.vsep . map unparse)
+                (OrCondition.toConditions notRequires)
+            ]
+    if isBottom notRequires
+        then return ()
+        else traceShow message empty
 
 isMatchingSubstitution :: Ord variable => Substitution (Target variable) -> Bool
 isMatchingSubstitution =
