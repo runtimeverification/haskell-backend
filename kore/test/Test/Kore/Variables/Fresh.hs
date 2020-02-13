@@ -43,6 +43,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     , mapUnifiedVariable
     )
+import Pair
 
 import Test.Kore
     ( idGen
@@ -329,72 +330,82 @@ test_refreshVariable =
     avoidUET = Set.singleton unifiedElemNonTargetOriginal
     avoidUST = Set.singleton unifiedSetTargetOriginal
 
--- | Property tests of a 'FreshPartialOrd' instance using the given generator.
+{- | Property tests of a 'FreshPartialOrd' instance using the given generator.
+
+The generator should produce a 'Pair' of related variables.
+
+ -}
 testFreshPartialOrd
     :: (Show variable, FreshPartialOrd variable)
-    => Gen variable
+    => Gen (Pair variable)
     -> [TestTree]
 testFreshPartialOrd gen =
-    [ testProperty "supVariable is relevant" $ property $ do
-        x <- forAll gen
+    [ testProperty "compareFresh agrees with compare" $ property $ do
+        Pair x y <- forAll gen
+        compareFresh x y === Just (compare x y)
+        compareFresh y x === Just (compare y x)
+    , testProperty "supVariable is relevant" $ property $ do
+        Pair x _ <- forAll gen
         compareFresh x (supVariable x) /== Nothing
     , testProperty "supVariable is idempotent" $ property $ do
-        x <- forAll gen
+        Pair x _ <- forAll gen
         let xSup = supVariable x
             xSupSup = supVariable xSup
         xSup === xSupSup
     , testProperty "supVariable dominates other variables" $ property $ do
-        x <- forAll gen
+        Pair x _ <- forAll gen
         let sup = supVariable x
         when (x == sup) discard
-        compareFresh x (supVariable x) === Just LT
+        compareFresh x sup === Just LT
     , testProperty "nextVariable is relevant" $ property $ do
-        x <- forAll gen
-        y <- forAll gen
+        Pair x y <- forAll gen
         when (x == supVariable x) discard
         when (y == supVariable y) discard
         case nextVariable y x of
-            Nothing -> discard
+            Nothing ->
+                compareFresh y x === Just LT
             Just x' -> do
                 annotateShow x'
                 compareFresh x x' /== Nothing
     , testProperty "nextVariable is monotonic" $ property $ do
-        x <- forAll gen
-        y <- forAll gen
+        Pair x y <- forAll gen
         when (x == supVariable x) discard
         when (y == supVariable y) discard
         case nextVariable y x of
-            Nothing -> discard
+            Nothing ->
+                compareFresh y x === Just LT
             Just x' -> do
                 annotateShow x'
                 compareFresh x x' === Just LT
-                case compareFresh y x' of
-                    Nothing -> return ()
-                    Just ordering -> ordering === LT
+                compareFresh y x' === Just LT
     ]
 
 test_FreshPartialOrd_Variable :: TestTree
 test_FreshPartialOrd_Variable =
     testGroup "instance FreshPartialOrd Variable"
-    $ testFreshPartialOrd variableGen
+    $ testFreshPartialOrd relatedVariableGen
 
 test_FreshPartialOrd_ElementVariable :: TestTree
 test_FreshPartialOrd_ElementVariable =
     testGroup "instance FreshPartialOrd (ElementVariable Variable)"
-    $ testFreshPartialOrd elementVariableGen
+    $ testFreshPartialOrd relatedElementVariableGen
 
 test_FreshPartialOrd_SetVariable :: TestTree
 test_FreshPartialOrd_SetVariable =
     testGroup "instance FreshPartialOrd (SetVariable Variable)"
-    $ testFreshPartialOrd setVariableGen
+    $ testFreshPartialOrd relatedSetVariableGen
 
 test_FreshPartialOrd_UnifiedVariable :: TestTree
 test_FreshPartialOrd_UnifiedVariable =
     testGroup "instance FreshPartialOrd (UnifiedVariable Variable)"
-    $ testFreshPartialOrd unifiedVariableGen
+    $ testFreshPartialOrd relatedUnifiedVariableGen
 
-variableGen :: MonadGen gen => gen Variable
-variableGen = Variable <$> idGen <*> counterGen <*> sortGen
+relatedVariableGen :: Gen (Pair Variable)
+relatedVariableGen = do
+    name <- idGen
+    Pair
+        <$> (Variable name <$> counterGen <*> sortGen)
+        <*> (Variable name <$> counterGen <*> sortGen)
 
 counterGen :: MonadGen gen => gen (Maybe (Sup Natural))
 counterGen =
@@ -407,15 +418,15 @@ counterGen =
 sortGen :: MonadGen gen => gen Sort
 sortGen = Gen.element [testSort, topSort, subSort]
 
-elementVariableGen :: MonadGen gen => gen (ElementVariable Variable)
-elementVariableGen = ElementVariable <$> variableGen
+relatedElementVariableGen :: Gen (Pair (ElementVariable Variable))
+relatedElementVariableGen = (fmap . fmap) ElementVariable relatedVariableGen
 
-setVariableGen :: MonadGen gen => gen (SetVariable Variable)
-setVariableGen = SetVariable <$> variableGen
+relatedSetVariableGen :: Gen (Pair (SetVariable Variable))
+relatedSetVariableGen = (fmap . fmap) SetVariable relatedVariableGen
 
-unifiedVariableGen :: MonadGen gen => gen (UnifiedVariable Variable)
-unifiedVariableGen =
+relatedUnifiedVariableGen :: Gen (Pair (UnifiedVariable Variable))
+relatedUnifiedVariableGen =
     Gen.choice
-        [ ElemVar <$> elementVariableGen
-        , SetVar <$> setVariableGen
+        [ (fmap . fmap) ElemVar relatedElementVariableGen
+        , (fmap . fmap) SetVar relatedSetVariableGen
         ]
