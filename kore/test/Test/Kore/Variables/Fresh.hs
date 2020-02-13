@@ -51,6 +51,8 @@ import Test.Kore
 import Test.Kore.Step.MockSymbols
     ( subSort
     , testSort
+    , testSort0
+    , testSort1
     , topSort
     )
 
@@ -70,7 +72,16 @@ metaVariableDifferentSort = Variable
 
 test_refreshVariable :: [TestTree]
 test_refreshVariable =
-    [ testGroup "instance FreshVariable Variable"
+    [ testCase "same name, different sort" $ do
+        let x0 = Variable (testId "x0") Nothing testSort0
+            x1 = x0 { variableSort = testSort1 }
+            x1' = x1 { variableCounter = Just (Element 0) }
+        let avoiding = Set.singleton x0
+        assertEqual "Expected fresh variable"
+            (Just x1')
+            (refreshVariable avoiding x1)
+
+    , testGroup "instance FreshVariable Variable"
         [ testCase "refreshVariable - avoid empty set" $
             assertEqual "Expected no new variable"
                 Nothing
