@@ -23,7 +23,6 @@ import Kore.Internal.Predicate
     , makeAndPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
-    , makeTruePredicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -78,7 +77,7 @@ test_orPatternSimplification =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
                 ]

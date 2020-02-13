@@ -27,23 +27,12 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
-    ( Conditional (..)
+import Kore.Internal.MultiOr
+    ( MultiOr
     )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
     ( gather
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-    ( gather
-    )
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( splitTerm
-    , withCondition
     )
 import Kore.Internal.Predicate
     ( makeAndPredicate
@@ -70,24 +59,26 @@ import Kore.TopBottom
     )
 
 simplifyConditionsWithSmt
-    ::  forall variable simplifier
-    .   (MonadSimplify simplifier, InternalVariable variable)
+    :: forall variable term simplifier
+    .  (MonadSimplify simplifier, InternalVariable variable)
+    => (Ord term, TopBottom term)
     => SideCondition variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    -> MultiOr (Conditional variable term)
+    -> simplifier (MultiOr (Conditional variable term))
 simplifyConditionsWithSmt sideCondition unsimplified =
-    OrPattern.gather $ do
+    MultiOr.gather $ do
         unsimplified1 <- BranchT.scatter unsimplified
         simplifyAndPrune unsimplified1
   where
     simplifyAndPrune
-        :: Pattern variable -> BranchT simplifier (Pattern variable)
-    simplifyAndPrune (Pattern.splitTerm -> (term, condition)) = do
+        :: Conditional variable term
+        -> BranchT simplifier (Conditional variable term)
+    simplifyAndPrune (Conditional.splitTerm -> (term, condition)) = do
         simplified <- simplifyCondition sideCondition condition
         filtered <- Monad.Trans.lift $ resultWithFilter
             rejectCondition
             (resultWithFilter pruneCondition (return simplified))
-        return (term `Pattern.withCondition` filtered)
+        return (term `Conditional.withCondition` filtered)
 
     resultWithFilter
         :: (Condition variable -> simplifier (Maybe Bool))
@@ -163,6 +154,6 @@ simplifyConditionsWithSmt sideCondition unsimplified =
 
     sidePredicate = SideCondition.toPredicate sideCondition
 
-    addPredicate :: Conditional variable term -> Conditional variable term
+    addPredicate :: Conditional variable term' -> Conditional variable term'
     addPredicate c@Conditional {predicate} =
         c {Conditional.predicate = makeAndPredicate predicate sidePredicate}
