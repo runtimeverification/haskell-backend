@@ -71,8 +71,8 @@ buildRepresentations
     -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
     listToDeclarations builtinDeclarations
-    `AST.mergePreferFirst` listToDeclarations constructorDeclarations
     `AST.mergePreferFirst` listToDeclarations smtlibDeclarations
+    `AST.mergePreferFirst` listToDeclarations constructorDeclarations
   where
     listToDeclarations
         :: [(Id, AST.UnresolvedSymbol)]
@@ -193,7 +193,11 @@ constructorDeclaration
         Attribute.Symbol.constructor attributes
     Attribute.Functional { isDeclaredFunctional } =
         Attribute.Symbol.functional attributes
-    encodedName = AST.encodable symbolConstructor
+    Attribute.Smtlib { getSmtlib } = Attribute.Symbol.smtlib attributes
+    encodedName =
+        case SMT.nameFromSExpr <$> getSmtlib of
+            Just name -> AST.AlreadyEncoded name
+            Nothing -> AST.encodable symbolConstructor
 
 emptySortArgsToSmt
     :: SMT.SExpr

@@ -112,6 +112,7 @@ import Test.Kore.Step.SMT.Helpers
     , gt
     , isError
     , isNotSatisfiable
+    , isNotSatisfiableWithTools
     , isSatisfiable
     , isSatisfiableWithTools
     , lt
@@ -191,7 +192,9 @@ test_sortDeclaration =
                 (symbolDeclaration "C" "S" []
                     `with` smtlib "D"
                     `with` constructor
+                    `with` functional
                 )
+            `with` constructorAxiom "S" [("C", [])]
         )
         -- [ isSatisfiable
         --     [ SMT.assert (atom "D" `eq` atom "D")
@@ -211,19 +214,20 @@ test_sortDeclaration =
                 traceM $ "\n\n" <> show pred
                 SMT.assert pred
             ]
-        -- , isNotSatisfiable
-        --     [ do
-        --         pred <-
-        --             runSimplifier testEnv
-        --             $ encodePredicate
-        --                 (makeNotPredicate
-        --                     (makeEqualsPredicate_
-        --                         (mkElemVar x)
-        --                         c
-        --                     )
-        --                 )
-        --         SMT.assert pred
-        --     ]
+        , isNotSatisfiableWithTools
+            [ \t -> do
+                pred <-
+                        encodePredicate
+                            t
+                            (makeNotPredicate
+                                (makeEqualsPredicate_
+                                    (mkElemVar x)
+                                    c
+                                )
+                            )
+                traceM $ "\n\n" <> show pred
+                SMT.assert pred
+            ]
         ]
     ]
   where
@@ -288,5 +292,6 @@ test_sortDeclaration =
         => VerifiedModule Attribute.Symbol
         -> m ()
     declareSymbolsAndSorts m =
-        Declaration.declare
+        trace (show $ Representation.build m (Attribute.Constructors.indexBySort m))
+        $ Declaration.declare
             (Representation.build m (Attribute.Constructors.indexBySort m))

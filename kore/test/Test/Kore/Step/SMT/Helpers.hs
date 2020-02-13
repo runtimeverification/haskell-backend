@@ -9,6 +9,7 @@ module Test.Kore.Step.SMT.Helpers
     , isNotSatisfiable
     , isSatisfiable
     , isSatisfiableWithTools
+    , isNotSatisfiableWithTools
     , constructorAxiom
     , testsForModule
     ) where
@@ -128,6 +129,15 @@ isNotSatisfiable
     -> SmtPrelude
     -> TestTree
 isNotSatisfiable tests _ = assertSmtTestCase "isNotSatisfiable" SMT.Unsat tests
+
+isNotSatisfiableWithTools
+    :: HasCallStack
+    => [SmtMetadataTools Attribute.Symbol -> SMT ()]
+    -> SmtMetadataTools Attribute.Symbol
+    -> SmtPrelude
+    -> TestTree
+isNotSatisfiableWithTools tests tools prelude =
+    assertSmtTestCase "isNotSatisfiable" SMT.Unsat (fmap (\t -> t tools) tests ) prelude
 
 isError
     :: HasCallStack
