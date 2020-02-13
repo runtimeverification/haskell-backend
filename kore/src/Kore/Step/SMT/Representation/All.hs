@@ -59,8 +59,8 @@ build
     -> Map.Map Id Attribute.Constructors
     -> Step.AST.SmtDeclarations
 build indexedModule sortConstructors =
-    removeDuplicateConstructorDeclarations
-    $ resolve (sorts `Step.AST.mergePreferFirst` symbols)
+    -- removeDuplicateConstructorDeclarations
+    resolve (sorts `Step.AST.mergePreferFirst` symbols)
   where
     sorts = Sorts.buildRepresentations indexedModule sortConstructors
     symbols = Symbols.buildRepresentations indexedModule
