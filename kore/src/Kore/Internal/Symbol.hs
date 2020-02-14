@@ -37,7 +37,6 @@ import Prelude.Kore
 import Control.DeepSeq
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import Data.Generics.Product
 import Data.Hashable
 import Data.Text
@@ -71,14 +70,14 @@ data Symbol =
 
 instance Eq Symbol where
     (==) a b =
-            Function.on (==) symbolConstructor a b
-        &&  Function.on (==) symbolParams a b
+            on (==) symbolConstructor a b
+        &&  on (==) symbolParams a b
     {-# INLINE (==) #-}
 
 instance Ord Symbol where
     compare a b =
-            Function.on compare symbolConstructor a b
-        <>  Function.on compare symbolParams a b
+            on compare symbolConstructor a b
+        <>  on compare symbolParams a b
 
 instance Hashable Symbol where
     hashWithSalt salt Symbol { symbolConstructor, symbolParams } =
@@ -113,7 +112,7 @@ instance
 
 instance Synthetic Sort (Application Symbol) where
     synthetic application =
-        resultSort Function.& deepseq (matchSorts operandSorts children)
+        resultSort & deepseq (matchSorts operandSorts children)
       where
         Application { applicationSymbolOrAlias = symbol } = application
         Application { applicationChildren = children } = application

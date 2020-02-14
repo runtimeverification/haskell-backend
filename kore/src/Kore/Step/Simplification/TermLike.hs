@@ -156,7 +156,7 @@ import qualified Kore.Variables.Binding as Binding
 -}
 simplify
     ::  ( HasCallStack
-        , SimplifierVariable variable
+        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  TermLike variable
@@ -171,7 +171,7 @@ simplify patt sideCondition = do
 -}
 simplifyToOr
     ::  ( HasCallStack
-        , SimplifierVariable variable
+        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  SideCondition variable
@@ -187,7 +187,7 @@ simplifyToOr sideCondition term =
 simplifyInternal
     ::  forall variable simplifier
     .   ( HasCallStack
-        , SimplifierVariable variable
+        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  TermLike variable

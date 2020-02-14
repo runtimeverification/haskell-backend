@@ -41,7 +41,7 @@ See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
  -}
 equalInjectiveHeadsAndEquals
     :: forall variable unifier .
-        ( SimplifierVariable variable
+        ( InternalVariable variable
         , MonadUnify unifier
         )
     => HasCallStack

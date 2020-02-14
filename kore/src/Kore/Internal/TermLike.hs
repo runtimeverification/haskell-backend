@@ -143,7 +143,7 @@ module Kore.Internal.TermLike
     , pattern Inj_
     -- * Re-exports
     , module Kore.Internal.Variable
-    , Substitute.SubstitutionVariable
+    , FreshVariable (..)
     , Symbol (..)
     , Alias (..)
     , SortedVariable (..)
@@ -270,6 +270,9 @@ import Kore.Unparser
     )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
 
@@ -281,7 +284,7 @@ hasFreeVariable
 hasFreeVariable variable = isFreeVariable variable . freeVariables
 
 refreshVariables
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => FreeVariables variable
     -> TermLike variable
     -> TermLike variable
@@ -341,7 +344,7 @@ Otherwise, the argument is returned.
 
  -}
 withoutFreeVariable
-    :: (Ord variable, SortedVariable variable, Unparse variable)
+    :: InternalVariable variable
     => UnifiedVariable variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
@@ -358,36 +361,6 @@ withoutFreeVariable variable termLike result
         ]
   | otherwise = result
 
-{- | Use the provided traversal to replace all variables in a 'TermLike'.
-
-@traverseVariables@ is strict, i.e. its argument is fully evaluated before it
-returns. When composing multiple transformations with @traverseVariables@, the
-intermediate trees will be fully allocated; @mapVariables@ is more composable in
-this respect.
-
-__Warning__: @traverseVariables@ will capture variables if the provided
-traversal is not injective!
-
-See also: 'mapVariables'
-
- -}
-traverseVariables
-    ::  forall m variable1 variable2.
-        (Monad m, Ord variable2)
-    => (variable1 -> m variable2)
-    -> TermLike variable1
-    -> m (TermLike variable2)
-traverseVariables traversing =
-    Recursive.fold traverseVariablesWorker
-  where
-    traverseVariablesWorker (attrs :< pat) =
-        Recursive.embed <$> projected
-      where
-        projected =
-            (:<)
-                <$> Attribute.traverseVariables traversing attrs
-                <*> (traverseVariablesF traversing =<< sequence pat)
-
 {- | Construct a @'TermLike' 'Concrete'@ from any 'TermLike'.
 
 A concrete pattern contains no variables, so @asConcreteStepPattern@ is
@@ -400,11 +373,12 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcrete
-    :: TermLike variable
+    :: Ord variable
+    => TermLike variable
     -> Maybe (TermLike Concrete)
-asConcrete = traverseVariables (\case { _ -> Nothing })
+asConcrete = traverseVariables (\case { _ -> Nothing }) (\case { _ -> Nothing })
 
-isConcrete :: TermLike variable -> Bool
+isConcrete :: Ord variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
@@ -417,10 +391,10 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcrete
-    :: Ord variable
+    :: FreshVariable variable
     => TermLike Concrete
     -> TermLike variable
-fromConcrete = mapVariables (\case {})
+fromConcrete = mapVariables (\case {}) (\case {})
 
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
@@ -446,7 +420,7 @@ simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys
-    :: SortedVariable variable
+    :: InternalVariable variable
     => Foldable t
     => t (TermLike variable)
     -> a
@@ -1911,7 +1885,7 @@ pattern Inj_ :: Inj (TermLike child) -> TermLike child
 pattern Inj_ inj <- (Recursive.project -> _ :< InjF inj)
 
 refreshBinder
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => (Set (UnifiedVariable variable) -> bound -> Maybe bound)
     -> (bound -> UnifiedVariable variable)
     -> FreeVariables variable
@@ -1934,14 +1908,14 @@ refreshBinder refreshBound mkUnified (getFreeVariables -> avoiding) binder =
     Binder { binderVariable, binderChild } = binder
 
 refreshElementBinder
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => FreeVariables variable
     -> Binder (ElementVariable variable) (TermLike variable)
     -> Binder (ElementVariable variable) (TermLike variable)
 refreshElementBinder = refreshBinder refreshElementVariable ElemVar
 
 refreshSetBinder
-    :: Substitute.SubstitutionVariable variable
+    :: InternalVariable variable
     => FreeVariables variable
     -> Binder (SetVariable variable) (TermLike variable)
     -> Binder (SetVariable variable) (TermLike variable)

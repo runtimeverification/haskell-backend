@@ -115,8 +115,8 @@ import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
 import Kore.Step.Simplification.Data
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
@@ -929,7 +929,7 @@ deriveResults goal results = do
     let mapRules =
             Result.mapRules
             $ (fromRulePattern . goalToRule $ goal)
-            . Step.unwrapRule
+            . Step.unTargetRule
             . Step.withoutUnification
         traverseConfigs =
             Result.traverseConfigs
@@ -955,7 +955,7 @@ withConfiguration goal = handle (throw . WithConfiguration configuration)
  -}
 removalPredicate
     :: forall variable m
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify m
     => Pattern variable
     -- ^ Destination
@@ -1112,7 +1112,7 @@ debugProofStateBracket
     action
   = do
     result <- action
-    logM DebugProofState
+    logEntry DebugProofState
         { proofState
         , transition
         , result = Just $ toReachabilityRule <$> result
@@ -1136,7 +1136,7 @@ debugProofStateFinal
     (fmap toReachabilityRule -> proofState)
     (coerce -> transition)
   = do
-    logM DebugProofState
+    logEntry DebugProofState
         { proofState
         , transition
         , result = Nothing

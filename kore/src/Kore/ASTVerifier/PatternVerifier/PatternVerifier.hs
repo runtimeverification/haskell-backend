@@ -42,7 +42,6 @@ import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -99,7 +98,7 @@ newtype PatternVerifierHook =
 instance Semigroup PatternVerifierHook where
     (<>) verifier1 verifier2 =
         PatternVerifierHook
-            (Function.on (>=>) runPatternVerifierHook verifier1 verifier2)
+            (on (>=>) runPatternVerifierHook verifier1 verifier2)
     {-# INLINE (<>) #-}
 
 instance Monoid PatternVerifierHook where

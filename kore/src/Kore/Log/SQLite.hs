@@ -45,6 +45,11 @@ import Kore.Log.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder
     )
 import Log
+    ( Entry
+    , LogAction (..)
+    , SomeEntry
+    , fromEntry
+    )
 import SQL
     ( SQL
     )

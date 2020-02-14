@@ -43,9 +43,6 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     , deduplicateSubstitution
     , simplifySubstitutionWorker
     )
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Error
 import Kore.Unification.Unify
@@ -65,7 +62,7 @@ substitutionSimplifier =
   where
     wrapper
         :: forall variable
-        .  SubstitutionVariable variable
+        .  InternalVariable variable
         => SideCondition variable
         -> Substitution variable
         -> unifier (OrCondition variable)
@@ -80,7 +77,7 @@ substitutionSimplifier =
         worker = simplifySubstitutionWorker sideCondition unificationMakeAnd
 
     fromNormalization
-        :: SimplifierVariable variable
+        :: InternalVariable variable
         => Normalization variable
         -> unifier (Condition variable)
     fromNormalization normalization@Normalization { denormalized }

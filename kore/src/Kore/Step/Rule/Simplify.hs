@@ -64,8 +64,8 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import Kore.Syntax.Variable
     ( Variable
@@ -79,7 +79,7 @@ class SimplifyRuleLHS rule where
         => rule
         -> simplifier (MultiAnd rule)
 
-instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
+instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
   where
     simplifyRuleLhs rule@(RulePattern _ _ _ _ _) = do
         let lhsWithPredicate = Pattern.fromTermLike left
@@ -131,7 +131,7 @@ instance SimplifyRuleLHS (ReachabilityRule Variable) where
         (fmap . fmap) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule
-    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    :: (MonadSimplify simplifier, InternalVariable variable)
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyClaimRule rule@(RulePattern _ _ _ _ _) =

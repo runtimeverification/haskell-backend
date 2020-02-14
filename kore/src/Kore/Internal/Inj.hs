@@ -19,7 +19,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import qualified Data.Function as Function
 import Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
@@ -57,18 +56,18 @@ data Inj a =
 
 instance Eq a => Eq (Inj a) where
     (==) a@(Inj _ _ _ _ _) b =
-            Function.on (==) injConstructor a b
-        &&  Function.on (==) injFrom a b
-        &&  Function.on (==) injTo a b
-        &&  Function.on (==) injChild a b
+            on (==) injConstructor a b
+        &&  on (==) injFrom a b
+        &&  on (==) injTo a b
+        &&  on (==) injChild a b
     {-# INLINE (==) #-}
 
 instance Ord a => Ord (Inj a) where
     compare a@(Inj _ _ _ _ _) b =
-            Function.on compare injConstructor a b
-        <>  Function.on compare injFrom a b
-        <>  Function.on compare injTo a b
-        <>  Function.on compare injChild a b
+            on compare injConstructor a b
+        <>  on compare injFrom a b
+        <>  on compare injTo a b
+        <>  on compare injChild a b
     {-# INLINE compare #-}
 
 instance Hashable a => Hashable (Inj a) where

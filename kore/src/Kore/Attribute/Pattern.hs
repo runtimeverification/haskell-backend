@@ -67,7 +67,9 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
+    ( ElementVariable
+    , SetVariable
+    , UnifiedVariable (..)
     )
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
@@ -86,6 +88,9 @@ data Pattern variable =
         , constructorLike :: !ConstructorLike
         }
     deriving (Eq, GHC.Generic, Show)
+
+-- TODO (thomas.tuegel): Lift 'simplified' to the 'Conditional' level once we
+-- treat the latter as an aggregate root.
 
 instance NFData variable => NFData (Pattern variable)
 
@@ -174,10 +179,12 @@ See also: 'traverseVariables'
  -}
 mapVariables
     :: Ord variable2
-    => (variable1 -> variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> Pattern variable1 -> Pattern variable2
-mapVariables mapping =
-    Lens.over (field @"freeVariables") (mapFreeVariables mapping)
+mapVariables mapElemVar mapSetVar =
+    Lens.over (field @"freeVariables")
+        (mapFreeVariables mapElemVar mapSetVar)
 
 {- | Use the provided traversal to replace the free variables in a 'Pattern'.
 
@@ -187,11 +194,12 @@ See also: 'mapVariables'
 traverseVariables
     ::  forall m variable1 variable2.
         (Monad m, Ord variable2)
-    => (variable1 -> m variable2)
+    => (ElementVariable variable1 -> m (ElementVariable variable2))
+    -> (SetVariable variable1 -> m (SetVariable variable2))
     -> Pattern variable1
     -> m (Pattern variable2)
-traverseVariables traversing =
-    field @"freeVariables" (traverseFreeVariables traversing)
+traverseVariables trElemVar trSetVar =
+    field @"freeVariables" (traverseFreeVariables trElemVar trSetVar)
 
 {- | Delete the given variable from the set of free variables.
  -}

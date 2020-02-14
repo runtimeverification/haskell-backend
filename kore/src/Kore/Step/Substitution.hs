@@ -38,14 +38,11 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Unification.Unify
-    ( SimplifierVariable
-    )
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
     :: forall variable term simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Conditional variable term
     -> BranchT simplifier (Conditional variable term)
@@ -68,7 +65,7 @@ predicates and redo the merge.
 -}
 mergePredicatesAndSubstitutions
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> [Predicate variable]

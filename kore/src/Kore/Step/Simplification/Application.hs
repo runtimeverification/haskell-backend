@@ -61,7 +61,7 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -89,7 +89,7 @@ simplify sideCondition application = do
     childrenCrossProduct = MultiOr.fullCrossProduct children
 
 makeAndEvaluateApplications
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Symbol
     -> [Pattern variable]
@@ -98,7 +98,7 @@ makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Symbol
     -> [Pattern variable]
@@ -112,7 +112,7 @@ makeAndEvaluateSymbolApplications sideCondition symbol children = do
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -- ^ The predicate from the configuration
     -> ExpandedApplication variable
@@ -128,7 +128,7 @@ evaluateApplicationFunction
         term
 
 makeExpandedApplication
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Symbol
     -> [Pattern variable]

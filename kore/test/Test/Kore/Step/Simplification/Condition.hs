@@ -292,14 +292,14 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeEvaluator
-    :: (forall variable. SimplifierVariable variable
+    :: (forall variable. InternalVariable variable
         => [(TermLike variable, TermLike variable)]
         )
     -> BuiltinAndAxiomSimplifier
 makeEvaluator mapping = BuiltinAndAxiomSimplifier $ simpleEvaluator mapping
 
 simpleEvaluator
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
     -> SideCondition variable

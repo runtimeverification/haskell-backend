@@ -128,6 +128,8 @@ data Binder variable child =
         { binderVariable :: variable
         , binderChild :: !child
         }
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.

@@ -5,49 +5,80 @@ License     : NCSA
 
 module Kore.Internal.SideCondition.SideCondition
     ( Representation
-    , fromText
     ) where
 
 import Prelude.Kore
 
 import Control.DeepSeq
-    ( NFData
+    ( NFData (..)
     )
 import Data.Hashable
-    ( Hashable
+    ( Hashable (..)
     , Hashed
     , hashed
     )
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
-    ( Generic
-    , HasDatatypeInfo
-    )
-import qualified GHC.Generics as GHC
 
+import Data.Type.Equality
+    ( (:~:) (..)
+    , testEquality
+    )
 import Kore.Debug
-    ( Debug
+    ( Debug (..)
     , Diff (..)
     )
+import Type.Reflection
+    ( SomeTypeRep (..)
+    , TypeRep
+    , Typeable
+    , typeRep
+    )
 
-newtype Representation =
-    Representation
-        { getRepresentation :: Hashed Text
-        }
-    deriving (Eq, GHC.Generic, Hashable, NFData, Ord, Show)
+data Representation where
+    Representation :: Ord a => !(TypeRep a) -> !(Hashed a) -> Representation
 
-instance SOP.Generic Representation
+instance Eq Representation where
+    (==) (Representation typeRep1 hashed1) (Representation typeRep2 hashed2) =
+        case testEquality typeRep1 typeRep2 of
+            Nothing -> False
+            Just Refl -> hashed1 == hashed2
+    {-# INLINE (==) #-}
 
-instance SOP.HasDatatypeInfo Representation
+instance Ord Representation where
+    compare
+        (Representation typeRep1 hashed1)
+        (Representation typeRep2 hashed2)
+      =
+        case testEquality typeRep1 typeRep2 of
+            Nothing -> compare (SomeTypeRep typeRep1) (SomeTypeRep typeRep2)
+            Just Refl -> compare hashed1 hashed2
+    {-# INLINE compare #-}
 
-instance Debug Representation
+instance Show Representation where
+    showsPrec prec (Representation typeRep1 _) =
+        showParen (prec >= 10)
+        $ showString "Representation " . shows typeRep1 . showString " _"
+    {-# INLINE showsPrec #-}
 
-instance Diff Representation
+instance Hashable Representation where
+    hashWithSalt salt (Representation typeRep1 hashed1) =
+        salt `hashWithSalt` typeRep1 `hashWithSalt` hashed1
+    {-# INLINE hashWithSalt #-}
 
-instance From Text Representation where
-    from = Representation . hashed
+instance NFData Representation where
+    rnf (Representation typeRep1 hashed1) = typeRep1 `seq` hashed1 `seq` ()
+    {-# INLINE rnf #-}
 
-fromText :: Text -> Representation
-fromText = from
+mkRepresentation :: (Ord a, Hashable a, Typeable a) => a -> Representation
+mkRepresentation = Representation typeRep . hashed
+
+instance Debug Representation where
+    debugPrec _ _ = "_"
+    {-# INLINE debugPrec #-}
+
+instance Diff Representation where
+    diffPrec _ _ = Nothing
+    {-# INLINE diffPrec #-}
+
+instance (Ord a, Hashable a, Typeable a) => From a Representation where
+    from = mkRepresentation
+    {-# INLINE from #-}

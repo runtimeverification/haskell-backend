@@ -49,7 +49,7 @@ Right now this uses the following simplifications:
 and it has a special case for children with top terms.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Implies Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -78,7 +78,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
@@ -93,7 +93,7 @@ simplifyEvaluated sideCondition first second
     return (MultiOr.flatten results)
 
 simplifyEvaluateHalfImplies
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> Pattern variable
@@ -113,7 +113,7 @@ simplifyEvaluateHalfImplies
             distributeEvaluateImplies sideCondition firstPatterns second
 
 distributeEvaluateImplies
-    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    :: (MonadSimplify simplifier, InternalVariable variable)
     => SideCondition variable
     -> [Pattern variable]
     -> Pattern variable

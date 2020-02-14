@@ -389,6 +389,36 @@ test_andTermsSimplification =
                        )
                     )
             assertEqual "" ([], Just []) actual
+        , testCase "injected overload vs. injected domain value, common join"
+          $ do
+            actual <-
+                simplifyUnify
+                    (Mock.sortInjectionOtherToTop
+                       (Mock.otherOverload
+                           (Mock.sortInjectionSubSubToOther
+                               Mock.aSubSubsort
+                           )
+                       )
+                    )
+                    (Mock.sortInjectionSubOtherToTop
+                       subOtherDomainValue
+                    )
+            assertEqual "" ([], Just []) actual
+        , testCase "injected overload vs. injected domain value, no common join"
+          $ do
+            actual <-
+                simplifyUnify
+                    (Mock.sortInjectionOtherToOtherTop
+                       (Mock.otherOverload
+                           (Mock.sortInjectionSubSubToOther
+                               Mock.aSubSubsort
+                           )
+                       )
+                    )
+                    (Mock.sortInjectionSubToOtherTop
+                       subDomainValue
+                    )
+            assertEqual "" ([], Just []) actual
         ]
     , testGroup "constructor and"
         [ testCase "same head" $ do
@@ -1385,6 +1415,20 @@ aDomainValue :: TermLike Variable
 aDomainValue =
     mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
+        , domainValueChild = mkStringLiteral "a"
+        }
+
+subDomainValue :: TermLike Variable
+subDomainValue =
+    mkDomainValue DomainValue
+        { domainValueSort = Mock.subSort
+        , domainValueChild = mkStringLiteral "a"
+        }
+
+subOtherDomainValue :: TermLike Variable
+subOtherDomainValue =
+    mkDomainValue DomainValue
+        { domainValueSort = Mock.subOthersort
         , domainValueChild = mkStringLiteral "a"
         }
 

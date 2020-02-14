@@ -47,4 +47,4 @@ debugEvaluateCondition
     => InternalVariable variable
     => Predicate variable -> log ()
 debugEvaluateCondition predicate =
-    logM $ DebugEvaluateCondition $ freshVariable predicate
+    logEntry $ DebugEvaluateCondition $ freshVariable predicate

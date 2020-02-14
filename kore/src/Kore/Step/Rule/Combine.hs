@@ -7,26 +7,27 @@ module Kore.Step.Rule.Combine
     ( mergeRules
     , mergeRulesConsecutiveBatches
     , mergeRulesPredicate
+    , renameRulesVariables
     ) where
 
 import Prelude.Kore
 
+import Control.Monad.State.Strict
+    ( State
+    , evalState
+    )
+import qualified Control.Monad.State.Strict as State
 import Data.Default
     ( Default (..)
     )
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
-import Data.Set
-    ( Set
-    )
-import qualified Data.Set as Set
 
 import qualified Branch as BranchT
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (FreeVariables)
+    ( FreeVariables
     , freeVariables
     )
 import qualified Kore.Internal.Condition as Condition
@@ -63,7 +64,6 @@ import qualified Kore.Step.RulePattern as RulePattern
 import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
-    , SimplifierVariable
     , simplifyCondition
     )
 import qualified Kore.Step.SMT.Evaluator as SMT
@@ -71,12 +71,6 @@ import qualified Kore.Step.SMT.Evaluator as SMT
     )
 import Kore.Step.Step
     ( refreshRule
-    )
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
     )
 
 {-
@@ -95,7 +89,7 @@ is the same as applying @(L1 and P) => Rn@.
 See docs/2019-09-09-Combining-Rewrite-Axioms.md for details.
 -}
 mergeRulesPredicate
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => [RewriteRule variable]
     -> Predicate variable
 mergeRulesPredicate rules =
@@ -103,7 +97,7 @@ mergeRulesPredicate rules =
     $ renameRulesVariables rules
 
 mergeDisjointVarRulesPredicate
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => [RewriteRule variable]
     -> Predicate variable
 mergeDisjointVarRulesPredicate rules =
@@ -139,36 +133,22 @@ mergeRulePairPredicate
     error "AntiLeft(priority-based rules) not handled when merging yet."
 
 renameRulesVariables
-    :: SubstitutionVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => [RewriteRule variable]
     -> [RewriteRule variable]
-renameRulesVariables
-    = List.reverse . snd . List.foldl' renameRuleVariable (Set.empty, [])
-
-renameRuleVariable
-    :: SubstitutionVariable variable
-    => (Set (UnifiedVariable variable), [RewriteRule variable])
-    -> RewriteRule variable
-    -> (Set (UnifiedVariable variable), [RewriteRule variable])
-renameRuleVariable
-    (usedVariables, processedRules)
-    (RewriteRule rulePattern)
-  = (newUsedVariables, RewriteRule newRulePattern : processedRules)
+renameRulesVariables rules =
+    evalState (traverse renameRule rules) mempty
   where
-    newUsedVariables =
-        usedVariables
-        `Set.union` ruleVariables
-        `Set.union` newRuleVariables
-
-    (FreeVariables ruleVariables) = freeVariables rulePattern
-
-    (FreeVariables newRuleVariables) = freeVariables newRulePattern
-
-    (_, newRulePattern) =
-        refreshRule (FreeVariables usedVariables) rulePattern
+    renameRule
+        :: RewriteRule variable
+        -> State (FreeVariables variable) (RewriteRule variable)
+    renameRule rewriteRule = State.state $ \used ->
+        let (_, rewriteRule') = refreshRule used rewriteRule in
+        (rewriteRule', used <> freeVariables rewriteRule')
 
 mergeRules
-    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    :: (MonadSimplify simplifier, InternalVariable variable)
     => NonEmpty (RewriteRule variable)
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
@@ -196,7 +176,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
 
         return (RewriteRule finalRule)
   where
-    mergedPredicate = mergeRulesPredicate rules
+    mergedPredicate = mergeDisjointVarRulesPredicate rules
     firstRule = head rules
     RewriteRule RulePattern
         {left = firstLeft, requires = firstRequires, antiLeft = firstAntiLeft}
@@ -212,7 +192,7 @@ first merges rules 1, 2, 3 and 4 into rule 4', then rules 4', 5, 6, 7
 into rule 7', then returns the result of merging 7', 8 and 9.
 -}
 mergeRulesConsecutiveBatches
-    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    :: (MonadSimplify simplifier, InternalVariable variable)
     => Int
     -- ^ Batch size
     -> NonEmpty (RewriteRule variable)

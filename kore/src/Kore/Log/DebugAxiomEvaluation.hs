@@ -9,11 +9,14 @@ module Kore.Log.DebugAxiomEvaluation
     , DebugAxiomEvaluation (..)
     , DebugAxiomEvaluationOptions (..)
     , filterDebugAxiomEvaluation
+    , mapDebugAxiomEvaluation
     , parseDebugAxiomEvaluationOptions
 
     -- * logging functions. Import qualified.
     , attemptAxiom
     , end
+    , endNotApplicable
+    , endNotApplicableConditionally
     , notEvaluated
     , notEvaluatedConditionally
     , reevaluation
@@ -26,9 +29,6 @@ module Kore.Log.DebugAxiomEvaluation
 import Prelude.Kore
 
 import Data.Default
-import Data.Function
-    ( on
-    )
 import Data.Set
     ( Set
     )
@@ -59,6 +59,12 @@ import qualified Kore.Attribute.Symbol as Attribute.Symbol.DoNotUse
 import qualified Kore.Attribute.Symbol.Klabel as Attribute
     ( Klabel (Klabel)
     )
+import qualified Kore.Internal.Conditional as Conditional
+    ( mapVariables
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import Kore.Internal.Symbol
     ( Symbol (Symbol)
     )
@@ -67,15 +73,26 @@ import Kore.Internal.TermLike
     ( pattern App_
     , TermLike
     )
+import qualified Kore.Internal.TermLike as TermLike
+    ( mapVariables
+    )
+import Kore.Internal.Variable
+    ( InternalVariable
+    , Variable
+    , toVariable
+    )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
+import Kore.Unparser
+    ( unparse
+    )
 import Log
-    ( Entry (fromEntry)
+    ( Entry (fromEntry, toEntry)
     , MonadLog
     , Severity (..)
     , SomeEntry
-    , logM
+    , logEntry
     )
 import qualified Log as Log.DoNotUse
 
@@ -88,27 +105,35 @@ data DebugAxiomEvaluation =
     DebugAxiomEvaluation
     { identifier :: !(Maybe AxiomIdentifier)
     , secondaryIdentifier :: !(Maybe Text)
+    , logPatterns :: !Bool
     , state :: !AxiomEvaluationState
     }
     deriving (Eq, Typeable)
 
 data AxiomEvaluationState
-    = Start
+    = Start [TermLike Variable]
     | AttemptingAxiom SourceLocation
     | NotEvaluated
     | NotEvaluatedConditionally
-    | Reevaluation
-    | End
+    | Reevaluation [Pattern Variable]
+    | End [Pattern Variable]
+    | EndNotApplicable
+    | EndNotApplicableConditionally
     deriving Eq
 
 instance Entry DebugAxiomEvaluation where
     entrySeverity _ = Debug
 
 instance Pretty DebugAxiomEvaluation where
-    pretty DebugAxiomEvaluation { identifier, state } =
+    pretty DebugAxiomEvaluation { identifier, state, logPatterns } =
         case state of
-            Start ->
-                Pretty.sep ["Starting:", Pretty.pretty identifier]
+            Start arguments ->
+                Pretty.sep
+                    (  ["Starting:", Pretty.pretty identifier]
+                    ++ if logPatterns
+                        then "Arguments:" : map unparse arguments
+                        else []
+                    )
             AttemptingAxiom sourceLocation ->
                 Pretty.sep
                     [ "Attempting axiom "
@@ -123,30 +148,83 @@ instance Pretty DebugAxiomEvaluation where
                     [ "Under certain conditions, no results for:"
                     , Pretty.pretty identifier
                     ]
-            Reevaluation ->
-                Pretty.sep ["Reevaluating:", Pretty.pretty identifier]
-            End ->
-                Pretty.sep ["Ending:", Pretty.pretty identifier]
+            Reevaluation results ->
+                Pretty.sep
+                    (  ["Reevaluating:", Pretty.pretty identifier]
+                    ++ if logPatterns
+                        then "Results:" : map unparse results
+                        else []
+                    )
+            End results ->
+                Pretty.sep
+                    (  ["Ending:", Pretty.pretty identifier]
+                    ++ if logPatterns
+                        then "Results:" : map unparse results
+                        else []
+                    )
+            EndNotApplicable ->
+                Pretty.sep ["Ending with N/A:", Pretty.pretty identifier]
+            EndNotApplicableConditionally ->
+                Pretty.sep
+                    ["Ending with conditional N/A:", Pretty.pretty identifier]
 
 {- | Log the start of a term's axiom evaluation.
 -}
 start
-    :: forall log
-    .  MonadLog log
-    => Maybe AxiomIdentifier
+    :: forall log variable
+    .  (MonadLog log, InternalVariable variable)
+    => [TermLike variable]
+    -> Maybe AxiomIdentifier
     -> Maybe Text
     -> log ()
-start = logState Start
+start arguments = logState
+    (Start
+        (map
+            (TermLike.mapVariables (fmap toVariable) (fmap toVariable))
+            arguments
+        )
+    )
 
 {- | Log the end of a term's axiom evaluation.
 -}
 end
+    :: forall log variable
+    .  (MonadLog log, InternalVariable variable)
+    => [Pattern variable]
+    -> Maybe AxiomIdentifier
+    -> Maybe Text
+    -> log ()
+end results = logState (End (map convertPatternVariable results))
+
+{- | Log the end of a term's axiom evaluation.
+-}
+endNotApplicable
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
     -> Maybe Text
     -> log ()
-end = logState End
+endNotApplicable = logState EndNotApplicable
+
+{- | Log the end of a term's axiom evaluation.
+-}
+endNotApplicableConditionally
+    :: forall log
+    .  MonadLog log
+    => Maybe AxiomIdentifier
+    -> Maybe Text
+    -> log ()
+endNotApplicableConditionally = logState EndNotApplicableConditionally
+
+convertPatternVariable
+    :: InternalVariable variable => Pattern variable -> Pattern Variable
+convertPatternVariable patt =
+    Conditional.mapVariables
+        TermLike.mapVariables
+        (fmap toVariable)
+        (fmap toVariable)
+        patt
+
 
 {- | Log the start of a term's axiom evaluation.
 -}
@@ -171,12 +249,14 @@ notEvaluatedConditionally = logState NotEvaluatedConditionally
 {- | Log the start of a term's axiom evaluation.
 -}
 reevaluation
-    :: forall log
-    .  MonadLog log
-    => Maybe AxiomIdentifier
+    :: forall log variable
+    .  (MonadLog log, InternalVariable variable)
+    => [Pattern variable]
+    -> Maybe AxiomIdentifier
     -> Maybe Text
     -> log ()
-reevaluation = logState Reevaluation
+reevaluation results =
+    logState (Reevaluation (map convertPatternVariable results))
 
 attemptAxiom
     :: MonadLog log
@@ -193,9 +273,10 @@ logState
     -> Maybe Text
     -> log ()
 logState state identifier secondaryIdentifier =
-    logM DebugAxiomEvaluation
+    logEntry DebugAxiomEvaluation
         { identifier
         , secondaryIdentifier
+        , logPatterns = False
         , state
         }
 
@@ -205,9 +286,10 @@ applications.
 See also: 'parseDebugAxiomEvaluationOptions'
 
  -}
-newtype DebugAxiomEvaluationOptions =
+data DebugAxiomEvaluationOptions =
     DebugAxiomEvaluationOptions
-        { debugAxiomEvaluation :: Set Text
+        { debugAxiomEvaluation :: !(Set Text)
+        , debugAxiomEvaluationPatterns :: !Bool
         }
     deriving (Eq, Show)
 
@@ -217,15 +299,22 @@ instance Default DebugAxiomEvaluationOptions where
 instance Semigroup DebugAxiomEvaluationOptions where
     (<>) a b =
         DebugAxiomEvaluationOptions
-            { debugAxiomEvaluation = on (<>) debugAxiomEvaluation a b }
+            { debugAxiomEvaluation = on (<>) debugAxiomEvaluation a b
+            , debugAxiomEvaluationPatterns =
+                on (||) debugAxiomEvaluationPatterns a b
+            }
 
 instance Monoid DebugAxiomEvaluationOptions where
-    mempty = DebugAxiomEvaluationOptions mempty
+    mempty = DebugAxiomEvaluationOptions
+        { debugAxiomEvaluation = mempty
+        , debugAxiomEvaluationPatterns = False
+        }
 
 parseDebugAxiomEvaluationOptions :: Parser DebugAxiomEvaluationOptions
 parseDebugAxiomEvaluationOptions =
     DebugAxiomEvaluationOptions
     <$> (Set.fromList <$> many parseId)
+    <*> patterns
   where
     parseId =
         Options.strOption
@@ -234,6 +323,14 @@ parseDebugAxiomEvaluationOptions =
             <> Options.help
                 (  "Log every rule applied for the "
                 <> "SIMPLIFICATION_IDENTIFIER."
+                )
+            )
+    patterns =
+        Options.switch
+            (  Options.long "debug-simplification-axiom-patterns"
+            <> Options.help
+                (  "Log arguments and results for "
+                <> "SIMPLIFICATION_IDENTIFIER's evaluation."
                 )
             )
 
@@ -272,6 +369,22 @@ filterDebugAxiomEvaluation
 
     DebugAxiomEvaluationOptions { debugAxiomEvaluation } =
         debugAxiomEvaluationOptions
+
+mapDebugAxiomEvaluation :: DebugAxiomEvaluationOptions -> SomeEntry -> SomeEntry
+mapDebugAxiomEvaluation debugAxiomEvaluationOptions entry =
+    fromMaybe entry mapAxiomEvaluation
+  where
+    mapAxiomEvaluation :: Maybe SomeEntry
+    mapAxiomEvaluation = do
+        axiomEntry@DebugAxiomEvaluation { logPatterns } <- fromEntry entry
+        return
+            (toEntry axiomEntry
+                {logPatterns = logPatterns || debugAxiomEvaluationPatterns}
+            )
+
+    DebugAxiomEvaluationOptions { debugAxiomEvaluationPatterns } =
+        debugAxiomEvaluationOptions
+
 
 klabelIdentifier :: TermLike variable -> Maybe Text
 klabelIdentifier

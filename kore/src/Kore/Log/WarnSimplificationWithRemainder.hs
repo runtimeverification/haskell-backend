@@ -106,12 +106,18 @@ warnSimplificationWithRemainder
     -> OrPattern variable  -- ^ remainders
     -> logger ()
 warnSimplificationWithRemainder
-    (TermLike.mapVariables toVariable -> inputPattern)
-    (SideCondition.mapVariables toVariable -> sideCondition)
-    (Results . fmap (Pattern.mapVariables toVariable) -> results)
-    (Remainders . fmap (Pattern.mapVariables toVariable) -> remainders)
+    (TermLike.mapVariables (fmap toVariable) (fmap toVariable) -> inputPattern)
+    (SideCondition.mapVariables (fmap toVariable) (fmap toVariable)
+        -> sideCondition
+    )
+    (Results . fmap (Pattern.mapVariables (fmap toVariable) (fmap toVariable))
+        -> results
+    )
+    (Remainders . fmap (Pattern.mapVariables (fmap toVariable) (fmap toVariable))
+        -> remainders
+    )
   =
-    logM WarnSimplificationWithRemainder
+    logEntry WarnSimplificationWithRemainder
         { inputPattern
         , sideCondition
         , results

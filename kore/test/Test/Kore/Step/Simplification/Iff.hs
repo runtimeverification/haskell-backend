@@ -7,8 +7,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Data.Function as Function
-
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -163,7 +161,7 @@ testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testEvaluateBoolean a b =
     Terse.equals
         (OrPattern.fromPatterns [valueBool r])
-        (Function.on makeEvaluate valueBool a b)
+        (on makeEvaluate valueBool a b)
         ("iff(" ++ nameBool a ++ ", " ++ nameBool b ++ ")")
   where
     r = a == b

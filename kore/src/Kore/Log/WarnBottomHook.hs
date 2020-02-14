@@ -23,7 +23,7 @@ import GHC.Generics as GHC
 
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
-    ( SimplifierVariable
+    ( InternalVariable
     )
 import Kore.Unparser
     ( unparse
@@ -59,9 +59,9 @@ instance SQL.Table WarnBottomHook
 
 warnBottomHook
     :: MonadLog logger
-    => SimplifierVariable variable
+    => InternalVariable variable
     => Text
     -> TermLike variable
     -> logger ()
-warnBottomHook hook (mapVariables toVariable -> term) =
-    logM WarnBottomHook { hook, term }
+warnBottomHook hook (mapVariables (fmap toVariable) (fmap toVariable) -> term) =
+    logEntry WarnBottomHook { hook, term }

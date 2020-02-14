@@ -15,7 +15,6 @@ import Prelude.Kore
 
 import Control.DeepSeq
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -46,14 +45,14 @@ data Alias patternType =
 
 instance Eq patternType => Eq (Alias patternType) where
     (==) a b =
-            Function.on (==) aliasConstructor a b
-        &&  Function.on (==) aliasParams a b
+            on (==) aliasConstructor a b
+        &&  on (==) aliasParams a b
     {-# INLINE (==) #-}
 
 instance Ord patternType => Ord (Alias patternType) where
     compare a b =
-            Function.on compare aliasConstructor a b
-        <>  Function.on compare aliasParams a b
+            on compare aliasConstructor a b
+        <>  on compare aliasParams a b
 
 instance Hashable patternType => Hashable (Alias patternType) where
     hashWithSalt salt Alias { aliasConstructor, aliasParams } =
@@ -87,7 +86,7 @@ instance
 
 instance Synthetic Sort (Application (Alias patternType)) where
     synthetic application =
-        resultSort Function.& deepseq (matchSorts operandSorts children)
+        resultSort & deepseq (matchSorts operandSorts children)
       where
         Application { applicationSymbolOrAlias = alias } = application
         Application { applicationChildren = children } = application
