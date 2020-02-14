@@ -263,6 +263,5 @@ test_sortDeclaration =
         => VerifiedModule Attribute.Symbol
         -> m ()
     declareSymbolsAndSorts m =
-        trace (show $ Representation.build m (Attribute.Constructors.indexBySort m))
-        $ Declaration.declare
+        Declaration.declare
             (Representation.build m (Attribute.Constructors.indexBySort m))
