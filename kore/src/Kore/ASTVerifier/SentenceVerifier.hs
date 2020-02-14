@@ -393,7 +393,7 @@ verifyClaims =
     . mapMaybe projectSentenceClaim
 
 verifyClaimSentence :: SentenceClaim ParsedPattern -> SentenceVerifier ()
-verifyClaimSentence sentence =
+verifyClaimSentence sentence = trace "\nn\nn\nn\nn\nn\nn\nn verifyClaimSentence" $ 
     withSentenceClaimContext sentence $ do
         verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)

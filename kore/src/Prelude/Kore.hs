@@ -30,7 +30,6 @@ module Prelude.Kore
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
 -- documentation is complete.
-
 import Control.Applicative
     ( Alternative (..)
     , Applicative (..)
