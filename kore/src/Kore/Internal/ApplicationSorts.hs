@@ -61,7 +61,7 @@ symbolOrAliasSorts
     => [Sort]
     -> sentence pat
     -> m ApplicationSorts
-symbolOrAliasSorts params sentence = do
+symbolOrAliasSorts params sentence = trace "hello" $ do
     variableToSort <-
         pairVariablesToSorts
             paramVariables
@@ -112,7 +112,8 @@ pairVariablesToSorts
     -> m [(SortVariable, Sort)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
-        koreFail "Application uses more sorts than the declaration."
+        koreFail $ "Application uses more sorts than the declaration."
+            <> show variables <> " vs " <> show sorts
     | variablesLength > sortsLength =
         koreFail "Application uses less sorts than the declaration."
     | otherwise = return (zip variables sorts)

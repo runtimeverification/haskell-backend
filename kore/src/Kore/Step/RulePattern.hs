@@ -33,6 +33,7 @@ module Kore.Step.RulePattern
     , allPathRuleToTerm
     , toSentence
     , implicationRuleToTerm
+    , mkImpliesRule
     , weakExistsFinally
     , wEF
     , weakAlwaysFinally
