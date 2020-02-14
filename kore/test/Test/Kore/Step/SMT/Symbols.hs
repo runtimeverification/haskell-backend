@@ -6,19 +6,12 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Control.Monad.Counter as Counter
-import qualified Control.Monad.State.Strict as State
 import Control.Monad.Trans.Maybe
     ( MaybeT (..)
     )
-import Data.Functor.Identity
-    ( Identity (..)
-    )
-import qualified Data.Map.Strict as Map
 import Data.Reflection
     ( give
     )
-import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
     ( indexBySort
@@ -34,9 +27,7 @@ import Kore.IndexedModule.MetadataTools
     )
 import Kore.Internal.Predicate
     ( Predicate
-    )
-import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
+    , makeEqualsPredicate_
     , makeNotPredicate
     )
 import Kore.Internal.Symbol
@@ -57,24 +48,20 @@ import Kore.Internal.Variable
 import Kore.Sort
     ( Sort (..)
     )
-import Kore.Step.Simplification.Data
-    ( runSimplifier
-    )
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify (..)
-    )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
     ( declare
     )
 import Kore.Step.SMT.Encoder
     ( encodeName
     )
+import Kore.Step.SMT.Evaluator
+    ( translateUninterpreted
+    )
 import qualified Kore.Step.SMT.Representation.All as Representation
     ( build
     )
 import Kore.Step.SMT.Translate
-    ( Translator
-    , evalTranslator
+    ( evalTranslator
     , translatePredicate
     )
 import Kore.Syntax.ElementVariable
@@ -82,6 +69,9 @@ import Kore.Syntax.ElementVariable
     )
 import Kore.Syntax.Variable
     ( Variable (..)
+    )
+import Log
+    ( MonadLog (..)
     )
 import SMT
     ( MonadSMT
@@ -91,9 +81,6 @@ import qualified SMT
 
 import Test.Kore
     ( testId
-    )
-import Test.Kore.Builtin.Builtin
-    ( testEnv
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.SMT.Builders
@@ -185,7 +172,7 @@ test_sortDeclaration =
             [ SMT.assert (atom (encodeName "C") `eq` atom (encodeName "C"))
             ]
         ]
-    , testsForModule "TESTING Encodes smtlib name for constructor"
+    , testsForModule "Encodes smtlib name for constructor"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
             `with`
@@ -196,73 +183,57 @@ test_sortDeclaration =
                 )
             `with` constructorAxiom "S" [("C", [])]
         )
-        -- [ isSatisfiable
-        --     [ SMT.assert (atom "D" `eq` atom "D")
-        --     ]
-        -- , isSatisfiable
-        --     [ "a" `ofType` (encodeName "S")
-        --     ]
-        [ isSatisfiableWithTools
-            [ \t ->  do
-                pred <-
-                        encodePredicate
-                            t
-                            (makeEqualsPredicate_
-                                (mkElemVar x)
-                                c
-                            )
-                traceM $ "\n\n" <> show pred
-                SMT.assert pred
+        [ isSatisfiable
+            [ SMT.assert (atom "D" `eq` atom "D")
+            ]
+        , isSatisfiable
+            [ "a" `ofType` (encodeName "S")
+            ]
+        , isSatisfiableWithTools
+            [ encodeAndAssertPredicate $
+                makeEqualsPredicate_
+                    (mkElemVar x)
+                    c
             ]
         , isNotSatisfiableWithTools
-            [ \t -> do
-                pred <-
-                        encodePredicate
-                            t
-                            (makeNotPredicate
-                                (makeEqualsPredicate_
-                                    (mkElemVar x)
-                                    c
-                                )
-                            )
-                traceM $ "\n\n" <> show pred
-                SMT.assert pred
+            [ encodeAndAssertPredicate $
+                makeNotPredicate
+                    (makeEqualsPredicate_
+                          (mkElemVar x)
+                          c
+                    )
             ]
         ]
     ]
   where
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
 
-    translateUninterpreted
-        :: ( InternalVariable variable
-           , p ~ TermLike variable
-           )
-        => MonadSMT m
-        => SExpr  -- ^ type name
-        -> p  -- ^ uninterpreted pattern
-        -> Translator m p SExpr
-    translateUninterpreted t pat =
-        lookupPattern <|> freeVariable
-      where
-        lookupPattern = do
-            result <- State.gets $ Map.lookup pat
-            maybe empty (return . fst) result
-        freeVariable = do
-            n <- Counter.increment
-            var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
-            State.modify' (Map.insert pat (var, t))
-            return var
+    encodeAndAssertPredicate
+        :: MonadSMT m
+        => MonadLog m
+        => Predicate Variable
+        -> SmtMetadataTools Attribute.Symbol
+        -> m ()
+    encodeAndAssertPredicate predicate tools = do
+        encoded <-
+            encodePredicate
+                tools
+                predicate
+        SMT.assert encoded
 
     encodePredicate
         :: MonadSMT m
+        => MonadLog m
         => SmtMetadataTools Attribute.Symbol
         -> Predicate Variable
         -> m SExpr
     encodePredicate tools predicate = do
         expr <-
             runMaybeT
-                $ evalTranslator
-                    (give tools $ translatePredicate translateUninterpreted predicate)
+            $ evalTranslator
+                ( give tools
+                $ translatePredicate translateUninterpreted predicate
+                )
         maybe (error "Could not encode predicate") return expr
 
     sSortId :: Id
