@@ -23,7 +23,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import qualified Kore.Step.SMT.AST as Step.AST
+import qualified Kore.Step.SMT.AST as AST
 import Kore.Step.SMT.Representation.Resolve
     ( resolve
     )
@@ -46,9 +46,9 @@ sorts).
 build
     :: VerifiedModule Attribute.Symbol
     -> Map.Map Id Attribute.Constructors
-    -> Step.AST.SmtDeclarations
+    -> AST.SmtDeclarations
 build indexedModule sortConstructors =
-    resolve (sorts `Step.AST.mergePreferFirst` symbols)
+    resolve (sorts `AST.mergePreferFirst` symbols)
   where
     sorts = Sorts.buildRepresentations indexedModule sortConstructors
     symbols = Symbols.buildRepresentations indexedModule
