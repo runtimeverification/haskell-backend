@@ -24,7 +24,6 @@ import Prelude.Kore
 import Data.Hashable
     ( Hashable (hashWithSalt)
     )
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -166,13 +165,9 @@ instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance FreshVariable variable => FreshVariable (Target variable) where
-    refreshVariable (Set.map unTarget -> avoiding) =
-        \case
-            Target variable ->
-                Target <$> refreshVariable avoiding variable
-            NonTarget variable ->
-                NonTarget <$> refreshVariable avoiding variable
+instance
+    (FreshPartialOrd variable, SortedVariable variable)
+    => FreshVariable (Target variable)
 
 instance
     Unparse variable =>
