@@ -241,9 +241,11 @@ instance
             { setVariables = on (<>) setVariables a b
             , elementVariables = on (<>) elementVariables a b
             }
+    {-# INLINE (<>) #-}
 
 instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
     mempty = UnifiedVariableMap mempty mempty
+    {-# INLINE mempty #-}
 
 renameSetVariable
     :: Ord variable1
@@ -255,6 +257,7 @@ renameSetVariable variable1 variable2 =
     Lens.over
         (field @"setVariables")
         (Map.insert variable1 variable2)
+{-# INLINE renameSetVariable #-}
 
 renameElementVariable
     :: Ord variable1
@@ -266,6 +269,7 @@ renameElementVariable variable1 variable2 =
     Lens.over
         (field @"elementVariables")
         (Map.insert variable1 variable2)
+{-# INLINE renameElementVariable #-}
 
 lookupRenamedElementVariable
     :: Ord variable1
@@ -274,6 +278,7 @@ lookupRenamedElementVariable
     -> Maybe (ElementVariable variable2)
 lookupRenamedElementVariable variable =
     Map.lookup variable . elementVariables
+{-# INLINE lookupRenamedElementVariable #-}
 
 lookupRenamedSetVariable
     :: Ord variable1
@@ -282,3 +287,4 @@ lookupRenamedSetVariable
     -> Maybe (SetVariable variable2)
 lookupRenamedSetVariable variable =
     Map.lookup variable . setVariables
+{-# INLINE lookupRenamedSetVariable #-}
