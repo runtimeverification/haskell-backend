@@ -61,7 +61,7 @@ symbolOrAliasSorts
     => [Sort]
     -> sentence pat
     -> m ApplicationSorts
-symbolOrAliasSorts params sentence = trace "hello" $ do
+symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts
             paramVariables

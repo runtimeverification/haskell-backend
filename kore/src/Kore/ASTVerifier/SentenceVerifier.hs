@@ -393,7 +393,7 @@ verifyClaims =
     . mapMaybe projectSentenceClaim
 
 verifyClaimSentence :: SentenceClaim ParsedPattern -> SentenceVerifier ()
-verifyClaimSentence sentence = trace "\nn\nn\nn\nn\nn\nn\nn verifyClaimSentence" $ 
+verifyClaimSentence sentence =
     withSentenceClaimContext sentence $ do
         verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)
@@ -418,7 +418,7 @@ verifyClaimSentence sentence = trace "\nn\nn\nn\nn\nn\nn\nn verifyClaimSentence"
             _ -> False
     rejectRulePattern
         RulePattern { left, antiLeft, requires, rhs = RHS { right, ensures } }
-      = 
+      =
         let lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
             rhs = [right, unwrapPredicate ensures]
             freeVariablesUnion terms
