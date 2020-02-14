@@ -112,8 +112,7 @@ pairVariablesToSorts
     -> m [(SortVariable, Sort)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
-        koreFail $ "Application uses more sorts than the declaration."
-            <> show variables <> " vs " <> show sorts
+        koreFail "Application uses more sorts than the declaration."
     | variablesLength > sortsLength =
         koreFail "Application uses less sorts than the declaration."
     | otherwise = return (zip variables sorts)
