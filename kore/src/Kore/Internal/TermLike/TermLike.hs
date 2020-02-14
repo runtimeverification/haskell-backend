@@ -303,10 +303,10 @@ instance InternalVariable variable => Unparse (TermLike variable) where
 
                 attributeRepresentation = case attrs of
                     (Attribute.Pattern _ _ _ _ _ _ _ _) ->
-                        Pretty.sep
-                            ( "/*"
-                            : (map Pretty.pretty representation ++ ["*/"])
-                            )
+                        Pretty.surround
+                            (Pretty.hsep $ map Pretty.pretty representation)
+                            "/* "
+                            " */"
                   where
                     representation =
                         addFunctionalRepresentation
