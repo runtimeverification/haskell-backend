@@ -85,14 +85,13 @@ import Kore.Step.Step
     , checkSubstitutionCoverage
     , matchingPattern
     , precondition
-    , refreshRule
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
     , wouldNarrowWith
     )
 import qualified Kore.Step.Step as EqualityPattern
-    ( toAxiomVariables
+    ( targetRuleVariables
     )
 import Kore.Unification.UnifierT
     ( UnifierT
@@ -157,13 +156,13 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
     unwrappedConfig :: Pattern variable
     unwrappedConfig =
         Pattern.mapVariables
-            (fmap Target.unwrapVariable)
-            (fmap Target.unwrapVariable)
+            Target.unTargetElement
+            Target.unTargetSet
             configWithNewSubst
 
     targetVariables :: [ElementVariable variable]
     targetVariables =
-        map (fmap Target.unwrapVariable)
+        map Target.unTargetElement
         . filter (Target.isTarget . getElementVariable)
         . Pattern.freeElementVariables
         $ configWithNewSubst
@@ -342,9 +341,7 @@ finalizeRulesSequence sideCondition initial unifiedRules
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables
-                (fmap Target.unwrapVariable)
-                (fmap Target.unwrapVariable)
+            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
             <$> remainders'
         }
   where
@@ -384,14 +381,11 @@ applyRulesSequence
     -> [EqualityPattern variable]
     -- ^ Rewrite rules
     -> unifier (Results EqualityPattern variable)
-applyRulesSequence
-    sideCondition
-    initial
-    -- Wrap the rules so that unification prefers to substitute
-    -- axiom variables.
-    (map EqualityPattern.toAxiomVariables -> rules)
-  = matchRules sideCondition initial rules
+applyRulesSequence sideCondition initial rules =
+    matchRules sideCondition initial rules'
     >>= finalizeRulesSequence sideCondition initial
+  where
+    rules' = EqualityPattern.targetRuleVariables sideCondition initial <$> rules
 
 -- | Matches a list a rules against a configuration. See 'matchRule'.
 matchRules
@@ -435,22 +429,15 @@ matchRule
     -> unifier (UnifiedRule variable (rule variable))
 matchRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-    -- Rename free axiom variables to avoid free variables from the initial
-    -- configuration.
-    let
-        configVariables = TermLike.freeVariables initial
-        (_, rule') = refreshRule configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
-    let
-        ruleLeft = matchingPattern rule'
+    let ruleLeft = matchingPattern rule
     unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
-    let
-        requires = precondition rule'
+    let requires = precondition rule
     unification' <-
         evaluateRequires sideCondition initialCondition unification requires
-    return (rule' `Conditional.withCondition` unification')
+    return (rule `Conditional.withCondition` unification')
   where
     unifyPatterns = ignoreUnificationErrors matchIncremental
 

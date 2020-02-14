@@ -19,9 +19,6 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    )
 
 mockSimplifier
     :: InternalVariable variable
@@ -76,9 +73,8 @@ mockSimplifierHelper
         unevaluatedPatt
 
 convertTermLikeVariables
-    ::  ( Ord variable
-        , SortedVariable variable
-        , SortedVariable variable0
+    ::  ( VariableName variable
+        , VariableName variable0
         , FreshVariable variable0
         )
     => TermLike variable
@@ -89,9 +85,8 @@ convertTermLikeVariables =
         (fmap $ fromVariable . toVariable)
 
 convertPatternVariables
-    ::  ( Ord variable
-        , SortedVariable variable
-        , SortedVariable variable0
+    ::  ( VariableName variable
+        , VariableName variable0
         , FreshVariable variable0
         )
     => Pattern variable

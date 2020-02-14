@@ -36,9 +36,6 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
-    ( fromText
-    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -46,13 +43,14 @@ import Kore.Internal.Variable
     ( ElementVariable
     , InternalVariable
     , SetVariable
+    , Variable
+    , toVariable
     )
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
     ( Unparse (..)
-    , unparseToText
     )
 import qualified Pretty
 import qualified SQL
@@ -175,4 +173,5 @@ toRepresentationCondition
     => Condition variable
     -> SideCondition.Representation
 toRepresentationCondition condition =
-    SideCondition.Representation.fromText $ unparseToText condition
+    from @(Condition Variable)
+    $ Condition.mapVariables (fmap toVariable) (fmap toVariable) condition

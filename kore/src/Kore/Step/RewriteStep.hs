@@ -63,7 +63,7 @@ import Kore.Step.Step
     , assertFunctionLikeResults
     , checkSubstitutionCoverage
     , simplifyPredicate
-    , toAxiomVariables
+    , targetRuleVariables
     , toConfigurationVariables
     , unifyRules
     )
@@ -95,8 +95,8 @@ unwrapConfiguration
     -> Pattern variable
 unwrapConfiguration config@Conditional { substitution } =
     Pattern.mapVariables
-        (fmap Target.unwrapVariable)
-        (fmap Target.unwrapVariable)
+        Target.unTargetElement
+        Target.unTargetSet
         configWithNewSubst
   where
     substitution' =
@@ -180,13 +180,15 @@ finalizeRule initial unifiedRule =
         let result = unwrapConfiguration <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
-finalizeRulesParallel
-    :: forall unifier variable
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => Pattern (Target variable)
-    -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
-    -> unifier (Results RulePattern variable)
+-- | Finalizes a list of applied rules into 'Results'.
+type Finalizer unifier variable
+    =   InternalVariable variable
+    =>  MonadUnify unifier
+    =>  Pattern (Target variable)
+    ->  [UnifiedRule (Target variable) (RulePattern (Target variable))]
+    ->  unifier (Results RulePattern variable)
+
+finalizeRulesParallel :: forall unifier variable. Finalizer unifier variable
 finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
@@ -197,21 +199,12 @@ finalizeRulesParallel initial unifiedRules = do
         { results = Seq.fromList results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables
-                (fmap Target.unwrapVariable)
-                (fmap Target.unwrapVariable)
+            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
             <$> remainders'
         }
 
-finalizeRulesSequence
-    :: forall unifier variable
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => Pattern (Target variable)
-    -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
-    -> unifier (Results RulePattern variable)
-finalizeRulesSequence initial unifiedRules
-  = do
+finalizeRulesSequence :: forall unifier variable. Finalizer unifier variable
+finalizeRulesSequence initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
@@ -222,9 +215,7 @@ finalizeRulesSequence initial unifiedRules
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables
-                (fmap Target.unwrapVariable)
-                (fmap Target.unwrapVariable)
+            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
             <$> remainders'
         }
   where
@@ -246,34 +237,42 @@ finalizeRulesSequence initial unifiedRules
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')
         return results
+
+applyRulesWithFinalizer
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => Finalizer unifier variable
+    -> UnificationProcedure
+    -> [RulePattern variable]
+    -- ^ Rewrite rules
+    -> Pattern (Target variable)
+    -- ^ Configuration being rewritten
+    -> unifier (Results RulePattern variable)
+applyRulesWithFinalizer finalize unificationProcedure rules initial = do
+    let sideCondition = SideCondition.topTODO
+        rules' = targetRuleVariables sideCondition initial <$> rules
+    results <- unifyRules unificationProcedure sideCondition initial rules'
+    debugAppliedRewriteRules initial results
+    finalize initial results
+{-# INLINE applyRulesWithFinalizer #-}
+
 {- | Apply the given rules to the initial configuration in parallel.
 
 See also: 'applyRewriteRule'
 
  -}
 applyRulesParallel
-    ::  forall unifier variable
-    .   ( InternalVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifier
-        )
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
     => UnificationProcedure
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> unifier (Results RulePattern variable)
-applyRulesParallel
-    unificationProcedure
-    -- Wrap the rule and configuration so that unification prefers to substitute
-    -- axiom variables.
-    (map toAxiomVariables -> rules)
-    initial
-  = do
-      results <-
-          unifyRules unificationProcedure SideCondition.topTODO initial rules
-      debugAppliedRewriteRules initial results
-      finalizeRulesParallel initial results
+applyRulesParallel = applyRulesWithFinalizer finalizeRulesParallel
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -306,28 +305,16 @@ See also: 'applyRewriteRule'
 
  -}
 applyRulesSequence
-    ::  forall unifier variable
-    .   ( InternalVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifier
-        )
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
     => UnificationProcedure
-    -> Pattern (Target variable)
-    -- ^ Configuration being rewritten
     -> [RulePattern variable]
     -- ^ Rewrite rules
+    -> Pattern (Target variable)
+    -- ^ Configuration being rewritten
     -> unifier (Results RulePattern variable)
-applyRulesSequence
-    unificationProcedure
-    initial
-    -- Wrap the rules so that unification prefers to substitute
-    -- axiom variables.
-    (map toAxiomVariables -> rules)
-  = do
-      results <-
-          unifyRules unificationProcedure SideCondition.topTODO initial rules
-      debugAppliedRewriteRules initial results
-      finalizeRulesSequence initial results
+applyRulesSequence = applyRulesWithFinalizer finalizeRulesSequence
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -349,6 +336,6 @@ applyRewriteRulesSequence
     (toConfigurationVariables -> initialConfig)
     (map getRewriteRule -> rules)
   = do
-    results <- applyRulesSequence unificationProcedure initialConfig rules
+    results <- applyRulesSequence unificationProcedure rules initialConfig
     assertFunctionLikeResults (term initialConfig) results
     return results

@@ -88,6 +88,7 @@ import Data.Time.LocalTime
 import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugAxiomEvaluation
     ( filterDebugAxiomEvaluation
+    , mapDebugAxiomEvaluation
     )
 import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
@@ -129,10 +130,13 @@ withMainLogger
   =
     case logType of
         LogStdErr -> continue
-            $ koreLogFilters koreLogOptions (stderrLogger exeName timestampsSwitch)
+            $ koreLogTransformer koreLogOptions
+            $ koreLogFilters koreLogOptions
+                (stderrLogger exeName timestampsSwitch)
         LogFileText filename ->
             Colog.withLogTextFile filename
             $ continue
+            . koreLogTransformer koreLogOptions
             . koreLogFilters koreLogOptions
             . makeKoreLogger exeName timestampsSwitch
 
@@ -143,6 +147,17 @@ withSmtSolverLogger DebugSolverOptions {logFile} continue =
         Nothing -> continue mempty
         Just filename -> Colog.withLogTextFile filename
             $ continue . solverTranscriptLogger
+
+koreLogTransformer
+    :: KoreLogOptions
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+koreLogTransformer koreLogOptions baseLogger =
+    Colog.cmap
+        (mapDebugAxiomEvaluation debugAxiomEvaluationOptions)
+        baseLogger
+  where
+    KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
 
 koreLogFilters
     :: Applicative m

@@ -155,8 +155,14 @@ instance Unparse V where
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVariable
-    fromVariable = undefined
-    toVariable = undefined
+
+instance From Variable V where
+    from = error "Not implemented"
+
+instance From V Variable where
+    from = error "Not implemented"
+
+instance VariableName V
 
 instance FreshVariable V where
     refreshVariable avoiding v@(V name)
@@ -165,6 +171,9 @@ instance FreshVariable V where
         Just ((head . dropWhile (flip Set.member avoiding)) (V <$> names' ))
       where
         names' = iterate (+ 1) name
+
+instance SubstitutionOrd V where
+    compareSubstitution = compare
 
 newtype W = W String
     deriving (Show, Eq, Ord, GHC.Generic)
@@ -183,8 +192,14 @@ instance Unparse W where
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVariable
-    fromVariable = undefined
-    toVariable = undefined
+
+instance From Variable W where
+    from = error "Not implemented"
+
+instance From W Variable where
+    from = error "Not implemented"
+
+instance VariableName W
 
 instance FreshVariable W where
     refreshVariable avoiding w@(W name)
@@ -193,6 +208,9 @@ instance FreshVariable W where
         Just ((head . dropWhile (flip Set.member avoiding)) (W <$> names' ))
       where
         names' = iterate (<> "\'") name
+
+instance SubstitutionOrd W where
+    compareSubstitution = compare
 
 showVar :: V -> W
 showVar (V i) = W (show i)
