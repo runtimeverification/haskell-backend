@@ -58,11 +58,11 @@ data Target variable
     deriving (Functor, Foldable, Traversable)
 
 instance Eq variable => Eq (Target variable) where
-    (==) = on (==) unTarget
+    (==) a b = unTarget a == unTarget b
     {-# INLINE (==) #-}
 
 instance Ord variable => Ord (Target variable) where
-    compare = on compare unTarget
+    compare a b = compare (unTarget a) (unTarget b)
     {-# INLINE compare #-}
 
 instance Hashable variable => Hashable (Target variable) where
@@ -90,6 +90,7 @@ instance
 unTarget :: Target variable -> variable
 unTarget (Target variable) = variable
 unTarget (NonTarget variable) = variable
+{-# INLINE unTarget #-}
 
 unTargetElement :: ElementVariable (Target variable) -> ElementVariable variable
 unTargetElement = fmap unTarget
