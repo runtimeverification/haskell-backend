@@ -128,7 +128,7 @@ test_sortDeclaration =
             , SMT.assert (atom "i" `gt` atom "0")
             , SMT.assert (atom "i" `lt` atom "0")
             ]
-        , isSatisfiable
+        , isError
             [ "x" `ofType` "S"
             ]
         , isError

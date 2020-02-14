@@ -24,6 +24,7 @@ import Kore.Step.RulePattern
     ( RewriteRule (..)
     , rulePattern
     )
+import Kore.Step.SMT.Declaration.All as SMT.AST
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
@@ -88,15 +89,16 @@ runVerification
     -> [claim]
     -> IO (Either (StuckVerification (Pattern Variable) claim) ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
-    runSimplifier mockEnv
-    $ runExceptT
-    $ Verification.verify
-        breadthLimit
-        BreadthFirst
-        (AllClaims claims)
-        (Axioms axioms)
-        (AlreadyProven (map unparseToText2 alreadyProven))
-        (ToProve (map applyDepthLimit . selectUntrusted $ claims))
+    runSimplifier mockEnv $ do
+        SMT.AST.declare Mock.smtDeclarations
+        runExceptT
+            $ Verification.verify
+                breadthLimit
+                BreadthFirst
+                (AllClaims claims)
+                (Axioms axioms)
+                (AlreadyProven (map unparseToText2 alreadyProven))
+                (ToProve (map applyDepthLimit . selectUntrusted $ claims))
   where
     mockEnv = Mock.env
     applyDepthLimit claim = (claim, depthLimit)
