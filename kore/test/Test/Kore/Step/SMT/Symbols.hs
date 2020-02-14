@@ -187,7 +187,7 @@ test_sortDeclaration =
             [ SMT.assert (atom "D" `eq` atom "D")
             ]
         , isSatisfiable
-            [ "a" `ofType` (encodeName "S")
+            [ "a" `ofType` encodeName "S"
             ]
         , isSatisfiableWithTools
             [ encodeAndAssertPredicate $
