@@ -62,7 +62,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.Substitution
-    ( SingleSubstitution
+    ( Assignment
+    , pattern Assignment_
     , Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
@@ -109,11 +110,11 @@ data Conditional variable child =
     deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 deriving instance
-    (Eq child, Ord variable) =>
+    (Eq child, InternalVariable variable) =>
     Eq (Conditional variable child)
 
 deriving instance
-    (Ord child, Ord variable) =>
+    (Ord child, InternalVariable variable) =>
     Ord (Conditional variable child)
 
 deriving instance
@@ -127,7 +128,7 @@ instance SOP.HasDatatypeInfo (Conditional variable child)
 instance (Debug variable, Debug child) => Debug (Conditional variable child)
 
 instance
-    ( Debug variable, Debug child, Diff variable, Diff child, Ord variable )
+    ( Debug variable, Debug child, Diff variable, Diff child, InternalVariable variable )
     => Diff (Conditional variable child)
 
 instance
@@ -214,7 +215,7 @@ instance
         Predicate.makeAndPredicate predicate (from substitution)
 
 instance
-    Ord variable
+    InternalVariable variable
     => From (Predicate variable) (Conditional variable ())
   where
     from predicate =
@@ -233,9 +234,9 @@ instance
 
 instance
     InternalVariable variable
-    => From (SingleSubstitution variable) (Conditional variable ())
+    => From (Assignment variable) (Conditional variable ())
   where
-    from = from @(Substitution variable) . from
+    from = from @(Substitution variable) . from . Substitution.assignmentToPair
 
 instance
     From from to
@@ -295,7 +296,8 @@ instance
         termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
             Predicate.coerceSort sort
-            .  singleSubstitutionToPredicate
+            . singleSubstitutionToPredicate
+            . Substitution.assignmentToPair
             <$> Substitution.unwrap substitution
 
     unparse2 Conditional { term, predicate, substitution } =
@@ -309,7 +311,8 @@ instance
         termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
             Predicate.coerceSort sort
-            .  singleSubstitutionToPredicate
+            . singleSubstitutionToPredicate
+            . Substitution.assignmentToPair
             <$> Substitution.unwrap substitution
 
 instance
@@ -356,7 +359,7 @@ The result has an empty 'Substitution'.
 
  -}
 fromPredicate
-    :: Ord variable
+    :: InternalVariable variable
     => Predicate variable
     -> Conditional variable ()
 fromPredicate = from
@@ -379,7 +382,7 @@ The result has a true 'Predicate'.
  -}
 fromSingleSubstitution
     :: InternalVariable variable
-    => (UnifiedVariable variable, TermLike variable)
+    => Assignment variable
     -> Conditional variable ()
 fromSingleSubstitution = from
 
@@ -393,7 +396,7 @@ andPredicate
 andPredicate config predicate = config `andCondition` fromPredicate predicate
 
 instance
-    (Ord variable, HasFreeVariables term variable)
+    (InternalVariable variable, HasFreeVariables term variable)
     => HasFreeVariables (Conditional variable term) variable
   where
     freeVariables Conditional { term, predicate, substitution } =
@@ -413,7 +416,9 @@ isPredicate Conditional {term} = isTop term
 
 -}
 mapVariables
-    :: (Ord variableFrom, FreshVariable variableTo)
+    :: InternalVariable variableFrom
+    => InternalVariable variableTo
+    => FreshVariable variableTo
     => ((ElementVariable variableFrom -> ElementVariable variableTo) -> (SetVariable variableFrom -> SetVariable variableTo) -> termFrom -> termTo)
     -> (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)
