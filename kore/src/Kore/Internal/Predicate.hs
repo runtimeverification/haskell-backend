@@ -706,7 +706,7 @@ isPredicate = Either.isRight . makePredicate
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
 mapVariables
-    :: (Ord from, FreshPartialOrd to)
+    :: (Ord from, FreshPartialOrd to, SortedVariable to)
     => (ElementVariable from -> ElementVariable to)
     -> (SetVariable from -> SetVariable to)
     -> Predicate from

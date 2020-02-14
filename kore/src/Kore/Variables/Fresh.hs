@@ -5,7 +5,6 @@ License     : UIUC/NCSA
 module Kore.Variables.Fresh
     ( FreshPartialOrd (..)
     , FreshVariable (..)
-    , incrementVariable
     , refreshVariables
     -- * Re-exports
     , module Kore.Syntax.Variable
@@ -14,12 +13,13 @@ module Kore.Variables.Fresh
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( on
-    )
 import Data.Generics.Product
     ( field
+    )
+import Data.Generics.Wrapped
+    ( _Unwrapped
     )
 import Data.Map.Strict
     ( Map
@@ -38,48 +38,42 @@ import Kore.Syntax.Variable
 
 {- | @FreshPartialOrder@ defines a partial order for renaming variables.
 
-Two variables are related under this partial order when @compareFresh@ returns
-@'Just' _@.
+Two variables @x@ and @y@ are related under the partial order if @infVariable@
+and @supVariable@ give the same value on @x@ and @y@.
 
-Agreement:
+Disjoint:
 
-prop> maybe True (== compare a b) (compareFresh a b)
+prop> infVariable x /= supVariable y
 
-Relevance:
+prop> (infVariable x == infVariable y) == (supVariable x == supVariable y)
 
-prop> compareFresh a (supVariable a) \/= Nothing
+Order:
 
-prop> isJust (nextVariable x a) ==> isJust (compareFresh a (nextVariable x a))
+prop> infVariable x <= x
 
-prop> isJust (nextVariable x a) ==> isJust (compareFresh x (nextVariable x a))
+prop> x <= supVariable x
+
+prop> infVariable x < supVariable x
 
 Idempotence:
 
-prop> supVariable a == supVariable (supVariable a)
+prop> infVariable x == infVariable (infVariable x)
 
-Dominance:
-
-prop> a \/= supVariable a ==> compareFresh a (supVariable a) == Just LT
+prop> supVariable x == supVariable (supVariable x)
 
 Monotonicity:
 
-prop> isJust (nextVariable x a) ==> compareFresh a (nextVariable x a) == Just LT
+prop> x < supVariable x ==> x < nextVariable x
 
-prop> isJust (nextVariable x a) ==> compareFresh x (nextVariable x a) == Just LT
+Bounding:
 
-Note: The monotonicity property of 'nextVariable' implies the relevance
-property.
+prop> x < supVariable x ==> infVariable x < nextVariable x
+
+prop> x < supVariable x ==> nextVariable x < supVariable x
 
  -}
 class Ord variable => FreshPartialOrd variable where
-    {- | @compareFresh@ defines a partial order on variables.
-
-    In the typical implementation of fresh name generation, the variable name
-    consists of a string (the base name) and a counter. Then, all variables with
-    the same base name are related, and their ordering is given by the counter.
-
-     -}
-    compareFresh :: variable -> variable -> Maybe Ordering
+    infVariable :: variable -> variable
 
     {- | @supVariable x@ is the greatest variable related to @x@.
 
@@ -90,63 +84,31 @@ class Ord variable => FreshPartialOrd variable where
      -}
     supVariable :: variable -> variable
 
-    {- | @nextVariable@ generates a fresh variable greater than a given bound.
-
-    The resulting variable, if defined, is /related/ to the /original variable/.
-    @nextVariable@ returns @'Nothing'@ unless:
-
-    * the /lower bound/ is related to the /original variable/, and
-    * the /original variable/ is not greater than the /lower bound/.
-
-    When @nextVariable@ returns a value (@'Just' _@), then the result is
-    strictly greater than both arguments.
-
+    {- | @nextVariable@ increments the counter attached to a variable.
      -}
-    nextVariable
-        :: variable  -- ^ lower bound
-        -> variable  -- ^ original variable
-        -> Maybe variable
-
-incrementVariable :: FreshPartialOrd variable => variable -> variable
-incrementVariable original =
-    case nextVariable original original of
-        Just incremented -> incremented
-        Nothing ->
-            -- This is impossible for any law-abiding instance of
-            -- FreshPartialOrd.
-            undefined
+    nextVariable :: variable -> variable
 
 instance FreshPartialOrd Variable where
-    compareFresh x y
-      | variableName x == variableName y = Just $ compare x y
-      | otherwise = Nothing
-    {-# INLINE compareFresh #-}
+    infVariable variable = variable { variableCounter = Nothing }
+    {-# INLINE infVariable #-}
 
     supVariable variable = variable { variableCounter = Just Sup }
     {-# INLINE supVariable #-}
 
-    nextVariable bound original = do
-        ordering <- compareFresh bound original
-        case ordering of { LT -> empty; _ -> pure () }
-        incrementCounter . resetIdLocation $ original
+    nextVariable =
+        Lens.over (field @"variableCounter") incrementCounter
+        . Lens.set (field @"variableName" . field @"idLocation") generated
       where
-        resetIdLocation =
-            Lens.set
-                (field @"variableName" . field @"idLocation")
-                AstLocationGeneratedVariable
-        incrementCounter =
-            field @"variableCounter" $ \_ ->
-                case variableCounter bound of
-                    Nothing -> pure $ Just (Element 0)
-                    Just (Element a) -> pure $ Just (Element (succ a))
-                    Just Sup ->
-                        -- Never rename (supVariable _) because it does not
-                        -- occur in any pattern.
-                        empty
+        generated = AstLocationGeneratedVariable
+        incrementCounter counter =
+            case counter of
+                Nothing          -> Just (Element 0)
+                Just (Element n) -> Just (Element (succ n))
+                Just Sup         -> illegalVariableCounter
     {-# INLINE nextVariable #-}
 
 instance FreshPartialOrd Concrete where
-    compareFresh = \case {}
+    infVariable = \case {}
     supVariable = \case {}
     nextVariable = \case {}
 
@@ -154,28 +116,26 @@ instance
     FreshPartialOrd variable
     => FreshPartialOrd (ElementVariable variable)
   where
-    compareFresh = on compareFresh getElementVariable
-    {-# INLINE compareFresh #-}
+    infVariable = Lens.over _Unwrapped infVariable
+    {-# INLINE infVariable #-}
 
-    supVariable = ElementVariable . supVariable . getElementVariable
+    supVariable = Lens.over _Unwrapped supVariable
     {-# INLINE supVariable #-}
 
-    nextVariable (ElementVariable bound) (ElementVariable original) =
-        ElementVariable <$> nextVariable bound original
+    nextVariable = Lens.over _Unwrapped nextVariable
     {-# INLINE nextVariable #-}
 
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (SetVariable variable)
   where
-    compareFresh = on compareFresh getSetVariable
-    {-# INLINE compareFresh #-}
+    infVariable = Lens.over _Unwrapped infVariable
+    {-# INLINE infVariable #-}
 
-    supVariable = SetVariable . supVariable . getSetVariable
+    supVariable = Lens.over _Unwrapped supVariable
     {-# INLINE supVariable #-}
 
-    nextVariable (SetVariable bound) (SetVariable original) =
-        SetVariable <$> nextVariable bound original
+    nextVariable = Lens.over _Unwrapped nextVariable
     {-# INLINE nextVariable #-}
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
@@ -194,18 +154,26 @@ class Ord variable => FreshVariable variable where
         -> variable      -- ^ variable to rename
         -> Maybe variable
     default refreshVariable
-        :: FreshPartialOrd variable
+        :: (FreshPartialOrd variable, SortedVariable variable)
         => Set variable
         -> variable
         -> Maybe variable
     refreshVariable avoiding original = do
-        largest <- Set.lookupLT (supVariable original) avoiding
-        nextVariable largest original
+        largest <- assignSort <$> Set.lookupLT (supVariable original) avoiding
+        Monad.guard (largest >= infVariable original)
+        pure (nextVariable largest)
+      where
+        originalSort = Lens.view lensVariableSort original
+        assignSort = Lens.set lensVariableSort originalSort
     {-# INLINE refreshVariable #-}
 
-instance FreshPartialOrd variable => FreshVariable (ElementVariable variable)
+instance
+    (FreshPartialOrd variable, SortedVariable variable)
+    => FreshVariable (ElementVariable variable)
 
-instance FreshPartialOrd variable => FreshVariable (SetVariable variable)
+instance
+    (FreshPartialOrd variable, SortedVariable variable)
+    => FreshVariable (SetVariable variable)
 
 instance FreshVariable Variable
 

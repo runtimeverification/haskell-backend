@@ -18,7 +18,7 @@ import Test.Tasty.Hedgehog
 import Test.Tasty.HUnit
 
 import Control.Monad
-    ( when
+    ( unless
     )
 import Data.Maybe
     ( fromJust
@@ -340,44 +340,46 @@ testFreshPartialOrd
     => Gen (Pair variable)
     -> [TestTree]
 testFreshPartialOrd gen =
-    [ testProperty "compareFresh agrees with compare" $ property $ do
-        Pair x y <- forAll gen
-        compareFresh x y === Just (compare x y)
-        compareFresh y x === Just (compare y x)
-    , testProperty "supVariable is relevant" $ property $ do
+    [ testProperty "exclusive bounds" $ property $ do
+        xy <- forAll gen
+        let Pair infX infY = infVariable <$> xy
+            Pair supX supY = supVariable <$> xy
+        annotateShow infX
+        annotateShow supX
+        annotateShow infY
+        annotateShow supY
+        (infX == infY) === (supX == supY)
+        infX /== supY
+        infY /== supX
+    , testProperty "lower and upper bound" $ property $ do
         Pair x _ <- forAll gen
-        compareFresh x (supVariable x) /== Nothing
-    , testProperty "supVariable is idempotent" $ property $ do
+        let inf = infVariable x
+            sup = supVariable x
+        annotateShow inf
+        annotateShow sup
+        Hedgehog.assert (inf <= x)
+        Hedgehog.assert (x <= sup)
+        Hedgehog.assert (inf < sup)
+    , testProperty "idempotence" $ property $ do
         Pair x _ <- forAll gen
-        let xSup = supVariable x
-            xSupSup = supVariable xSup
-        xSup === xSupSup
-    , testProperty "supVariable dominates other variables" $ property $ do
+        let inf1 = infVariable x
+            inf2 = infVariable inf1
+            sup1 = supVariable x
+            sup2 = supVariable sup1
+        inf1 === inf2
+        sup1 === sup2
+    , testProperty "nextVariable" $ property $ do
         Pair x _ <- forAll gen
-        let sup = supVariable x
-        when (x == sup) discard
-        compareFresh x sup === Just LT
-    , testProperty "nextVariable is relevant" $ property $ do
-        Pair x y <- forAll gen
-        when (x == supVariable x) discard
-        when (y == supVariable y) discard
-        case nextVariable y x of
-            Nothing ->
-                compareFresh y x === Just LT
-            Just x' -> do
-                annotateShow x'
-                compareFresh x x' /== Nothing
-    , testProperty "nextVariable is monotonic" $ property $ do
-        Pair x y <- forAll gen
-        when (x == supVariable x) discard
-        when (y == supVariable y) discard
-        case nextVariable y x of
-            Nothing ->
-                compareFresh y x === Just LT
-            Just x' -> do
-                annotateShow x'
-                compareFresh x x' === Just LT
-                compareFresh y x' === Just LT
+        let inf = infVariable x
+            sup = supVariable x
+            next = nextVariable x
+        unless (x < sup) discard
+        annotateShow inf
+        annotateShow sup
+        annotateShow next
+        Hedgehog.assert (inf < next)
+        Hedgehog.assert (x < next)
+        Hedgehog.assert (next < sup)
     ]
 
 test_FreshPartialOrd_Variable :: TestTree
@@ -402,10 +404,24 @@ test_FreshPartialOrd_UnifiedVariable =
 
 relatedVariableGen :: Gen (Pair Variable)
 relatedVariableGen = do
-    name <- idGen
-    Pair
-        <$> (Variable name <$> counterGen <*> sortGen)
-        <*> (Variable name <$> counterGen <*> sortGen)
+    Pair name1 name2 <-
+        Gen.choice
+            [ do { name <- idGen; return (Pair name name) }
+            , Pair <$> idGen <*> idGen
+            ]
+    Pair counter1 counter2 <-
+        Gen.choice
+            [ do { counter <- counterGen; return (Pair counter counter) }
+            , Pair <$> counterGen <*> counterGen
+            ]
+    Pair sort1 sort2 <-
+        Gen.choice
+            [ do { sort <- sortGen; return (Pair sort sort) }
+            , Pair <$> sortGen <*> sortGen
+            ]
+    let variable1 = Variable name1 counter1 sort1
+        variable2 = Variable name2 counter2 sort2
+    return (Pair variable1 variable2)
 
 counterGen :: MonadGen gen => gen (Maybe (Sup Natural))
 counterGen =

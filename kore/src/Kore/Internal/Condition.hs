@@ -148,7 +148,7 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    :: (Ord variable1, FreshPartialOrd variable2)
+    :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Condition variable1

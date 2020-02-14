@@ -82,6 +82,7 @@ import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
     , SetVariable
+    , SortedVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -161,7 +162,7 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        :: (Ord variable1, FreshPartialOrd variable2)
+        :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
         => (ElementVariable variable1 -> ElementVariable variable2)
         -> (SetVariable variable1 -> SetVariable variable2)
         -> rule variable1
@@ -274,7 +275,7 @@ targetRuleVariables sideCondition initial =
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
 unTargetRule
-    :: FreshPartialOrd variable
+    :: (FreshPartialOrd variable, SortedVariable variable)
     => UnifyingRule rule
     => rule (Target variable) -> rule variable
 unTargetRule = mapRuleVariables Target.unTargetElement Target.unTargetSet

@@ -84,27 +84,39 @@ instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse2 = foldMapVariable unparse2
 
 instance
+    SortedVariable variable
+    => SortedVariable (UnifiedVariable variable)
+  where
+    lensVariableSort f =
+        \case
+            ElemVar elemVar -> ElemVar <$> lensVariableSort f elemVar
+            SetVar setVar -> SetVar <$> lensVariableSort f setVar
+    {-# INLINE lensVariableSort #-}
+
+instance
     FreshPartialOrd variable => FreshPartialOrd (UnifiedVariable variable)
   where
-    compareFresh (ElemVar elemVar1) (ElemVar elemVar2) =
-        compareFresh elemVar1 elemVar2
-    compareFresh (SetVar elemVar1) (SetVar elemVar2) =
-        compareFresh elemVar1 elemVar2
-    compareFresh _ _ = Nothing
+    infVariable =
+        \case
+            ElemVar elemVar -> ElemVar (infVariable elemVar)
+            SetVar setVar -> SetVar (infVariable setVar)
+    {-# INLINE infVariable #-}
 
-    supVariable (ElemVar elemVar) = ElemVar (supVariable elemVar)
-    supVariable (SetVar setVar) = SetVar (supVariable setVar)
+    supVariable =
+        \case
+            ElemVar elemVar -> ElemVar (supVariable elemVar)
+            SetVar setVar -> SetVar (supVariable setVar)
+    {-# INLINE supVariable #-}
 
-    nextVariable (ElemVar bound) (ElemVar original) =
-        ElemVar <$> nextVariable bound original
-    nextVariable (SetVar bound) (SetVar original) =
-        SetVar <$> nextVariable bound original
-    nextVariable _ _ =
-        -- There is never a need to rename a SetVariable to avoid an
-        -- ElementVariable, and vice versa.
-        empty
+    nextVariable =
+        \case
+            ElemVar elemVar -> ElemVar (nextVariable elemVar)
+            SetVar setVar -> SetVar (nextVariable setVar)
+    {-# INLINE nextVariable #-}
 
-instance FreshPartialOrd variable => FreshVariable (UnifiedVariable variable)
+instance
+    (FreshPartialOrd variable, SortedVariable variable)
+    => FreshVariable (UnifiedVariable variable)
 
 isElemVar :: UnifiedVariable variable -> Bool
 isElemVar (ElemVar _) = True

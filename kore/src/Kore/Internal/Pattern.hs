@@ -63,6 +63,7 @@ import Kore.Internal.TermLike
     , InternalVariable
     , SetVariable
     , Sort
+    , SortedVariable
     , TermLike
     , mkAnd
     , mkBottom
@@ -123,7 +124,7 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    :: (Ord variableFrom, FreshPartialOrd variableTo)
+    :: (Ord variableFrom, FreshPartialOrd variableTo, SortedVariable variableTo)
     => (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Pattern variableFrom

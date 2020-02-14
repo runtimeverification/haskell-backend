@@ -593,7 +593,7 @@ See also: 'traverseVariables'
  -}
 mapVariables
     :: forall variable1 variable2
-    .  (Ord variable1, FreshPartialOrd variable2)
+    .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> TermLike variable1
@@ -669,7 +669,7 @@ See also: 'mapVariables'
  -}
 traverseVariables
     :: forall variable1 variable2 m
-    .  (Ord variable1, FreshPartialOrd variable2)
+    .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     => Monad m
     => (ElementVariable variable1 -> m (ElementVariable variable2))
     -> (SetVariable variable1 -> m (SetVariable variable2))
@@ -762,7 +762,7 @@ sequenceAdjunct gsequence =
 
 renameElementBinder
     ::  Monad m
-    =>  (Ord variable1, FreshPartialOrd variable2)
+    =>  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     =>  (ElementVariable variable1 -> m (ElementVariable variable2))
     ->  Set.Set (UnifiedVariable variable2)
     ->  Binder (ElementVariable variable1)
@@ -788,7 +788,7 @@ renameElementBinder trElemVar avoiding binder = do
 
 renameSetBinder
     ::  Monad m
-    =>  (Ord variable1, FreshPartialOrd variable2)
+    =>  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     =>  (SetVariable variable1 -> m (SetVariable variable2))
     ->  Set.Set (UnifiedVariable variable2)
     ->  Binder (SetVariable variable1)
@@ -898,7 +898,7 @@ externalizeFreshVariables termLike =
         head
         $ dropWhile wouldCapture
         $ externalize
-        <$> iterate Fresh.incrementVariable variable
+        <$> iterate Fresh.nextVariable variable
       where
         wouldCapture var = isFreeVariable (mk var) avoiding
         externalize = fmap Variable.externalizeFreshVariable

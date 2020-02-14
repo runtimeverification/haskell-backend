@@ -607,7 +607,7 @@ Returns 'Nothing' if the variable name is already globally-unique.
 
  -}
 liftVariable
-    :: FreshPartialOrd variable
+    :: (FreshPartialOrd variable, SortedVariable variable)
     => MonadState (MatcherState variable) matcher
     => UnifiedVariable variable
     -> matcher (Maybe (UnifiedVariable variable))

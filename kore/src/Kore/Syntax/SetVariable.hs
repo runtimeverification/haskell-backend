@@ -13,11 +13,17 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
+import Data.Generics.Wrapped
+    ( _Unwrapped
+    )
 import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Syntax.Variable
+    ( SortedVariable (..)
+    )
 import Kore.Unparser
 
 -- | Applicative-Kore set variables
@@ -40,3 +46,9 @@ instance (Debug variable, Diff variable) => Diff (SetVariable variable)
 instance Unparse variable => Unparse (SetVariable variable) where
     unparse = unparse . getSetVariable
     unparse2 = unparse2 . getSetVariable
+
+instance
+    SortedVariable variable => SortedVariable (SetVariable variable)
+  where
+    lensVariableSort = _Unwrapped . lensVariableSort
+    {-# INLINE lensVariableSort #-}

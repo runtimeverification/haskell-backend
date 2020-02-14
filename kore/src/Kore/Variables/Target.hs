@@ -146,13 +146,22 @@ instance From variable1 variable2 => From (Target variable1) variable2 where
     {-# INLINE from #-}
 
 instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
-    compareFresh = on compareFresh unTarget
-    {-# INLINE compareFresh #-}
+    infVariable =
+        \case
+            Target var    -> Target (infVariable var)
+            NonTarget var -> NonTarget (infVariable var)
+    {-# INLINE infVariable #-}
 
-    supVariable = fmap supVariable
+    supVariable =
+        \case
+            Target var    -> Target (supVariable var)
+            NonTarget var -> NonTarget (supVariable var)
     {-# INLINE supVariable #-}
 
-    nextVariable (unTarget -> bound) = traverse (nextVariable bound)
+    nextVariable =
+        \case
+            Target var    -> Target (nextVariable var)
+            NonTarget var -> NonTarget (nextVariable var)
     {-# INLINE nextVariable #-}
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.

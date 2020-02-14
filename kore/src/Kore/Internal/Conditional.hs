@@ -69,6 +69,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , Sort
+    , SortedVariable
     , TermLike
     , termLikeSort
     )
@@ -413,7 +414,7 @@ isPredicate Conditional {term} = isTop term
 
 -}
 mapVariables
-    :: (Ord variableFrom, FreshPartialOrd variableTo)
+    :: (Ord variableFrom, FreshPartialOrd variableTo, SortedVariable variableTo)
     => ((ElementVariable variableFrom -> ElementVariable variableTo) -> (SetVariable variableFrom -> SetVariable variableTo) -> termFrom -> termTo)
     -> (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)

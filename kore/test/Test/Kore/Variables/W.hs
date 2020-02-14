@@ -53,18 +53,16 @@ instance From W Variable where
 instance VariableName W
 
 instance FreshPartialOrd W where
-    compareFresh (W a an) (W b bn)
-      | a == b = Just (compare an bn)
-      | otherwise = Nothing
+    infVariable w = w { counter = Nothing }
     supVariable w = w { counter = Just Sup }
-    nextVariable W { counter = bound } =
-        field @"counter" (increment . max bound)
+    nextVariable =
+        Lens.over (field @"counter") increment
       where
         increment =
             \case
-                Nothing -> pure $ Just (Element 0)
-                Just (Element a) -> pure $ Just (Element (succ a))
-                Just Sup -> empty
+                Nothing -> Just (Element 0)
+                Just (Element a) -> Just (Element (succ a))
+                Just Sup -> illegalVariableCounter
 
 instance FreshVariable W
 
