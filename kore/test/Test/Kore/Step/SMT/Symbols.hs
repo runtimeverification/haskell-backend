@@ -183,13 +183,7 @@ test_sortDeclaration =
                 )
             `with` constructorAxiom "S" [("C", [])]
         )
-        [ isSatisfiable
-            [ SMT.assert (atom "D" `eq` atom "D")
-            ]
-        , isSatisfiable
-            [ "a" `ofType` encodeName "S"
-            ]
-        , isSatisfiableWithTools
+        [ isSatisfiableWithTools
             [ encodeAndAssertPredicate $
                 makeEqualsPredicate_
                     (mkElemVar x)
