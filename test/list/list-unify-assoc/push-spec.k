@@ -10,6 +10,6 @@ module PUSH-SPEC
 
   rule
     <k> push(X) => . ... </k>
-    <stack> _ => _ </stack>
+    <stack> _ => ?_ </stack>
 
 endmodule
