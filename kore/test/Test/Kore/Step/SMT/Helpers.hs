@@ -120,7 +120,11 @@ isSatisfiableWithTools
     -> SmtPrelude
     -> TestTree
 isSatisfiableWithTools tests tools prelude =
-    assertSmtTestCase "isSatisfiable" SMT.Sat (fmap (\t -> t tools) tests ) prelude
+    assertSmtTestCase
+        "isSatisfiable"
+        SMT.Sat
+        (fmap (\t -> t tools) tests )
+        prelude
 
 isNotSatisfiable
     :: HasCallStack
@@ -137,7 +141,11 @@ isNotSatisfiableWithTools
     -> SmtPrelude
     -> TestTree
 isNotSatisfiableWithTools tests tools prelude =
-    assertSmtTestCase "isNotSatisfiable" SMT.Unsat (fmap (\t -> t tools) tests ) prelude
+    assertSmtTestCase
+        "isNotSatisfiable"
+        SMT.Unsat
+        (fmap (\t -> t tools) tests )
+        prelude
 
 isError
     :: HasCallStack
