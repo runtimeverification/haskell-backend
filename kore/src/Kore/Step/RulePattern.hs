@@ -433,6 +433,13 @@ instance
     unparse = unparse . rewriteRuleToTerm
     unparse2 = unparse2 . rewriteRuleToTerm
 
+instance
+    InternalVariable variable
+    => HasFreeVariables (RewriteRule variable) variable
+  where
+    freeVariables (RewriteRule rule) = freeVariables rule
+    {-# INLINE freeVariables #-}
+
 {-  | Implication-based pattern.
 -}
 newtype ImplicationRule variable =
@@ -783,3 +790,18 @@ instance UnifyingRule RulePattern where
             } = rule1
         mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
         mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
+
+instance UnifyingRule RewriteRule where
+    matchingPattern (RewriteRule rule) = matchingPattern rule
+    {-# INLINE matchingPattern #-}
+
+    precondition (RewriteRule rule) = precondition rule
+    {-# INLINE precondition #-}
+
+    refreshRule avoiding (RewriteRule rule) =
+        RewriteRule <$> refreshRule avoiding rule
+    {-# INLINE refreshRule #-}
+
+    mapRuleVariables mapElemVar mapSetVar (RewriteRule rule) =
+        RewriteRule (mapRuleVariables mapElemVar mapSetVar rule)
+    {-# INLINE mapRuleVariables #-}
