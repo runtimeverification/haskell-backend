@@ -13,11 +13,15 @@ module Kore.Syntax.Variable
     , isOriginalVariable
     , illegalVariableCounter
     , externalizeFreshVariable
+    -- * Variable names
     , VariableName
     , toVariable
     , fromVariable
+    -- * Variable sorts
     , SortedVariable (..)
+    , sortedVariableSort
     , unparse2SortedVariable
+    -- * Concrete
     , Concrete
     ) where
 
@@ -25,6 +29,13 @@ import Prelude.Kore
 
 import Control.DeepSeq
     ( NFData (..)
+    )
+import Control.Lens
+    ( Lens'
+    )
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
     )
 import Data.Hashable
 import qualified Data.Text as Text
@@ -151,11 +162,15 @@ toVariable = from @variable @Variable
 
  -}
 class SortedVariable variable where
-    -- | The known 'Sort' of the given variable.
-    sortedVariableSort :: variable -> Sort
+    lensVariableSort :: Lens' variable Sort
+
+-- | The known 'Sort' of the given variable.
+sortedVariableSort :: SortedVariable variable => variable -> Sort
+sortedVariableSort = Lens.view lensVariableSort
 
 instance SortedVariable Variable where
-    sortedVariableSort = variableSort
+    lensVariableSort = field @"variableSort"
+    {-# INLINE lensVariableSort #-}
 
 {- | Unparse any 'SortedVariable' in an Applicative Kore binder.
 
@@ -200,7 +215,8 @@ instance Unparse Concrete where
     unparse2 = \case {}
 
 instance SortedVariable Concrete where
-    sortedVariableSort = \case {}
+    lensVariableSort _ = \case {}
+    {-# INLINE lensVariableSort #-}
 
 instance VariableName Concrete
 

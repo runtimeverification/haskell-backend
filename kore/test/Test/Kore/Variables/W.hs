@@ -5,6 +5,7 @@ module Test.Kore.Variables.W
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field
     )
@@ -40,7 +41,8 @@ instance Unparse W where
     unparse2 = undefined
 
 instance SortedVariable W where
-    sortedVariableSort _ = sortVariable
+    lensVariableSort = Lens.lens (const sortVariable) (\w _ -> w)
+    {-# INLINE lensVariableSort #-}
 
 instance From Variable W where
     from = error "Not implemented"

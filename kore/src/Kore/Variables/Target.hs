@@ -129,8 +129,11 @@ instance
     SortedVariable variable
     => SortedVariable (Target variable)
   where
-    sortedVariableSort (Target variable) = sortedVariableSort variable
-    sortedVariableSort (NonTarget variable) = sortedVariableSort variable
+    lensVariableSort f =
+        \case
+            Target variable -> Target <$> lensVariableSort f variable
+            NonTarget variable -> Target <$> lensVariableSort f variable
+    {-# INLINE lensVariableSort #-}
 
 instance VariableName variable => VariableName (Target variable)
 

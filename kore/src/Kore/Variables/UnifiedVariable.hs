@@ -54,6 +54,7 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
     ( SortedVariable (..)
+    , sortedVariableSort
     )
 import Kore.Unparser
 import Kore.Variables.Fresh
