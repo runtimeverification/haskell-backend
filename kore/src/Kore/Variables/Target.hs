@@ -46,9 +46,9 @@ import Kore.Variables.UnifiedVariable
 
 {- | Distinguish variables by their source.
 
-'Target' variables always compare 'LT' 'NonTarget' variables, so that the
-unification procedure prefers to generate substitutions for 'Target' variables
-instead of 'NonTarget' variables.
+'Target' variables always compare 'LT' 'NonTarget' variables under
+'SubstitutionOrd', so that the unification procedure prefers to generate
+substitutions for 'Target' variables instead of 'NonTarget' variables.
 
  -}
 data Target variable
