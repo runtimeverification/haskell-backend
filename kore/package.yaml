@@ -31,6 +31,7 @@ flags:
 
 dependencies:
   - base >=4.7
+  - adjunctions >=4.4
   - aeson >=1.4
   - array >=0.5
   - async >=2.2

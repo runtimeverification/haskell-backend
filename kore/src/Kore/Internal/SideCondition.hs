@@ -36,21 +36,21 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
-    ( fromText
-    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.Variable
-    ( InternalVariable
+    ( ElementVariable
+    , InternalVariable
+    , SetVariable
+    , Variable
+    , toVariable
     )
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
     ( Unparse (..)
-    , unparseToText
     )
 import qualified Pretty
 import qualified SQL
@@ -155,11 +155,12 @@ toRepresentation SideCondition { representation } = representation
 
 mapVariables
     :: (Ord variable1, InternalVariable variable2)
-    => (variable1 -> variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables mapper condition@(SideCondition _ _) =
-    fromCondition (Condition.mapVariables mapper assumedTrue)
+mapVariables mapElemVar mapSetVar condition@(SideCondition _ _) =
+    fromCondition (Condition.mapVariables mapElemVar mapSetVar assumedTrue)
   where
     SideCondition { assumedTrue } = condition
 
@@ -172,4 +173,5 @@ toRepresentationCondition
     => Condition variable
     -> SideCondition.Representation
 toRepresentationCondition condition =
-    SideCondition.Representation.fromText $ unparseToText condition
+    from @(Condition Variable)
+    $ Condition.mapVariables (fmap toVariable) (fmap toVariable) condition

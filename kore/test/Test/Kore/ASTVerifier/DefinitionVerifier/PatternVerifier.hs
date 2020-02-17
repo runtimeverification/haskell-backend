@@ -10,7 +10,6 @@ import Test.Tasty
     )
 import Test.Tasty.HUnit
 
-import Data.Function
 import qualified Data.List as List
 import qualified Data.Text as Text
 

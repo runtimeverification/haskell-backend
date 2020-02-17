@@ -39,6 +39,7 @@ import qualified Kore.Attribute.Constructor as Attribute.Constructor
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , freeVariables
+    , nullFreeVariables
     )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
@@ -872,7 +873,7 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
     let variableKeys :: [TermLike Variable]
         variableKeys =
             filter
-                (not . null . freeVariables')
+                (not . nullFreeVariables . freeVariables')
                 (catMaybes (Set.toList mixedKeys))
     maybeVariablePairs <- mapM variablePair variableKeys
     let variablePairs :: [Domain.Element normalized (TermLike Variable)]

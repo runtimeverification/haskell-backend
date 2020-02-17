@@ -85,22 +85,21 @@ import Kore.Step.Step
     , checkSubstitutionCoverage
     , matchingPattern
     , precondition
-    , refreshRule
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
     , wouldNarrowWith
     )
 import qualified Kore.Step.Step as EqualityPattern
-    ( toAxiomVariables
+    ( targetRuleVariables
     )
 import Kore.Unification.UnifierT
     ( UnifierT
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
-    ( MonadUnify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
     ( gather
@@ -156,11 +155,14 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
 
     unwrappedConfig :: Pattern variable
     unwrappedConfig =
-        Pattern.mapVariables Target.unwrapVariable configWithNewSubst
+        Pattern.mapVariables
+            Target.unTargetElement
+            Target.unTargetSet
+            configWithNewSubst
 
     targetVariables :: [ElementVariable variable]
     targetVariables =
-        map (fmap Target.unwrapVariable)
+        map Target.unTargetElement
         . filter (Target.isTarget . getElementVariable)
         . Pattern.freeElementVariables
         $ configWithNewSubst
@@ -183,7 +185,7 @@ See also: 'applyInitialConditions'
  -}
 finalizeAppliedRule
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ Top level condition
@@ -217,7 +219,7 @@ finalizeAppliedRule sideCondition renamedRule appliedConditions =
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeRule
-    ::  ( SimplifierVariable variable
+    ::  ( InternalVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -255,7 +257,7 @@ implied by the configuration predicate.
 -}
 recoveryFunctionLikeResults
     :: forall variable simplifier
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => Simplifier.MonadSimplify simplifier
     => Pattern (Target variable)
     -> Results EqualityPattern variable
@@ -321,7 +323,7 @@ recoveryFunctionLikeResults initial results = do
 
 finalizeRulesSequence
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition (Target variable)
     -> Pattern (Target variable)
@@ -339,7 +341,8 @@ finalizeRulesSequence sideCondition initial unifiedRules
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
+            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
+            <$> remainders'
         }
   where
     initialTerm = Conditional.term initial
@@ -369,7 +372,7 @@ See also: 'applyRewriteRule'
  -}
 applyRulesSequence
     ::  forall unifier variable
-    .   ( SimplifierVariable variable
+    .   ( InternalVariable variable
         , MonadUnify unifier
         )
     => SideCondition (Target variable)
@@ -378,18 +381,15 @@ applyRulesSequence
     -> [EqualityPattern variable]
     -- ^ Rewrite rules
     -> unifier (Results EqualityPattern variable)
-applyRulesSequence
-    sideCondition
-    initial
-    -- Wrap the rules so that unification prefers to substitute
-    -- axiom variables.
-    (map EqualityPattern.toAxiomVariables -> rules)
-  = matchRules sideCondition initial rules
+applyRulesSequence sideCondition initial rules =
+    matchRules sideCondition initial rules'
     >>= finalizeRulesSequence sideCondition initial
+  where
+    rules' = EqualityPattern.targetRuleVariables sideCondition initial <$> rules
 
 -- | Matches a list a rules against a configuration. See 'matchRule'.
 matchRules
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => SideCondition (Target variable)
@@ -417,7 +417,7 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 matchRule
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => SideCondition variable
@@ -429,22 +429,15 @@ matchRule
     -> unifier (UnifiedRule variable (rule variable))
 matchRule sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-    -- Rename free axiom variables to avoid free variables from the initial
-    -- configuration.
-    let
-        configVariables = TermLike.freeVariables initial
-        (_, rule') = refreshRule configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
-    let
-        ruleLeft = matchingPattern rule'
+    let ruleLeft = matchingPattern rule
     unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
-    let
-        requires = precondition rule'
+    let requires = precondition rule
     unification' <-
         evaluateRequires sideCondition initialCondition unification requires
-    return (rule' `Conditional.withCondition` unification')
+    return (rule `Conditional.withCondition` unification')
   where
     unifyPatterns = ignoreUnificationErrors matchIncremental
 
@@ -462,7 +455,7 @@ matchRule sideCondition initial rule = do
  -}
 evaluateRequires
     :: forall unifier variable
-    .  SimplifierVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => SideCondition variable
     -- ^ the side condition

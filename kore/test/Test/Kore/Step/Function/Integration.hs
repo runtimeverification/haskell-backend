@@ -103,7 +103,6 @@ import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
 import Kore.Unparser
-import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -1348,13 +1347,15 @@ appliedMockEvaluator result =
         }
 
 mapVariables
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        )
+    :: forall variable
+    .  (FreshVariable variable, VariableName variable)
     => Pattern Variable
     -> Pattern variable
 mapVariables =
-    Pattern.mapVariables $ \v ->
+    Pattern.mapVariables worker worker
+  where
+    worker :: Functor f => f Variable -> f variable
+    worker = fmap $ \v ->
         fromVariable v { variableCounter = Just (Element 1) }
 
 mockEvaluator

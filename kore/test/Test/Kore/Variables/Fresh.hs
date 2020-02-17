@@ -26,10 +26,9 @@ import Kore.Syntax.SetVariable
     )
 import Kore.Variables.Fresh
 import Kore.Variables.Target
-    ( Target (..)
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
+    , mapUnifiedVariable
     )
 
 import Test.Kore
@@ -180,8 +179,7 @@ test_refreshVariable =
                 (elemTargetOriginal < fresh0 elemTargetOriginal)
 
         , testCase "refreshVariable - avoid original (ignore Target constructor)" $
-            assertBool
-                "Expected fresh variable"
+            assertBool "Expected fresh variable"
                 (elemTargetOriginal < fresh avoidET elemTargetOriginal)
 
         , testCase "refreshVariable - avoid fresh" $
@@ -202,8 +200,7 @@ test_refreshVariable =
                 (setNonTargetOriginal < fresh0 setNonTargetOriginal)
 
         , testCase "refreshVariable - avoid original (ignore Target constructor)" $
-            assertBool
-                "Expected fresh variable"
+            assertBool "Expected fresh variable"
                 (setNonTargetOriginal < fresh avoidST setNonTargetOriginal)
 
         , testCase "refreshVariable - avoid fresh" $
@@ -280,18 +277,22 @@ test_refreshVariable =
     avoidT = Set.singleton nonTargetOriginal
 
     -- ElementVariable (Target Variable)
-    elemTargetOriginal    = Target <$> elemOriginal
-    elemNonTargetOriginal = NonTarget <$> elemOriginal
+    elemTargetOriginal    = mkElementTarget elemOriginal
+    elemNonTargetOriginal = mkElementNonTarget elemOriginal
     avoidET = Set.singleton elemNonTargetOriginal
     -- SetVariable (Target Variable)
-    setTargetOriginal     = Target <$> setOriginal
-    setNonTargetOriginal  = NonTarget <$> setOriginal
+    setTargetOriginal     = mkSetTarget setOriginal
+    setNonTargetOriginal  = mkSetNonTarget setOriginal
     avoidST = Set.singleton setTargetOriginal
 
+    unifiedTarget = mapUnifiedVariable mkElementTarget mkSetTarget
+
+    unifiedNonTarget = mapUnifiedVariable mkElementNonTarget mkSetNonTarget
+
     -- UnifiedVariable (Target Variable)
-    unifiedElemTargetOriginal    = Target <$> unifiedElemOriginal
-    unifiedElemNonTargetOriginal = NonTarget <$> unifiedElemOriginal
-    unifiedSetTargetOriginal     = Target <$> unifiedSetOriginal
-    unifiedSetNonTargetOriginal  = NonTarget <$> unifiedSetOriginal
+    unifiedElemTargetOriginal    = unifiedTarget unifiedElemOriginal
+    unifiedElemNonTargetOriginal = unifiedNonTarget unifiedElemOriginal
+    unifiedSetTargetOriginal     = unifiedTarget  unifiedSetOriginal
+    unifiedSetNonTargetOriginal  = unifiedNonTarget unifiedSetOriginal
     avoidUET = Set.singleton unifiedElemNonTargetOriginal
     avoidUST = Set.singleton unifiedSetTargetOriginal

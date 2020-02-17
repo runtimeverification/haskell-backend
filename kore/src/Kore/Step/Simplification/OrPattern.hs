@@ -58,8 +58,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , top
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     , simplifyCondition
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -71,7 +71,7 @@ import Kore.TopBottom
 
 simplifyConditionsWithSmt
     ::  forall variable simplifier
-    .   (MonadSimplify simplifier, SimplifierVariable variable)
+    .   (MonadSimplify simplifier, InternalVariable variable)
     => SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)

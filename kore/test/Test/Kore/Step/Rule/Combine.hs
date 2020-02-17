@@ -238,6 +238,17 @@ test_combineRules =
             ]
 
         assertEqual "" expected actual
+    , testCase "renameRulesVariables" $ do
+        let original =
+                [ Mock.functionalConstr10 x `rewritesTo` x
+                , Mock.functionalConstr11 x `rewritesTo` x
+                ]
+            expected =
+                [ Mock.functionalConstr10 x `rewritesTo` x
+                , Mock.functionalConstr11 x0 `rewritesTo` x0
+                ]
+            actual = renameRulesVariables original
+        assertEqual "" expected actual
     , testCase "Renames variables" $ do
         let expected =
                 [   Mock.functionalConstr10 (Mock.functionalConstr11 x0)

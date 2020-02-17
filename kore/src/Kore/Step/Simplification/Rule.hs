@@ -42,8 +42,8 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 
@@ -53,14 +53,14 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyFunctionAxioms
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => Map identifier [EqualityRule variable]
     -> simplifier (Map identifier [EqualityRule variable])
 simplifyFunctionAxioms =
     (traverse . traverse) simplifyEqualityRule
 
 simplifyEqualityRule
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => EqualityRule variable
     -> simplifier (EqualityRule variable)
 simplifyEqualityRule (EqualityRule rule) =
@@ -73,7 +73,7 @@ narrowly-defined criteria.
 
  -}
 simplifyEqualityPattern
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => EqualityPattern variable
     -> simplifier (EqualityPattern variable)
 simplifyEqualityPattern rule = do
@@ -113,7 +113,7 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyRewriteRule
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => RewriteRule variable
     -> simplifier (RewriteRule variable)
 simplifyRewriteRule (RewriteRule rule) =
@@ -126,7 +126,7 @@ narrowly-defined criteria.
 
  -}
 simplifyRulePattern
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => RulePattern variable
     -> simplifier (RulePattern variable)
 simplifyRulePattern rule = do
@@ -166,7 +166,7 @@ simplifyRulePattern rule = do
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> simplifier (OrPattern variable)
 simplifyPattern termLike =

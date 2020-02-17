@@ -52,9 +52,6 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
 import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
@@ -73,7 +70,7 @@ x = f(x) or something equivalent).
 -}
 normalizeSubstitution
     :: forall variable
-    .  SubstitutionVariable variable
+    .  InternalVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> Either SubstitutionError (Condition variable)
 normalizeSubstitution substitution =
@@ -101,7 +98,7 @@ constructor cycles with element variables.
  -}
 normalize
     ::  forall variable
-    .   SubstitutionVariable variable
+    .   InternalVariable variable
     =>  Map (UnifiedVariable variable) (TermLike variable)
     -- ^ De-duplicated substitution
     ->  Maybe (Normalization variable)
@@ -210,7 +207,7 @@ Every substitution must be satisfiable, see 'isSatisfiableSubstitution'.
  -}
 backSubstitute
     :: forall variable
-    .  SubstitutionVariable variable
+    .  InternalVariable variable
     => UnwrappedSubstitution variable
     -- ^ Topologically-sorted substitution
     -> UnwrappedSubstitution variable

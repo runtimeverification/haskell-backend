@@ -19,6 +19,7 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -533,7 +534,9 @@ test_unification =
         (assertEqual ""
             [(ElemVar $ ElementVariable $ W "1", war' "2")]
             (Substitution.unwrap
-                . Substitution.mapVariables showVar
+                . Substitution.mapVariables
+                    (fmap showVar)
+                    (fmap showVar)
                 . Substitution.wrap
                 $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
             )
@@ -680,12 +683,29 @@ instance Diff V
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVar
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
+
+instance From Variable V where
+    from = error "Not implemented"
+
+instance From V Variable where
+    from = error "Not implemented"
+
+instance VariableName V
 
 instance Unparse V where
     unparse = error "Not implemented"
     unparse2 = error "Not implemented"
+
+instance FreshVariable V where
+    refreshVariable avoiding v@(V name)
+      | Set.notMember v avoiding = Nothing
+      | otherwise =
+        Just ((head . dropWhile (flip Set.member avoiding)) (V <$> names' ))
+      where
+        names' = iterate (+ 1) name
+
+instance SubstitutionOrd V where
+    compareSubstitution = compare
 
 newtype W = W String
     deriving (Eq, GHC.Generic, Ord, Show)
@@ -700,12 +720,29 @@ instance Diff W
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVar
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
+
+instance From Variable W where
+    from = error "Not implemented"
+
+instance From W Variable where
+    from = error "Not implemented"
+
+instance VariableName W
 
 instance Unparse W where
     unparse = error "Not implemented"
     unparse2 = error "Not implemented"
+
+instance FreshVariable W where
+    refreshVariable avoiding w@(W name)
+      | Set.notMember w avoiding = Nothing
+      | otherwise =
+        Just ((head . dropWhile (flip Set.member avoiding)) (W <$> names' ))
+      where
+        names' = iterate (<> "\'") name
+
+instance SubstitutionOrd W where
+    compareSubstitution = compare
 
 showVar :: V -> W
 showVar (V i) = W (show i)

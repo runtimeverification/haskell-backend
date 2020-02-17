@@ -19,12 +19,9 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
-import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    )
 
 mockSimplifier
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockSimplifier values =
@@ -32,7 +29,7 @@ mockSimplifier values =
         $ const $ mockSimplifierHelper Pattern.fromTermLike values
 
 mockConditionSimplifier
-    :: SimplifierVariable variable
+    :: InternalVariable variable
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockConditionSimplifier values =
@@ -47,8 +44,8 @@ mockConditionSimplifier values =
         values
 
 mockSimplifierHelper
-    ::  ( SimplifierVariable variable0
-        , SimplifierVariable variable
+    ::  ( InternalVariable variable0
+        , InternalVariable variable
         , MonadSimplify m
         )
     => (TermLike variable -> Pattern variable)
@@ -76,22 +73,25 @@ mockSimplifierHelper
         unevaluatedPatt
 
 convertTermLikeVariables
-    ::  ( Ord variable0
-        , SortedVariable variable
-        , SortedVariable variable0
+    ::  ( VariableName variable
+        , VariableName variable0
+        , FreshVariable variable0
         )
     => TermLike variable
     -> TermLike variable0
 convertTermLikeVariables =
-    TermLike.mapVariables (fromVariable . toVariable)
+    TermLike.mapVariables
+        (fmap $ fromVariable . toVariable)
+        (fmap $ fromVariable . toVariable)
 
 convertPatternVariables
-    ::  ( Ord variable
-        , Ord variable0
-        , SortedVariable variable
-        , SortedVariable variable0
+    ::  ( VariableName variable
+        , VariableName variable0
+        , FreshVariable variable0
         )
     => Pattern variable
     -> Pattern variable0
 convertPatternVariables =
-    Pattern.mapVariables (fromVariable . toVariable)
+    Pattern.mapVariables
+        (fmap $ fromVariable . toVariable)
+        (fmap $ fromVariable . toVariable)

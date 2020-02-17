@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
     , HasFreeVariables (..)
+    , nullFreeVariables
     , freeVariable
     , isFreeVariable
     , bindVariable
@@ -31,13 +32,13 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Syntax.ElementVariable
+import Kore.Syntax.SetVariable
 import Kore.Variables.UnifiedVariable
 
 newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Set (UnifiedVariable variable) }
     deriving GHC.Generic
     deriving (Eq, Show)
-    deriving Foldable
     deriving (Semigroup, Monoid)
 
 instance SOP.Generic (FreeVariables variable)
@@ -58,6 +59,10 @@ instance Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
+
+nullFreeVariables :: FreeVariables variable -> Bool
+nullFreeVariables = Set.null . getFreeVariables
+{-# INLINE nullFreeVariables #-}
 
 bindVariable
     :: Ord variable
@@ -81,19 +86,23 @@ freeVariable variable = FreeVariables (Set.singleton variable)
 
 mapFreeVariables
     :: Ord variable2
-    => (variable1 -> variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
     -> FreeVariables variable1 -> FreeVariables variable2
-mapFreeVariables mapping (FreeVariables freeVars) =
-    FreeVariables (Set.map (fmap mapping) freeVars)
+mapFreeVariables mapElemVar mapSetVar (FreeVariables freeVars) =
+    FreeVariables (Set.map (mapUnifiedVariable mapElemVar mapSetVar) freeVars)
 {-# INLINE mapFreeVariables #-}
 
 traverseFreeVariables
     :: (Applicative f, Ord variable2)
-    => (variable1 -> f variable2)
+    => (ElementVariable variable1 -> f (ElementVariable variable2))
+    -> (SetVariable variable1 -> f (SetVariable variable2))
     -> FreeVariables variable1 -> f (FreeVariables variable2)
-traverseFreeVariables traversing (FreeVariables freeVars) =
+traverseFreeVariables traverseElemVar traverseSetVar (FreeVariables freeVars) =
     FreeVariables . Set.fromList
-    <$> Traversable.traverse (traverse traversing) (Set.toList freeVars)
+    <$> Traversable.traverse traversal (Set.toList freeVars)
+  where
+    traversal = traverseUnifiedVariable traverseElemVar traverseSetVar
 {-# INLINE traverseFreeVariables #-}
 
 {- | Extracts the list of free element variables
@@ -101,6 +110,9 @@ traverseFreeVariables traversing (FreeVariables freeVars) =
 getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
 getFreeElementVariables =
     mapMaybe extractElementVariable . Set.toList . getFreeVariables
+
+-- TODO (thomas.tuegel): Use an associated type family with HasFreeVariables to
+-- fix type inference.
 
 -- | Class for extracting the free variables of a pattern, term, rule, ...
 class HasFreeVariables pat variable where

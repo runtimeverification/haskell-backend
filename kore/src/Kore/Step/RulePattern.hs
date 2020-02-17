@@ -108,9 +108,6 @@ import Kore.Sort
 import Kore.Step.Step
     ( UnifyingRule (..)
     )
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( AstLocation (..)
@@ -160,7 +157,7 @@ renaming them (if needed) to avoid clashing with the given free variables.
 -}
 topExistsToImplicitForall
     :: forall variable
-    .  SubstitutionVariable variable
+    .  InternalVariable variable
     => FreeVariables variable
     -> RHS variable
     -> Pattern variable
@@ -341,7 +338,7 @@ isFreeOf rule =
 {- | Apply the substitution to the right-hand-side of a rule.
  -}
 rhsSubstitute
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Map (UnifiedVariable variable) (TermLike.TermLike variable)
     -> RHS variable
     -> RHS variable
@@ -357,7 +354,7 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
 {- | Apply the substitution to the rule.
  -}
 substitute
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Map (UnifiedVariable variable) (TermLike.TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
@@ -376,7 +373,7 @@ i.e. there is no substitution variable left in the rule.
 -}
 applySubstitution
     :: HasCallStack
-    => SubstitutionVariable variable
+    => InternalVariable variable
     => Substitution variable
     -> RulePattern variable
     -> RulePattern variable
@@ -434,6 +431,13 @@ instance
   where
     unparse = unparse . rewriteRuleToTerm
     unparse2 = unparse2 . rewriteRuleToTerm
+
+instance
+    InternalVariable variable
+    => HasFreeVariables (RewriteRule variable) variable
+  where
+    freeVariables (RewriteRule rule) = freeVariables rule
+    {-# INLINE freeVariables #-}
 
 {-  | Implication-based pattern.
 -}
@@ -767,15 +771,15 @@ instance UnifyingRule RulePattern where
         originalFreeVariables =
             FreeVariables.getFreeVariables $ freeVariables rule1
 
-    mapRuleVariables mapping rule1@(RulePattern _ _ _ _ _) =
+    mapRuleVariables mapElemVar mapSetVar rule1@(RulePattern _ _ _ _ _) =
         rule1
-            { left = TermLike.mapVariables mapping left
-            , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
-            , requires = Predicate.mapVariables mapping requires
+            { left = mapTermLikeVariables left
+            , antiLeft = mapTermLikeVariables <$> antiLeft
+            , requires = mapPredicateVariables requires
             , rhs = RHS
-                { existentials = fmap mapping <$> existentials
-                , right = TermLike.mapVariables mapping right
-                , ensures = Predicate.mapVariables mapping ensures
+                { existentials = mapElemVar <$> existentials
+                , right = mapTermLikeVariables right
+                , ensures = mapPredicateVariables ensures
                 }
             }
       where
@@ -783,3 +787,20 @@ instance UnifyingRule RulePattern where
             { left, antiLeft, requires
             , rhs = RHS { existentials, right, ensures }
             } = rule1
+        mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
+        mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
+
+instance UnifyingRule RewriteRule where
+    matchingPattern (RewriteRule rule) = matchingPattern rule
+    {-# INLINE matchingPattern #-}
+
+    precondition (RewriteRule rule) = precondition rule
+    {-# INLINE precondition #-}
+
+    refreshRule avoiding (RewriteRule rule) =
+        RewriteRule <$> refreshRule avoiding rule
+    {-# INLINE refreshRule #-}
+
+    mapRuleVariables mapElemVar mapSetVar (RewriteRule rule) =
+        RewriteRule (mapRuleVariables mapElemVar mapSetVar rule)
+    {-# INLINE mapRuleVariables #-}

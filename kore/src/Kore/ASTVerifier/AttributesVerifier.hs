@@ -19,9 +19,6 @@ module Kore.ASTVerifier.AttributesVerifier
     ) where
 
 import qualified Control.Lens as Lens
-import Data.Function
-    ( (&)
-    )
 import Data.Generics.Product
 import Prelude.Kore
 

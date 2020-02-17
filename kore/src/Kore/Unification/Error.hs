@@ -18,9 +18,6 @@ module Kore.Unification.Error
 
 import Prelude.Kore
 
-import Data.Function
-    ( on
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
@@ -83,10 +80,11 @@ instance Debug UnificationError
 instance Diff UnificationError
 
 unsupportedPatterns
-    :: SortedVariable variable
+    :: InternalVariable variable
     => String -> TermLike variable -> TermLike variable -> UnificationError
 unsupportedPatterns message =
-    UnsupportedPatterns message `on` mapVariables toVariable
+    on (UnsupportedPatterns message)
+    $ mapVariables (fmap toVariable) (fmap toVariable)
 
 instance Pretty UnificationError where
     pretty UnsupportedPatterns { message, first, second } =

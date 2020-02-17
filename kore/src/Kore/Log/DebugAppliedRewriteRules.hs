@@ -40,13 +40,13 @@ import Kore.Step.Step
     , mapRuleVariables
     )
 import Kore.Unification.Unify
-    ( SimplifierVariable
+    ( InternalVariable
     )
 import Kore.Unparser
     ( unparse
     )
 import Kore.Variables.Target
-    ( Target (..)
+    ( Target
     )
 import Log
 
@@ -92,22 +92,21 @@ instance Entry DebugAppliedRewriteRules where
 
 debugAppliedRewriteRules
     :: MonadLog log
-    => SimplifierVariable variable
+    => InternalVariable variable
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
     -> log ()
 debugAppliedRewriteRules initial rules =
-    logM DebugAppliedRewriteRules
+    logEntry DebugAppliedRewriteRules
         { configuration
         , appliedRewriteRules
         }
   where
-    configuration =
-        Conditional.mapVariables
-            TermLike.mapVariables
-            toVariable
-            initial
+    configuration = mapConditionalVariables TermLike.mapVariables initial
     appliedRewriteRules =
-        coerce
-        $ Conditional.mapVariables mapRuleVariables toVariable
-        <$> rules
+        coerce (mapConditionalVariables mapRuleVariables <$> rules)
+    mapConditionalVariables mapTermVariables =
+        Conditional.mapVariables
+            mapTermVariables
+            (fmap toVariable)
+            (fmap toVariable)

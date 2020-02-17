@@ -36,7 +36,6 @@ import qualified Data.Align as Align
     ( align
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
 import Data.Generics.Product
 import Data.List
     ( foldl'
@@ -85,9 +84,12 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
+import Kore.Step.Simplification.Overloading
+    ( unifyOverloading
+    )
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+    ( InternalVariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
@@ -124,6 +126,7 @@ matchOne pair =
     <|> matchBuiltinMap  pair
     <|> matchBuiltinSet  pair
     <|> matchInj         pair
+    <|> matchOverload    pair
     )
     & Error.maybeT (defer pair) return
 
@@ -354,9 +357,15 @@ matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
     unifyInj inj1 inj2 & either (const empty) (push . injChild)
 matchInj _ = empty
 
+matchOverload
+    :: (MatchingVariable variable, MonadSimplify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchOverload termPair = Error.hushT (unifyOverloading termPair) >>= push
+
 -- * Implementation
 
-type MatchingVariable variable = SimplifierVariable variable
+type MatchingVariable variable = InternalVariable variable
 
 {- | The internal state of the matching algorithm.
  -}

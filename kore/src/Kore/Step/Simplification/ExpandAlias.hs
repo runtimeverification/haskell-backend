@@ -26,22 +26,25 @@ import Kore.Internal.Pattern
     )
 import Kore.Internal.TermLike
     ( pattern ApplyAlias_
-    , SubstitutionVariable
+    , InternalVariable
     , TermLike
     , Variable
     , mapVariables
     , substitute
     )
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
+    ( fromVariable
     )
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import Kore.Variables.UnifiedVariable
+    ( mapUnifiedVariable
+    )
 
 expandAlias
     :: forall variable unifier
-    .  SubstitutionVariable variable
+    .  InternalVariable variable
     => MonadUnify unifier
     => (   TermLike variable
         -> TermLike variable
@@ -56,7 +59,7 @@ expandAlias recurse t1 t2 =
         (t1', t2') -> recurse (fromMaybe t1 t1') (fromMaybe t2 t2')
 
 expandSingleAlias
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => TermLike variable
     -> Maybe (TermLike variable)
 expandSingleAlias =
@@ -68,15 +71,16 @@ expandSingleAlias =
 -- with the *bounded* variables in the rhs is empty (because we can't currently
 -- handle things like \mu.
 substituteInAlias
-    :: SubstitutionVariable variable
+    :: InternalVariable variable
     => Alias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable
 substituteInAlias Alias { aliasLeft, aliasRight } children =
     assert (length aliasLeft == length children)
-        $ substitute
-            substitutionMap
-            (mapVariables fromVariable aliasRight)
+    $ substitute substitutionMap
+    $ mapVariables (fmap fromVariable) (fmap fromVariable) aliasRight
   where
+    aliasLeft' =
+        mapUnifiedVariable (fmap fromVariable) (fmap fromVariable) <$> aliasLeft
     substitutionMap =
-        Map.fromList $ zip (fmap fromVariable <$> aliasLeft) children
+        Map.fromList $ zip aliasLeft' children

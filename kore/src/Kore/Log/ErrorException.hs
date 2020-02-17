@@ -30,4 +30,4 @@ instance Entry ErrorException where
     entrySeverity _ = Error
 
 errorException :: MonadLog log => SomeException -> log ()
-errorException = logM . ErrorException
+errorException = logEntry . ErrorException
