@@ -45,28 +45,11 @@
                                                         \and{SortGeneratedTopCell{}}(
                                                             /* Spa */
                                                             \equals{SortOutputCell{}, SortGeneratedTopCell{}}(
-                                                                /*
-                                                                Fl
-                                                                Fn
-                                                                D
-                                                                Sfa
-                                                                */
+                                                                /* Fl Fn D Sfa */
                                                                 Var'Unds'0:SortOutputCell{},
-                                                                /*
-                                                                Fl
-                                                                Fn
-                                                                D
-                                                                Sfa
-                                                                Cl
-                                                                */
+                                                                /* Fl Fn D Sfa Cl */
                                                                 Lbl'-LT-'output'-GT-'{}(
-                                                                    /*
-                                                                    Fl
-                                                                    Fn
-                                                                    D
-                                                                    Sfa
-                                                                    Cl
-                                                                    */
+                                                                    /* Fl Fn D Sfa Cl */
                                                                     \dv{SortBytes{}}(
                                                                         ""
                                                                     )
@@ -74,26 +57,11 @@
                                                             ),
                                                             /* Spa */
                                                             \equals{SortCallStackCell{}, SortGeneratedTopCell{}}(
-                                                                /*
-                                                                Fl
-                                                                Fn
-                                                                D
-                                                                Sfa
-                                                                */
+                                                                /* Fl Fn D Sfa */
                                                                 Var'Unds'1:SortCallStackCell{},
-                                                                /*
-                                                                Fl
-                                                                Fn
-                                                                D
-                                                                Sfa
-                                                                */
+                                                                /* Fl Fn D Sfa */
                                                                 Lbl'-LT-'callStack'-GT-'{}(
-                                                                    /*
-                                                                    Fl
-                                                                    Fn
-                                                                    D
-                                                                    Sfa
-                                                                    */
+                                                                    /* Fl Fn D Sfa */
                                                                     /* builtin: */
                                                                     Lbl'Stop'List{}()
                                                                 )
@@ -105,29 +73,11 @@
                                                             Var'Unds'10:SortKCell{},
                                                             /* Fl Fn D Sfa Cl */
                                                             Lbl'-LT-'k'-GT-'{}(
-                                                                /*
-                                                                Fl
-                                                                Fn
-                                                                D
-                                                                Sfa
-                                                                Cl
-                                                                */
+                                                                /* Fl Fn D Sfa Cl */
                                                                 kseq{}(
-                                                                    /*
-                                                                    Fl
-                                                                    Fn
-                                                                    D
-                                                                    Sfa
-                                                                    Cl
-                                                                    */
+                                                                    /* Fl Fn D Sfa Cl */
                                                                     Lbl'Hash'halt'Unds'EVM'Unds'KItem{}(),
-                                                                    /*
-                                                                    Fl
-                                                                    Fn
-                                                                    D
-                                                                    Sfa
-                                                                    Cl
-                                                                    */
+                                                                    /* Fl Fn D Sfa Cl */
                                                                     dotk{}()
                                                                 )
                                                             )
