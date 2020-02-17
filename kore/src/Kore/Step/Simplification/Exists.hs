@@ -96,6 +96,9 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
+import Kore.Variables.Target
+    ( Target (..)
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     , extractElementVariable
@@ -137,7 +140,10 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 simplify
     :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
-    -> Exists Sort variable (OrPattern variable)
+    -> Exists
+        Sort
+        variable
+        (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify sideCondition Exists { existsVariable, existsChild } =
     simplifyEvaluated sideCondition existsVariable existsChild
@@ -378,10 +384,13 @@ splitSubstitution
 splitSubstitution variable substitution =
     (bound, independent)
   where
-    reversedSubstitution =
-        Substitution.reverseIfRhsIsVar (ElemVar variable) substitution
+    -- reversedSubstitution =
+    --     Substitution.reverseIfRhsIsVar (ElemVar variable) substitution
+    -- TODO: substitution should have leftVar < rightVar; Target leftVar
+    -- should always be smaller than NonTarget rightVar
+    -- order substitution here until new refactoring PR
     (dependent, independent) =
-        Substitution.partition hasVariable reversedSubstitution
+        Substitution.partition hasVariable substitution -- reversedSubstitution
     hasVariable variable' term =
         ElemVar variable == variable'
         || TermLike.hasFreeVariable (ElemVar variable) term

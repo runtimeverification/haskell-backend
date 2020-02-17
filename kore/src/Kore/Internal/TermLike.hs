@@ -274,6 +274,9 @@ import Kore.Variables.Fresh
     ( FreshVariable
     )
 import qualified Kore.Variables.Fresh as Fresh
+import Kore.Variables.Target
+    ( Target (..)
+    )
 import Kore.Variables.UnifiedVariable
 
 hasFreeVariable
