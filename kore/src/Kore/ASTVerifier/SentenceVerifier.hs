@@ -435,7 +435,7 @@ verifyClaimSentence sentence =
                     (foldMap freeVariables terms :: FreeVariables Variable)
             existentialsInRHS = Set.fromList $ fmap ElemVar existentials
         in
-            not 
+            not
                 $ isSubsetOf
                     (freeVariablesUnion rhs \\ existentialsInRHS)
                     (freeVariablesUnion lhs)
