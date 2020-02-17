@@ -10,6 +10,7 @@ module Kore.Step.SMT.Evaluator
     ( decidePredicate
     , Evaluable (..)
     , filterMultiOr
+    , translateUninterpreted
     ) where
 
 import Prelude.Kore
@@ -158,10 +159,10 @@ goTranslatePredicate tools predicate = evalTranslator translator
         give tools $ translatePredicate translateUninterpreted predicate
 
 translateUninterpreted
-    :: ( InternalVariable variable
-       , p ~ TermLike variable
-       )
-    => MonadSimplify m
+    :: InternalVariable variable
+    => p ~ TermLike variable
+    => SMT.MonadSMT m
+    => MonadLog m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr
