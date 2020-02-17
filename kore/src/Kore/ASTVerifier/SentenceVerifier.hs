@@ -42,6 +42,7 @@ import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     , isSubsetOf
+    , (\\)
     )
 import qualified Data.Set as Set
 import Data.Text
@@ -98,6 +99,9 @@ import Kore.Step.RulePattern
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
     ( Variable (..)
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
     )
 import qualified Kore.Verified as Verified
 
@@ -417,15 +421,24 @@ verifyClaimSentence sentence =
               | rejectRulePattern rulePattern -> True
             _ -> False
     rejectRulePattern
-        RulePattern { left, antiLeft, requires, rhs = RHS { right, ensures } }
+        RulePattern
+            { left
+            , antiLeft
+            , requires
+            , rhs = RHS { existentials, right, ensures }
+            }
       =
         let lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
             rhs = [right, unwrapPredicate ensures]
             freeVariablesUnion terms
                 = getFreeVariables
                     (foldMap freeVariables terms :: FreeVariables Variable)
+            existentialsInRHS = Set.fromList $ fmap ElemVar existentials
         in
-            not $ isSubsetOf (freeVariablesUnion rhs) (freeVariablesUnion lhs)
+            not 
+                $ isSubsetOf
+                    (freeVariablesUnion rhs \\ existentialsInRHS)
+                    (freeVariablesUnion lhs)
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project

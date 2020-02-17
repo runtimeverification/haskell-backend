@@ -26,9 +26,9 @@ module MAX-SPEC
     <state>
       a   |-> A:Int
       b   |-> B:Int
-      max |-> (_ => M:Int)
+      max |-> (_ => ?M:Int)
     </state>
   ensures
-    (A >=Int B andBool M ==Int A) orBool (B >=Int A andBool M ==Int B)
+    (A >=Int B andBool ?M ==Int A) orBool (B >=Int A andBool ?M ==Int B)
 
 endmodule

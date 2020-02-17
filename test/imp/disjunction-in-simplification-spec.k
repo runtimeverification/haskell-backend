@@ -24,9 +24,9 @@ module DISJUNCTION-IN-SIMPLIFICATION-SPEC
     <state>
       a   |-> A:Int
       b   |-> B:Int
-      x |-> (_ => X:Int)
+      x |-> (_ => ?X:Int)
     </state>
   ensures
-    X ==Int A orBool X ==Int B
+    ?X ==Int A orBool ?X ==Int B
 
 endmodule
