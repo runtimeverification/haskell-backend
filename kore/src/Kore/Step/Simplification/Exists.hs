@@ -96,9 +96,9 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
-import Kore.Variables.Target
-    ( Target (..)
-    )
+-- import Kore.Variables.Target
+--     ( Target (..)
+--     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     , extractElementVariable
@@ -384,13 +384,16 @@ splitSubstitution
 splitSubstitution variable substitution =
     (bound, independent)
   where
-    -- reversedSubstitution =
-    --     Substitution.reverseIfRhsIsVar (ElemVar variable) substitution
-    -- TODO: substitution should have leftVar < rightVar; Target leftVar
-    -- should always be smaller than NonTarget rightVar
-    -- order substitution here until new refactoring PR
+    -- TODO: this will be called with variables wrapped in Target
+    -- Target leftVar should always be smaller than NonTarget rightVar
+    -- maintain order invariant here until new refactoring PR
     (dependent, independent) =
-        Substitution.partition hasVariable substitution -- reversedSubstitution
+        Substitution.partition
+            hasVariable
+            ( Substitution.orderRenameAndRenormalizeTODO
+                (ElemVar variable)
+                substitution
+            ) -- reversedSubstitution
     hasVariable variable' term =
         ElemVar variable == variable'
         || TermLike.hasFreeVariable (ElemVar variable) term
