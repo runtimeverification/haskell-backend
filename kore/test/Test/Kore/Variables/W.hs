@@ -41,7 +41,7 @@ instance Unparse W where
     unparse2 = undefined
 
 instance SortedVariable W where
-    lensVariableSort = Lens.lens (const sortVariable) (\w _ -> w)
+    lensVariableSort = Lens.lens (const sortVariable) const
     {-# INLINE lensVariableSort #-}
 
 instance From Variable W where
