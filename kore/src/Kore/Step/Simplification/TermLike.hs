@@ -404,10 +404,10 @@ simplifyInternal term sideCondition = do
                     Exists.simplify
                         (targetSideCondition sideCondition)
                         (targetSimplifiedChildren simplifiedChildren)
-                return
-                    $ fmap
-                        (Pattern.mapVariables unTargetElement unTargetSet)
-                        targetedResults
+                let unTargetedResults =
+                        Pattern.mapVariables unTargetElement unTargetSet
+                        <$> targetedResults
+                return unTargetedResults
               where
                 refresh = Lens.over Binding.existsBinder refreshElementBinder
                 targetSideCondition
