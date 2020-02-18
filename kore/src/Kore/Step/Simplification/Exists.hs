@@ -136,10 +136,7 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 simplify
     :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
-    -> Exists
-        Sort
-        variable
-        (OrPattern variable)
+    -> Exists Sort variable (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify sideCondition Exists { existsVariable, existsChild } =
     simplifyEvaluated sideCondition existsVariable existsChild
