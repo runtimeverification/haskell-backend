@@ -34,13 +34,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                             /* Fl Fn D Sfa Cli */
                                             /* Inj: */ inj{SortId{}, SortAExp{}}(
                                                 /* Fl Fn D Sfa Cl */
-                                                \dv{SortId{}}(/*
-                                                Fl
-                                                Fn
-                                                D
-                                                Sfa
-                                                Cl
-                                                */
+                                                \dv{SortId{}}(/* Fl Fn D Sfa Cl */
                                                 "n")
                                             ),
                                             /* Fl Fn D Sfa Cli */
@@ -58,13 +52,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                \dv{SortId{}}(/*
-                                                Fl
-                                                Fn
-                                                D
-                                                Sfa
-                                                Cl
-                                                */
+                                                \dv{SortId{}}(/* Fl Fn D Sfa Cl */
                                                 "sum"),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(
@@ -73,38 +61,20 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                                         /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortId{}, SortAExp{}}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            \dv{SortId{}}(/*
-                                                            Fl
-                                                            Fn
-                                                            D
-                                                            Sfa
-                                                            Cl
-                                                            */
+                                                            \dv{SortId{}}(/* Fl Fn D Sfa Cl */
                                                             "sum")
                                                         ),
                                                         /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortId{}, SortAExp{}}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            \dv{SortId{}}(/*
-                                                            Fl
-                                                            Fn
-                                                            D
-                                                            Sfa
-                                                            Cl
-                                                            */
+                                                            \dv{SortId{}}(/* Fl Fn D Sfa Cl */
                                                             "n")
                                                         )
                                                     ),
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortId{}, SortAExp{}}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        \dv{SortId{}}(/*
-                                                        Fl
-                                                        Fn
-                                                        D
-                                                        Sfa
-                                                        Cl
-                                                        */
+                                                        \dv{SortId{}}(/* Fl Fn D Sfa Cl */
                                                         "n")
                                                     )
                                                 )
@@ -112,26 +82,14 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                \dv{SortId{}}(/*
-                                                Fl
-                                                Fn
-                                                D
-                                                Sfa
-                                                Cl
-                                                */
+                                                \dv{SortId{}}(/* Fl Fn D Sfa Cl */
                                                 "n"),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortId{}, SortAExp{}}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        \dv{SortId{}}(/*
-                                                        Fl
-                                                        Fn
-                                                        D
-                                                        Sfa
-                                                        Cl
-                                                        */
+                                                        \dv{SortId{}}(/* Fl Fn D Sfa Cl */
                                                         "n")
                                                     ),
                                                     /* Fl Fn D Sfa Cli */
