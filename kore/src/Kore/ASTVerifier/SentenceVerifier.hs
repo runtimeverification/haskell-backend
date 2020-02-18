@@ -27,6 +27,7 @@ import Prelude.Kore
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
+    , when
     )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
@@ -40,6 +41,7 @@ import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
+    , isSubsetOf
     )
 import qualified Data.Set as Set
 import Data.Text
@@ -60,6 +62,10 @@ import Kore.Attribute.Parser
     ( ParseAttributes
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
+    , getFreeVariables
+    )
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
     ( Sort
@@ -71,9 +77,27 @@ import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
+import Kore.Internal.Predicate
+    ( unwrapPredicate
+    )
 import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.TermLike.TermLike
+    ( freeVariables
+    )
 import Kore.Sort
+import Kore.Step.Rule
+    ( QualifiedAxiomPattern (..)
+    , fromSentenceAxiom
+    )
+import Kore.Step.RulePattern
+    ( AllPathRule (..)
+    , OnePathRule (..)
+    , RulePattern (..)
+    )
 import Kore.Syntax.Definition
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -375,12 +399,36 @@ verifyClaimSentence sentence =
         attrs <-
             parseAndVerifyAxiomAttributes verifiedModule'
             $ sentenceClaimAttributes sentence
+        when (rejectClaim attrs verified)
+            $ koreFail "Found claim with universally-quantified variables\
+                        \ appearing only on the right-hand side"
         State.modify' $ addClaim (SentenceClaim verified) attrs
   where
     addClaim verified attrs =
         Lens.over
             (field @"indexedModuleClaims")
             ((attrs, verified) :)
+    rejectClaim attrs verified =
+        case fromSentenceAxiom (attrs, verified) of
+            Right (OnePathClaimPattern (OnePathRule rulePattern))
+              | rejectRulePattern rulePattern -> True
+            Right (AllPathClaimPattern (AllPathRule rulePattern))
+              | rejectRulePattern rulePattern -> True
+            _ -> False
+    rejectRulePattern
+        RulePattern
+            { left
+            , antiLeft
+            , requires
+            , rhs
+            }
+      =
+        not $ isSubsetOf (getFreeVariables $ freeVariables rhs) freeVariablesLhs
+          where
+            lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
+            freeVariablesLhs
+                = getFreeVariables
+                    (foldMap freeVariables lhs :: FreeVariables Variable)
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project

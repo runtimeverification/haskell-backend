@@ -42,6 +42,7 @@ module Test.Kore.ASTVerifier.DefinitionVerifier
     , metaAliasSentenceWithSortParameters
     , sentenceAliasWithResultSort
     , sentenceAliasWithSortArgument
+    , sentenceAliasWithSortArgument'
     , successTestData
     , successTestDataGroup
     , failureTestData
@@ -399,6 +400,47 @@ sentenceAliasWithSortArgument
                         }
                 , applicationChildren =
                     [ ElemVar $ ElementVariable Variable
+                        { variableName = testId "x"
+                        , variableCounter = mempty
+                        , variableSort = sortArgument
+                        }
+                    ]
+                }
+        , sentenceAliasRightPattern = r
+        , sentenceAliasAttributes = Attributes []
+        }
+
+sentenceAliasWithSortArgument'
+    :: AliasName
+    -> Sort
+    -> Sort
+    -> [SortVariable]
+    -> patternType
+    -> SentenceAlias patternType
+sentenceAliasWithSortArgument'
+    (AliasName name)
+    sortArgument
+    resultSort
+    parameters
+    r
+  =
+    SentenceAlias
+        { sentenceAliasAlias = Alias
+            { aliasConstructor = testId name
+            , aliasParams = parameters
+            }
+        , sentenceAliasSorts = [sortArgument]
+        , sentenceAliasResultSort = resultSort
+        , sentenceAliasLeftPattern =
+            Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId name
+                        , symbolOrAliasParams =
+                            SortVariableSort <$> parameters
+                        }
+                , applicationChildren =
+                    [ SetVar $ SetVariable Variable
                         { variableName = testId "x"
                         , variableCounter = mempty
                         , variableSort = sortArgument
