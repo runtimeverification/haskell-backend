@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Internal.Substitution
     ( Substitution
     , Assignment
+    , assign
     , pattern Assignment_
     , assignmentToPair
     , UnwrappedSubstitution

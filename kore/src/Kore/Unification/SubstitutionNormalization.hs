@@ -46,7 +46,9 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Substitution
-    ( Normalization (..)
+    ( Assignment
+    , pattern Assignment_
+    , Normalization (..)
     , UnwrappedSubstitution
     )
 import qualified Kore.Internal.Substitution as Substitution
@@ -81,11 +83,11 @@ normalizeSubstitution substitution =
       | null denormalized =
         pure
         $ Condition.fromSubstitution
-        $ Substitution.unsafeWrap normalized
+        $ Substitution.unsafeWrap (Substitution.assignmentToPair <$> normalized)
       | otherwise =
         throwError $ SimplifiableCycle variables normalization
       where
-        (variables, _) = unzip denormalized
+        (variables, _) = unzip (Substitution.assignmentToPair <$> denormalized)
 
 {- | 'normalize' a substitution as far as possible.
 
@@ -142,7 +144,9 @@ normalize (dropTrivialSubstitutions -> substitution) =
         let -- Variables with simplifiable dependencies
             simplifiable = Set.filter (isSimplifiable variables) variables
             denormalized =
-                Map.toList $ Map.restrictKeys substitution simplifiable
+                fmap (uncurry Substitution.assign)
+                $ Map.toList
+                $ Map.restrictKeys substitution simplifiable
             substitution' = Map.withoutKeys substitution simplifiable
         -- Partially normalize the substitution by separating variables with
         -- simplifiable dependencies.
@@ -186,13 +190,19 @@ normalize (dropTrivialSubstitutions -> substitution) =
         Map.map Set.toList
         $ Map.mapWithKey getNonSimplifiableDependencies' substitution
 
+    sorted :: [UnifiedVariable variable] -> Maybe (Normalization variable)
     sorted order
       | any (not . isSatisfiableSubstitution) substitution' = empty
       | otherwise = do
-        let normalized = backSubstitute substitution'
+        let normalized =
+                backSubstitute
+                . fmap (uncurry Substitution.assign)
+                $ substitution'
         pure Normalization { normalized, denormalized = mempty }
       where
-        substitution' = order <&> \v -> (v, (Map.!) substitution v)
+        substitution' :: [(UnifiedVariable variable, TermLike variable)]
+        substitution' =
+            order <&> \v -> (v, (Map.!) substitution v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 
@@ -214,10 +224,10 @@ backSubstitute
 backSubstitute sorted =
     flip State.evalState mempty (traverse worker sorted)
   where
-    worker (variable, termLike) = do
+    worker (Assignment_ variable termLike) = do
         termLike' <- applySubstitution termLike
         insertSubstitution variable termLike'
-        return (variable, termLike')
+        return $ Substitution.assign variable termLike'
     insertSubstitution variable termLike =
         State.modify' $ Map.insert variable termLike
     applySubstitution termLike = do
