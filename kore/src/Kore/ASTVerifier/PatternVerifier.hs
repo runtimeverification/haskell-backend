@@ -381,7 +381,7 @@ verifyApplyAlias application =
             _ ->
                 koreFail
                     "The alias was declared with an element variable, but its\
-                    \argument is not an element variable."
+                    \ argument is not an element variable."
 
 verifyApplySymbol
     :: (child -> Sort)
