@@ -103,6 +103,9 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %.save-proofs.kore: %.out
 	[ -f $@ ]
 
+%-spec.k.repl: $(TEST_DIR)/%-spec.k $(KORE_REPL) $(TEST_DEPS)
+	$(KPROVE) $(KPROVE_REPL_OPTS) $<
+
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 %-repl-script-spec.k.out: %-repl-script-spec.k.repl
