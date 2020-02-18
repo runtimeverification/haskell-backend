@@ -43,6 +43,7 @@ import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )
+import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -219,5 +220,6 @@ runSimplifyRule
 runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
     $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ runSimplifier Mock.env
-    $ simplifyRuleLhs rule
+    $ runSimplifier Mock.env $ do
+        SMT.All.declare Mock.smtDeclarations
+        simplifyRuleLhs rule
