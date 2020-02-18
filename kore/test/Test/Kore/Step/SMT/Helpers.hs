@@ -8,6 +8,8 @@ module Test.Kore.Step.SMT.Helpers
     , isError
     , isNotSatisfiable
     , isSatisfiable
+    , isSatisfiableWithTools
+    , isNotSatisfiableWithTools
     , constructorAxiom
     , testsForModule
     ) where
@@ -106,23 +108,52 @@ eq = SMT.eq
 isSatisfiable
     :: HasCallStack
     => [SMT ()]
+    -> SmtMetadataTools Attribute.Symbol
     -> SmtPrelude
     -> TestTree
-isSatisfiable = assertSmtTestCase "isSatisfiable" SMT.Sat
+isSatisfiable tests _ = assertSmtTestCase "isSatisfiable" SMT.Sat tests
+
+isSatisfiableWithTools
+    :: HasCallStack
+    => [SmtMetadataTools Attribute.Symbol -> SMT ()]
+    -> SmtMetadataTools Attribute.Symbol
+    -> SmtPrelude
+    -> TestTree
+isSatisfiableWithTools tests tools prelude =
+    assertSmtTestCase
+        "isSatisfiable"
+        SMT.Sat
+        (fmap (\t -> t tools) tests )
+        prelude
 
 isNotSatisfiable
     :: HasCallStack
     => [SMT ()]
+    -> SmtMetadataTools Attribute.Symbol
     -> SmtPrelude
     -> TestTree
-isNotSatisfiable = assertSmtTestCase "isNotSatisfiable" SMT.Unsat
+isNotSatisfiable tests _ = assertSmtTestCase "isNotSatisfiable" SMT.Unsat tests
+
+isNotSatisfiableWithTools
+    :: HasCallStack
+    => [SmtMetadataTools Attribute.Symbol -> SMT ()]
+    -> SmtMetadataTools Attribute.Symbol
+    -> SmtPrelude
+    -> TestTree
+isNotSatisfiableWithTools tests tools prelude =
+    assertSmtTestCase
+        "isNotSatisfiable"
+        SMT.Unsat
+        (fmap (\t -> t tools) tests )
+        prelude
 
 isError
     :: HasCallStack
     => [SMT ()]
+    -> SmtMetadataTools Attribute.Symbol
     -> SmtPrelude
     -> TestTree
-isError actions prelude =
+isError actions _ prelude =
     testCase "isError" $
         catch (catch runSolver ignoreIOError) ignoreErrorCall
     where
@@ -184,10 +215,10 @@ testsForModule
         -> m ()
         )
     -> VerifiedModule Attribute.Symbol
-    -> [SmtPrelude -> TestTree]
+    -> [SmtMetadataTools Attribute.Symbol -> SmtPrelude -> TestTree]
     -> TestTree
 testsForModule name functionToTest indexedModule tests =
-    testGroup name (map (\f -> f prelude) tests)
+    testGroup name (map (\f -> f tools prelude) tests)
   where
     prelude = SmtPrelude
         (give tools $ functionToTest indexedModule)
