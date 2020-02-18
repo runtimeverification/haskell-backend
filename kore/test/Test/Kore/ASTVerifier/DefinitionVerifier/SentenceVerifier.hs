@@ -116,10 +116,10 @@ patternNoFreeVarInRHS :: Pattern Variable Null
 patternNoFreeVarInRHS =
     externalize
     $ Rule.axiomPatternToTerm $ Rule.OnePathClaimPattern
-    $ OnePathRule rulePatternFreeVarInRHS
+    $ OnePathRule rulePatternNoFreeVarInRHS
   where
-    rulePatternFreeVarInRHS :: RulePattern Variable
-    rulePatternFreeVarInRHS = RulePattern
+    rulePatternNoFreeVarInRHS :: RulePattern Variable
+    rulePatternNoFreeVarInRHS = RulePattern
         { left = mkTop Mock.testSort
         , antiLeft = Nothing
         , requires = makeTruePredicate Mock.testSort
