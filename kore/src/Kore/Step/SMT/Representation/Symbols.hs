@@ -71,8 +71,8 @@ buildRepresentations
     -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
     listToDeclarations builtinDeclarations
-    `AST.mergePreferFirst` listToDeclarations smtlibDeclarations
     `AST.mergePreferFirst` listToDeclarations constructorDeclarations
+    `AST.mergePreferFirst` listToDeclarations smtlibDeclarations
   where
     listToDeclarations
         :: [(Id, AST.UnresolvedSymbol)]

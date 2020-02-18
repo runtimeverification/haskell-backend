@@ -456,7 +456,7 @@ declare proc f t = declareFun proc (FunctionDeclaration f [] t)
 -- For convenience, returns an the declared name as a constant expression.
 declareFun :: Solver -> SmtFunctionDeclaration -> IO SExpr
 declareFun proc FunctionDeclaration {name, inputSorts, resultSort} = do
-    ackCommandIgnoreErr proc
+    ackCommand proc
         $ fun "declare-fun" [ Atom name, List inputSorts, resultSort ]
     return (const name)
 
@@ -465,7 +465,7 @@ declareSort
     proc
     SortDeclaration {name, arity}
   = do
-    ackCommandIgnoreErr proc
+    ackCommand proc
         $ fun "declare-sort" [ Atom name, (Atom . Text.pack . show) arity ]
     pure (const name)
 
