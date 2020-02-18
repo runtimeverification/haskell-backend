@@ -384,7 +384,7 @@ test_matcherVariableFunction =
     ]
   where
     aSubSub = Mock.functional00SubSubSort
-    xSub = ElementVariable $ Variable (testId "x") mempty Mock.subSort
+    xSub = ElementVariable $ Variable (testId "xSub") mempty Mock.subSort
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =

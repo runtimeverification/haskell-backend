@@ -19,15 +19,11 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
-import Kore.Debug
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
@@ -66,6 +62,8 @@ import qualified SMT
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Variables.V
+import Test.Kore.Variables.W
 import Test.Tasty.HUnit.Ext
 
 var :: Text -> Sort -> ElementVariable Variable
@@ -532,13 +530,13 @@ test_unification =
         -}
     , testCase "Maps substitution variables"
         (assertEqual ""
-            [(ElemVar $ ElementVariable $ W "1", war' "2")]
+            [(ElemVar $ ElementVariable $ mkW "1", war' "2")]
             (Substitution.unwrap
                 . Substitution.mapVariables
                     (fmap showVar)
                     (fmap showVar)
                 . Substitution.wrap
-                $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
+                $ [(ElemVar $ ElementVariable $ mkV 1, var' 2)]
             )
         )
     , testCase "framed Map with concrete Map" $
@@ -669,92 +667,6 @@ test_unsupportedConstructs =
                 a
                 (mkImplies a (mkNext a1))
             )
-
-newtype V = V Integer
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic V
-
-instance SOP.HasDatatypeInfo V
-
-instance Debug V
-
-instance Diff V
-
-instance SortedVariable V where
-    sortedVariableSort _ = sortVar
-
-instance From Variable V where
-    from = error "Not implemented"
-
-instance From V Variable where
-    from = error "Not implemented"
-
-instance VariableName V
-
-instance Unparse V where
-    unparse = error "Not implemented"
-    unparse2 = error "Not implemented"
-
-instance FreshVariable V where
-    refreshVariable avoiding v@(V name)
-      | Set.notMember v avoiding = Nothing
-      | otherwise =
-        Just ((head . dropWhile (flip Set.member avoiding)) (V <$> names' ))
-      where
-        names' = iterate (+ 1) name
-
-instance SubstitutionOrd V where
-    compareSubstitution = compare
-
-newtype W = W String
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic W
-
-instance SOP.HasDatatypeInfo W
-
-instance Debug W
-
-instance Diff W
-
-instance SortedVariable W where
-    sortedVariableSort _ = sortVar
-
-instance From Variable W where
-    from = error "Not implemented"
-
-instance From W Variable where
-    from = error "Not implemented"
-
-instance VariableName W
-
-instance Unparse W where
-    unparse = error "Not implemented"
-    unparse2 = error "Not implemented"
-
-instance FreshVariable W where
-    refreshVariable avoiding w@(W name)
-      | Set.notMember w avoiding = Nothing
-      | otherwise =
-        Just ((head . dropWhile (flip Set.member avoiding)) (W <$> names' ))
-      where
-        names' = iterate (<> "\'") name
-
-instance SubstitutionOrd W where
-    compareSubstitution = compare
-
-showVar :: V -> W
-showVar (V i) = W (show i)
-
-var' :: Integer -> TermLike V
-var' = mkElemVar . ElementVariable . V
-
-war' :: String -> TermLike W
-war' = mkElemVar . ElementVariable . W
-
-sortVar :: Sort
-sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
 
 injUnificationTests :: [TestTree]
 injUnificationTests =

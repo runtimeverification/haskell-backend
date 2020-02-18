@@ -15,6 +15,7 @@ module Kore.Variables.UnifiedVariable
     , unifiedVariableSort
     , refreshElementVariable
     , refreshSetVariable
+    , MapVariables
     , mapUnifiedVariable
     , traverseUnifiedVariable
     -- * UnifiedVariableMap
@@ -42,7 +43,6 @@ import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import GHC.Generics
     ( Generic
@@ -55,6 +55,7 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
     ( SortedVariable (..)
+    , sortedVariableSort
     )
 import Kore.Unparser
 import Kore.Variables.Fresh
@@ -83,15 +84,40 @@ instance Unparse variable => Unparse (UnifiedVariable variable) where
     unparse = foldMapVariable unparse
     unparse2 = foldMapVariable unparse2
 
-instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
+instance
+    SortedVariable variable
+    => SortedVariable (UnifiedVariable variable)
   where
-    refreshVariable avoid = \case
-        SetVar v -> SetVar <$> refreshVariable setVars v
-        ElemVar v -> ElemVar <$> refreshVariable elemVars v
-      where
-        avoid' = Set.toList avoid
-        setVars = Set.fromList [v | SetVar v <- avoid']
-        elemVars = Set.fromList [v | ElemVar v <- avoid']
+    lensVariableSort f =
+        \case
+            ElemVar elemVar -> ElemVar <$> lensVariableSort f elemVar
+            SetVar setVar -> SetVar <$> lensVariableSort f setVar
+    {-# INLINE lensVariableSort #-}
+
+instance
+    FreshPartialOrd variable => FreshPartialOrd (UnifiedVariable variable)
+  where
+    infVariable =
+        \case
+            ElemVar elemVar -> ElemVar (infVariable elemVar)
+            SetVar setVar -> SetVar (infVariable setVar)
+    {-# INLINE infVariable #-}
+
+    supVariable =
+        \case
+            ElemVar elemVar -> ElemVar (supVariable elemVar)
+            SetVar setVar -> SetVar (supVariable setVar)
+    {-# INLINE supVariable #-}
+
+    nextVariable =
+        \case
+            ElemVar elemVar -> ElemVar (nextVariable elemVar)
+            SetVar setVar -> SetVar (nextVariable setVar)
+    {-# INLINE nextVariable #-}
+
+instance
+    (FreshPartialOrd variable, SortedVariable variable)
+    => FreshVariable (UnifiedVariable variable)
 
 isElemVar :: UnifiedVariable variable -> Bool
 isElemVar (ElemVar _) = True
@@ -177,10 +203,15 @@ refreshSetVariable avoiding =
     -- UnifiedVariable (above) conserves the SetVar constructor.
     fmap expectSetVar . refreshVariable avoiding . SetVar
 
+type MapVariables variable1 variable2 term1 term2 =
+        (ElementVariable variable1 -> ElementVariable variable2)
+    ->  (SetVariable     variable1 -> SetVariable     variable2)
+    ->  term1 -> term2
+
 mapUnifiedVariable
-    :: (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
-    -> UnifiedVariable variable1 -> UnifiedVariable variable2
+    ::  MapVariables variable1 variable2
+            (UnifiedVariable variable1)
+            (UnifiedVariable variable2)
 mapUnifiedVariable mapElemVar mapSetVar =
     \case
         ElemVar elemVar -> ElemVar (mapElemVar elemVar)
@@ -216,9 +247,11 @@ instance
             { setVariables = on (<>) setVariables a b
             , elementVariables = on (<>) elementVariables a b
             }
+    {-# INLINE (<>) #-}
 
 instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
     mempty = UnifiedVariableMap mempty mempty
+    {-# INLINE mempty #-}
 
 renameSetVariable
     :: Ord variable1
@@ -230,6 +263,7 @@ renameSetVariable variable1 variable2 =
     Lens.over
         (field @"setVariables")
         (Map.insert variable1 variable2)
+{-# INLINE renameSetVariable #-}
 
 renameElementVariable
     :: Ord variable1
@@ -241,6 +275,7 @@ renameElementVariable variable1 variable2 =
     Lens.over
         (field @"elementVariables")
         (Map.insert variable1 variable2)
+{-# INLINE renameElementVariable #-}
 
 lookupRenamedElementVariable
     :: Ord variable1
@@ -249,6 +284,7 @@ lookupRenamedElementVariable
     -> Maybe (ElementVariable variable2)
 lookupRenamedElementVariable variable =
     Map.lookup variable . elementVariables
+{-# INLINE lookupRenamedElementVariable #-}
 
 lookupRenamedSetVariable
     :: Ord variable1
@@ -257,3 +293,4 @@ lookupRenamedSetVariable
     -> Maybe (SetVariable variable2)
 lookupRenamedSetVariable variable =
     Map.lookup variable . setVariables
+{-# INLINE lookupRenamedSetVariable #-}

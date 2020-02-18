@@ -7,6 +7,8 @@ License     : NCSA
 module Kore.Internal.Variable
     ( SubstitutionOrd (..)
     , InternalVariable
+    , FreshVariable
+    , FreshPartialOrd
     , module Kore.Syntax.ElementVariable
     , module Kore.Syntax.SetVariable
     , module Kore.Syntax.Variable
@@ -24,7 +26,8 @@ import Kore.Unparser
     ( Unparse
     )
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
+    , FreshVariable
     )
 
 {- | @SubstitutionOrd@ orders variables for substitution.
@@ -81,5 +84,6 @@ these constraints.
 type InternalVariable variable =
     ( Ord variable, SubstitutionOrd variable
     , Debug variable, Show variable, Unparse variable
-    , VariableName variable, SortedVariable variable, FreshVariable variable
+    , VariableName variable, SortedVariable variable
+    , FreshPartialOrd variable, FreshVariable variable
     )

@@ -125,7 +125,7 @@ import Kore.Unparser
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 import qualified Kore.Variables.Fresh as Fresh
 import qualified Pretty
@@ -593,7 +593,7 @@ See also: 'traverseVariables'
  -}
 mapVariables
     :: forall variable1 variable2
-    .  (Ord variable1, FreshVariable variable2)
+    .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> TermLike variable1
@@ -669,7 +669,7 @@ See also: 'mapVariables'
  -}
 traverseVariables
     :: forall variable1 variable2 m
-    .  (Ord variable1, FreshVariable variable2)
+    .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     => Monad m
     => (ElementVariable variable1 -> m (ElementVariable variable2))
     -> (SetVariable variable1 -> m (SetVariable variable2))
@@ -762,7 +762,7 @@ sequenceAdjunct gsequence =
 
 renameElementBinder
     ::  Monad m
-    =>  (Ord variable1, FreshVariable variable2)
+    =>  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     =>  (ElementVariable variable1 -> m (ElementVariable variable2))
     ->  Set.Set (UnifiedVariable variable2)
     ->  Binder (ElementVariable variable1)
@@ -788,7 +788,7 @@ renameElementBinder trElemVar avoiding binder = do
 
 renameSetBinder
     ::  Monad m
-    =>  (Ord variable1, FreshVariable variable2)
+    =>  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     =>  (SetVariable variable1 -> m (SetVariable variable2))
     ->  Set.Set (UnifiedVariable variable2)
     ->  Binder (SetVariable variable1)
@@ -888,33 +888,32 @@ externalizeFreshVariables termLike =
     among the set of avoided variables. The externalized form is returned.
 
      -}
+    safeVariable
+        :: (Functor f, FreshPartialOrd (f Variable))
+        => (f Variable -> UnifiedVariable Variable)
+        -> FreeVariables Variable
+        -> f Variable
+        -> f Variable
+    safeVariable mk avoiding variable =
+        head
+        $ dropWhile wouldCapture
+        $ externalize
+        <$> iterate Fresh.nextVariable variable
+      where
+        wouldCapture var = isFreeVariable (mk var) avoiding
+        externalize = fmap Variable.externalizeFreshVariable
+
     safeElementVariable
         :: FreeVariables Variable
         -> ElementVariable Variable
         -> ElementVariable Variable
-    safeElementVariable avoiding variable =
-        head  -- 'head' is safe because 'iterate' creates an infinite list
-        $ dropWhile wouldCapture
-        $ externalize
-        <$> iterate nextVariable variable
-      where
-        wouldCapture var = isFreeVariable (ElemVar var) avoiding
-        nextVariable = fmap Fresh.nextVariable
-        externalize = fmap Variable.externalizeFreshVariable
+    safeElementVariable = safeVariable ElemVar
 
     safeSetVariable
         :: FreeVariables Variable
         -> SetVariable Variable
         -> SetVariable Variable
-    safeSetVariable avoiding variable =
-        head  -- 'head' is safe because 'iterate' creates an infinite list
-        $ dropWhile wouldCapture
-        $ externalize
-        <$> iterate nextVariable variable
-      where
-        wouldCapture var = isFreeVariable (SetVar var) avoiding
-        nextVariable = fmap Fresh.nextVariable
-        externalize = fmap Variable.externalizeFreshVariable
+    safeSetVariable = safeVariable SetVar
 
     underElementBinder freeVariables' variable child = do
         let variable' = safeElementVariable freeVariables' variable
