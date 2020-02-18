@@ -64,6 +64,7 @@ import Kore.Variables.Target
     ( Target (..)
     , mkElementTarget
     , mkSetNonTarget
+    , targetIfEqual
     )
 
 {-| The disjunction of 'Pattern'.
@@ -201,16 +202,14 @@ targetBinder
     -> Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
 targetBinder Binder { binderVariable, binderChild } =
     let newVar = mkElementTarget binderVariable
-        newChild = fmap (Pattern.mapVariables boundTarget mkSetNonTarget) binderChild
+        targetBoundVariables =
+            targetIfEqual . getElementVariable $ binderVariable
+        newChild =
+            Pattern.mapVariables
+                targetBoundVariables
+                mkSetNonTarget
+            <$> binderChild
      in Binder
          { binderVariable = newVar
          , binderChild = newChild
          }
-  where
-    boundTarget
-        :: ElementVariable variable
-        -> ElementVariable (Target variable)
-    boundTarget (ElementVariable var) =
-        if var == getElementVariable binderVariable
-            then ElementVariable . Target $ var
-            else ElementVariable . NonTarget $ var

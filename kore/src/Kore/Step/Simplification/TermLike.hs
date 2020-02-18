@@ -151,9 +151,8 @@ import Kore.Unparser
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
     ( Target (..)
-    , mkElementNonTarget
-    , mkElementTarget
     , mkSetNonTarget
+    , targetIfEqual
     , unTargetElement
     , unTargetSet
     )
@@ -416,11 +415,7 @@ simplifyInternal term sideCondition = do
                     -> SideCondition (Target variable)
                 targetSideCondition =
                     SideCondition.mapVariables
-                        (\elemVar@(TermLike.ElementVariable var) ->
-                            if var == boundVar
-                                then mkElementTarget elemVar
-                                else mkElementNonTarget elemVar
-                        )
+                        (targetIfEqual boundVar)
                         mkSetNonTarget
                 targetSimplifiedChildren
                     :: TermLike.Exists
