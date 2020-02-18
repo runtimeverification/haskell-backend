@@ -82,8 +82,7 @@ import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
-    ( ElementVariable
-    , SetVariable
+    ( MapVariables
     , UnifiedVariable
     )
 import qualified SQL
@@ -414,12 +413,12 @@ isPredicate Conditional {term} = isTop term
 
 -}
 mapVariables
-    :: (Ord variableFrom, FreshPartialOrd variableTo, SortedVariable variableTo)
-    => ((ElementVariable variableFrom -> ElementVariable variableTo) -> (SetVariable variableFrom -> SetVariable variableTo) -> termFrom -> termTo)
-    -> (ElementVariable variableFrom -> ElementVariable variableTo)
-    -> (SetVariable variableFrom -> SetVariable variableTo)
-    -> Conditional variableFrom termFrom
-    -> Conditional variableTo   termTo
+    ::  Ord variableFrom
+    =>  (FreshPartialOrd variableTo, SortedVariable variableTo)
+    =>  MapVariables variableFrom variableTo termFrom termTo
+    ->  MapVariables variableFrom variableTo
+            (Conditional variableFrom termFrom)
+            (Conditional variableTo   termTo)
 mapVariables
     mapTermVariables
     mapElemVar

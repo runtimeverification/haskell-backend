@@ -15,6 +15,7 @@ module Kore.Variables.UnifiedVariable
     , unifiedVariableSort
     , refreshElementVariable
     , refreshSetVariable
+    , MapVariables
     , mapUnifiedVariable
     , traverseUnifiedVariable
     -- * UnifiedVariableMap
@@ -202,10 +203,15 @@ refreshSetVariable avoiding =
     -- UnifiedVariable (above) conserves the SetVar constructor.
     fmap expectSetVar . refreshVariable avoiding . SetVar
 
+type MapVariables variable1 variable2 term1 term2 =
+        (ElementVariable variable1 -> ElementVariable variable2)
+    ->  (SetVariable     variable1 -> SetVariable     variable2)
+    ->  term1 -> term2
+
 mapUnifiedVariable
-    :: (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
-    -> UnifiedVariable variable1 -> UnifiedVariable variable2
+    ::  MapVariables variable1 variable2
+            (UnifiedVariable variable1)
+            (UnifiedVariable variable2)
 mapUnifiedVariable mapElemVar mapSetVar =
     \case
         ElemVar elemVar -> ElemVar (mapElemVar elemVar)
