@@ -148,7 +148,7 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    :: (Ord variable1, FreshVariable variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Condition variable1
@@ -170,12 +170,12 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
   where
     predicate' =
         Conditional.fromPredicate
-        . markSimplifiedIfChildrenSimplified denormalized
+        . markSimplifiedIfChildrenSimplified (Substitution.assignmentToPair <$> denormalized)
         . Substitution.toPredicate
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution
-        $ Substitution.unsafeWrap normalized
+        $ Substitution.unsafeWrap (Substitution.assignmentToPair <$> normalized)
     markSimplifiedIfChildrenSimplified childrenList result =
         Predicate.setSimplified childrenSimplified result
       where

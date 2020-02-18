@@ -113,7 +113,7 @@ simplifiedAttribute (splitTerm -> (t, p)) =
     TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
 
 freeElementVariables
-    :: Ord variable
+    :: InternalVariable variable
     => Pattern variable
     -> [ElementVariable variable]
 freeElementVariables =
@@ -123,7 +123,7 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    :: (Ord variableFrom, FreshVariable variableTo)
+    :: (InternalVariable variableFrom, InternalVariable variableTo)
     => (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Pattern variableFrom

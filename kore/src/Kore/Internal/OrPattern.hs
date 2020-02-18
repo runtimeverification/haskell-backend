@@ -82,7 +82,7 @@ fromPattern = from
 {- | Disjoin a collection of patterns.
  -}
 fromPatterns
-    :: (Foldable f, Ord variable)
+    :: (Foldable f, InternalVariable variable)
     => f (Pattern variable)
     -> OrPattern variable
 fromPatterns = from . Foldable.toList
@@ -110,7 +110,7 @@ fromTermLike = fromPattern . Pattern.fromTermLike
 @
 
  -}
-bottom :: Ord variable => OrPattern variable
+bottom :: InternalVariable variable => OrPattern variable
 bottom = fromPatterns []
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
@@ -191,13 +191,13 @@ coerceSort sort =
     . toPatterns
 
 gather
-    :: (Ord variable, Monad m)
+    :: (InternalVariable variable, Monad m)
     => BranchT m (Pattern variable) -> m (OrPattern variable)
 gather = MultiOr.gather
 
 targetBinder
     :: forall variable
-    .  FreshVariable variable
+    .  InternalVariable variable
     => Binder (ElementVariable variable) (OrPattern variable)
     -> Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
 targetBinder Binder { binderVariable, binderChild } =

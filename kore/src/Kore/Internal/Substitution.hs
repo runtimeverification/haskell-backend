@@ -357,6 +357,7 @@ wrap xs = Substitution xs
 
 -- | Wrap the list of substitutions to a normalized substitution. Do not use
 -- this unless you are sure you need it.
+-- TODO: change type to [Assignment] -> Substitution
 unsafeWrap
     :: Ord variable
     => [(UnifiedVariable variable, TermLike variable)]
