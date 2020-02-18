@@ -424,6 +424,7 @@ partition criterion (NormalizedSubstitution substitution) =
     let (true, false) = Map.partitionWithKey criterion substitution
     in (NormalizedSubstitution true, NormalizedSubstitution false)
 
+-- TODO(Ana): this will be refactored in a subsequent PR
 orderRenameAndRenormalizeTODO
     :: forall variable
     .  InternalVariable variable
@@ -432,7 +433,10 @@ orderRenameAndRenormalizeTODO
     -> Substitution variable
 orderRenameAndRenormalizeTODO _ (Substitution substitution) =
     Substitution (fmap orderRenaming substitution)
-orderRenameAndRenormalizeTODO variable original@(NormalizedSubstitution substitution) =
+orderRenameAndRenormalizeTODO
+    variable
+    original@(NormalizedSubstitution substitution)
+  =
     case reversableVars of
         [] -> original
         (v:vs) ->

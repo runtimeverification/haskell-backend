@@ -384,16 +384,14 @@ splitSubstitution
 splitSubstitution variable substitution =
     (bound, independent)
   where
-    -- TODO: this will be called with variables wrapped in Target
-    -- Target leftVar should always be smaller than NonTarget rightVar
-    -- maintain order invariant here until new refactoring PR
+    orderRenamedSubstitution =
+        Substitution.orderRenameAndRenormalizeTODO
+            (ElemVar variable)
+            substitution
     (dependent, independent) =
         Substitution.partition
             hasVariable
-            ( Substitution.orderRenameAndRenormalizeTODO
-                (ElemVar variable)
-                substitution
-            ) -- reversedSubstitution
+            orderRenamedSubstitution
     hasVariable variable' term =
         ElemVar variable == variable'
         || TermLike.hasFreeVariable (ElemVar variable) term
