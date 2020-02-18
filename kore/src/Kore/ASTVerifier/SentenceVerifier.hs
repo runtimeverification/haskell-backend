@@ -423,15 +423,12 @@ verifyClaimSentence sentence =
             , rhs
             }
       =
-        let lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
+        not $ isSubsetOf (getFreeVariables $ freeVariables rhs) freeVariablesLhs
+          where
+            lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
             freeVariablesLhs
                 = getFreeVariables
                     (foldMap freeVariables lhs :: FreeVariables Variable)
-        in
-            not
-                $ isSubsetOf
-                    (getFreeVariables $ freeVariables rhs)
-                    freeVariablesLhs
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
