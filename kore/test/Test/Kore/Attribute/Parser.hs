@@ -8,10 +8,6 @@ import Prelude.Kore
 
 import Test.Tasty.HUnit
 
-import Data.Either
-    ( isLeft
-    )
-
 import Kore.Attribute.Attributes
     ( Attributes (..)
     )
