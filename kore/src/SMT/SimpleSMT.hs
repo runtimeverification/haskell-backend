@@ -18,6 +18,7 @@ module SMT.SimpleSMT
     , debug
     , command
     , stop
+    , Logger
     , newSolver
     , ackCommand
     , ackCommandIgnoreErr
@@ -160,14 +161,16 @@ import Prelude hiding
     , or
     )
 
-import qualified Control.Exception as X
+import qualified Colog
+import Control.Concurrent
+    ( forkIO
+    )
+import qualified Control.Monad.Catch as X
+import Control.Monad.Fail (MonadFail)
 import qualified Control.Monad as Monad
 import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
-    )
-import Control.Monad.IO.Unlift
-    ( MonadUnliftIO (..)
     )
 import Data.Bits
     ( testBit
@@ -211,8 +214,6 @@ import qualified Text.Megaparsec as Parser
 import Text.Read
     ( readMaybe
     )
-import qualified UnliftIO as Unlift
-import qualified UnliftIO.Concurrent as Unlift
 
 import Kore.Debug hiding
     ( debug
@@ -253,32 +254,33 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 
 --------------------------------------------------------------------------------
 
+type Logger = Log.LogAction IO Log.SomeEntry
+
 -- | An interactive solver process.
 data Solver = Solver
     { hIn    :: !Handle
     , hOut   :: !Handle
     , hErr   :: !Handle
     , hProc  :: !ProcessHandle
+    , logger :: !Logger
     }
     deriving (GHC.Generic)
 
 -- | Start a new solver process.
 newSolver
-    :: Log.MonadLog m
-    => MonadUnliftIO m
-    => FilePath -- ^ Executable
+    :: FilePath -- ^ Executable
     -> [String] -- ^ Arguments
-    -> m Solver
-newSolver exe opts = do
-    (hIn, hOut, hErr, hProc) <-
-        liftIO $ runInteractiveProcess exe opts Nothing Nothing
-    let solver = Solver { hIn, hOut, hErr, hProc }
+    -> Logger   -- ^ Logger
+    -> IO Solver
+newSolver exe opts logger = do
+    (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
+    let solver = Solver { hIn, hOut, hErr, hProc, logger }
 
-    _ <- Unlift.forkIO $ do
+    _ <- forkIO $ do
         let handler X.SomeException {} = return ()
-        Unlift.handle handler $ Monad.forever $ do
-            errs <- liftIO $ Text.hGetLine hErr
-            debug errs
+        X.handle handler $ Monad.forever $ do
+            errs <- Text.hGetLine hErr
+            debug solver errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
@@ -291,20 +293,22 @@ logMessageWith
     :: Log.MonadLog m
     => HasCallStack
     => Log.Severity
+    -> Solver
     -> Text
     -> m ()
-logMessageWith severity a = Log.logEntry message
+logMessageWith severity Solver { logger } a =
+    Log.logEntry message
   where
     message = Log.SomeEntry $ Log.LogMessage a severity callStack
 
-debug :: (Log.MonadLog m, HasCallStack) => Text -> m ()
+debug :: (Log.MonadLog m, HasCallStack) => Solver -> Text -> m ()
 debug = logMessageWith Log.Debug
 
-warn :: (Log.MonadLog m, HasCallStack) => Text -> m ()
+warn :: (Log.MonadLog m, HasCallStack) => Solver -> Text -> m ()
 warn = logMessageWith Log.Warning
 
 send :: (Log.MonadLog m, MonadIO m) => Solver -> SExpr -> m ()
-send Solver { hIn } command' = do
+send Solver { hIn, logger } command' = do
     logDebugSolverSendWith command'
     liftIO $ do
         sendSExpr hIn command'
@@ -312,7 +316,7 @@ send Solver { hIn } command' = do
         hFlush hIn
 
 recv :: (Log.MonadLog m, MonadIO m) => Solver -> m SExpr
-recv Solver { hOut } = do
+recv Solver { hOut, logger } = do
     responseLines <- liftIO $ readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
     logDebugSolverRecvWith resp
@@ -342,16 +346,13 @@ command solver c =
         send solver c
         recv solver
 
-stop
-    :: forall m
-     . (Log.MonadLog m, MonadUnliftIO m)
-    => Solver -> m ExitCode
+stop :: forall m . (Log.MonadLog m, MonadIO m, X.MonadCatch m) => Solver -> m ExitCode
 stop solver@Solver { hIn, hOut, hErr, hProc } = do
     send solver (List [Atom "exit"])
     ec <- liftIO $ waitForProcess hProc
-    let handler :: X.IOException -> m ()
-        handler ex = (debug . Text.pack) (show ex)
-    Unlift.handle handler $ liftIO $ do
+    let handler :: X.SomeException -> m ()
+        handler = debug solver . Text.pack . show
+    X.handle handler $ liftIO $ do
         hClose hIn
         hClose hOut
         hClose hErr
@@ -414,7 +415,9 @@ setOption :: (Log.MonadLog m, MonadIO m) => Solver -> Text -> Text -> m ()
 setOption s x y = simpleCommand s [ "set-option", x, y ]
 
 -- | Set a solver option, returning False if the option is unsupported.
-setOptionMaybe :: (Log.MonadLog m, MonadIO m) => Solver -> Text -> Text -> m Bool
+setOptionMaybe
+    :: (Log.MonadLog m, MonadIO m)
+    => Solver -> Text -> Text -> m Bool
 setOptionMaybe s x y = simpleCommandMaybe s [ "set-option", x, y ]
 
 -- | Set the solver's logic.  Usually, this should be done first.
@@ -447,10 +450,11 @@ popMany :: (Log.MonadLog m, MonadIO m) => Solver -> Integer -> m ()
 popMany proc n = simpleCommand proc [ "pop", Text.pack (show n) ]
 
 -- | Execute the IO action in a new solver scope (push before, pop after)
-inNewScope :: (Log.MonadLog m, MonadUnliftIO m) => Solver -> m a -> m a
+inNewScope
+    :: (Log.MonadLog m, MonadIO m, X.MonadMask m) => Solver -> IO a -> m a
 inNewScope s m = do
     push s
-    m `Unlift.finally` pop s
+    (liftIO m) `X.finally` pop s
 
 
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
@@ -469,7 +473,8 @@ declareFun proc FunctionDeclaration {name, inputSorts, resultSort} = do
     return (const name)
 
 declareSort
-    :: (Log.MonadLog m, MonadIO m) => Solver -> SmtSortDeclaration -> m SExpr
+    :: (Log.MonadLog m, MonadIO m)
+    => Solver -> SmtSortDeclaration -> m SExpr
 declareSort
     proc
     SortDeclaration {name, arity}
@@ -607,30 +612,29 @@ declareDatatypes proc datatypes =
 
 -- | Declare an ADT using the format introduced in SmtLib 2.6.
 declareDatatype
-    :: (Log.MonadLog m, MonadIO m) => Solver -> SmtDataTypeDeclaration -> m ()
+    :: (Log.MonadLog m, MonadIO m)
+    => Solver -> SmtDataTypeDeclaration -> m ()
 declareDatatype proc declaration = declareDatatypes proc [declaration]
 
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns the defined name as a constant expression.
-define
-    :: (Log.MonadLog m, MonadIO m)
-    => Solver
-    -> Text     {- ^ New symbol -}
-    -> SExpr    {- ^ Symbol type -}
-    -> SExpr    {- ^ Symbol definition -}
-    -> m SExpr
+define :: (Log.MonadLog m, MonadIO m)
+       => Solver ->
+          Text {- ^ New symbol -} ->
+          SExpr  {- ^ Symbol type -} ->
+          SExpr  {- ^ Symbol definition -} ->
+          m SExpr
 define proc f = defineFun proc f []
 
 -- | Define a function or a constant.
 -- For convenience, returns an the defined name as a constant expression.
-defineFun
-    :: (Log.MonadLog m, MonadIO m)
-    => Solver
-    -> Text             {- ^ New symbol -}
-    -> [(Text,SExpr)]   {- ^ Parameters, with types -}
-    -> SExpr            {- ^ Type of result -}
-    -> SExpr            {- ^ Definition -}
-    -> m SExpr
+defineFun :: (Log.MonadLog m, MonadIO m)
+          => Solver ->
+             Text           {- ^ New symbol -} ->
+             [(Text,SExpr)] {- ^ Parameters, with types -} ->
+             SExpr            {- ^ Type of result -} ->
+             SExpr            {- ^ Definition -} ->
+             m SExpr
 defineFun proc f as t e = do
     ackCommand proc $ fun "define-fun"
         [ Atom f, List [ List [const x,a] | (x,a) <- as ], t, e]
@@ -650,11 +654,11 @@ check solver = do
         Atom "unknown" -> do
             Monad.when featureProduceAssertions $ do
                 asserts <- command solver (List [Atom "get-assertions"])
-                warn (buildText asserts)
+                warn solver (buildText asserts)
             return Unknown
         Atom "sat"     -> do
             model <- command solver (List [Atom "get-model"])
-            debug (buildText model)
+            debug solver (buildText model)
             return Sat
         _ -> fail $ unlines
             [ "Unexpected result from the SMT solver:"
@@ -692,7 +696,8 @@ sexprToVal expr =
 -- | Get the values of some s-expressions.
 -- Only valid after a 'Sat' result.
 getExprs
-    :: (Log.MonadLog m, MonadIO m) => Solver -> [SExpr] -> m [(SExpr, Value)]
+    :: (Log.MonadLog m, MonadIO m)
+    => Solver -> [SExpr] -> m [(SExpr, Value)]
 getExprs solver vals =
   do let cmd = List [ Atom "get-value", List vals ]
      res <- command solver cmd
@@ -718,23 +723,19 @@ getExprs solver vals =
 -- A special case of 'getExprs'.
 -- Only valid after a 'Sat' result.
 getConsts
-    :: (Log.MonadLog m, MonadIO m) => Solver -> [Text] -> m [(Text, Value)]
+    :: (Log.MonadLog m, MonadIO m)
+    => Solver -> [Text] -> m [(Text, Value)]
 getConsts proc xs =
   do ans <- getExprs proc (map Atom xs)
      return [ (x,e) | (Atom x, e) <- ans ]
 
 
 -- | Get the value of a single expression.
-getExpr :: (Log.MonadLog m, MonadIO m) => Solver -> SExpr -> m Value
-getExpr proc x
-  = do
-    result <- getExprs proc [x]
-    case result of
-        [ (_,v) ] -> return v
-        _ -> fail $ unlines
-            [ "Unexpected non-singleton expression"
-            , show result
-            ]
+getExpr
+    :: (Log.MonadLog m, MonadIO m, MonadFail m) => Solver -> SExpr -> m Value
+getExpr proc x =
+  do [ (_,v) ] <- getExprs proc [x]
+     return v
 
 -- | Get the value of a single constant.
 getConst :: (Log.MonadLog m, MonadIO m) => Solver -> Text -> m Value
