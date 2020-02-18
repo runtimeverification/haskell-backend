@@ -26,7 +26,8 @@ TESTS = \
 	$(wildcard $(TEST_DIR)/*.merge) \
 	$(wildcard $(TEST_DIR)/test-*.sh)
 
-OUTS = $(foreach TEST, $(TESTS), $(TEST).out)
+OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
+GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
 
 KOMPILE_OPTS += -d $(DEF_DIR)
 KRUN_OPTS += -d $(DEF_DIR)
@@ -140,7 +141,7 @@ test: test-k
 
 test-k: $(OUTS)
 
-golden: $(foreach OUT, $(OUTS), $(OUT).golden)
+golden: $(GOLDEN)
 
 clean:
 	rm -fr $(KOMPILED) $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
