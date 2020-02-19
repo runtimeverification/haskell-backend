@@ -101,7 +101,6 @@ import Kore.Variables.UnifiedVariable
     , extractElementVariable
     )
 
-
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
@@ -378,10 +377,14 @@ splitSubstitution
 splitSubstitution variable substitution =
     (bound, independent)
   where
-    reversedSubstitution =
-        Substitution.reverseIfRhsIsVar (ElemVar variable) substitution
+    orderRenamedSubstitution =
+        Substitution.orderRenameAndRenormalizeTODO
+            (ElemVar variable)
+            substitution
     (dependent, independent) =
-        Substitution.partition hasVariable reversedSubstitution
+        Substitution.partition
+            hasVariable
+            orderRenamedSubstitution
     hasVariable variable' term =
         ElemVar variable == variable'
         || TermLike.hasFreeVariable (ElemVar variable) term

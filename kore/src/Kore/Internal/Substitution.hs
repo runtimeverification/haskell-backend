@@ -27,7 +27,7 @@ module Kore.Internal.Substitution
     , unsafeWrap
     , Kore.Internal.Substitution.filter
     , partition
-    , reverseIfRhsIsVar
+    , orderRenameAndRenormalizeTODO
     , toPredicate
     , Normalization (..)
     , wrapNormalization
@@ -425,27 +425,19 @@ partition criterion (NormalizedSubstitution substitution) =
     let (true, false) = Map.partitionWithKey criterion substitution
     in (NormalizedSubstitution true, NormalizedSubstitution false)
 
-{- | Reverses all `var = givenVar` assignments in the substitution and
-renormalizes, if needed.
--}
-reverseIfRhsIsVar
+-- TODO(Ana): this will be refactored in a subsequent PR
+orderRenameAndRenormalizeTODO
     :: forall variable
     .  InternalVariable variable
     => UnifiedVariable variable
     -> Substitution variable
     -> Substitution variable
-reverseIfRhsIsVar variable (Substitution substitution) =
-    Substitution (map (reversePairIfRhsVar variable) substitution)
-  where
-    reversePairIfRhsVar
-        :: UnifiedVariable variable
-        -> (UnifiedVariable variable, TermLike variable)
-        -> (UnifiedVariable variable, TermLike variable)
-    reversePairIfRhsVar var (substVar, Var_ substitutionVar)
-      | var == substitutionVar =
-          (substitutionVar, mkVar substVar)
-    reversePairIfRhsVar _ original = original
-reverseIfRhsIsVar variable original@(NormalizedSubstitution substitution) =
+orderRenameAndRenormalizeTODO _ (Substitution substitution) =
+    Substitution (fmap orderRenaming substitution)
+orderRenameAndRenormalizeTODO
+    variable
+    original@(NormalizedSubstitution substitution)
+  =
     case reversableVars of
         [] -> original
         (v:vs) ->
