@@ -57,6 +57,7 @@ import Control.Monad.Catch
     ( MonadCatch
     , MonadMask
     , MonadThrow
+    , bracket
     , finally
     )
 import qualified Control.Monad.Counter as Counter
@@ -67,7 +68,6 @@ import Control.Monad.IO.Class
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO (..)
     , UnliftIO (..)
-    , withRunInIO
     , withUnliftIO
     )
 import qualified Control.Monad.Morph as Morph
@@ -289,17 +289,18 @@ withSolver' action = SmtT $ do
     mvar <- Reader.ask
     liftIO $ withMVar mvar action
 
-withSolverT' :: MonadUnliftIO m => (Solver -> m a) -> SmtT m a
+withSolverT' :: MonadIO m => MonadMask m => (Solver -> m a) -> SmtT m a
 withSolverT' action = SmtT $ do
     mvar <- Reader.ask
-    Trans.lift $ withRunInIO $ \runInIO -> withMVar mvar (runInIO . action)
+    Trans.lift $
+        bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
 
-instance MonadUnliftIO m => MonadLog (SmtT m) where
+instance (MonadIO m, MonadMask m) => MonadLog (SmtT m) where
     logEntry entry = withSolverT' $ \solver -> do
         let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
         liftIO $ Colog.unLogAction logAction entry
 
-instance (MonadIO m, MonadUnliftIO m, MonadMask m) => MonadSMT (SmtT m) where
+instance (MonadIO m, MonadMask m) => MonadSMT (SmtT m) where
     withSolver (SmtT action) =
         withSolverT' $ \solver -> do
             -- Create an unshared "dummy" mutex for the solver.
