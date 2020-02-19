@@ -203,7 +203,7 @@ targetBinder
 targetBinder Binder { binderVariable, binderChild } =
     let newVar = mkElementTarget binderVariable
         targetBoundVariables =
-            targetIfEqual . getElementVariable $ binderVariable
+            targetIfEqual binderVariable
         newChild =
             Pattern.mapVariables
                 targetBoundVariables

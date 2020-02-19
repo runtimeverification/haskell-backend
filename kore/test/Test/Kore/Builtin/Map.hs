@@ -1184,7 +1184,7 @@ test_renormalize =
     x = mkIntVar (testId "x")
     v = mkIntVar (testId "v")
 
-    k1, k2 :: FreshVariable variable => TermLike variable
+    k1, k2 :: InternalVariable variable => TermLike variable
     k1 = Test.Int.asInternal 1
     k2 = Test.Int.asInternal 2
 

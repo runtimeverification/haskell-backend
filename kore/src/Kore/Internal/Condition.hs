@@ -64,7 +64,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Syntax
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable

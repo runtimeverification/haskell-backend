@@ -31,9 +31,6 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import Control.Monad.IO.Unlift
-    ( MonadUnliftIO
-    )
 import qualified Control.Monad.Trans as Trans
 import Data.Map.Strict
     ( Map
@@ -266,14 +263,14 @@ simplify =
     . simplifyConditionalTerm SideCondition.top
 
 evaluate
-    :: (MonadSMT smt, MonadUnliftIO smt, MonadProfiler smt, MonadLog smt)
+    :: (MonadSMT smt, MonadProfiler smt, MonadLog smt)
     => TermLike Variable
     -> smt (Pattern Variable)
 evaluate = runSimplifier testEnv . (`TermLike.simplify` SideCondition.top)
 
 evaluateT
     :: Trans.MonadTrans t
-    => (MonadSMT smt, MonadUnliftIO smt, MonadProfiler smt, MonadLog smt)
+    => (MonadSMT smt, MonadProfiler smt, MonadLog smt)
     => TermLike Variable
     -> t smt (Pattern Variable)
 evaluateT = Trans.lift . evaluate

@@ -27,9 +27,6 @@ import Control.Monad.Catch
     ( MonadCatch
     , MonadThrow
     )
-import Control.Monad.IO.Unlift
-    ( MonadUnliftIO
-    )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
@@ -109,8 +106,7 @@ instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
     {-# INLINE profile #-}
 
 instance
-    ( MonadUnliftIO m
-    , MonadSMT m
+    ( MonadSMT m
     , MonadProfiler m
     , WithLog LogMessage m
     )
@@ -179,7 +175,7 @@ that may branch.
 evalSimplifier
     :: forall smt a
     .  WithLog LogMessage smt
-    => (MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
+    => (MonadProfiler smt, MonadSMT smt, MonadIO smt)
     => VerifiedModule Attribute.Symbol
     -> SimplifierT smt a
     -> smt a

@@ -41,9 +41,6 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
-import Kore.Variables.Fresh
-    ( FreshVariable
-    )
 
 {- | Builtin name of the @String@ sort.
  -}
@@ -59,7 +56,7 @@ See also: 'sort'
 
  -}
 asInternal
-    :: FreshVariable variable
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> TermLike variable

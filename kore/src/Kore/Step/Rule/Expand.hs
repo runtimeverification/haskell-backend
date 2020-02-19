@@ -19,6 +19,7 @@ import Data.List.NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
+import qualified Debug
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (getFreeVariables)
     , freeVariables
@@ -71,6 +72,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar)
     , extractElementVariable
     )
+import qualified Pretty
 
 -- | Instantiate variables on sorts with a single constructor
 {- TODO(ttuegel): make this a strategy step, so that we expand any
@@ -299,17 +301,18 @@ maybeNewVariable
         then error "Unmatching sort for direct use variable."
         else (usedVariables, mkElemVar variable)
 maybeNewVariable usedVariables variable sort UseAsPrototype =
-    case refreshVariable usedVariables (resort variable) of
+    case refreshVariable usedVariables variable' of
         Just newVariable ->
             ( Set.insert newVariable usedVariables
             , mkElemVar newVariable
             )
         Nothing ->
-            (error . unlines)
-                [ "Expecting a variable refresh for"
-                , show variable
-                , "but got nothing. Used variables:"
-                , show usedVariables
+            (error . show . Pretty.hang 4 . Pretty.vsep)
+                [ "Failed to generate a new name for:"
+                , Pretty.indent 4 $ Debug.debug variable'
+                , "while avoiding:"
+                , Pretty.indent 4 $ Debug.debug usedVariables
                 ]
   where
+    variable' = resort variable
     resort (ElementVariable var) = ElementVariable var { variableSort = sort }

@@ -231,8 +231,12 @@ orderRenameAndRenormalizeTODOTests =
             (orderRenameAndRenormalizeTODO (ElemVar Mock.x) subst)
     , testCase "unnormalized reverses RHS" $ do
         let
-            expectedSubst = wrap [assign targetVarX nonTargetPattY]
-            originalSubst = wrap [assign nonTargetVarY targetPattX]
+            expectedSubst =
+                wrap . mkUnwrappedSubstitution
+                $ [(targetVarX, nonTargetPattY)]
+            originalSubst =
+                wrap . mkUnwrappedSubstitution
+                $ [(nonTargetVarY, targetPattX)]
         assertEqual ""
             expectedSubst
             ( orderRenameAndRenormalizeTODO
@@ -241,8 +245,12 @@ orderRenameAndRenormalizeTODOTests =
             )
     , testCase "unnormalized does not reverse RHS" $ do
         let
-            expectedSubst = wrap [assign targetVarX nonTargetPattY]
-            originalSubst = wrap [assign targetVarX nonTargetPattY]
+            expectedSubst =
+                wrap . mkUnwrappedSubstitution
+                $ [(targetVarX, nonTargetPattY)]
+            originalSubst =
+                wrap . mkUnwrappedSubstitution
+                $ [(targetVarX, nonTargetPattY)]
         assertEqual ""
             expectedSubst
             ( orderRenameAndRenormalizeTODO
@@ -258,10 +266,10 @@ orderRenameAndRenormalizeTODOTests =
             (orderRenameAndRenormalizeTODO (ElemVar Mock.x) originalSubst)
     , testCase "unnormalized reverses multiple RHS" $ do
         let
-            expectedSubst = wrap
-                [ assign targetVarX nonTargetPattY, assign targetVarX nonTargetPattZ ]
-            originalSubst = wrap
-                [ assign nonTargetVarY targetPattX, assign nonTargetVarZ targetPattX ]
+            expectedSubst = wrap . mkUnwrappedSubstitution $
+                [ (targetVarX, nonTargetPattY), (targetVarX, nonTargetPattZ) ]
+            originalSubst = wrap . mkUnwrappedSubstitution $
+                [ (nonTargetVarY, targetPattX), (nonTargetVarZ, targetPattX) ]
         assertEqual ""
             expectedSubst
             (orderRenameAndRenormalizeTODO targetVarX originalSubst)

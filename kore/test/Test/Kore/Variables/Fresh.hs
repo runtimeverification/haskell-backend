@@ -2,13 +2,24 @@
 
 module Test.Kore.Variables.Fresh
     ( test_refreshVariable
+    , test_FreshPartialOrd_Variable
+    , test_FreshPartialOrd_ElementVariable
+    , test_FreshPartialOrd_SetVariable
+    , test_FreshPartialOrd_UnifiedVariable
     ) where
 
 import Prelude.Kore
 
+import Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import Test.Tasty
+import Test.Tasty.Hedgehog
 import Test.Tasty.HUnit
 
+import Control.Monad
+    ( unless
+    )
 import Data.Maybe
     ( fromJust
     )
@@ -16,7 +27,9 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Numeric.Natural
 
+import Data.Sup
 import Kore.Sort
 import Kore.Syntax.ElementVariable
     ( ElementVariable (..)
@@ -30,8 +43,19 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     , mapUnifiedVariable
     )
+import Pair
 
 import Test.Kore
+    ( idGen
+    , testId
+    )
+import Test.Kore.Step.MockSymbols
+    ( subSort
+    , testSort
+    , testSort0
+    , testSort1
+    , topSort
+    )
 
 metaVariable :: Variable
 metaVariable = Variable
@@ -49,7 +73,16 @@ metaVariableDifferentSort = Variable
 
 test_refreshVariable :: [TestTree]
 test_refreshVariable =
-    [ testGroup "instance FreshVariable Variable"
+    [ testCase "same name, different sort" $ do
+        let x0 = Variable (testId "x0") Nothing testSort0
+            x1 = x0 { variableSort = testSort1 }
+            x1' = x1 { variableCounter = Just (Element 0) }
+        let avoiding = Set.singleton x0
+        assertEqual "Expected fresh variable"
+            (Just x1')
+            (refreshVariable avoiding x1)
+
+    , testGroup "instance FreshVariable Variable"
         [ testCase "refreshVariable - avoid empty set" $
             assertEqual "Expected no new variable"
                 Nothing
@@ -296,3 +329,120 @@ test_refreshVariable =
     unifiedSetNonTargetOriginal  = unifiedNonTarget unifiedSetOriginal
     avoidUET = Set.singleton unifiedElemNonTargetOriginal
     avoidUST = Set.singleton unifiedSetTargetOriginal
+
+{- | Property tests of a 'FreshPartialOrd' instance using the given generator.
+
+The generator should produce a 'Pair' of related variables.
+
+ -}
+testFreshPartialOrd
+    :: (Show variable, FreshPartialOrd variable)
+    => Gen (Pair variable)
+    -> [TestTree]
+testFreshPartialOrd gen =
+    [ testProperty "exclusive bounds" $ property $ do
+        xy <- forAll gen
+        let Pair infX infY = infVariable <$> xy
+            Pair supX supY = supVariable <$> xy
+        annotateShow infX
+        annotateShow supX
+        annotateShow infY
+        annotateShow supY
+        (infX == infY) === (supX == supY)
+        infX /== supY
+        infY /== supX
+    , testProperty "lower and upper bound" $ property $ do
+        Pair x _ <- forAll gen
+        let inf = infVariable x
+            sup = supVariable x
+        annotateShow inf
+        annotateShow sup
+        Hedgehog.assert (inf <= x)
+        Hedgehog.assert (x <= sup)
+        Hedgehog.assert (inf < sup)
+    , testProperty "idempotence" $ property $ do
+        Pair x _ <- forAll gen
+        let inf1 = infVariable x
+            inf2 = infVariable inf1
+            sup1 = supVariable x
+            sup2 = supVariable sup1
+        inf1 === inf2
+        sup1 === sup2
+    , testProperty "nextVariable" $ property $ do
+        Pair x _ <- forAll gen
+        let inf = infVariable x
+            sup = supVariable x
+            next = nextVariable x
+        unless (x < sup) discard
+        annotateShow inf
+        annotateShow sup
+        annotateShow next
+        Hedgehog.assert (inf < next)
+        Hedgehog.assert (x < next)
+        Hedgehog.assert (next < sup)
+    ]
+
+test_FreshPartialOrd_Variable :: TestTree
+test_FreshPartialOrd_Variable =
+    testGroup "instance FreshPartialOrd Variable"
+    $ testFreshPartialOrd relatedVariableGen
+
+test_FreshPartialOrd_ElementVariable :: TestTree
+test_FreshPartialOrd_ElementVariable =
+    testGroup "instance FreshPartialOrd (ElementVariable Variable)"
+    $ testFreshPartialOrd relatedElementVariableGen
+
+test_FreshPartialOrd_SetVariable :: TestTree
+test_FreshPartialOrd_SetVariable =
+    testGroup "instance FreshPartialOrd (SetVariable Variable)"
+    $ testFreshPartialOrd relatedSetVariableGen
+
+test_FreshPartialOrd_UnifiedVariable :: TestTree
+test_FreshPartialOrd_UnifiedVariable =
+    testGroup "instance FreshPartialOrd (UnifiedVariable Variable)"
+    $ testFreshPartialOrd relatedUnifiedVariableGen
+
+relatedVariableGen :: Gen (Pair Variable)
+relatedVariableGen = do
+    Pair name1 name2 <-
+        Gen.choice
+            [ do { name <- idGen; return (Pair name name) }
+            , Pair <$> idGen <*> idGen
+            ]
+    Pair counter1 counter2 <-
+        Gen.choice
+            [ do { counter <- counterGen; return (Pair counter counter) }
+            , Pair <$> counterGen <*> counterGen
+            ]
+    Pair sort1 sort2 <-
+        Gen.choice
+            [ do { sort <- sortGen; return (Pair sort sort) }
+            , Pair <$> sortGen <*> sortGen
+            ]
+    let variable1 = Variable name1 counter1 sort1
+        variable2 = Variable name2 counter2 sort2
+    return (Pair variable1 variable2)
+
+counterGen :: MonadGen gen => gen (Maybe (Sup Natural))
+counterGen =
+    Gen.frequency
+        [ (2, pure Nothing)
+        , (4, Just . Element <$> Gen.integral (Range.linear 0 256))
+        , (1, pure $ Just Sup)
+        ]
+
+sortGen :: MonadGen gen => gen Sort
+sortGen = Gen.element [testSort, topSort, subSort]
+
+relatedElementVariableGen :: Gen (Pair (ElementVariable Variable))
+relatedElementVariableGen = (fmap . fmap) ElementVariable relatedVariableGen
+
+relatedSetVariableGen :: Gen (Pair (SetVariable Variable))
+relatedSetVariableGen = (fmap . fmap) SetVariable relatedVariableGen
+
+relatedUnifiedVariableGen :: Gen (Pair (UnifiedVariable Variable))
+relatedUnifiedVariableGen =
+    Gen.choice
+        [ (fmap . fmap) ElemVar relatedElementVariableGen
+        , (fmap . fmap) SetVar relatedSetVariableGen
+        ]

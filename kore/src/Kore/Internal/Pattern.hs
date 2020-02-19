@@ -63,6 +63,7 @@ import Kore.Internal.TermLike
     , InternalVariable
     , SetVariable
     , Sort
+    , SortedVariable
     , TermLike
     , mkAnd
     , mkBottom
@@ -79,7 +80,7 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
     )
 
 {- | The conjunction of a pattern, predicate, and substitution.

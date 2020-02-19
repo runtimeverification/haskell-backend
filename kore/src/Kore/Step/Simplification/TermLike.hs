@@ -54,7 +54,8 @@ import qualified Kore.Internal.Substitution as Substitution
     ( toMap
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( ElementVariable (..)
+    , TermLike
     , TermLikeF (..)
     , termLikeSort
     )
@@ -415,7 +416,7 @@ simplifyInternal term sideCondition = do
                     -> SideCondition (Target variable)
                 targetSideCondition =
                     SideCondition.mapVariables
-                        (targetIfEqual boundVar)
+                        (targetIfEqual . ElementVariable $ boundVar)
                         mkSetNonTarget
                 targetSimplifiedChildren
                     :: TermLike.Exists
