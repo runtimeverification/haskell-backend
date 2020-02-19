@@ -159,7 +159,10 @@ test_ceilSimplification =
             Conditional
                 { term = somethingOfA
                 , predicate = makeEqualsPredicate_ fOfA gOfA
-                , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                , substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual "ceil(something(a) and equals(f(a), g(a)))"
             expected
@@ -190,7 +193,10 @@ test_ceilSimplification =
                 Conditional
                     { term = constructorTerm
                     , predicate = makeEqualsPredicate_ fOfA gOfA
-                    , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, fOfB)]
                     }
             assertEqual
                 "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
@@ -229,7 +235,10 @@ test_ceilSimplification =
             Conditional
                 { term = Mock.functional20 somethingOfA somethingOfB
                 , predicate = makeEqualsPredicate_ fOfA gOfA
-                , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                , substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional(something(a), something(b)) and eq(f(a), g(a)))"
@@ -255,7 +264,10 @@ test_ceilSimplification =
             Conditional
                 { term = fOfA
                 , predicate = makeEqualsPredicate_ fOfA gOfA
-                , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                , substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(f(a)) and eq(f(a), g(a)))"
@@ -278,7 +290,10 @@ test_ceilSimplification =
             Conditional
                 { term = Mock.a
                 , predicate = makeEqualsPredicate_ fOfA gOfA
-                , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                , substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional and eq(f(a), g(a)))"
@@ -301,7 +316,10 @@ test_ceilSimplification =
             Conditional
                 { term = mkEvaluated Mock.a
                 , predicate = makeEqualsPredicate_ fOfA gOfA
-                , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                , substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional and eq(f(a), g(a)))"
@@ -332,7 +350,10 @@ test_ceilSimplification =
             Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate_ fOfA gOfA
-                , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                , substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
@@ -372,7 +393,10 @@ test_ceilSimplification =
             Conditional
                 { term = Mock.functional20 fOfA fOfB
                 , predicate = makeEqualsPredicate_ fOfA gOfA
-                , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
+                , substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
@@ -608,7 +632,7 @@ mapVariables =
         fromVariable v { variableCounter = Just (Sup.Element 1) }
 
 makeCeil
-    :: Ord variable
+    :: InternalVariable variable
     => [Pattern variable]
     -> Ceil Sort (OrPattern variable)
 makeCeil patterns =

@@ -306,7 +306,10 @@ test_applyRewriteRule_ =
             expect = Right
                 [ OrPattern.fromPatterns [initial { term, substitution }] ]
               where
-                substitution = Substitution.wrap [ (ElemVar Mock.x, term) ]
+                substitution =
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [ (ElemVar Mock.x, term) ]
             initial = Pattern.fromTermLike (Mock.sigma (mkElemVar Mock.x) term)
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -316,7 +319,9 @@ test_applyRewriteRule_ =
                 [ OrPattern.fromPatterns [initial { term = fz, substitution }] ]
               where
                 substitution =
-                    Substitution.wrap [ (ElemVar Mock.y, mkElemVar Mock.z) ]
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [ (ElemVar Mock.y, mkElemVar Mock.z) ]
             fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
             initial = Pattern.fromTermLike (Mock.sigma fy fz)
@@ -328,7 +333,9 @@ test_applyRewriteRule_ =
                 [ OrPattern.fromPatterns [initial { term = yy, substitution }] ]
               where
                 substitution =
-                    Substitution.wrap [ (ElemVar Mock.x, mkElemVar Mock.y) ]
+                    Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
+                    [ (ElemVar Mock.x, mkElemVar Mock.y) ]
             xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             yx = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.x)
             yy = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y)
@@ -435,7 +442,9 @@ test_applyRewriteRule_ =
                             (Mock.functionalConstr10 (mkElemVar Mock.y))
                     , predicate = Predicate.makeTruePredicate_
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.y, mkElemVar Mock.x)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, mkElemVar Mock.x)]
                     }
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -450,13 +459,20 @@ test_applyRewriteRule_ =
                 Left . SubstitutionError
                 $ SimplifiableCycle [ElemVar Mock.y] normalization
             fy = Mock.functional10 (mkElemVar Mock.y)
-            normalization = mempty { denormalized = [(ElemVar Mock.y, fy)] }
+            normalization =
+                mempty
+                    { denormalized =
+                        Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, fy)]
+                    }
             initial =
                 Conditional
                     { term = Mock.sigma (mkElemVar Mock.x) fy
                     , predicate = makeTruePredicate_
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.y, mkElemVar Mock.x)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, mkElemVar Mock.x)]
                     }
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -484,7 +500,9 @@ test_applyRewriteRule_ =
                         [ Conditional
                             { term = Mock.sigma zz zz
                             , predicate = makeTruePredicate Mock.testSort
-                            , substitution = Substitution.wrap
+                            , substitution =
+                                Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                 [ (ElemVar Mock.x, zz)
                                 , (ElemVar Mock.y, mkElemVar Mock.z)
                                 ]
@@ -513,7 +531,9 @@ test_applyRewriteRule_ =
                             { term = Mock.sigma fb fb
                             , predicate = makeTruePredicate Mock.testSort
                             , substitution =
-                                Substitution.wrap [(ElemVar Mock.x, fb)]
+                                Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
+                                [(ElemVar Mock.x, fb)]
                             }
                         ]
                     ]
@@ -538,6 +558,7 @@ test_applyRewriteRule_ =
                             , predicate = makeTruePredicate Mock.testSort
                             , substitution =
                                 Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [ (ElemVar Mock.x, fz)
                                     , (ElemVar Mock.y, mkElemVar Mock.z)
                                     ]
@@ -551,7 +572,10 @@ test_applyRewriteRule_ =
                             (Mock.sigma (mkElemVar Mock.x) fy)
                             (mkElemVar Mock.x)
                     , predicate = makeTruePredicate_
-                    , substitution = Substitution.wrap [(ElemVar Mock.x, fz)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, fz)]
                     }
         actual <- applyRewriteRuleParallel_ initial axiomSigmaXXY
         assertEqual "" expect actual
@@ -606,7 +630,9 @@ test_applyRewriteRule_ =
                                     (Mock.functional11 fb)
                                     (Mock.functional10 fb)
                             , substitution =
-                                Substitution.wrap [(ElemVar Mock.x, fb)]
+                                Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
+                                [(ElemVar Mock.x, fb)]
                             }
                         ]
                     ]
@@ -832,7 +858,9 @@ test_applyRewriteRulesParallel =
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.testSort Mock.cg
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, Mock.a)]
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -875,6 +903,7 @@ test_applyRewriteRulesParallel =
                             (makeCeilPredicate_ Mock.cg)
                     , substitution =
                         Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                             [(ElemVar Mock.x, Mock.a)]
                     }
             remainders =
@@ -960,7 +989,9 @@ test_applyRewriteRulesParallel =
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.testSort Mock.cg
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, Mock.a)]
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -1014,13 +1045,17 @@ test_applyRewriteRulesParallel =
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(ElemVar Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.b)]
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(ElemVar Mock.x, Mock.b)]
                         }
                     ]
             remainders =
@@ -1070,7 +1105,9 @@ test_applyRewriteRulesParallel =
                     { term = Mock.cg
                     , predicate = makeCeilPredicate Mock.testSort Mock.cg
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, Mock.a)]
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -1207,13 +1244,17 @@ test_applyRewriteRulesSequence =
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(ElemVar Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.b)]
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(ElemVar Mock.x, Mock.b)]
                         }
                     ]
             remainders =

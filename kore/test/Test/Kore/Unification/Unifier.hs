@@ -540,14 +540,16 @@ test_unification =
         -}
     , testCase "Maps substitution variables"
         (assertEqual ""
+            ( Substitution.mkUnwrappedSubstitution
             [(ElemVar $ ElementVariable $ W "1", war' "2")]
+            )
             (Substitution.unwrap
-                . fmap Substitution.assignmentToPair
                 . Substitution.mapVariables
                     (fmap showVar)
                     (fmap showVar)
                 . Substitution.wrap
-                $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
+                $ Substitution.mkUnwrappedSubstitution
+                [(ElemVar $ ElementVariable $ V 1, var' 2)]
             )
         )
     , testCase "framed Map with concrete Map" $

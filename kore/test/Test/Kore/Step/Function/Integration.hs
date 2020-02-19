@@ -457,7 +457,9 @@ test_functionIntegration =
                                         )
                                     )
                             , substitution =
-                                Substitution.wrap [(ElemVar Mock.x, Mock.cf)]
+                                Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
+                                [(ElemVar Mock.x, Mock.cf)]
                             }
                         )
                     ]
@@ -1348,7 +1350,7 @@ appliedMockEvaluator result =
 
 mapVariables
     :: forall variable
-    .  (FreshVariable variable, VariableName variable)
+    .  (InternalVariable variable, VariableName variable)
     => Pattern Variable
     -> Pattern variable
 mapVariables =
