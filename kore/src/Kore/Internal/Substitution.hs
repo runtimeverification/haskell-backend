@@ -36,6 +36,7 @@ module Kore.Internal.Substitution
     , toPredicate
     , Normalization (..)
     , wrapNormalization
+    , mkNormalization
     , applyNormalized
     ) where
 
@@ -607,6 +608,16 @@ instance Semigroup (Normalization variable) where
 
 instance Monoid (Normalization variable) where
     mempty = Normalization mempty mempty
+
+mkNormalization
+    :: InternalVariable variable
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
+    -> Normalization variable
+mkNormalization normalized' denormalized' =
+    Normalization
+        (mkUnwrappedSubstitution normalized')
+        (mkUnwrappedSubstitution denormalized')
 
 wrapNormalization :: Normalization variable -> Substitution variable
 wrapNormalization Normalization { normalized, denormalized } =
