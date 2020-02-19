@@ -162,10 +162,10 @@ instance
 
 targetIfEqual
     :: Eq variable
-    => variable
+    => ElementVariable variable
     -> ElementVariable variable
     -> ElementVariable (Target variable)
-targetIfEqual boundVariable (ElementVariable variable) =
+targetIfEqual boundVariable variable =
     if boundVariable == variable
-        then ElementVariable . Target $ variable
-        else ElementVariable . NonTarget $ variable
+        then mkElementTarget variable
+        else mkElementNonTarget variable
