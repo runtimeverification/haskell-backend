@@ -8,6 +8,7 @@ License     : NCSA
 
 module Kore.Internal.SideCondition
     ( SideCondition  -- Constructor not exported on purpose
+    , fromCondition
     , andCondition
     , assumeTrueCondition
     , assumeTruePredicate
@@ -20,6 +21,16 @@ module Kore.Internal.SideCondition
 
 import Prelude.Kore
 
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Hashable
+    ( Hashable
+    )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Debug
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
@@ -68,6 +79,20 @@ data SideCondition variable =
         , assumedTrue :: !(Condition variable)
         }
     deriving (Eq, Show)
+    deriving (GHC.Generic)
+
+instance SOP.Generic (SideCondition variable)
+
+instance SOP.HasDatatypeInfo (SideCondition variable)
+
+instance Hashable variable => Hashable (SideCondition variable)
+
+instance NFData variable => NFData (SideCondition variable)
+
+instance Debug variable => Debug (SideCondition variable)
+
+instance
+    (InternalVariable variable, Diff variable) => Diff (SideCondition variable)
 
 instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
