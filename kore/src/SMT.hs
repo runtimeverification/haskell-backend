@@ -55,6 +55,7 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
+    , MonadMask
     , MonadThrow
     )
 import qualified Control.Monad.Counter as Counter
@@ -220,7 +221,8 @@ class Monad m => MonadSMT m where
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: ReaderT Logger IO a }
-    deriving (Functor, Applicative, Monad, MonadCatch, MonadIO, MonadThrow)
+    deriving (Functor, Applicative, Monad, MonadIO)
+    deriving (MonadCatch, MonadThrow, MonadMask)
 
 runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
@@ -268,6 +270,7 @@ newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
         , MonadIO
         , MonadThrow
         , Morph.MFunctor
+        , MonadMask
         )
 
 instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where
