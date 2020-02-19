@@ -65,11 +65,6 @@ import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
     )
-import Control.Monad.IO.Unlift
-    ( MonadUnliftIO (..)
-    , UnliftIO (..)
-    , withUnliftIO
-    )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT (..)
@@ -252,8 +247,6 @@ instance MonadProfiler NoSMT where
         configuration <- profileConfiguration
         profileEvent configuration a action
 
-deriving instance MonadUnliftIO NoSMT
-
 -- * Implementation
 
 {- | Query an external SMT solver.
@@ -275,12 +268,6 @@ newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
         , Morph.MFunctor
         , MonadMask
         )
-
-instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where
-    askUnliftIO =
-        SmtT $ ReaderT $ \r ->
-            withUnliftIO $ \u ->
-                return (UnliftIO (unliftIO u . flip runReaderT r . runSmtT))
 
 type SMT = SmtT IO
 

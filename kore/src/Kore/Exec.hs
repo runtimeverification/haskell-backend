@@ -32,8 +32,8 @@ import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
     )
-import Control.Monad.IO.Unlift
-    ( MonadUnliftIO
+import Control.Monad.IO.Class
+    ( MonadIO
     )
 import Control.Monad.Trans.Except
     ( runExceptT
@@ -198,7 +198,7 @@ exec
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -235,7 +235,7 @@ execGetExitCode
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -263,7 +263,7 @@ search
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -304,7 +304,7 @@ prove
       . ( Log.WithLog Log.LogMessage smt
         , MonadCatch smt
         , MonadProfiler smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         , MonadSMT smt
         )
     => Strategy.GraphSearchOrder
@@ -401,7 +401,7 @@ boundedModelCheck
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         )
     => Limit Natural
     -> Limit Natural
@@ -432,7 +432,7 @@ mergeAllRules
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -446,7 +446,7 @@ mergeRulesConsecutiveBatches
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         )
     => Int
     -- ^ Batch size
@@ -463,7 +463,7 @@ mergeRules
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         )
     =>  (  NonEmpty (RewriteRule Variable)
         -> Simplifier.SimplifierT smt [RewriteRule Variable]
@@ -743,7 +743,7 @@ evalProver
     ::  forall smt a
       . ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
-        , MonadUnliftIO smt
+        , MonadIO smt
         , MonadSMT smt
         )
     => VerifiedModule StepperAttributes
