@@ -55,18 +55,15 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
+    , MonadMask
     , MonadThrow
+    , bracket
+    , finally
     )
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
-    )
-import Control.Monad.IO.Unlift
-    ( MonadUnliftIO (..)
-    , UnliftIO (..)
-    , withRunInIO
-    , withUnliftIO
     )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
@@ -114,6 +111,8 @@ import SMT.SimpleSMT
     , SmtSortDeclaration
     , Solver
     , SortDeclaration (..)
+    , pop
+    , push
     )
 import qualified SMT.SimpleSMT as SimpleSMT
 
@@ -220,7 +219,8 @@ class Monad m => MonadSMT m where
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: ReaderT Logger IO a }
-    deriving (Functor, Applicative, Monad, MonadCatch, MonadIO, MonadThrow)
+    deriving (Functor, Applicative, Monad, MonadIO)
+    deriving (MonadCatch, MonadThrow, MonadMask)
 
 runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
@@ -247,8 +247,6 @@ instance MonadProfiler NoSMT where
         configuration <- profileConfiguration
         profileEvent configuration a action
 
-deriving instance MonadUnliftIO NoSMT
-
 -- * Implementation
 
 {- | Query an external SMT solver.
@@ -268,13 +266,8 @@ newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
         , MonadIO
         , MonadThrow
         , Morph.MFunctor
+        , MonadMask
         )
-
-instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where
-    askUnliftIO =
-        SmtT $ ReaderT $ \r ->
-            withUnliftIO $ \u ->
-                return (UnliftIO (unliftIO u . flip runReaderT r . runSmtT))
 
 type SMT = SmtT IO
 
@@ -283,25 +276,26 @@ withSolver' action = SmtT $ do
     mvar <- Reader.ask
     liftIO $ withMVar mvar action
 
-withSolverT' :: MonadUnliftIO m => (Solver -> m a) -> SmtT m a
+withSolverT' :: MonadIO m => MonadMask m => (Solver -> m a) -> SmtT m a
 withSolverT' action = SmtT $ do
     mvar <- Reader.ask
-    Trans.lift $ withRunInIO $ \runInIO -> withMVar mvar (runInIO . action)
+    Trans.lift $ bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
 
-instance MonadUnliftIO m => MonadLog (SmtT m) where
+instance (MonadIO m, MonadMask m) => MonadLog (SmtT m) where
     logEntry entry = withSolverT' $ \solver -> do
         let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
         liftIO $ Colog.unLogAction logAction entry
 
-instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
+instance (MonadIO m, MonadMask m) => MonadSMT (SmtT m) where
     withSolver (SmtT action) =
         withSolverT' $ \solver -> do
             -- Create an unshared "dummy" mutex for the solver.
             mvar <- liftIO $ newMVar solver
             -- Run the inner action with the unshared mutex.
             -- The action will never block waiting to acquire the solver.
-            withRunInIO $ \runInIO ->
-                SimpleSMT.inNewScope solver (runInIO $ runReaderT action mvar)
+            liftIO (push solver)
+            runReaderT action mvar `finally` liftIO (pop solver)
+
 
     declare name typ =
         withSolverT' $ \solver -> liftIO $ SimpleSMT.declare solver name typ

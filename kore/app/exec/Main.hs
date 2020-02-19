@@ -12,9 +12,6 @@ import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
     )
-import Control.Monad.IO.Unlift
-    ( MonadUnliftIO
-    )
 import qualified Control.Monad.Reader.Class as Reader
 import Control.Monad.Trans
     ( lift
@@ -646,7 +643,6 @@ type MonadExecute exe =
     , MonadIO exe
     , MonadProfiler exe
     , MonadSMT exe
-    , MonadUnliftIO exe
     , WithLog LogMessage exe
     )
 
