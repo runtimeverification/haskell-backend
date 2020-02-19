@@ -47,13 +47,15 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
+    ( mapVariables
+    , toRepresentation
     )
 import qualified Kore.Internal.Substitution as Substitution
     ( toMap
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( ElementVariable (..)
+    , TermLike
     , TermLikeF (..)
     , termLikeSort
     )
@@ -148,6 +150,13 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Kore.Variables.Binding as Binding
+import Kore.Variables.Target
+    ( Target (..)
+    , mkSetNonTarget
+    , targetIfEqual
+    , unTargetElement
+    , unTargetSet
+    )
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -389,11 +398,39 @@ simplifyInternal term sideCondition = do
                 Ceil.simplify sideCondition =<< simplifyChildren ceilF
             EqualsF equalsF ->
                 Equals.simplify sideCondition =<< simplifyChildren equalsF
-            ExistsF exists ->
-                Exists.simplify sideCondition
-                    =<< simplifyChildren (refresh exists)
+            ExistsF exists -> do
+                simplifiedChildren <-
+                    simplifyChildren (refresh exists)
+                targetedResults <-
+                    Exists.simplify
+                        (targetSideCondition sideCondition)
+                        (targetSimplifiedChildren simplifiedChildren)
+                let unTargetedResults =
+                        Pattern.mapVariables unTargetElement unTargetSet
+                        <$> targetedResults
+                return unTargetedResults
               where
                 refresh = Lens.over Binding.existsBinder refreshElementBinder
+                targetSideCondition
+                    :: SideCondition variable
+                    -> SideCondition (Target variable)
+                targetSideCondition =
+                    SideCondition.mapVariables
+                        (targetIfEqual . ElementVariable $ boundVar)
+                        mkSetNonTarget
+                targetSimplifiedChildren
+                    :: TermLike.Exists
+                        TermLike.Sort
+                        variable
+                        (OrPattern variable)
+                    -> TermLike.Exists
+                        TermLike.Sort
+                        (Target variable)
+                        (OrPattern (Target variable))
+                targetSimplifiedChildren =
+                    Lens.over Binding.existsBinder OrPattern.targetBinder
+                (TermLike.ElementVariable boundVar) =
+                    TermLike.existsVariable exists
             IffF iffF ->
                 Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->

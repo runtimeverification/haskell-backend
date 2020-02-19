@@ -17,6 +17,7 @@ module Kore.Variables.Target
     , mkElementNonTarget
     , mkSetNonTarget
     , isNonTarget
+    , targetIfEqual
     ) where
 
 import Prelude.Kore
@@ -178,3 +179,13 @@ instance
     unparse (NonTarget var) = unparse var
     unparse2 (Target var) = unparse2 var
     unparse2 (NonTarget var) = unparse2 var
+
+targetIfEqual
+    :: Eq variable
+    => ElementVariable variable
+    -> ElementVariable variable
+    -> ElementVariable (Target variable)
+targetIfEqual boundVariable variable =
+    if boundVariable == variable
+        then mkElementTarget variable
+        else mkElementNonTarget variable

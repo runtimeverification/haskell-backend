@@ -19,6 +19,7 @@ module Kore.Internal.OrPattern
     , isTrue
     , toPattern
     , toTermLike
+    , targetBinder
     , MultiOr.flatten
     , MultiOr.filterOr
     ) where
@@ -55,6 +56,15 @@ import Kore.Internal.TermLike hiding
     )
 import Kore.TopBottom
     ( TopBottom (..)
+    )
+import Kore.Variables.Binding
+    ( Binder (..)
+    )
+import Kore.Variables.Target
+    ( Target (..)
+    , mkElementTarget
+    , mkSetNonTarget
+    , targetIfEqual
     )
 
 {-| The disjunction of 'Pattern'.
@@ -184,3 +194,22 @@ gather
     :: (Ord variable, Monad m)
     => BranchT m (Pattern variable) -> m (OrPattern variable)
 gather = MultiOr.gather
+
+targetBinder
+    :: forall variable
+    .  InternalVariable variable
+    => Binder (ElementVariable variable) (OrPattern variable)
+    -> Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
+targetBinder Binder { binderVariable, binderChild } =
+    let newVar = mkElementTarget binderVariable
+        targetBoundVariables =
+            targetIfEqual binderVariable
+        newChild =
+            Pattern.mapVariables
+                targetBoundVariables
+                mkSetNonTarget
+            <$> binderChild
+     in Binder
+         { binderVariable = newVar
+         , binderChild = newChild
+         }
