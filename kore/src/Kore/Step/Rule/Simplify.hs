@@ -42,7 +42,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( coerceSort
@@ -148,7 +147,7 @@ simplifyClaimRule =
         :: Pattern variable
         -> BranchT simplifier (Pattern variable)
     worker =
-        (return . requireDefined)
+        (return . Pattern.requireDefined)
         >=> simplify
         >=> simplifyWithSolver
     simplify =
@@ -158,20 +157,6 @@ simplifyClaimRule =
         (return . OrPattern.fromPattern)
         >=> simplifyConditionsWithSmt SideCondition.top
         >=> Branch.scatter
-
-requireDefined
-    :: InternalVariable variable
-    => Pattern variable -> Pattern variable
-requireDefined Pattern.Conditional { term, predicate, substitution } =
-    Pattern.Conditional
-        { term
-        , substitution
-        , predicate =
-            makeAndPredicate predicate
-            $ makeCeilPredicate sort term
-        }
-  where
-    sort = termLikeSort term
 
 {- | A 'Lens\'' to view the left-hand side of a 'RulePattern' as a 'Pattern'.
  -}
