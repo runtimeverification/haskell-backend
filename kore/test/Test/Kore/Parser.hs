@@ -22,10 +22,6 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import Data.Either
-    ( isLeft
-    )
-
 import Kore.Parser.ParserUtils
 
 data SuccessfulTest a = SuccessfulTest

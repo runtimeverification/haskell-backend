@@ -15,6 +15,9 @@ module Prelude.Kore
     , isNothing
     , fromMaybe
     , headMay
+    -- * Either
+    , either
+    , isLeft, isRight
     -- * Filterable
     , Filterable (..)
     -- * Errors
@@ -37,7 +40,10 @@ import Control.Applicative
     , optional
     )
 import Control.Error
-    ( headMay
+    ( either
+    , headMay
+    , isLeft
+    , isRight
     )
 import Control.Exception
     ( assert
@@ -61,6 +67,7 @@ import GHC.Stack
     )
 import Prelude hiding
     ( Applicative (..)
+    , either
     , filter
     , log
     )
