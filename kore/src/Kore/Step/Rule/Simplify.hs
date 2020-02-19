@@ -9,6 +9,11 @@ module Kore.Step.Rule.Simplify
 
 import Prelude.Kore
 
+import qualified Branch
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -22,16 +27,15 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
 import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-    ( fromTermLike
-    )
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate_
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -61,11 +65,10 @@ import Kore.Step.Simplification.OrPattern
     ( simplifyConditionsWithSmt
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyTopConfiguration
-    )
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
+    , simplifyCondition
     )
 import Kore.Syntax.Variable
     ( Variable
@@ -131,18 +134,36 @@ instance SimplifyRuleLHS (ReachabilityRule Variable) where
         (fmap . fmap) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule
-    :: (MonadSimplify simplifier, InternalVariable variable)
+    :: forall simplifier variable
+    .  MonadSimplify simplifier
+    => InternalVariable variable
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyClaimRule rule@(RulePattern _ _ _ _ _) =
-    simplifyRuleLhs rule
-        { RulePattern.left =
-            mkAnd
-                left
-                -- Add the predicate to the left term so that it gets simplified
-                -- by the rule pattern simplifier.
-                (mkAnd (Predicate.unwrapPredicate requires) (mkCeil_ left))
-        , RulePattern.requires = makeTruePredicate_
-        }
+    fmap MultiAnd.make . Branch.gather $ do
+        let requires1 = makeAndPredicate requires (makeCeilPredicate_ left)
+        let left0 = Pattern.withCondition left $ from @(Predicate _) requires1
+        left1 <- Pattern.simplifyTopConfiguration left0 >>= Branch.scatter
+        let left2 = OrPattern.fromPattern left1
+        left3 <-
+            simplifyConditionsWithSmt SideCondition.top left2
+            >>= Branch.scatter
+        return (setRuleLeft rule left3)
   where
-    RulePattern {left, requires} = rule
+    RulePattern { left, requires } = rule
+
+    setRuleLeft
+        :: RulePattern variable
+        -> Pattern variable
+        -> RulePattern variable
+    setRuleLeft
+        rulePattern
+        Conditional { term, predicate, substitution }
+      =
+        RulePattern.applySubstitution
+            substitution
+            rulePattern
+                { RulePattern.left = term
+                , RulePattern.requires =
+                    Predicate.coerceSort (termLikeSort term) predicate
+                }
