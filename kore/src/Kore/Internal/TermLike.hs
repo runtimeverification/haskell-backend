@@ -271,7 +271,8 @@ import Kore.Unparser
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
-    ( FreshVariable
+    ( FreshPartialOrd
+    , FreshVariable
     )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
@@ -391,7 +392,7 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcrete
-    :: FreshVariable variable
+    :: (FreshPartialOrd variable, SortedVariable variable)
     => TermLike Concrete
     -> TermLike variable
 fromConcrete = mapVariables (\case {}) (\case {})

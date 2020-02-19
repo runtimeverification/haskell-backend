@@ -338,16 +338,18 @@ fromCofreeT (CofreeT x) = SOP (Z (I x :* Nil))
 
 instance (Debug k, Debug a) => Debug (Map.Map k a) where
     debugPrec as precOut =
-        parens (precOut >= 10) ("Data.Map.fromList" <+> debug (Map.toList as))
+        (parens (precOut >= 10) . Pretty.sep)
+        ["Data.Map.fromList", debug (Map.toList as)]
 
 instance Debug a => Debug (Set a) where
     debugPrec as precOut =
-        parens (precOut >= 10) ("Data.Set.fromList" <+> debug (Set.toList as))
+        (parens (precOut >= 10) . Pretty.sep)
+        ["Data.Set.fromList", debug (Set.toList as)]
 
 instance Debug a => Debug (Seq a) where
     debugPrec as precOut =
-        parens (precOut >= 10)
-        $ "Data.Sequence.fromList" <+> debug (Foldable.toList as)
+        (parens (precOut >= 10) . Pretty.sep)
+        ["Data.Sequence.fromList", debug (Foldable.toList as)]
 
 instance Debug a => Debug (Const a b)
 

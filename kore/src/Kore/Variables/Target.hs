@@ -25,7 +25,6 @@ import Prelude.Kore
 import Data.Hashable
     ( Hashable (hashWithSalt)
     )
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -38,7 +37,8 @@ import Kore.Unparser
     ( Unparse (..)
     )
 import Kore.Variables.Fresh
-    ( FreshVariable (..)
+    ( FreshPartialOrd (..)
+    , FreshVariable (..)
     )
 import Kore.Variables.UnifiedVariable
     ( ElementVariable
@@ -47,22 +47,23 @@ import Kore.Variables.UnifiedVariable
 
 {- | Distinguish variables by their source.
 
-'Target' variables always compare 'LT' 'NonTarget' variables, so that the
-unification procedure prefers to generate substitutions for 'Target' variables
-instead of 'NonTarget' variables.
+'Target' variables always compare 'LT' 'NonTarget' variables under
+'SubstitutionOrd', so that the unification procedure prefers to generate
+substitutions for 'Target' variables instead of 'NonTarget' variables.
 
  -}
 data Target variable
     = Target !variable
     | NonTarget !variable
-    deriving (GHC.Generic, Show, Functor)
+    deriving (GHC.Generic, Show)
+    deriving (Functor, Foldable, Traversable)
 
 instance Eq variable => Eq (Target variable) where
-    (==) = on (==) unTarget
+    (==) a b = unTarget a == unTarget b
     {-# INLINE (==) #-}
 
 instance Ord variable => Ord (Target variable) where
-    compare = on compare unTarget
+    compare a b = compare (unTarget a) (unTarget b)
     {-# INLINE compare #-}
 
 instance Hashable variable => Hashable (Target variable) where
@@ -90,6 +91,7 @@ instance
 unTarget :: Target variable -> variable
 unTarget (Target variable) = variable
 unTarget (NonTarget variable) = variable
+{-# INLINE unTarget #-}
 
 unTargetElement :: ElementVariable (Target variable) -> ElementVariable variable
 unTargetElement = fmap unTarget
@@ -128,8 +130,11 @@ instance
     SortedVariable variable
     => SortedVariable (Target variable)
   where
-    sortedVariableSort (Target variable) = sortedVariableSort variable
-    sortedVariableSort (NonTarget variable) = sortedVariableSort variable
+    lensVariableSort f =
+        \case
+            Target variable -> Target <$> lensVariableSort f variable
+            NonTarget variable -> Target <$> lensVariableSort f variable
+    {-# INLINE lensVariableSort #-}
 
 instance VariableName variable => VariableName (Target variable)
 
@@ -141,15 +146,30 @@ instance From variable1 variable2 => From (Target variable1) variable2 where
     from = from @variable1 @variable2 . unTarget
     {-# INLINE from #-}
 
+instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
+    infVariable =
+        \case
+            Target var    -> Target (infVariable var)
+            NonTarget var -> NonTarget (infVariable var)
+    {-# INLINE infVariable #-}
+
+    supVariable =
+        \case
+            Target var    -> Target (supVariable var)
+            NonTarget var -> NonTarget (supVariable var)
+    {-# INLINE supVariable #-}
+
+    nextVariable =
+        \case
+            Target var    -> Target (nextVariable var)
+            NonTarget var -> NonTarget (nextVariable var)
+    {-# INLINE nextVariable #-}
+
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance FreshVariable variable => FreshVariable (Target variable) where
-    refreshVariable (Set.map unTarget -> avoiding) =
-        \case
-            Target variable ->
-                Target <$> refreshVariable avoiding variable
-            NonTarget variable ->
-                NonTarget <$> refreshVariable avoiding variable
+instance
+    (FreshPartialOrd variable, SortedVariable variable)
+    => FreshVariable (Target variable)
 
 instance
     Unparse variable =>

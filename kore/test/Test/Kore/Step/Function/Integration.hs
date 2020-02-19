@@ -1348,7 +1348,7 @@ appliedMockEvaluator result =
 
 mapVariables
     :: forall variable
-    .  (FreshVariable variable, VariableName variable)
+    .  InternalVariable variable
     => Pattern Variable
     -> Pattern variable
 mapVariables =

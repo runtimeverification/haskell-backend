@@ -56,6 +56,7 @@ renameFreeVariables trElemVar trSetVar =
                 renameSetVariable setVar
                     <$> trSetVar setVar
                     <*> pure renaming
+{-# INLINE renameFreeVariables #-}
 
 askUnifiedVariable
     :: Monad m
