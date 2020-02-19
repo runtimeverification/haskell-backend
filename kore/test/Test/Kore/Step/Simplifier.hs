@@ -87,7 +87,8 @@ convertTermLikeVariables =
 convertPatternVariables
     ::  ( VariableName variable
         , VariableName variable0
-        , FreshVariable variable0
+        , InternalVariable variable0
+        , InternalVariable variable
         )
     => Pattern variable
     -> Pattern variable0
