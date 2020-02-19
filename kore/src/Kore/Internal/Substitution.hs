@@ -12,6 +12,7 @@ module Kore.Internal.Substitution
     , assignmentToPair
     , assignedVariable
     , UnwrappedSubstitution
+    , mkUnwrappedSubstitution
     , unwrap
     , toMap
     , toMultiMap
@@ -139,6 +140,12 @@ assignedVariable
     :: Assignment variable
     -> UnifiedVariable variable
 assignedVariable (Assignment_ variable _) = variable
+
+mkUnwrappedSubstitution
+    :: InternalVariable variable
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [Assignment variable]
+mkUnwrappedSubstitution = fmap (uncurry assign)
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -581,8 +588,7 @@ because it contained simplifiable cycles.
 data Normalization variable =
     Normalization
         { normalized, denormalized :: !(UnwrappedSubstitution variable) }
-    deriving (Eq, Ord, Show)
-    deriving GHC.Generic
+    deriving (Eq, Ord, Show, GHC.Generic)
 
 instance SOP.Generic (Normalization variable)
 

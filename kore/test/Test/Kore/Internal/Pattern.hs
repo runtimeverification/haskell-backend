@@ -65,7 +65,7 @@ test_expandedPattern =
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap
-                        [(ElemVar . ElementVariable $ V 4, var 5)]
+                        [Substitution.assign (ElemVar . ElementVariable $ V 4) (var 5)]
                     }
             )
         )
@@ -83,7 +83,7 @@ test_expandedPattern =
                     { term = var 1
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap
-                        [(ElemVar . ElementVariable $ V 4, var 5)]
+                        [Substitution.assign (ElemVar . ElementVariable $ V 4) (var 5)]
                     }
             )
         )
@@ -98,7 +98,7 @@ test_expandedPattern =
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap
-                        [(ElemVar . ElementVariable $ V 4, var 5)]
+                        [Substitution.assign (ElemVar . ElementVariable $ V 4) (var 5)]
                     }
             )
         )
@@ -121,7 +121,7 @@ test_expandedPattern =
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var 2) (var 3)
                     , substitution = Substitution.wrap
-                        [(ElemVar . ElementVariable $ V 4, var 5)]
+                        [Substitution.assign (ElemVar . ElementVariable $ V 4) (var 5)]
                     }
             )
         )

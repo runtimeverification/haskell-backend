@@ -52,10 +52,6 @@ import Kore.Internal.Substitution
     ( Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
-    ( mapTerms
-    , unsafeWrap
-    , unwrap
-    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -92,6 +88,7 @@ simplifiedSubstitution
 simplifiedSubstitution =
     Substitution.unsafeWrap
     . Substitution.unwrap
+    . fmap Substitution.assignmentToPair
     . Substitution.mapTerms simplifiedTerm
 
 simplifiedCondition :: Ord variable => Condition variable -> Condition variable
