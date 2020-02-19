@@ -417,7 +417,7 @@ applyInitialConditions sideCondition initial unification = do
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariables
-    :: FreshVariable variable
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern (Target variable)
 toConfigurationVariables =

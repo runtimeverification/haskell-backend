@@ -59,6 +59,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
+import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.ExpandAlias
@@ -421,11 +422,13 @@ variableFunctionAndEquals
         LT ->
             return
             $ Pattern.withCondition second
-            $ Condition.fromSingleSubstitution (ElemVar v1, second)
+            $ Condition.fromSingleSubstitution
+                (Substitution.assign (ElemVar v1) second)
         _ ->
             return
             $ Pattern.withCondition first
-            $ Condition.fromSingleSubstitution (ElemVar v2, first)
+            $ Condition.fromSingleSubstitution
+                (Substitution.assign (ElemVar v1) first)
 variableFunctionAndEquals
     sideCondition
     simplificationType
@@ -451,7 +454,9 @@ variableFunctionAndEquals
                         empty
                     resultConditions -> Unify.scatter resultConditions
     let result =
-            predicate <> Condition.fromSingleSubstitution (ElemVar v, second)
+            predicate
+            <> Condition.fromSingleSubstitution
+                (Substitution.assign (ElemVar v) second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ = empty
 

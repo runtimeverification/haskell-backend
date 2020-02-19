@@ -113,7 +113,7 @@ instance ExpandSingleConstructors (RulePattern Variable) where
                         leftVariables
                         allElementVariables
                 substitutionPredicate =
-                    (Substitution.toPredicate . Substitution.wrap)
+                    (Substitution.toPredicate . Substitution.wrap . fmap (uncurry Substitution.assign))
                         (Map.toList expansion)
             in rule
                 { RulePattern.left = TermLike.substitute expansion left
