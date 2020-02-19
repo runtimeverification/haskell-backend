@@ -279,8 +279,7 @@ withSolver' action = SmtT $ do
 withSolverT' :: MonadIO m => MonadMask m => (Solver -> m a) -> SmtT m a
 withSolverT' action = SmtT $ do
     mvar <- Reader.ask
-    Trans.lift $
-        bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
+    Trans.lift $ bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
 
 instance (MonadIO m, MonadMask m) => MonadLog (SmtT m) where
     logEntry entry = withSolverT' $ \solver -> do
