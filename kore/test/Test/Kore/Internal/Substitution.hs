@@ -63,7 +63,7 @@ propertyTests =
   ]
   where
     normalized = unsafeWrap [(ElemVar Mock.x, Mock.a)]
-    unnormalized = wrap [(ElemVar Mock.x, Mock.a)]
+    unnormalized = wrap [assign (ElemVar Mock.x) Mock.a]
 
 
 monoidTests:: TestTree
@@ -75,20 +75,20 @@ monoidTests =
             $ wrap mempty <> wrap emptyRawSubst
     , testCase "empty <> normalized == normalized"
         $ assertEqual ""
-            (unsafeWrap singletonSubst)
-            $ wrap mempty <> unsafeWrap singletonSubst
+            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
+            $ wrap mempty <> (unsafeWrap . fmap assignmentToPair) singletonSubst
     , testCase "empty normalized <> normalized == normalized"
         $ assertEqual ""
-            (unsafeWrap singletonSubst)
-            $ emptySubst <> unsafeWrap singletonSubst
+            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
+            $ emptySubst <> (unsafeWrap . fmap assignmentToPair) singletonSubst
     , testCase "normalized <> empty == normalized"
         $ assertEqual ""
-            (unsafeWrap singletonSubst)
-            $ unsafeWrap singletonSubst <> wrap mempty
+            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
+            $ (unsafeWrap . fmap assignmentToPair) singletonSubst <> wrap mempty
     , testCase "normalized <> empty normalized == normalized"
         $ assertEqual ""
-            (unsafeWrap singletonSubst)
-            $ unsafeWrap singletonSubst <> emptySubst
+            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
+            $ (unsafeWrap . fmap assignmentToPair) singletonSubst <> emptySubst
     ]
 
 unwrapTests :: TestTree
@@ -107,7 +107,7 @@ unwrapTests =
         $ assertEqual ""
             singletonSubst
             . unwrap . unsafeWrap
-            $ singletonSubst
+            $ fmap assignmentToPair singletonSubst
     ]
 
 modifyTests :: TestTree
@@ -122,7 +122,7 @@ modifyTests =
         $ assertEqual ""
             (wrap singletonSubst)
             . modify id
-            $ unsafeWrap singletonSubst
+            $ unsafeWrap $ fmap assignmentToPair singletonSubst
     , testCase "modify empty subst == id"
         $ assertEqual ""
             mempty
@@ -148,7 +148,7 @@ mapVariablesTests =
     , testCase "map id over normalized singletonSubst"
         $ assertEqual ""
             (wrap singletonSubst)
-            . mapVariables id id $ unsafeWrap singletonSubst
+            . mapVariables id id $ unsafeWrap $ fmap assignmentToPair singletonSubst
     ]
 
 isNormalizedTests :: TestTree
@@ -165,7 +165,7 @@ isNormalizedTests =
     , testCase "unsafeWrap is normalized"
         $ assertEqual ""
             True
-            . isNormalized $ unsafeWrap singletonSubst
+            . isNormalized $ unsafeWrap $ fmap assignmentToPair singletonSubst
     ]
 
 nullTests :: TestTree
@@ -178,7 +178,7 @@ nullTests =
     , testCase "unsafeWrap empty is null"
         $ assertEqual ""
             True
-            . null $ unsafeWrap emptyRawSubst
+            . null $ unsafeWrap $ fmap assignmentToPair emptyRawSubst
     , testCase "nonempty is not null"
         $ assertEqual ""
             False
@@ -186,7 +186,7 @@ nullTests =
     , testCase "nonempty normalized is not null"
         $ assertEqual ""
             False
-            . null $ unsafeWrap singletonSubst
+            . null $ unsafeWrap $ fmap assignmentToPair singletonSubst
     ]
 
 variablesTests :: TestTree
@@ -202,11 +202,11 @@ variablesTests =
             . variables $ wrap emptyRawSubst
     , testCase "singleton normalized subst has one variable"
         $ assertEqual ""
-           (Set.fromList $ fst <$> singletonSubst)
-           . variables $ unsafeWrap singletonSubst
+           (Set.fromList $ assignedVariable <$> singletonSubst)
+           . variables $ unsafeWrap $ fmap assignmentToPair singletonSubst
     , testCase "singleton subst has one variable"
         $ assertEqual ""
-           (Set.fromList $ fst <$> singletonSubst)
+           (Set.fromList $ assignedVariable <$> singletonSubst)
            . variables $ wrap singletonSubst
     ]
 
@@ -219,7 +219,7 @@ orderRenameAndRenormalizeTODOTests =
             (orderRenameAndRenormalizeTODO (ElemVar Mock.x) emptySubst)
     , testCase "unnormalized without RHS unchanged" $ do
         let
-            subst = wrap [(ElemVar Mock.x, Mock.a)]
+            subst = wrap [assign (ElemVar Mock.x) Mock.a]
         assertEqual ""
             subst
             (orderRenameAndRenormalizeTODO (ElemVar Mock.x) subst)
@@ -231,8 +231,8 @@ orderRenameAndRenormalizeTODOTests =
             (orderRenameAndRenormalizeTODO (ElemVar Mock.x) subst)
     , testCase "unnormalized reverses RHS" $ do
         let
-            expectedSubst = wrap [(targetVarX, nonTargetPattY)]
-            originalSubst = wrap [(nonTargetVarY, targetPattX)]
+            expectedSubst = wrap [assign targetVarX nonTargetPattY]
+            originalSubst = wrap [assign nonTargetVarY targetPattX]
         assertEqual ""
             expectedSubst
             ( orderRenameAndRenormalizeTODO
@@ -241,8 +241,8 @@ orderRenameAndRenormalizeTODOTests =
             )
     , testCase "unnormalized does not reverse RHS" $ do
         let
-            expectedSubst = wrap [(targetVarX, nonTargetPattY)]
-            originalSubst = wrap [(targetVarX, nonTargetPattY)]
+            expectedSubst = wrap [assign targetVarX nonTargetPattY]
+            originalSubst = wrap [assign targetVarX nonTargetPattY]
         assertEqual ""
             expectedSubst
             ( orderRenameAndRenormalizeTODO
@@ -259,9 +259,9 @@ orderRenameAndRenormalizeTODOTests =
     , testCase "unnormalized reverses multiple RHS" $ do
         let
             expectedSubst = wrap
-                [ (targetVarX, nonTargetPattY), (targetVarX, nonTargetPattZ) ]
+                [ assign targetVarX nonTargetPattY, assign targetVarX nonTargetPattZ ]
             originalSubst = wrap
-                [ (nonTargetVarY, targetPattX), (nonTargetVarZ, targetPattX) ]
+                [ assign nonTargetVarY targetPattX, assign nonTargetVarZ targetPattX ]
         assertEqual ""
             expectedSubst
             (orderRenameAndRenormalizeTODO targetVarX originalSubst)
@@ -277,12 +277,12 @@ orderRenameAndRenormalizeTODOTests =
     , testCase "unnormalized does not substitute reverse RHS" $ do
         let
             expectedSubst = wrap
-                [ (ElemVar Mock.x, mkElemVar Mock.y)
-                , (ElemVar Mock.z, Mock.f (mkElemVar Mock.x))
+                [ assign (ElemVar Mock.x) (mkElemVar Mock.y)
+                , assign (ElemVar Mock.z) (Mock.f (mkElemVar Mock.x))
                 ]
             originalSubst = wrap
-                [ (ElemVar Mock.y, mkElemVar Mock.x)
-                , (ElemVar Mock.z, Mock.f (mkElemVar Mock.x))
+                [ assign (ElemVar Mock.y) (mkElemVar Mock.x)
+                , assign (ElemVar Mock.z) (Mock.f (mkElemVar Mock.x))
                 ]
         assertEqual ""
             expectedSubst
@@ -311,14 +311,14 @@ orderRenameAndRenormalizeTODOTests =
     nonTargetVarZ = ElemVar . mkElementNonTarget $ Mock.z
     nonTargetPattZ = mkElemVar . mkElementNonTarget $ Mock.z
 
-emptyRawSubst :: [(UnifiedVariable Variable, TermLike Variable)]
+emptyRawSubst :: [Assignment Variable]
 emptyRawSubst = mempty
 
 emptySubst :: Substitution Variable
 emptySubst = mempty
 
-singletonSubst :: [(UnifiedVariable Variable, TermLike Variable)]
-singletonSubst = [(ElemVar Mock.x, Mock.a)]
+singletonSubst :: [Assignment Variable]
+singletonSubst = [assign (ElemVar Mock.x) Mock.a]
 
 test_toPredicate :: TestTree
 test_toPredicate =
@@ -329,7 +329,7 @@ test_toPredicate =
         assertEqual "a = b"
             (makeAndPredicate pr1 makeTruePredicate_)
             (toPredicate $ wrap
-                [(ElemVar $ a Mock.testSort, mkElemVar $ b Mock.testSort)]
+                [assign (ElemVar $ a Mock.testSort) (mkElemVar $ b Mock.testSort)]
             )
 
 pr1 :: Predicate Variable

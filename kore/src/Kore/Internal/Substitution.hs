@@ -10,6 +10,7 @@ module Kore.Internal.Substitution
     , assign
     , pattern Assignment_
     , assignmentToPair
+    , assignedVariable
     , UnwrappedSubstitution
     , unwrap
     , toMap
@@ -133,6 +134,11 @@ assignmentToPair
     -> (UnifiedVariable variable, TermLike variable)
 assignmentToPair (Assignment_ variable term) =
     (variable, term)
+
+assignedVariable
+    :: Assignment variable
+    -> UnifiedVariable variable
+assignedVariable (Assignment_ variable _) = variable
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
