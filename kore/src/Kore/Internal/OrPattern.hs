@@ -197,7 +197,7 @@ gather = MultiOr.gather
 
 targetBinder
     :: forall variable
-    .  FreshVariable variable
+    .  InternalVariable variable
     => Binder (ElementVariable variable) (OrPattern variable)
     -> Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
 targetBinder Binder { binderVariable, binderChild } =
