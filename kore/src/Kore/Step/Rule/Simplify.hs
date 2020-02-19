@@ -9,9 +9,6 @@ module Kore.Step.Rule.Simplify
 
 import Prelude.Kore
 
-import Control.Lens
-    ( Lens'
-    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
@@ -40,8 +37,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
+    ( makeAndPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( coerceSort
@@ -62,6 +58,7 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     , applySubstitution
+    , leftPattern
     )
 import Kore.Step.Simplification.OrPattern
     ( simplifyConditionsWithSmt
@@ -141,7 +138,9 @@ simplifyClaimRule
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyClaimRule =
-    fmap MultiAnd.make . Branch.gather . Lens.traverseOf leftPattern worker
+    fmap MultiAnd.make
+    . Branch.gather
+    . Lens.traverseOf RulePattern.leftPattern worker
   where
     worker, simplify, simplifyWithSolver
         :: Pattern variable
@@ -157,24 +156,3 @@ simplifyClaimRule =
         (return . OrPattern.fromPattern)
         >=> simplifyConditionsWithSmt SideCondition.top
         >=> Branch.scatter
-
-{- | A 'Lens\'' to view the left-hand side of a 'RulePattern' as a 'Pattern'.
- -}
-leftPattern
-    :: InternalVariable variable
-    => Lens' (RulePattern variable) (Pattern variable)
-leftPattern =
-    Lens.lens get set
-  where
-    get RulePattern { left, requires } =
-        Pattern.withCondition left $ from @(Predicate _) requires
-    set rule@(RulePattern _ _ _ _ _) pattern' =
-        RulePattern.applySubstitution
-            (Pattern.substitution pattern')
-            rule
-                { RulePattern.left = Pattern.term pattern'
-                , RulePattern.requires =
-                    Predicate.coerceSort
-                        (termLikeSort $ Pattern.term pattern')
-                        (Pattern.predicate pattern')
-                }
