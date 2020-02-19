@@ -135,20 +135,20 @@ pattern Assignment_ variable term <-
 assignmentToPair
     :: Assignment variable
     -> (UnifiedVariable variable, TermLike variable)
-assignmentToPair (Assignment_ variable term) =
+assignmentToPair (Assignment variable term) =
     (variable, term)
 
 assignedVariable
     :: Assignment variable
     -> UnifiedVariable variable
-assignedVariable (Assignment_ variable _) = variable
+assignedVariable (Assignment variable _) = variable
 
 mapAssignedTerm
     :: InternalVariable variable
     => (TermLike variable -> TermLike variable)
     -> Assignment variable
     -> Assignment variable
-mapAssignedTerm f (Assignment_ variable term) =
+mapAssignedTerm f (Assignment variable term) =
     assign variable (f term)
 
 mkUnwrappedSubstitution
@@ -263,7 +263,7 @@ instance
     from =
         Predicate.makeMultipleAndPredicate
         . fmap Predicate.singleSubstitutionToPredicate
-        . fmap (\(Assignment_ var term) -> (var, term))
+        . fmap assignmentToPair
         . unwrap
 
 type UnwrappedSubstitution variable = [Assignment variable]
@@ -273,7 +273,7 @@ unwrap
     :: InternalVariable variable
     => Substitution variable
     -> [Assignment variable]
-unwrap (Substitution xs) = List.sortBy (on compare (fst . (\(Assignment_ var term) -> (var, term)))) xs
+unwrap (Substitution xs) = List.sortBy (on compare (fst . assignmentToPair)) xs
 unwrap (NormalizedSubstitution xs)  = fmap (uncurry assign) $ Map.toList xs
 
 {- | Convert a normalized substitution to a 'Map'.
@@ -439,7 +439,8 @@ mapTerms
     :: InternalVariable variable
     => (TermLike variable -> TermLike variable)
     -> Substitution variable -> Substitution variable
-mapTerms mapper (Substitution s) = Substitution (uncurry assign . fmap mapper . assignmentToPair <$> s)
+mapTerms mapper (Substitution s) =
+    Substitution (mapAssignedTerm mapper <$> s)
 mapTerms mapper (NormalizedSubstitution s) =
     NormalizedSubstitution (fmap mapper s)
 
@@ -453,7 +454,7 @@ forgetSimplified
     => Substitution variable -> Substitution variable
 forgetSimplified =
     wrap
-    . map (uncurry assign . (Bifunctor.second TermLike.forgetSimplified) . assignmentToPair)
+    . fmap (mapAssignedTerm TermLike.forgetSimplified)
     . unwrap
 
 simplifiedAttribute
@@ -491,7 +492,10 @@ partition
     -> Substitution variable
     -> (Substitution variable, Substitution variable)
 partition criterion (Substitution substitution) =
-    let (true, false) = List.partition (uncurry criterion . assignmentToPair) substitution
+    let (true, false) =
+            List.partition
+                (uncurry criterion . assignmentToPair)
+                substitution
     in (Substitution true, Substitution false)
 partition criterion (NormalizedSubstitution substitution) =
     let (true, false) = Map.partitionWithKey criterion substitution
@@ -503,7 +507,6 @@ orderRenameAndRenormalizeTODO
     => UnifiedVariable variable
     -> Substitution variable
     -> Substitution variable
-orderRenameAndRenormalizeTODO _ x@(Substitution substitution) = x
 orderRenameAndRenormalizeTODO
     variable
     original@(NormalizedSubstitution substitution)
@@ -542,6 +545,7 @@ orderRenameAndRenormalizeTODO
     rhsIsVar :: UnifiedVariable variable -> (thing, TermLike variable) -> Bool
     rhsIsVar var (_, Var_ otherVar) = var == otherVar
     rhsIsVar _ _ = False
+orderRenameAndRenormalizeTODO _ substitution = substitution
 
 assertNoneAreFreeVarsInRhs
     :: InternalVariable variable
@@ -577,7 +581,7 @@ instance InternalVariable variable
   where
     freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
       where
-        freeVariablesWorker (Assignment_ x t) =
+        freeVariablesWorker (Assignment x t) =
             freeVariable x <> freeVariables t
 
 -- | The left-hand side variables of the 'Substitution'.
@@ -586,7 +590,8 @@ variables
     => Substitution variable
     -> Set (UnifiedVariable variable)
 variables (NormalizedSubstitution subst) = Map.keysSet subst
-variables (Substitution subst) = Foldable.foldMap (Set.singleton . (\(Assignment_ v _) -> v)) subst
+variables (Substitution subst) =
+    Foldable.foldMap (Set.singleton . assignedVariable) subst
 
 {- | The result of /normalizing/ a substitution.
 
@@ -642,8 +647,7 @@ applyNormalized Normalization { normalized, denormalized } =
     Normalization
         { normalized
         , denormalized =
-            fmap (uncurry assign)
-            $ (fmap . fmap) substitute (assignmentToPair <$> denormalized)
+            mapAssignedTerm substitute <$> denormalized
         }
   where
     substitute = TermLike.substitute (Map.fromList (assignmentToPair <$> normalized))

@@ -37,7 +37,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.Substitution
     ( Assignment
-    , pattern Assignment_
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
