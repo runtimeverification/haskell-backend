@@ -9,6 +9,11 @@ module Kore.Step.Rule.Simplify
 
 import Prelude.Kore
 
+import Control.Lens
+    ( Lens'
+    )
+import qualified Control.Lens as Lens
+
 import qualified Branch
 import Kore.Internal.Condition
     ( Condition
@@ -35,7 +40,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -139,31 +144,48 @@ simplifyClaimRule
     => InternalVariable variable
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
-simplifyClaimRule rule@(RulePattern _ _ _ _ _) =
-    fmap MultiAnd.make . Branch.gather $ do
-        let requires1 = makeAndPredicate requires (makeCeilPredicate_ left)
-        let left0 = Pattern.withCondition left $ from @(Predicate _) requires1
-        left1 <- Pattern.simplifyTopConfiguration left0 >>= Branch.scatter
-        let left2 = OrPattern.fromPattern left1
-        left3 <-
-            simplifyConditionsWithSmt SideCondition.top left2
-            >>= Branch.scatter
-        return (setRuleLeft rule left3)
+simplifyClaimRule =
+    fmap MultiAnd.make . Branch.gather . Lens.traverseOf leftPattern worker
   where
-    RulePattern { left, requires } = rule
+    worker pattern0 = do
+        let pattern1 = requireDefined pattern0
+        pattern2 <- Pattern.simplifyTopConfiguration pattern1 >>= Branch.scatter
+        simplifyConditionsWithSmt
+            SideCondition.top
+            (OrPattern.fromPattern pattern2)
+            >>= Branch.scatter
 
-    setRuleLeft
-        :: RulePattern variable
-        -> Pattern variable
-        -> RulePattern variable
-    setRuleLeft
-        rulePattern
-        Conditional { term, predicate, substitution }
-      =
+requireDefined
+    :: InternalVariable variable
+    => Pattern variable -> Pattern variable
+requireDefined Pattern.Conditional { term, predicate, substitution } =
+    Pattern.Conditional
+        { term
+        , substitution
+        , predicate =
+            makeAndPredicate predicate
+            $ makeCeilPredicate sort term
+        }
+  where
+    sort = termLikeSort term
+
+{- | A 'Lens\'' to view the left-hand side of a 'RulePattern' as a 'Pattern'.
+ -}
+leftPattern
+    :: InternalVariable variable
+    => Lens' (RulePattern variable) (Pattern variable)
+leftPattern =
+    Lens.lens get set
+  where
+    get RulePattern { left, requires } =
+        Pattern.withCondition left $ from @(Predicate _) requires
+    set rule@(RulePattern _ _ _ _ _) pattern' =
         RulePattern.applySubstitution
-            substitution
-            rulePattern
-                { RulePattern.left = term
+            (Pattern.substitution pattern')
+            rule
+                { RulePattern.left = Pattern.term pattern'
                 , RulePattern.requires =
-                    Predicate.coerceSort (termLikeSort term) predicate
+                    Predicate.coerceSort
+                        (termLikeSort $ Pattern.term pattern')
+                        (Pattern.predicate pattern')
                 }
