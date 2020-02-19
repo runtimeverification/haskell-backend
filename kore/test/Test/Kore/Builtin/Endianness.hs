@@ -13,6 +13,9 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Substitution
+    ( Assignment
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -86,7 +89,7 @@ test_unify =
         => TestName
         -> TermLike Variable
         -> TermLike Variable
-        -> [(UnifiedVariable Variable, TermLike Variable)]
+        -> [Assignment Variable]
         -> TestTree
     unifies name term1 term2 solution =
         testCase name $ do

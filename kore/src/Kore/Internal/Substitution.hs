@@ -11,6 +11,7 @@ module Kore.Internal.Substitution
     , pattern Assignment_
     , assignmentToPair
     , assignedVariable
+    , mapAssignedTerm
     , UnwrappedSubstitution
     , mkUnwrappedSubstitution
     , unwrap
@@ -141,6 +142,14 @@ assignedVariable
     :: Assignment variable
     -> UnifiedVariable variable
 assignedVariable (Assignment_ variable _) = variable
+
+mapAssignedTerm
+    :: InternalVariable variable
+    => (TermLike variable -> TermLike variable)
+    -> Assignment variable
+    -> Assignment variable
+mapAssignedTerm f (Assignment_ variable term) =
+    assign variable (f term)
 
 mkUnwrappedSubstitution
     :: InternalVariable variable

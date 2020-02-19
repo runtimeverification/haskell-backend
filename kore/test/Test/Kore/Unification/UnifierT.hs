@@ -28,7 +28,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import Kore.Internal.Substitution
-    ( Normalization (..)
+    ( Assignment
+    , Normalization (..)
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -83,7 +84,9 @@ test_simplifyCondition =
                 Left . SubstitutionError
                 $ SimplifiableCycle [x] normalization
             normalization = mempty { denormalized }
-            denormalized = [(x, Mock.f (mkVar x))]
+            denormalized =
+                Substitution.mkUnwrappedSubstitution
+                [(x, Mock.f (mkVar x))]
             input =
                 (Condition.fromSubstitution . Substitution.wrap) denormalized
         actual <- normalizeExcept input
@@ -92,7 +95,10 @@ test_simplifyCondition =
         let x = ElemVar Mock.x
             expect = Right (OrCondition.fromCondition Condition.top)
             input =
-                (Condition.fromSubstitution . Substitution.wrap)
+                ( Condition.fromSubstitution
+                . Substitution.wrap
+                . Substitution.mkUnwrappedSubstitution
+                )
                     [(x, Mock.functional10 (mkVar x))]
         actual <- normalizeExcept input
         assertEqual "Expected \\top" expect actual
@@ -115,13 +121,13 @@ test_mergeAndNormalizeSubstitutions =
                     ]
             actual <-
                 merge
-                    [   ( ElemVar Mock.x
-                        , Mock.constr10 Mock.a
-                        )
+                    [( ElemVar Mock.x
+                     , Mock.constr10 Mock.a
+                     )
                     ]
-                    [   ( ElemVar Mock.x
-                        , Mock.constr10 Mock.a
-                        )
+                    [( ElemVar Mock.x
+                     , Mock.constr10 Mock.a
+                     )
                     ]
             assertEqual "" expect actual
             assertNormalizedPredicates actual
@@ -313,7 +319,9 @@ test_mergeAndNormalizeSubstitutions =
                     ]
             actual <-
                 normalize
-                $ Condition.fromSubstitution $ Substitution.wrap
+                $ Condition.fromSubstitution
+                $ Substitution.wrap
+                $ Substitution.mkUnwrappedSubstitution
                     [ (ElemVar Mock.x, Mock.constr10 Mock.a)
                     , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                     ]
@@ -337,6 +345,7 @@ test_mergeAndNormalizeSubstitutions =
                         { term = ()
                         , predicate = Predicate.makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [ (ElemVar Mock.x, Mock.constr10 Mock.cf)
                             , (ElemVar Mock.x, Mock.constr10 Mock.cg)
                             ]
@@ -366,6 +375,7 @@ test_mergeAndNormalizeSubstitutions =
                             Predicate.makeCeilPredicate_
                             $ Mock.f (mkElemVar Mock.y)
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)
                             , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                             ]
@@ -378,16 +388,22 @@ merge
     :: [(UnifiedVariable Variable, TermLike Variable)]
     -> [(UnifiedVariable Variable, TermLike Variable)]
     -> IO (Either UnificationOrSubstitutionError [Condition Variable])
-merge s1 s2 =
+merge
+    (Substitution.mkUnwrappedSubstitution -> s1)
+    (Substitution.mkUnwrappedSubstitution -> s2)
+  =
     Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
     $ mergeSubstitutionsExcept
-    $ Substitution.wrap . fmap simplifiedPairTerm <$> [s1, s2]
+    $ Substitution.wrap
+    . fmap simplifiedAssignment
+    <$> [s1, s2]
   where
-    simplifiedPairTerm
-        :: (UnifiedVariable Variable, TermLike Variable)
-        -> (UnifiedVariable Variable, TermLike Variable)
-    simplifiedPairTerm = fmap Test.simplifiedTerm
+    simplifiedAssignment
+        :: Assignment Variable
+        -> Assignment Variable
+    simplifiedAssignment =
+        Substitution.mapAssignedTerm Test.simplifiedTerm
 
     mergeSubstitutionsExcept =
         Branch.alternate

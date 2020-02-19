@@ -144,13 +144,17 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate_
                         , substitution =
-                            Substitution.wrap [(ElemVar Mock.y, fOfX)]
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(ElemVar Mock.y, fOfX)]
                         }
                     Conditional
                         { term = mkTop_
                         , predicate = makeTruePredicate_
                         , substitution =
-                            Substitution.wrap [(ElemVar Mock.z, gOfX)]
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(ElemVar Mock.z, gOfX)]
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
@@ -188,12 +192,18 @@ test_andSimplification =
                 Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate_
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfX)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, fOfX)]
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeTruePredicate_
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, gOfX)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, gOfX)]
                     }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
@@ -204,6 +214,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [   ( ElemVar Mock.y
                                 , Mock.functionalConstr10 (mkElemVar Mock.x)
                                 )
@@ -213,6 +224,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [   ( ElemVar Mock.y
                                 , Mock.functionalConstr11 (mkElemVar Mock.x)
                                 )
