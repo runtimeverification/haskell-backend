@@ -57,6 +57,7 @@ import Control.Monad.Catch
     ( MonadCatch
     , MonadMask
     , MonadThrow
+    , finally
     )
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.IO.Class
@@ -115,6 +116,8 @@ import SMT.SimpleSMT
     , SmtSortDeclaration
     , Solver
     , SortDeclaration (..)
+    , pop
+    , push
     )
 import qualified SMT.SimpleSMT as SimpleSMT
 
@@ -296,15 +299,16 @@ instance MonadUnliftIO m => MonadLog (SmtT m) where
         let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
         liftIO $ Colog.unLogAction logAction entry
 
-instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
+instance (MonadIO m, MonadUnliftIO m, MonadMask m) => MonadSMT (SmtT m) where
     withSolver (SmtT action) =
         withSolverT' $ \solver -> do
             -- Create an unshared "dummy" mutex for the solver.
             mvar <- liftIO $ newMVar solver
             -- Run the inner action with the unshared mutex.
             -- The action will never block waiting to acquire the solver.
-            withRunInIO $ \runInIO ->
-                SimpleSMT.inNewScope solver (runInIO $ runReaderT action mvar)
+            liftIO (push solver)
+            runReaderT action mvar `finally` liftIO (pop solver)
+
 
     declare name typ =
         withSolverT' $ \solver -> liftIO $ SimpleSMT.declare solver name typ
