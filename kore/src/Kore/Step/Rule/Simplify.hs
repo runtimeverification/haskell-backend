@@ -13,12 +13,14 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
-
-import qualified Branch
-import Kore.Internal.Condition
-    ( Condition
+import Control.Monad
+    ( (>=>)
     )
-import qualified Kore.Internal.Condition as Condition
+
+import Branch
+    ( BranchT
+    )
+import qualified Branch
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -41,19 +43,15 @@ import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeCeilPredicate
-    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( coerceSort
-    , unwrapPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import Kore.Internal.TermLike
-    ( mkAnd
-    , mkCeil_
-    , termLikeSort
+    ( termLikeSort
     )
 import Kore.Step.RulePattern
     ( AllPathRule (..)
@@ -73,7 +71,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
-    , simplifyCondition
     )
 import Kore.Syntax.Variable
     ( Variable
@@ -147,13 +144,20 @@ simplifyClaimRule
 simplifyClaimRule =
     fmap MultiAnd.make . Branch.gather . Lens.traverseOf leftPattern worker
   where
-    worker pattern0 = do
-        let pattern1 = requireDefined pattern0
-        pattern2 <- Pattern.simplifyTopConfiguration pattern1 >>= Branch.scatter
-        simplifyConditionsWithSmt
-            SideCondition.top
-            (OrPattern.fromPattern pattern2)
-            >>= Branch.scatter
+    worker, simplify, simplifyWithSolver
+        :: Pattern variable
+        -> BranchT simplifier (Pattern variable)
+    worker =
+        (return . requireDefined)
+        >=> simplify
+        >=> simplifyWithSolver
+    simplify =
+        Pattern.simplifyTopConfiguration
+        >=> Branch.scatter
+    simplifyWithSolver =
+        (return . OrPattern.fromPattern)
+        >=> simplifyConditionsWithSmt SideCondition.top
+        >=> Branch.scatter
 
 requireDefined
     :: InternalVariable variable
