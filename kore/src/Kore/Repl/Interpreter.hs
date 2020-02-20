@@ -1273,8 +1273,10 @@ graphParams len = Graph.nonClusteredParams
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
             $ case ps of
-                ProofState.DoNotUse.Proven -> toColorList green
-                _                          -> []
+                ProofState.DoNotUse.Proven          -> toColorList green
+                ProofState.DoNotUse.GoalStuck _     -> toColorList red
+                ProofState.DoNotUse.GoalRemainder _ -> toColorList red
+                _                                   -> []
         ]
     }
   where
@@ -1302,6 +1304,7 @@ graphParams len = Graph.nonClusteredParams
                     )
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
+    red = Graph.Attr.RGB 200 0 0
 
 showAliasError :: AliasError -> String
 showAliasError =
