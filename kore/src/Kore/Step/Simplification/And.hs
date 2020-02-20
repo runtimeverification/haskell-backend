@@ -217,21 +217,51 @@ makeEvaluateNonBool
             }
 
 applyAndIdempotenceAndFindContradictions
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => TermLike variable
     -> TermLike variable
 applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
-        then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
+        then foldl1' mkAndSimplified . Set.toList
+            $ Set.union terms filteredNegatedTerms
         else mkBottom_
 
   where
-    (terms, negatedTerms) = splitIntoTermsAndNegations patt
-    noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
+    (terms, unfilteredNegatedTerms) = splitIntoTermsAndNegations patt
+    filteredNegatedTerms =
+        Set.fromList
+        $ map (filterNegation terms)
+        $ Set.toList unfilteredNegatedTerms
+
+    noContradictions =
+        Set.disjoint (Set.map mkNot terms) filteredNegatedTerms
+        && not (any isBottom (Set.toList filteredNegatedTerms))
     mkAndSimplified a b =
         TermLike.setSimplified
             (TermLike.simplifiedAttribute a <> TermLike.simplifiedAttribute b)
             (mkAnd a b)
+
+    filterNegation
+        :: Set (TermLike variable) -> TermLike variable -> TermLike variable
+    filterNegation
+        positiveTerms
+        term@(Not_ _ andTerm@(And_ _ _ _))
+      =
+        case filteredAndTerms of
+            _ | andTerms == filteredAndTerms -> term
+            [] -> mkBottom_
+            [t] -> case t of
+                Not_ _ doubleNegation ->  -- TODO: Use Not.simplify.
+                    doubleNegation
+                _ -> mkNot t
+            t : ts ->  -- TODO: Use Not.simplify.
+                TermLike.markSimplified $ mkNot (foldl mkAnd t ts)
+      where
+        andTerms = children andTerm
+        filteredAndTerms =
+            filter (not . (`Set.member` positiveTerms)) andTerms
+    filterNegation _ term = term
 
 splitIntoTermsAndNegations
     :: forall variable
@@ -243,16 +273,16 @@ splitIntoTermsAndNegations =
         . partitionWith termOrNegation
         . children
   where
-    children :: TermLike variable -> [TermLike variable]
-    children (And_ _ p1 p2) = children p1 ++ children p2
-    children p = [p]
-
     -- Left is for regular terms, Right is negated terms
     termOrNegation
         :: TermLike variable
         -> Either (TermLike variable) (TermLike variable)
     termOrNegation t@(Not_ _ _) = Right t
     termOrNegation t            = Left t
+
+children :: TermLike variable -> [TermLike variable]
+children (And_ _ p1 p2) = children p1 ++ children p2
+children p = [p]
 
 partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
 partitionWith f = partitionEithers . fmap f
