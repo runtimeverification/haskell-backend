@@ -413,22 +413,10 @@ variableFunctionAndEquals
 variableFunctionAndEquals
     _
     SimplificationType.And
-    first@(ElemVar_ v1)
-    second@(ElemVar_ v2)
+    (ElemVar_ v1)
+    second@(ElemVar_ _)
   =
-    -- TODO (thomas.tuegel): Remove this use of compareSubstitution; it violates
-    -- the boundary of the Substitution context.
-    case compareSubstitution v1 v2 of
-        LT ->
-            return
-            $ Pattern.withCondition second
-            $ Condition.fromSingleSubstitution
-                (Substitution.assign (ElemVar v1) second)
-        _ ->
-            return
-            $ Pattern.withCondition first
-            $ Condition.fromSingleSubstitution
-                (Substitution.assign (ElemVar v1) first)
+      return $ Pattern.assign (ElemVar v1) second
 variableFunctionAndEquals
     sideCondition
     simplificationType

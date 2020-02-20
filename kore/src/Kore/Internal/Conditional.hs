@@ -418,7 +418,6 @@ isPredicate Conditional {term} = isTop term
 mapVariables
     ::  InternalVariable variableFrom
     =>  InternalVariable variableTo
-    =>  (FreshPartialOrd variableTo, SortedVariable variableTo)
     =>  MapVariables variableFrom variableTo termFrom termTo
     ->  MapVariables variableFrom variableTo
             (Conditional variableFrom termFrom)

@@ -23,6 +23,7 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
     , simplifiedAttribute
+    , assign
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -81,6 +82,9 @@ import Kore.TopBottom
     )
 import Kore.Variables.Fresh
     ( FreshPartialOrd
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
     )
 
 {- | The conjunction of a pattern, predicate, and substitution.
@@ -296,3 +300,16 @@ syncSort
     :: (HasCallStack, InternalVariable variable)
     => Pattern variable -> Pattern variable
 syncSort patt = coerceSort (patternSort patt) patt
+
+assign
+    :: InternalVariable variable
+    => UnifiedVariable variable
+    -> TermLike variable
+    -> Pattern variable
+assign variable term =
+    withCondition assignedTerm
+    $ Condition.fromSingleSubstitution
+        assignment
+  where
+    assignment = Substitution.assign variable term
+    assignedTerm = Substitution.assignedTerm assignment

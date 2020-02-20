@@ -11,6 +11,7 @@ module Kore.Internal.Substitution
     , pattern Assignment_
     , assignmentToPair
     , assignedVariable
+    , assignedTerm
     , mapAssignedTerm
     , UnwrappedSubstitution
     , mkUnwrappedSubstitution
@@ -92,9 +93,6 @@ import Kore.TopBottom
 import Kore.Unparser
     ( unparseToString
     )
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import Kore.Variables.UnifiedVariable
 import qualified SQL
 
@@ -142,6 +140,11 @@ assignedVariable
     :: Assignment variable
     -> UnifiedVariable variable
 assignedVariable (Assignment variable _) = variable
+
+assignedTerm
+    :: Assignment variable
+    -> TermLike variable
+assignedTerm (Assignment _ term) = term
 
 mapAssignedTerm
     :: InternalVariable variable
@@ -194,8 +197,7 @@ instance SOP.HasDatatypeInfo (Substitution variable)
 
 instance Debug variable => Debug (Substitution variable)
 
-instance
-    ( InternalVariable variable, Debug variable, Diff variable, Ord variable )
+instance (InternalVariable variable, Diff variable)
     => Diff (Substitution variable)
   where
     diffPrec a b =
