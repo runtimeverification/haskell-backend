@@ -43,7 +43,6 @@ import Control.Monad.Except
     ( ExceptT
     )
 import qualified Control.Monad.Except as Except
-import Control.Monad.IO.Class
 import Control.Monad.Trans
     ( MonadTrans
     )

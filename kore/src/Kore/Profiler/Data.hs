@@ -16,9 +16,6 @@ import Prelude.Kore
 import Control.Monad
     ( when
     )
-import Control.Monad.IO.Class
-    ( MonadIO (liftIO)
-    )
 import Control.Monad.Morph
     ( MFunctor (..)
     )

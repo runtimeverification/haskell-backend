@@ -18,7 +18,6 @@ import Control.Exception
     ( SomeException
     )
 import qualified Control.Exception as Exception
-import Control.Monad.IO.Class
 import Data.List
     ( isInfixOf
     )

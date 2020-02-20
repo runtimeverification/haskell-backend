@@ -29,6 +29,8 @@ module Prelude.Kore
     , optional
     -- * From
     , module From
+    -- * IO
+    , MonadIO (..)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -47,6 +49,9 @@ import Control.Error
     )
 import Control.Exception
     ( assert
+    )
+import Control.Monad.IO.Class
+    ( MonadIO (..)
     )
 import Data.Function
     ( on

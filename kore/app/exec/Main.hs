@@ -8,10 +8,6 @@ import Control.Monad.Catch
     , handle
     , throwM
     )
-import Control.Monad.IO.Class
-    ( MonadIO
-    , liftIO
-    )
 import qualified Control.Monad.Reader.Class as Reader
 import Control.Monad.Trans
     ( lift
