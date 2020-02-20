@@ -37,10 +37,6 @@ import Control.Monad.Error.Class
     ( MonadError
     )
 import qualified Control.Monad.Error.Class as Monad.Error
-import Control.Monad.IO.Class
-    ( MonadIO
-    , liftIO
-    )
 import Control.Monad.State.Strict
     ( MonadState
     , get

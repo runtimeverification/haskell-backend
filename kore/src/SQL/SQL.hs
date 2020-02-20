@@ -21,10 +21,6 @@ module SQL.SQL
 import Prelude.Kore
 
 import qualified Control.Monad.Catch as Exceptions
-import Control.Monad.IO.Class
-    ( MonadIO
-    , liftIO
-    )
 import Control.Monad.Reader
     ( ReaderT (ReaderT)
     , runReaderT
