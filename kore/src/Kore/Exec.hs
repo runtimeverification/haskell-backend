@@ -32,9 +32,6 @@ import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
     )
-import Control.Monad.IO.Class
-    ( MonadIO
-    )
 import Control.Monad.Trans.Except
     ( runExceptT
     )

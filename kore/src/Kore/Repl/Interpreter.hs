@@ -41,10 +41,6 @@ import Control.Monad.Extra
     , loop
     , loopM
     )
-import Control.Monad.IO.Class
-    ( MonadIO
-    , liftIO
-    )
 import Control.Monad.Reader
     ( MonadReader
     , ReaderT (..)
