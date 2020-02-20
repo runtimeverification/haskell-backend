@@ -46,8 +46,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Substitution
-    ( Assignment
-    , pattern Assignment_
+    ( pattern Assignment_
     , Normalization (..)
     , UnwrappedSubstitution
     )

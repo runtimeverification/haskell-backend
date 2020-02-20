@@ -63,14 +63,12 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.Substitution
     ( Assignment
-    , pattern Assignment_
     , Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , Sort
-    , SortedVariable
     , TermLike
     , termLikeSort
     )
@@ -79,12 +77,8 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import Kore.Variables.UnifiedVariable
     ( MapVariables
-    , UnifiedVariable
     )
 import qualified SQL
 
@@ -128,7 +122,7 @@ instance SOP.HasDatatypeInfo (Conditional variable child)
 instance (Debug variable, Debug child) => Debug (Conditional variable child)
 
 instance
-    ( Debug variable, Debug child, Diff variable, Diff child, InternalVariable variable )
+    ( Debug child, Diff variable, Diff child, InternalVariable variable )
     => Diff (Conditional variable child)
 
 instance

@@ -97,7 +97,10 @@ import Kore.Variables.UnifiedVariable
 import qualified SQL
 
 data Assignment variable =
-    Assignment !(UnifiedVariable variable) !(TermLike variable)
+    Assignment
+        { assignedVariable :: !(UnifiedVariable variable)
+        , assignedTerm :: !(TermLike variable)
+        }
     deriving (Show, Eq, Ord, GHC.Generic)
 
 instance SOP.Generic (Assignment variable)
@@ -135,16 +138,6 @@ assignmentToPair
     -> (UnifiedVariable variable, TermLike variable)
 assignmentToPair (Assignment variable term) =
     (variable, term)
-
-assignedVariable
-    :: Assignment variable
-    -> UnifiedVariable variable
-assignedVariable (Assignment variable _) = variable
-
-assignedTerm
-    :: Assignment variable
-    -> TermLike variable
-assignedTerm (Assignment _ term) = term
 
 mapAssignedTerm
     :: InternalVariable variable
