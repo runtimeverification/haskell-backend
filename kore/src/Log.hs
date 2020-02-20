@@ -37,6 +37,7 @@ import Colog
     )
 import Control.Monad.Catch
     ( MonadCatch
+    , MonadMask
     , MonadThrow
     )
 import Control.Monad.Except
@@ -198,7 +199,7 @@ instance MonadLog log => MonadLog (Strict.StateT state log)
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
     deriving (Functor, Applicative, Monad)
-    deriving (MonadIO, MonadThrow, MonadCatch)
+    deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)

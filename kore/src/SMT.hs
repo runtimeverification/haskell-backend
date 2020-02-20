@@ -8,7 +8,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 
 module SMT
-    ( SMT, SmtT, runSmtT
+    ( SMT, getSMT
     , Solver
     , stopSolver
     , runSMT
@@ -58,6 +58,7 @@ import Control.Monad.Catch
     , MonadMask
     , MonadThrow
     , bracket
+    , catch
     , finally
     )
 import qualified Control.Monad.Counter as Counter
@@ -68,6 +69,7 @@ import Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT (..)
+    , lift
     , runReaderT
     )
 import qualified Control.Monad.Reader as Reader
@@ -95,7 +97,8 @@ import ListT
     , mapListT
     )
 import Log
-    ( MonadLog (..)
+    ( LoggerT (..)
+    , MonadLog (..)
     )
 import qualified Log
 import SMT.SimpleSMT
@@ -257,7 +260,7 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
+newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) (LoggerT IO) a }
     deriving
         ( Applicative
         , Functor
@@ -265,29 +268,25 @@ newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
         , MonadCatch
         , MonadIO
         , MonadThrow
-        , Morph.MFunctor
-        , MonadMask
         )
 
-type SMT = SmtT IO
-
 withSolver' :: (Solver -> IO a) -> SMT a
-withSolver' action = SmtT $ do
+withSolver' action = SMT $ do
     mvar <- Reader.ask
     liftIO $ withMVar mvar action
 
-withSolverT' :: MonadIO m => MonadMask m => (Solver -> m a) -> SmtT m a
-withSolverT' action = SmtT $ do
+withSolverT' :: (Solver -> LoggerT IO a) -> SMT a
+withSolverT' action = SMT $ do
     mvar <- Reader.ask
     Trans.lift $ bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
 
-instance (MonadIO m, MonadMask m) => MonadLog (SmtT m) where
+instance MonadLog SMT where
     logEntry entry = withSolverT' $ \solver -> do
         let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
         liftIO $ Colog.unLogAction logAction entry
 
-instance (MonadIO m, MonadMask m) => MonadSMT (SmtT m) where
-    withSolver (SmtT action) =
+instance MonadSMT SMT where
+    withSolver (SMT action) =
         withSolverT' $ \solver -> do
             -- Create an unshared "dummy" mutex for the solver.
             mvar <- liftIO $ newMVar solver
@@ -319,7 +318,7 @@ instance (MonadIO m, MonadMask m) => MonadSMT (SmtT m) where
     assert fact =
         withSolverT' $ \solver -> liftIO $ SimpleSMT.assert solver fact
 
-    check = Morph.hoist liftIO $ withSolver' SimpleSMT.check
+    check = withSolver' SimpleSMT.check
 
     ackCommand command =
         withSolverT' $ \solver -> liftIO $ SimpleSMT.ackCommand solver command
@@ -331,11 +330,11 @@ instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
     {-# INLINE withSolver #-}
 
-instance (MonadIO m) => MonadProfiler (SmtT m)
+instance MonadProfiler SMT
   where
     profile a action = do
         configuration <- profileConfiguration
-        SmtT (profileEvent configuration a (runSmtT action))
+        SMT (profileEvent configuration a (getSMT action))
     {-# INLINE profile #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
@@ -394,17 +393,17 @@ defaultConfig =
 The new solver is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> Logger -> IO (MVar Solver)
+newSolver :: Config -> Logger -> LoggerT IO (MVar Solver)
 newSolver config logger = do
-    solver <- SimpleSMT.newSolver exe args logger
-    mvar <- newMVar solver
-    runReaderT runSmtT mvar
+    solver <- lift $ SimpleSMT.newSolver exe args logger
+    mvar <- lift $ newMVar solver
+    runReaderT getSMT mvar
     return mvar
   where
     Config { timeOut } = config
     Config { executable = exe, arguments = args } = config
     Config { preludeFile } = config
-    SmtT { runSmtT } = do
+    SMT { getSMT } = do
         setTimeOut timeOut
         maybe (pure ()) loadFile preludeFile
 
@@ -423,11 +422,15 @@ stopSolver mvar = do
 
 -- | Run an external SMT solver.
 runSMT :: Config -> Logger -> SMT a -> IO a
-runSMT config logger SmtT { runSmtT } =
+runSMT config logger SMT { getSMT } =
     Exception.bracket
-        (newSolver config logger `Exception.catch` showZ3NotFound)
+        ( catch
+            (runReaderT (getLoggerT (newSolver config logger)) logger)
+            showZ3NotFound
+
+        )
         stopSolver
-        (runReaderT runSmtT)
+        (\mvar -> runReaderT (getLoggerT $ runReaderT getSMT mvar) logger)
   where
     showZ3NotFound :: Exception.IOException -> IO a
     showZ3NotFound e =
@@ -436,11 +439,28 @@ runSMT config logger SmtT { runSmtT } =
             <> "We couldn't start Z3 due to the exception above. "
             <> "Is Z3 installed?"
 
+
+
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
 escapeId :: Text -> Text
 escapeId name = "|" <> name <> "|"
 
+{-
+runSMT :: Config -> Logger -> SMT a -> LoggerT IO a
+runSMT config logger SMT { getSMT } =
+    bracket
+        (newSolver config logger `catch` showZ3NotFound)
+        (lift . stopSolver)
+        (runReaderT getSMT)
+  where
+    showZ3NotFound :: Exception.IOException -> LoggerT IO a
+    showZ3NotFound e =
+        error
+            $ Exception.displayException e <> "\n"
+            <> "We couldn't start Z3 due to the exception above. "
+            <> "Is Z3 installed?"
+-}
 
 -- | Declares a function symbol to SMT, returning ().
 declareFun_ :: MonadSMT m => SmtFunctionDeclaration -> m ()
