@@ -783,7 +783,7 @@ allPathFollowupStep claims axiomGroups =
         , Simplify
         , TriviallyValid
         ]
-        <> groupStrategy axiomGroups<>
+        <> groupStrategy axiomGroups <>
         [ ResetGoal
         , Simplify
         , TriviallyValid
