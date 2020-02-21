@@ -14,7 +14,6 @@ import Test.Tasty
 import Test.Tasty.Hedgehog
 import Test.Tasty.HUnit
 
-import Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
 
 import SMT

@@ -26,10 +26,6 @@ import Control.Monad.Catch
     ( MonadCatch
     )
 import qualified Control.Monad.Catch as Exception
-import Control.Monad.IO.Class
-    ( MonadIO
-    , liftIO
-    )
 import Control.Monad.Reader
     ( ReaderT (..)
     )
