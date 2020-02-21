@@ -408,14 +408,14 @@ test_onePathVerification =
         -- Claims: a => d
         --        b => c [trusted]
         --        b => d [trusted]
-        -- Expected: success
+        -- Expected: error c
         actual <- runVerificationToPattern
             Unlimited
             Unlimited
             [ simpleAxiom Mock.a Mock.b ]
             [ simpleClaim Mock.a Mock.d
-            , simpleTrustedPriorityClaim Mock.b Mock.c 2
-            , simpleTrustedPriorityClaim Mock.b Mock.d 1
+            , simpleTrustedClaim Mock.b Mock.c
+            , simpleTrustedClaim Mock.b Mock.d
             ]
             []
         assertEqual ""
@@ -440,6 +440,26 @@ test_onePathVerification =
             []
         assertEqual ""
             (Right ())
+            actual
+    , testCase "TESTING Priority: should apply trusted\
+               \ claim with higher priority" $ do
+        -- Axioms:
+        --     a => b
+        -- Claims: a => d
+        --        b => c [trusted, priority(2)]
+        --        b => d [trusted, priority(1)]
+        -- Expected: error c
+        actual <- runVerificationToPattern
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b ]
+            [ simpleClaim Mock.a Mock.d
+            , simpleTrustedPriorityClaim Mock.b Mock.d 2
+            , simpleTrustedPriorityClaim Mock.b Mock.c 1
+            ]
+            []
+        assertEqual ""
+            (Left $ Pattern.fromTermLike Mock.c)
             actual
     ]
 
