@@ -9,6 +9,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 module Kore.Step.SMT.Evaluator
     ( decidePredicate
     , Evaluable (..)
+    , filterBranch
     , filterMultiOr
     , translateUninterpreted
     ) where
@@ -25,6 +26,9 @@ import Data.Reflection
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Branch
+    ( BranchT
+    )
 import qualified Control.Monad.Counter as Counter
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
@@ -91,6 +95,19 @@ instance InternalVariable variable => Evaluable (Conditional variable term)
     evaluate conditional =
         assert (Conditional.isNormalized conditional)
         $ evaluate (Conditional.predicate conditional)
+
+{- | Removes all branches refuted by an external SMT solver.
+ -}
+filterBranch
+    :: forall simplifier thing
+    .  MonadSimplify simplifier
+    => Evaluable thing
+    => thing
+    -> BranchT simplifier thing
+filterBranch thing =
+    evaluate thing >>= \case
+        Just False -> empty
+        _          -> return thing
 
 {- | Removes from a MultiOr all items refuted by an external SMT solver. -}
 filterMultiOr
