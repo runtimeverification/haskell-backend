@@ -53,10 +53,6 @@ import Control.Monad.Cont
     ( ContT (..)
     , runContT
     )
-import Control.Monad.IO.Class
-    ( MonadIO
-    , liftIO
-    )
 import Control.Monad.Reader
     ( runReaderT
     )

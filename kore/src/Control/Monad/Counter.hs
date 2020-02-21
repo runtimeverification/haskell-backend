@@ -33,9 +33,6 @@ import Control.Monad
     )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
-import Control.Monad.IO.Class
-    ( MonadIO (..)
-    )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( MonadReader
