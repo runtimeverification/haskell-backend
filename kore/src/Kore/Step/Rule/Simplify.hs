@@ -41,9 +41,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
     ( coerceSort
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import Kore.Internal.TermLike
     ( termLikeSort
     )
@@ -58,9 +55,6 @@ import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     , applySubstitution
     , leftPattern
-    )
-import Kore.Step.Simplification.OrPattern
-    ( simplifyConditionsWithSmt
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
@@ -86,10 +80,7 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate
-        fullySimplified <-
-            simplifyConditionsWithSmt
-                SideCondition.top
-                simplifiedTerms
+        fullySimplified <- SMT.Evaluator.filterMultiOr simplifiedTerms
         let rules =
                 map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
         return (MultiAnd.make rules)
