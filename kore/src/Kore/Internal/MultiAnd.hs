@@ -16,6 +16,7 @@ module Kore.Internal.MultiAnd
     , extractPatterns
     , make
     , toPredicate
+    , singleton
     ) where
 
 import Prelude.Kore
@@ -102,6 +103,11 @@ patternToAndBool patt
 -}
 make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
 make patts = filterAnd (MultiAnd patts)
+
+{-| 'make' constructs a normalized 'MultiAnd'.
+-}
+singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
+singleton term = make [term]
 
 {-| Returns the patterns inside an @\and@.
 -}
