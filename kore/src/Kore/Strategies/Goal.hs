@@ -29,6 +29,9 @@ import Prelude.Kore
 import Control.Exception
     ( throw
     )
+import Control.Monad
+    ( join
+    )
 import Control.Monad.Catch
     ( Exception (..)
     , MonadCatch
@@ -42,6 +45,10 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import Data.List.Extra
+    ( groupSortOn
+    , sortOn
+    )
 import qualified Data.Set as Set
 import Data.Stream.Infinite
     ( Stream (..)
@@ -315,12 +322,13 @@ instance Goal (OnePathRule Variable) where
                 rewrites
             )
       where
-        rewrites = rules
+        rewrites = sortOn priority rules
         coinductiveRewrites =
             OnePathRewriteRule
             . RewriteRule
             . getOnePathRule
             <$> goals
+        priority = Attribute.Axiom.priority . RulePattern.attributes . toRulePattern
 
 instance SOP.Generic (Rule (OnePathRule Variable))
 
@@ -377,12 +385,13 @@ instance Goal (AllPathRule Variable) where
                 rewrites
             )
       where
-        rewrites = rules
+        rewrites = groupSortOn priority rules
         coinductiveRewrites =
             AllPathRewriteRule
             . RewriteRule
             . getAllPathRule
             <$> goals
+        priority = Attribute.Axiom.priority . RulePattern.attributes . toRulePattern
 
 instance SOP.Generic (Rule (AllPathRule Variable))
 
@@ -733,18 +742,19 @@ onePathFollowupStep claims axioms =
         ]
 
 allPathFirstStep
-    :: [Rule (AllPathRule Variable)]
+    :: [[Rule (AllPathRule Variable)]]
     -> Strategy (Prim (AllPathRule Variable))
 allPathFirstStep axioms =
-    (Strategy.sequence . map Strategy.apply)
+    (Strategy.sequence . map Strategy.apply) $
         [ CheckProven
         , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , DerivePar axioms
-        , Simplify
+        ]
+        <> fmap DerivePar axioms <>
+        [ Simplify
         , TriviallyValid
         , ResetGoal
         , Simplify
@@ -753,10 +763,10 @@ allPathFirstStep axioms =
 
 allPathFollowupStep
     :: [Rule (AllPathRule Variable)]
-    -> [Rule (AllPathRule Variable)]
+    -> [[Rule (AllPathRule Variable)]]
     -> Strategy (Prim (AllPathRule Variable))
 allPathFollowupStep claims axioms =
-    (Strategy.sequence . map Strategy.apply)
+    (Strategy.sequence . map Strategy.apply) $
         [ CheckProven
         , CheckGoalStuck
         , CheckGoalRemainder
@@ -766,10 +776,9 @@ allPathFollowupStep claims axioms =
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
-        , DerivePar axioms
-        , Simplify
-        , TriviallyValid
-        , ResetGoal
+        ]
+        <> join [[DerivePar group, Simplify, TriviallyValid] | group <- axioms] <>
+        [ ResetGoal
         , Simplify
         , TriviallyValid
         ]
