@@ -17,9 +17,12 @@ module Kore.Step.Simplification.Ceil
 
 import Prelude.Kore
 
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad
+    ( zipWithM
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
@@ -30,9 +33,10 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( make
+import Kore.Internal.MultiAnd
+    ( MultiAnd
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
     ( OrCondition
@@ -68,7 +72,6 @@ import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
-
 import Kore.Unparser
     ( unparseToString
     )
@@ -241,13 +244,17 @@ makeEvaluateBuiltin
     -> Maybe (simplifier (OrCondition variable))
 makeEvaluateBuiltin
     sideCondition
-    (Domain.BuiltinMap Domain.InternalAc
-        {builtinAcChild}
-    )
+    (Domain.BuiltinMap internalAc)
   =
     makeEvaluateNormalizedAc
+        mkOpaqueAc
         sideCondition
         (Domain.unwrapAc builtinAcChild)
+  where
+    Domain.InternalAc { builtinAcChild } = internalAc
+    mkOpaqueAc normalizedAc =
+        mkBuiltinMap internalAc
+            { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
 makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = Just $ do
     children <- mapM (makeEvaluateTerm sideCondition) (Foldable.toList l)
     let
@@ -256,16 +263,24 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = Just $ do
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
 makeEvaluateBuiltin
     sideCondition
-    (Domain.BuiltinSet Domain.InternalAc
-        {builtinAcChild}
-    )
+    (Domain.BuiltinSet internalAc)
   =
     makeEvaluateNormalizedAc
+        mkOpaqueAc
         sideCondition
         (Domain.unwrapAc builtinAcChild)
+  where
+    Domain.InternalAc { builtinAcChild } = internalAc
+    mkOpaqueAc normalizedAc =
+        mkBuiltinSet internalAc
+            { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
 makeEvaluateBuiltin _ (Domain.BuiltinBool _) = Just $ return OrCondition.top
 makeEvaluateBuiltin _ (Domain.BuiltinInt _) = Just $ return OrCondition.top
 makeEvaluateBuiltin _ (Domain.BuiltinString _) = Just $ return OrCondition.top
+
+type MkOpaqueAc normalized variable =
+    Domain.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
 
 makeEvaluateNormalizedAc
     :: forall normalized variable simplifier
@@ -274,98 +289,146 @@ makeEvaluateNormalizedAc
         , Traversable (Domain.Value normalized)
         , Domain.AcWrapper normalized
         )
-    =>  SideCondition variable
+    =>  MkOpaqueAc normalized variable
+    ->  SideCondition variable
     ->  Domain.NormalizedAc
             normalized
             (TermLike Concrete)
             (TermLike variable)
-    -> Maybe (simplifier (OrCondition variable))
-makeEvaluateNormalizedAc
-    sideCondition
-    Domain.NormalizedAc
-        { elementsWithVariables
-        , concreteElements
-        , opaque = []
-        }
-  = TermLike.assertConstructorLikeKeys concreteKeys . Just $ do
-    variableKeyConditions <- mapM (makeEvaluateTerm sideCondition) variableKeys
-    variableValueConditions <- evaluateValues variableValues
-    concreteValueConditions <- evaluateValues concreteValues
+    ->  Maybe (simplifier (OrCondition variable))
+makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
+    TermLike.assertConstructorLikeKeys concreteKeys . Just $ do
+        -- concreteKeys are defined by assumption
+        definedKeys <- traverse defineAbstractKey abstractKeys
+        definedOpaque <- traverse defineOpaque opaque
+        definedValues <- traverse defineValue allValues
+        -- concreteKeys are distinct by assumption
+        distinctConcreteKeys <-
+            traverse (flip distinctKey concreteKeys) abstractKeys
+        distinctAbstractKeys <-
+            zipWithM distinctKey
+                abstractKeys
+                (tail $ List.tails abstractKeys)
+        let definedConcreteOpaque =
+                foldMap defineConcreteOpaque $ Map.toList concreteElements
+            definedAbstractOpaque =
+                foldMap defineAbstractOpaque abstractElements
+        let conditions :: MultiAnd (OrCondition variable)
+            conditions =
+                mconcat
+                    [ MultiAnd.make definedKeys
+                    , MultiAnd.make definedOpaque
+                    , mconcat definedValues
+                    , mconcat distinctConcreteKeys
+                    , mconcat distinctAbstractKeys
+                    , definedConcreteOpaque
+                    , definedAbstractOpaque
+                    , definedOpaquePairwise
+                    ]
 
-
-    elementsWithVariablesDistinct <-
-        evaluateDistinct variableKeys concreteKeys
-    let allConditions :: [OrCondition variable]
-        allConditions =
-            concreteValueConditions
-            ++ variableValueConditions
-            ++ variableKeyConditions
-            ++ elementsWithVariablesDistinct
-    And.simplifyEvaluatedMultiPredicate
-        sideCondition
-        (MultiAnd.make allConditions)
+        And.simplifyEvaluatedMultiPredicate sideCondition conditions
   where
-    concreteElementsList
-        ::  [   ( TermLike variable
-                , Domain.Value normalized (TermLike variable)
-                )
-            ]
-    concreteElementsList =
-        map
-            (Bifunctor.first TermLike.fromConcrete)
-            (Map.toList concreteElements)
-    (variableKeys, variableValues) =
-        unzip (Domain.unwrapElement <$> elementsWithVariables)
-    (concreteKeys, concreteValues) = unzip concreteElementsList
-
-    evaluateDistinct
-        :: [TermLike variable]
-        -> [TermLike variable]
-        -> simplifier [OrCondition variable]
-    evaluateDistinct [] _ = return []
-    evaluateDistinct (variableTerm : variableTerms) concreteTerms = do
-        equalities <-
-            mapM
-                (flip
-                    (Equals.makeEvaluateTermsToPredicate variableTerm)
-                    sideCondition
-                )
-                -- TODO(virgil): consider eliminating these repeated
-                -- concatenations.
-                (variableTerms ++ concreteTerms)
-        negations <- mapM Not.simplifyEvaluatedPredicate equalities
-
-        remainingConditions <-
-            evaluateDistinct variableTerms concreteTerms
-        return (negations ++ remainingConditions)
-
-    evaluateValues
-        :: [Domain.Value normalized (TermLike variable)]
-        -> simplifier [OrCondition variable]
-    evaluateValues elements = do
-        wrapped <- evaluateWrappers elements
-        let unwrapped = map Foldable.toList wrapped
-        return (concat unwrapped)
-      where
-        evaluateWrapper
-            :: Domain.Value normalized (TermLike variable)
-            -> simplifier (Domain.Value normalized (OrCondition variable))
-        evaluateWrapper = traverse (makeEvaluateTerm sideCondition)
-
-        evaluateWrappers
-            :: [Domain.Value normalized (TermLike variable)]
-            -> simplifier [Domain.Value normalized (OrCondition variable)]
-        evaluateWrappers = traverse evaluateWrapper
-
-makeEvaluateNormalizedAc
-    sideCondition
     Domain.NormalizedAc
-        { elementsWithVariables = []
+        { elementsWithVariables = abstractElements
         , concreteElements
-        , opaque = [opaqueAc]
+        , opaque
         }
-  | Map.null concreteElements = Just $ makeEvaluateTerm sideCondition opaqueAc
-makeEvaluateNormalizedAc _  _ = Nothing
+      = normalizedAc
+
+    defineAbstractKey :: TermLike variable -> simplifier (OrCondition variable)
+    defineAbstractKey = makeEvaluateTerm sideCondition
+
+    defineOpaque :: TermLike variable -> simplifier (OrCondition variable)
+    defineOpaque = makeEvaluateTerm sideCondition
+
+    abstractKeys, concreteKeys :: [TermLike variable]
+    abstractValues, concreteValues, allValues
+        :: [Domain.Value normalized (TermLike variable)]
+    (abstractKeys, abstractValues) =
+        unzip (Domain.unwrapElement <$> abstractElements)
+    concreteKeys = TermLike.fromConcrete <$> Map.keys concreteElements
+    concreteValues = Map.elems concreteElements
+    allValues = concreteValues <> abstractValues
+
+    defineValue
+        :: Domain.Value normalized (TermLike variable)
+        -> simplifier (MultiAnd (OrCondition variable))
+    defineValue =
+        Foldable.foldlM worker mempty
+      where
+        worker multiAnd termLike = do
+            evaluated <- makeEvaluateTerm sideCondition termLike
+            return (multiAnd <> MultiAnd.singleton evaluated)
+
+    distinctKey
+        :: TermLike variable
+        -> [TermLike variable]
+        -> simplifier (MultiAnd (OrCondition variable))
+    distinctKey thisKey otherKeys = do
+        MultiAnd.make <$> traverse (notEquals thisKey) otherKeys
+
+    notEquals t1 t2 =
+        Equals.makeEvaluateTermsToPredicate t1 t2 sideCondition
+        >>= Not.simplifyEvaluatedPredicate
+
+    defineConcreteOpaque
+        :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
+        -> MultiAnd (OrCondition variable)
+    defineConcreteOpaque (key, value)
+      | null opaque = mempty
+      | otherwise =
+        opaqueAc { Domain.concreteElements = Map.singleton key value }
+        & mkOpaqueAc
+        & makeSimplified
+        & MultiAnd.singleton
+
+    defineAbstractOpaque
+        :: Domain.Element normalized (TermLike variable)
+        -> MultiAnd (OrCondition variable)
+    defineAbstractOpaque element
+      | null opaque = mempty
+      | otherwise =
+        opaqueAc { Domain.elementsWithVariables = [element] }
+        & mkOpaqueAc
+        & makeSimplified
+        & MultiAnd.singleton
+
+    definedOpaquePairwise :: MultiAnd (OrCondition variable)
+    definedOpaquePairwise =
+        mconcat $ zipWith defineOpaquePairwise opaque (tail $ List.tails opaque)
+
+    defineOpaquePairwise
+        :: TermLike variable
+        -> [TermLike variable]
+        -> MultiAnd (OrCondition variable)
+    defineOpaquePairwise this others =
+        foldMap (defineOpaquePair this) others
+
+    defineOpaquePair
+        :: TermLike variable
+        -> TermLike variable
+        -> MultiAnd (OrCondition variable)
+    defineOpaquePair opaque1 opaque2 =
+        Domain.NormalizedAc
+            { elementsWithVariables = mempty
+            , concreteElements = mempty
+            , opaque = [opaque1, opaque2]
+            }
+        & mkOpaqueAc
+        & makeSimplified
+        & MultiAnd.singleton
+
+    opaqueAc =
+        Domain.NormalizedAc
+            { elementsWithVariables = mempty
+            , concreteElements = mempty
+            , opaque
+            }
+
+    makeSimplified =
+        OrCondition.fromPredicate
+        . Predicate.markSimplifiedMaybeConditional Nothing
+        . makeCeilPredicate_
 
 {-| This handles the case when we can't simplify a term's ceil.
 
@@ -436,8 +499,7 @@ makeSimplifiedCeil
         VariableF _ -> False
 
     unsimplified =
-        OrCondition.fromCondition
-        . Condition.fromPredicate
+        OrCondition.fromPredicate
         . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
         . makeCeilPredicate_
         $ termLike
