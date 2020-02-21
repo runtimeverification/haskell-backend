@@ -88,8 +88,7 @@ simplifiedSubstitution
     => Substitution variable
     -> Substitution variable
 simplifiedSubstitution =
-    Substitution.unsafeWrap
-    . fmap Substitution.assignmentToPair
+    Substitution.unsafeWrapFromAssignments
     . Substitution.unwrap
     . Substitution.mapTerms simplifiedTerm
 

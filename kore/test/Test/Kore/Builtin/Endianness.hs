@@ -29,7 +29,6 @@ import Kore.Unification.Error
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import Kore.Variables.UnifiedVariable
 import SMT
     ( runNoSMT
     )

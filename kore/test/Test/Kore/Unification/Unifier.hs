@@ -170,9 +170,8 @@ unificationResult
         { term
         , predicate
         , substitution =
-            Substitution.unsafeWrap
-            . fmap Substitution.assignmentToPair
-            $ unificationSubstitution substitution
+            Substitution.unsafeWrapFromAssignments
+                $ unificationSubstitution substitution
         }
 
 newtype UnificationTerm = UnificationTerm (TermLike Variable)
