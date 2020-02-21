@@ -143,7 +143,7 @@ normalize (dropTrivialSubstitutions -> substitution) =
         let -- Variables with simplifiable dependencies
             simplifiable = Set.filter (isSimplifiable variables) variables
             denormalized =
-                fmap (uncurry Substitution.assign)
+                Substitution.mkUnwrappedSubstitution
                 $ Map.toList
                 $ Map.restrictKeys substitution simplifiable
             substitution' = Map.withoutKeys substitution simplifiable
@@ -195,7 +195,7 @@ normalize (dropTrivialSubstitutions -> substitution) =
       | otherwise = do
         let normalized =
                 backSubstitute
-                . fmap (uncurry Substitution.assign)
+                . Substitution.mkUnwrappedSubstitution
                 $ substitution'
         pure Normalization { normalized, denormalized = mempty }
       where

@@ -90,7 +90,7 @@ substitutionSimplifier =
         simplifiableCycle =
             throwSubstitutionError $ SimplifiableCycle variables normalization
           where
-            (variables, _) = unzip $ fmap Substitution.assignmentToPair denormalized
+            variables = fmap Substitution.assignedVariable denormalized
 
 unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =

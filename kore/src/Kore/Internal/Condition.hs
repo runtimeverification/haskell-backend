@@ -55,9 +55,6 @@ import Kore.Internal.Substitution
     ( Normalization (..)
     )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
-    ( TermLike
-    )
 import qualified Kore.Internal.TermLike as TermLike
     ( simplifiedAttribute
     )
@@ -167,7 +164,7 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
   where
     predicate' =
         Conditional.fromPredicate
-        . markSimplifiedIfChildrenSimplified (Substitution.assignmentToPair <$> denormalized)
+        . markSimplifiedIfChildrenSimplified denormalized
         . Substitution.toPredicate
         $ Substitution.wrap denormalized
     substitution' =
@@ -177,12 +174,9 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
         Predicate.setSimplified childrenSimplified result
       where
         childrenSimplified =
-            foldMap (TermLike.simplifiedAttribute . dropVariable) childrenList
-
-        dropVariable
-            :: (UnifiedVariable variable, TermLike variable)
-            -> TermLike variable
-        dropVariable = snd
+            foldMap
+                (TermLike.simplifiedAttribute . Substitution.assignedTerm)
+                childrenList
 
 conditionSort :: Condition variable -> Sort
 conditionSort Conditional {term = (), predicate} =

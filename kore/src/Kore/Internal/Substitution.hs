@@ -49,7 +49,6 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Hashable
 import qualified Data.List as List
@@ -234,7 +233,7 @@ instance
         (Map (UnifiedVariable variable) (TermLike variable))
         (Substitution variable)
   where
-    from = wrap . fmap (uncurry assign) . Map.toList
+    from = wrap . mkUnwrappedSubstitution . Map.toList
 
 instance
     InternalVariable variable
@@ -268,8 +267,10 @@ unwrap
     :: InternalVariable variable
     => Substitution variable
     -> [Assignment variable]
-unwrap (Substitution xs) = List.sortBy (on compare (fst . assignmentToPair)) xs
-unwrap (NormalizedSubstitution xs)  = fmap (uncurry assign) $ Map.toList xs
+unwrap (Substitution xs) =
+    List.sortBy (on compare assignedVariable) xs
+unwrap (NormalizedSubstitution xs) =
+    mkUnwrappedSubstitution $ Map.toList xs
 
 {- | Convert a normalized substitution to a 'Map'.
 
@@ -405,13 +406,24 @@ unsafeWrap =
 -- normalization status is reset to un-normalized.
 modify
     :: InternalVariable variable1
-    => InternalVariable variable2
-    => ( [(UnifiedVariable variable1, TermLike variable1)]
-       -> [(UnifiedVariable variable2, TermLike variable2)]
+    => ( [Assignment variable1]
+       -> [Assignment variable2]
        )
     -> Substitution variable1
     -> Substitution variable2
-modify f = wrap . fmap (uncurry assign) . f . fmap assignmentToPair . unwrap
+modify f = wrap . f . unwrap
+
+mapAssignmentVariables
+    :: (InternalVariable variableFrom, InternalVariable variableTo)
+    => (ElementVariable variableFrom -> ElementVariable variableTo)
+    -> (SetVariable variableFrom -> SetVariable variableTo)
+    -> Assignment variableFrom
+    -> Assignment variableTo
+mapAssignmentVariables mapElemVar mapSetVar (Assignment variable term) =
+    assign mappedVariable mappedTerm
+  where
+    mappedVariable = mapUnifiedVariable mapElemVar mapSetVar variable
+    mappedTerm = TermLike.mapVariables mapElemVar mapSetVar term
 
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
@@ -423,12 +435,8 @@ mapVariables
     -> Substitution variableFrom
     -> Substitution variableTo
 mapVariables mapElemVar mapSetVar  =
-    modify (map mapSingleSubstitution )
-  where
-    mapSingleSubstitution =
-        Bifunctor.bimap
-            (mapUnifiedVariable mapElemVar mapSetVar)
-            (TermLike.mapVariables mapElemVar mapSetVar)
+    modify . fmap
+    $ mapAssignmentVariables mapElemVar mapSetVar
 
 mapTerms
     :: InternalVariable variable
@@ -475,7 +483,7 @@ filter
     -> Substitution variable
     -> Substitution variable
 filter filtering =
-    modify (Prelude.Kore.filter (filtering . fst))
+    modify (Prelude.Kore.filter (filtering . assignedVariable))
 
 {- | Return the pair of substitutions that do and do not satisfy the criterion.
 
@@ -496,6 +504,7 @@ partition criterion (NormalizedSubstitution substitution) =
     let (true, false) = Map.partitionWithKey criterion substitution
     in (NormalizedSubstitution true, NormalizedSubstitution false)
 
+-- TODO(Ana): this will be refactored in a subsequent PR
 orderRenameAndRenormalizeTODO
     :: forall variable
     .  InternalVariable variable
@@ -645,7 +654,9 @@ applyNormalized Normalization { normalized, denormalized } =
             mapAssignedTerm substitute <$> denormalized
         }
   where
-    substitute = TermLike.substitute (Map.fromList (assignmentToPair <$> normalized))
+    substitute =
+        TermLike.substitute
+            (Map.fromList (assignmentToPair <$> normalized))
 
 {- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
 

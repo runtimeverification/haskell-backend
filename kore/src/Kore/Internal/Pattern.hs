@@ -64,7 +64,6 @@ import Kore.Internal.TermLike
     , InternalVariable
     , SetVariable
     , Sort
-    , SortedVariable
     , TermLike
     , mkAnd
     , mkBottom
@@ -79,9 +78,6 @@ import qualified Kore.Sort as Sort
     )
 import Kore.TopBottom
     ( TopBottom (..)
-    )
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
