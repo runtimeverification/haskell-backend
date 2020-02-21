@@ -31,7 +31,6 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
 import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -68,6 +67,7 @@ import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
     )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -142,17 +142,12 @@ simplifyClaimRule =
     . Branch.gather
     . Lens.traverseOf RulePattern.leftPattern worker
   where
-    worker, simplify, simplifyWithSolver
+    worker, simplify, filterWithSolver
         :: Pattern variable
         -> BranchT simplifier (Pattern variable)
     worker =
         (return . Pattern.requireDefined)
         >=> simplify
-        >=> simplifyWithSolver
-    simplify =
-        Pattern.simplifyTopConfiguration
-        >=> Branch.scatter
-    simplifyWithSolver =
-        (return . OrPattern.fromPattern)
-        >=> simplifyConditionsWithSmt SideCondition.top
-        >=> Branch.scatter
+        >=> filterWithSolver
+    simplify = Pattern.simplifyTopConfiguration >=> Branch.scatter
+    filterWithSolver = SMT.Evaluator.filterBranch
