@@ -402,6 +402,45 @@ test_onePathVerification =
         assertEqual ""
             (Right ())
             actual
+    , testCase "TESTING Priority: should apply first trusted claim" $ do
+        -- Axioms:
+        --     a => b
+        -- Claims: a => d
+        --        b => c [trusted]
+        --        b => d [trusted]
+        -- Expected: success
+        actual <- runVerificationToPattern
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b ]
+            [ simpleClaim Mock.a Mock.d
+            , simpleTrustedPriorityClaim Mock.b Mock.c 2
+            , simpleTrustedPriorityClaim Mock.b Mock.d 1
+            ]
+            []
+        assertEqual ""
+            (Left $ Pattern.fromTermLike Mock.c)
+            actual
+    , testCase "TESTING Priority: should apply trusted\
+               \ claim with higher priority" $ do
+        -- Axioms:
+        --     a => b
+        -- Claims: a => d
+        --        b => c [trusted, priority(2)]
+        --        b => d [trusted, priority(1)]
+        -- Expected: success
+        actual <- runVerificationToPattern
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b ]
+            [ simpleClaim Mock.a Mock.d
+            , simpleTrustedPriorityClaim Mock.b Mock.c 2
+            , simpleTrustedPriorityClaim Mock.b Mock.d 1
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
     ]
 
 simpleAxiom
@@ -438,4 +477,22 @@ simpleTrustedClaim left right =
         , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.trusted = Attribute.Trusted True }
+        }
+
+simpleTrustedPriorityClaim
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Integer
+    -> OnePathRule Variable
+simpleTrustedPriorityClaim left right priority =
+    OnePathRule
+    RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , requires = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
+        , attributes = def
+            { Attribute.trusted = Attribute.Trusted True
+            , Attribute.priority = Attribute.Priority (Just priority)
+            }
         }
