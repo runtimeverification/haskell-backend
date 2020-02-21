@@ -55,11 +55,12 @@ test_normalize =
                 mkUnwrappedSubstitution [(y, a)]
             , denormalized = []
             }
+    -- TODO(Ana): this test should work with x and y swapped
     , test "unnormalized substitution, variable-only"
-        [(y, mkVar x), (x, a)]
+        [(x, mkVar y), (y, a)]
         Normalization
             { normalized =
-                mkUnwrappedSubstitution [(x, a), (y, a)]
+                mkUnwrappedSubstitution [(y, a), (x, a)]
             , denormalized = []
             }
     , test "unnormalized substitution, variable under symbol"

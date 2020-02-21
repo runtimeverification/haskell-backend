@@ -460,7 +460,7 @@ instance SOP.HasDatatypeInfo (AttemptedAxiomResults variable)
 instance Debug variable => Debug (AttemptedAxiomResults variable)
 
 instance
-    (Debug variable, Diff variable, InternalVariable variable)
+    (Diff variable, InternalVariable variable)
     => Diff (AttemptedAxiomResults variable)
 
 instance InternalVariable variable => Semigroup (AttemptedAxiomResults variable) where
@@ -515,7 +515,7 @@ instance SOP.HasDatatypeInfo (AttemptedAxiom variable)
 instance Debug variable => Debug (AttemptedAxiom variable)
 
 instance
-    (Debug variable, Diff variable, InternalVariable variable)
+    (Diff variable, InternalVariable variable)
     => Diff (AttemptedAxiom variable)
 
 isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool

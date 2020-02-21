@@ -117,6 +117,9 @@ instance NFData variable => NFData (Assignment variable)
 
 instance Hashable variable => Hashable (Assignment variable)
 
+-- | Smart constructor for 'Assignment'. It enforces the invariant
+-- that for variable renaming, the smaller variable will be on the
+-- left of the substitution.
 assign
     :: InternalVariable variable
     => UnifiedVariable variable
@@ -125,13 +128,12 @@ assign
 assign variable term =
     uncurry Assignment $ curry orderRenaming variable term
 
--- TODO: docs
 pattern Assignment_
     :: UnifiedVariable variable
     -> TermLike variable
     -> Assignment variable
-pattern Assignment_ variable term <-
-    Assignment variable term
+pattern Assignment_ assignedVariable assignedTerm <-
+    Assignment { assignedVariable, assignedTerm }
 
 assignmentToPair
     :: Assignment variable
