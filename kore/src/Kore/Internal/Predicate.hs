@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Internal.Predicate
     ( Predicate -- Constructor not exported on purpose
+    , pattern PredicateAnd
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
@@ -247,6 +248,10 @@ pattern PredicateTrue :: Predicate variable
 pattern PredicateFalse <- GenericPredicate (Recursive.project -> _ :< BottomF _)
 pattern PredicateTrue  <- GenericPredicate (Recursive.project -> _ :< TopF _)
 
+pattern PredicateAnd
+    :: Predicate variable -> Predicate variable -> Predicate variable
+pattern PredicateAnd p1 p2 <-
+    GenericPredicate (And_ _ (GenericPredicate -> p1) (GenericPredicate -> p2))
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}
 isFalse :: TopBottom patt => GenericPredicate patt -> Bool

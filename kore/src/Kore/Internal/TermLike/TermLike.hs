@@ -19,6 +19,7 @@ module Kore.Internal.TermLike.TermLike
     , mkVar
     , traverseVariablesF
     , updateCallStack
+    , depth
     ) where
 
 import Prelude.Kore
@@ -1031,3 +1032,8 @@ mkVar
     => UnifiedVariable variable
     -> TermLike variable
 mkVar = updateCallStack . synthesize . VariableF . Const
+
+depth :: TermLike variable -> Int
+depth = Recursive.fold levelDepth
+  where
+    levelDepth (_ :< termF) = 1 + foldl max 0 termF

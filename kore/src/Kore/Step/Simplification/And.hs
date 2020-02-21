@@ -18,6 +18,9 @@ module Kore.Step.Simplification.And
 
 import Prelude.Kore
 
+import Control.Comonad.Trans.Cofree
+    ( CofreeF ((:<))
+    )
 import Control.Error
     ( fromMaybe
     , runMaybeT
@@ -32,8 +35,13 @@ import Data.Bifunctor
 import Data.Either
     ( partitionEithers
     )
+import qualified Data.Functor.Foldable as Recursive
 import Data.List
     ( foldl1'
+    , sortBy
+    )
+import qualified Data.List as List
+    ( sort
     )
 import Data.Set
     ( Set
@@ -42,6 +50,12 @@ import qualified Data.Set as Set
 
 import Branch
 import qualified Branch as BranchT
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
+import Kore.Error
+    ( printError
+    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
@@ -51,21 +65,46 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    , pattern PredicateAnd
+    , makeAndPredicate
+    , makePredicate
+    , makeTruePredicate_
+    )
+import qualified Kore.Internal.Predicate as Predicate
+    ( setSimplified
+    , simplifiedAttribute
+    , unwrapPredicate
+    )
 import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
+    , pattern Exists_
+    , pattern Forall_
     , InternalVariable
+    , pattern Mu_
     , pattern Not_
+    , pattern Nu_
     , Sort
     , TermLike
+    , TermLikeF
     , mkAnd
     , mkBottom_
     , mkNot
+    , mkTop_
     )
 import qualified Kore.Internal.TermLike as TermLike
+    ( hasFreeVariable
+    , setSimplified
+    , simplifiedAttribute
+    )
+import qualified Kore.Internal.TermLike.TermLike as TermLike
+    ( depth
+    )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
     )
@@ -76,6 +115,12 @@ import Kore.Unification.UnifierT
     )
 import Kore.Unification.Unify
     ( MonadUnify
+    )
+import Kore.Unparser
+    ( unparseToString
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (ElemVar, SetVar)
     )
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.
@@ -186,6 +231,27 @@ makeEvaluate sideCondition first second
   | Pattern.isTop second = return first
   | otherwise = makeEvaluateNonBool sideCondition first second
 
+data Normalized thing
+    = Unchanged !thing
+    | Changed  !thing
+    deriving (Eq, Functor, Show)
+
+instance Applicative Normalized where
+    pure = Unchanged
+
+    Unchanged f <*> Unchanged a = Unchanged (f a)
+    Unchanged f <*> Changed   a =   Changed (f a)
+    Changed   f <*> Unchanged a =   Changed (f a)
+    Changed   f <*> Changed   a =   Changed (f a)
+
+instance Monad Normalized where
+    Unchanged a >>= f = f a
+    Changed a   >>= f = Changed $ fromNormalized $ f a
+
+fromNormalized :: Normalized a -> a
+fromNormalized (Unchanged a) = a
+fromNormalized (Changed a) = a
+
 makeEvaluateNonBool
     ::  ( InternalVariable variable
         , HasCallStack
@@ -206,15 +272,136 @@ makeEvaluateNonBool
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
     normalized <- Substitution.normalize sideCondition merged
-    return
-        normalized
-            { term =
-                applyAndIdempotenceAndFindContradictions
-                    (Conditional.term normalized)
-            , predicate =
-                applyAndIdempotenceAndFindContradictions
-                    <$> Conditional.predicate normalized
-            }
+    let normalizedPredicates =
+            applyAndIdempotenceAndFindContradictions
+                (Conditional.term normalized)
+        normalizedPredicate =
+            promoteSubTermsToTop (Conditional.predicate normalized)
+    case normalizedPredicate of
+        Unchanged unchanged ->
+            return normalized
+                { term = normalizedPredicates
+                , predicate = unchanged
+                }
+        Changed changed ->
+            simplifyCondition
+                sideCondition
+                normalized
+                    { term = normalizedPredicates
+                    , predicate = changed
+                    }
+
+promoteSubTermsToTop
+    :: forall variable
+    .  InternalVariable variable
+    => Predicate variable
+    -> Normalized (Predicate variable)
+promoteSubTermsToTop predicate =
+    case normalizedPredicates of
+        Unchanged unchanged -> Unchanged $
+            foldl
+                makeSimplifiedAndPredicate
+                makeTruePredicate_
+                (List.sort unchanged)
+        Changed changed -> Changed $
+            foldl makeAndPredicate makeTruePredicate_ changed
+  where
+    andPredicates :: [Predicate variable]
+    andPredicates = children predicate
+
+    children :: Predicate variable -> [Predicate variable]
+    children (PredicateAnd p1 p2) = children p1 ++ children p2
+    children p = [p]
+
+    sortedAndPredicates :: [Predicate variable]
+    sortedAndPredicates = sortByDepth andPredicates
+
+    sortByDepth :: [Predicate variable] -> [Predicate variable]
+    sortByDepth =
+        map snd
+        . sortBy (compare `on` fst)
+        . map
+            (\predicate' ->
+                ( TermLike.depth $ Predicate.unwrapPredicate predicate'
+                , predicate'
+                )
+            )
+
+    normalizedPredicates :: Normalized [Predicate variable]
+    normalizedPredicates = normalizedPredicatesWorker [] sortedAndPredicates
+
+    normalizedPredicatesWorker
+        :: [Predicate variable]
+        -> [Predicate variable]
+        -> Normalized [Predicate variable]
+    normalizedPredicatesWorker result [] = return result
+    normalizedPredicatesWorker partialResult (predicate' : predicates) = do
+        replacedPredicates <-
+            mapM (replaceWithTopNormalized predicate') predicates
+        normalizedPredicatesWorker
+            (predicate' : partialResult)
+            replacedPredicates
+
+    replaceWithTopNormalized
+        :: Predicate variable
+        -> Predicate variable
+        -> Normalized (Predicate variable)
+    replaceWithTopNormalized replaceWithPredicate replaceInPredicate = do
+        let replaceIn = Predicate.unwrapPredicate replaceInPredicate
+        let replaceWith = Predicate.unwrapPredicate replaceWithPredicate
+        resultTerm <- replaceWithTop replaceWith replaceIn
+        case makePredicate resultTerm of
+            Left err -> error $ unlines
+                [ "Replacing"
+                , unparseToString replaceWith
+                , "in"
+                , unparseToString replaceIn
+                , "did not produce a predicate!"
+                , printError err
+                ]
+            Right p -> return p
+
+    replaceWithTop
+        :: TermLike variable
+        -> TermLike variable
+        -> Normalized (TermLike variable)
+    replaceWithTop replaceWith replaceIn
+      | replaceWith == replaceIn = Changed mkTop_
+    replaceWithTop replaceWith unchanged
+      | isQuantified unchanged
+      = Unchanged unchanged
+      where
+        isQuantified (Exists_ _ var _) =
+            TermLike.hasFreeVariable (ElemVar var) replaceWith
+        isQuantified (Forall_ _ var _) =
+            TermLike.hasFreeVariable (ElemVar var) replaceWith
+        isQuantified (Mu_ var _) =
+            TermLike.hasFreeVariable (SetVar var) replaceWith
+        isQuantified (Nu_ var _) =
+            TermLike.hasFreeVariable (SetVar var) replaceWith
+        isQuantified _ = False
+    replaceWithTop
+        replaceWith
+        unchanged@(Recursive.project -> _ :< replaceIn)
+      = replaceWithTopInChildren replaceWith (Unchanged unchanged) replaceIn
+
+    replaceWithTopInChildren
+        :: TermLike variable
+        -> Normalized (TermLike variable)
+        -> TermLikeF variable (TermLike variable)
+        -> Normalized (TermLike variable)
+    replaceWithTopInChildren replaceWith unchangedValue replaceIn =
+        case replaced of
+            Unchanged _ -> unchangedValue
+            Changed changed -> Changed (synthesize changed)
+      where
+        replaced :: Normalized (TermLikeF variable (TermLike variable))
+        replaced = traverse (replaceWithTop replaceWith) replaceIn
+
+    makeSimplifiedAndPredicate a b =
+        Predicate.setSimplified
+            (Predicate.simplifiedAttribute a <> Predicate.simplifiedAttribute b)
+            (makeAndPredicate a b)
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
