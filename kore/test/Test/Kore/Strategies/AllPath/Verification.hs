@@ -363,26 +363,6 @@ test_allPathVerification =
         assertEqual ""
             (Right ())
             actual
-    , testCase "TESTING Priority: should apply axiom with higher priority" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c [priority(2)]
-        --     b => d [priority(1)]
-        -- Claims: a => d
-        -- Expected: error c
-        actual <- runVerificationToPattern
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simplePriorityAxiom Mock.b Mock.d 2
-            , simplePriorityAxiom Mock.b Mock.c 1
-            ]
-            [ simpleClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.c)
-            actual
     ]
 
 simpleAxiom
