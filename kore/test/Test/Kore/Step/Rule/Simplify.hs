@@ -8,9 +8,11 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
+import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
     )
+import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -33,13 +35,15 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-    ( TermLike
+    ( InternalVariable
+    , TermLike
     , mkAnd
     , mkElemVar
     , mkEquals_
     , mkOr
     , termLikeSort
     )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log
     ( emptyLogger
     )
@@ -246,10 +250,10 @@ runSimplifyRule rule =
 
 test_simplifyClaimRule :: [TestTree]
 test_simplifyClaimRule =
-    [ test "infers definedness"
+    [ test "infers definedness" []
         rule1
         [rule1']
-    , test "includes side condition"
+    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
         rule2
         [rule2']
     ]
@@ -282,10 +286,11 @@ test_simplifyClaimRule =
     test
         :: HasCallStack
         => TestName
+        -> [(TermLike Variable, TermLike Variable)]  -- ^ replacements
         -> RulePattern Variable
         -> [RulePattern Variable]
         -> TestTree
-    test name (OnePathRule -> input) (map OnePathRule -> expect) =
+    test name replacements (OnePathRule -> input) (map OnePathRule -> expect) =
         -- Test simplifyClaimRule through the OnePathRule instance.
         testCase name $ do
             actual <- run $ simplifyRuleLhs input
@@ -304,15 +309,44 @@ test_simplifyClaimRule =
                 sort = termLikeSort left
                 expectSideCondition =
                     makeAndPredicate requires (makeCeilPredicate sort left)
-                    & Predicate.mapVariables
-                        (fmap fromVariable)
-                        (fmap fromVariable)
+                    & liftPredicate
                     & Predicate.coerceSort predicateSort
                     & Condition.fromPredicate
                     & SideCondition.fromCondition
-            return . OrPattern.fromTermLike
-                $ if
-                    (termLike == Mock.g Mock.a)
-                    && (sideCondition == expectSideCondition)
-                    then Mock.f Mock.a
-                    else termLike
+                satisfied = sideCondition == expectSideCondition
+            return
+                . OrPattern.fromTermLike
+                . (if satisfied then applyReplacements else id)
+                $ termLike
+
+        applyReplacements
+            :: InternalVariable variable
+            => TermLike variable
+            -> TermLike variable
+        applyReplacements zero =
+            Foldable.foldl' applyReplacement zero
+            $ map liftReplacement replacements
+
+        applyReplacement orig (ini, fin)
+          | orig == ini = fin
+          | otherwise   = orig
+
+        liftPredicate
+            :: InternalVariable variable
+            => Predicate Variable
+            -> Predicate variable
+        liftPredicate =
+            Predicate.mapVariables (fmap fromVariable) (fmap fromVariable)
+
+        liftTermLike
+            :: InternalVariable variable
+            => TermLike Variable
+            -> TermLike variable
+        liftTermLike =
+            TermLike.mapVariables (fmap fromVariable) (fmap fromVariable)
+
+        liftReplacement
+            :: InternalVariable variable
+            => (TermLike Variable, TermLike Variable)
+            -> (TermLike variable, TermLike variable)
+        liftReplacement = Bifunctor.bimap liftTermLike liftTermLike
