@@ -32,6 +32,7 @@ module Kore.Internal.Substitution
     , null
     , variables
     , unsafeWrap
+    , unsafeWrapFromAssignments
     , Kore.Internal.Substitution.filter
     , partition
     , orderRenameAndRenormalizeTODO
@@ -375,9 +376,9 @@ wrap
 wrap [] = NormalizedSubstitution Map.empty
 wrap xs = Substitution xs
 
+-- TODO(Ana): change to [Assignment] -> Substitution
 -- | Wrap the list of substitutions to a normalized substitution. Do not use
 -- this unless you are sure you need it.
--- TODO: change type to [Assignment] -> Substitution
 unsafeWrap
     :: HasCallStack
     => Ord variable
@@ -401,6 +402,13 @@ unsafeWrap =
       where
         occurs = TermLike.hasFreeVariable var
         depends var' = TermLike.hasFreeVariable var' termLike
+
+unsafeWrapFromAssignments
+    :: Ord variable
+    => [Assignment variable]
+    -> Substitution variable
+unsafeWrapFromAssignments =
+    unsafeWrap . fmap assignmentToPair
 
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.

@@ -75,20 +75,20 @@ monoidTests =
             $ wrap mempty <> wrap emptyRawSubst
     , testCase "empty <> normalized == normalized"
         $ assertEqual ""
-            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
-            $ wrap mempty <> (unsafeWrap . fmap assignmentToPair) singletonSubst
+            (unsafeWrapFromAssignments singletonSubst)
+            $ wrap mempty <> unsafeWrapFromAssignments singletonSubst
     , testCase "empty normalized <> normalized == normalized"
         $ assertEqual ""
-            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
-            $ emptySubst <> (unsafeWrap . fmap assignmentToPair) singletonSubst
+            (unsafeWrapFromAssignments singletonSubst)
+            $ emptySubst <> unsafeWrapFromAssignments singletonSubst
     , testCase "normalized <> empty == normalized"
         $ assertEqual ""
-            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
-            $ (unsafeWrap . fmap assignmentToPair) singletonSubst <> wrap mempty
+            (unsafeWrapFromAssignments singletonSubst)
+            $ unsafeWrapFromAssignments singletonSubst <> wrap mempty
     , testCase "normalized <> empty normalized == normalized"
         $ assertEqual ""
-            (unsafeWrap . fmap assignmentToPair $ singletonSubst)
-            $ (unsafeWrap . fmap assignmentToPair) singletonSubst <> emptySubst
+            (unsafeWrapFromAssignments singletonSubst)
+            $ unsafeWrapFromAssignments singletonSubst <> emptySubst
     ]
 
 unwrapTests :: TestTree
@@ -106,8 +106,8 @@ unwrapTests =
     , testCase "unwrap . unsafeWrap == id"
         $ assertEqual ""
             singletonSubst
-            . unwrap . unsafeWrap
-            $ fmap assignmentToPair singletonSubst
+            . unwrap . unsafeWrapFromAssignments
+            $ singletonSubst
     ]
 
 modifyTests :: TestTree
@@ -122,7 +122,7 @@ modifyTests =
         $ assertEqual ""
             (wrap singletonSubst)
             . modify id
-            $ unsafeWrap $ fmap assignmentToPair singletonSubst
+            $ unsafeWrapFromAssignments singletonSubst
     , testCase "modify empty subst == id"
         $ assertEqual ""
             mempty
@@ -148,7 +148,7 @@ mapVariablesTests =
     , testCase "map id over normalized singletonSubst"
         $ assertEqual ""
             (wrap singletonSubst)
-            . mapVariables id id $ unsafeWrap $ fmap assignmentToPair singletonSubst
+            . mapVariables id id $ unsafeWrapFromAssignments singletonSubst
     ]
 
 isNormalizedTests :: TestTree
@@ -165,7 +165,7 @@ isNormalizedTests =
     , testCase "unsafeWrap is normalized"
         $ assertEqual ""
             True
-            . isNormalized $ unsafeWrap $ fmap assignmentToPair singletonSubst
+            . isNormalized $ unsafeWrapFromAssignments singletonSubst
     ]
 
 nullTests :: TestTree
@@ -178,7 +178,7 @@ nullTests =
     , testCase "unsafeWrap empty is null"
         $ assertEqual ""
             True
-            . null $ unsafeWrap $ fmap assignmentToPair emptyRawSubst
+            . null $ unsafeWrapFromAssignments emptyRawSubst
     , testCase "nonempty is not null"
         $ assertEqual ""
             False
@@ -186,7 +186,7 @@ nullTests =
     , testCase "nonempty normalized is not null"
         $ assertEqual ""
             False
-            . null $ unsafeWrap $ fmap assignmentToPair singletonSubst
+            . null $ unsafeWrapFromAssignments singletonSubst
     ]
 
 variablesTests :: TestTree
@@ -203,7 +203,7 @@ variablesTests =
     , testCase "singleton normalized subst has one variable"
         $ assertEqual ""
            (Set.fromList $ assignedVariable <$> singletonSubst)
-           . variables $ unsafeWrap $ fmap assignmentToPair singletonSubst
+           . variables $ unsafeWrapFromAssignments singletonSubst
     , testCase "singleton subst has one variable"
         $ assertEqual ""
            (Set.fromList $ assignedVariable <$> singletonSubst)

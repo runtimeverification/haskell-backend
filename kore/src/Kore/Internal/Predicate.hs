@@ -788,6 +788,8 @@ hasFreeVariable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
 
+-- TODO(Ana): change to Substitution.Assignment -> Predicate;
+-- this would require moving Assignment to a new module
 singleSubstitutionToPredicate
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
