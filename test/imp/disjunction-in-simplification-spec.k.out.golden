@@ -1,10 +1,14 @@
-<T>
-  <k>
-    x = choice ( a , b );
-  </k>
-  <state>
-    a |-> A:Int
-    b |-> B:Int
-    x |-> _0
-  </state>
-</T>
+  #True
+#And
+  #True
+#And
+  <T>
+    <k>
+      x = choice ( a , b );
+    </k>
+    <state>
+      a |-> A:Int
+      b |-> B:Int
+      x |-> _0
+    </state>
+  </T>
