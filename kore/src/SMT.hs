@@ -69,7 +69,6 @@ import Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT (..)
-    , lift
     , runReaderT
     )
 import qualified Control.Monad.Reader as Reader
@@ -112,7 +111,8 @@ import SMT.SimpleSMT
     , SmtDataTypeDeclaration
     , SmtFunctionDeclaration
     , SmtSortDeclaration
-    , Solver
+    , Solver (..)
+    , SolverHandle (..)
     , SortDeclaration (..)
     , pop
     , push
@@ -260,7 +260,7 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) (LoggerT IO) a }
+newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
     deriving
         ( Applicative
         , Functor
@@ -273,58 +273,91 @@ newtype SMT a = SMT { getSMT :: ReaderT (MVar Solver) (LoggerT IO) a }
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action = SMT $ do
     mvar <- Reader.ask
-    liftIO $ withMVar mvar action
+    Trans.lift
+        $ LoggerT $ ReaderT $ withMVar mvar . flip (curryForSolver action)
 
-withSolverT' :: (Solver -> LoggerT IO a) -> SMT a
+withSolverT' :: (SolverHandle -> LoggerT IO a) -> SMT a
 withSolverT' action = SMT $ do
     mvar <- Reader.ask
-    Trans.lift $ bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
+    Trans.lift
+        $ bracket
+            (liftIO $ takeMVar mvar)
+            (liftIO . putMVar mvar)
+            action
+
+curryForSolver :: (Solver -> IO a) -> SolverHandle -> Logger -> IO a
+curryForSolver fromSolver =
+    \solverHandle logger -> fromSolver (Solver solverHandle logger)
 
 instance MonadLog SMT where
-    logEntry entry = withSolverT' $ \solver -> do
-        let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
-        liftIO $ Colog.unLogAction logAction entry
+    logEntry entry =
+        withSolverT' $ \_ -> LoggerT (ReaderT (\logger -> do
+            let logAction = contramap Log.toEntry logger
+            liftIO $ Colog.unLogAction logAction entry
+            ))
+
 
 instance MonadSMT SMT where
     withSolver (SMT action) =
-        withSolverT' $ \solver -> do
-            -- Create an unshared "dummy" mutex for the solver.
-            mvar <- liftIO $ newMVar solver
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            -- Create an unshared "dummy" mutex for the solverHandle.
+            mvar <- newMVar solverHandle
             -- Run the inner action with the unshared mutex.
-            -- The action will never block waiting to acquire the solver.
-            liftIO (push solver)
-            runReaderT action mvar `finally` liftIO (pop solver)
-
+            -- The action will never block waiting to acquire the solverHandle.
+            push solver
+            runReaderT (getLoggerT (runReaderT action mvar)) logger `finally` pop solver
+            ))
 
     declare name typ =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.declare solver name typ
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            SimpleSMT.declare solver name typ
+            ))
 
     declareFun declaration =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareFun solver declaration
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            SimpleSMT.declareFun solver declaration
+            ))
 
     declareSort declaration =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareSort solver declaration
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            SimpleSMT.declareSort solver declaration
+            ))
 
     declareDatatype declaration =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareDatatype solver declaration
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            SimpleSMT.declareDatatype solver declaration
+            ))
 
     declareDatatypes datatypes =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareDatatypes solver datatypes
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            SimpleSMT.declareDatatypes solver datatypes
+            ))
 
     assert fact =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.assert solver fact
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            SimpleSMT.assert solver fact
+            ))
 
     check = withSolver' SimpleSMT.check
 
     ackCommand command =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.ackCommand solver command
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            SimpleSMT.ackCommand solver command
+            ))
 
     loadFile path =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.loadFile solver path
+        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
+            let solver = Solver solverHandle logger
+            liftIO $ SimpleSMT.loadFile solver path
+            ))
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
@@ -388,15 +421,15 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         }
 
-{- | Initialize a new solver with the given 'Config'.
+{- | Initialize a new solverHandle with the given 'Config'.
 
-The new solver is returned in an 'MVar' for thread-safety.
+The new solverHandle is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> Logger -> LoggerT IO (MVar Solver)
+newSolver :: Config -> Logger -> LoggerT IO (MVar SolverHandle)
 newSolver config logger = do
-    solver <- lift $ SimpleSMT.newSolver exe args logger
-    mvar <- lift $ newMVar solver
+    solverHandle <- Trans.lift $ SimpleSMT.newSolver exe args logger
+    mvar <- Trans.lift $ newMVar solverHandle
     runReaderT getSMT mvar
     return mvar
   where
@@ -414,9 +447,10 @@ the 'Solver' is never returned to the 'MVar', so any threads waiting for the
 solver will hang.
 
  -}
-stopSolver :: MVar Solver -> IO ()
-stopSolver mvar = do
-    solver <- takeMVar mvar
+stopSolver :: Logger -> MVar SolverHandle -> IO ()
+stopSolver logger mvar = do
+    solverHandle <- takeMVar mvar
+    let solver = Solver solverHandle logger
     _ <- SimpleSMT.stop solver
     return ()
 
@@ -429,7 +463,7 @@ runSMT config logger SMT { getSMT } =
             showZ3NotFound
 
         )
-        stopSolver
+        (stopSolver logger)
         (\mvar -> runReaderT (getLoggerT $ runReaderT getSMT mvar) logger)
   where
     showZ3NotFound :: Exception.IOException -> IO a
