@@ -292,7 +292,6 @@ instance MonadLog SMT where
             liftIO $ Colog.unLogAction logAction entry
             ))
 
-
 instance MonadSMT SMT where
     withSolver (SMT action) =
         withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
@@ -300,9 +299,10 @@ instance MonadSMT SMT where
             -- Create an unshared "dummy" mutex for the solverHandle.
             mvar <- newMVar solverHandle
             -- Run the inner action with the unshared mutex.
-            -- The action will never block waiting to acquire the solverHandle.
+            -- The action will never block waiting to acquire the solver.
             push solver
-            runReaderT (getLoggerT (runReaderT action mvar)) logger `finally` pop solver
+            runReaderT (getLoggerT (runReaderT action mvar)) logger
+                `finally` pop solver
             ))
 
     declare name typ =
@@ -472,6 +472,7 @@ runSMT config logger SMT { getSMT } =
 -- to escape special chars
 escapeId :: Text -> Text
 escapeId name = "|" <> name <> "|"
+
 
 -- | Declares a function symbol to SMT, returning ().
 declareFun_ :: MonadSMT m => SmtFunctionDeclaration -> m ()
