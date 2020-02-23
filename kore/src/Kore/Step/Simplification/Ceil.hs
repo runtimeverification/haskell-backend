@@ -309,10 +309,6 @@ makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
             zipWithM distinctKey
                 abstractKeys
                 (tail $ List.tails abstractKeys)
-        let definedConcreteOpaque =
-                foldMap defineConcreteOpaque $ Map.toList concreteElements
-            definedAbstractOpaque =
-                foldMap defineAbstractOpaque abstractElements
         let conditions :: MultiAnd (OrCondition variable)
             conditions =
                 mconcat
@@ -321,9 +317,9 @@ makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
                     , mconcat definedValues
                     , mconcat distinctConcreteKeys
                     , mconcat distinctAbstractKeys
-                    , definedConcreteOpaque
-                    , definedAbstractOpaque
-                    , definedOpaquePairwise
+                    , definedConcreteOpaquePairs
+                    , definedAbstractOpaquePairs
+                    , definedOpaquePairs
                     ]
 
         And.simplifyEvaluatedMultiPredicate sideCondition conditions
@@ -371,13 +367,27 @@ makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
         Equals.makeEvaluateTermsToPredicate t1 t2 sideCondition
         >>= Not.simplifyEvaluatedPredicate
 
+    definedConcreteOpaquePairs =
+        foldMap defineConcreteOpaque $ Map.toList concreteElements
+    definedAbstractOpaquePairs =
+        foldMap defineAbstractOpaque abstractElements
+
     defineConcreteOpaque
         :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
         -> MultiAnd (OrCondition variable)
-    defineConcreteOpaque (key, value)
-      | null opaque = mempty
-      | otherwise =
-        opaqueAc { Domain.concreteElements = Map.singleton key value }
+    defineConcreteOpaque elt =
+        foldMap (defineConcreteOpaquePair elt) opaque
+
+    defineConcreteOpaquePair
+        :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
+        -> TermLike variable
+        -> MultiAnd (OrCondition variable)
+    defineConcreteOpaquePair (key, value) opaque1 =
+        Domain.NormalizedAc
+            { elementsWithVariables = mempty
+            , concreteElements = Map.singleton key value
+            , opaque = [opaque1]
+            }
         & mkOpaqueAc
         & makeSimplified
         & MultiAnd.singleton
@@ -385,23 +395,32 @@ makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
     defineAbstractOpaque
         :: Domain.Element normalized (TermLike variable)
         -> MultiAnd (OrCondition variable)
-    defineAbstractOpaque element
-      | null opaque = mempty
-      | otherwise =
-        opaqueAc { Domain.elementsWithVariables = [element] }
+    defineAbstractOpaque elt =
+        foldMap (defineAbstractOpaquePair elt) opaque
+
+    defineAbstractOpaquePair
+        :: Domain.Element normalized (TermLike variable)
+        -> TermLike variable
+        -> MultiAnd (OrCondition variable)
+    defineAbstractOpaquePair elt opaque1 =
+        Domain.NormalizedAc
+            { elementsWithVariables = [elt]
+            , concreteElements = mempty
+            , opaque = [opaque1]
+            }
         & mkOpaqueAc
         & makeSimplified
         & MultiAnd.singleton
 
-    definedOpaquePairwise :: MultiAnd (OrCondition variable)
-    definedOpaquePairwise =
-        mconcat $ zipWith defineOpaquePairwise opaque (tail $ List.tails opaque)
+    definedOpaquePairs :: MultiAnd (OrCondition variable)
+    definedOpaquePairs =
+        mconcat $ zipWith defineOpaquePairs opaque (tail $ List.tails opaque)
 
-    defineOpaquePairwise
+    defineOpaquePairs
         :: TermLike variable
         -> [TermLike variable]
         -> MultiAnd (OrCondition variable)
-    defineOpaquePairwise this others =
+    defineOpaquePairs this others =
         foldMap (defineOpaquePair this) others
 
     defineOpaquePair
@@ -417,13 +436,6 @@ makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
         & mkOpaqueAc
         & makeSimplified
         & MultiAnd.singleton
-
-    opaqueAc =
-        Domain.NormalizedAc
-            { elementsWithVariables = mempty
-            , concreteElements = mempty
-            , opaque
-            }
 
     makeSimplified =
         OrCondition.fromPredicate
