@@ -275,23 +275,19 @@ withSolver' action = SMT $ do
     mvar <- Reader.ask
     Trans.lift
         $ LoggerT $ ReaderT $ withMVar mvar . flip (curryForSolver action)
+  where
+    curryForSolver :: (Solver -> IO a) -> SolverHandle -> Logger -> IO a
+    curryForSolver fromSolver =
+        \solverHandle logger -> fromSolver (Solver solverHandle logger)
 
 withSolverT' :: (SolverHandle -> LoggerT IO a) -> SMT a
 withSolverT' action = SMT $ do
     mvar <- Reader.ask
-    Trans.lift
-        $ bracket
-            (liftIO $ takeMVar mvar)
-            (liftIO . putMVar mvar)
-            action
-
-curryForSolver :: (Solver -> IO a) -> SolverHandle -> Logger -> IO a
-curryForSolver fromSolver =
-    \solverHandle logger -> fromSolver (Solver solverHandle logger)
+    Trans.lift $ bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
 
 instance MonadLog SMT where
     logEntry entry =
-        withSolverT' $ \_ -> LoggerT (ReaderT (\logger -> do
+        withSolverT' $ \_solverHandle -> LoggerT (ReaderT (\logger -> do
             let logAction = contramap Log.toEntry logger
             liftIO $ Colog.unLogAction logAction entry
             ))
@@ -426,12 +422,11 @@ defaultConfig =
 The new solverHandle is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> LoggerT IO (MVar SolverHandle)
-newSolver config = do
-    logger <- LoggerT Reader.ask
-    solverHandle <- Trans.lift $ SimpleSMT.newSolver exe args logger
-    mvar <- Trans.lift $ newMVar solverHandle
-    runReaderT getSMT mvar
+newSolver :: Config -> Logger -> IO (MVar SolverHandle)
+newSolver config logger = do
+    solverHandle <- SimpleSMT.newSolver exe args logger
+    mvar <- newMVar solverHandle
+    runReaderT (getLoggerT (runReaderT getSMT mvar)) logger
     return mvar
   where
     Config { timeOut } = config
@@ -460,9 +455,8 @@ runSMT :: Config -> Logger -> SMT a -> IO a
 runSMT config logger SMT { getSMT } =
     Exception.bracket
         ( catch
-            (runReaderT (getLoggerT (newSolver config)) logger)
+            (newSolver config logger)
             showZ3NotFound
-
         )
         (stopSolver logger)
         (\mvar -> runReaderT (getLoggerT $ runReaderT getSMT mvar) logger)
@@ -474,28 +468,10 @@ runSMT config logger SMT { getSMT } =
             <> "We couldn't start Z3 due to the exception above. "
             <> "Is Z3 installed?"
 
-
-
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
 escapeId :: Text -> Text
 escapeId name = "|" <> name <> "|"
-
-{-
-runSMT :: Config -> Logger -> SMT a -> LoggerT IO a
-runSMT config logger SMT { getSMT } =
-    bracket
-        (newSolver config logger `catch` showZ3NotFound)
-        (lift . stopSolver)
-        (runReaderT getSMT)
-  where
-    showZ3NotFound :: Exception.IOException -> LoggerT IO a
-    showZ3NotFound e =
-        error
-            $ Exception.displayException e <> "\n"
-            <> "We couldn't start Z3 due to the exception above. "
-            <> "Is Z3 installed?"
--}
 
 -- | Declares a function symbol to SMT, returning ().
 declareFun_ :: MonadSMT m => SmtFunctionDeclaration -> m ()
