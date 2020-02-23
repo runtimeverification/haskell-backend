@@ -374,7 +374,7 @@ helpText =
     \ was reached using the SMT solver or it was reached through the Remove \n\
     \ Destination step.\n\
     \(**) A green node represents the proof has completed on\
-    \ that respective branch.\
+    \ that respective branch. A red node represents a stuck configuration.\
     \\n\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\

@@ -23,6 +23,7 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
     , simplifiedAttribute
+    , requireDefined
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -296,3 +297,26 @@ syncSort
     :: (HasCallStack, InternalVariable variable)
     => Pattern variable -> Pattern variable
 syncSort patt = coerceSort (patternSort patt) patt
+
+{- | Add a 'Predicate' requiring that the 'term' of a 'Pattern' is defined.
+
+@requireDefined@ effectively implements:
+
+@
+φ = φ ∧ ⌈φ⌉
+@
+
+ -}
+requireDefined
+    :: InternalVariable variable
+    => Pattern variable -> Pattern variable
+requireDefined Conditional { term, predicate, substitution } =
+    Conditional
+        { term
+        , substitution
+        , predicate =
+            Predicate.makeAndPredicate predicate
+            $ Predicate.makeCeilPredicate sort term
+        }
+  where
+    sort = termLikeSort term
