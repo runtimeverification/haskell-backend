@@ -426,8 +426,9 @@ defaultConfig =
 The new solverHandle is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> Logger -> LoggerT IO (MVar SolverHandle)
-newSolver config logger = do
+newSolver :: Config -> LoggerT IO (MVar SolverHandle)
+newSolver config = do
+    logger <- LoggerT Reader.ask
     solverHandle <- Trans.lift $ SimpleSMT.newSolver exe args logger
     mvar <- Trans.lift $ newMVar solverHandle
     runReaderT getSMT mvar
@@ -459,7 +460,7 @@ runSMT :: Config -> Logger -> SMT a -> IO a
 runSMT config logger SMT { getSMT } =
     Exception.bracket
         ( catch
-            (runReaderT (getLoggerT (newSolver config logger)) logger)
+            (runReaderT (getLoggerT (newSolver config)) logger)
             showZ3NotFound
 
         )
