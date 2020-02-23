@@ -443,13 +443,13 @@ test_ceilSimplification =
             let original =
                     Mock.framedMap
                         [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                        [Mock.m]
+                        [mkElemVar Mock.m]
                 expected =
                     OrPattern.fromPattern . Pattern.fromCondition
                     . Condition.fromPredicate . makeCeilPredicate_
                     $ Mock.framedMap
                         [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                        [Mock.m]
+                        [mkElemVar Mock.m]
             actual <- makeEvaluate $ Pattern.fromTermLike original
             assertEqual "" expected actual
         ]

@@ -1655,9 +1655,9 @@ builtinMap elements = framedMap elements []
 framedMap
     :: InternalVariable variable
     => [(TermLike variable, TermLike variable)]
-    -> [ElementVariable variable]
+    -> [TermLike variable]
     -> TermLike variable
-framedMap elements (map Internal.mkElemVar -> opaque) =
+framedMap elements opaque =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
