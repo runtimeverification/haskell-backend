@@ -364,8 +364,11 @@ makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
         MultiAnd.make <$> traverse (notEquals thisKey) otherKeys
 
     notEquals t1 t2 =
-        Equals.makeEvaluateTermsToPredicate t1 t2 sideCondition
+        Equals.makeEvaluateTermsToPredicate tMin tMax sideCondition
         >>= Not.simplifyEvaluatedPredicate
+      where
+        -- Stabilize the order of terms under Equals.
+        (tMin, tMax) = minMax t1 t2
 
     definedConcreteOpaquePairs =
         foldMap defineConcreteOpaque $ Map.toList concreteElements
