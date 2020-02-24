@@ -1,17 +1,26 @@
 module Test.Kore.Step.Simplification.Ceil
     ( test_ceilSimplification
+    , hprop_Builtin_Map
     ) where
 
 import Prelude.Kore
 
+import Hedgehog hiding
+    ( test
+    )
+import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
+import Control.Monad
+    ( guard
+    )
 import qualified Data.Map.Strict as Map
 
 import qualified Data.Sup as Sup
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -21,8 +30,10 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate_
+    , makeNotPredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -419,40 +430,6 @@ test_ceilSimplification =
                 , domainValueChild = mkStringLiteral "a"
                 }
         assertEqual "ceil(1)" expected actual
-    , testGroup "Builtin.Map"
-        [ testCase "concrete keys" $ do
-            -- maps assume that their keys are constructor-like, so
-            -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
-            let original =
-                    Mock.builtinMap [(constr10OfA, fOfB), (constr11OfA, gOfB)]
-                expected =
-                    OrPattern.fromPattern . Pattern.fromCondition
-                    . Condition.fromPredicate
-                    $ makeAndPredicate
-                        (makeCeilPredicate_ fOfB)
-                        (makeCeilPredicate_ gOfB)
-            actual <- makeEvaluate $ Pattern.fromTermLike original
-            assertEqual "" expected actual
-        , testCase "abstract keys" $ do
-            let original =
-                    Mock.builtinMap [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                expected = OrPattern.top
-            actual <- makeEvaluate $ Pattern.fromTermLike original
-            assertEqual "" expected actual
-        , testCase "abstract keys with frame" $ do
-            let original =
-                    Mock.framedMap
-                        [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                        [mkElemVar Mock.m]
-                expected =
-                    OrPattern.fromPattern . Pattern.fromCondition
-                    . Condition.fromPredicate . makeCeilPredicate_
-                    $ Mock.framedMap
-                        [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                        [mkElemVar Mock.m]
-            actual <- makeEvaluate $ Pattern.fromTermLike original
-            assertEqual "" expected actual
-        ]
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
         let
@@ -573,9 +550,6 @@ test_ceilSimplification =
     fOfB :: TermLike Variable
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
-    gOfB = Mock.g Mock.b
-    constr10OfA = Mock.constr10 Mock.a
-    constr11OfA = Mock.constr11 Mock.a
     fOfX :: TermLike Variable
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXset :: TermLike Variable
@@ -599,6 +573,80 @@ test_ceilSimplification =
         fromMaybe (error "Expected concrete pattern") (TermLike.asConcrete p)
     asInternalSet =
         Ac.asInternal Mock.metadataTools Mock.setSort . Domain.wrapAc
+
+hprop_Builtin_Map :: Property
+hprop_Builtin_Map = Hedgehog.property $ do
+    opaques <- forAll (Gen.subsequence opaqueMaps)
+    keys <- forAll (Gen.subsequence allKeys)
+    vals <- forAll $ traverse (const $ Gen.element allVals) keys
+    let elements = zip keys vals
+        original = Pattern.fromTermLike $ mkMap elements opaques
+    actualPattern <-
+        (liftIO . makeEvaluate) original
+        >>= (return . OrPattern.toPatterns)
+        >>= \case { [actualPattern] -> return actualPattern; _ -> failure }
+    Hedgehog.assert (isTop $ term actualPattern)
+    Hedgehog.assert (Substitution.null $ substitution actualPattern)
+    let actualPredicates =
+            predicate actualPattern
+            & Predicate.getMultiAndPredicate
+            & MultiAnd.make
+        expectPredicates =
+            (MultiAnd.make . concat)
+                [
+                -- The first three conditions are the minimum requirements
+                -- for /any/ symbol pattern to be defined.
+
+                    -- symbolic keys are defined
+                    makeCeilPredicate_ <$> filter (not . isConcrete) keys
+                ,
+                    -- symbolic values are defined
+                    makeCeilPredicate_ <$> filter (not . isConcrete) vals
+                ,
+                    -- opaque operands are defined
+                    makeCeilPredicate_ <$> opaques
+
+                -- The remaining conditions cover the uniqueness of keys.
+                , do
+                    (key1, key2) <- zipWithTails (,) keys
+                    -- concrete keys are assumed to be distinct among the
+                    -- concrete keys, but not among the symbolic keys
+                    (guard . not) (isConcrete key1 && isConcrete key2)
+                    -- keys are distinct
+                    pure $ uncurry makeNotEqualsPredicate $ minMax key1 key2
+
+                , do
+                    element <- elements
+                    opaque' <- opaques
+                    -- no element occurs in any opaque operand
+                    pure $ makeCeilPredicate_ (mkMap [element] [opaque'])
+
+                , do
+                    (opaque1, opaque2) <- zipWithTails (,) opaques
+                    -- opaque operands are distinct
+                    pure $ makeCeilPredicate_ (mkMap [] [opaque1, opaque2])
+                ]
+    expectPredicates === actualPredicates
+  where
+    mkMap = Mock.framedMap
+    makeNotEqualsPredicate x y = makeNotPredicate $ makeEqualsPredicate_ x y
+    nullaryCtors = [Mock.a, Mock.b, Mock.c]
+    elemVars = [Mock.x, Mock.y, Mock.z]
+    opaqueMaps = Mock.opaqueMap . mkElemVar <$> elemVars
+    allKeys =
+        -- concrete keys
+        nullaryCtors
+        -- symbolic keys
+        ++ (Mock.f . mkElemVar <$> elemVars)
+    allVals =
+        -- concrete values
+        (Mock.constr10 <$> nullaryCtors)
+        -- symbolic values
+        ++ (Mock.g . mkElemVar <$> elemVars)
+
+    zipWithTails :: (a -> a -> b) -> [a] -> [b]
+    zipWithTails _ [] = []
+    zipWithTails f (x : xs) = map (f x) xs ++ zipWithTails f xs
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier
