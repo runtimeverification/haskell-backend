@@ -9,6 +9,15 @@ module Kore.Step.Rule.Simplify
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
+import Control.Monad
+    ( (>=>)
+    )
+
+import Branch
+    ( BranchT
+    )
+import qualified Branch
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -22,29 +31,18 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
 import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-    ( fromTermLike
-    )
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( coerceSort
-    , unwrapPredicate
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
     )
 import Kore.Internal.TermLike
-    ( mkAnd
-    , mkCeil_
-    , termLikeSort
+    ( termLikeSort
     )
 import Kore.Step.RulePattern
     ( AllPathRule (..)
@@ -56,17 +54,14 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     , applySubstitution
-    )
-import Kore.Step.Simplification.OrPattern
-    ( simplifyConditionsWithSmt
+    , leftPattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyTopConfiguration
-    )
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
     )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -85,10 +80,7 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate
-        fullySimplified <-
-            simplifyConditionsWithSmt
-                SideCondition.top
-                simplifiedTerms
+        fullySimplified <- SMT.Evaluator.filterMultiOr simplifiedTerms
         let rules =
                 map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
         return (MultiAnd.make rules)
@@ -131,18 +123,22 @@ instance SimplifyRuleLHS (ReachabilityRule Variable) where
         (fmap . fmap) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule
-    :: (MonadSimplify simplifier, InternalVariable variable)
+    :: forall simplifier variable
+    .  MonadSimplify simplifier
+    => InternalVariable variable
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
-simplifyClaimRule rule@(RulePattern _ _ _ _ _) =
-    simplifyRuleLhs rule
-        { RulePattern.left =
-            mkAnd
-                left
-                -- Add the predicate to the left term so that it gets simplified
-                -- by the rule pattern simplifier.
-                (mkAnd (Predicate.unwrapPredicate requires) (mkCeil_ left))
-        , RulePattern.requires = makeTruePredicate_
-        }
+simplifyClaimRule =
+    fmap MultiAnd.make
+    . Branch.gather
+    . Lens.traverseOf RulePattern.leftPattern worker
   where
-    RulePattern {left, requires} = rule
+    worker, simplify, filterWithSolver
+        :: Pattern variable
+        -> BranchT simplifier (Pattern variable)
+    worker =
+        (return . Pattern.requireDefined)
+        >=> simplify
+        >=> filterWithSolver
+    simplify = Pattern.simplifyTopConfiguration >=> Branch.scatter
+    filterWithSolver = SMT.Evaluator.filterBranch
