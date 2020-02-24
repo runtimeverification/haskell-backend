@@ -18,7 +18,7 @@ module Kore.Internal.Substitution
     , unwrap
     , toMap
     , toMultiMap
-    , orderRenaming
+    , normalOrder
     , fromMap
     , singleton
     , wrap
@@ -126,7 +126,7 @@ assign
     -> TermLike variable
     -> Assignment variable
 assign variable term =
-    uncurry Assignment $ curry orderRenaming variable term
+    uncurry Assignment $ curry normalOrder variable term
 
 pattern Assignment_
     :: UnifiedVariable variable
@@ -333,11 +333,11 @@ substituted in place of the lesser. Consistent ordering prevents variable-only
 cycles.
 
  -}
-orderRenaming
+normalOrder
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> (UnifiedVariable variable, TermLike variable)
-orderRenaming (uVar1, Var_ uVar2)
+normalOrder (uVar1, Var_ uVar2)
   | ElemVar eVar1 <- uVar1
   , ElemVar eVar2 <- uVar2
   , LT <- compareSubstitution eVar2 eVar1
@@ -347,7 +347,7 @@ orderRenaming (uVar1, Var_ uVar2)
   , SetVar sVar2 <- uVar2
   , LT <- compareSubstitution sVar2 sVar1
   = (uVar2, mkVar uVar1)
-orderRenaming subst = subst
+normalOrder subst = subst
 
 fromMap
     :: InternalVariable variable
