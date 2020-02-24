@@ -245,6 +245,8 @@ elementMapId :: Id
 elementMapId = testId "elementMap"
 concatMapId :: Id
 concatMapId = testId "concatMap"
+opaqueMapId :: Id
+opaqueMapId = testId "opaqueMap"
 lessIntId :: Id
 lessIntId = testId "lessIntId"
 greaterEqIntId :: Id
@@ -564,6 +566,11 @@ concatMapSymbol :: Symbol
 concatMapSymbol =
     symbol concatMapId [mapSort, mapSort] mapSort
     & functional & hook "MAP.concat"
+
+opaqueMapSymbol :: Symbol
+opaqueMapSymbol =
+    symbol opaqueMapId [testSort] mapSort
+    & function
 
 lessIntSymbol :: Symbol
 lessIntSymbol =
@@ -1132,6 +1139,13 @@ concatMap
     -> TermLike variable
 concatMap m1 m2 = Internal.mkApplySymbol concatMapSymbol [m1, m2]
 
+opaqueMap
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+opaqueMap term = Internal.mkApplySymbol opaqueMapSymbol [term]
+
 unitSet :: InternalVariable variable => TermLike variable
 unitSet = Internal.mkApplySymbol unitSetSymbol []
 
@@ -1288,6 +1302,7 @@ symbols =
     , unitMapSymbol
     , elementMapSymbol
     , concatMapSymbol
+    , opaqueMapSymbol
     , concatListSymbol
     , elementListSymbol
     , unitListSymbol
