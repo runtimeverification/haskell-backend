@@ -1707,21 +1707,34 @@ builtinList child =
 
 builtinSet
     :: InternalVariable variable
-    => [TermLike Concrete]
+    => [TermLike variable]
     -> TermLike variable
-builtinSet child =
+builtinSet elements = framedSet elements []
+
+framedSet
+    :: InternalVariable variable
+    => [TermLike variable]
+    -> [TermLike variable]
+    -> TermLike variable
+framedSet elements opaque =
     Internal.mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
         , builtinAcConcat = concatSetSymbol
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements =
-                Map.fromList (map (\key -> (key, Domain.SetValue)) child)
-            , opaque = []
+            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+            , concreteElements
+            , opaque
             }
         }
+  where
+    asConcrete key =
+        (,) <$> Internal.asConcrete key <*> pure Domain.SetValue
+        & maybe (Left (key, Domain.SetValue)) Right
+    (abstractElements, Map.fromList -> concreteElements) =
+        asConcrete <$> elements
+        & Either.partitionEithers
 
 builtinInt
     :: InternalVariable variable
