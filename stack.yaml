@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-14.16
+resolver: lts-14.27
 
 nix:
   packages:
@@ -48,6 +48,8 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - ghc-trace-events-0.1.0
+  - witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
+  - witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775
 
   # ghcide must use the same compiler as Stack.
   # That is trickier than it may first appear: We must use the same *exactly*
