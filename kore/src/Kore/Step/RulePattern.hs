@@ -27,6 +27,7 @@ module Kore.Step.RulePattern
     , isFreeOf
     , Kore.Step.RulePattern.substitute
     , rhsSubstitute
+    , rhsForgetSimplified
     , rhsToTerm
     , termToRHS
     , injectTermIntoRHS
@@ -381,6 +382,14 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
         }
   where
     subst' = foldr (Map.delete . ElemVar) subst existentials
+
+rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
+rhsForgetSimplified RHS { existentials, right, ensures } =
+    RHS
+        { existentials
+        , right = TermLike.forgetSimplified right
+        , ensures = Predicate.forgetSimplified ensures
+        }
 
 {- | Apply the substitution to the rule.
  -}
