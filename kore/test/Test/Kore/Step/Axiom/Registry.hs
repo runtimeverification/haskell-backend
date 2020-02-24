@@ -104,11 +104,13 @@ testSymbol name =
         }
     & Symbol.function
 
-fHead, gHead, sHead, tHead :: Symbol
+fHead, gHead, pHead, qHead, sHead, tHead :: Symbol
 fHead = testSymbol "f"
 gHead = testSymbol "g"
 sHead = testSymbol "s"
 tHead = testSymbol "t"
+pHead = testSymbol "p"
+qHead = testSymbol "q"
 
 injHead :: Sort -> Sort -> Symbol
 injHead s1 s2 =
@@ -151,6 +153,19 @@ testDef =
                 , Attribute.constructorAttribute]
             )
             (simpleSymbolSentence (SymbolName "g") (SortName "S"))
+        , updateAttributes
+            (Attributes
+                [ Attribute.functionAttribute
+                , Attribute.constructorAttribute
+                ]
+            )
+            (simpleSymbolSentence (SymbolName "p") (SortName "S"))
+        , updateAttributes
+            (Attributes
+                [ Attribute.functionAttribute
+                , Attribute.constructorAttribute]
+            )
+            (simpleSymbolSentence (SymbolName "q") (SortName "S"))
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
@@ -287,6 +302,60 @@ testDef =
             }
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
+                Attributes
+                    [ simplificationAttribute
+                    , Attribute.priorityAttribute "3"
+                    ]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol pHead [])
+                            (mkApplySymbol qHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
+                Attributes
+                    [ simplificationAttribute
+                    , Attribute.priorityAttribute "1"
+                    ]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol pHead [])
+                            (mkApplySymbol tHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
+            , sentenceAxiomAttributes =
+                Attributes
+                    [ simplificationAttribute
+                    , Attribute.priorityAttribute "2"
+                    ]
+            , sentenceAxiomPattern =
+                Builtin.externalize $ mkImplies
+                    (mkTop sortVarS)
+                    (mkAnd
+                        (mkEquals sortVarS
+                            (mkApplySymbol pHead [])
+                            (mkApplySymbol qHead [])
+                        )
+                        (mkTop sortVarS)
+                    )
+            }
+        , SentenceAxiomSentence SentenceAxiom
+            { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkRewrites
@@ -387,7 +456,17 @@ test_functionRegistry =
                 Pattern.term $ head
                 $ MultiOr.extractPatterns simplified
         assertEqual "" expect actual
-    , testCase "Sorted in order of priorities"
+    , testCase "Checking that evaluator simplifies correctly" $ do
+        let expect = mkApplySymbol tHead []
+        simplified <-
+            runSimplifier testEnv
+            $ Pattern.simplify SideCondition.top
+            $ makePattern $ mkApplySymbol pHead []
+        let actual =
+                Pattern.term $ head
+                $ MultiOr.extractPatterns simplified
+        assertEqual "" expect actual
+    , testCase "Function rules sorted in order of priorities"
         (let axiomId = AxiomIdentifier.Application (testId "f")
           in
            (case Map.lookup axiomId testProcessedAxiomPatterns of
@@ -395,7 +474,18 @@ test_functionRegistry =
                     assertEqual ""
                         [1, 2, 3, 100, 200]
                         (fmap getPriorityOfRule functionRules)
-                _ -> assertFailure "Should find equality rules for f"
+                _ -> assertFailure "Should find function rules for f"
+            )
+        )
+    , testCase "Simplification rules sorted in order of priorities"
+        (let axiomId = AxiomIdentifier.Application (testId "p")
+          in
+           (case Map.lookup axiomId testProcessedAxiomPatterns of
+                Just PartitionedEqualityRules { simplificationRules } ->
+                    assertEqual ""
+                        [1, 2, 3]
+                        (fmap getPriorityOfRule simplificationRules)
+                _ -> assertFailure "Should find simplification rules for p"
             )
         )
     ]

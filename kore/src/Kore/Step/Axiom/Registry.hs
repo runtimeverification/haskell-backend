@@ -145,14 +145,11 @@ processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
         , simplificationRules
         }
   where
-    (unProcessedSimplificationRules, unProcessedFunctionRules) =
-        partition isSimplificationRule equalities
-    functionRules =
-        sortOn getPriorityOfRule
-        . filter (not . ignoreDefinition)
-        $ unProcessedFunctionRules
-    simplificationRules =
-        sortOn getPriorityOfRule unProcessedSimplificationRules
+    (simplificationRules, unProcessedFunctionRules) =
+        partition isSimplificationRule
+        . sortOn getPriorityOfRule
+        $ equalities
+    functionRules = filter (not . ignoreDefinition) unProcessedFunctionRules
 
 -- | Converts a collection of processed 'EqualityRule's to one of
 -- 'BuiltinAndAxiomSimplifier's
