@@ -49,6 +49,21 @@ packages:
 extra-deps:
   - ghc-trace-events-0.1.0
 
+  # ghcide must use the same compiler as Stack.
+  # That is trickier than it may first appear: We must use the same *exactly*
+  # the same compiler, not just the same *version* of the compiler, because
+  # ghcide loads the compiler's shared object files into GHCi.
+  # We set up extra-deps so that we can `stack install ghcide`.
+  - git: https://github.com/digital-asset/ghcide
+    commit: 6f3bd734de52f933000ea92ff4a8a3dea3b95add
+  - fuzzy-0.1.0.0@sha256:123b9581c587ae5422b67bbad7e81186b1ecbf86941a8049f921ddf136f2234e,833
+  - haddock-library-1.8.0@sha256:293544a80c3d817a021fec69c430e808914a9d86db0c6bd6e96a386607a66627,3850
+  - haskell-lsp-0.20.0.1@sha256:fd4f773c9a32c6e76d57381956b3c2e1302230ae2ad784722ce85ff6e7d64ceb,5315
+  - haskell-lsp-types-0.20.0.0@sha256:24dcd72f3d39260b9ebb447e89175e09f2244a17d24eca8bf6dbea3f9cf20977,2941
+  - hie-bios-0.4.0
+  - regex-base-0.94.0.0@sha256:d514eab2aa9ba4b9d14900ac40cbdea1993372466a6cc6ffeeab59a1975563c0,2166
+  - regex-tdfa-1.3.1.0@sha256:c77808a0d68d275c75fb84dc9ced340536574c9aa7961604036a606a232d585b,6274
+  - shake-0.18.5@sha256:a4775c96499e1ed89462903cac292ba209420af85665f34fc792630734025353,15340
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

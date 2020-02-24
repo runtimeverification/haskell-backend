@@ -11,6 +11,76 @@ packages:
       sha256: 2f1cd7f170129e0fc6806fd5a5828f80bc2d82c60d9000297871909e0bae6569
   original:
     hackage: ghc-trace-events-0.1.0
+- completed:
+    cabal-file:
+      size: 7311
+      sha256: 30ce06cf09dc22cd89dd795bd1589567648108b800f30fdaa828d8c9e8b9bcea
+    name: ghcide
+    version: 0.1.0
+    git: https://github.com/digital-asset/ghcide
+    pantry-tree:
+      size: 5445
+      sha256: 5bd341d5043878faae307a80b22513f129776b6a04e2d2ca52129e328447c35d
+    commit: 6f3bd734de52f933000ea92ff4a8a3dea3b95add
+  original:
+    git: https://github.com/digital-asset/ghcide
+    commit: 6f3bd734de52f933000ea92ff4a8a3dea3b95add
+- completed:
+    hackage: fuzzy-0.1.0.0@sha256:123b9581c587ae5422b67bbad7e81186b1ecbf86941a8049f921ddf136f2234e,833
+    pantry-tree:
+      size: 261
+      sha256: 97019c97e95f2a91089acec705243e1fa5b8529ae112658757e0ab3574905f3c
+  original:
+    hackage: fuzzy-0.1.0.0@sha256:123b9581c587ae5422b67bbad7e81186b1ecbf86941a8049f921ddf136f2234e,833
+- completed:
+    hackage: haddock-library-1.8.0@sha256:293544a80c3d817a021fec69c430e808914a9d86db0c6bd6e96a386607a66627,3850
+    pantry-tree:
+      size: 3397
+      sha256: 2fb23fd09565829807a0368011cd57ea13e9a79fa4c65a47810aaf9a528427c2
+  original:
+    hackage: haddock-library-1.8.0@sha256:293544a80c3d817a021fec69c430e808914a9d86db0c6bd6e96a386607a66627,3850
+- completed:
+    hackage: haskell-lsp-0.20.0.1@sha256:fd4f773c9a32c6e76d57381956b3c2e1302230ae2ad784722ce85ff6e7d64ceb,5315
+    pantry-tree:
+      size: 1726
+      sha256: f541056204ef590eb6f4c4352b3446a222f169f887b55ae0d28d97fb3ed520d1
+  original:
+    hackage: haskell-lsp-0.20.0.1@sha256:fd4f773c9a32c6e76d57381956b3c2e1302230ae2ad784722ce85ff6e7d64ceb,5315
+- completed:
+    hackage: haskell-lsp-types-0.20.0.0@sha256:24dcd72f3d39260b9ebb447e89175e09f2244a17d24eca8bf6dbea3f9cf20977,2941
+    pantry-tree:
+      size: 2451
+      sha256: 8d4a6011264f75f301e14549d40327f90bd7524b0c647983cd571bf3419f7945
+  original:
+    hackage: haskell-lsp-types-0.20.0.0@sha256:24dcd72f3d39260b9ebb447e89175e09f2244a17d24eca8bf6dbea3f9cf20977,2941
+- completed:
+    hackage: hie-bios-0.4.0@sha256:01bb3a9c99173ad6a7c7bd3f2f58ef5019c415b365ae5d573dc489e0940a39f3,8389
+    pantry-tree:
+      size: 6579
+      sha256: 13f9434b6afdff43d50504feac07baae55e4e85b379ca14f2922041e37852693
+  original:
+    hackage: hie-bios-0.4.0
+- completed:
+    hackage: regex-base-0.94.0.0@sha256:d514eab2aa9ba4b9d14900ac40cbdea1993372466a6cc6ffeeab59a1975563c0,2166
+    pantry-tree:
+      size: 483
+      sha256: d147c3c3e3df525bd3909327ee287911f29c9fdf671350cae9e9c4164ceeaea6
+  original:
+    hackage: regex-base-0.94.0.0@sha256:d514eab2aa9ba4b9d14900ac40cbdea1993372466a6cc6ffeeab59a1975563c0,2166
+- completed:
+    hackage: regex-tdfa-1.3.1.0@sha256:c77808a0d68d275c75fb84dc9ced340536574c9aa7961604036a606a232d585b,6274
+    pantry-tree:
+      size: 2566
+      sha256: 706ad120cb4b38ca5cff79a2e2ed961812076fc29aa1866cc3b7c4bda158b5d1
+  original:
+    hackage: regex-tdfa-1.3.1.0@sha256:c77808a0d68d275c75fb84dc9ced340536574c9aa7961604036a606a232d585b,6274
+- completed:
+    hackage: shake-0.18.5@sha256:a4775c96499e1ed89462903cac292ba209420af85665f34fc792630734025353,15340
+    pantry-tree:
+      size: 12063
+      sha256: 511b4a363bffa7d84dbf5bbea6ae5be580f68fb275e10d2c06d71ebb190d26fd
+  original:
+    hackage: shake-0.18.5@sha256:a4775c96499e1ed89462903cac292ba209420af85665f34fc792630734025353,15340
 snapshots:
 - completed:
     size: 524804
