@@ -134,6 +134,7 @@ pattern Assignment_
     -> Assignment variable
 pattern Assignment_ assignedVariable assignedTerm <-
     Assignment { assignedVariable, assignedTerm }
+{-# COMPLETE Assignment_ #-}
 
 assignmentToPair
     :: Assignment variable
