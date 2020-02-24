@@ -260,8 +260,7 @@ instance
   where
     from =
         Predicate.makeMultipleAndPredicate
-        . fmap Predicate.singleSubstitutionToPredicate
-        . fmap assignmentToPair
+        . fmap (Predicate.singleSubstitutionToPredicate . assignmentToPair)
         . unwrap
 
 type UnwrappedSubstitution variable = [Assignment variable]
