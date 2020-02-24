@@ -57,14 +57,12 @@ import Control.Monad.Catch
     ( MonadCatch
     , MonadMask
     , MonadThrow
-    , bracket
     , catch
     , finally
     )
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.IO.Class
     ( MonadIO
-    , liftIO
     )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
