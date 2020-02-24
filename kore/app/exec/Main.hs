@@ -536,39 +536,39 @@ koreProve execOptions proveOptions = do
                 return (Just savedProofsModule)
             else return Nothing
 
-saveProven
-    :: VerifiedModule StepperAttributes
-    -> [ReachabilityRule Variable]
-    -> FilePath
-    -> IO ()
-saveProven specModule provenClaims outputFile =
-    withFile outputFile WriteMode
-        (`hPutDoc` unparse provenDefinition)
-  where
-    specModuleDefinitions :: [Sentence (TermLike Variable)]
-    specModuleDefinitions =
-        filter isNotAxiomOrClaim (indexedModuleRawSentences specModule)
+    saveProven
+        :: VerifiedModule StepperAttributes
+        -> [ReachabilityRule Variable]
+        -> FilePath
+        -> IO ()
+    saveProven specModule provenClaims outputFile =
+        withFile outputFile WriteMode
+            (`hPutDoc` unparse provenDefinition)
+      where
+        specModuleDefinitions :: [Sentence (TermLike Variable)]
+        specModuleDefinitions =
+            filter isNotAxiomOrClaim (indexedModuleRawSentences specModule)
 
-    isNotAxiomOrClaim :: Sentence patternType -> Bool
-    isNotAxiomOrClaim (SentenceAxiomSentence  _) = False
-    isNotAxiomOrClaim (SentenceClaimSentence _) = False
-    isNotAxiomOrClaim (SentenceAliasSentence _) = True
-    isNotAxiomOrClaim (SentenceSymbolSentence _) = True
-    isNotAxiomOrClaim (SentenceImportSentence _) = True
-    isNotAxiomOrClaim (SentenceSortSentence _) = True
-    isNotAxiomOrClaim (SentenceHookSentence _) = True
+        isNotAxiomOrClaim :: Sentence patternType -> Bool
+        isNotAxiomOrClaim (SentenceAxiomSentence  _) = False
+        isNotAxiomOrClaim (SentenceClaimSentence _) = False
+        isNotAxiomOrClaim (SentenceAliasSentence _) = True
+        isNotAxiomOrClaim (SentenceSymbolSentence _) = True
+        isNotAxiomOrClaim (SentenceImportSentence _) = True
+        isNotAxiomOrClaim (SentenceSortSentence _) = True
+        isNotAxiomOrClaim (SentenceHookSentence _) = True
 
-    provenModule =
-        Module
-            { moduleName = savedProofsModuleName
-            , moduleSentences =
-                specModuleDefinitions ++ map Rule.toSentence provenClaims
-            , moduleAttributes = def
+        provenModule =
+            Module
+                { moduleName = savedProofsModuleName
+                , moduleSentences =
+                    specModuleDefinitions ++ map Rule.toSentence provenClaims
+                , moduleAttributes = def
+                }
+        provenDefinition = Definition
+            { definitionAttributes = def
+            , definitionModules = [provenModule]
             }
-    provenDefinition = Definition
-        { definitionAttributes = def
-        , definitionModules = [provenModule]
-        }
 
 koreBmc :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreBmc execOptions proveOptions = do
