@@ -79,9 +79,6 @@ import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
-import Data.Functor.Contravariant
-    ( contramap
-    )
 import Data.Limit
 import Data.Text
     ( Text
@@ -268,6 +265,7 @@ newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
         , MonadCatch
         , MonadIO
         , MonadThrow
+        , MonadLog
         )
 
 withSolver' :: (Solver -> IO a) -> SMT a
@@ -280,22 +278,9 @@ withSolver' action = SMT $ do
     curryForSolver fromSolver =
         \solverHandle logger -> fromSolver (Solver solverHandle logger)
 
-withSolverT' :: (SolverHandle -> LoggerT IO a) -> SMT a
-withSolverT' action = SMT $ do
-    mvar <- Reader.ask
-    Trans.lift $ bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
-
-instance MonadLog SMT where
-    logEntry entry =
-        withSolverT' $ \_solverHandle -> LoggerT (ReaderT (\logger -> do
-            let logAction = contramap Log.toEntry logger
-            liftIO $ Colog.unLogAction logAction entry
-            ))
-
 instance MonadSMT SMT where
     withSolver (SMT action) =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
+        withSolver' $ \solver@(Solver solverHandle logger) -> do
             -- Create an unshared "dummy" mutex for the solverHandle.
             mvar <- newMVar solverHandle
             -- Run the inner action with the unshared mutex.
@@ -303,57 +288,31 @@ instance MonadSMT SMT where
             push solver
             runReaderT (getLoggerT (runReaderT action mvar)) logger
                 `finally` pop solver
-            ))
 
     declare name typ =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            SimpleSMT.declare solver name typ
-            ))
+        withSolver' $ \solver -> SimpleSMT.declare solver name typ
 
     declareFun declaration =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            SimpleSMT.declareFun solver declaration
-            ))
+        withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
 
     declareSort declaration =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            SimpleSMT.declareSort solver declaration
-            ))
+        withSolver' $ \solver -> SimpleSMT.declareSort solver declaration
 
     declareDatatype declaration =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            SimpleSMT.declareDatatype solver declaration
-            ))
+        withSolver' $ \solver -> SimpleSMT.declareDatatype solver declaration
 
     declareDatatypes datatypes =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            SimpleSMT.declareDatatypes solver datatypes
-            ))
+        withSolver' $ \solver -> SimpleSMT.declareDatatypes solver datatypes
 
-    assert fact =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            SimpleSMT.assert solver fact
-            ))
+    assert fact = withSolver' $ \solver -> SimpleSMT.assert solver fact
 
     check = withSolver' SimpleSMT.check
 
     ackCommand command =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            SimpleSMT.ackCommand solver command
-            ))
+        withSolver' $ \solver -> SimpleSMT.ackCommand solver command
 
     loadFile path =
-        withSolverT' $ \solverHandle -> LoggerT (ReaderT (\logger -> do
-            let solver = Solver solverHandle logger
-            liftIO $ SimpleSMT.loadFile solver path
-            ))
+        withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver

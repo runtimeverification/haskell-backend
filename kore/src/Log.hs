@@ -193,6 +193,8 @@ instance MonadLog log => MonadLog (IdentityT log)
 
 instance MonadLog log => MonadLog (MaybeT log)
 
+instance MonadLog log => MonadLog (ReaderT a log)
+
 instance MonadLog log => MonadLog (Strict.StateT state log)
 
 newtype LoggerT m a =
