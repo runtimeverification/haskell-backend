@@ -323,7 +323,7 @@ test_allPathVerification =
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
-    , testCase "Priority: should apply first axiom" $ do
+    , testCase "Priority: should get stuck because of second axiom" $ do
         -- Axioms:
         --     a => b
         --     b => c
@@ -343,7 +343,7 @@ test_allPathVerification =
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
-    , testCase "Priority: should apply axiom with higher priority" $ do
+    , testCase "Priority: should succeed, prefering axiom with priority 1" $ do
         -- Axioms:
         --     a => b
         --     b => c [priority(2)]

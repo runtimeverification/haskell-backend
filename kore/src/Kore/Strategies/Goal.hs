@@ -382,12 +382,10 @@ instance Goal (AllPathRule Variable) where
                 priorityGroups
             )
       where
-        priorityGroups' =
+        priorityGroups =
             groupSortOn
                 (RulePattern.getPriority . toRulePattern)
                 rules
-        priorityGroups = if null priorityGroups' then [[]] else priorityGroups'
-
         coinductiveRewrites =
             AllPathRewriteRule
             . RewriteRule
@@ -745,6 +743,8 @@ onePathFollowupStep claims axioms =
 groupStrategy
     :: [[Rule (AllPathRule Variable)]]
     -> [Prim (AllPathRule Variable)]
+groupStrategy [] =
+    [DerivePar [], Simplify, TriviallyValid]
 groupStrategy axiomGroups = do
     group <- axiomGroups
     [DerivePar group, Simplify, TriviallyValid]
@@ -762,9 +762,7 @@ allPathFirstStep axiomGroups =
         , RemoveDestination
         ]
         <> groupStrategy axiomGroups <>
-        [ Simplify
-        , TriviallyValid
-        , ResetGoal
+        [ ResetGoal
         , Simplify
         , TriviallyValid
         ]
