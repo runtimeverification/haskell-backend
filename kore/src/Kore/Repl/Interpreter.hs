@@ -265,6 +265,7 @@ replInterpreter0 printAux printKore replCmd = do
                 TryF ac             -> tryFAxiomClaim ac   $> Continue
                 Clear n             -> clear n             $> Continue
                 SaveSession file    -> saveSession file    $> Continue
+                SaveProof mn file   -> saveProof mn file   $> Continue
                 Pipe inn file args  -> pipe inn file args  $> Continue
                 AppendTo inn file   -> appendTo inn file   $> Continue
                 Alias a             -> alias a             $> Continue
@@ -985,6 +986,14 @@ saveSession path =
         putStrLn' "Done."
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
+
+-- | Save the current proof state as a kore module to the specified file.
+saveProof
+    :: MonadWriter ReplOutput m
+    => Maybe Natural
+    -> FilePath
+    -> m ()
+saveProof _ _ = putStrLn' "TODO"
 
 -- | Pipe result of the command to the specified program. This function will start
 -- one process for each KoreOut in the command's output. AuxOut will not be piped,

@@ -110,7 +110,7 @@ first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
 
 If the verification fails, returns an error containing a pattern that could
 not be rewritten (either because no axiom could be applied or because we
-didn't manage to verify a claim within the its maximum number of steps.
+didn't manage to verify a claim within its maximum number of steps.
 
 If the verification succeeds, it returns ().
 -}
