@@ -60,7 +60,7 @@ test_allPathVerification =
         -- Expected: error a
         actual <- runVerificationToPattern
             Unlimited
-            (Limit 1)
+            Unlimited
             []
             [ simpleClaim Mock.a Mock.b ]
             []

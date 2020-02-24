@@ -374,18 +374,20 @@ instance Goal (AllPathRule Variable) where
                 }
 
     strategy _ goals rules =
-        allPathFirstStep rewrites
+        allPathFirstStep priorityGroups
         :> Stream.iterate
             id
             ( allPathFollowupStep
                 coinductiveRewrites
-                rewrites
+                priorityGroups
             )
       where
-        rewrites =
+        priorityGroups' =
             groupSortOn
                 (RulePattern.getPriority . toRulePattern)
                 rules
+        priorityGroups = if null priorityGroups' then [[]] else priorityGroups'
+
         coinductiveRewrites =
             AllPathRewriteRule
             . RewriteRule
