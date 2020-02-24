@@ -19,9 +19,6 @@ import Control.Error
     )
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.Except
-import Control.Monad.IO.Class
-    ( MonadIO
-    )
 import qualified Control.Monad.State as State
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map

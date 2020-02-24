@@ -22,10 +22,6 @@ module Kore.Step.Function.Memo
 
 import Prelude.Kore
 
-import Control.Monad.IO.Class
-    ( MonadIO
-    , liftIO
-    )
 import Control.Monad.State.Class
     ( MonadState
     )

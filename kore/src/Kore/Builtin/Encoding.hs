@@ -71,15 +71,21 @@ decode8Bit =
     >>> map (Char.chr . fromIntegral)
     >>> Text.pack
 
+parseHexHalfByte :: Parsec Void Text Word8
+parseHexHalfByte =
+    toEnum . Char.digitToInt <$> parseHexDigit
+  where
+    parseHexDigit = Parsec.satisfy Char.isHexDigit Parsec.<?> "hex digit"
+
 parseBase16 :: Parsec Void Text ByteString
-parseBase16 =
-    parseByte <|> pure ByteString.empty
+parseBase16 = do
+    bytes <- many parseByte
+    pure $ foldr ByteString.cons ByteString.empty bytes
   where
     parseByte = do
-        half1 <- toEnum . Char.digitToInt <$> Parsec.satisfy Char.isDigit
-        half2 <- toEnum . Char.digitToInt <$> Parsec.satisfy Char.isDigit
-        let byte = Bits.shiftL half1 4 Bits..|. half2
-        ByteString.cons byte <$> parseBase16
+        half1 <- parseHexHalfByte
+        half2 <- parseHexHalfByte
+        pure (Bits.shiftL half1 4 Bits..|. half2)
 
 toBase16 :: ByteString -> Text
 toBase16 byteString =

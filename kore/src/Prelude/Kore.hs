@@ -15,6 +15,9 @@ module Prelude.Kore
     , isNothing
     , fromMaybe
     , headMay
+    -- * Either
+    , either
+    , isLeft, isRight
     -- * Filterable
     , Filterable (..)
     -- * Errors
@@ -26,6 +29,8 @@ module Prelude.Kore
     , optional
     -- * From
     , module From
+    -- * IO
+    , MonadIO (..)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -37,10 +42,16 @@ import Control.Applicative
     , optional
     )
 import Control.Error
-    ( headMay
+    ( either
+    , headMay
+    , isLeft
+    , isRight
     )
 import Control.Exception
     ( assert
+    )
+import Control.Monad.IO.Class
+    ( MonadIO (..)
     )
 import Data.Function
     ( on
@@ -61,6 +72,7 @@ import GHC.Stack
     )
 import Prelude hiding
     ( Applicative (..)
+    , either
     , filter
     , log
     )

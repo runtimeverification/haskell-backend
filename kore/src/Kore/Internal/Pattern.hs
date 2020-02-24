@@ -24,6 +24,7 @@ module Kore.Internal.Pattern
     , isSimplified
     , simplifiedAttribute
     , assign
+    , requireDefined
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -309,3 +310,26 @@ assign variable term =
   where
     assignment = Substitution.assign variable term
     assignedTerm = Substitution.assignedTerm assignment
+
+{- | Add a 'Predicate' requiring that the 'term' of a 'Pattern' is defined.
+
+@requireDefined@ effectively implements:
+
+@
+φ = φ ∧ ⌈φ⌉
+@
+
+ -}
+requireDefined
+    :: InternalVariable variable
+    => Pattern variable -> Pattern variable
+requireDefined Conditional { term, predicate, substitution } =
+    Conditional
+        { term
+        , substitution
+        , predicate =
+            Predicate.makeAndPredicate predicate
+            $ Predicate.makeCeilPredicate sort term
+        }
+  where
+    sort = termLikeSort term

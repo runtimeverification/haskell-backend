@@ -17,6 +17,7 @@ module Kore.Step.RulePattern
     , FromRulePattern (..)
     , UnifyingRule (..)
     , rulePattern
+    , leftPattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
@@ -46,6 +47,10 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import Control.Lens
+    ( Lens'
+    )
+import qualified Control.Lens as Lens
 import Data.Coerce
     ( Coercible
     , coerce
@@ -81,6 +86,7 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -250,6 +256,27 @@ rulePattern left right =
         , rhs = termToRHS right
         , attributes = Default.def
         }
+
+{- | A 'Lens\'' to view the left-hand side of a 'RulePattern' as a 'Pattern'.
+ -}
+leftPattern
+    :: InternalVariable variable
+    => Lens' (RulePattern variable) (Pattern variable)
+leftPattern =
+    Lens.lens get set
+  where
+    get RulePattern { left, requires } =
+        Pattern.withCondition left $ from @(Predicate _) requires
+    set rule@(RulePattern _ _ _ _ _) pattern' =
+        applySubstitution
+            (Pattern.substitution pattern')
+            rule
+                { left = Pattern.term pattern'
+                , requires = coerceSort (Pattern.predicate pattern')
+                }
+      where
+        sort = TermLike.termLikeSort (Pattern.term pattern')
+        coerceSort = Predicate.coerceSort sort
 
 {- | Does the axiom pattern represent a heating rule?
  -}
