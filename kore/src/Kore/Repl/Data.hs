@@ -471,6 +471,7 @@ data Config claim m = Config
     -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.
+    -- , definition :: Syntax.Definition
     }
     deriving (GHC.Generic)
 

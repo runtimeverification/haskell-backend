@@ -993,7 +993,12 @@ saveProof
     => Maybe Natural
     -> FilePath
     -> m ()
-saveProof _ _ = putStrLn' "TODO"
+saveProof currentNode file = do
+    let leafToRemove = correspondingLeaf currentNode
+    -- TODO: refactor generateInProgressOPClaims
+    undefined
+  where
+    correspondingLeaf = undefined
 
 -- | Pipe result of the command to the specified program. This function will start
 -- one process for each KoreOut in the command's output. AuxOut will not be piped,

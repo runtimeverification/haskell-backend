@@ -172,6 +172,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , unifier    = unificationProcedure
             , logger
             , outputFile
+            -- , definition
             }
 
     firstClaimIndex :: ClaimIndex
