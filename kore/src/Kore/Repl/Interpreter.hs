@@ -331,7 +331,7 @@ exit
 exit = do
     proofs <- allProofs
     ofile <- Lens.view (field @"outputFile")
-    onePathClaims <- generateInProgressClaims
+    onePathClaims <- generateInProgressClaims Nothing
     sort <- currentClaimSort
     let conj = conjOfOnePathClaims onePathClaims sort
         printTerm = maybe putStrLn writeFile (unOutputFile ofile)
@@ -1001,7 +1001,6 @@ saveProof
     -> m ()
 saveProof currentNode file = do
     let leafToRemove = correspondingLeaf currentNode
-    -- TODO: refactor generateInProgressOPClaims
     undefined
   where
     correspondingLeaf = undefined

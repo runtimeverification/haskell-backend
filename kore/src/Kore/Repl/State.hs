@@ -86,6 +86,7 @@ import Data.Text
 import GHC.Exts
     ( toList
     )
+import Numeric.Natural
 import System.IO
     ( Handle
     , IOMode (AppendMode)
@@ -684,14 +685,21 @@ generateInProgressClaims
     .  Claim claim
     => axiom ~ Rule claim
     => MonadState (ReplState claim) m
-    => m [claim]
-generateInProgressClaims = do
+    => Maybe Natural
+    -> m [claim]
+generateInProgressClaims maybeNode = do
+    currentNode <- defaultCurrentNode maybeNode
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
     let started = startedClaims graphs claims
         notStarted = notStartedClaims graphs claims
     return $ started <> notStarted
   where
+    defaultCurrentNode :: Maybe Natural -> m ReplNode
+    defaultCurrentNode =
+        maybe
+            (Lens.use $ field @"node")
+            (return . ReplNode . fromEnum)
     startedClaims
         :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> [claim]
