@@ -11,13 +11,13 @@
   </T>
 #And
   {
-    false
-  #Equals
     ?I <=Int ?I0
+  #Equals
+    false
   }
 #And
   {
-    false
-  #Equals
     ?I <=Int ?I1
+  #Equals
+    false
   }
