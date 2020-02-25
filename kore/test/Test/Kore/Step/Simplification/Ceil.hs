@@ -1,6 +1,7 @@
 module Test.Kore.Step.Simplification.Ceil
     ( test_ceilSimplification
     , hprop_Builtin_Map
+    , hprop_Builtin_Set
     ) where
 
 import Prelude.Kore
@@ -11,14 +12,9 @@ import Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
-import Control.Monad
-    ( guard
-    )
 import qualified Data.Map.Strict as Map
 
 import qualified Data.Sup as Sup
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
@@ -27,7 +23,8 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate_
     , makeNotPredicate
@@ -64,15 +61,11 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore.Builtin.Builtin
-    ( emptyNormalizedSet
-    )
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Kore.With
 import Test.Tasty.HUnit.Ext
 
 test_ceilSimplification :: [TestTree]
@@ -450,86 +443,6 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqual "ceil(list)" expected actual
-    , testCase "ceil with concrete set domain value" $ do
-        -- sets assume that their concrete elements are relatively functional,
-        -- so ceil({a, b}) = top
-        let
-            expected = OrPattern.fromPatterns [ Pattern.top ]
-        actual <- makeEvaluate
-            Conditional
-                { term = Mock.builtinSet [Mock.a, Mock.b]
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set)" expected actual
-    , testCase "ceil with element variable" $ do
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate = makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = asInternalSet $
-                    emptyNormalizedSet `with` VariableElement fOfX
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set)" expected actual
-    , testCase "ceil with opaque set" $ do
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate = makeCeilPredicate_ fOfXset
-                    , substitution = mempty
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = asInternalSet $
-                    emptyNormalizedSet
-                    `with` OpaqueSet (TermLike.markSimplified fOfXset)
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set)" expected actual
-        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
-    , testCase "ceil with opaque sets" $ do
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate = makeAndPredicate
-                        (makeCeilPredicate_ fOfXset)
-                        (makeAndPredicate
-                           (makeCeilPredicate_ fOfYset)
-                            (makeCeilPredicate_
-                                (asInternalSet
-                                    ( emptyNormalizedSet
-                                    `with` OpaqueSet fOfXset
-                                    `with` OpaqueSet fOfYset
-                                    )
-                                )
-                            )
-                        )
-                    , substitution = mempty
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = TermLike.markSimplified $ asInternalSet $
-                    emptyNormalizedSet
-                        `with` OpaqueSet fOfXset
-                        `with` OpaqueSet fOfYset
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set set)" expected actual
-        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "ceil of sort injection" $ do
         let expected =
                 OrPattern.fromPattern Conditional
@@ -549,12 +462,6 @@ test_ceilSimplification =
     fOfB :: TermLike Variable
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
-    fOfX :: TermLike Variable
-    fOfX = Mock.f (mkElemVar Mock.x)
-    fOfXset :: TermLike Variable
-    fOfXset = Mock.fSet (mkElemVar Mock.xSet)
-    fOfYset :: TermLike Variable
-    fOfYset = Mock.fSet (mkElemVar Mock.ySet)
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Conditional
@@ -567,16 +474,72 @@ test_ceilSimplification =
         , predicate = makeTruePredicate_
         , substitution = mempty
         }
-    asInternalSet =
-        Ac.asInternal Mock.metadataTools Mock.setSort . Domain.wrapAc
 
 hprop_Builtin_Map :: Property
-hprop_Builtin_Map = Hedgehog.property $ do
-    opaques <- forAll (Gen.subsequence opaqueMaps)
-    keys <- forAll (Gen.subsequence allKeys)
-    vals <- forAll $ traverse (const $ Gen.element allVals) keys
-    let elements = zip keys vals
-        original = Pattern.fromTermLike $ mkMap elements opaques
+hprop_Builtin_Set :: Property
+(hprop_Builtin_Map, hprop_Builtin_Set) =
+    ( propertyBuiltinAssocComm
+        (genKeys >>= traverse genMapElement)
+        (Gen.subsequence opaqueMaps)
+        fst
+        defineMapElement
+        Mock.framedMap
+    , propertyBuiltinAssocComm
+        genKeys
+        (Gen.subsequence opaqueSets)
+        id
+        defineSetElement
+        Mock.framedSet
+    )
+  where
+    nullaryCtors = [Mock.a, Mock.b, Mock.c]
+    elemVars = [Mock.x, Mock.y, Mock.z]
+    opaqueMaps = Mock.opaqueMap . mkElemVar <$> elemVars
+    opaqueSets = Mock.opaqueSet . mkElemVar <$> elemVars
+    genKeys = Gen.subsequence keys
+    keys =
+        -- concrete keys
+        nullaryCtors
+        -- symbolic keys
+        ++ (Mock.f . mkElemVar <$> elemVars)
+    genMapElement key = (,) key <$> genVal
+    genVal = Gen.element vals
+    vals =
+        -- concrete values
+        (Mock.constr10 <$> nullaryCtors)
+        -- symbolic values
+        ++ (Mock.g . mkElemVar <$> elemVars)
+
+    defineMapElement (key, val) =
+        -- symbolic keys are defined
+        [ makeCeilPredicate_ key | (not . isConcrete) key ]
+        ++
+        -- symbolic values are defined
+        [ makeCeilPredicate_ val | (not . isConcrete) val ]
+
+    defineSetElement key =
+        -- symbolic keys are defined
+        [ makeCeilPredicate_ key | (not . isConcrete) key ]
+
+propertyBuiltinAssocComm
+    :: Show element
+    => Gen [element]
+    -> Gen [TermLike Variable]
+    -> (element -> TermLike Variable)
+    -> (element -> [Predicate Variable])
+    -> ([element] -> [TermLike Variable] -> TermLike Variable)
+    -> Property
+propertyBuiltinAssocComm
+    genElements
+    genOpaques
+    elementKey
+    defineElement
+    mkAssocComm
+  = Hedgehog.property $ do
+    opaques <- forAll genOpaques
+    elements <- forAll genElements
+    let original = Pattern.fromTermLike $ mkAssocComm elements opaques
+        keys = elementKey <$> elements
     actualPattern <-
         (liftIO . makeEvaluate) original
         >>= (return . OrPattern.toPatterns)
@@ -587,58 +550,40 @@ hprop_Builtin_Map = Hedgehog.property $ do
             predicate actualPattern
             & Predicate.getMultiAndPredicate
             & MultiAnd.make
+        -- | Elements are defined
+        expectDefinedElements = elements >>= defineElement
+        -- | Opaque operands are defined
+        expectDefinedOpaques = makeCeilPredicate_ <$> opaques
+        -- | Keys are distinct
+        expectDistinctKeys =
+            [ uncurry makeNotEqualsPredicate $ minMax key1 key2
+            | (key1, key2) <- zipWithTails (,) keys
+            -- concrete keys are assumed to be distinct among the
+            -- concrete keys, but not among the symbolic keys
+            , not (isConcrete key1 && isConcrete key2)
+            ]
+        -- | No element occurs in any opaque operand
+        expectNoElementInOpaque =
+            [ makeCeilPredicate_ $ mkAssocComm [element] [opaque']
+            | element <- elements
+            , opaque' <- opaques
+            ]
+        -- | Opaque operands are distinct
+        expectDistinctOpaques =
+            [ makeCeilPredicate_ $ mkAssocComm [] [opaque1, opaque2]
+            | (opaque1, opaque2) <- zipWithTails (,) opaques
+            ]
         expectPredicates =
             (MultiAnd.make . concat)
-                [
-                -- The first three conditions are the minimum requirements
-                -- for /any/ symbol pattern to be defined.
-
-                    -- symbolic keys are defined
-                    makeCeilPredicate_ <$> filter (not . isConcrete) keys
-                ,
-                    -- symbolic values are defined
-                    makeCeilPredicate_ <$> filter (not . isConcrete) vals
-                ,
-                    -- opaque operands are defined
-                    makeCeilPredicate_ <$> opaques
-
-                -- The remaining conditions cover the uniqueness of keys.
-                , do
-                    (key1, key2) <- zipWithTails (,) keys
-                    -- concrete keys are assumed to be distinct among the
-                    -- concrete keys, but not among the symbolic keys
-                    (guard . not) (isConcrete key1 && isConcrete key2)
-                    -- keys are distinct
-                    pure $ uncurry makeNotEqualsPredicate $ minMax key1 key2
-
-                , do
-                    element <- elements
-                    opaque' <- opaques
-                    -- no element occurs in any opaque operand
-                    pure $ makeCeilPredicate_ (mkMap [element] [opaque'])
-
-                , do
-                    (opaque1, opaque2) <- zipWithTails (,) opaques
-                    -- opaque operands are distinct
-                    pure $ makeCeilPredicate_ (mkMap [] [opaque1, opaque2])
+                [ expectDefinedElements
+                , expectDefinedOpaques
+                , expectDistinctKeys
+                , expectNoElementInOpaque
+                , expectDistinctOpaques
                 ]
     expectPredicates === actualPredicates
   where
-    mkMap = Mock.framedMap
     makeNotEqualsPredicate x y = makeNotPredicate $ makeEqualsPredicate_ x y
-    nullaryCtors = [Mock.a, Mock.b, Mock.c]
-    elemVars = [Mock.x, Mock.y, Mock.z]
-    opaqueMaps = Mock.opaqueMap . mkElemVar <$> elemVars
-    allKeys =
-        -- concrete keys
-        nullaryCtors
-        -- symbolic keys
-        ++ (Mock.f . mkElemVar <$> elemVars)
-    allVals =
-        -- concrete values
-        (Mock.constr10 <$> nullaryCtors)
-        -- symbolic values
-        ++ (Mock.g . mkElemVar <$> elemVars)
 
     zipWithTails :: (a -> a -> b) -> [a] -> [b]
     zipWithTails _ [] = []
