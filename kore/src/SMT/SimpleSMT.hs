@@ -274,8 +274,8 @@ newSolver
     -> IO SolverHandle
 newSolver exe opts logger = do
     (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
-    let solverHandle = SolverHandle hIn hOut hErr hProc
-        solver = Solver solverHandle logger
+    let solverHandle = SolverHandle { hIn, hOut, hErr, hProc }
+        solver = Solver { solverHandle, logger }
 
     _ <- forkIO $ do
         let handler X.SomeException {} = return ()

@@ -277,15 +277,14 @@ withSolver' action = SMT $ do
         \solverHandle logger -> fromSolver (Solver solverHandle logger)
 
 instance MonadSMT SMT where
-    withSolver (SMT action) =
+    withSolver smt =
         withSolver' $ \solver@(Solver solverHandle logger) -> do
             -- Create an unshared "dummy" mutex for the solverHandle.
             mvar <- newMVar solverHandle
-            -- Run the inner action with the unshared mutex.
-            -- The action will never block waiting to acquire the solver.
+            -- Run the SMT with the unshared mutex.
+            -- The SMT will never block waiting to acquire the solver.
             push solver
-            runReaderT (getLoggerT (runReaderT action mvar)) logger
-                `finally` pop solver
+            runSMT' mvar logger smt `finally` pop solver
 
     declare name typ =
         withSolver' $ \solver -> SimpleSMT.declare solver name typ
@@ -409,14 +408,14 @@ stopSolver logger mvar = do
 
 -- | Run an external SMT solver.
 runSMT :: Config -> Logger -> SMT a -> IO a
-runSMT config logger SMT { getSMT } =
+runSMT config logger smt =
     Exception.bracket
         ( catch
             (newSolver config logger)
             showZ3NotFound
         )
         (stopSolver logger)
-        (\mvar -> runReaderT (getLoggerT $ runReaderT getSMT mvar) logger)
+        (\mvar -> runSMT' mvar logger smt)
   where
     showZ3NotFound :: Exception.IOException -> IO a
     showZ3NotFound e =
@@ -424,6 +423,10 @@ runSMT config logger SMT { getSMT } =
             $ Exception.displayException e <> "\n"
             <> "We couldn't start Z3 due to the exception above. "
             <> "Is Z3 installed?"
+
+runSMT' :: MVar SolverHandle -> Logger -> SMT a -> IO a
+runSMT' mvar logger SMT { getSMT } =
+    (runReaderT . getLoggerT) (runReaderT getSMT mvar) logger
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
