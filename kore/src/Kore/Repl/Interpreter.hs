@@ -333,7 +333,7 @@ exit = do
     ofile <- Lens.view (field @"outputFile")
     newClaims <- generateInProgressClaims Nothing
     sort <- currentClaimSort
-    let conj = conjOfClaims newClaims sort
+    let conj = conjOfClaims (fmap snd newClaims) sort
         printTerm = maybe putStrLn writeFile (unOutputFile ofile)
     liftIO . printTerm . unparseToString $ conj
     if isCompleted (Map.elems proofs)

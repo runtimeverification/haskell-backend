@@ -81,6 +81,7 @@ import Data.Set
 import qualified Data.Set as Set
 import Data.Text
     ( Text
+    , pack
     , unpack
     )
 import GHC.Exts
@@ -570,15 +571,16 @@ getNodeState graph node =
 nodeToPattern
     :: InnerGraph axiom
     -> Graph.Node
-    -> Maybe (TermLike Variable)
+    -> Maybe (Text, TermLike Variable)
 nodeToPattern graph node =
-    proofState ProofStateTransformer
-        { goalTransformer = Just . toTermLike
-        , goalRemainderTransformer = Just . toTermLike
-        , goalRewrittenTransformer = Just . toTermLike
-        , goalStuckTransformer = Just . toTermLike
-        , provenValue = Nothing
-        }
+    fmap (\x -> ("node" <> (pack . show) node, x))
+    $ proofState ProofStateTransformer
+    { goalTransformer = Just . toTermLike
+    , goalRemainderTransformer = Just . toTermLike
+    , goalRewrittenTransformer = Just . toTermLike
+    , goalStuckTransformer = Just . toTermLike
+    , provenValue = Nothing
+    }
     . Graph.lab'
     . Graph.context graph
     $ node
@@ -657,10 +659,12 @@ substituteAlias
 
 createClaim
     :: Claim claim
-    => (claim, TermLike Variable)
-    -> claim
-createClaim (claim, cpattern) =
-    fromRulePattern
+    => (claim, (Text, TermLike Variable))
+    -> (AttrLabel.Label, claim)
+createClaim (claim, (name, cpattern)) =
+    ( AttrLabel.Label . Just
+        $ maybe "" (<> "_") claimName <> name
+    , fromRulePattern
         claim
         Rule.RulePattern
             { left = cpattern
@@ -669,6 +673,9 @@ createClaim (claim, cpattern) =
             , rhs = Rule.rhs . toRulePattern $ claim
             , attributes = Default.def
             }
+    )
+  where
+    claimName = AttrLabel.unLabel . getNameText $ claim
 
 conjOfClaims
     :: From claim (TermLike Variable)
@@ -687,15 +694,21 @@ generateInProgressClaims
     => axiom ~ Rule claim
     => MonadState (ReplState claim) m
     => Maybe Natural
-    -> m [claim]
+    -> m [(AttrLabel.Label, claim)]
 generateInProgressClaims maybeNode = do
     currentNode <- defaultCurrentNode maybeNode
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
-    let started = startedClaims graphs claims
-        notStarted = notStartedClaims graphs claims
+    currentClaimIndex <-
+        Lens.use (field @"claimIndex")
+    let claims' = removeAt currentClaimIndex claims
+    let started =
+            currentClaim currentNode
+            : startedClaims graphs claims'
+        notStarted = notStartedClaims graphs claims'
     return $ started <> notStarted
   where
+    currentClaim = undefined
     defaultCurrentNode :: Maybe Natural -> m ReplNode
     defaultCurrentNode =
         maybe
@@ -704,7 +717,7 @@ generateInProgressClaims maybeNode = do
     startedClaims
         :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> [claim]
-        -> [claim]
+        -> [(AttrLabel.Label, claim)]
     startedClaims graphs claims =
         fmap createClaim
         $ claimsWithPatterns graphs claims
@@ -712,26 +725,37 @@ generateInProgressClaims maybeNode = do
     notStartedClaims
         :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> [claim]
-        -> [claim]
+        -> [(AttrLabel.Label, claim)]
     notStartedClaims graphs claims =
-        filter (not . isTrusted)
-                ( (claims !!)
-                . unClaimIndex
-                <$> Set.toList
-                    (Set.difference
-                        ( Set.fromList
-                        $ fmap ClaimIndex [0..length claims - 1]
-                        )
-                        ( Set.fromList
-                        $ Map.keys graphs
+        let nsClaims =
+                filter (not . isTrusted)
+                    ( (claims !!)
+                    . unClaimIndex
+                    <$> Set.toList
+                        (Set.difference
+                            ( Set.fromList
+                            $ fmap ClaimIndex [0..length claims - 1]
+                            )
+                            ( Set.fromList
+                            $ Map.keys graphs
+                            )
                         )
                     )
-                )
+         in fmap (\c -> (getNameText c, c)) nsClaims
+    removeAt
+        :: ClaimIndex
+        -> [claim]
+        -> [claim]
+    removeAt (ClaimIndex index) claims
+        | index >= 0 && index < length claims =
+            take index claims
+            <> drop (index + 1) claims
+        | otherwise = claims
 
 claimsWithPatterns
     :: Map ClaimIndex (ExecutionGraph axiom)
     -> [claim]
-    -> [(claim, [TermLike Variable])]
+    -> [(claim, [(Text, TermLike Variable)])]
 claimsWithPatterns graphs claims =
     Bifunctor.bimap
         ((claims !!) . unClaimIndex)
@@ -740,7 +764,7 @@ claimsWithPatterns graphs claims =
 
 findTerminalPatterns
     :: InnerGraph axiom
-    -> [TermLike Variable]
+    -> [(Text, TermLike Variable)]
 findTerminalPatterns graph =
     mapMaybe (nodeToPattern graph)
     . findLeafNodes
