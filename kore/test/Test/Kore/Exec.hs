@@ -1,6 +1,8 @@
 module Test.Kore.Exec
     ( test_exec
+    , test_execPriority
     , test_search
+    , test_searchPriority
     , test_searchExeedingBreadthLimit
     , test_execGetExitCode
     ) where
@@ -14,6 +16,9 @@ import Control.Applicative
     )
 import Control.Exception as Exception
 import Control.Monad.Except
+import Data.Default
+    ( def
+    )
 import Data.Limit
     ( Limit (..)
     )
@@ -33,10 +38,12 @@ import System.Exit
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
+import qualified Kore.Attribute.Priority as Attribute.Axiom
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
@@ -49,12 +56,19 @@ import Kore.Internal.Predicate
     ( makeTruePredicate_
     )
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step
     ( Prim (..)
-    , allRewrites
-    , anyRewrite
+    , priorityAllStrategy
+    , priorityAnyStrategy
     )
 import Kore.Step.Rule
+import Kore.Step.RulePattern
+    ( RewriteRule (..)
+    , RulePattern (..)
+    , injectTermIntoRHS
+    , rewriteRuleToTerm
+    )
 import Kore.Step.Search
     ( SearchType (..)
     )
@@ -66,12 +80,46 @@ import Kore.Step.Strategy
 import Kore.Syntax.Definition hiding
     ( Symbol
     )
+import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
 import qualified SMT
 
 import Test.Kore
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Tasty.HUnit.Ext
+
+test_execPriority :: TestTree
+test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
+  where
+    unlimited :: Limit Integer
+    unlimited = Unlimited
+    actual =
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ exec
+            Unlimited
+            verifiedModule
+            (Limit.replicate unlimited . priorityAnyStrategy)
+            inputPattern
+    verifiedModule = verifiedMyModule Module
+        { moduleName = ModuleName "MY-MODULE"
+        , moduleSentences =
+            [ asSentence mySortDecl
+            , asSentence $ constructorDecl "a"
+            , asSentence $ constructorDecl "b"
+            , asSentence $ constructorDecl "c"
+            , asSentence $ constructorDecl "d"
+            , functionalAxiom "a"
+            , functionalAxiom "b"
+            , functionalAxiom "c"
+            , functionalAxiom "d"
+            , rewriteAxiomPriority "a" "b" 2
+            , rewriteAxiomPriority "a" "c" 1
+            , rewriteAxiom "c" "d"
+            ]
+        , moduleAttributes = Attributes []
+        }
+    inputPattern = applyToNoArgs mySort "a"
+    expected = applyToNoArgs mySort "d"
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
@@ -83,7 +131,7 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
         $ exec
             Unlimited
             verifiedModule
-            (Limit.replicate unlimited . anyRewrite)
+            (Limit.replicate unlimited . priorityAnyStrategy)
             inputPattern
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
@@ -106,6 +154,65 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
     inputPattern = applyToNoArgs mySort "b"
     expected = applyToNoArgs mySort "d"
 
+test_searchPriority :: [TestTree]
+test_searchPriority =
+    [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
+  where
+    unlimited :: Limit Integer
+    unlimited = Unlimited
+    makeTestCase searchType =
+        testCase ("searchpriority " <> show searchType) (assertion searchType)
+    assertion searchType =
+        actual searchType >>= assertEqual "" (expected searchType)
+    actual searchType = do
+        finalPattern <-
+            SMT.runSMT SMT.defaultConfig emptyLogger
+            $ search
+                Unlimited
+                verifiedModule
+                (Limit.replicate unlimited . priorityAllStrategy)
+                inputPattern
+                searchPattern
+                Search.Config { bound = Unlimited, searchType }
+        let results =
+                fromMaybe
+                    (error "Expected search results")
+                    (extractSearchResults finalPattern)
+        return results
+    verifiedModule = verifiedMyModule Module
+        { moduleName = ModuleName "MY-MODULE"
+        , moduleSentences =
+            [ asSentence mySortDecl
+            , asSentence $ constructorDecl "a"
+            , asSentence $ constructorDecl "b"
+            , asSentence $ constructorDecl "c"
+            , asSentence $ constructorDecl "d"
+            , asSentence $ constructorDecl "e"
+            , functionalAxiom "a"
+            , functionalAxiom "b"
+            , functionalAxiom "c"
+            , functionalAxiom "d"
+            , functionalAxiom "e"
+            , rewriteAxiomPriority "a" "b" 2
+            , rewriteAxiomPriority "a" "c" 1
+            , rewriteAxiom "c" "d"
+            , rewriteAxiom "e" "a"
+            ]
+        , moduleAttributes = Attributes []
+        }
+    inputPattern = applyToNoArgs mySort "a"
+    expected =
+        let
+            a = applyToNoArgs mySort "a"
+            c = applyToNoArgs mySort "c"
+            d = applyToNoArgs mySort "d"
+        in
+            \case
+                ONE -> Set.fromList [c]
+                STAR -> Set.fromList [a, c, d]
+                PLUS -> Set.fromList [c, d]
+                FINAL -> Set.fromList [d]
+
 test_search :: [TestTree]
 test_search =
     [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
@@ -122,7 +229,7 @@ test_search =
             $ search
                 Unlimited
                 verifiedModule
-                (Limit.replicate unlimited . allRewrites)
+                (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
@@ -193,7 +300,7 @@ test_searchExeedingBreadthLimit =
             $ search
                 (Limit 0)
                 verifiedModule
-                (Limit.replicate unlimited . allRewrites)
+                (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
@@ -360,6 +467,27 @@ rewriteAxiom lhsName rhsName =
         (applyToNoArgs mySort rhsName)
         Nothing
 
+rewriteAxiomPriority :: Text -> Text -> Integer -> Verified.Sentence
+rewriteAxiomPriority lhsName rhsName priority =
+    (Syntax.SentenceAxiomSentence . axiomWithAttribute (Attribute.Axiom.priorityAttribute priority) . TermLike.mkAxiom_)
+    $ rewriteRuleToTerm
+    $ RewriteRule RulePattern
+        { left = applyToNoArgs mySort lhsName
+        , antiLeft = Nothing
+        , requires = makeTruePredicate_
+        , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
+        , attributes = def
+            { Attribute.Axiom.priority = Attribute.Axiom.Priority (Just priority)
+            }
+        }
+
+axiomWithAttribute
+    :: AttributePattern
+    -> SentenceAxiom (TermLike variable)
+    -> SentenceAxiom (TermLike variable)
+axiomWithAttribute attribute axiom =
+    axiom { sentenceAxiomAttributes = sentenceAxiomAttributes axiom <> Attributes [attribute] }
+
 applyToNoArgs :: Sort -> Text -> TermLike Variable
 applyToNoArgs sort name =
     mkApplySymbol
@@ -395,7 +523,7 @@ test_execGetExitCode =
         SMT.runSMT SMT.defaultConfig emptyLogger
         $ execGetExitCode
             (verifiedMyModule testModule)
-            (Limit.replicate unlimited . anyRewrite)
+            (Limit.replicate unlimited . priorityAnyStrategy)
             $ Int.asInternal myIntSort exitCode
 
     -- Module with no getExitCode symbol

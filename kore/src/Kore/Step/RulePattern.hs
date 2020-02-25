@@ -602,6 +602,8 @@ instance TopBottom (AllPathRule variable) where
     isTop _ = False
     isBottom _ = False
 
+instance ToRulePattern (RewriteRule Variable)
+
 instance ToRulePattern (OnePathRule Variable)
 
 instance ToRulePattern (AllPathRule Variable)

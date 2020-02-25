@@ -12,9 +12,9 @@ module Kore.Step
     , rewrite
     , simplify
     , rewriteStep
+    , priorityAllStrategy
+    , priorityAnyStrategy
     , transitionRule
-    , allRewrites
-    , anyRewrite
     , heatingCooling
       -- * Re-exports
     , RulePattern
@@ -29,6 +29,10 @@ import Prelude.Kore
 
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
+import Data.List.Extra
+    ( groupSortOn
+    , sortOn
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Numeric.Natural
     ( Natural
@@ -42,8 +46,10 @@ import qualified Kore.Step.Result as Result
     )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
-    ( RewriteRule (RewriteRule)
+    ( RewriteRule (..)
     , RulePattern
+    , ToRulePattern (..)
+    , getPriority
     , isCoolingRule
     , isHeatingRule
     , isNormalRule
@@ -163,13 +169,40 @@ anyRewrite
 anyRewrite rewrites =
     Strategy.any (rewriteStep <$> rewrites)
 
+priorityAllStrategy
+    :: ToRulePattern rewrite
+    => [rewrite]
+    -> Strategy (Prim rewrite)
+priorityAllStrategy rewrites =
+    trace (show (fmap length priorityGroups))
+    $ Strategy.any (fmap allRewrites priorityGroups)
+  where
+    priorityGroups =
+        groupSortOn
+            (getPriority . toRulePattern)
+            rewrites
+
+priorityAnyStrategy
+    :: ToRulePattern rewrite
+    => [rewrite]
+    -> Strategy (Prim rewrite)
+priorityAnyStrategy rewrites =
+    anyRewrite sortedRewrites
+  where
+    sortedRewrites =
+        sortOn
+            (getPriority . toRulePattern)
+            rewrites
+
 {- | Heat the configuration, apply a normal rewrite, and cool the result.
  -}
 -- TODO (thomas.tuegel): This strategy is not right because heating/cooling
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    :: (forall rewrite. [rewrite] -> Strategy (Prim rewrite))
+    :: ( forall rewrite. ToRulePattern rewrite
+        => [rewrite] -> Strategy (Prim rewrite)
+       )
     -- ^ 'allRewrites' or 'anyRewrite'
     -> [RewriteRule Variable]
     -> Strategy (Prim (RewriteRule Variable))

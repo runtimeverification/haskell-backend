@@ -148,7 +148,7 @@ takeSteps (Start start, wrappedAxioms) =
         Strategy.runStrategy
             Unlimited
             transitionRule
-            (repeat $ allRewrites axioms)
+            (repeat $ priorityAllStrategy axioms)
             (pure configuration)
 
 compareTo
@@ -532,7 +532,7 @@ runStep
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
-    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration
+    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
 
 runStepMockEnv
     :: Pattern Variable
@@ -542,4 +542,4 @@ runStepMockEnv
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration
+    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration

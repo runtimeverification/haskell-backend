@@ -200,7 +200,7 @@ testDef =
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
-                Attributes [Attribute.priorityAttribute "2"]
+                Attributes [Attribute.priorityAttribute 2]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -215,7 +215,7 @@ testDef =
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
-                Attributes [Attribute.priorityAttribute "3"]
+                Attributes [Attribute.priorityAttribute 3]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -245,7 +245,7 @@ testDef =
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
-                Attributes [Attribute.priorityAttribute "1"]
+                Attributes [Attribute.priorityAttribute 1]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)

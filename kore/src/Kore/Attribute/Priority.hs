@@ -52,9 +52,9 @@ prioritySymbol =
         }
 
 -- | Kore pattern representing a @priority@ attribute.
-priorityAttribute :: Text -> AttributePattern
+priorityAttribute :: Integer -> AttributePattern
 priorityAttribute name =
-    attributePattern prioritySymbol [attributeString name]
+    attributePattern prioritySymbol [attributeInteger name]
 
 instance ParseAttributes Priority where
     parseAttribute =
@@ -73,4 +73,4 @@ instance From Priority Attributes where
     from =
         maybe def toAttribute . getPriority
       where
-        toAttribute = from @AttributePattern . priorityAttribute . pack . show
+        toAttribute = from @AttributePattern . priorityAttribute
