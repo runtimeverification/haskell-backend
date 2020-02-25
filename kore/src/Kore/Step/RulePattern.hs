@@ -653,6 +653,25 @@ rewriteRuleToTerm
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (rhsToTerm rhs)
 
+instance
+    InternalVariable variable
+      => From (OnePathRule variable) (TermLike variable)
+  where
+    from = onePathRuleToTerm
+
+instance
+    InternalVariable variable
+      => From (AllPathRule variable) (TermLike variable)
+  where
+    from = allPathRuleToTerm
+
+instance
+    InternalVariable variable
+      => From (ReachabilityRule variable) (TermLike variable)
+  where
+    from (OnePath claim) = from claim
+    from (AllPath claim) = from claim
+
 -- | Converts a 'OnePathRule' into its term representation
 onePathRuleToTerm
     :: InternalVariable variable
