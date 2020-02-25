@@ -360,7 +360,7 @@ makeEvaluateNormalizedAc mkOpaqueAc sideCondition normalizedAc =
         :: TermLike variable
         -> [TermLike variable]
         -> simplifier (MultiAnd (OrCondition variable))
-    distinctKey thisKey otherKeys = do
+    distinctKey thisKey otherKeys =
         MultiAnd.make <$> traverse (notEquals thisKey) otherKeys
 
     notEquals t1 t2 =
