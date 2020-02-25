@@ -261,6 +261,8 @@ unitListId :: Id
 unitListId = testId "unitList"
 concatSetId :: Id
 concatSetId = testId "concatSet"
+opaqueSetId :: Id
+opaqueSetId = testId "opaqueSet"
 elementSetId :: Id
 elementSetId = testId "elementSet"
 unitSetId :: Id
@@ -612,6 +614,11 @@ elementSetSymbol =
 unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
+
+opaqueSetSymbol :: Symbol
+opaqueSetSymbol =
+    symbol opaqueSetId [testSort] setSort
+    & function
 
 sigmaSymbol :: Symbol
 sigmaSymbol =
@@ -1164,6 +1171,13 @@ concatSet
     -> TermLike variable
 concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
 
+opaqueSet
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+opaqueSet term = Internal.mkApplySymbol opaqueSetSymbol [term]
+
 lessInt
     :: InternalVariable variable
     => HasCallStack
@@ -1309,6 +1323,7 @@ symbols =
     , concatSetSymbol
     , elementSetSymbol
     , unitSetSymbol
+    , opaqueSetSymbol
     , lessIntSymbol
     , greaterEqIntSymbol
     , tdivIntSymbol
