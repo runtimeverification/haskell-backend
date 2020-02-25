@@ -11,7 +11,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
     , simplificationEvaluation
-    , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
     ) where
@@ -104,39 +103,6 @@ simplificationEvaluation rule =
         let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
         Step.recoveryFunctionLikeResults initial results'
         return $ Results.toAttemptedAxiom results'
-
-{- | Creates an evaluator for a function from all the rules that define it.
-
-The function is not applied (@totalDefinitionEvaluation@ returns
-'AttemptedAxiom.NotApplicable') if the supplied rules do not match the entire
-input.
-
-See also: 'definitionEvaluation'
-
--}
-totalDefinitionEvaluation
-    :: [EqualityRule Variable]
-    -> BuiltinAndAxiomSimplifier
-totalDefinitionEvaluation rules =
-    BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
-  where
-    totalDefinitionEvaluationWorker
-        :: forall variable simplifier
-        .  ( InternalVariable variable
-           , MonadSimplify simplifier
-           )
-        => TermLike variable
-        -> SideCondition variable
-        -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker term sideCondition = do
-        results <- evaluateAxioms rules sideCondition term
-        let attempted = rejectRemainders $ Results.toAttemptedAxiom results
-        Step.assertFunctionLikeResults term results
-        return attempted
-
-    rejectRemainders attempted
-      | hasRemainders attempted = AttemptedAxiom.NotApplicable
-      | otherwise               = attempted
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
