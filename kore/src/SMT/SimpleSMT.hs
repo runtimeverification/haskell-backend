@@ -13,6 +13,7 @@ module SMT.SimpleSMT
     (
     -- * Basic Solver Interface
       Solver (..)
+    , SolverHandle (..)
     , send
     , recv
     , debug
@@ -253,36 +254,41 @@ type Logger = Log.LogAction IO Log.SomeEntry
 
 -- | An interactive solver process.
 data Solver = Solver
+    { solverHandle :: !SolverHandle
+    , logger :: !Logger
+    }
+    deriving (GHC.Generic)
+
+data SolverHandle = SolverHandle
     { hIn    :: !Handle
     , hOut   :: !Handle
     , hErr   :: !Handle
     , hProc  :: !ProcessHandle
-    , logger :: !Logger
     }
-    deriving (GHC.Generic)
 
 -- | Start a new solver process.
 newSolver
     :: FilePath -- ^ Executable
     -> [String] -- ^ Arguments
     -> Logger   -- ^ Logger
-    -> IO Solver
+    -> IO SolverHandle
 newSolver exe opts logger = do
     (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
-    let solver = Solver { hIn, hOut, hErr, hProc, logger }
+    let solverHandle = SolverHandle { hIn, hOut, hErr, hProc }
+        solver = Solver { solverHandle, logger }
 
     _ <- forkIO $ do
         let handler X.SomeException {} = return ()
         X.handle handler $ Monad.forever $ do
             errs <- Text.hGetLine hErr
-            debug solver errs
+            debug (Solver solverHandle logger) errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
     Monad.when featureProduceAssertions
         $ setOption solver ":produce-assertions" "true"
 
-    return solver
+    return solverHandle
 
 logMessageWith
     :: HasCallStack
@@ -302,14 +308,14 @@ warn :: HasCallStack => Solver -> Text -> IO ()
 warn = logMessageWith Log.Warning
 
 send :: Solver -> SExpr -> IO ()
-send Solver { hIn, logger } command' = do
+send Solver { solverHandle = SolverHandle { hIn }, logger } command' = do
     logDebugSolverSendWith logger command'
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
 
 recv :: Solver -> IO SExpr
-recv Solver { hOut, logger } = do
+recv Solver { solverHandle = SolverHandle { hOut } , logger } = do
     responseLines <- readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
     logDebugSolverRecvWith logger resp
@@ -340,7 +346,7 @@ command solver c =
         recv solver
 
 stop :: Solver -> IO ExitCode
-stop solver@Solver { hIn, hOut, hErr, hProc } = do
+stop solver@Solver { solverHandle = SolverHandle { hIn, hOut, hErr, hProc } } = do
     send solver (List [Atom "exit"])
     ec <- waitForProcess hProc
     let handler :: X.IOException -> IO ()
