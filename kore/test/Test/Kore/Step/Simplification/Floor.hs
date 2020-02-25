@@ -133,7 +133,10 @@ test_floorSimplification =
                         makeAndPredicate
                             (makeFloorPredicate_ a)
                             (makeEqualsPredicate_ fOfA gOfA)
-                    , substitution = Substitution.wrap [(ElemVar x, fOfB)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar x, fOfB)]
                     }
                 ]
             )
@@ -141,7 +144,10 @@ test_floorSimplification =
                 Conditional
                     { term = a
                     , predicate = makeEqualsPredicate_ fOfA gOfA
-                    , substitution = Substitution.wrap [(ElemVar x, fOfB)]
+                    , substitution =
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(ElemVar x, fOfB)]
                     }
             )
         )
@@ -179,7 +185,7 @@ test_floorSimplification =
         }
 
 makeFloor
-    :: Ord variable
+    :: InternalVariable variable
     => [Pattern variable]
     -> Floor Sort (OrPattern variable)
 makeFloor patterns =

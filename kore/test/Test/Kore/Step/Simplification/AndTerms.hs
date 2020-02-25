@@ -608,6 +608,7 @@ test_andTermsSimplification =
                             Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -629,6 +630,7 @@ test_andTermsSimplification =
                             Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -650,6 +652,7 @@ test_andTermsSimplification =
                             Mock.builtinMap [(Mock.a, fOfA) , (Mock.b, fOfB)]
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -671,6 +674,7 @@ test_andTermsSimplification =
                             Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -691,6 +695,7 @@ test_andTermsSimplification =
                         { term = Mock.builtinMap [ (Mock.a, fOfA) ]
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                             [ (ElemVar Mock.x, Mock.a)
                             , (ElemVar Mock.y, fOfA)
                             ]

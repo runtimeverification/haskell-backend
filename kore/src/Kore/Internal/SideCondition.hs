@@ -179,7 +179,7 @@ toRepresentation :: SideCondition variable -> SideCondition.Representation
 toRepresentation SideCondition { representation } = representation
 
 mapVariables
-    :: (Ord variable1, InternalVariable variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> SideCondition variable1

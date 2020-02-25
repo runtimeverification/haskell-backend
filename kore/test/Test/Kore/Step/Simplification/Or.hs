@@ -170,10 +170,16 @@ sT :: TestSubstitution
 sT = mempty
 
 sm :: TestSubstitution
-sm = Substitution.wrap [(ElemVar Mock.x, Mock.a)] -- I'd rather these were meaningful
+sm =
+    Substitution.wrap
+    $ Substitution.mkUnwrappedSubstitution
+    [(ElemVar Mock.x, Mock.a)] -- I'd rather these were meaningful
 
 sM :: TestSubstitution
-sM = Substitution.wrap [(ElemVar Mock.y, Mock.b)] -- I'd rather these were meaningful
+sM =
+    Substitution.wrap
+    $ Substitution.mkUnwrappedSubstitution
+    [(ElemVar Mock.y, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
 test_valueProperties =

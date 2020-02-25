@@ -220,6 +220,7 @@ data ReplStatus = Continue | SuccessStop | FailStop
 replInterpreter
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => (String -> IO ())
@@ -234,6 +235,7 @@ replInterpreter fn cmd =
 replInterpreter0
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => PrintAuxOutput
@@ -323,12 +325,13 @@ showUsage = putStrLn' showUsageMessage
 
 exit
     :: Claim claim
+    => From claim (TermLike Variable)
     => MonadIO m
     => ReplM claim m ReplStatus
 exit = do
     proofs <- allProofs
     ofile <- Lens.view (field @"outputFile")
-    onePathClaims <- generateInProgressOPClaims
+    onePathClaims <- generateInProgressClaims
     sort <- currentClaimSort
     let conj = conjOfOnePathClaims onePathClaims sort
         printTerm = maybe putStrLn writeFile (unOutputFile ofile)
@@ -490,6 +493,7 @@ proveStepsF n = do
 loadScript
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => FilePath
@@ -761,6 +765,7 @@ labelDel lbl = do
 redirect
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => ReplCommand
@@ -775,6 +780,7 @@ redirect cmd file = do
 runInterpreterWithOutput
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => PrintAuxOutput
@@ -1006,6 +1012,7 @@ saveProof currentNode file = do
 pipe
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadIO m
     => MonadSimplify m
     => ReplCommand
@@ -1051,6 +1058,7 @@ pipe cmd file args = do
 appendTo
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => ReplCommand
@@ -1064,6 +1072,7 @@ appendTo cmd file =
 appendCommand
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => ReplCommand
@@ -1093,6 +1102,7 @@ alias a = do
 tryAlias
     :: forall claim m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => ReplAlias
@@ -1345,6 +1355,7 @@ showAxiomOrClaimName
 parseEvalScript
     :: forall claim t m
     .  Claim claim
+    => From claim (TermLike Variable)
     => MonadSimplify m
     => MonadIO m
     => MonadState (ReplState claim) (t m)

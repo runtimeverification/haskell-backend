@@ -59,6 +59,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
+import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.ExpandAlias
@@ -412,20 +413,10 @@ variableFunctionAndEquals
 variableFunctionAndEquals
     _
     SimplificationType.And
-    first@(ElemVar_ v1)
-    second@(ElemVar_ v2)
+    (ElemVar_ v1)
+    second@(ElemVar_ _)
   =
-    -- TODO (thomas.tuegel): Remove this use of compareSubstitution; it violates
-    -- the boundary of the Substitution context.
-    case compareSubstitution v1 v2 of
-        LT ->
-            return
-            $ Pattern.withCondition second
-            $ Condition.fromSingleSubstitution (ElemVar v1, second)
-        _ ->
-            return
-            $ Pattern.withCondition first
-            $ Condition.fromSingleSubstitution (ElemVar v2, first)
+      return $ Pattern.assign (ElemVar v1) second
 variableFunctionAndEquals
     sideCondition
     simplificationType
@@ -451,7 +442,9 @@ variableFunctionAndEquals
                         empty
                     resultConditions -> Unify.scatter resultConditions
     let result =
-            predicate <> Condition.fromSingleSubstitution (ElemVar v, second)
+            predicate
+            <> Condition.fromSingleSubstitution
+                (Substitution.assign (ElemVar v) second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ = empty
 

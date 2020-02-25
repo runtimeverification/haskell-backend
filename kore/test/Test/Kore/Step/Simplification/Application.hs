@@ -168,14 +168,18 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate_ fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
+                                    Substitution.wrap
+                                    $ Substitution.mkUnwrappedSubstitution
+                                    [ (ElemVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate_ gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
+                                    Substitution.wrap
+                                    $ Substitution.mkUnwrappedSubstitution
+                                    [ (ElemVar Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -230,7 +234,9 @@ test_applicationSimplification =
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate_ fOfA gOfA
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar zvar, gOfB) ]
+                                    Substitution.wrap
+                                    $ Substitution.mkUnwrappedSubstitution
+                                    [ (ElemVar zvar, gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -251,14 +257,18 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate_ fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
+                                    Substitution.wrap
+                                    $ Substitution.mkUnwrappedSubstitution
+                                    [ (ElemVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate_ gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
+                                    Substitution.wrap
+                                    $ Substitution.mkUnwrappedSubstitution
+                                    [ (ElemVar Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -307,7 +317,7 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: Ord variable
+    :: InternalVariable variable
     => Symbol
     -> [[Pattern variable]]
     -> Application Symbol (OrPattern variable)

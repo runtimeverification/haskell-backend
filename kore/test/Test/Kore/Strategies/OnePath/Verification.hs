@@ -29,6 +29,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.RulePattern
     ( OnePathRule (..)
+    , RewriteRule (..)
     , RulePattern (..)
     , injectTermIntoRHS
     )
@@ -402,6 +403,66 @@ test_onePathVerification =
         assertEqual ""
             (Right ())
             actual
+    , testCase "Priority: can get stuck by choosing second axiom" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c
+        --     b => d
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- runVerificationToPattern
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.b Mock.c
+            , simpleAxiom Mock.b Mock.d
+            ]
+            [ simpleClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ Pattern.fromTermLike Mock.c)
+            actual
+    , testCase "Priority: should succeed, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: success
+        actual <- runVerificationToPattern
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.c 2
+            , simplePriorityAxiom Mock.b Mock.d 1
+            ]
+            [ simpleClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Priority: should fail, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- runVerificationToPattern
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.d 2
+            , simplePriorityAxiom Mock.b Mock.c 1
+            ]
+            [ simpleClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ Pattern.fromTermLike Mock.c)
+            actual
     ]
 
 simpleAxiom
@@ -438,4 +499,21 @@ simpleTrustedClaim left right =
         , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.trusted = Attribute.Trusted True }
+        }
+
+simplePriorityAxiom
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Integer
+    -> Rule (OnePathRule Variable)
+simplePriorityAxiom left right priority =
+    OnePathRewriteRule . RewriteRule
+    $ RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , requires = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
+        , attributes = def
+            { Attribute.priority = Attribute.Priority (Just priority)
+            }
         }
