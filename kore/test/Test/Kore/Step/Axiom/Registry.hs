@@ -438,7 +438,7 @@ test_functionRegistry =
         )
     , testCase "Checking that evaluator map has size 4"
         (assertEqual ""
-            4
+            5
             (Map.size testEvaluators)
         )
     , testCase "Checking that the indexed module contains a rewrite axiom"
