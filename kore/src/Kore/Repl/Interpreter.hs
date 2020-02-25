@@ -331,9 +331,9 @@ exit
 exit = do
     proofs <- allProofs
     ofile <- Lens.view (field @"outputFile")
-    onePathClaims <- generateInProgressClaims Nothing
+    newClaims <- generateInProgressClaims Nothing
     sort <- currentClaimSort
-    let conj = conjOfOnePathClaims onePathClaims sort
+    let conj = conjOfClaims newClaims sort
         printTerm = maybe putStrLn writeFile (unOutputFile ofile)
     liftIO . printTerm . unparseToString $ conj
     if isCompleted (Map.elems proofs)
