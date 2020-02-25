@@ -38,6 +38,7 @@ import Kore.Internal.Pattern
 import Kore.Step.Simplification.Simplify
     ( AttemptedAxiom (..)
     , AttemptedAxiomResults (AttemptedAxiomResults)
+    , InternalVariable
     )
 import Kore.Step.Transition
     ( TransitionT
@@ -171,7 +172,7 @@ traverseConfigs traverseResults traverseRemainders rs =
         <*> traverse traverseRemainders (remainders rs)
 
 toAttemptedAxiom
-    :: Ord variable
+    :: InternalVariable variable
     => Results rule (Pattern variable)
     -> AttemptedAxiom variable
 toAttemptedAxiom results

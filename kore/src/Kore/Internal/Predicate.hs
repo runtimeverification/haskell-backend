@@ -48,7 +48,6 @@ module Kore.Internal.Predicate
     , freeElementVariables
     , hasFreeVariable
     , mapVariables
-    , singleSubstitutionToPredicate
     , stringFromPredicate
     , coerceSort
     , predicateSort
@@ -787,16 +786,6 @@ hasFreeVariable
     -> Predicate variable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
-
-singleSubstitutionToPredicate
-    :: InternalVariable variable
-    => (UnifiedVariable variable, TermLike variable)
-    -> Predicate variable
-singleSubstitutionToPredicate (var, patt) =
-    -- Never mark this as simplified since we want to be able to rebuild the
-    -- substitution sometimes (e.g. not(not(subst)) and when simplifying
-    -- claims).
-    makeEqualsPredicate_ (TermLike.mkVar var) patt
 
 {- | Traverse the predicate from the top down and apply substitutions.
 

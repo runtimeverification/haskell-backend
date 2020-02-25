@@ -46,7 +46,9 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Substitution
-    ( Normalization (..)
+    ( Assignment
+    , pattern Assignment
+    , Normalization (..)
     , UnwrappedSubstitution
     )
 import qualified Kore.Internal.Substitution as Substitution
@@ -81,11 +83,11 @@ normalizeSubstitution substitution =
       | null denormalized =
         pure
         $ Condition.fromSubstitution
-        $ Substitution.unsafeWrap normalized
+        $ Substitution.unsafeWrap (Substitution.assignmentToPair <$> normalized)
       | otherwise =
         throwError $ SimplifiableCycle variables normalization
       where
-        (variables, _) = unzip denormalized
+        (variables, _) = unzip (Substitution.assignmentToPair <$> denormalized)
 
 {- | 'normalize' a substitution as far as possible.
 
@@ -95,14 +97,19 @@ The result is @Nothing@ if the substitution is not satisfiable, for example
 because it contains pairs such as @x = \\bottom@ or because it contains
 constructor cycles with element variables.
 
+If there are any renamings (var1 |-> var2), then var1 should be smaller
+than var2 to satisfy the 'Kore.Internal.Substitution.Assignment' invariant.
+
  -}
+-- TODO(Ana): change map type for substitutions to an AssignmentMap which
+-- forces the assignment invariant
 normalize
     ::  forall variable
     .   InternalVariable variable
     =>  Map (UnifiedVariable variable) (TermLike variable)
     -- ^ De-duplicated substitution
     ->  Maybe (Normalization variable)
-normalize (dropTrivialSubstitutions -> substitution) =
+normalize (dropTrivialSubstitutions -> substitutionMap) =
     case topologicalSort allDependencies of
         Right order -> sorted order
         Left (TopologicalSortCycles cycleVariables) ->
@@ -123,7 +130,7 @@ normalize (dropTrivialSubstitutions -> substitution) =
                     mixedCtorCycle cycleVariables'
   where
     isRenaming variable =
-        case substitution Map.! variable of
+        case substitutionMap Map.! variable of
             Var_ _ -> True
             _      -> False
 
@@ -133,7 +140,7 @@ normalize (dropTrivialSubstitutions -> substitution) =
             \variable-only cycles!"
 
     setCtorCycle variables = do
-        let substitution' = Foldable.foldl' assignBottom substitution variables
+        let substitution' = Foldable.foldl' assignBottom substitutionMap variables
         normalize substitution'
 
     mixedCtorCycle _ = empty
@@ -142,8 +149,10 @@ normalize (dropTrivialSubstitutions -> substitution) =
         let -- Variables with simplifiable dependencies
             simplifiable = Set.filter (isSimplifiable variables) variables
             denormalized =
-                Map.toList $ Map.restrictKeys substitution simplifiable
-            substitution' = Map.withoutKeys substitution simplifiable
+                Substitution.mkUnwrappedSubstitution
+                $ Map.toList
+                $ Map.restrictKeys substitutionMap simplifiable
+            substitution' = Map.withoutKeys substitutionMap simplifiable
         -- Partially normalize the substitution by separating variables with
         -- simplifiable dependencies.
         normalization <- normalize substitution'
@@ -166,7 +175,7 @@ normalize (dropTrivialSubstitutions -> substitution) =
         Map.adjust (mkBottom . termLikeSort) variable subst
 
     interestingVariables :: Set (UnifiedVariable variable)
-    interestingVariables = Map.keysSet substitution
+    interestingVariables = Map.keysSet substitutionMap
 
     getDependencies' =
         getDependencies interestingVariables
@@ -175,7 +184,7 @@ normalize (dropTrivialSubstitutions -> substitution) =
         :: Map (UnifiedVariable variable) [UnifiedVariable variable]
     allDependencies =
         Map.map Set.toList
-        $ Map.mapWithKey getDependencies' substitution
+        $ Map.mapWithKey getDependencies' substitutionMap
 
     getNonSimplifiableDependencies' =
         getNonSimplifiableDependencies interestingVariables
@@ -184,15 +193,18 @@ normalize (dropTrivialSubstitutions -> substitution) =
         :: Map (UnifiedVariable variable) [UnifiedVariable variable]
     nonSimplifiableDependencies =
         Map.map Set.toList
-        $ Map.mapWithKey getNonSimplifiableDependencies' substitution
+        $ Map.mapWithKey getNonSimplifiableDependencies' substitutionMap
 
+    sorted :: [UnifiedVariable variable] -> Maybe (Normalization variable)
     sorted order
-      | any (not . isSatisfiableSubstitution) substitution' = empty
+      | any (not . isSatisfiableSubstitution) substitution = empty
       | otherwise = do
-        let normalized = backSubstitute substitution'
+        let normalized = backSubstitute substitution
         pure Normalization { normalized, denormalized = mempty }
       where
-        substitution' = order <&> \v -> (v, (Map.!) substitution v)
+        substitution :: [Assignment variable]
+        substitution =
+            order <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 
@@ -214,10 +226,10 @@ backSubstitute
 backSubstitute sorted =
     flip State.evalState mempty (traverse worker sorted)
   where
-    worker (variable, termLike) = do
+    worker (Assignment variable termLike) = do
         termLike' <- applySubstitution termLike
         insertSubstitution variable termLike'
-        return (variable, termLike')
+        return $ Substitution.assign variable termLike'
     insertSubstitution variable termLike =
         State.modify' $ Map.insert variable termLike
     applySubstitution termLike = do
@@ -242,9 +254,9 @@ dropTrivialSubstitutions =
     Map.filterWithKey $ \k v -> not $ isTrivialSubstitution k v
 
 isSatisfiableSubstitution
-    :: (UnifiedVariable variable, TermLike variable)
+    :: Assignment variable
     -> Bool
-isSatisfiableSubstitution (variable, termLike) =
+isSatisfiableSubstitution (Assignment variable termLike) =
     not $ isElemVar variable && isBottom termLike
 
 {- | Calculate the dependencies of a substitution.

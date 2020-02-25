@@ -3,7 +3,7 @@ module Test.Kore.Log.DebugAppliedRule
     , test_instance_Table_DebugAppliedRule
     ) where
 
-import Prelude.Kore ()
+import Prelude.Kore
 
 import Test.Tasty
 
@@ -64,5 +64,11 @@ applied equality substitution =
         }
 
 subst1, subst2 :: Substitution Variable
-subst1 = Substitution.wrap [(ElemVar Mock.x, Mock.a)]
-subst2 = Substitution.wrap [(ElemVar Mock.x, Mock.b)]
+subst1 =
+    Substitution.wrap
+    $ Substitution.mkUnwrappedSubstitution
+    [(ElemVar Mock.x, Mock.a)]
+subst2 =
+    Substitution.wrap
+    $ Substitution.mkUnwrappedSubstitution
+    [(ElemVar Mock.x, Mock.b)]

@@ -62,7 +62,7 @@ fromCondition = from
 {- | Disjoin a collection of predicates.
  -}
 fromConditions
-    :: (Foldable f, Ord variable)
+    :: (Foldable f, InternalVariable variable)
     => f (Condition variable)
     -> OrCondition variable
 fromConditions = from . Foldable.toList
@@ -74,7 +74,7 @@ fromConditions = from . Foldable.toList
 @
 
  -}
-bottom :: Ord variable => OrCondition variable
+bottom :: InternalVariable variable => OrCondition variable
 bottom = fromConditions []
 
 {- | @\\top@
@@ -108,6 +108,6 @@ toPredicate multiOr =
     Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
 
 gather
-    :: (Ord variable, Monad m)
+    :: (InternalVariable variable, Monad m)
     => BranchT m (Condition variable) -> m (OrCondition variable)
 gather = MultiOr.gather

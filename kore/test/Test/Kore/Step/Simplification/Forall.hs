@@ -125,6 +125,7 @@ test_forallSimplification =
                     , predicate = makeCeilPredicate_ (Mock.h (mkElemVar Mock.x))
                     , substitution =
                         Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                             [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
                     }
             )
@@ -201,7 +202,10 @@ test_forallSimplification =
                 Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate_ fOfX
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, fOfA)]
                     }
             )
         )
@@ -223,7 +227,10 @@ test_forallSimplification =
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate_ fOfX
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, fOfA)]
                     }
             )
         )
@@ -245,7 +252,10 @@ test_forallSimplification =
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate_ fOfX gOfA
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, hOfA)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, hOfA)]
                     }
             )
         )
@@ -286,7 +296,7 @@ test_forallSimplification =
         }
 
 makeForall
-    :: Ord variable
+    :: InternalVariable variable
     => ElementVariable variable
     -> [Pattern variable]
     -> Forall Sort variable (OrPattern variable)

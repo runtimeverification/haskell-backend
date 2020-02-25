@@ -35,6 +35,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     , topTODO
     )
+import Kore.Internal.Substitution
+    ( Assignment
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -153,10 +156,11 @@ type Substitution = [(Text, TermLike Variable)]
 
 unificationSubstitution
     :: Substitution
-    -> [ (UnifiedVariable Variable, TermLike Variable) ]
+    -> [ Assignment Variable ]
 unificationSubstitution = map trans
   where
-    trans (v, p) = (Mock.makeUnifiedVariable v (termLikeSort p), p)
+    trans (v, p) =
+        Substitution.assign (Mock.makeUnifiedVariable v (termLikeSort p)) p
 
 unificationResult :: UnificationResult -> Pattern Variable
 unificationResult
@@ -166,7 +170,8 @@ unificationResult
         { term
         , predicate
         , substitution =
-            Substitution.unsafeWrap $ unificationSubstitution substitution
+            Substitution.unsafeWrapFromAssignments
+                $ unificationSubstitution substitution
         }
 
 newtype UnificationTerm = UnificationTerm (TermLike Variable)
@@ -257,10 +262,7 @@ unificationProcedureSuccessWithSimplifiers
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [  ( [(UnifiedVariable Variable, TermLike Variable)]
-          , Predicate Variable
-          )
-       ]
+    -> [([Assignment Variable], Predicate Variable)]
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
@@ -278,10 +280,8 @@ unificationProcedureSuccessWithSimplifiers
             $ unificationProcedure SideCondition.topTODO term1 term2
         let
             normalize
-                ::  Condition Variable
-                ->  ( [(UnifiedVariable Variable, TermLike Variable)]
-                    , Predicate Variable
-                    )
+                :: Condition Variable
+                -> ([Assignment Variable], Predicate Variable)
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
         assertEqual ""
@@ -303,6 +303,7 @@ unificationProcedureSuccess message term1 term2 substPredicate =
         term2
         expect
   where
+    expect :: [([Assignment Variable], Predicate Variable)]
     expect =
         map (Bifunctor.first unificationSubstitution) substPredicate
 
@@ -530,12 +531,15 @@ test_unification =
         -}
     , testCase "Maps substitution variables"
         (assertEqual ""
-            [(ElemVar $ ElementVariable $ mkW "1", war' "2")]
+            (Substitution.mkUnwrappedSubstitution
+                [(ElemVar $ ElementVariable $ mkW "1", war' "2")]
+            )
             (Substitution.unwrap
                 . Substitution.mapVariables
                     (fmap showVar)
                     (fmap showVar)
                 . Substitution.wrap
+                . Substitution.mkUnwrappedSubstitution
                 $ [(ElemVar $ ElementVariable $ mkV 1, var' 2)]
             )
         )

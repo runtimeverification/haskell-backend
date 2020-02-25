@@ -23,6 +23,7 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
     , simplifiedAttribute
+    , assign
     , requireDefined
     -- * Re-exports
     , Conditional (..)
@@ -64,7 +65,6 @@ import Kore.Internal.TermLike
     , InternalVariable
     , SetVariable
     , Sort
-    , SortedVariable
     , TermLike
     , mkAnd
     , mkBottom
@@ -80,8 +80,8 @@ import qualified Kore.Sort as Sort
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
     )
 
 {- | The conjunction of a pattern, predicate, and substitution.
@@ -115,7 +115,7 @@ simplifiedAttribute (splitTerm -> (t, p)) =
     TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
 
 freeElementVariables
-    :: Ord variable
+    :: InternalVariable variable
     => Pattern variable
     -> [ElementVariable variable]
 freeElementVariables =
@@ -125,7 +125,7 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    :: (Ord variableFrom, FreshPartialOrd variableTo, SortedVariable variableTo)
+    :: (InternalVariable variableFrom, InternalVariable variableTo)
     => (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Pattern variableFrom
@@ -297,6 +297,19 @@ syncSort
     :: (HasCallStack, InternalVariable variable)
     => Pattern variable -> Pattern variable
 syncSort patt = coerceSort (patternSort patt) patt
+
+assign
+    :: InternalVariable variable
+    => UnifiedVariable variable
+    -> TermLike variable
+    -> Pattern variable
+assign variable term =
+    withCondition assignedTerm
+    $ Condition.fromSingleSubstitution
+        assignment
+  where
+    assignment = Substitution.assign variable term
+    assignedTerm = Substitution.assignedTerm assignment
 
 {- | Add a 'Predicate' requiring that the 'term' of a 'Pattern' is defined.
 

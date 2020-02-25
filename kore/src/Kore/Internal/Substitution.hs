@@ -6,12 +6,22 @@ License     : NCSA
 
 module Kore.Internal.Substitution
     ( Substitution
-    , SingleSubstitution
+    -- Constructor for Assignment not exported
+    -- on purpose
+    , Assignment
+    , assign
+    , pattern Assignment
+    , assignmentToPair
+    , assignedVariable
+    , assignedTerm
+    , mapAssignedTerm
+    , singleSubstitutionToPredicate
     , UnwrappedSubstitution
+    , mkUnwrappedSubstitution
     , unwrap
     , toMap
     , toMultiMap
-    , orderRenaming
+    , normalOrder
     , fromMap
     , singleton
     , wrap
@@ -25,12 +35,14 @@ module Kore.Internal.Substitution
     , null
     , variables
     , unsafeWrap
+    , unsafeWrapFromAssignments
     , Kore.Internal.Substitution.filter
     , partition
     , orderRenameAndRenormalizeTODO
     , toPredicate
     , Normalization (..)
     , wrapNormalization
+    , mkNormalization
     , applyNormalized
     ) where
 
@@ -41,7 +53,6 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Hashable
 import qualified Data.List as List
@@ -85,11 +96,68 @@ import Kore.TopBottom
 import Kore.Unparser
     ( unparseToString
     )
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import Kore.Variables.UnifiedVariable
 import qualified SQL
+
+data Assignment variable =
+    Assignment_
+        { assignedVariable :: !(UnifiedVariable variable)
+        , assignedTerm :: !(TermLike variable)
+        }
+    deriving (Show, Eq, Ord, GHC.Generic)
+
+instance SOP.Generic (Assignment variable)
+
+instance SOP.HasDatatypeInfo (Assignment variable)
+
+instance Debug variable => Debug (Assignment variable)
+
+instance
+    ( Debug variable, Diff variable, Ord variable )
+    => Diff (Assignment variable)
+
+instance NFData variable => NFData (Assignment variable)
+
+instance Hashable variable => Hashable (Assignment variable)
+
+-- | Smart constructor for 'Assignment'. It enforces the invariant
+-- that for variable renaming, the smaller variable will be on the
+-- left of the substitution.
+assign
+    :: InternalVariable variable
+    => UnifiedVariable variable
+    -> TermLike variable
+    -> Assignment variable
+assign variable term =
+    uncurry Assignment_ $ curry normalOrder variable term
+
+pattern Assignment
+    :: UnifiedVariable variable
+    -> TermLike variable
+    -> Assignment variable
+pattern Assignment assignedVariable assignedTerm <-
+    Assignment_ { assignedVariable, assignedTerm }
+{-# COMPLETE Assignment #-}
+
+assignmentToPair
+    :: Assignment variable
+    -> (UnifiedVariable variable, TermLike variable)
+assignmentToPair (Assignment variable term) =
+    (variable, term)
+
+mapAssignedTerm
+    :: InternalVariable variable
+    => (TermLike variable -> TermLike variable)
+    -> Assignment variable
+    -> Assignment variable
+mapAssignedTerm f (Assignment variable term) =
+    assign variable (f term)
+
+mkUnwrappedSubstitution
+    :: InternalVariable variable
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [Assignment variable]
+mkUnwrappedSubstitution = fmap (uncurry assign)
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -109,17 +177,17 @@ data Substitution variable
     -- normalized and denormalized parts of the substitution together. That
     -- would enable us to keep more substitutions normalized in the Semigroup
     -- instance below.
-    = Substitution ![(UnifiedVariable variable, TermLike variable)]
+    = Substitution ![Assignment variable]
     | NormalizedSubstitution
         !(Map (UnifiedVariable variable) (TermLike variable))
     deriving GHC.Generic
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
-instance Ord variable => Eq (Substitution variable) where
+instance InternalVariable variable => Eq (Substitution variable) where
     (==) = on (==) unwrap
 
 -- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
-instance Ord variable => Ord (Substitution variable) where
+instance InternalVariable variable => Ord (Substitution variable) where
     compare = on compare unwrap
 
 instance SOP.Generic (Substitution variable)
@@ -128,8 +196,7 @@ instance SOP.HasDatatypeInfo (Substitution variable)
 
 instance Debug variable => Debug (Substitution variable)
 
-instance
-    ( Debug variable, Diff variable, Ord variable )
+instance (InternalVariable variable, Diff variable)
     => Diff (Substitution variable)
   where
     diffPrec a b =
@@ -153,14 +220,14 @@ instance TopBottom (Substitution variable) where
     isTop = null
     isBottom _ = False
 
-instance Ord variable => Semigroup (Substitution variable) where
+instance InternalVariable variable => Semigroup (Substitution variable) where
     a <> b
       | null a, null b = mempty
       | null a         = b
       | null b         = a
       | otherwise      = Substitution (unwrap a <> unwrap b)
 
-instance Ord variable => Monoid (Substitution variable) where
+instance InternalVariable variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
 instance InternalVariable variable => SQL.Column (Substitution variable) where
@@ -168,15 +235,16 @@ instance InternalVariable variable => SQL.Column (Substitution variable) where
     toColumn = SQL.toColumn . toPredicate
 
 instance
+    InternalVariable variable =>
     From
         (Map (UnifiedVariable variable) (TermLike variable))
         (Substitution variable)
   where
-    from = wrap . Map.toList
+    from = wrap . mkUnwrappedSubstitution . Map.toList
 
 instance
-    Ord variable
-    => From (SingleSubstitution variable) (Substitution variable)
+    InternalVariable variable
+    => From (UnifiedVariable variable, TermLike variable) (Substitution variable)
   where
     from = uncurry singleton
 
@@ -184,10 +252,24 @@ instance From (UnwrappedSubstitution variable) (Substitution variable) where
     from = wrap
 
 instance
-    Ord variable
+    InternalVariable variable
     => From (Substitution variable) (UnwrappedSubstitution variable)
   where
     from = unwrap
+
+instance From (Assignment variable) (Substitution variable)
+  where
+    from assignment = wrap [assignment]
+
+instance
+    InternalVariable variable
+    => From (Assignment variable) (Predicate variable)
+  where
+    from (Assignment var patt) =
+        -- Never mark this as simplified since we want to be able to rebuild the
+        -- substitution sometimes (e.g. not(not(subst)) and when simplifying
+        -- claims).
+        Predicate.makeEqualsPredicate_ (TermLike.mkVar var) patt
 
 instance
     InternalVariable variable
@@ -195,20 +277,20 @@ instance
   where
     from =
         Predicate.makeMultipleAndPredicate
-        . fmap Predicate.singleSubstitutionToPredicate
+        . fmap singleSubstitutionToPredicate
         . unwrap
 
-type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
-
-type UnwrappedSubstitution variable = [SingleSubstitution variable]
+type UnwrappedSubstitution variable = [Assignment variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
-    :: Ord variable
+    :: InternalVariable variable
     => Substitution variable
-    -> [(UnifiedVariable variable, TermLike variable)]
-unwrap (Substitution xs) = List.sortBy (on compare fst) xs
-unwrap (NormalizedSubstitution xs)  = Map.toList xs
+    -> [Assignment variable]
+unwrap (Substitution xs) =
+    List.sortBy (on compare assignedVariable) xs
+unwrap (NormalizedSubstitution xs) =
+    mkUnwrappedSubstitution $ Map.toList xs
 
 {- | Convert a normalized substitution to a 'Map'.
 
@@ -232,7 +314,7 @@ toMultiMap
     -> Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
 toMultiMap =
     Foldable.foldl' insertSubstitution Map.empty
-    . map orderRenaming
+    . fmap assignmentToPair
     . unwrap
   where
     insertSubstitution
@@ -268,11 +350,11 @@ substituted in place of the lesser. Consistent ordering prevents variable-only
 cycles.
 
  -}
-orderRenaming
+normalOrder
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> (UnifiedVariable variable, TermLike variable)
-orderRenaming (uVar1, Var_ uVar2)
+normalOrder (uVar1, Var_ uVar2)
   | ElemVar eVar1 <- uVar1
   , ElemVar eVar2 <- uVar2
   , LT <- compareSubstitution eVar2 eVar1
@@ -282,10 +364,11 @@ orderRenaming (uVar1, Var_ uVar2)
   , SetVar sVar2 <- uVar2
   , LT <- compareSubstitution sVar2 sVar1
   = (uVar2, mkVar uVar1)
-orderRenaming subst = subst
+normalOrder subst = subst
 
 fromMap
-    :: Map (UnifiedVariable variable) (TermLike variable)
+    :: InternalVariable variable
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> Substitution variable
 fromMap = from
 
@@ -295,22 +378,24 @@ The substitution is normalized if the variable does not occur free in the term.
 
  -}
 singleton
-    :: Ord variable
+    :: InternalVariable variable
     => UnifiedVariable variable
     -> TermLike variable
     -> Substitution variable
 singleton var termLike
-  | TermLike.hasFreeVariable var termLike = Substitution [(var, termLike)]
+  | TermLike.hasFreeVariable var termLike =
+      Substitution [assign var termLike]
   | otherwise = NormalizedSubstitution (Map.singleton var termLike)
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
 wrap
-    :: [(UnifiedVariable variable, TermLike variable)]
+    :: [Assignment variable]
     -> Substitution variable
 wrap [] = NormalizedSubstitution Map.empty
 wrap xs = Substitution xs
 
+-- TODO(Ana): change to [Assignment] -> Substitution
 -- | Wrap the list of substitutions to a normalized substitution. Do not use
 -- this unless you are sure you need it.
 unsafeWrap
@@ -337,37 +422,53 @@ unsafeWrap =
         occurs = TermLike.hasFreeVariable var
         depends var' = TermLike.hasFreeVariable var' termLike
 
+unsafeWrapFromAssignments
+    :: Ord variable
+    => [Assignment variable]
+    -> Substitution variable
+unsafeWrapFromAssignments =
+    unsafeWrap . fmap assignmentToPair
+
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.
 modify
-    :: Ord variable1
-    => ([(UnifiedVariable variable1, TermLike variable1)]
-            -> [(UnifiedVariable variable2, TermLike variable2)])
+    :: InternalVariable variable1
+    => ( [Assignment variable1] -> [Assignment variable2] )
     -> Substitution variable1
     -> Substitution variable2
 modify f = wrap . f . unwrap
+
+mapAssignmentVariables
+    :: (InternalVariable variableFrom, InternalVariable variableTo)
+    => (ElementVariable variableFrom -> ElementVariable variableTo)
+    -> (SetVariable variableFrom -> SetVariable variableTo)
+    -> Assignment variableFrom
+    -> Assignment variableTo
+mapAssignmentVariables mapElemVar mapSetVar (Assignment variable term) =
+    assign mappedVariable mappedTerm
+  where
+    mappedVariable = mapUnifiedVariable mapElemVar mapSetVar variable
+    mappedTerm = TermLike.mapVariables mapElemVar mapSetVar term
 
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
     :: forall variableFrom variableTo
-    .  (Ord variableFrom, FreshPartialOrd variableTo, SortedVariable variableTo)
+    .  (InternalVariable variableFrom, InternalVariable variableTo)
     => (ElementVariable variableFrom -> ElementVariable variableTo)
     -> (SetVariable variableFrom -> SetVariable variableTo)
     -> Substitution variableFrom
     -> Substitution variableTo
 mapVariables mapElemVar mapSetVar  =
-    modify (map mapSingleSubstitution)
-  where
-    mapSingleSubstitution =
-        Bifunctor.bimap
-            (mapUnifiedVariable mapElemVar mapSetVar)
-            (TermLike.mapVariables mapElemVar mapSetVar)
+    modify . fmap
+    $ mapAssignmentVariables mapElemVar mapSetVar
 
 mapTerms
-    :: (TermLike variable -> TermLike variable)
+    :: InternalVariable variable
+    => (TermLike variable -> TermLike variable)
     -> Substitution variable -> Substitution variable
-mapTerms mapper (Substitution s) = Substitution (fmap mapper <$> s)
+mapTerms mapper (Substitution s) =
+    Substitution (mapAssignedTerm mapper <$> s)
 mapTerms mapper (NormalizedSubstitution s) =
     NormalizedSubstitution (fmap mapper s)
 
@@ -381,7 +482,7 @@ forgetSimplified
     => Substitution variable -> Substitution variable
 forgetSimplified =
     wrap
-    . map (Bifunctor.second TermLike.forgetSimplified)
+    . fmap (mapAssignedTerm TermLike.forgetSimplified)
     . unwrap
 
 simplifiedAttribute
@@ -402,12 +503,12 @@ null (NormalizedSubstitution norm) = Map.null norm
 
 -- | Filter the variables of the 'Substitution'.
 filter
-    :: Ord variable
+    :: InternalVariable variable
     => (UnifiedVariable variable -> Bool)
     -> Substitution variable
     -> Substitution variable
 filter filtering =
-    modify (Prelude.Kore.filter (filtering . fst))
+    modify (Prelude.Kore.filter (filtering . assignedVariable))
 
 {- | Return the pair of substitutions that do and do not satisfy the criterion.
 
@@ -419,7 +520,10 @@ partition
     -> Substitution variable
     -> (Substitution variable, Substitution variable)
 partition criterion (Substitution substitution) =
-    let (true, false) = List.partition (uncurry criterion) substitution
+    let (true, false) =
+            List.partition
+                (uncurry criterion . assignmentToPair)
+                substitution
     in (Substitution true, Substitution false)
 partition criterion (NormalizedSubstitution substitution) =
     let (true, false) = Map.partitionWithKey criterion substitution
@@ -432,8 +536,6 @@ orderRenameAndRenormalizeTODO
     => UnifiedVariable variable
     -> Substitution variable
     -> Substitution variable
-orderRenameAndRenormalizeTODO _ (Substitution substitution) =
-    Substitution (fmap orderRenaming substitution)
 orderRenameAndRenormalizeTODO
     variable
     original@(NormalizedSubstitution substitution)
@@ -472,6 +574,7 @@ orderRenameAndRenormalizeTODO
     rhsIsVar :: UnifiedVariable variable -> (thing, TermLike variable) -> Bool
     rhsIsVar var (_, Var_ otherVar) = var == otherVar
     rhsIsVar _ _ = False
+orderRenameAndRenormalizeTODO _ substitution = substitution
 
 assertNoneAreFreeVarsInRhs
     :: InternalVariable variable
@@ -502,11 +605,12 @@ assertNoneAreFreeVarsInRhs lhsVariables =
             $ getFreeVariables
             $ freeVariables patt
 
-instance Ord variable => HasFreeVariables (Substitution variable) variable
+instance InternalVariable variable
+  => HasFreeVariables (Substitution variable) variable
   where
     freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
       where
-        freeVariablesWorker (x, t) =
+        freeVariablesWorker (Assignment x t) =
             freeVariable x <> freeVariables t
 
 -- | The left-hand side variables of the 'Substitution'.
@@ -515,7 +619,8 @@ variables
     => Substitution variable
     -> Set (UnifiedVariable variable)
 variables (NormalizedSubstitution subst) = Map.keysSet subst
-variables (Substitution subst) = Foldable.foldMap (Set.singleton . fst) subst
+variables (Substitution subst) =
+    Foldable.foldMap (Set.singleton . assignedVariable) subst
 
 {- | The result of /normalizing/ a substitution.
 
@@ -528,8 +633,7 @@ because it contained simplifiable cycles.
 data Normalization variable =
     Normalization
         { normalized, denormalized :: !(UnwrappedSubstitution variable) }
-    deriving (Eq, Ord, Show)
-    deriving GHC.Generic
+    deriving (Eq, Ord, Show, GHC.Generic)
 
 instance SOP.Generic (Normalization variable)
 
@@ -537,7 +641,7 @@ instance SOP.HasDatatypeInfo (Normalization variable)
 
 instance Debug variable => Debug (Normalization variable)
 
-instance (Debug variable, Diff variable) => Diff (Normalization variable)
+instance (Ord variable, Debug variable, Diff variable) => Diff (Normalization variable)
 
 instance Semigroup (Normalization variable) where
     (<>) a b =
@@ -548,6 +652,16 @@ instance Semigroup (Normalization variable) where
 
 instance Monoid (Normalization variable) where
     mempty = Normalization mempty mempty
+
+mkNormalization
+    :: InternalVariable variable
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
+    -> Normalization variable
+mkNormalization normalized' denormalized' =
+    Normalization
+        (mkUnwrappedSubstitution normalized')
+        (mkUnwrappedSubstitution denormalized')
 
 wrapNormalization :: Normalization variable -> Substitution variable
 wrapNormalization Normalization { normalized, denormalized } =
@@ -561,10 +675,13 @@ applyNormalized
 applyNormalized Normalization { normalized, denormalized } =
     Normalization
         { normalized
-        , denormalized = (fmap . fmap) substitute denormalized
+        , denormalized =
+            mapAssignedTerm substitute <$> denormalized
         }
   where
-    substitute = TermLike.substitute (Map.fromList normalized)
+    substitute =
+        TermLike.substitute
+            (Map.fromList (assignmentToPair <$> normalized))
 
 {- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
 
@@ -577,3 +694,9 @@ toPredicate
     => Substitution variable
     -> Predicate variable
 toPredicate = from
+
+singleSubstitutionToPredicate
+    :: InternalVariable variable
+    => Assignment variable
+    -> Predicate variable
+singleSubstitutionToPredicate = from

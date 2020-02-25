@@ -86,11 +86,8 @@ convertTermLikeVariables =
         (fmap $ fromVariable . toVariable)
 
 convertPatternVariables
-    ::  ( VariableName variable
-        , VariableName variable0
-        , FreshPartialOrd variable0
-        , SortedVariable variable0
-        )
+    :: InternalVariable variable0
+    => InternalVariable variable
     => Pattern variable
     -> Pattern variable0
 convertPatternVariables =
