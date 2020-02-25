@@ -24,7 +24,7 @@ module Kore.Repl.State
     , sortLeafsByType
     , generateInProgressClaims
     , currentClaimSort
-    , conjOfOnePathClaims
+    , conjOfClaims
     , appReplOut
     , replOut, replOutputToString
     ) where
@@ -659,21 +659,22 @@ createClaim
     => (claim, TermLike Variable)
     -> claim
 createClaim (claim, cpattern) =
-    fromRulePattern claim
-    Rule.RulePattern
-        { left = cpattern
-        , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate_
-        , rhs = Rule.rhs . toRulePattern $ claim
-        , attributes = Default.def
-        }
+    fromRulePattern
+        claim
+        Rule.RulePattern
+            { left = cpattern
+            , antiLeft = Nothing
+            , requires = Predicate.makeTruePredicate_
+            , rhs = Rule.rhs . toRulePattern $ claim
+            , attributes = Default.def
+            }
 
-conjOfOnePathClaims
+conjOfClaims
     :: From claim (TermLike Variable)
     => [claim]
     -> Sort
     -> TermLike Variable
-conjOfOnePathClaims claims sort =
+conjOfClaims claims sort =
     foldr
         TermLike.mkAnd
         (TermLike.mkTop sort)
