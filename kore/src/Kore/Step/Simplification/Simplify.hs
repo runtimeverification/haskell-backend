@@ -460,10 +460,10 @@ instance SOP.HasDatatypeInfo (AttemptedAxiomResults variable)
 instance Debug variable => Debug (AttemptedAxiomResults variable)
 
 instance
-    (Debug variable, Diff variable, Ord variable)
+    (Diff variable, InternalVariable variable)
     => Diff (AttemptedAxiomResults variable)
 
-instance Ord variable => Semigroup (AttemptedAxiomResults variable) where
+instance InternalVariable variable => Semigroup (AttemptedAxiomResults variable) where
     (<>)
         AttemptedAxiomResults
             { results = firstResults
@@ -479,7 +479,7 @@ instance Ord variable => Semigroup (AttemptedAxiomResults variable) where
             , remainders = MultiOr.merge firstRemainders secondRemainders
             }
 
-instance Ord variable => Monoid (AttemptedAxiomResults variable) where
+instance InternalVariable variable => Monoid (AttemptedAxiomResults variable) where
     mempty =
         AttemptedAxiomResults
             { results = OrPattern.bottom
@@ -515,7 +515,7 @@ instance SOP.HasDatatypeInfo (AttemptedAxiom variable)
 instance Debug variable => Debug (AttemptedAxiom variable)
 
 instance
-    (Debug variable, Diff variable, Ord variable)
+    (Diff variable, InternalVariable variable)
     => Diff (AttemptedAxiom variable)
 
 isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
@@ -531,7 +531,7 @@ following the same pattern as the other `Common*` types.
 -}
 type CommonAttemptedAxiom = AttemptedAxiom Variable
 
-emptyAttemptedAxiom :: Ord variable => AttemptedAxiom variable
+emptyAttemptedAxiom :: InternalVariable variable => AttemptedAxiom variable
 emptyAttemptedAxiom = Applied mempty
 
 {- | Does the 'AttemptedAxiom' have remainders?

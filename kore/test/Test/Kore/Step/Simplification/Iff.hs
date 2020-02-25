@@ -91,13 +91,17 @@ test_makeEvaluate =
                     { term = mkTop_
                     , predicate = makeCeilPredicate_ Mock.cf
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate_ Mock.cg
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.y, Mock.b)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, Mock.b)]
                     }
             )
         )
@@ -131,13 +135,17 @@ test_makeEvaluate =
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate_ Mock.cf
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate_ Mock.cg
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.y, Mock.b)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, Mock.b)]
                     }
             )
         )
@@ -188,7 +196,7 @@ termNotA :: Pattern Variable
 termNotA = mkNot <$> termA
 
 makeIff
-    :: (Ord variable)
+    :: InternalVariable variable
     => [Pattern variable]
     -> [Pattern variable]
     -> Iff Sort (OrPattern variable)

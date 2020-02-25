@@ -51,6 +51,7 @@ test_expandedPattern =
                 { term = war' "1"
                 , predicate = makeEquals (war' "2") (war' "3")
                 , substitution = Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
                     [(ElemVar . ElementVariable $ mkW "4", war' "5")]
                 }
             (Pattern.mapVariables (fmap showVar) (fmap showVar)
@@ -58,6 +59,7 @@ test_expandedPattern =
                     { term = var' 1
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                         [(ElemVar . ElementVariable $ mkV 4, var' 5)]
                     }
             )
@@ -76,6 +78,7 @@ test_expandedPattern =
                     { term = var' 1
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                         [(ElemVar . ElementVariable $ mkV 4, var' 5)]
                     }
             )
@@ -91,6 +94,7 @@ test_expandedPattern =
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                         [(ElemVar . ElementVariable $ mkV 4, var' 5)]
                     }
             )
@@ -114,6 +118,7 @@ test_expandedPattern =
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                         [(ElemVar . ElementVariable $ mkV 4, var' 5)]
                     }
             )

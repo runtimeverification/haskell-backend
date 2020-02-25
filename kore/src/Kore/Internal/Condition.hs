@@ -55,17 +55,11 @@ import Kore.Internal.Substitution
     ( Normalization (..)
     )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
-    ( TermLike
-    )
 import qualified Kore.Internal.TermLike as TermLike
     ( simplifiedAttribute
     )
 import Kore.Internal.Variable
 import Kore.Syntax
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -148,7 +142,7 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Condition variable1
@@ -175,17 +169,14 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution
-        $ Substitution.unsafeWrap normalized
+        $ Substitution.unsafeWrap (Substitution.assignmentToPair <$> normalized)
     markSimplifiedIfChildrenSimplified childrenList result =
         Predicate.setSimplified childrenSimplified result
       where
         childrenSimplified =
-            foldMap (TermLike.simplifiedAttribute . dropVariable) childrenList
-
-        dropVariable
-            :: (UnifiedVariable variable, TermLike variable)
-            -> TermLike variable
-        dropVariable = snd
+            foldMap
+                (TermLike.simplifiedAttribute . Substitution.assignedTerm)
+                childrenList
 
 conditionSort :: Condition variable -> Sort
 conditionSort Conditional {term = (), predicate} =

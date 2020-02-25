@@ -60,7 +60,8 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.Substitution
-    ( Substitution
+    ( pattern Assignment
+    , Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -276,7 +277,7 @@ singleVariableSubstitution
         , "if matching can be resolved without generating predicates or "
         , "substitutions, then the equality should have already been resolved."
         ]
-    [(substVariable, substTerm)]
+    [Assignment substVariable substTerm]
         | substVariable == ElemVar variable ->
             TermLike.withoutFreeVariable substVariable substTerm
                 True

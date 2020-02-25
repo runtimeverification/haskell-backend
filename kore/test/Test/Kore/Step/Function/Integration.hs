@@ -457,7 +457,9 @@ test_functionIntegration =
                                         )
                                     )
                             , substitution =
-                                Substitution.wrap [(ElemVar Mock.x, Mock.cf)]
+                                Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
+                                [(ElemVar Mock.x, Mock.cf)]
                             }
                         )
                     ]

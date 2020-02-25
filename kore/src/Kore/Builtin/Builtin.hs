@@ -146,7 +146,7 @@ notImplemented =
   See also: 'Pattern'
  -}
 appliedFunction
-    :: (Monad m, Ord variable)
+    :: (Monad m, InternalVariable variable)
     => Pattern variable
     -> m (AttemptedAxiom variable)
 appliedFunction epat =

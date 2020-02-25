@@ -175,7 +175,9 @@ test_applyEquationalRule_ =
                             (Mock.functionalConstr10 (mkElemVar Mock.y))
                     , predicate = Predicate.makeTruePredicate_
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.y, mkElemVar Mock.x)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, mkElemVar Mock.x)]
                     }
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -191,7 +193,9 @@ test_applyEquationalRule_ =
                     { term = Mock.sigma (mkElemVar Mock.x) fy
                     , predicate = makeTruePredicate_
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.y, mkElemVar Mock.x)]
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.y, mkElemVar Mock.x)]
                     }
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -247,7 +251,10 @@ test_applyEquationalRule_ =
                             (Mock.sigma (mkElemVar Mock.x) fy)
                             (mkElemVar Mock.x)
                     , predicate = makeTruePredicate_
-                    , substitution = Substitution.wrap [(ElemVar Mock.x, fz)]
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, fz)]
                     }
         actual <- applyEquationalRuleParallel_ initial axiomSigmaXXY
         assertEqual "" expect actual
