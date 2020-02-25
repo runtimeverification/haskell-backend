@@ -21,6 +21,7 @@ module Kore.Step.RulePattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
+    , getPriority
     , applySubstitution
     , topExistsToImplicitForall
     , isFreeOf
@@ -301,6 +302,9 @@ isNormalRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Normal -> True
         _ -> False
+
+getPriority :: RulePattern variable -> Attribute.Priority
+getPriority = Attribute.priority . attributes
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm
