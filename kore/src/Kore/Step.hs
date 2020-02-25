@@ -174,8 +174,7 @@ priorityAllStrategy
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAllStrategy rewrites =
-    trace (show (fmap length priorityGroups))
-    $ Strategy.any (fmap allRewrites priorityGroups)
+    Strategy.any (fmap allRewrites priorityGroups)
   where
     priorityGroups =
         groupSortOn
@@ -200,9 +199,10 @@ priorityAnyStrategy rewrites =
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    :: ( forall rewrite. ToRulePattern rewrite
-        => [rewrite] -> Strategy (Prim rewrite)
-       )
+    ::  ( forall rewrite
+         .  ToRulePattern rewrite
+         => [rewrite] -> Strategy (Prim rewrite)
+        )
     -- ^ 'allRewrites' or 'anyRewrite'
     -> [RewriteRule Variable]
     -> Strategy (Prim (RewriteRule Variable))

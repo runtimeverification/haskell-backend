@@ -38,7 +38,6 @@ import System.Exit
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
@@ -161,7 +160,7 @@ test_searchPriority =
     unlimited :: Limit Integer
     unlimited = Unlimited
     makeTestCase searchType =
-        testCase ("searchpriority " <> show searchType) (assertion searchType)
+        testCase ("searchPriority " <> show searchType) (assertion searchType)
     assertion searchType =
         actual searchType >>= assertEqual "" (expected searchType)
     actual searchType = do
@@ -220,7 +219,7 @@ test_search =
     unlimited :: Limit Integer
     unlimited = Unlimited
     makeTestCase searchType =
-        testCase (show searchType) (assertion searchType)
+        testCase ("search " <> show searchType) (assertion searchType)
     assertion searchType =
         actual searchType >>= assertEqual "" (expected searchType)
     actual searchType = do
@@ -469,7 +468,10 @@ rewriteAxiom lhsName rhsName =
 
 rewriteAxiomPriority :: Text -> Text -> Integer -> Verified.Sentence
 rewriteAxiomPriority lhsName rhsName priority =
-    (Syntax.SentenceAxiomSentence . axiomWithAttribute (Attribute.Axiom.priorityAttribute priority) . TermLike.mkAxiom_)
+    ( Syntax.SentenceAxiomSentence
+    . axiomWithAttribute (Attribute.Axiom.priorityAttribute priority)
+    . TermLike.mkAxiom_
+    )
     $ rewriteRuleToTerm
     $ RewriteRule RulePattern
         { left = applyToNoArgs mySort lhsName
@@ -477,8 +479,6 @@ rewriteAxiomPriority lhsName rhsName priority =
         , requires = makeTruePredicate_
         , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
         , attributes = def
-            { Attribute.Axiom.priority = Attribute.Axiom.Priority (Just priority)
-            }
         }
 
 axiomWithAttribute
@@ -486,7 +486,12 @@ axiomWithAttribute
     -> SentenceAxiom (TermLike variable)
     -> SentenceAxiom (TermLike variable)
 axiomWithAttribute attribute axiom =
-    axiom { sentenceAxiomAttributes = sentenceAxiomAttributes axiom <> Attributes [attribute] }
+    axiom
+        { sentenceAxiomAttributes =
+            currentAttributes <> Attributes [attribute]
+        }
+  where
+    currentAttributes = sentenceAxiomAttributes axiom
 
 applyToNoArgs :: Sort -> Text -> TermLike Variable
 applyToNoArgs sort name =
