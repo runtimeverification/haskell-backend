@@ -93,6 +93,7 @@ runRepl
     => MonadIO m
     => MonadCatch m
     => Claim claim
+    => From claim (TermLike Variable)
     => axiom ~ Rule claim
     => [axiom]
     -- ^ list of axioms to used in the proof

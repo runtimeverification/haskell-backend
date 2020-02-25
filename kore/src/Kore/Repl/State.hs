@@ -22,9 +22,9 @@ module Kore.Repl.State
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
     , sortLeafsByType
-    , generateInProgressOPClaims
+    , generateInProgressClaims
     , currentClaimSort
-    , conjOfOnePathClaims
+    , conjOfClaims
     , appReplOut
     , replOut, replOutputToString
     ) where
@@ -654,59 +654,59 @@ substituteAlias
         SimpleArgument str -> str
         QuotedArgument str -> "\"" <> str <> "\""
 
-createOnePathClaim
+createClaim
     :: Claim claim
     => (claim, TermLike Variable)
-    -> Rule.OnePathRule Variable
-createOnePathClaim (claim, cpattern) =
-    Rule.OnePathRule
-    $ Rule.RulePattern
-        { left = cpattern
-        , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate_
-        , rhs = Rule.rhs . toRulePattern $ claim
-        , attributes = Default.def
-        }
+    -> claim
+createClaim (claim, cpattern) =
+    fromRulePattern
+        claim
+        Rule.RulePattern
+            { left = cpattern
+            , antiLeft = Nothing
+            , requires = Predicate.makeTruePredicate_
+            , rhs = Rule.rhs . toRulePattern $ claim
+            , attributes = Default.def
+            }
 
-conjOfOnePathClaims
-    :: [Rule.OnePathRule Variable]
+conjOfClaims
+    :: From claim (TermLike Variable)
+    => [claim]
     -> Sort
     -> TermLike Variable
-conjOfOnePathClaims claims sort =
+conjOfClaims claims sort =
     foldr
         TermLike.mkAnd
         (TermLike.mkTop sort)
-        $ fmap Rule.onePathRuleToTerm claims
+        $ fmap from claims
 
-generateInProgressOPClaims
-    :: Claim claim
+generateInProgressClaims
+    :: forall claim m axiom
+    .  Claim claim
+    => axiom ~ Rule claim
     => MonadState (ReplState claim) m
-    => m [Rule.OnePathRule Variable]
-generateInProgressOPClaims = do
+    => m [claim]
+generateInProgressClaims = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
-    let started = startedOPClaims graphs claims
-        notStarted = notStartedOPClaims graphs claims
+    let started = startedClaims graphs claims
+        notStarted = notStartedClaims graphs claims
     return $ started <> notStarted
   where
-    startedOPClaims
-        :: Claim claim
-        => Map.Map ClaimIndex (ExecutionGraph axiom)
+    startedClaims
+        :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> [claim]
-        -> [Rule.OnePathRule Variable]
-    startedOPClaims graphs claims =
-        fmap createOnePathClaim
+        -> [claim]
+    startedClaims graphs claims =
+        fmap createClaim
         $ claimsWithPatterns graphs claims
         >>= sequence
-    notStartedOPClaims
-        :: Claim claim
-        => Map.Map ClaimIndex (ExecutionGraph axiom)
+    notStartedClaims
+        :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> [claim]
-        -> [Rule.OnePathRule Variable]
-    notStartedOPClaims graphs claims =
-        Rule.OnePathRule
-        . toRulePattern
-        <$> filter (not . isTrusted)
+        -> [claim]
+    notStartedClaims graphs claims =
+        filter (not . isTrusted)
                 ( (claims !!)
                 . unClaimIndex
                 <$> Set.toList
