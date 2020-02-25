@@ -21,7 +21,7 @@ module Kore.Step.RulePattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
-    , getPriority
+    , getPriorityOfRule
     , applySubstitution
     , topExistsToImplicitForall
     , isFreeOf
@@ -71,6 +71,7 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Kore.Attribute.Owise as Attribute
 
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
@@ -303,8 +304,16 @@ isNormalRule RulePattern { attributes } =
         Attribute.Normal -> True
         _ -> False
 
-getPriority :: RulePattern variable -> Attribute.Priority
-getPriority = Attribute.priority . attributes
+getPriorityOfRule :: RulePattern variable -> Integer
+getPriorityOfRule RulePattern { attributes } =
+    if isOwise
+        then 200
+        else fromMaybe 100 getPriority
+  where
+    Attribute.Priority { getPriority } =
+        Attribute.priority attributes
+    Attribute.Owise { isOwise } =
+        Attribute.owise attributes
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm

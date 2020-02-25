@@ -18,6 +18,11 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 {- | @Priority@ represents the @priority@ attribute.
+
+    It is unsafe to use this directly when handling the priorities of
+    rules with a 'RulePattern' or a 'EqualityRule' representation.
+    'Kore.Step.RulePattern.getPriorityOfRule'
+    or 'Kore.Step.EqualityPattern.getPriorityOfRule' should be used instead.
  -}
 newtype Priority = Priority { getPriority :: Maybe Integer }
     deriving (Eq, GHC.Generic, Ord, Show)

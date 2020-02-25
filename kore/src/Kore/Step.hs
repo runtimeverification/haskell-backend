@@ -49,7 +49,7 @@ import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern
     , ToRulePattern (..)
-    , getPriority
+    , getPriorityOfRule
     , isCoolingRule
     , isHeatingRule
     , isNormalRule
@@ -178,7 +178,7 @@ priorityAllStrategy rewrites =
   where
     priorityGroups =
         groupSortOn
-            (getPriority . toRulePattern)
+            (getPriorityOfRule . toRulePattern)
             rewrites
 
 priorityAnyStrategy
@@ -190,7 +190,7 @@ priorityAnyStrategy rewrites =
   where
     sortedRewrites =
         sortOn
-            (getPriority . toRulePattern)
+            (getPriorityOfRule . toRulePattern)
             rewrites
 
 {- | Heat the configuration, apply a normal rewrite, and cool the result.
