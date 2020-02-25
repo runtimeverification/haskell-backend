@@ -80,7 +80,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.Substitution
     ( Assignment
-    , pattern Assignment_
+    , pattern Assignment
     , Normalization (..)
     , Substitution
     )
@@ -341,7 +341,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     simplifySingleSubstitution
         :: Assignment variable
         -> Impl variable simplifier (Assignment variable)
-    simplifySingleSubstitution subst@(Assignment_ uVar termLike) =
+    simplifySingleSubstitution subst@(Assignment uVar termLike) =
         case uVar of
             SetVar _ -> return subst
             ElemVar _

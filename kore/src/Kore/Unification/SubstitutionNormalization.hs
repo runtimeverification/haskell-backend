@@ -47,7 +47,7 @@ import Kore.Internal.Condition
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Substitution
     ( Assignment
-    , pattern Assignment_
+    , pattern Assignment
     , Normalization (..)
     , UnwrappedSubstitution
     )
@@ -226,7 +226,7 @@ backSubstitute
 backSubstitute sorted =
     flip State.evalState mempty (traverse worker sorted)
   where
-    worker (Assignment_ variable termLike) = do
+    worker (Assignment variable termLike) = do
         termLike' <- applySubstitution termLike
         insertSubstitution variable termLike'
         return $ Substitution.assign variable termLike'
@@ -256,7 +256,7 @@ dropTrivialSubstitutions =
 isSatisfiableSubstitution
     :: Assignment variable
     -> Bool
-isSatisfiableSubstitution (Assignment_ variable termLike) =
+isSatisfiableSubstitution (Assignment variable termLike) =
     not $ isElemVar variable && isBottom termLike
 
 {- | Calculate the dependencies of a substitution.

@@ -379,11 +379,11 @@ test_matcherVariableFunction =
             let evaluated = mkEvaluated Mock.cf
                 expect =
                     Just (Condition.fromSingleSubstitution
-                        (Substitution.assign
-                            (UnifiedVariable.ElemVar Mock.x)
-                            evaluated
+                            (Substitution.assign
+                                (UnifiedVariable.ElemVar Mock.x)
+                                evaluated
+                            )
                          )
-                        )
                         { predicate = makeCeilPredicate_ evaluated }
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
             assertEqual "" expect actual

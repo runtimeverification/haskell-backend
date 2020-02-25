@@ -37,7 +37,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.Substitution
-    ( pattern Assignment_
+    ( pattern Assignment
     , Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
@@ -147,7 +147,7 @@ substitutionConditions
 substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
-    substitutionCoverageWorker (Assignment_ x t) =
+    substitutionCoverageWorker (Assignment x t) =
         Predicate.makeEqualsPredicate_ (mkVar x) t
 
 ceilChildOfApplicationOrTop

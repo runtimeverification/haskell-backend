@@ -6,13 +6,16 @@ License     : NCSA
 
 module Kore.Internal.Substitution
     ( Substitution
+    -- Constructor for Assignment not exported
+    -- on purpose
     , Assignment
     , assign
-    , pattern Assignment_
+    , pattern Assignment
     , assignmentToPair
     , assignedVariable
     , assignedTerm
     , mapAssignedTerm
+    , singleSubstitutionToPredicate
     , UnwrappedSubstitution
     , mkUnwrappedSubstitution
     , unwrap
@@ -97,7 +100,7 @@ import Kore.Variables.UnifiedVariable
 import qualified SQL
 
 data Assignment variable =
-    Assignment
+    Assignment_
         { assignedVariable :: !(UnifiedVariable variable)
         , assignedTerm :: !(TermLike variable)
         }
@@ -126,15 +129,15 @@ assign
     -> TermLike variable
     -> Assignment variable
 assign variable term =
-    uncurry Assignment $ curry normalOrder variable term
+    uncurry Assignment_ $ curry normalOrder variable term
 
-pattern Assignment_
+pattern Assignment
     :: UnifiedVariable variable
     -> TermLike variable
     -> Assignment variable
-pattern Assignment_ assignedVariable assignedTerm <-
-    Assignment { assignedVariable, assignedTerm }
-{-# COMPLETE Assignment_ #-}
+pattern Assignment assignedVariable assignedTerm <-
+    Assignment_ { assignedVariable, assignedTerm }
+{-# COMPLETE Assignment #-}
 
 assignmentToPair
     :: Assignment variable
@@ -254,13 +257,27 @@ instance
   where
     from = unwrap
 
+instance From (Assignment variable) (Substitution variable)
+  where
+    from assignment = wrap [assignment]
+
+instance
+    InternalVariable variable
+    => From (Assignment variable) (Predicate variable)
+  where
+    from (Assignment var patt) =
+        -- Never mark this as simplified since we want to be able to rebuild the
+        -- substitution sometimes (e.g. not(not(subst)) and when simplifying
+        -- claims).
+        Predicate.makeEqualsPredicate_ (TermLike.mkVar var) patt
+
 instance
     InternalVariable variable
     => From (Substitution variable) (Predicate variable)
   where
     from =
         Predicate.makeMultipleAndPredicate
-        . fmap (Predicate.singleSubstitutionToPredicate . assignmentToPair)
+        . fmap singleSubstitutionToPredicate
         . unwrap
 
 type UnwrappedSubstitution variable = [Assignment variable]
@@ -416,9 +433,7 @@ unsafeWrapFromAssignments =
 -- normalization status is reset to un-normalized.
 modify
     :: InternalVariable variable1
-    => ( [Assignment variable1]
-       -> [Assignment variable2]
-       )
+    => ( [Assignment variable1] -> [Assignment variable2] )
     -> Substitution variable1
     -> Substitution variable2
 modify f = wrap . f . unwrap
@@ -679,3 +694,9 @@ toPredicate
     => Substitution variable
     -> Predicate variable
 toPredicate = from
+
+singleSubstitutionToPredicate
+    :: InternalVariable variable
+    => Assignment variable
+    -> Predicate variable
+singleSubstitutionToPredicate = from

@@ -55,7 +55,6 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
-    , singleSubstitutionToPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
@@ -230,7 +229,12 @@ instance
     InternalVariable variable
     => From (Assignment variable) (Conditional variable ())
   where
-    from = from @(Substitution variable) . from . Substitution.assignmentToPair
+    from assignment =
+        Conditional
+            { term = ()
+            , predicate = Predicate.makeTruePredicate_
+            , substitution = from assignment
+            }
 
 instance
     From from to
@@ -290,8 +294,7 @@ instance
         termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
             Predicate.coerceSort sort
-            . singleSubstitutionToPredicate
-            . Substitution.assignmentToPair
+            . Substitution.singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 
     unparse2 Conditional { term, predicate, substitution } =
@@ -305,8 +308,7 @@ instance
         termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
             Predicate.coerceSort sort
-            . singleSubstitutionToPredicate
-            . Substitution.assignmentToPair
+            . Substitution.singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 
 instance

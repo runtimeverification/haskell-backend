@@ -262,10 +262,7 @@ unificationProcedureSuccessWithSimplifiers
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [  ( [Assignment Variable]
-          , Predicate Variable
-          )
-       ]
+    -> [([Assignment Variable], Predicate Variable)]
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
@@ -283,10 +280,8 @@ unificationProcedureSuccessWithSimplifiers
             $ unificationProcedure SideCondition.topTODO term1 term2
         let
             normalize
-                ::  Condition Variable
-                ->  ( [Assignment Variable]
-                    , Predicate Variable
-                    )
+                :: Condition Variable
+                -> ([Assignment Variable], Predicate Variable)
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
         assertEqual ""
