@@ -40,18 +40,18 @@ import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
-import Data.Generics.Product
-import Data.Proxy
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+import Data.Proxy
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Assoc
+import Kore.Attribute.Attributes
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Constructor
 import Kore.Attribute.Axiom.Unit
-import Kore.Attribute.Attributes
 import Kore.Attribute.Comm
 import Kore.Attribute.Functional
 import Kore.Attribute.HeatCool
@@ -218,7 +218,7 @@ parseAxiomAttribute attr =
         Monad.>=> typed @Unit (parseAttribute attr)
         Monad.>=> typed @Idem (parseAttribute attr)
         Monad.>=> typed @Trusted (parseAttribute attr)
-        Monad.>=> typed @Concrete (parseAttribute attr)
+        Monad.>=> typed @Concrete (parseConcreteAttribute attr)
         Monad.>=> typed @Simplification (parseAttribute attr)
         Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
         Monad.>=> typed @SmtLemma (parseAttribute attr)

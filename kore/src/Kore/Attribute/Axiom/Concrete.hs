@@ -9,6 +9,7 @@ Maintainer  : phillip.harris@runtimeverification.com
 module Kore.Attribute.Axiom.Concrete
     ( Concrete (..)
     , concreteId, concreteSymbol, concreteAttribute
+    , parseConcreteAttribute
     ) where
 
 import Prelude.Kore
@@ -53,8 +54,8 @@ concreteSymbol =
 concreteAttribute :: AttributePattern
 concreteAttribute = attributePattern_ concreteSymbol
 
-instance ParseAttributes Concrete where
-    parseAttribute = parseBoolAttribute concreteId
+parseConcreteAttribute :: AttributePattern -> Concrete -> Parser Concrete
+parseConcreteAttribute = parseBoolAttribute concreteId
 
 instance From Concrete Attributes where
     from = toBoolAttributes concreteAttribute
