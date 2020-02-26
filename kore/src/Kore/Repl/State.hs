@@ -22,11 +22,12 @@ module Kore.Repl.State
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
     , sortLeafsByType
-    , generateInProgressClaims
+    , generateInProgressClaims, createClaim
     , currentClaimSort
     , conjOfClaims
     , appReplOut
     , replOut, replOutputToString
+    , createNewModule
     ) where
 
 import Prelude.Kore
@@ -81,6 +82,7 @@ import Data.Set
 import qualified Data.Set as Set
 import Data.Text
     ( Text
+    , pack
     , unpack
     )
 import GHC.Exts
@@ -97,18 +99,21 @@ import Control.Monad.Reader
     ( MonadReader
     , asks
     )
+import qualified Kore.Attribute.Attributes as Syntax
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
+import qualified Kore.Attribute.Trusted as Attribute
 import Kore.Internal.Condition
     ( Condition
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import Kore.Internal.Pattern
-    ( toTermLike
+    ( Pattern
     )
-import Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -129,6 +134,9 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
+    ( Goal (..)
+    )
+import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
@@ -136,6 +144,14 @@ import Kore.Strategies.ProofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
+import Kore.Syntax.Definition
+    ( Module (..)
+    , ModuleName (..)
+    , Sentence (..)
+    , SentenceAxiom (..)
+    , SentenceClaim (..)
+    , SentenceImport (..)
+    )
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -569,13 +585,13 @@ getNodeState graph node =
 nodeToPattern
     :: InnerGraph axiom
     -> Graph.Node
-    -> Maybe (TermLike Variable)
+    -> Maybe (Pattern Variable)
 nodeToPattern graph node =
     proofState ProofStateTransformer
-        { goalTransformer = Just . toTermLike
-        , goalRemainderTransformer = Just . toTermLike
-        , goalRewrittenTransformer = Just . toTermLike
-        , goalStuckTransformer = Just . toTermLike
+        { goalTransformer = Just
+        , goalRemainderTransformer = Just
+        , goalRewrittenTransformer = Just
+        , goalStuckTransformer = Just
         , provenValue = Nothing
         }
     . Graph.lab'
@@ -656,18 +672,22 @@ substituteAlias
 
 createClaim
     :: Claim claim
-    => (claim, TermLike Variable)
+    => claim
+    -> Pattern Variable
     -> claim
-createClaim (claim, cpattern) =
+createClaim claim cpattern =
     fromRulePattern
         claim
         Rule.RulePattern
-            { left = cpattern
+            { left
             , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate_
+            , requires
             , rhs = Rule.rhs . toRulePattern $ claim
             , attributes = Default.def
             }
+  where
+    (left, condition) = Pattern.splitTerm cpattern
+    requires = Condition.toPredicate condition
 
 conjOfClaims
     :: From claim (TermLike Variable)
@@ -698,7 +718,7 @@ generateInProgressClaims = do
         -> [claim]
         -> [claim]
     startedClaims graphs claims =
-        fmap createClaim
+        fmap (uncurry  createClaim)
         $ claimsWithPatterns graphs claims
         >>= sequence
     notStartedClaims
@@ -706,7 +726,7 @@ generateInProgressClaims = do
         -> [claim]
         -> [claim]
     notStartedClaims graphs claims =
-        filter (not . isTrusted)
+        filter (not . Goal.isTrusted)
                 ( (claims !!)
                 . unClaimIndex
                 <$> Set.toList
@@ -723,7 +743,7 @@ generateInProgressClaims = do
 claimsWithPatterns
     :: Map ClaimIndex (ExecutionGraph axiom)
     -> [claim]
-    -> [(claim, [TermLike Variable])]
+    -> [(claim, [Pattern Variable])]
 claimsWithPatterns graphs claims =
     Bifunctor.bimap
         ((claims !!) . unClaimIndex)
@@ -732,7 +752,7 @@ claimsWithPatterns graphs claims =
 
 findTerminalPatterns
     :: InnerGraph axiom
-    -> [TermLike Variable]
+    -> [Pattern Variable]
 findTerminalPatterns graph =
     mapMaybe (nodeToPattern graph)
     . findLeafNodes
@@ -779,3 +799,47 @@ replOut f g =
 replOutputToString :: ReplOutput -> String
 replOutputToString (ReplOutput out) =
     out >>= replOut id id
+
+createNewModule
+    :: forall claim
+    .  Claim claim
+    => From claim (TermLike Variable)
+    => String
+    -> [claim]
+    -> Module (Sentence (TermLike Variable))
+createNewModule name claims =
+    Module
+        { moduleName = ModuleName . pack $ name
+        , moduleSentences =
+            importVerification
+            : fmap claimToSentence claims
+        , moduleAttributes = Default.def
+        }
+  where
+    importVerification =
+        SentenceImportSentence
+            SentenceImport
+                { sentenceImportModuleName =
+                    ModuleName "VERIFICATION"
+                , sentenceImportAttributes = mempty
+                }
+    claimToSentence :: claim -> Sentence (TermLike Variable)
+    claimToSentence claim =
+        SentenceClaimSentence
+        . SentenceClaim
+        $ SentenceAxiom
+            { sentenceAxiomParameters = []
+            , sentenceAxiomPattern = claimToTerm claim
+            , sentenceAxiomAttributes = trustedToAttribute claim
+            }
+    claimToTerm :: claim -> TermLike Variable
+    claimToTerm = from
+    trustedToAttribute :: claim -> Syntax.Attributes
+    trustedToAttribute
+        ( Attribute.trusted
+        . attributes
+        . toRulePattern
+        -> Attribute.Trusted { isTrusted }
+        )
+        | isTrusted = Syntax.Attributes [Attribute.trustedAttribute]
+        | otherwise = mempty

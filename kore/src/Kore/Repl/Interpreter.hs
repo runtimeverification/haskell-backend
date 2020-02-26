@@ -88,6 +88,9 @@ import Data.IORef
     , readIORef
     )
 import qualified Data.List as List
+import Data.List.Extra
+    ( upper
+    )
 import Data.List.NonEmpty
     ( NonEmpty
     )
@@ -105,6 +108,9 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Text.Prettyprint.Doc.Render.Text
+    ( hPutDoc
+    )
 import qualified Data.Typeable as Typeable
 import GHC.Exts
     ( toList
@@ -113,16 +119,19 @@ import GHC.IO.Handle
     ( hGetContents
     , hPutStr
     )
+import GHC.Natural
+    ( naturalToInt
+    )
 import System.Exit
+import System.IO
+    ( IOMode (..)
+    , withFile
+    )
 
 import Kore.Attribute.Axiom
     ( SourceLocation (..)
     )
 import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom (..)
-    , RuleIndex (..)
-    , sourceLocation
-    )
 import qualified Kore.Attribute.Label as AttrLabel
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
@@ -170,6 +179,7 @@ import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
     ( Claim
     , CommonProofState
+    , commonProofStateTransformer
     )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -994,10 +1004,54 @@ saveSession path =
     seqUnlines = unlines . toList
 
 savePartialProof
-    :: Maybe Natural
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => MonadWriter ReplOutput m
+    => MonadIO m
+    => Claim claim
+    => From claim (TermLike Variable)
+    => Maybe Natural
     -> FilePath
     -> m ()
-savePartialProof = undefined
+savePartialProof maybeNatural file = do
+    currentClaim <- Lens.use (field @"claim")
+    maybeConfig <- getConfigAt maybeNode
+    case maybeConfig of
+        Nothing -> putStrLn' "Invalid node!"
+        Just (_, currentProofState) -> do
+            let config = proofState commonProofStateTransformer currentProofState
+                newClaim = createClaim currentClaim config
+            currentIndex <- Lens.use (field @"claimIndex")
+            claims <- Lens.use (field @"claims")
+            let newTrustedClaims = makeTrusted <$> removeAt currentIndex claims
+                newModule =
+                    createNewModule (makeModuleName file)
+                    $ newClaim : newTrustedClaims
+            liftIO $ withFile file WriteMode (`hPutDoc` unparse newModule)
+  where
+    maybeNode :: Maybe ReplNode
+    maybeNode =
+        ReplNode . naturalToInt <$> maybeNatural
+    makeTrusted :: claim -> claim
+    makeTrusted goal@(toRulePattern -> rule) =
+        fromRulePattern goal
+        $ rule
+            { attributes =
+                (attributes rule)
+                    { Attribute.trusted = Attribute.Trusted True
+                    }
+            }
+    removeAt
+        :: ClaimIndex
+        -> [claim]
+        -> [claim]
+    removeAt (ClaimIndex index) claims
+        | index >= 0 && index < length claims =
+            take index claims
+            <> drop (index + 1) claims
+        | otherwise = claims
+    makeModuleName :: FilePath -> String
+    makeModuleName name = upper name <> "-SPEC"
 
 -- | Pipe result of the command to the specified program. This function will start
 -- one process for each KoreOut in the command's output. AuxOut will not be piped,

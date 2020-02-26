@@ -17,6 +17,7 @@ module Kore.Strategies.Verification
     , verify
     , verifyClaimStep
     , toRulePattern
+    , commonProofStateTransformer
     ) where
 
 import Prelude.Kore
@@ -59,6 +60,7 @@ import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Step.Rule.Expand
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
@@ -71,6 +73,9 @@ import Kore.Step.Transition
     )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
+import Kore.Strategies.ProofState
+    ( ProofStateTransformer (..)
+    )
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
     ( Variable
@@ -78,6 +83,16 @@ import Kore.Syntax.Variable
 import Kore.Unparser
 
 type CommonProofState  = ProofState.ProofState (Pattern Variable)
+
+commonProofStateTransformer :: ProofStateTransformer (Pattern Variable) (Pattern Variable)
+commonProofStateTransformer =
+    ProofStateTransformer
+        { goalTransformer = id
+        , goalRemainderTransformer = id
+        , goalRewrittenTransformer = id
+        , goalStuckTransformer = id
+        , provenValue = Pattern.bottom
+        }
 
 {- | Class type for claim-like rules
 -}
