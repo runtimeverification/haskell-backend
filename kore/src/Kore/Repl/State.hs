@@ -719,7 +719,7 @@ generateInProgressClaims = do
         -> [claim]
         -> [claim]
     startedClaims graphs claims =
-        fmap (uncurry  createClaim)
+        fmap (uncurry createClaim)
         $ claimsWithPatterns graphs claims
         >>= sequence
     notStartedClaims

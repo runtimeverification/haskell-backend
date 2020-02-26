@@ -335,8 +335,9 @@ helpText =
                                               \ proof graph\n\
     \                                         (defaults to current node)\n\
     \save-session file                        saves the current session to file\n\
-    \save-partial-proof [n] file              creates a file containing a kore module with\
-    \                                         a new claim from the current config (or config n)\n\
+    \save-partial-proof [n] file              creates a file, <file>.kore, containing a kore module\
+                                              \ with the name uppercase(<file>)-SPEC, a new claim\n\
+    \                                         with the current config (or config <n>) as its LHS\
                                               \ and all other claims marked as trusted\n\
     \alias <name> = <command>                 adds as an alias for <command>\n\
     \<alias>                                  runs an existing alias\n\
