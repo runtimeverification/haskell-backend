@@ -7,7 +7,7 @@
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
             \ceil{SortMap{}, SortGeneratedTopCell{}}(
-                /* Fn Sfc */
+                /* Fn Spc */
                 /* builtin: */
                 Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
