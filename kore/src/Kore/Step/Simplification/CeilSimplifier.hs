@@ -36,7 +36,7 @@ hoistCeilSimplifier
     -> CeilSimplifier m input output
     -> CeilSimplifier n input output
 hoistCeilSimplifier transform (CeilSimplifier simpl) =
-    CeilSimplifier (\input -> transform (simpl input))
+    CeilSimplifier (transform . simpl)
 {-# INLINE hoistCeilSimplifier #-}
 
 runCeilSimplifierWith
