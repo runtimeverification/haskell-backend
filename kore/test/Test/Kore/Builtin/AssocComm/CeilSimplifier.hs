@@ -1,6 +1,10 @@
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
+
 module Test.Kore.Builtin.AssocComm.CeilSimplifier
     ( hprop_Builtin_Map
     , hprop_Builtin_Set
+    , test_Builtin_Map
+    , test_Builtin_Set
     ) where
 
 import Prelude.Kore
@@ -9,12 +13,13 @@ import Hedgehog hiding
     ( test
     )
 import qualified Hedgehog.Gen as Gen
+import Test.Tasty
 
 import Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.OrPattern
-    ( OrPattern
+import Kore.Internal.MultiAnd
+    ( MultiAnd
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -33,10 +38,13 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Ext
 
+test_Builtin_Map :: [TestTree]
+test_Builtin_Set :: [TestTree]
 hprop_Builtin_Map :: Property
 hprop_Builtin_Set :: Property
-(hprop_Builtin_Map, hprop_Builtin_Set) =
+(hprop_Builtin_Map, hprop_Builtin_Set, test_Builtin_Map, test_Builtin_Set) =
     ( propertyBuiltinAssocComm
         (genKeys >>= traverse genMapElement)
         (Gen.subsequence opaqueMaps)
@@ -49,25 +57,29 @@ hprop_Builtin_Set :: Property
         id
         defineSetElement
         Mock.framedSet
+    , testsMap
+    , testsSet
     )
   where
     nullaryCtors = [Mock.a, Mock.b, Mock.c]
     elemVars = [Mock.x, Mock.y, Mock.z]
-    opaqueMaps = Mock.opaqueMap . mkElemVar <$> elemVars
-    opaqueSets = Mock.opaqueSet . mkElemVar <$> elemVars
+    opaqueMaps@[opaqueMap1, opaqueMap2, opaqueMap3] =
+        Mock.opaqueMap . mkElemVar <$> elemVars
+    opaqueSets@[opaqueSet1, opaqueSet2, opaqueSet3] =
+        Mock.opaqueSet . mkElemVar <$> elemVars
     genKeys = Gen.subsequence keys
-    keys =
-        -- concrete keys
-        nullaryCtors
-        -- symbolic keys
-        ++ (Mock.f . mkElemVar <$> elemVars)
+    concreteKeys@[cKey1, cKey2, _] = nullaryCtors
+    symbolicKeys@[sKey1, sKey2, _] = Mock.f . mkElemVar <$> elemVars
+    keys = concreteKeys ++ symbolicKeys
     genMapElement key = (,) key <$> genVal
     genVal = Gen.element vals
-    vals =
-        -- concrete values
-        (Mock.constr10 <$> nullaryCtors)
-        -- symbolic values
-        ++ (Mock.g . mkElemVar <$> elemVars)
+    concreteVals@[cVal1, cVal2, _] = Mock.constr10 <$> nullaryCtors
+    symbolicVals@[sVal1, sVal2, _] = Mock.g . mkElemVar <$> elemVars
+    vals = concreteVals ++ symbolicVals
+    cElt1 = (cKey1, cVal1)
+    cElt2 = (cKey2, cVal2)
+    sElt1 = (sKey1, cVal1)
+    sElt2 = (sKey2, cVal2)
 
     defineMapElement (key, val) =
         -- symbolic keys are defined
@@ -79,6 +91,168 @@ hprop_Builtin_Set :: Property
     defineSetElement key =
         -- symbolic keys are defined
         [ makeCeilPredicate_ key | (not . isConcrete) key ]
+
+    testsMap =
+        [
+            let
+                original = Mock.framedMap [(cKey1, sVal1)] []
+                expect = [makeCeilPredicate_ sVal1]
+            in
+                test "values with concrete keys are defined" original expect
+        ,
+            let
+                original = Mock.framedMap [(sKey2, sVal2)] []
+                expect =
+                    [ makeCeilPredicate_ sKey2
+                    , makeCeilPredicate_ sVal2
+                    ]
+            in
+                test "values with symbolic keys are defined" original expect
+        ,
+            let
+                original = Mock.framedMap [cElt1] []
+                expect = []
+            in
+                test "concrete keys are defined by assumption" original expect
+        ,
+            let
+                original = Mock.framedMap [cElt1, cElt2] []
+                expect = []
+            in
+                test "concrete keys are distinct by assumption" original expect
+        ,
+            let
+                original = Mock.framedMap [sElt1] []
+                expect = [makeCeilPredicate_ sKey1]
+            in
+                test "symbolic keys are defined" original expect
+        ,
+            let
+                original = Mock.framedMap [cElt1, sElt1] []
+                expect =
+                    [ makeCeilPredicate_ sKey1
+                    , makeNotEqualsPredicate cKey1 sKey1
+                    ]
+            in
+                test "symbolic and concrete keys are distinct" original expect
+        ,
+            let
+                original = Mock.framedMap [sElt1, sElt2] []
+                expect =
+                    [ makeCeilPredicate_ sKey1
+                    , makeCeilPredicate_ sKey2
+                    , makeNotEqualsPredicate sKey1 sKey2
+                    ]
+            in
+                test "symbolic keys are distinct" original expect
+        ,
+            let
+                original = Mock.framedMap [cElt1] [opaqueMap1]
+                expect = map makeCeilPredicate_ [original, opaqueMap1]
+            in
+                test "concrete keys are not in the frame" original expect
+        ,
+            let
+                original = Mock.framedMap [sElt1] [opaqueMap1]
+                expect =
+                    map makeCeilPredicate_ [original, sKey1, opaqueMap1]
+            in
+                test "symbolic keys are not in the frame" original expect
+        ,
+            let
+                original =
+                    Mock.framedMap [] [opaqueMap1, opaqueMap2, opaqueMap3]
+                expect =
+                    map makeCeilPredicate_
+                        [ Mock.framedMap [] [opaqueMap1, opaqueMap2]
+                        , Mock.framedMap [] [opaqueMap1, opaqueMap3]
+                        , Mock.framedMap [] [opaqueMap2, opaqueMap3]
+                        , opaqueMap1
+                        , opaqueMap2
+                        , opaqueMap3
+                        ]
+            in
+                test "frames are disjoint" original expect
+        ]
+
+    testsSet =
+        [
+            let
+                original = Mock.framedSet [cKey1] []
+                expect = []
+            in
+                test "concrete keys are defined by assumption" original expect
+        ,
+            let
+                original = Mock.framedSet [cKey1, cKey2] []
+                expect = []
+            in
+                test "concrete keys are distinct by assumption" original expect
+        ,
+            let
+                original = Mock.framedSet [sKey1] []
+                expect = [makeCeilPredicate_ sKey1]
+            in
+                test "symbolic keys are defined" original expect
+        ,
+            let
+                original = Mock.framedSet [cKey1, sKey1] []
+                expect =
+                    [ makeCeilPredicate_ sKey1
+                    , makeNotEqualsPredicate cKey1 sKey1
+                    ]
+            in
+                test "symbolic and concrete keys are distinct" original expect
+        ,
+            let
+                original = Mock.framedSet [sKey1, sKey2] []
+                expect =
+                    [ makeCeilPredicate_ sKey1
+                    , makeCeilPredicate_ sKey2
+                    , makeNotEqualsPredicate sKey1 sKey2
+                    ]
+            in
+                test "symbolic keys are distinct" original expect
+        ,
+            let
+                original = Mock.framedSet [cKey1] [opaqueSet1]
+                expect = map makeCeilPredicate_ [original, opaqueSet1]
+            in
+                test "concrete keys are not in the frame" original expect
+        ,
+            let
+                original = Mock.framedSet [sKey1] [opaqueSet1]
+                expect =
+                    map makeCeilPredicate_ [original, sKey1, opaqueSet1]
+            in
+                test "symbolic keys are not in the frame" original expect
+        ,
+            let
+                original =
+                    Mock.framedSet [] [opaqueSet1, opaqueSet2, opaqueSet3]
+                expect =
+                    map makeCeilPredicate_
+                        [ Mock.framedSet [] [opaqueSet1, opaqueSet2]
+                        , Mock.framedSet [] [opaqueSet1, opaqueSet3]
+                        , Mock.framedSet [] [opaqueSet2, opaqueSet3]
+                        , opaqueSet1
+                        , opaqueSet2
+                        , opaqueSet3
+                        ]
+            in
+                test "frames are disjoint" original expect
+        ]
+
+    test
+        :: HasCallStack
+        => TestName
+        -> TermLike Variable
+        -> [Predicate Variable]
+        -> TestTree
+    test testName original expect =
+        testCase testName $ do
+            actual <- makeEvaluate original
+            assertEqual "" (MultiAnd.make expect) actual
 
 propertyBuiltinAssocComm
     :: Show element
@@ -97,19 +271,10 @@ propertyBuiltinAssocComm
   = Hedgehog.property $ do
     opaques <- forAll genOpaques
     elements <- forAll genElements
-    let original = Pattern.fromTermLike $ mkAssocComm elements opaques
+    let original = mkAssocComm elements opaques
         keys = elementKey <$> elements
-    actualPattern <-
-        (liftIO . makeEvaluate) original
-        >>= (return . OrPattern.toPatterns)
-        >>= \case { [actualPattern] -> return actualPattern; _ -> failure }
-    Hedgehog.assert (isTop $ term actualPattern)
-    Hedgehog.assert (Substitution.null $ substitution actualPattern)
-    let actualPredicates =
-            predicate actualPattern
-            & Predicate.getMultiAndPredicate
-            & MultiAnd.make
-        -- | Elements are defined
+    actualPredicates <- (liftIO . makeEvaluate) original
+    let -- | Elements are defined
         expectDefinedElements = elements >>= defineElement
         -- | Opaque operands are defined
         expectDefinedOpaques = makeCeilPredicate_ <$> opaques
@@ -142,15 +307,39 @@ propertyBuiltinAssocComm
                 ]
     expectPredicates === actualPredicates
   where
-    makeNotEqualsPredicate x y = makeNotPredicate $ makeEqualsPredicate_ x y
-
     zipWithTails :: (a -> a -> b) -> [a] -> [b]
     zipWithTails _ [] = []
     zipWithTails f (x : xs) = map (f x) xs ++ zipWithTails f xs
 
-makeEvaluate :: Pattern Variable -> IO (OrPattern Variable)
-makeEvaluate child =
-    runSimplifierNoSMT mockEnv
-    $ Ceil.makeEvaluate SideCondition.top child
+makeNotEqualsPredicate
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
+makeNotEqualsPredicate x y =
+    (makeNotPredicate . uncurry makeEqualsPredicate_) (minMax x y)
+
+makeEvaluate :: TermLike Variable -> IO (MultiAnd (Predicate Variable))
+makeEvaluate termLike = do
+    actualPattern <-
+        makeEvaluate' termLike
+        >>= (return . OrPattern.toPatterns)
+        >>= expectSingleResult
+    assertBool "expected \\top term"
+        (isTop $ term actualPattern)
+    assertBool "expected empty substitution"
+        (Substitution.null $ substitution actualPattern)
+    let actualPredicates =
+            predicate actualPattern
+            & Predicate.getMultiAndPredicate
+            & MultiAnd.make
+    return actualPredicates
   where
+    makeEvaluate' =
+        runSimplifierNoSMT mockEnv
+        . Ceil.makeEvaluate SideCondition.top
+        . Pattern.fromTermLike
     mockEnv = Mock.env { simplifierAxioms = mempty }
+    expectSingleResult =
+        \case
+            [actualPattern] -> return actualPattern
+            _ -> assertFailure "expected single result"
