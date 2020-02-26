@@ -24,7 +24,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -93,7 +93,7 @@ unwrapConfiguration
     .  InternalVariable variable
     => Pattern (Target variable)
     -> Pattern variable
-unwrapConfiguration config@Conditional { substitution } =
+unwrapConfiguration config =
     Pattern.mapVariables
         Target.unTargetElement
         Target.unTargetSet
@@ -101,7 +101,7 @@ unwrapConfiguration config@Conditional { substitution } =
   where
     substitution' =
         Substitution.filter (foldMapVariable Target.isNonTarget)
-            substitution
+            (substitution config)
 
     configWithNewSubst :: Pattern (Target variable)
     configWithNewSubst = config { Pattern.substitution = substitution' }
@@ -140,7 +140,7 @@ finalizeAppliedRule renamedRule appliedConditions =
             avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
             finalPattern =
                 Rule.topExistsToImplicitForall avoidVars ruleRHS
-            Conditional { predicate = ensures } = finalPattern
+            ensures = predicate finalPattern
             ensuresCondition = Condition.fromPredicate ensures
         finalCondition <-
             simplifyPredicate
@@ -148,9 +148,8 @@ finalizeAppliedRule renamedRule appliedConditions =
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
-            Conditional { substitution } = finalCondition
-            substitution' = Substitution.toMap substitution
-            Conditional { term = finalTerm} = finalPattern
+            substitution' = Substitution.toMap (substitution finalCondition)
+            finalTerm = term finalPattern
             finalTerm' = TermLike.substitute substitution' finalTerm
         return (finalTerm' `Pattern.withCondition` finalCondition)
 

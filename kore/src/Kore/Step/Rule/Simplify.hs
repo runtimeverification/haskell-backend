@@ -19,9 +19,6 @@ import Branch
     )
 import qualified Branch
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
     ( Conditional (..)
     )
 import Kore.Internal.MultiAnd
@@ -93,15 +90,15 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
             -> RulePattern variable
         setRuleLeft
             rulePattern@RulePattern {requires = requires'}
-            Conditional {term, predicate, substitution}
+            conditional
           =
             RulePattern.applySubstitution
-                substitution
+                (substitution conditional)
                 rulePattern
-                    { RulePattern.left = term
+                    { RulePattern.left = (term conditional)
                     , RulePattern.requires =
-                        Predicate.coerceSort (termLikeSort term)
-                        $ makeAndPredicate predicate requires'
+                        Predicate.coerceSort (termLikeSort (term conditional))
+                        $ makeAndPredicate (predicate conditional) requires'
                     }
 
 instance SimplifyRuleLHS (RewriteRule Variable) where

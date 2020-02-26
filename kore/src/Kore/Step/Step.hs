@@ -376,8 +376,7 @@ checkSubstitutionCoverage initial unified
     axiom = term unified
     unifier :: Pattern (Target variable)
     unifier = TermLike.mkTop_ <$ Conditional.withoutTerm unified
-    Conditional { substitution } = unified
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    substitutionVariables = Map.keysSet (Substitution.toMap (substitution unified))
     uncovered = wouldNarrowWith unified
     isCoveringSubstitution = Set.null uncovered
     isSymbolic =
