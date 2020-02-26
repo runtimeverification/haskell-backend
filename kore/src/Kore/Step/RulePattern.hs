@@ -71,14 +71,14 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import qualified Kore.Attribute.Owise as Attribute
-
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Owise as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
     , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Priority as Attribute
 import Kore.Debug
 import Kore.Internal.Alias
     ( Alias (..)
@@ -307,8 +307,8 @@ isNormalRule RulePattern { attributes } =
 getPriorityOfRule :: RulePattern variable -> Integer
 getPriorityOfRule RulePattern { attributes } =
     if isOwise
-        then 200
-        else fromMaybe 100 getPriority
+        then Attribute.owisePriority
+        else fromMaybe Attribute.defaultPriority getPriority
   where
     Attribute.Priority { getPriority } =
         Attribute.priority attributes

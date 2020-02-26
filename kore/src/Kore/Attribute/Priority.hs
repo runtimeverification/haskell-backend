@@ -5,6 +5,7 @@ License     : NCSA
 -}
 module Kore.Attribute.Priority
     ( Priority (..)
+    , defaultPriority, owisePriority
     , priorityId, prioritySymbol, priorityAttribute
     ) where
 
@@ -39,6 +40,15 @@ instance NFData Priority
 
 instance Default Priority where
     def = Priority Nothing
+
+-- | Default priority for 'EqualityRule' and 'RulePattern'.
+defaultPriority :: Integer
+defaultPriority = 50
+
+-- | Priority for 'EqualityRule' and 'RulePattern' with the
+-- 'owise' attribute.
+owisePriority :: Integer
+owisePriority = 200
 
 -- | Kore identifier representing the @priority@ attribute symbol.
 priorityId :: Id

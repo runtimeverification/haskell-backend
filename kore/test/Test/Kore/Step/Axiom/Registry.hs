@@ -21,6 +21,10 @@ import Data.Text
 
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Owise as Attribute
+import Kore.Attribute.Priority
+    ( defaultPriority
+    , owisePriority
+    )
 import qualified Kore.Attribute.Priority as Attribute
 import Kore.Attribute.Simplification
     ( simplificationAttribute
@@ -393,7 +397,7 @@ test_functionRegistry =
            (case Map.lookup axiomId testProcessedAxiomPatterns of
                 Just PartitionedEqualityRules { functionRules } ->
                     assertEqual ""
-                        [1, 2, 3, 100, 200]
+                        [1, 2, 3, defaultPriority, owisePriority]
                         (fmap getPriorityOfRule functionRules)
                 _ -> assertFailure "Should find equality rules for f"
             )
