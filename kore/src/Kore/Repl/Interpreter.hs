@@ -122,10 +122,33 @@ import GHC.IO.Handle
 import GHC.Natural
     ( naturalToInt
     )
+import Numeric.Natural
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , findExecutable
+    )
 import System.Exit
+import System.FilePath.Posix
+    ( splitFileName
+    , (<.>)
+    )
 import System.IO
     ( IOMode (..)
     , withFile
+    )
+import System.Process
+    ( StdStream (CreatePipe)
+    , createProcess
+    , proc
+    , std_in
+    , std_out
+    )
+import Text.Megaparsec
+    ( ParseErrorBundle (..)
+    , errorBundlePretty
+    , parseMaybe
+    , runParser
     )
 
 import Kore.Attribute.Axiom
@@ -192,28 +215,6 @@ import Kore.Unparser
     ( Unparse
     , unparse
     , unparseToString
-    )
-import Numeric.Natural
-import System.Directory
-    ( doesDirectoryExist
-    , doesFileExist
-    , findExecutable
-    )
-import System.FilePath.Posix
-    ( splitFileName
-    )
-import System.Process
-    ( StdStream (CreatePipe)
-    , createProcess
-    , proc
-    , std_in
-    , std_out
-    )
-import Text.Megaparsec
-    ( ParseErrorBundle (..)
-    , errorBundlePretty
-    , parseMaybe
-    , runParser
     )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
@@ -1015,19 +1016,20 @@ savePartialProof
     -> m ()
 savePartialProof maybeNatural file = do
     currentClaim <- Lens.use (field @"claim")
+    currentIndex <- Lens.use (field @"claimIndex")
+    claims <- Lens.use (field @"claims")
     maybeConfig <- getConfigAt maybeNode
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
         Just (_, currentProofState) -> do
             let config = proofState commonProofStateTransformer currentProofState
                 newClaim = createClaim currentClaim config
-            currentIndex <- Lens.use (field @"claimIndex")
-            claims <- Lens.use (field @"claims")
             let newTrustedClaims = makeTrusted <$> removeAt currentIndex claims
                 newModule =
                     createNewModule (makeModuleName file)
                     $ newClaim : newTrustedClaims
-            liftIO $ withFile file WriteMode (`hPutDoc` unparse newModule)
+            liftIO $ withFile (file <.> "kore") WriteMode (`hPutDoc` unparse newModule)
+            putStrLn' "Done."
   where
     maybeNode :: Maybe ReplNode
     maybeNode =

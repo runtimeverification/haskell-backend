@@ -145,7 +145,8 @@ import Kore.Strategies.ProofState
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
 import Kore.Syntax.Definition
-    ( Module (..)
+    ( Definition (..)
+    , Module (..)
     , ModuleName (..)
     , Sentence (..)
     , SentenceAxiom (..)
@@ -806,16 +807,21 @@ createNewModule
     => From claim (TermLike Variable)
     => String
     -> [claim]
-    -> Module (Sentence (TermLike Variable))
+    -> Definition (Sentence (TermLike Variable))
 createNewModule name claims =
-    Module
-        { moduleName = ModuleName . pack $ name
-        , moduleSentences =
-            importVerification
-            : fmap claimToSentence claims
-        , moduleAttributes = Default.def
+    Definition
+        { definitionAttributes = mempty
+        , definitionModules = [newModule]
         }
   where
+    newModule =
+        Module
+            { moduleName = ModuleName . pack $ name
+            , moduleSentences =
+                importVerification
+                : fmap claimToSentence claims
+            , moduleAttributes = Default.def
+            }
     importVerification =
         SentenceImportSentence
             SentenceImport
