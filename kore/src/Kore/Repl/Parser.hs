@@ -265,7 +265,7 @@ saveSession =
 savePartialProof :: Parser ReplCommand
 savePartialProof =
     SavePartialProof
-    <$$> literal "save-partial-proog"
+    <$$> literal "save-partial-proof"
     *> maybeDecimal
     <**> quotedOrWordWithout ""
 
