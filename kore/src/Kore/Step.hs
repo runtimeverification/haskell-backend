@@ -200,8 +200,8 @@ priorityAnyStrategy rewrites =
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
     ::  ( forall rewrite
-         .  ToRulePattern rewrite
-         => [rewrite] -> Strategy (Prim rewrite)
+        .  ToRulePattern rewrite
+        => [rewrite] -> Strategy (Prim rewrite)
         )
     -- ^ 'allRewrites' or 'anyRewrite'
     -> [RewriteRule Variable]
