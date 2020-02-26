@@ -34,6 +34,9 @@ import Prelude.Kore
 
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
+import Control.Monad
+    ( join
+    )
 import Control.Monad.Error.Class
     ( MonadError
     )
@@ -896,3 +899,22 @@ findProofStatus m =
                 Nothing -> Completed
                 Just ns -> InProgress ns
         Just ns -> StuckProof ns
+
+newClaimsFromGlobalProofStatus
+    :: forall claim m
+    .  Claim claim
+    => MonadState (ReplState claim) m
+    => Map.Map ClaimIndex GraphProofStatus
+    -> m [claim]
+newClaimsFromGlobalProofStatus globalProofStatus =
+    fmap join $ traverse generateClaims $ Map.toList globalProofStatus
+  where
+    generateClaims
+        :: (ClaimIndex, GraphProofStatus)
+        -> m [claim]
+    generateClaims (index, NotStarted) = do
+        claim <- getClaimByIndex (unClaimIndex index)
+        return [fromJust claim]
+    generateClaims (index, Completed) = do
+        claim <- getClaimByIndex (unClaimIndex index)
+        return [addTrustedAttribute . fromJust $ claim]
