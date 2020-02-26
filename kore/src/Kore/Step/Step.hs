@@ -56,7 +56,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -245,10 +245,9 @@ wouldNarrowWith unified =
     leftAxiomVariables =
         FreeVariables.getFreeVariables $ TermLike.freeVariables leftAxiom
       where
-        Conditional { term = axiom } = unified
+        axiom = term unified
         leftAxiom = matchingPattern axiom
-    Conditional { substitution } = unified
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    substitutionVariables = Map.keysSet (Substitution.toMap (substitution unified))
 
 {- | Prepare a rule for unification or matching with the configuration.
 
@@ -316,14 +315,14 @@ checkFunctionLike unifiedRules pat
     , Pretty.indent 4 (unparse pat)
     ]
   where
-    checkFunctionLikeRule Conditional { term }
+    checkFunctionLikeRule conditional
       | TermLike.isFunctionPattern left = return ()
       | otherwise = Left . show . Pretty.vsep $
         [ "Expected function-like left-hand side of rule, but found:"
         , Pretty.indent 4 (unparse left)
         ]
       where
-        left = matchingPattern term
+        left = matchingPattern (term conditional)
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -374,7 +373,7 @@ checkSubstitutionCoverage initial unified
         , "in the left-hand side of the axiom."
         ]
   where
-    Conditional { term = axiom } = unified
+    axiom = term unified
     unifier :: Pattern (Target variable)
     unifier = TermLike.mkTop_ <$ Conditional.withoutTerm unified
     Conditional { substitution } = unified
