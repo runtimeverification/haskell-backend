@@ -17,6 +17,7 @@ module Kore.Internal.Predicate
     , isPredicate
     , makeAndPredicate
     , makeMultipleAndPredicate
+    , getMultiAndPredicate
     , makeCeilPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate
