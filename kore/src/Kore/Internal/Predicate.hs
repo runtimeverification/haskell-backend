@@ -12,6 +12,7 @@ module Kore.Internal.Predicate
     , compactPredicatePredicate
     , freshVariable
     , isFalse
+    , depth
     , makePredicate
     , isPredicate
     , makeAndPredicate
@@ -102,7 +103,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike hiding
-    ( hasFreeVariable
+    ( depth
+    , hasFreeVariable
     , isSimplified
     , mapVariables
     , markSimplified
@@ -817,3 +819,6 @@ freshVariable predicate =
     externalizeFreshVariables
     . TermLike.mapVariables (fmap toVariable) (fmap toVariable)
     <$> predicate
+
+depth :: Predicate variable -> Int
+depth (GenericPredicate predicate) = TermLike.depth predicate

@@ -59,6 +59,9 @@ import Data.Functor.Identity
     )
 import qualified Data.Generics.Product as Lens.Product
 import Data.Hashable
+import Data.List
+    ( foldl'
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -1036,4 +1039,4 @@ mkVar = updateCallStack . synthesize . VariableF . Const
 depth :: TermLike variable -> Int
 depth = Recursive.fold levelDepth
   where
-    levelDepth (_ :< termF) = 1 + foldl max 0 termF
+    levelDepth (_ :< termF) = 1 + foldl' max 0 termF

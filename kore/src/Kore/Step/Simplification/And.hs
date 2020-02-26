@@ -37,7 +37,8 @@ import Data.Either
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.List
-    ( foldl1'
+    ( foldl'
+    , foldl1'
     , sortBy
     )
 import qualified Data.List as List
@@ -73,7 +74,8 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
-    ( setSimplified
+    ( depth
+    , setSimplified
     , simplifiedAttribute
     , unwrapPredicate
     )
@@ -95,15 +97,13 @@ import Kore.Internal.TermLike
     , mkAnd
     , mkBottom_
     , mkNot
-    , mkTop_
+    , mkTop
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( hasFreeVariable
     , setSimplified
     , simplifiedAttribute
-    )
-import qualified Kore.Internal.TermLike.TermLike as TermLike
-    ( depth
     )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
@@ -299,12 +299,12 @@ promoteSubTermsToTop
 promoteSubTermsToTop predicate =
     case normalizedPredicates of
         Unchanged unchanged -> Unchanged $
-            foldl
+            foldl'
                 makeSimplifiedAndPredicate
                 makeTruePredicate_
                 (List.sort unchanged)
         Changed changed -> Changed $
-            foldl makeAndPredicate makeTruePredicate_ changed
+            foldl' makeAndPredicate makeTruePredicate_ changed
   where
     andPredicates :: [Predicate variable]
     andPredicates = children predicate
@@ -318,14 +318,7 @@ promoteSubTermsToTop predicate =
 
     sortByDepth :: [Predicate variable] -> [Predicate variable]
     sortByDepth =
-        map snd
-        . sortBy (compare `on` fst)
-        . map
-            (\predicate' ->
-                ( TermLike.depth $ Predicate.unwrapPredicate predicate'
-                , predicate'
-                )
-            )
+        sortBy (compare `on` Predicate.depth)
 
     normalizedPredicates :: Normalized [Predicate variable]
     normalizedPredicates = normalizedPredicatesWorker [] sortedAndPredicates
@@ -351,6 +344,8 @@ promoteSubTermsToTop predicate =
         let replaceWith = Predicate.unwrapPredicate replaceWithPredicate
         resultTerm <- replaceWithTop replaceWith replaceIn
         case makePredicate resultTerm of
+            -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
+            -- should make it impossible to have an error here.
             Left err -> error $ unlines
                 [ "Replacing"
                 , unparseToString replaceWith
@@ -366,7 +361,7 @@ promoteSubTermsToTop predicate =
         -> TermLike variable
         -> Normalized (TermLike variable)
     replaceWithTop replaceWith replaceIn
-      | replaceWith == replaceIn = Changed mkTop_
+      | replaceWith == replaceIn = Changed (mkTop (termLikeSort replaceIn))
     replaceWithTop replaceWith unchanged
       | isQuantified unchanged
       = Unchanged unchanged
