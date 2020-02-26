@@ -27,7 +27,7 @@ module Kore.Repl.State
     , conjOfClaims
     , appReplOut
     , replOut, replOutputToString
-    , createNewModule
+    , createNewDefinition
     ) where
 
 import Prelude.Kore
@@ -801,14 +801,14 @@ replOutputToString :: ReplOutput -> String
 replOutputToString (ReplOutput out) =
     out >>= replOut id id
 
-createNewModule
+createNewDefinition
     :: forall claim
     .  Claim claim
     => From claim (TermLike Variable)
     => String
     -> [claim]
     -> Definition (Sentence (TermLike Variable))
-createNewModule name claims =
+createNewDefinition name claims =
     Definition
         { definitionAttributes = mempty
         , definitionModules = [newModule]

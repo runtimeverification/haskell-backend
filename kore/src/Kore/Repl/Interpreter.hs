@@ -1022,18 +1022,34 @@ savePartialProof maybeNatural file = do
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
         Just (_, currentProofState) -> do
-            let config = proofState commonProofStateTransformer currentProofState
+            let config = unwrapConfig currentProofState
                 newClaim = createClaim currentClaim config
-            let newTrustedClaims = makeTrusted <$> removeAt currentIndex claims
-                newModule =
-                    createNewModule (makeModuleName file)
-                    $ newClaim : newTrustedClaims
-            liftIO $ withFile (file <.> "kore") WriteMode (`hPutDoc` unparse newModule)
+                newTrustedClaims =
+                    makeTrusted <$> removeAt currentIndex claims
+                newDefinition =
+                    createNewDefinition
+                        (makeModuleName file)
+                        $ newClaim : newTrustedClaims
+            saveUnparsedDefinitionToFile (unparse newDefinition)
             putStrLn' "Done."
   where
+    unwrapConfig :: CommonProofState -> Pattern Variable
+    unwrapConfig = proofState commonProofStateTransformer
+
+    saveUnparsedDefinitionToFile
+        :: Pretty.Doc ann
+        -> m ()
+    saveUnparsedDefinitionToFile definition =
+        liftIO
+        $ withFile
+            (file <.> "kore")
+            WriteMode
+            (`hPutDoc` definition)
+
     maybeNode :: Maybe ReplNode
     maybeNode =
         ReplNode . naturalToInt <$> maybeNatural
+
     makeTrusted :: claim -> claim
     makeTrusted goal@(toRulePattern -> rule) =
         fromRulePattern goal
@@ -1043,6 +1059,7 @@ savePartialProof maybeNatural file = do
                     { Attribute.trusted = Attribute.Trusted True
                     }
             }
+
     removeAt
         :: ClaimIndex
         -> [claim]
@@ -1052,6 +1069,7 @@ savePartialProof maybeNatural file = do
             take index claims
             <> drop (index + 1) claims
         | otherwise = claims
+
     makeModuleName :: FilePath -> String
     makeModuleName name = upper name <> "-SPEC"
 
