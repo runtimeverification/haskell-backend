@@ -274,7 +274,7 @@ applyFirstSimplifierThatWorksWorker
                 , (Pretty.indent 4 . Pretty.vsep)
                     (unparse <$> Foldable.toList orRemainders)
                 ]
-          | not (OrPattern.isFalse orRemainders) ->  do
+          | not (OrPattern.isFalse orRemainders) ->
             -- TODO (traiansf): this might generate too much output
             --    replace log with a logOnce when that becomes available
             tryNextSimplifier Conditional
