@@ -68,23 +68,23 @@ import Kore.Variables.UnifiedVariable
 type Condition variable = Conditional variable ()
 
 isSimplified :: SideCondition.Representation -> Condition variable -> Bool
-isSimplified sideCondition Conditional {term = (), predicate, substitution} =
-    Predicate.isSimplified sideCondition predicate
-    && Substitution.isSimplified sideCondition substitution
+isSimplified sideCondition conditional =
+    Predicate.isSimplified sideCondition (predicate conditional)
+    && Substitution.isSimplified sideCondition (substitution conditional)
 
 simplifiedAttribute :: Condition variable -> Attribute.Simplified
-simplifiedAttribute Conditional {term = (), predicate, substitution} =
-    Predicate.simplifiedAttribute predicate
-    <> Substitution.simplifiedAttribute substitution
+simplifiedAttribute conditional =
+    Predicate.simplifiedAttribute (predicate conditional)
+    <> Substitution.simplifiedAttribute (substitution conditional)
 
 forgetSimplified
     :: InternalVariable variable
     => Condition variable -> Condition variable
-forgetSimplified Conditional { term = (), predicate, substitution } =
+forgetSimplified condition =
     Conditional
         { term = ()
-        , predicate = Predicate.forgetSimplified predicate
-        , substitution = Substitution.forgetSimplified substitution
+        , predicate = Predicate.forgetSimplified (predicate condition)
+        , substitution = Substitution.forgetSimplified (substitution condition)
         }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Condition'.
@@ -179,18 +179,18 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
                 childrenList
 
 conditionSort :: Condition variable -> Sort
-conditionSort Conditional {term = (), predicate} =
-    Predicate.predicateSort predicate
+conditionSort condition =
+    Predicate.predicateSort (predicate condition)
 
 coerceSort
     :: (HasCallStack, InternalVariable variable)
     => Sort -> Condition variable -> Condition variable
 coerceSort
     sort
-    Conditional {term = (), predicate, substitution}
+    condition
   =
     Conditional
         { term = ()
-        , predicate = Predicate.coerceSort sort predicate
-        , substitution
+        , predicate = Predicate.coerceSort sort (predicate condition)
+        , substitution = (substitution condition)
         }
