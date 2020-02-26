@@ -7,6 +7,7 @@ module Kore.Internal.OrPattern
     ( OrPattern
     , coerceSort
     , isSimplified
+    , forgetSimplified
     , fromPatterns
     , toPatterns
     , fromPattern
@@ -51,8 +52,13 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
-import Kore.Internal.TermLike hiding
-    ( isSimplified
+import Kore.Internal.TermLike
+    ( ElementVariable
+    , InternalVariable
+    , Sort
+    , TermLike
+    , mkBottom_
+    , mkOr
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -73,6 +79,10 @@ type OrPattern variable = MultiOr (Pattern variable)
 
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
+
+forgetSimplified
+    :: InternalVariable variable => OrPattern variable -> OrPattern variable
+forgetSimplified = fromPatterns . map Pattern.forgetSimplified . toPatterns
 
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}

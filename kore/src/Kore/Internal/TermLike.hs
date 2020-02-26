@@ -40,6 +40,7 @@ module Kore.Internal.TermLike
     , externalizeFreshVariables
     , refreshElementBinder
     , refreshSetBinder
+    , depth
     -- * Utility functions for dealing with sorts
     , forceSort
     , fullyOverrideSort

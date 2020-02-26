@@ -22,6 +22,7 @@ module Kore.Internal.Pattern
     , fromTermLike
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
+    , forgetSimplified
     , simplifiedAttribute
     , assign
     , requireDefined
@@ -109,6 +110,14 @@ isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =
     TermLike.isSimplified sideCondition t
     && Condition.isSimplified sideCondition p
+
+forgetSimplified
+    :: InternalVariable variable => Pattern variable -> Pattern variable
+forgetSimplified patt =
+    TermLike.forgetSimplified term
+        `withCondition` Condition.forgetSimplified condition
+  where
+    (term, condition) = Conditional.splitTerm patt
 
 simplifiedAttribute :: Pattern variable -> Attribute.Simplified
 simplifiedAttribute (splitTerm -> (t, p)) =
