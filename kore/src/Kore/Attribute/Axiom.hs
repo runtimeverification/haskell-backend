@@ -27,6 +27,7 @@ module Kore.Attribute.Axiom
     , RuleIndex (..)
     , UniqueId (..)
     , axiomSymbolToSymbolOrAlias
+    , parseAxiomAttributes
     ) where
 
 import Prelude.Kore
@@ -41,6 +42,8 @@ import Data.Default
     )
 import Data.Generics.Product
 import Data.Proxy
+import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -48,6 +51,7 @@ import Kore.Attribute.Assoc
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Constructor
 import Kore.Attribute.Axiom.Unit
+import Kore.Attribute.Attributes
 import Kore.Attribute.Comm
 import Kore.Attribute.Functional
 import Kore.Attribute.HeatCool
@@ -59,6 +63,7 @@ import Kore.Attribute.Parser
     ( AttributePattern
     , Attributes
     , ParseAttributes (..)
+    , Parser
     , SymbolOrAlias
     , toAttributes
     )
@@ -162,28 +167,6 @@ instance Default (Axiom symbol) where
             , owise = def
             }
 
-instance ParseAttributes (Axiom SymbolOrAlias) where
-    parseAttribute attr =
-        typed @HeatCool (parseAttribute attr)
-        Monad.>=> typed @ProductionID (parseAttribute attr)
-        Monad.>=> typed @Priority (parseAttribute attr)
-        Monad.>=> typed @Assoc (parseAttribute attr)
-        Monad.>=> typed @Comm (parseAttribute attr)
-        Monad.>=> typed @Unit (parseAttribute attr)
-        Monad.>=> typed @Idem (parseAttribute attr)
-        Monad.>=> typed @Trusted (parseAttribute attr)
-        Monad.>=> typed @Concrete (parseAttribute attr)
-        Monad.>=> typed @Simplification (parseAttribute attr)
-        Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
-        Monad.>=> typed @SmtLemma (parseAttribute attr)
-        Monad.>=> typed @Label (parseAttribute attr)
-        Monad.>=> typed @SourceLocation (parseAttribute attr)
-        Monad.>=> typed @Constructor (parseAttribute attr)
-        Monad.>=> typed @Functional (parseAttribute attr)
-        Monad.>=> typed @Subsorts (parseAttribute attr)
-        Monad.>=> typed @UniqueId (parseAttribute attr)
-        Monad.>=> typed @Owise (parseAttribute attr)
-
 instance From symbol SymbolOrAlias => From (Axiom symbol) Attributes where
     from =
         mconcat . sequence
@@ -221,3 +204,32 @@ instance SQL.Column (Axiom Symbol) where
 axiomSymbolToSymbolOrAlias :: Axiom Symbol -> Axiom SymbolOrAlias
 axiomSymbolToSymbolOrAlias axiom =
     axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias
+
+parseAxiomAttribute
+    :: AttributePattern
+    -> Axiom SymbolOrAlias
+    -> Parser (Axiom SymbolOrAlias)
+parseAxiomAttribute attr =
+        typed @HeatCool (parseAttribute attr)
+        Monad.>=> typed @ProductionID (parseAttribute attr)
+        Monad.>=> typed @Priority (parseAttribute attr)
+        Monad.>=> typed @Assoc (parseAttribute attr)
+        Monad.>=> typed @Comm (parseAttribute attr)
+        Monad.>=> typed @Unit (parseAttribute attr)
+        Monad.>=> typed @Idem (parseAttribute attr)
+        Monad.>=> typed @Trusted (parseAttribute attr)
+        Monad.>=> typed @Concrete (parseAttribute attr)
+        Monad.>=> typed @Simplification (parseAttribute attr)
+        Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
+        Monad.>=> typed @SmtLemma (parseAttribute attr)
+        Monad.>=> typed @Label (parseAttribute attr)
+        Monad.>=> typed @SourceLocation (parseAttribute attr)
+        Monad.>=> typed @Constructor (parseAttribute attr)
+        Monad.>=> typed @Functional (parseAttribute attr)
+        Monad.>=> typed @Subsorts (parseAttribute attr)
+        Monad.>=> typed @UniqueId (parseAttribute attr)
+        Monad.>=> typed @Owise (parseAttribute attr)
+
+parseAxiomAttributes :: Attributes -> Parser (Axiom SymbolOrAlias)
+parseAxiomAttributes (Attributes attrs) =
+    Foldable.foldlM (flip parseAxiomAttribute) Default.def attrs
