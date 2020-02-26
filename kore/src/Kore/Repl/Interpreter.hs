@@ -160,7 +160,6 @@ import qualified Kore.Step.RulePattern as Axiom
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
-import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (ProofStateTransformer)
@@ -590,51 +589,6 @@ proofStatus
 proofStatus = do
     proofs <- allProofs
     putStrLn' . showProofStatus $ proofs
-
-allProofs
-    :: forall claim axiom m
-    .  Claim claim
-    => axiom ~ Rule claim
-    => Monad m
-    => ReplM claim m (Map.Map ClaimIndex GraphProofStatus)
-allProofs = do
-    graphs <- Lens.use (field @"graphs")
-    claims <- Lens.use (field @"claims")
-    let cindexes = ClaimIndex <$> [0..length claims - 1]
-    return
-        $ Map.union
-            (fmap inProgressProofs graphs)
-            (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
-  where
-    inProgressProofs
-        :: ExecutionGraph axiom
-        -> GraphProofStatus
-    inProgressProofs =
-        findProofStatus
-        . sortLeafsByType
-        . Strategy.graph
-
-    notStartedProofs
-        :: Map.Map ClaimIndex (ExecutionGraph axiom)
-        -> Map.Map ClaimIndex claim
-        -> Map.Map ClaimIndex GraphProofStatus
-    notStartedProofs gphs cls =
-        notStartedOrTrusted <$> cls `Map.difference` gphs
-
-    notStartedOrTrusted :: claim -> GraphProofStatus
-    notStartedOrTrusted cl =
-        if isTrusted cl
-           then TrustedClaim
-           else NotStarted
-
-    findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
-    findProofStatus m =
-        case Map.lookup StuckNode m of
-            Nothing ->
-                case Map.lookup UnevaluatedNode m of
-                    Nothing -> Completed
-                    Just ns -> InProgress ns
-            Just ns -> StuckProof ns
 
 showRule
     :: MonadState (ReplState claim) m

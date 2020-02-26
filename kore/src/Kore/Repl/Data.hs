@@ -540,6 +540,7 @@ data GraphProofStatus
     | InProgress [Graph.Node]
     | StuckProof [Graph.Node]
     | TrustedClaim
+    | CurrentClaim [Graph.Node]
     deriving (Eq, Show)
 
 makeAuxReplOutput :: String -> ReplOutput

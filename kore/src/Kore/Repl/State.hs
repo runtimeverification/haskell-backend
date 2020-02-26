@@ -27,6 +27,7 @@ module Kore.Repl.State
     , conjOfClaims
     , appReplOut
     , replOut, replOutputToString
+    , allProofs
     ) where
 
 import Prelude.Kore
@@ -72,6 +73,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 import Data.Sequence
     ( Seq
     )
@@ -811,3 +815,84 @@ replOut f g =
 replOutputToString :: ReplOutput -> String
 replOutputToString (ReplOutput out) =
     out >>= replOut id id
+
+allProofs
+    :: forall claim m
+    .  Claim claim
+    => MonadState (ReplState claim) m
+    => m (Map.Map ClaimIndex GraphProofStatus)
+allProofs = do
+    graphs <- Lens.use (field @"graphs")
+    claims <- Lens.use (field @"claims")
+    let cindexes = ClaimIndex <$> [0..length claims - 1]
+    return
+        $ fmap inProgressProofs graphs
+        `Map.union`
+        notStartedProofs graphs (Map.fromList $ zip cindexes claims)
+
+allProofsWithCurrentClaim
+    :: forall claim m
+    .  Claim claim
+    => MonadState (ReplState claim) m
+    => m (Map.Map ClaimIndex GraphProofStatus)
+allProofsWithCurrentClaim = do
+    graphs <- Lens.use (field @"graphs")
+    claims <- Lens.use (field @"claims")
+    currentClaimIndex <- Lens.use (field @"claimIndex")
+    let cindexes = ClaimIndex <$> [0..length claims - 1]
+    return
+        $ currentProof currentClaimIndex graphs
+        `Map.union`
+        fmap inProgressProofs graphs
+        `Map.union`
+        notStartedProofs graphs (Map.fromList $ zip cindexes claims)
+
+currentProof
+    :: ClaimIndex
+    -> Map.Map ClaimIndex (ExecutionGraph axiom)
+    -> Map.Map ClaimIndex GraphProofStatus
+currentProof index gphs =
+    Map.singleton index
+    . CurrentClaim
+    . findLeafNodes
+    . Strategy.graph
+    . fromJust
+    -- ^ should be safe since the any current ClaimIndex must
+    -- have an ExecutionGraph in the state
+    $ Map.lookup index gphs
+
+inProgressProofs
+    :: ExecutionGraph axiom
+    -> GraphProofStatus
+inProgressProofs =
+    findProofStatus
+    . sortLeafsByType
+    . Strategy.graph
+
+notStartedProofs
+    :: forall claim axiom
+    .  Claim claim
+    => Map.Map ClaimIndex (ExecutionGraph axiom)
+    -> Map.Map ClaimIndex claim
+    -> Map.Map ClaimIndex GraphProofStatus
+notStartedProofs gphs cls =
+    notStartedOrTrusted <$> cls `Map.difference` gphs
+
+notStartedOrTrusted
+    :: forall claim
+    .  Claim claim
+    => claim
+    -> GraphProofStatus
+notStartedOrTrusted cl =
+    if isTrusted cl
+       then TrustedClaim
+       else NotStarted
+
+findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
+findProofStatus m =
+    case Map.lookup StuckNode m of
+        Nothing ->
+            case Map.lookup UnevaluatedNode m of
+                Nothing -> Completed
+                Just ns -> InProgress ns
+        Just ns -> StuckProof ns
