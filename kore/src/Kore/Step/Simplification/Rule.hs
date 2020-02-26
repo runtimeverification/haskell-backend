@@ -26,6 +26,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
     )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
@@ -95,10 +96,10 @@ simplifyEqualityPattern rule = do
                     EqualityPattern { ensures = ensures } = rule
                 EqualityPattern { attributes } = rule
             return EqualityPattern
-                { left = left'
-                , requires = requires'
-                , right = rhs'
-                , ensures = ensures'
+                { left = TermLike.forgetSimplified left'
+                , requires = Predicate.forgetSimplified requires'
+                , right = TermLike.forgetSimplified rhs'
+                , ensures = Predicate.forgetSimplified ensures'
                 , attributes = attributes
                 }
         _ ->
@@ -152,10 +153,10 @@ simplifyRulePattern rule = do
                     RulePattern { rhs } = rule
                 RulePattern { attributes } = rule
             return RulePattern
-                { left = left'
-                , antiLeft = antiLeft'
-                , requires = requires'
-                , rhs = rhs'
+                { left = TermLike.forgetSimplified left'
+                , antiLeft = TermLike.forgetSimplified <$> antiLeft'
+                , requires = Predicate.forgetSimplified requires'
+                , rhs = rhsForgetSimplified rhs'
                 , attributes = attributes
                 }
         _ ->

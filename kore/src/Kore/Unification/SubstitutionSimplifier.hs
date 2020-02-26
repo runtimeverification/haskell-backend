@@ -33,6 +33,7 @@ import Kore.Internal.Substitution
     ( Normalization (..)
     , Substitution
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -89,7 +90,7 @@ substitutionSimplifier =
         simplifiableCycle =
             throwSubstitutionError $ SimplifiableCycle variables normalization
           where
-            (variables, _) = unzip denormalized
+            variables = fmap Substitution.assignedVariable denormalized
 
 unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =

@@ -8,7 +8,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 
 module SMT
-    ( SMT, SmtT, runSmtT
+    ( SMT, getSMT
     , Solver
     , stopSolver
     , runSMT
@@ -57,13 +57,12 @@ import Control.Monad.Catch
     ( MonadCatch
     , MonadMask
     , MonadThrow
-    , bracket
+    , catch
     , finally
     )
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.IO.Class
     ( MonadIO
-    , liftIO
     )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
@@ -78,9 +77,6 @@ import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
-import Data.Functor.Contravariant
-    ( contramap
-    )
 import Data.Limit
 import Data.Text
     ( Text
@@ -95,7 +91,8 @@ import ListT
     , mapListT
     )
 import Log
-    ( MonadLog (..)
+    ( LoggerT (..)
+    , MonadLog (..)
     )
 import qualified Log
 import SMT.SimpleSMT
@@ -109,7 +106,8 @@ import SMT.SimpleSMT
     , SmtDataTypeDeclaration
     , SmtFunctionDeclaration
     , SmtSortDeclaration
-    , Solver
+    , Solver (..)
+    , SolverHandle (..)
     , SortDeclaration (..)
     , pop
     , push
@@ -257,7 +255,7 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
+newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
     deriving
         ( Applicative
         , Functor
@@ -265,77 +263,63 @@ newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
         , MonadCatch
         , MonadIO
         , MonadThrow
-        , Morph.MFunctor
-        , MonadMask
+        , MonadLog
         )
 
-type SMT = SmtT IO
-
 withSolver' :: (Solver -> IO a) -> SMT a
-withSolver' action = SmtT $ do
+withSolver' action = SMT $ do
     mvar <- Reader.ask
-    liftIO $ withMVar mvar action
+    Trans.lift
+        $ LoggerT $ ReaderT $ withMVar mvar . flip (curryForSolver action)
+  where
+    curryForSolver :: (Solver -> IO a) -> SolverHandle -> Logger -> IO a
+    curryForSolver fromSolver =
+        \solverHandle logger -> fromSolver (Solver solverHandle logger)
 
-withSolverT' :: MonadIO m => MonadMask m => (Solver -> m a) -> SmtT m a
-withSolverT' action = SmtT $ do
-    mvar <- Reader.ask
-    Trans.lift $ bracket (liftIO $ takeMVar mvar) (liftIO . putMVar mvar) action
-
-instance (MonadIO m, MonadMask m) => MonadLog (SmtT m) where
-    logEntry entry = withSolverT' $ \solver -> do
-        let logAction = contramap Log.toEntry $ SimpleSMT.logger solver
-        liftIO $ Colog.unLogAction logAction entry
-
-instance (MonadIO m, MonadMask m) => MonadSMT (SmtT m) where
-    withSolver (SmtT action) =
-        withSolverT' $ \solver -> do
-            -- Create an unshared "dummy" mutex for the solver.
-            mvar <- liftIO $ newMVar solver
-            -- Run the inner action with the unshared mutex.
-            -- The action will never block waiting to acquire the solver.
-            liftIO (push solver)
-            runReaderT action mvar `finally` liftIO (pop solver)
-
+instance MonadSMT SMT where
+    withSolver smt =
+        withSolver' $ \solver@(Solver solverHandle logger) -> do
+            -- Create an unshared "dummy" mutex for the solverHandle.
+            mvar <- newMVar solverHandle
+            -- Run the SMT with the unshared mutex.
+            -- The SMT will never block waiting to acquire the solver.
+            push solver
+            runSMT' mvar logger smt `finally` pop solver
 
     declare name typ =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.declare solver name typ
+        withSolver' $ \solver -> SimpleSMT.declare solver name typ
 
     declareFun declaration =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareFun solver declaration
+        withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
 
     declareSort declaration =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareSort solver declaration
+        withSolver' $ \solver -> SimpleSMT.declareSort solver declaration
 
     declareDatatype declaration =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareDatatype solver declaration
+        withSolver' $ \solver -> SimpleSMT.declareDatatype solver declaration
 
     declareDatatypes datatypes =
-        withSolverT' $ \solver ->
-            liftIO $ SimpleSMT.declareDatatypes solver datatypes
+        withSolver' $ \solver -> SimpleSMT.declareDatatypes solver datatypes
 
-    assert fact =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.assert solver fact
+    assert fact = withSolver' $ \solver -> SimpleSMT.assert solver fact
 
-    check = Morph.hoist liftIO $ withSolver' SimpleSMT.check
+    check = withSolver' SimpleSMT.check
 
     ackCommand command =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.ackCommand solver command
+        withSolver' $ \solver -> SimpleSMT.ackCommand solver command
 
     loadFile path =
-        withSolverT' $ \solver -> liftIO $ SimpleSMT.loadFile solver path
+        withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
     {-# INLINE withSolver #-}
 
-instance (MonadIO m) => MonadProfiler (SmtT m)
+instance MonadProfiler SMT
   where
     profile a action = do
         configuration <- profileConfiguration
-        SmtT (profileEvent configuration a (runSmtT action))
+        SMT (profileEvent configuration a (getSMT action))
     {-# INLINE profile #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
@@ -389,22 +373,22 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         }
 
-{- | Initialize a new solver with the given 'Config'.
+{- | Initialize a new solverHandle with the given 'Config'.
 
-The new solver is returned in an 'MVar' for thread-safety.
+The new solverHandle is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> Logger -> IO (MVar Solver)
+newSolver :: Config -> Logger -> IO (MVar SolverHandle)
 newSolver config logger = do
-    solver <- SimpleSMT.newSolver exe args logger
-    mvar <- newMVar solver
-    runReaderT runSmtT mvar
+    solverHandle <- SimpleSMT.newSolver exe args logger
+    mvar <- newMVar solverHandle
+    runReaderT (getLoggerT (runReaderT getSMT mvar)) logger
     return mvar
   where
     Config { timeOut } = config
     Config { executable = exe, arguments = args } = config
     Config { preludeFile } = config
-    SmtT { runSmtT } = do
+    SMT { getSMT } = do
         setTimeOut timeOut
         maybe (pure ()) loadFile preludeFile
 
@@ -415,19 +399,23 @@ the 'Solver' is never returned to the 'MVar', so any threads waiting for the
 solver will hang.
 
  -}
-stopSolver :: MVar Solver -> IO ()
-stopSolver mvar = do
-    solver <- takeMVar mvar
+stopSolver :: Logger -> MVar SolverHandle -> IO ()
+stopSolver logger mvar = do
+    solverHandle <- takeMVar mvar
+    let solver = Solver solverHandle logger
     _ <- SimpleSMT.stop solver
     return ()
 
 -- | Run an external SMT solver.
 runSMT :: Config -> Logger -> SMT a -> IO a
-runSMT config logger SmtT { runSmtT } =
+runSMT config logger smt =
     Exception.bracket
-        (newSolver config logger `Exception.catch` showZ3NotFound)
-        stopSolver
-        (runReaderT runSmtT)
+        ( catch
+            (newSolver config logger)
+            showZ3NotFound
+        )
+        (stopSolver logger)
+        (\mvar -> runSMT' mvar logger smt)
   where
     showZ3NotFound :: Exception.IOException -> IO a
     showZ3NotFound e =
@@ -435,6 +423,10 @@ runSMT config logger SmtT { runSmtT } =
             $ Exception.displayException e <> "\n"
             <> "We couldn't start Z3 due to the exception above. "
             <> "Is Z3 installed?"
+
+runSMT' :: MVar SolverHandle -> Logger -> SMT a -> IO a
+runSMT' mvar logger SMT { getSMT } =
+    (runReaderT . getLoggerT) (runReaderT getSMT mvar) logger
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars

@@ -52,10 +52,6 @@ import Kore.Internal.Substitution
     ( Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
-    ( mapTerms
-    , unsafeWrap
-    , unwrap
-    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -88,13 +84,18 @@ simplifiedPredicate :: Predicate variable -> Predicate variable
 simplifiedPredicate = fmap simplifiedTerm
 
 simplifiedSubstitution
-    :: Ord variable => Substitution variable -> Substitution variable
+    :: InternalVariable variable
+    => Substitution variable
+    -> Substitution variable
 simplifiedSubstitution =
-    Substitution.unsafeWrap
+    Substitution.unsafeWrapFromAssignments
     . Substitution.unwrap
     . Substitution.mapTerms simplifiedTerm
 
-simplifiedCondition :: Ord variable => Condition variable -> Condition variable
+simplifiedCondition
+    :: InternalVariable variable
+    => Condition variable
+    -> Condition variable
 simplifiedCondition Conditional { term = (), predicate, substitution } =
     Conditional
         { term = ()
@@ -118,5 +119,7 @@ simplifiedOrPattern
 simplifiedOrPattern = fmap simplifiedPattern
 
 simplifiedOrCondition
-    :: Ord variable => OrCondition variable -> OrCondition variable
+    :: InternalVariable variable
+    => OrCondition variable
+    -> OrCondition variable
 simplifiedOrCondition = fmap simplifiedCondition

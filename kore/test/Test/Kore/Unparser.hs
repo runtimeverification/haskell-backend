@@ -184,6 +184,7 @@ test_unparse =
             (Pattern.andCondition
                 (Pattern.topOf Mock.topSort)
                 (Condition.fromSubstitution $ Substitution.wrap
+                    $ Substitution.mkUnwrappedSubstitution
                     [ (ElemVar Mock.x, Mock.a)
                     , (ElemVar Mock.y, Mock.b)
                     , (ElemVar Mock.z, Mock.c)
@@ -227,6 +228,7 @@ test_unparse =
                         ]
                     )
                     (Condition.fromSubstitution $ Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                         [ (ElemVar Mock.x, Mock.a)
                         , (ElemVar Mock.y, Mock.b)
                         , (ElemVar Mock.z, Mock.c)

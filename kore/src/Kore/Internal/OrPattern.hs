@@ -7,6 +7,7 @@ module Kore.Internal.OrPattern
     ( OrPattern
     , coerceSort
     , isSimplified
+    , forgetSimplified
     , fromPatterns
     , toPatterns
     , fromPattern
@@ -51,8 +52,13 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
-import Kore.Internal.TermLike hiding
-    ( isSimplified
+import Kore.Internal.TermLike
+    ( ElementVariable
+    , InternalVariable
+    , Sort
+    , TermLike
+    , mkBottom_
+    , mkOr
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -74,6 +80,10 @@ type OrPattern variable = MultiOr (Pattern variable)
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
 
+forgetSimplified
+    :: InternalVariable variable => OrPattern variable -> OrPattern variable
+forgetSimplified = fromPatterns . map Pattern.forgetSimplified . toPatterns
+
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}
 fromPattern :: Pattern variable -> OrPattern variable
@@ -82,7 +92,7 @@ fromPattern = from
 {- | Disjoin a collection of patterns.
  -}
 fromPatterns
-    :: (Foldable f, Ord variable)
+    :: (Foldable f, InternalVariable variable)
     => f (Pattern variable)
     -> OrPattern variable
 fromPatterns = from . Foldable.toList
@@ -110,7 +120,7 @@ fromTermLike = fromPattern . Pattern.fromTermLike
 @
 
  -}
-bottom :: Ord variable => OrPattern variable
+bottom :: InternalVariable variable => OrPattern variable
 bottom = fromPatterns []
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
@@ -191,7 +201,7 @@ coerceSort sort =
     . toPatterns
 
 gather
-    :: (Ord variable, Monad m)
+    :: (InternalVariable variable, Monad m)
     => BranchT m (Pattern variable) -> m (OrPattern variable)
 gather = MultiOr.gather
 

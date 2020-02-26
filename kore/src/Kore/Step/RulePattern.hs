@@ -27,6 +27,7 @@ module Kore.Step.RulePattern
     , isFreeOf
     , Kore.Step.RulePattern.substitute
     , rhsSubstitute
+    , rhsForgetSimplified
     , rhsToTerm
     , termToRHS
     , injectTermIntoRHS
@@ -391,6 +392,14 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
   where
     subst' = foldr (Map.delete . ElemVar) subst existentials
 
+rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
+rhsForgetSimplified RHS { existentials, right, ensures } =
+    RHS
+        { existentials
+        , right = TermLike.forgetSimplified right
+        , ensures = Predicate.forgetSimplified ensures
+        }
+
 {- | Apply the substitution to the rule.
  -}
 substitute
@@ -663,6 +672,25 @@ rewriteRuleToTerm
     TermLike.mkRewrites
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (rhsToTerm rhs)
+
+instance
+    InternalVariable variable
+      => From (OnePathRule variable) (TermLike variable)
+  where
+    from = onePathRuleToTerm
+
+instance
+    InternalVariable variable
+      => From (AllPathRule variable) (TermLike variable)
+  where
+    from = allPathRuleToTerm
+
+instance
+    InternalVariable variable
+      => From (ReachabilityRule variable) (TermLike variable)
+  where
+    from (OnePath claim) = from claim
+    from (AllPath claim) = from claim
 
 -- | Converts a 'OnePathRule' into its term representation
 onePathRuleToTerm

@@ -132,6 +132,10 @@ evaluateApplication
     Application { applicationSymbolOrAlias = symbol } = application
 
     termLike = synthesize (ApplySymbolF application)
+
+    unevaluated
+        :: Monad m
+        => Maybe SideCondition.Representation -> m (OrPattern variable)
     unevaluated maybeSideCondition =
         return
         $ OrPattern.fromPattern
@@ -139,6 +143,10 @@ evaluateApplication
             (markSimplifiedIfChildren maybeSideCondition termLike)
             childrenCondition
 
+    markSimplifiedIfChildren
+        :: Maybe SideCondition.Representation
+        -> TermLike variable
+        -> TermLike variable
     markSimplifiedIfChildren Nothing = TermLike.setSimplified
         (Foldable.foldMap TermLike.simplifiedAttribute application)
     markSimplifiedIfChildren (Just condition) = TermLike.setSimplified

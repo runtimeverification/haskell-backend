@@ -97,6 +97,16 @@ import Kore.Internal.Predicate
     ( makePredicate
     )
 import Kore.Internal.TermLike
+    ( pattern And_
+    , TermLike
+    , Variable
+    , elemVarS
+    , mkElemVar
+    , mkSort
+    , mkSortVariable
+    , mkTop
+    , noLocationId
+    )
 import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
