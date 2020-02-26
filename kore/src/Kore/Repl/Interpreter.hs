@@ -244,37 +244,38 @@ replInterpreter0
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
-                ShowUsage           -> showUsage           $> Continue
-                Help                -> help                $> Continue
-                ShowClaim mc        -> showClaim mc        $> Continue
-                ShowAxiom ea        -> showAxiom ea        $> Continue
-                Prove i             -> prove i             $> Continue
-                ShowGraph mfile out -> showGraph mfile out $> Continue
-                ProveSteps n        -> proveSteps n        $> Continue
-                ProveStepsF n       -> proveStepsF n       $> Continue
-                SelectNode i        -> selectNode i        $> Continue
-                ShowConfig mc       -> showConfig mc       $> Continue
-                OmitCell c          -> omitCell c          $> Continue
-                ShowLeafs           -> showLeafs           $> Continue
-                ShowRule   mc       -> showRule mc         $> Continue
-                ShowPrecBranch mn   -> showPrecBranch mn   $> Continue
-                ShowChildren mn     -> showChildren mn     $> Continue
-                Label ms            -> label ms            $> Continue
-                LabelAdd l mn       -> labelAdd l mn       $> Continue
-                LabelDel l          -> labelDel l          $> Continue
-                Redirect inn file   -> redirect inn file   $> Continue
-                Try ref             -> tryAxiomClaim ref   $> Continue
-                TryF ac             -> tryFAxiomClaim ac   $> Continue
-                Clear n             -> clear n             $> Continue
-                SaveSession file    -> saveSession file    $> Continue
-                Pipe inn file args  -> pipe inn file args  $> Continue
-                AppendTo inn file   -> appendTo inn file   $> Continue
-                Alias a             -> alias a             $> Continue
-                TryAlias name       -> tryAlias name printAux printKore
-                LoadScript file     -> loadScript file     $> Continue
-                ProofStatus         -> proofStatus         $> Continue
-                Log opts            -> handleLog opts      $> Continue
-                Exit                -> exit
+                ShowUsage             -> showUsage             $> Continue
+                Help                  -> help                  $> Continue
+                ShowClaim mc          -> showClaim mc          $> Continue
+                ShowAxiom ea          -> showAxiom ea          $> Continue
+                Prove i               -> prove i               $> Continue
+                ShowGraph mfile out   -> showGraph mfile out   $> Continue
+                ProveSteps n          -> proveSteps n          $> Continue
+                ProveStepsF n         -> proveStepsF n         $> Continue
+                SelectNode i          -> selectNode i          $> Continue
+                ShowConfig mc         -> showConfig mc         $> Continue
+                OmitCell c            -> omitCell c            $> Continue
+                ShowLeafs             -> showLeafs             $> Continue
+                ShowRule   mc         -> showRule mc           $> Continue
+                ShowPrecBranch mn     -> showPrecBranch mn     $> Continue
+                ShowChildren mn       -> showChildren mn       $> Continue
+                Label ms              -> label ms              $> Continue
+                LabelAdd l mn         -> labelAdd l mn         $> Continue
+                LabelDel l            -> labelDel l            $> Continue
+                Redirect inn file     -> redirect inn file     $> Continue
+                Try ref               -> tryAxiomClaim ref     $> Continue
+                TryF ac               -> tryFAxiomClaim ac     $> Continue
+                Clear n               -> clear n               $> Continue
+                SaveSession file      -> saveSession file      $> Continue
+                SavePartialProof mn f -> savePartialProof mn f $> Continue
+                Pipe inn file args    -> pipe inn file args    $> Continue
+                AppendTo inn file     -> appendTo inn file     $> Continue
+                Alias a               -> alias a               $> Continue
+                TryAlias name         -> tryAlias name printAux printKore
+                LoadScript file       -> loadScript file       $> Continue
+                ProofStatus           -> proofStatus           $> Continue
+                Log opts              -> handleLog opts        $> Continue
+                Exit                  -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
             ( replOut
@@ -991,6 +992,12 @@ saveSession path =
         putStrLn' "Done."
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
+
+savePartialProof
+    :: Maybe Natural
+    -> FilePath
+    -> m ()
+savePartialProof = undefined
 
 -- | Pipe result of the command to the specified program. This function will start
 -- one process for each KoreOut in the command's output. AuxOut will not be piped,
