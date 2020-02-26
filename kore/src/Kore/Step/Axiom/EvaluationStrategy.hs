@@ -17,7 +17,6 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
