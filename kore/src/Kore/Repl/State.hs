@@ -814,6 +814,7 @@ createNewDefinition name claims =
         , definitionModules = [newModule]
         }
   where
+    newModule :: Module (Sentence (TermLike Variable))
     newModule =
         Module
             { moduleName = ModuleName . pack $ name
@@ -822,6 +823,8 @@ createNewDefinition name claims =
                 : fmap claimToSentence claims
             , moduleAttributes = Default.def
             }
+
+    importVerification :: Sentence (TermLike Variable)
     importVerification =
         SentenceImportSentence
             SentenceImport
@@ -829,6 +832,7 @@ createNewDefinition name claims =
                     ModuleName "VERIFICATION"
                 , sentenceImportAttributes = mempty
                 }
+
     claimToSentence :: claim -> Sentence (TermLike Variable)
     claimToSentence claim =
         SentenceClaimSentence
@@ -838,8 +842,10 @@ createNewDefinition name claims =
             , sentenceAxiomPattern = claimToTerm claim
             , sentenceAxiomAttributes = trustedToAttribute claim
             }
+
     claimToTerm :: claim -> TermLike Variable
     claimToTerm = from
+
     trustedToAttribute :: claim -> Syntax.Attributes
     trustedToAttribute
         ( Attribute.trusted
