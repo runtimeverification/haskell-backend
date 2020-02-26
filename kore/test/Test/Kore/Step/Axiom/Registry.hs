@@ -309,7 +309,7 @@ testDef =
             , sentenceAxiomAttributes =
                 Attributes
                     [ simplificationAttribute
-                    , Attribute.priorityAttribute "3"
+                    , Attribute.priorityAttribute 3
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
@@ -327,7 +327,7 @@ testDef =
             , sentenceAxiomAttributes =
                 Attributes
                     [ simplificationAttribute
-                    , Attribute.priorityAttribute "1"
+                    , Attribute.priorityAttribute 1
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
@@ -345,7 +345,7 @@ testDef =
             , sentenceAxiomAttributes =
                 Attributes
                     [ simplificationAttribute
-                    , Attribute.priorityAttribute "2"
+                    , Attribute.priorityAttribute 2
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
