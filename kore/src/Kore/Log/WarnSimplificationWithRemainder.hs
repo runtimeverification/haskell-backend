@@ -19,6 +19,7 @@ import Data.Typeable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -35,6 +36,10 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
+import Kore.Step.EqualityPattern
+    ( EqualityRule (..)
+    )
+import qualified Kore.Step.EqualityPattern as EqualityPattern
 import Kore.Unparser
 import Log
 import Pretty
@@ -53,8 +58,8 @@ data WarnSimplificationWithRemainder =
     WarnSimplificationWithRemainder
         { inputPattern :: TermLike Variable
         , sideCondition :: SideCondition Variable
-        , results :: Results
         , remainders :: Remainders
+        , rule :: EqualityRule Variable
         }
     deriving Typeable
     deriving (GHC.Generic)
@@ -102,26 +107,24 @@ warnSimplificationWithRemainder
     => InternalVariable variable
     => TermLike variable  -- ^ input pattern
     -> SideCondition variable  -- ^ input condition
-    -> OrPattern variable  -- ^ results
     -> OrPattern variable  -- ^ remainders
+    -> EqualityRule Variable
     -> logger ()
 warnSimplificationWithRemainder
     (TermLike.mapVariables (fmap toVariable) (fmap toVariable) -> inputPattern)
     (SideCondition.mapVariables (fmap toVariable) (fmap toVariable)
         -> sideCondition
     )
-    (Results . fmap (Pattern.mapVariables (fmap toVariable) (fmap toVariable))
-        -> results
-    )
     (Remainders . fmap (Pattern.mapVariables (fmap toVariable) (fmap toVariable))
         -> remainders
     )
+    rule
   =
     logEntry WarnSimplificationWithRemainder
         { inputPattern
         , sideCondition
-        , results
         , remainders
+        , rule
         }
 
 instance Entry WarnSimplificationWithRemainder where
@@ -136,14 +139,15 @@ instance Pretty WarnSimplificationWithRemainder where
                 , Pretty.indent 2 (unparse inputPattern)
                 , "input condition:"
                 , Pretty.indent 2 (unparse sideCondition)
-                , "results:"
-                , Pretty.indent 2 (unparseOrPattern $ getResults results)
                 , "remainders:"
                 , Pretty.indent 2 (unparseOrPattern $ getRemainders remainders)
+                , "when applying rule at location:"
+                , Pretty.indent 2 (Pretty.pretty location)
                 ]
             , "Rule will be skipped."
             ]
       where
         WarnSimplificationWithRemainder { inputPattern, sideCondition } = entry
-        WarnSimplificationWithRemainder { results, remainders } = entry
+        WarnSimplificationWithRemainder { remainders, rule } = entry
         unparseOrPattern = Pretty.vsep . map unparse . OrPattern.toPatterns
+        location = Attribute.Axiom.sourceLocation . EqualityPattern.attributes . getEqualityRule $ rule
