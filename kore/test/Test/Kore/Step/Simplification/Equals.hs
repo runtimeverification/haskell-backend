@@ -156,9 +156,7 @@ test_equalsSimplification_Or_Pattern =
                             makeMultipleAndPredicate
                                 [ makeCeilPredicate_ Mock.cf
                                 , makeCeilPredicate_ Mock.cg
-                                , makeImpliesPredicate
-                                    (makeCeilPredicate_ Mock.cg)
-                                    (makeEqualsPredicate_ Mock.cf Mock.cg)
+                                , makeEqualsPredicate_ Mock.cf Mock.cg
                                 , makeImpliesPredicate
                                     (makeCeilPredicate_ Mock.ch)
                                     (makeEqualsPredicate_ Mock.cf Mock.ch)
@@ -171,12 +169,10 @@ test_equalsSimplification_Or_Pattern =
                             makeMultipleAndPredicate
                                 [ makeCeilPredicate_ Mock.cf
                                 , makeCeilPredicate_ Mock.ch
+                                , makeEqualsPredicate_ Mock.cf Mock.ch
                                 , makeImpliesPredicate
                                     (makeCeilPredicate_ Mock.cg)
                                     (makeEqualsPredicate_ Mock.cf Mock.cg)
-                                , makeImpliesPredicate
-                                    (makeCeilPredicate_ Mock.ch)
-                                    (makeEqualsPredicate_ Mock.cf Mock.ch)
                                 ]
                         , substitution = mempty
                         }
@@ -240,9 +236,7 @@ test_equalsSimplification_Or_Pattern =
                             makeMultipleAndPredicate
                                 [ definedF
                                 , definedG
-                                , makeImpliesPredicate
-                                    definedGWithSubstitution
-                                    (makeEqualsPredicate_ Mock.cf Mock.cg)
+                                , makeEqualsPredicate_ Mock.cf Mock.cg
                                 , makeImpliesPredicate
                                     definedH
                                     (makeEqualsPredicate_ Mock.cf Mock.ch)
@@ -256,12 +250,10 @@ test_equalsSimplification_Or_Pattern =
                             makeMultipleAndPredicate
                                 [ definedF
                                 , definedH
+                                , makeEqualsPredicate_ Mock.cf Mock.ch
                                 , makeImpliesPredicate
                                     definedGWithSubstitution
                                     (makeEqualsPredicate_ Mock.cf Mock.cg)
-                                , makeImpliesPredicate
-                                    definedH
-                                    (makeEqualsPredicate_ Mock.cf Mock.ch)
                                 ]
                         , substitution = mempty
                         }
@@ -279,10 +271,12 @@ test_equalsSimplification_Or_Pattern =
               where
                 definedF = makeCeilPredicate_ Mock.cf
                 definedG = makeCeilPredicate_ Mock.cg
+                predicateSubstitution =
+                    makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
                 definedGWithSubstitution =
                     makeAndPredicate
-                        (makeCeilPredicate_ Mock.cg)
-                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
+                        definedG
+                        predicateSubstitution
                 definedH = makeCeilPredicate_ Mock.ch
             first =
                 OrPattern.fromPatterns

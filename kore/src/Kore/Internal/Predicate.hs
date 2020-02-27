@@ -6,15 +6,18 @@ License     : NCSA
 
 module Kore.Internal.Predicate
     ( Predicate -- Constructor not exported on purpose
+    , pattern PredicateAnd
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
     , freshVariable
     , isFalse
+    , depth
     , makePredicate
     , isPredicate
     , makeAndPredicate
     , makeMultipleAndPredicate
+    , getMultiAndPredicate
     , makeCeilPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate
@@ -101,7 +104,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike hiding
-    ( hasFreeVariable
+    ( depth
+    , hasFreeVariable
     , isSimplified
     , mapVariables
     , markSimplified
@@ -247,6 +251,10 @@ pattern PredicateTrue :: Predicate variable
 pattern PredicateFalse <- GenericPredicate (Recursive.project -> _ :< BottomF _)
 pattern PredicateTrue  <- GenericPredicate (Recursive.project -> _ :< TopF _)
 
+pattern PredicateAnd
+    :: Predicate variable -> Predicate variable -> Predicate variable
+pattern PredicateAnd p1 p2 <-
+    GenericPredicate (And_ _ (GenericPredicate -> p1) (GenericPredicate -> p2))
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}
 isFalse :: TopBottom patt => GenericPredicate patt -> Bool
@@ -812,3 +820,6 @@ freshVariable predicate =
     externalizeFreshVariables
     . TermLike.mapVariables (fmap toVariable) (fmap toVariable)
     <$> predicate
+
+depth :: Predicate variable -> Int
+depth (GenericPredicate predicate) = TermLike.depth predicate

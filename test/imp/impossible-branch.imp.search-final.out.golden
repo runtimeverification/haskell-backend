@@ -14,9 +14,9 @@
     }
   #And
     {
-      false
-    #Equals
       ?I <=Int ?I0
+    #Equals
+      false
     }
 #Or
     {
