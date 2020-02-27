@@ -9,8 +9,6 @@ import Test.Tasty
 import qualified Data.Map.Strict as Map
 
 import qualified Data.Sup as Sup
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -53,15 +51,11 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore.Builtin.Builtin
-    ( emptyNormalizedSet
-    )
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Kore.With
 import Test.Tasty.HUnit.Ext
 
 test_ceilSimplification :: [TestTree]
@@ -419,40 +413,6 @@ test_ceilSimplification =
                 , domainValueChild = mkStringLiteral "a"
                 }
         assertEqual "ceil(1)" expected actual
-    , testGroup "Builtin.Map"
-        [ testCase "concrete keys" $ do
-            -- maps assume that their keys are constructor-like, so
-            -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
-            let original =
-                    Mock.builtinMap [(constr10OfA, fOfB), (constr11OfA, gOfB)]
-                expected =
-                    OrPattern.fromPattern . Pattern.fromCondition
-                    . Condition.fromPredicate
-                    $ makeAndPredicate
-                        (makeCeilPredicate_ fOfB)
-                        (makeCeilPredicate_ gOfB)
-            actual <- makeEvaluate $ Pattern.fromTermLike original
-            assertEqual "" expected actual
-        , testCase "abstract keys" $ do
-            let original =
-                    Mock.builtinMap [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                expected = OrPattern.top
-            actual <- makeEvaluate $ Pattern.fromTermLike original
-            assertEqual "" expected actual
-        , testCase "abstract keys with frame" $ do
-            let original =
-                    Mock.framedMap
-                        [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                        [Mock.m]
-                expected =
-                    OrPattern.fromPattern . Pattern.fromCondition
-                    . Condition.fromPredicate . makeCeilPredicate_
-                    $ Mock.framedMap
-                        [(mkElemVar Mock.x, mkElemVar Mock.y)]
-                        [Mock.m]
-            actual <- makeEvaluate $ Pattern.fromTermLike original
-            assertEqual "" expected actual
-        ]
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
         let
@@ -473,87 +433,6 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqual "ceil(list)" expected actual
-    , testCase "ceil with concrete set domain value" $ do
-        -- sets assume that their concrete elements are relatively functional,
-        -- so ceil({a, b}) = top
-        let
-            expected = OrPattern.fromPatterns [ Pattern.top ]
-        actual <- makeEvaluate
-            Conditional
-                { term = Mock.builtinSet
-                    [asConcrete' Mock.a, asConcrete' Mock.b]
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set)" expected actual
-    , testCase "ceil with element variable" $ do
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate = makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = asInternalSet $
-                    emptyNormalizedSet `with` VariableElement fOfX
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set)" expected actual
-    , testCase "ceil with opaque set" $ do
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate = makeCeilPredicate_ fOfXset
-                    , substitution = mempty
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = asInternalSet $
-                    emptyNormalizedSet
-                    `with` OpaqueSet (TermLike.markSimplified fOfXset)
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set)" expected actual
-        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
-    , testCase "ceil with opaque sets" $ do
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate = makeAndPredicate
-                        (makeCeilPredicate_ fOfXset)
-                        (makeAndPredicate
-                           (makeCeilPredicate_ fOfYset)
-                            (makeCeilPredicate_
-                                (asInternalSet
-                                    ( emptyNormalizedSet
-                                    `with` OpaqueSet fOfXset
-                                    `with` OpaqueSet fOfYset
-                                    )
-                                )
-                            )
-                        )
-                    , substitution = mempty
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = TermLike.markSimplified $ asInternalSet $
-                    emptyNormalizedSet
-                        `with` OpaqueSet fOfXset
-                        `with` OpaqueSet fOfYset
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-        assertEqual "ceil(set set)" expected actual
-        assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "ceil of sort injection" $ do
         let expected =
                 OrPattern.fromPattern Conditional
@@ -573,15 +452,6 @@ test_ceilSimplification =
     fOfB :: TermLike Variable
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
-    gOfB = Mock.g Mock.b
-    constr10OfA = Mock.constr10 Mock.a
-    constr11OfA = Mock.constr11 Mock.a
-    fOfX :: TermLike Variable
-    fOfX = Mock.f (mkElemVar Mock.x)
-    fOfXset :: TermLike Variable
-    fOfXset = Mock.fSet (mkElemVar Mock.xSet)
-    fOfYset :: TermLike Variable
-    fOfYset = Mock.fSet (mkElemVar Mock.ySet)
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Conditional
@@ -594,11 +464,6 @@ test_ceilSimplification =
         , predicate = makeTruePredicate_
         , substitution = mempty
         }
-    asConcrete' :: TermLike Variable -> TermLike Concrete
-    asConcrete' p =
-        fromMaybe (error "Expected concrete pattern") (TermLike.asConcrete p)
-    asInternalSet =
-        Ac.asInternal Mock.metadataTools Mock.setSort . Domain.wrapAc
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier

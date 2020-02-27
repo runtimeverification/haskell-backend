@@ -271,7 +271,7 @@
                     \and{SortGeneratedTopCell{}}(
                         /* Sfa */
                         \ceil{SortMemInstCellMap{}, SortGeneratedTopCell{}}(
-                            /* Fn Sfa */
+                            /* Fn Spa */
                             /* builtin: */
                             Lbl'Unds'MemInstCellMap'Unds'{}(
                                 /* element: */ LblMemInstCellMapItem{}(
@@ -311,7 +311,7 @@
                         ),
                         /* Sfc */
                         \ceil{SortModuleInstCellMap{}, SortGeneratedTopCell{}}(
-                            /* Fn Sfc */
+                            /* Fn Spc */
                             /* builtin: */
                             Lbl'Unds'ModuleInstCellMap'Unds'{}(
                                 /* element: */ LblModuleInstCellMapItem{}(
