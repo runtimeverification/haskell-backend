@@ -145,7 +145,7 @@ extractRewriteAxioms idxMod =
     mapMaybe extractRewriteAxiomFrom (indexedModuleAxioms idxMod)
 
 extractRewriteAxiomFrom
-    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceAxiom)
+    :: (Attribute.Axiom Internal.Symbol.Symbol Variable, Verified.SentenceAxiom)
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (RewriteRule Variable)
 extractRewriteAxiomFrom sentence =
@@ -155,7 +155,7 @@ extractRewriteAxiomFrom sentence =
 
 -- | Extracts a 'ReachabilityRule' axioms from a 'Verified.SentenceClaim'
 extractReachabilityRule
-    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceClaim)
+    :: (Attribute.Axiom Internal.Symbol.Symbol Variable, Verified.SentenceClaim)
     -- ^ Sentence to extract axiom pattern from
     -> Maybe (ReachabilityRule Variable)
 extractReachabilityRule sentence =
@@ -169,14 +169,22 @@ extractReachabilityRule sentence =
 extractImplicationClaims
     :: VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    -> [(Attribute.Axiom Internal.Symbol.Symbol, ImplicationRule Variable)]
+    ->  [   ( Attribute.Axiom Internal.Symbol.Symbol Variable
+            , ImplicationRule Variable
+            )
+        ]
 extractImplicationClaims =
     mapMaybe extractImplicationClaimFrom . indexedModuleClaims
 
 extractImplicationClaimFrom
-    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceClaim)
+    ::  ( Attribute.Axiom Internal.Symbol.Symbol Variable
+        , Verified.SentenceClaim
+        )
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (Attribute.Axiom Internal.Symbol.Symbol, ImplicationRule Variable)
+    -> Maybe
+        ( Attribute.Axiom Internal.Symbol.Symbol Variable
+        , ImplicationRule Variable
+        )
 extractImplicationClaimFrom (attrs, sentence) =
     case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
         Right (ImplicationAxiomPattern axiomPat) -> Just (attrs, axiomPat)
@@ -184,7 +192,9 @@ extractImplicationClaimFrom (attrs, sentence) =
 
 -- | Attempts to extract a rule from the 'Verified.Sentence'.
 fromSentence
-    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.Sentence)
+    ::  ( Attribute.Axiom Internal.Symbol.Symbol Variable
+        , Verified.Sentence
+        )
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 fromSentence (attrs, Syntax.SentenceAxiomSentence sentenceAxiom) =
     fromSentenceAxiom (attrs, sentenceAxiom)
@@ -193,7 +203,9 @@ fromSentence _ =
 
 -- | Attempts to extract a rule from the 'Verified.SentenceAxiom'.
 fromSentenceAxiom
-    :: (Attribute.Axiom Internal.Symbol.Symbol, Verified.SentenceAxiom)
+    ::  ( Attribute.Axiom Internal.Symbol.Symbol Variable
+        , Verified.SentenceAxiom
+        )
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 fromSentenceAxiom (attributes, sentenceAxiom) =
     termToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
@@ -205,7 +217,7 @@ not encode a normal rewrite or function axiom.
 -}
 termToAxiomPattern
     :: InternalVariable variable
-    => Attribute.Axiom Internal.Symbol.Symbol
+    => Attribute.Axiom Internal.Symbol.Symbol Variable
     -> TermLike.TermLike variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
 termToAxiomPattern attributes pat =

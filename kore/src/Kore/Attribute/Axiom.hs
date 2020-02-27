@@ -88,7 +88,7 @@ import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
  -}
-data Axiom symbol =
+data Axiom symbol variable =
     Axiom
     { heatCool :: !HeatCool
     -- ^ An axiom may be denoted as a heating or cooling rule.
@@ -107,7 +107,7 @@ data Axiom symbol =
     -- ^ The axiom is an idempotency axiom.
     , trusted :: !Trusted
     -- ^ The claim is trusted
-    , concrete :: !(Concrete Variable)
+    , concrete :: !(Concrete variable)
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
@@ -135,17 +135,17 @@ data Axiom symbol =
     }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic (Axiom symbol)
+instance SOP.Generic (Axiom symbol variable)
 
-instance SOP.HasDatatypeInfo (Axiom symbol)
+instance SOP.HasDatatypeInfo (Axiom symbol variable)
 
-instance Debug symbol => Debug (Axiom symbol)
+instance Debug symbol => Debug (Axiom symbol variable)
 
-instance (Debug symbol, Diff symbol) => Diff (Axiom symbol)
+instance (Debug symbol, Diff symbol) => Diff (Axiom symbol variable)
 
-instance NFData symbol => NFData (Axiom symbol)
+instance NFData symbol => NFData (Axiom symbol variable)
 
-instance Default (Axiom symbol) where
+instance Default (Axiom symbol variable) where
     def =
         Axiom
             { heatCool = def
@@ -170,7 +170,7 @@ instance Default (Axiom symbol) where
             , owise = def
             }
 
-instance From symbol SymbolOrAlias => From (Axiom symbol) Attributes where
+instance From symbol SymbolOrAlias => From (Axiom symbol variable) Attributes where
     from =
         mconcat . sequence
             [ from . heatCool
@@ -194,24 +194,26 @@ instance From symbol SymbolOrAlias => From (Axiom symbol) Attributes where
             , from . owise
             ]
 
-instance SQL.Column (Axiom SymbolOrAlias) where
+instance SQL.Column (Axiom SymbolOrAlias variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
-instance SQL.Column (Axiom Symbol) where
+instance SQL.Column (Axiom Symbol variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
-axiomSymbolToSymbolOrAlias :: Axiom Symbol -> Axiom SymbolOrAlias
+axiomSymbolToSymbolOrAlias
+    :: Axiom Symbol variable
+    -> Axiom SymbolOrAlias variable
 axiomSymbolToSymbolOrAlias axiom =
     axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias
 
 parseAxiomAttribute
     :: AttributePattern
-    -> Axiom SymbolOrAlias
-    -> Parser (Axiom SymbolOrAlias)
+    -> Axiom SymbolOrAlias Variable
+    -> Parser (Axiom SymbolOrAlias Variable)
 parseAxiomAttribute attr =
         typed @HeatCool (parseAttribute attr)
         Monad.>=> typed @ProductionID (parseAttribute attr)
@@ -233,6 +235,6 @@ parseAxiomAttribute attr =
         Monad.>=> typed @UniqueId (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
 
-parseAxiomAttributes :: Attributes -> Parser (Axiom SymbolOrAlias)
+parseAxiomAttributes :: Attributes -> Parser (Axiom SymbolOrAlias Variable)
 parseAxiomAttributes (Attributes attrs) =
     Foldable.foldlM (flip parseAxiomAttribute) Default.def attrs

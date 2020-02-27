@@ -69,7 +69,7 @@ data EqualityPattern variable = EqualityPattern
     , left  :: !(TermLike.TermLike variable)
     , right :: !(TermLike.TermLike variable)
     , ensures :: !(Predicate variable)
-    , attributes :: !(Attribute.Axiom Symbol)
+    , attributes :: !(Attribute.Axiom Symbol Fresh.Variable)
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)

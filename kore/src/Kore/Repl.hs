@@ -205,7 +205,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
-        :: Attribute.Axiom Symbol
+        :: Attribute.Axiom Symbol Variable
         -> axiom
         -> axiom
     modifyAttribute att rule =
@@ -216,13 +216,13 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     axiomToRulePatt :: axiom -> Rule.RulePattern Variable
     axiomToRulePatt = toRulePattern
 
-    getAttribute :: axiom -> Attribute.Axiom Symbol
+    getAttribute :: axiom -> Attribute.Axiom Symbol Variable
     getAttribute = Rule.attributes . axiomToRulePatt
 
     mapAttribute
         :: Int
-        -> Attribute.Axiom Symbol
-        -> Attribute.Axiom Symbol
+        -> Attribute.Axiom Symbol Variable
+        -> Attribute.Axiom Symbol Variable
     mapAttribute n attr =
         Lens.over (field @"identifier") (makeRuleIndex n) attr
 

@@ -497,7 +497,7 @@ parseAndVerifyAxiomAttributes
     :: MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
     -> Attributes
-    -> error (Attribute.Axiom Internal.Symbol.Symbol)
+    -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
 parseAndVerifyAxiomAttributes indexModule attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
   where

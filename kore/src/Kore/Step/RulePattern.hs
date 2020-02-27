@@ -201,7 +201,7 @@ data RulePattern variable = RulePattern
     , antiLeft :: !(Maybe (TermLike.TermLike variable))
     , requires :: !(Predicate variable)
     , rhs :: !(RHS variable)
-    , attributes :: !(Attribute.Axiom Symbol)
+    , attributes :: !(Attribute.Axiom Symbol Variable)
     }
     deriving (GHC.Generic)
 
