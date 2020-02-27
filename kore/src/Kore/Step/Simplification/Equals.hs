@@ -256,12 +256,15 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
 
 See 'simplify' for detailed documentation.
 -}
+
+
 makeEvaluate
     :: (InternalVariable variable, MonadSimplify simplifier)
     => Pattern variable
     -> Pattern variable
     -> SideCondition variable
     -> simplifier (OrPattern variable)
+
 makeEvaluate
     first@Conditional { term = Top_ _ }
     second@Conditional { term = Top_ _ }
@@ -309,6 +312,9 @@ makeEvaluate
     firstTerm = term first
     secondTerm = term second
     termsAreEqual = firstTerm == secondTerm
+
+
+
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside

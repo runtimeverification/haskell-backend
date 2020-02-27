@@ -30,6 +30,8 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
+
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
@@ -218,17 +220,26 @@ makeEvaluateTerm
                 <$> makeSimplifiedCeil sideCondition maybeCondition term
             )
         return (fmap toCondition evaluation)
+    
+    toCondition 
+        :: Conditional variable (TermLike variable) 
+        -> Condition.Condition variable
 
-    toCondition Conditional {term = Top_ _, predicate, substitution} =
-        Conditional {term = (), predicate, substitution}
-    toCondition patt =
-        error
-            (  "Ceil simplification is expected to result ai a predicate, but"
-            ++ " got (" ++ show patt ++ ")."
-            ++ " The most likely cases are: evaluating predicate symbols, "
-            ++ " and predicate symbols are currently unrecognized as such, "
-            ++ "and programming errors."
-            )
+    toCondition conditional = case Conditional.term conditional of 
+        Top_ _ -> 
+            Conditional 
+                { term = ()
+                , predicate = predicate conditional
+                , substitution = substitution conditional
+                }
+        _      -> 
+            error
+                (  "Ceil simplification is expected to result in a predicate,"
+                ++ "but  got (" ++ show conditional ++ ")."
+                ++ " The most likely cases are: evaluating predicate symbols, "
+                ++ " and predicate symbols are currently unrecognized as such, "
+                ++ "and programming errors."
+                )  
 
 {-| Evaluates the ceil of a domain value.
 -}
