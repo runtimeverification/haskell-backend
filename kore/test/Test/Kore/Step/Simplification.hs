@@ -1,6 +1,7 @@
 module Test.Kore.Step.Simplification
     ( Simplifier, Env (..)
     , runSimplifier
+    , runSimplifierNoSMT
     , runSimplifierBranch
     , simplifiedCondition
     , simplifiedOrCondition
@@ -61,13 +62,20 @@ import Kore.Internal.Variable
 import Kore.Step.Simplification.Data
     ( Env (..)
     , Simplifier
+    , SimplifierT
     )
 import qualified Kore.Step.Simplification.Data as Kore
+import SMT
+    ( NoSMT
+    )
 
 import qualified Test.SMT as Test
 
 runSimplifier :: Env Simplifier -> Simplifier a -> IO a
 runSimplifier env = Test.runSMT . Kore.runSimplifier env
+
+runSimplifierNoSMT :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
+runSimplifierNoSMT env = Test.runNoSMT . Kore.runSimplifier env
 
 runSimplifierBranch :: Env Simplifier -> BranchT Simplifier a -> IO [a]
 runSimplifierBranch env = Test.runSMT . Kore.runSimplifierBranch env

@@ -35,6 +35,7 @@ import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Priority as Attribute
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
@@ -59,6 +60,7 @@ import Kore.Unparser
     , unparse2
     )
 import qualified Kore.Variables.Fresh as Fresh
+import qualified Pretty
 import qualified SQL
 
 {- | Function axioms
@@ -157,6 +159,9 @@ instance
     unparse = unparse . equalityRuleToTerm
     unparse2 = unparse2 . equalityRuleToTerm
 
+instance InternalVariable variable => SQL.Column (EqualityRule variable) where
+    defineColumn = SQL.defineTextColumn
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 {-| Reverses an 'EqualityRule' back into its 'Pattern' representation.
   Should be the inverse of 'Rule.termToAxiomPattern'.
@@ -262,8 +267,8 @@ isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
 getPriorityOfRule :: EqualityRule variable -> Integer
 getPriorityOfRule (EqualityRule EqualityPattern { attributes }) =
     if isOwise
-        then 200
-        else fromMaybe 100 getPriority
+        then Attribute.owisePriority
+        else fromMaybe Attribute.defaultPriority getPriority
   where
     Attribute.Priority { getPriority } =
         Attribute.priority attributes

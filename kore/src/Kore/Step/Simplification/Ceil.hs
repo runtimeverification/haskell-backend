@@ -17,14 +17,16 @@ module Kore.Step.Simplification.Ceil
 
 import Prelude.Kore
 
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad.Reader
+    ( ReaderT (..)
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map.Strict as Map
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
     ( isTotal
     )
+import qualified Kore.Builtin.AssocComm.CeilSimplifier as AssocComm
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -33,8 +35,6 @@ import Kore.Internal.Conditional
 
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( make
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
     ( OrCondition
@@ -60,17 +60,15 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Sort as Sort
 import qualified Kore.Step.Function.Evaluator as Axiom
     ( evaluatePattern
     )
 import qualified Kore.Step.Simplification.AndPredicates as And
-import qualified Kore.Step.Simplification.Equals as Equals
+import Kore.Step.Simplification.CeilSimplifier
 import Kore.Step.Simplification.InjSimplifier
-import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
-
 import Kore.Unparser
     ( unparseToString
     )
@@ -191,9 +189,7 @@ makeEvaluateTerm
                 (MultiAnd.make ceils)
 
       | BuiltinF child <- projected =
-        fromMaybe
-            (makeSimplifiedCeil sideCondition Nothing term)
-            (makeEvaluateBuiltin sideCondition child)
+        makeEvaluateBuiltin sideCondition child
 
       | InjF inj <- projected = do
         InjSimplifier { evaluateCeilInj } <- askInjSimplifier
@@ -241,6 +237,18 @@ makeEvaluateTerm
                 ++ "and programming errors."
                 )  
 
+ceilSimplifierTermLike
+    ::  InternalVariable variable
+    =>  MonadSimplify simplifier
+    =>  CeilSimplifier
+            (ReaderT (SideCondition variable) simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+ceilSimplifierTermLike =
+    CeilSimplifier $ \Ceil { ceilChild = termLike } ->
+    ReaderT $ \sideCondition ->
+        makeEvaluateTerm sideCondition termLike
+
 {-| Evaluates the ceil of a domain value.
 -}
 makeEvaluateBuiltin
@@ -249,134 +257,38 @@ makeEvaluateBuiltin
     => MonadSimplify simplifier
     => SideCondition variable
     -> Builtin (TermLike variable)
-    -> Maybe (simplifier (OrCondition variable))
-makeEvaluateBuiltin
-    sideCondition
-    (Domain.BuiltinMap Domain.InternalAc
-        {builtinAcChild}
-    )
-  =
-    makeEvaluateNormalizedAc
+    -> simplifier (OrCondition variable)
+makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
+    runCeilSimplifierWith
+        (AssocComm.newCeilSimplifier mkBuiltinMap ceilSimplifierTermLike)
         sideCondition
-        (Domain.unwrapAc builtinAcChild)
-makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = Just $ do
+        Ceil
+            { ceilResultSort = Sort.predicateSort
+            , ceilOperandSort = builtinAcSort
+            , ceilChild = internalAc
+            }
+  where
+    Domain.InternalAc { builtinAcSort } = internalAc
+makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
+    runCeilSimplifierWith
+        (AssocComm.newCeilSimplifier mkBuiltinSet ceilSimplifierTermLike)
+        sideCondition
+        Ceil
+            { ceilResultSort = Sort.predicateSort
+            , ceilOperandSort = builtinAcSort
+            , ceilChild = internalAc
+            }
+  where
+    Domain.InternalAc { builtinAcSort } = internalAc
+makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
     children <- mapM (makeEvaluateTerm sideCondition) (Foldable.toList l)
     let
         ceils :: [OrCondition variable]
         ceils = children
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
-makeEvaluateBuiltin
-    sideCondition
-    (Domain.BuiltinSet Domain.InternalAc
-        {builtinAcChild}
-    )
-  =
-    makeEvaluateNormalizedAc
-        sideCondition
-        (Domain.unwrapAc builtinAcChild)
-makeEvaluateBuiltin _ (Domain.BuiltinBool _) = Just $ return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinInt _) = Just $ return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinString _) = Just $ return OrCondition.top
-
-makeEvaluateNormalizedAc
-    :: forall normalized variable simplifier
-    .   ( InternalVariable variable
-        , MonadSimplify simplifier
-        , Traversable (Domain.Value normalized)
-        , Domain.AcWrapper normalized
-        )
-    =>  SideCondition variable
-    ->  Domain.NormalizedAc
-            normalized
-            (TermLike Concrete)
-            (TermLike variable)
-    -> Maybe (simplifier (OrCondition variable))
-makeEvaluateNormalizedAc
-    sideCondition
-    Domain.NormalizedAc
-        { elementsWithVariables
-        , concreteElements
-        , opaque = []
-        }
-  = TermLike.assertConstructorLikeKeys concreteKeys . Just $ do
-    variableKeyConditions <- mapM (makeEvaluateTerm sideCondition) variableKeys
-    variableValueConditions <- evaluateValues variableValues
-    concreteValueConditions <- evaluateValues concreteValues
-
-
-    elementsWithVariablesDistinct <-
-        evaluateDistinct variableKeys concreteKeys
-    let allConditions :: [OrCondition variable]
-        allConditions =
-            concreteValueConditions
-            ++ variableValueConditions
-            ++ variableKeyConditions
-            ++ elementsWithVariablesDistinct
-    And.simplifyEvaluatedMultiPredicate
-        sideCondition
-        (MultiAnd.make allConditions)
-  where
-    concreteElementsList
-        ::  [   ( TermLike variable
-                , Domain.Value normalized (TermLike variable)
-                )
-            ]
-    concreteElementsList =
-        map
-            (Bifunctor.first TermLike.fromConcrete)
-            (Map.toList concreteElements)
-    (variableKeys, variableValues) =
-        unzip (Domain.unwrapElement <$> elementsWithVariables)
-    (concreteKeys, concreteValues) = unzip concreteElementsList
-
-    evaluateDistinct
-        :: [TermLike variable]
-        -> [TermLike variable]
-        -> simplifier [OrCondition variable]
-    evaluateDistinct [] _ = return []
-    evaluateDistinct (variableTerm : variableTerms) concreteTerms = do
-        equalities <-
-            mapM
-                (flip
-                    (Equals.makeEvaluateTermsToPredicate variableTerm)
-                    sideCondition
-                )
-                -- TODO(virgil): consider eliminating these repeated
-                -- concatenations.
-                (variableTerms ++ concreteTerms)
-        negations <- mapM Not.simplifyEvaluatedPredicate equalities
-
-        remainingConditions <-
-            evaluateDistinct variableTerms concreteTerms
-        return (negations ++ remainingConditions)
-
-    evaluateValues
-        :: [Domain.Value normalized (TermLike variable)]
-        -> simplifier [OrCondition variable]
-    evaluateValues elements = do
-        wrapped <- evaluateWrappers elements
-        let unwrapped = map Foldable.toList wrapped
-        return (concat unwrapped)
-      where
-        evaluateWrapper
-            :: Domain.Value normalized (TermLike variable)
-            -> simplifier (Domain.Value normalized (OrCondition variable))
-        evaluateWrapper = traverse (makeEvaluateTerm sideCondition)
-
-        evaluateWrappers
-            :: [Domain.Value normalized (TermLike variable)]
-            -> simplifier [Domain.Value normalized (OrCondition variable)]
-        evaluateWrappers = traverse evaluateWrapper
-
-makeEvaluateNormalizedAc
-    sideCondition
-    Domain.NormalizedAc
-        { elementsWithVariables = []
-        , concreteElements
-        , opaque = [opaqueAc]
-        }
-  | Map.null concreteElements = Just $ makeEvaluateTerm sideCondition opaqueAc
-makeEvaluateNormalizedAc _  _ = Nothing
+makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top
+makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrCondition.top
+makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrCondition.top
 
 {-| This handles the case when we can't simplify a term's ceil.
 
@@ -447,8 +359,7 @@ makeSimplifiedCeil
         VariableF _ -> False
 
     unsimplified =
-        OrCondition.fromCondition
-        . Condition.fromPredicate
+        OrCondition.fromPredicate
         . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
         . makeCeilPredicate_
         $ termLike

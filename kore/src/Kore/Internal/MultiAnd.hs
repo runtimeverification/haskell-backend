@@ -16,6 +16,7 @@ module Kore.Internal.MultiAnd
     , extractPatterns
     , make
     , toPredicate
+    , singleton
     ) where
 
 import Prelude.Kore
@@ -23,14 +24,15 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import Data.Hashable
+    ( Hashable
+    )
 import qualified Data.Set as Set
-import GHC.Exts
-    ( IsList
-    )
-import GHC.Generics
-    ( Generic
-    )
+import qualified Generics.SOP as SOP
+import qualified GHC.Exts as GHC
+import qualified GHC.Generics as GHC
 
+import Debug
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
@@ -54,30 +56,29 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 'Bottom' patterns.
 -}
 newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
-    deriving
-        ( Alternative
-        , Applicative
-        , Eq
-        , Foldable
-        , Functor
-        , Generic
-        , IsList
-        , Monad
-        , Monoid
-        , Ord
-        , Semigroup
-        , Show
-        , Traversable
-        )
+    deriving (Eq, Ord, Show)
+    deriving (Semigroup, Monoid)
+    deriving (Functor, Applicative, Monad, Alternative)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic, GHC.IsList)
+
+instance SOP.Generic (MultiAnd child)
+
+instance SOP.HasDatatypeInfo (MultiAnd child)
 
 instance NFData child => NFData (MultiAnd child)
 
-instance TopBottom child => TopBottom (MultiAnd child)
-  where
+instance Hashable child => Hashable (MultiAnd child)
+
+instance TopBottom child => TopBottom (MultiAnd child) where
     isTop (MultiAnd []) = True
     isTop _ = False
     isBottom (MultiAnd [child]) = isBottom child
     isBottom _ = False
+
+instance Debug child => Debug (MultiAnd child)
+
+instance (Debug child, Diff child) => Diff (MultiAnd child)
 
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.
@@ -102,6 +103,11 @@ patternToAndBool patt
 -}
 make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
 make patts = filterAnd (MultiAnd patts)
+
+{-| 'make' constructs a normalized 'MultiAnd'.
+-}
+singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
+singleton term = make [term]
 
 {-| Returns the patterns inside an @\and@.
 -}

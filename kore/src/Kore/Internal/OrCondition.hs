@@ -9,6 +9,7 @@ module Kore.Internal.OrCondition
     , toConditions
     , fromConditions
     , fromCondition
+    , fromPredicate
     , gather
     , bottom
     , top
@@ -66,6 +67,12 @@ fromConditions
     => f (Condition variable)
     -> OrCondition variable
 fromConditions = from . Foldable.toList
+
+fromPredicate
+    :: InternalVariable variable
+    => Predicate variable
+    -> OrCondition variable
+fromPredicate = fromCondition . Condition.fromPredicate
 
 {- | @\\bottom@
 

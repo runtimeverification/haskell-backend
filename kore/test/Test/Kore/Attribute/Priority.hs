@@ -5,8 +5,6 @@ module Test.Kore.Attribute.Priority
     , test_zeroArguments
     , test_twoArguments
     , test_negative
-    , test_string
-    , test_space
     ) where
 
 import Prelude.Kore
@@ -27,14 +25,14 @@ test_priority =
     testCase "[priority{}(\"123\")] :: Priority"
         $ expectSuccess Priority { getPriority = Just 123 }
         $ parsePriority
-        $ Attributes [ priorityAttribute "123" ]
+        $ Attributes [ priorityAttribute 123 ]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[priority{}(\"123\")] :: Attributes"
         $ expectSuccess attrs $ parseAttributes attrs
   where
-    attrs = Attributes [ priorityAttribute "123"]
+    attrs = Attributes [ priorityAttribute 123]
 
 test_duplicate :: TestTree
 test_duplicate =
@@ -42,7 +40,7 @@ test_duplicate =
         $ expectFailure
         $ parsePriority $ Attributes [ attr, attr]
   where
-    attr = priorityAttribute "123"
+    attr = priorityAttribute 123
 
 test_zeroArguments :: TestTree
 test_zeroArguments =
@@ -72,21 +70,4 @@ test_negative =
     testCase "[priority{}(\"-32\")]"
         $ expectSuccess Priority { getPriority = Just (-32) }
         $ parsePriority
-        $ Attributes [ priorityAttribute "-32"]
-
-test_string :: TestTree
-test_string =
-    testCase "[priority{}(\"abc\")]"
-        $ expectFailure
-        $ parsePriority $ Attributes [ attr ]
-  where
-    attr = priorityAttribute "abc"
-
-
-test_space :: TestTree
-test_space =
-    testCase "[priority{}(\" \")]"
-        $ expectFailure
-        $ parsePriority $ Attributes [ attr ]
-  where
-    attr = priorityAttribute " "
+        $ Attributes [ priorityAttribute (-32)]

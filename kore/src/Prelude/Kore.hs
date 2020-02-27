@@ -7,6 +7,8 @@ License   : NCSA
 module Prelude.Kore
     ( module Prelude
     , module Debug.Trace
+    -- * Ord
+    , minMax
     -- * Functions
     , (&)
     , on
@@ -76,3 +78,10 @@ import Prelude hiding
     , filter
     , log
     )
+
+{- | Simultaneously compute the (@min@, @max@) of two values.
+ -}
+minMax :: Ord a => a -> a -> (a, a)
+minMax a b
+  | a < b     = (a, b)
+  | otherwise = (b, a)
