@@ -17,7 +17,6 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -104,13 +103,18 @@ simplificationEvaluation rule =
         let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
             remainders' = Results.remainders results'
         Step.recoveryFunctionLikeResults initial results'
-        Monad.unless (null remainders')
-            $ warnSimplificationWithRemainder
-                term
-                condition
-                remainders'
-                rule
-        return $ Results.toAttemptedAxiom results'
+        let attemptedAxiom = Results.toAttemptedAxiom results'
+        case attemptedAxiom of
+            AttemptedAxiom.Applied attemptedResults
+              | not . OrPattern.isFalse . AttemptedAxiomResults.remainders
+                $ attemptedResults
+              -> warnSimplificationWithRemainder
+                  term
+                  condition
+                  remainders'
+                  rule
+            _ -> return ()
+        return attemptedAxiom
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
@@ -275,8 +279,6 @@ applyFirstSimplifierThatWorksWorker
                     (unparse <$> Foldable.toList orRemainders)
                 ]
           | not (OrPattern.isFalse orRemainders) ->
-            -- TODO (traiansf): this might generate too much output
-            --    replace log with a logOnce when that becomes available
             tryNextSimplifier Conditional
           | otherwise -> return applicationResult
         AttemptedAxiom.NotApplicable -> tryNextSimplifier nonSimplifiability

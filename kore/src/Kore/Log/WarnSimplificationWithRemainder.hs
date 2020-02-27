@@ -133,16 +133,16 @@ instance Entry WarnSimplificationWithRemainder where
 instance Pretty WarnSimplificationWithRemainder where
     pretty entry =
         Pretty.vsep
-            [ "Simplification result with remainder:"
+            [ "Simplification result with non-empty remainder."
             , (Pretty.indent 2 . Pretty.vsep)
-                [ "input pattern:"
-                , Pretty.indent 2 (unparse inputPattern)
+                [ "remainders:"
+                , Pretty.indent 2 (unparseOrPattern $ getRemainders remainders)
                 , "input condition:"
                 , Pretty.indent 2 (unparse sideCondition)
-                , "remainders:"
-                , Pretty.indent 2 (unparseOrPattern $ getRemainders remainders)
-                , "when applying rule at location:"
+                , "original source location of attempted rule:"
                 , Pretty.indent 2 (Pretty.pretty location)
+                , "input pattern:"
+                , Pretty.indent 2 (unparse inputPattern)
                 ]
             , "Rule will be skipped."
             ]
