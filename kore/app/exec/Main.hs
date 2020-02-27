@@ -236,7 +236,7 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         { koreSearchOptions
         , strategy =
             -- Search relies on exploring the entire space of states.
-            allRewrites
+            priorityAllStrategy
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
@@ -352,15 +352,15 @@ parseKoreExecOptions =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value anyRewrite
+            <> value priorityAnyStrategy
             <> help "Select rewrites using STRATEGY."
             )
       where
         strategies =
-            [ ("any", anyRewrite)
-            , ("all", allRewrites)
-            , ("any-heating-cooling", heatingCooling anyRewrite)
-            , ("all-heating-cooling", heatingCooling allRewrites)
+            [ ("any", priorityAnyStrategy)
+            , ("all", priorityAllStrategy)
+            , ("any-heating-cooling", heatingCooling priorityAnyStrategy)
+            , ("all-heating-cooling", heatingCooling priorityAllStrategy)
             ]
     breadth =
         option auto

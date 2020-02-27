@@ -17,6 +17,7 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import Prelude.Kore
 
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -101,8 +102,22 @@ simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier $ \term condition -> do
         results' <- evaluateAxioms [rule] condition term
         let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
+            remainders' = Results.remainders results'
         Step.recoveryFunctionLikeResults initial results'
-        return $ Results.toAttemptedAxiom results'
+        let attemptedAxiom = Results.toAttemptedAxiom results'
+        Monad.when (hasRemainder attemptedAxiom)
+            $ warnSimplificationWithRemainder
+                term
+                condition
+                remainders'
+                rule
+        return attemptedAxiom
+  where
+    hasRemainder (AttemptedAxiom.Applied attemptedResults) =
+        not . OrPattern.isFalse . AttemptedAxiomResults.remainders
+        $ attemptedResults
+    hasRemainder _ =
+        False
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
@@ -266,14 +281,7 @@ applyFirstSimplifierThatWorksWorker
                 , (Pretty.indent 4 . Pretty.vsep)
                     (unparse <$> Foldable.toList orRemainders)
                 ]
-          | not (OrPattern.isFalse orRemainders) ->  do
-            warnSimplificationWithRemainder
-                patt
-                sideCondition
-                orResults
-                orRemainders
-            -- TODO (traiansf): this might generate too much output
-            --    replace log with a logOnce when that becomes available
+          | not (OrPattern.isFalse orRemainders) ->
             tryNextSimplifier Conditional
           | otherwise -> return applicationResult
         AttemptedAxiom.NotApplicable -> tryNextSimplifier nonSimplifiability
