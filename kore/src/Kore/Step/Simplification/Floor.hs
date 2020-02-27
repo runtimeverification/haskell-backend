@@ -93,11 +93,11 @@ makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
-    Conditional {term, predicate, substitution}
+    conditional
   =
     OrPattern.fromPattern Conditional
         { term = mkTop_
         , predicate = Predicate.markSimplified
-            $ makeAndPredicate (makeFloorPredicate_ term) predicate
-        , substitution = substitution
+            $ makeAndPredicate (makeFloorPredicate_ (term conditional)) (predicate conditional)
+        , substitution = substitution conditional
         }

@@ -35,6 +35,7 @@ import Kore.Internal.Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
     ( andCondition
+    , Conditional (..)
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -288,23 +289,30 @@ simplifyInternal term sideCondition = do
 
         applyTermSubstitution :: Pattern variable -> Pattern variable
         applyTermSubstitution
-            Conditional {term = term', predicate = predicate', substitution}
+            conditional
           =
             Conditional
                 { term =
-                    TermLike.substitute (Substitution.toMap substitution) term'
-                , predicate = predicate'
-                , substitution
+                    TermLike.substitute (Substitution.toMap substitution) 
+                                        (Conditional.term conditional)
+                , predicate = predicate
+                , substitution = substitution
                 }
+            where
+              substitution = Conditional.substitution conditional
+              predicate = Conditional.predicate conditional
 
         assertTermNotPredicate getResults = do
             results <- getResults
             let
                 -- The term of a result should never be any predicate other than
                 -- Top or Bottom.
-                hasPredicateTerm Conditional { term = term' }
+                hasPredicateTerm conditional
                   | isTop term' || isBottom term' = False
                   | otherwise                     = Predicate.isPredicate term'
+                  where 
+                    term' = Conditional.term conditional
+
                 unsimplified =
                     filter hasPredicateTerm $ OrPattern.toPatterns results
             if null unsimplified

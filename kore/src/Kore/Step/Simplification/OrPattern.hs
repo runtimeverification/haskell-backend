@@ -24,7 +24,7 @@ import qualified Kore.Internal.Condition as Condition
     , toPredicate
     )
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional ()
     )
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
@@ -164,5 +164,5 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     sidePredicate = SideCondition.toPredicate sideCondition
 
     addPredicate :: Conditional variable term -> Conditional variable term
-    addPredicate c@Conditional {predicate} =
-        c {Conditional.predicate = makeAndPredicate predicate sidePredicate}
+    addPredicate c =
+        c {Conditional.predicate = makeAndPredicate (Conditional.predicate c) sidePredicate}

@@ -33,7 +33,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -194,7 +194,7 @@ makeEvaluate sideCondition variables original = do
         -> BranchT simplifier (Pattern variable)
     makeEvaluateWorker variable original' = do
         normalized <- simplifyCondition sideCondition original'
-        let Conditional { substitution = normalizedSubstitution } = normalized
+        let normalizedSubstitution = substitution normalized
         case splitSubstitution variable normalizedSubstitution of
             (Left boundTerm, freeSubstitution) ->
                 makeEvaluateBoundLeft
@@ -405,7 +405,7 @@ quantifyPattern
     => ElementVariable variable
     -> Pattern variable
     -> Pattern variable
-quantifyPattern variable original@Conditional { term, predicate, substitution }
+quantifyPattern variable original
   | quantifyTerm, quantifyPredicate
   = (error . unlines)
     [ "Quantifying both the term and the predicate probably means that there's"
@@ -422,6 +422,9 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     $ Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
+    term = Conditional.term original
+    predicate = Conditional.predicate original
+    substitution = Conditional.substitution original
     quantifyTerm = TermLike.hasFreeVariable (ElemVar variable) term
     predicate' =
         Predicate.makeAndPredicate predicate
