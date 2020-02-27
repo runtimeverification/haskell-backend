@@ -23,6 +23,7 @@ import Kore.Internal.Predicate
     , makeExistsPredicate
     , makeFalsePredicate_
     , makeImpliesPredicate
+    , makeNotPredicate
     , makeTruePredicate
     , makeTruePredicate_
     )
@@ -413,7 +414,7 @@ test_andSimplification =
                     , substitution = mempty
                     }
         assertEqual "" mempty actual
-    , testCase "Simplifies Implies" $ do
+    , testCase "Simplifies Implies - Positive" $ do
         let expect =
                 Conditional
                     { term = Mock.constr10 fOfX
@@ -438,6 +439,32 @@ test_andSimplification =
                     , predicate = makeImpliesPredicate
                         (makeCeilPredicate_ fOfX)
                         (makeCeilPredicate_ gOfX)
+                    , substitution = mempty
+                    }
+        assertEqual "" (MultiOr [expect]) actual
+    , testCase "Simplifies Implies - Negative" $ do
+        let expect =
+                Conditional
+                    { term = Mock.constr10 fOfX
+                    , predicate =
+                        makeAndPredicate
+                            (makeEqualsPredicate testSort fOfX gOfX)
+                            (makeNotPredicate $ makeCeilPredicate testSort fOfX)
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluatePatterns
+                Conditional
+                    { term = Mock.constr10 fOfX
+                    , predicate = makeNotPredicate $ makeCeilPredicate_ fOfX
+                    , substitution = mempty
+                    }
+                Conditional
+                    { term = Mock.constr10 gOfX
+                    , predicate =
+                        makeImpliesPredicate
+                            (makeCeilPredicate_ fOfX)
+                            (makeCeilPredicate_ gOfX)
                     , substitution = mempty
                     }
         assertEqual "" (MultiOr [expect]) actual
