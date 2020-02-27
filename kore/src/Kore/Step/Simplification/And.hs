@@ -68,7 +68,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , pattern PredicateAnd
+    , getMultiAndPredicate
     , makeAndPredicate
     , makePredicate
     , makeTruePredicate_
@@ -307,11 +307,7 @@ promoteSubTermsToTop predicate =
             foldl' makeAndPredicate makeTruePredicate_ changed
   where
     andPredicates :: [Predicate variable]
-    andPredicates = children predicate
-
-    children :: Predicate variable -> [Predicate variable]
-    children (PredicateAnd p1 p2) = children p1 ++ children p2
-    children p = [p]
+    andPredicates = getMultiAndPredicate predicate
 
     sortedAndPredicates :: [Predicate variable]
     sortedAndPredicates = sortByDepth andPredicates
