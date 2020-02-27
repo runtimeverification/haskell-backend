@@ -391,7 +391,7 @@ promoteSubTermsToTop predicate =
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified
-            (Predicate.simplifiedAttribute a <> Predicate.simplifiedAttribute b)
+            (on (<>) Predicate.simplifiedAttribute a b)
             (makeAndPredicate a b)
 
 applyAndIdempotenceAndFindContradictions
