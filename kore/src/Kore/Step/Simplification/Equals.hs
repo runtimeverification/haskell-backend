@@ -193,7 +193,7 @@ simplifyEvaluated sideCondition first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise = do
-    let isFunctionConditional Conditional {term} = isFunctionPattern term
+    let isFunctionConditional conditional = isFunctionPattern (term conditional)
     case (firstPatterns, secondPatterns) of
         ([firstP], [secondP]) ->
             makeEvaluate firstP secondP sideCondition
@@ -246,10 +246,10 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
     makeEvaluateEqualsIfSecondNotBottom
-        Conditional {term = firstTerm}
-        (Conditional {term = secondTerm}, secondCeil)
+        firstConditional
+        (secondConditional, secondCeil)
       = do
-        equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+        equality <- makeEvaluateTermsAssumesNoBottom (term firstConditional) (term secondConditional)
         Implies.simplifyEvaluated sideCondition secondCeil equality
 
 {-| evaluates an 'Equals' given its two 'Pattern' children.
@@ -289,8 +289,8 @@ makeEvaluate
     return (Pattern.fromCondition <$> result)
 
 makeEvaluate
-    first@Conditional { term = firstTerm }
-    second@Conditional { term = secondTerm }
+    first
+    second
     sideCondition
   = do
     let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
@@ -306,6 +306,8 @@ makeEvaluate
     equalityAnd <- And.simplifyEvaluated sideCondition termEquality ceilAnd
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
+    firstTerm = term first
+    secondTerm = term second
     termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it

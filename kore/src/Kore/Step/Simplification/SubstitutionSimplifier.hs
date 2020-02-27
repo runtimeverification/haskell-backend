@@ -54,7 +54,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrCondition
@@ -248,10 +248,10 @@ deduplicateSubstitution makeAnd' =
         let -- Substitutions de-duplicated by simplification.
             substitutions' = toMultiMap $ Conditional.term simplified
             -- New conditions produced by simplification.
-            Conditional { predicate = predicate' } = simplified
+            predicate' = Conditional.predicate simplified
             predicate'' = Predicate.makeAndPredicate predicate predicate'
             -- New substitutions produced by simplification.
-            Conditional { substitution } = simplified
+            substitution = Conditional.substitution simplified
             substitutions'' =
                 Map.unionWith (<>) substitutions'
                 $ Substitution.toMultiMap substitution

@@ -69,33 +69,33 @@ simplify
 simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
     normalize initial >>= worker
   where
-    worker Conditional { term, predicate, substitution } = do
-        let substitution' = Substitution.toMap substitution
-            predicate' = Predicate.substitute substitution' predicate
+    worker conditional = do
+        let substitution' = Substitution.toMap (substitution conditional)
+            predicate' = Predicate.substitute substitution' (predicate conditional)
         simplified <- simplifyPredicate sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
-        let merged = simplified <> Condition.fromSubstitution substitution
+        let merged = simplified <> Condition.fromSubstitution (substitution conditional)
         normalized <- normalize merged
         -- Check for full simplification *after* normalization. Simplification
         -- may have produced irrelevant substitutions that become relevant after
         -- normalization.
         if fullySimplified normalized
-            then return normalized { term }
-            else worker normalized { term }
+            then return normalized { term = term conditional }
+            else worker normalized { term = term conditional }
 
-    fullySimplified Conditional { predicate, substitution } =
-        Predicate.isFreeOf predicate variables
+    fullySimplified conditional =
+        Predicate.isFreeOf (predicate conditional) variables
       where
-        variables = Substitution.variables substitution
+        variables = Substitution.variables (substitution conditional)
 
     normalize
         ::  forall any'
         .   Conditional variable any'
         ->  BranchT simplifier (Conditional variable any')
-    normalize conditional@Conditional { substitution } = do
+    normalize conditional = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- Monad.Trans.lift $
-            simplifySubstitution sideCondition substitution
+            simplifySubstitution sideCondition (substitution conditional)
         predicate' <- Branch.scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 

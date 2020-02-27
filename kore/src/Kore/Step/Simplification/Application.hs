@@ -120,12 +120,16 @@ evaluateApplicationFunction
     -> simplifier (OrPattern variable)
 evaluateApplicationFunction
     sideCondition
-    Conditional { term, predicate, substitution }
+    conditional
   =
     evaluateApplication
         sideCondition
-        Conditional { term = (), predicate, substitution }
-        term
+        Conditional
+        { term = ()
+        , predicate = (predicate conditional)
+        , substitution = (substitution conditional)
+        }
+        (term conditional)
 
 makeExpandedApplication
     :: (InternalVariable variable, MonadSimplify simplifier)

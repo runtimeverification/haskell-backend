@@ -197,10 +197,10 @@ makeEvaluateNonBool
     -> BranchT simplifier (Pattern variable)
 makeEvaluateNonBool
     sideCondition
-    first@Conditional { term = firstTerm }
-    second@Conditional { term = secondTerm }
+    first
+    second
   = do
-    terms <- termAnd firstTerm secondTerm
+    terms <- termAnd (term first) (term second)
     let firstCondition = Conditional.withoutTerm first
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition

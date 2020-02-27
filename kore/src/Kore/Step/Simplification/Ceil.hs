@@ -137,12 +137,12 @@ makeEvaluateNonBoolCeil
     => SideCondition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
-  | isTop term =
+makeEvaluateNonBoolCeil sideCondition patt
+  | isTop (term patt) =
     return $ OrPattern.fromPattern
         patt {term = mkTop_} -- erase the term's sort.
   | otherwise = do
-    termCeil <- makeEvaluateTerm sideCondition term
+    termCeil <- makeEvaluateTerm sideCondition (term patt)
     result <-
         And.simplifyEvaluatedMultiPredicate
             sideCondition

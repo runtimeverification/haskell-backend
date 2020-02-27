@@ -34,9 +34,8 @@ import qualified Kore.Internal.Condition as Condition
     ( fromPredicate
     )
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
@@ -154,18 +153,18 @@ mergeRules
 mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
     BranchT.gather $ do
-        Conditional {term = (), predicate, substitution} <-
+        condition <-
             simplifyCondition SideCondition.topTODO . Condition.fromPredicate
             $ makeAndPredicate firstRequires mergedPredicate
-        evaluation <- SMT.evaluate predicate
+        evaluation <- SMT.evaluate (predicate condition)
         evaluatedPredicate <- case evaluation of
-            Nothing -> return predicate
+            Nothing -> return (predicate condition)
             Just True -> return makeTruePredicate_
             Just False -> empty
 
         let finalRule =
                 RulePattern.applySubstitution
-                    substitution
+                    (substitution condition)
                     RulePattern
                         { left = firstLeft
                         , requires = evaluatedPredicate
