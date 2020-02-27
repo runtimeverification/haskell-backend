@@ -310,30 +310,35 @@ promoteSubTermsToTop predicate =
     normalizedPredicatesWorker partialResult (predicate' : predicates) = do
         let termLike' = Predicate.unwrapPredicate predicate'
         let termLikes = Predicate.unwrapPredicate <$> predicates
+        let replacements = HashSet.singleton termLike'
         replacedPredicates <-
-            mapM (replaceWithTopNormalized termLike') termLikes
+            mapM (replaceWithTopNormalized replacements) termLikes
         normalizedPredicatesWorker
             (predicate' : partialResult)
             replacedPredicates
 
     replaceWithTopNormalized
-        :: TermLike variable
+        :: HashSet (TermLike variable)
         -> TermLike variable
         -> Changed (Predicate variable)
-    replaceWithTopNormalized replaceWith replaceIn = do
-        resultTerm <- replaceWithTop (HashSet.singleton replaceWith) replaceIn
-        case makePredicate resultTerm of
+    replaceWithTopNormalized replacements replaceIn =
+        fmap
+            (unsafeMakePredicate replacements replaceIn)
+            (replaceWithTop replacements replaceIn)
+
+    unsafeMakePredicate replacements original result =
+        case makePredicate result of
             -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
             -- should make it impossible to have an error here.
             Left err -> error $ unlines
                 [ "Replacing"
-                , unparseToString replaceWith
+                , unlines $ map unparseToString $ HashSet.toList replacements
                 , "in"
-                , unparseToString replaceIn
+                , unparseToString original
                 , "did not produce a predicate!"
                 , printError err
                 ]
-            Right p -> return p
+            Right p -> p
 
     replaceWithTop
         :: HashSet (TermLike variable)
