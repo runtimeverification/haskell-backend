@@ -108,6 +108,7 @@ import Kore.Internal.TermLike
     , Sort
     , TermLike
     , mkAnd
+    , mkBottom
     , mkBottom_
     , mkNot
     , mkTop
@@ -323,7 +324,12 @@ promoteSubTermsToTop predicate =
     insertAssumption predicate1 =
         State.modify' insert
       where
-        insert = HashMap.insert termLike (mkTop sort)
+        insert =
+            case termLike of
+                -- Infer that the predicate is \bottom.
+                Not_ _ notChild -> HashMap.insert notChild (mkBottom sort)
+                -- Infer that the predicate is \top.
+                _               -> HashMap.insert termLike (mkTop    sort)
         termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
 
