@@ -33,6 +33,8 @@ module Prelude.Kore
     , module From
     -- * IO
     , MonadIO (..)
+    -- * Comonad
+    , module Control.Comonad
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -43,6 +45,7 @@ import Control.Applicative
     , Applicative (..)
     , optional
     )
+import Control.Comonad
 import Control.Error
     ( either
     , headMay

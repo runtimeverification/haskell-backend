@@ -24,7 +24,6 @@ module Kore.Internal.TermLike.TermLike
 
 import Prelude.Kore
 
-import Control.Comonad
 import Control.Comonad.Trans.Cofree
 import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
