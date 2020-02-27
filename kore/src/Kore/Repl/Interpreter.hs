@@ -1021,11 +1021,12 @@ savePartialProof maybeNatural file = do
     maybeConfig <- getConfigAt maybeNode
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
-        Just (_, currentProofState) -> do
+        Just (currentNode, currentProofState) -> do
             let config = unwrapConfig currentProofState
                 newClaim = createClaim currentClaim config
                 newTrustedClaims =
-                    makeTrusted <$> removeAt currentIndex claims
+                    makeTrusted
+                    <$> removeIfRoot currentNode currentIndex claims
                 newDefinition =
                     createNewDefinition
                         (makeModuleName file)
@@ -1060,12 +1061,14 @@ savePartialProof maybeNatural file = do
                     }
             }
 
-    removeAt
-        :: ClaimIndex
+    removeIfRoot
+        :: ReplNode
+        -> ClaimIndex
         -> [claim]
         -> [claim]
-    removeAt (ClaimIndex index) claims
-        | index >= 0 && index < length claims =
+    removeIfRoot (ReplNode node) (ClaimIndex index) claims
+        | index >= 0 && index < length claims
+        , node == 0 =
             take index claims
             <> drop (index + 1) claims
         | otherwise = claims
