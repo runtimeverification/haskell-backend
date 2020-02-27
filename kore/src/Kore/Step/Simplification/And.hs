@@ -335,12 +335,22 @@ promoteSubTermsToTop predicate =
         :: TermLike variable
         -> TermLike variable
         -> Changed (TermLike variable)
-    replaceWithTop replaceWith replaceIn
-      | replaceWith == replaceIn = Changed (mkTop (termLikeSort replaceIn))
-    replaceWithTop replaceWith unchanged
-      | isQuantified unchanged
-      = Unchanged unchanged
+    replaceWithTop replaceWith original
+      | replaceWith == original = Changed (mkTop originalSort)
+
+      | isQuantified original   = Unchanged original
+
+      | otherwise =
+        traverse (replaceWithTop replaceWith) replaceIn
+        & getChanged
+        -- The next line ensures that if the result is Unchanged, any allocation
+        -- performed while computing that result is collected.
+        & maybe (Unchanged original) (Changed . synthesize)
+
       where
+        originalSort = termLikeSort original
+        _ :< replaceIn = Recursive.project original
+
         isQuantified (Exists_ _ var _) =
             TermLike.hasFreeVariable (ElemVar var) replaceWith
         isQuantified (Forall_ _ var _) =
@@ -350,13 +360,6 @@ promoteSubTermsToTop predicate =
         isQuantified (Nu_ var _) =
             TermLike.hasFreeVariable (SetVar var) replaceWith
         isQuantified _ = False
-    replaceWithTop
-        replaceWith
-        unchanged@(Recursive.project -> _ :< replaceIn)
-      =
-        traverse (replaceWithTop replaceWith) replaceIn
-        & getChanged
-        & maybe (Unchanged unchanged) (Changed . synthesize)
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified
