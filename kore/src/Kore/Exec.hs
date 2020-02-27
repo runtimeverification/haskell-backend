@@ -579,8 +579,8 @@ makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
 
 simplifyRuleOnSecond
     :: (MonadSimplify simplifier, Claim claim)
-    => (Attribute.Axiom Symbol Variable, claim)
-    -> simplifier (Attribute.Axiom Symbol Variable, claim)
+    => (Attribute.Axiom Symbol variable, claim)
+    -> simplifier (Attribute.Axiom Symbol variable, claim)
 simplifyRuleOnSecond (atts, rule) = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
     return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')

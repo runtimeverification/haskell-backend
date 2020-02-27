@@ -217,7 +217,7 @@ not encode a normal rewrite or function axiom.
 -}
 termToAxiomPattern
     :: InternalVariable variable
-    => Attribute.Axiom Internal.Symbol.Symbol Variable
+    => Attribute.Axiom Internal.Symbol.Symbol variable
     -> TermLike.TermLike variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
 termToAxiomPattern attributes pat =

@@ -201,7 +201,7 @@ data RulePattern variable = RulePattern
     , antiLeft :: !(Maybe (TermLike.TermLike variable))
     , requires :: !(Predicate variable)
     , rhs :: !(RHS variable)
-    , attributes :: !(Attribute.Axiom Symbol Variable)
+    , attributes :: !(Attribute.Axiom Symbol variable)
     }
     deriving (GHC.Generic)
 
@@ -840,11 +840,14 @@ instance UnifyingRule RulePattern where
                 , right = mapTermLikeVariables right
                 , ensures = mapPredicateVariables ensures
                 }
+            , attributes =
+                Attribute.mapAxiomVariables mapElemVar mapSetVar attributes
             }
       where
         RulePattern
             { left, antiLeft, requires
             , rhs = RHS { existentials, right, ensures }
+            , attributes
             } = rule1
         mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
         mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar

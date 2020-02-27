@@ -69,7 +69,7 @@ data EqualityPattern variable = EqualityPattern
     , left  :: !(TermLike.TermLike variable)
     , right :: !(TermLike.TermLike variable)
     , ensures :: !(Predicate variable)
-    , attributes :: !(Attribute.Axiom Symbol Fresh.Variable)
+    , attributes :: !(Attribute.Axiom Symbol variable)
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -207,9 +207,11 @@ instance UnifyingRule EqualityPattern where
             , left = mapTermLikeVariables left
             , right = mapTermLikeVariables right
             , ensures = mapPredicateVariables ensures
+            , attributes =
+                Attribute.mapAxiomVariables mapElemVar mapSetVar attributes
             }
       where
-        EqualityPattern { requires, left, right, ensures } = rule1
+        EqualityPattern { requires, left, right, ensures, attributes } = rule1
         mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
         mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
 

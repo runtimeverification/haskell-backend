@@ -221,8 +221,8 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
     mapAttribute
         :: Int
-        -> Attribute.Axiom Symbol Variable
-        -> Attribute.Axiom Symbol Variable
+        -> Attribute.Axiom Symbol variable
+        -> Attribute.Axiom Symbol variable
     mapAttribute n attr =
         Lens.over (field @"identifier") (makeRuleIndex n) attr
 
