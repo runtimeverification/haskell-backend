@@ -5,6 +5,7 @@ License     : NCSA
 -}
 module Changed
     ( Changed (..)
+    , getChanged
     ) where
 
 import Prelude.Kore
@@ -37,3 +38,7 @@ instance Comonad Changed where
 instance Monad Changed where
     Unchanged a >>= f = f a
     Changed a   >>= f = Changed $ extract $ f a
+
+getChanged :: Changed a -> Maybe a
+getChanged (Changed   a) = Just a
+getChanged (Unchanged _) = Nothing
