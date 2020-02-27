@@ -60,6 +60,7 @@ import Kore.Unparser
     , unparse2
     )
 import qualified Kore.Variables.Fresh as Fresh
+import qualified Pretty
 import qualified SQL
 
 {- | Function axioms
@@ -158,6 +159,9 @@ instance
     unparse = unparse . equalityRuleToTerm
     unparse2 = unparse2 . equalityRuleToTerm
 
+instance InternalVariable variable => SQL.Column (EqualityRule variable) where
+    defineColumn = SQL.defineTextColumn
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 {-| Reverses an 'EqualityRule' back into its 'Pattern' representation.
   Should be the inverse of 'Rule.termToAxiomPattern'.
