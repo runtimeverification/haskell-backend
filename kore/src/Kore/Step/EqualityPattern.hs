@@ -35,6 +35,7 @@ import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Priority as Attribute
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
@@ -266,8 +267,8 @@ isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
 getPriorityOfRule :: EqualityRule variable -> Integer
 getPriorityOfRule (EqualityRule EqualityPattern { attributes }) =
     if isOwise
-        then 200
-        else fromMaybe 100 getPriority
+        then Attribute.owisePriority
+        else fromMaybe Attribute.defaultPriority getPriority
   where
     Attribute.Priority { getPriority } =
         Attribute.priority attributes

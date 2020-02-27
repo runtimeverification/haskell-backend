@@ -2,26 +2,26 @@
 module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
     import VERIFICATION []
     import kore []
-    claim {} /* Spc */
+    claim {} /* Spa */
     \implies{SortGeneratedTopCell{}}(
-        /* Spc */
+        /* Spa */
         \and{SortGeneratedTopCell{}}(
-            /* Sfa */
+            /* Spa */
             \equals{SortBool{}, SortGeneratedTopCell{}}(
-                /* Fl Fn D Sfa */
+                /* Fl Fn D Spa */
                 Lbl'Unds-GT-Eqls'Int'Unds'{}(
                     /* Fl Fn D Sfa */ VarN:SortInt{},
                     /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
                 ),
                 /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("true")
             ),
-            /* Fl Fn D Sfc */
+            /* Fl Fn D Spa */
             Lbl'-LT-'generatedTop'-GT-'{}(
-                /* Fl Fn D Sfc */
+                /* Fl Fn D Spa */
                 Lbl'-LT-'T'-GT-'{}(
-                    /* Fl Fn D Sfa */
+                    /* Fl Fn D Spa */
                     Lbl'-LT-'k'-GT-'{}(
-                        /* Fl Fn D Sfa */
+                        /* Fl Fn D Spa */
                         kseq{}(
                             /* Fl Fn D Sfa Cli */
                             /* Inj: */ inj{SortStmt{}, SortKItem{}}(
@@ -107,9 +107,9 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                             /* Fl Fn D Sfa */ VarDotVar2:SortK{}
                         )
                     ),
-                    /* Fl Fn D Sfc */
+                    /* Fl Fn D Spa */
                     Lbl'-LT-'state'-GT-'{}(
-                        /* Fl Fn D Sfc */
+                        /* Fl Fn D Spa */
                         /* builtin: */
                         Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
@@ -118,7 +118,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                     /* Fl Fn D Sfa Cl */
                                     \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "n")
                                 ),
-                                /* Fl Fn D Sfc */
+                                /* Fl Fn D Spa */
                                 /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                     /* Fl Fn D Sfa */ VarN:SortInt{}
                                 )
@@ -129,7 +129,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                     /* Fl Fn D Sfa Cl */
                                     \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "sum")
                                 ),
-                                /* Fl Fn D Sfc */
+                                /* Fl Fn D Spa */
                                 /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                     /* Fl Fn D Sfa */ VarS:SortInt{}
                                 )
@@ -137,7 +137,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                         )
                     )
                 ),
-                /* Fl Fn D Sfa */
+                /* Fl Fn D Spa */
                 Lbl'-LT-'generatedCounter'-GT-'{}(
                     /* Fl Fn D Sfa */ VarDotVar00:SortInt{}
                 )

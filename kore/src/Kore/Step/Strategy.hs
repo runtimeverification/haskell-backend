@@ -20,6 +20,7 @@ module Kore.Step.Strategy
     , all
     , or
     , try
+    , first
     , any
     , many
     , some
@@ -54,7 +55,6 @@ import Prelude.Kore hiding
     , any
     , many
     , or
-    , replicate
     , seq
     , sequence
     , some
@@ -183,8 +183,11 @@ any [] === stuck
 @
 
  -}
+first :: [Strategy prim] -> Strategy prim
+first = foldr or stuck
+
 any :: [Strategy prim] -> Strategy prim
-any = foldr or stuck
+any = first
 
 -- | Attempt the given strategy once.
 try :: Strategy prim -> Strategy prim

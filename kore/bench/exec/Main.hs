@@ -38,7 +38,7 @@ import Kore.Parser
     , parseKorePattern
     )
 import Kore.Step
-    ( anyRewrite
+    ( priorityAnyStrategy
     )
 import Kore.Syntax.Module
     ( ModuleName (..)
@@ -178,7 +178,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
       where
         unlimited :: Limit Natural
         unlimited = Limit.Unlimited
-        strategy = Limit.replicate unlimited . anyRewrite
+        strategy = Limit.replicate unlimited . priorityAnyStrategy
     kompile = myShell $ (kBin </> "kompile")
         ++ " --backend haskell -d " ++ root
         ++ " " ++ (root </> kFile)

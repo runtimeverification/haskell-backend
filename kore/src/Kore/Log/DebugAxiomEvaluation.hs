@@ -142,10 +142,10 @@ instance Pretty DebugAxiomEvaluation where
                     , Pretty.pretty identifier
                     ]
             NotEvaluated ->
-                Pretty.sep ["No results for:", Pretty.pretty identifier]
+                Pretty.sep ["Not evaluated:", Pretty.pretty identifier]
             NotEvaluatedConditionally ->
                 Pretty.sep
-                    [ "Under certain conditions, no results for:"
+                    [ "Under certain conditions, not evaluated:"
                     , Pretty.pretty identifier
                     ]
             Reevaluation results ->

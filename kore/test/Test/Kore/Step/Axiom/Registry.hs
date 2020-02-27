@@ -21,6 +21,10 @@ import Data.Text
 
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Owise as Attribute
+import Kore.Attribute.Priority
+    ( defaultPriority
+    , owisePriority
+    )
 import qualified Kore.Attribute.Priority as Attribute
 import Kore.Attribute.Simplification
     ( simplificationAttribute
@@ -215,7 +219,7 @@ testDef =
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
-                Attributes [Attribute.priorityAttribute "2"]
+                Attributes [Attribute.priorityAttribute 2]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -230,7 +234,7 @@ testDef =
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
-                Attributes [Attribute.priorityAttribute "3"]
+                Attributes [Attribute.priorityAttribute 3]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -260,7 +264,7 @@ testDef =
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
-                Attributes [Attribute.priorityAttribute "1"]
+                Attributes [Attribute.priorityAttribute 1]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -305,7 +309,7 @@ testDef =
             , sentenceAxiomAttributes =
                 Attributes
                     [ simplificationAttribute
-                    , Attribute.priorityAttribute "3"
+                    , Attribute.priorityAttribute 3
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
@@ -323,7 +327,7 @@ testDef =
             , sentenceAxiomAttributes =
                 Attributes
                     [ simplificationAttribute
-                    , Attribute.priorityAttribute "1"
+                    , Attribute.priorityAttribute 1
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
@@ -341,7 +345,7 @@ testDef =
             , sentenceAxiomAttributes =
                 Attributes
                     [ simplificationAttribute
-                    , Attribute.priorityAttribute "2"
+                    , Attribute.priorityAttribute 2
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
@@ -472,7 +476,7 @@ test_functionRegistry =
            (case Map.lookup axiomId testProcessedAxiomPatterns of
                 Just PartitionedEqualityRules { functionRules } ->
                     assertEqual ""
-                        [1, 2, 3, 100, 200]
+                        [1, 2, 3, defaultPriority, owisePriority]
                         (fmap getPriorityOfRule functionRules)
                 _ -> assertFailure "Should find function rules for f"
             )
