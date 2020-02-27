@@ -305,18 +305,15 @@ promoteSubTermsToTop predicate =
     sortedAndPredicates = sortByDepth andPredicates
 
     sortByDepth :: [Predicate variable] -> [Predicate variable]
-    sortByDepth =
-        sortBy (compare `on` Predicate.depth)
+    sortByDepth = sortBy (compare `on` Predicate.depth)
 
     normalizedPredicates :: Changed [Predicate variable]
     normalizedPredicates =
         flip evalStateT HashMap.empty
         $ for sortedAndPredicates
         $ \predicate' -> do
-            replacements <- State.get
             let original = Predicate.unwrapPredicate predicate'
-            result <-
-                Trans.lift $ replaceWithTopNormalized replacements original
+            result <- replaceWithTopNormalized original
             insertAssumption result
             return result
 
@@ -331,11 +328,12 @@ promoteSubTermsToTop predicate =
         sort = termLikeSort termLike
 
     replaceWithTopNormalized
-        :: HashMap (TermLike variable) (TermLike variable)
-        -> TermLike variable
-        -> Changed (Predicate variable)
-    replaceWithTopNormalized replacements replaceIn =
-        fmap
+        ::  TermLike variable
+        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
+                (Predicate variable)
+    replaceWithTopNormalized replaceIn = do
+        replacements <- State.get
+        Trans.lift $ fmap
             (unsafeMakePredicate replacements replaceIn)
             (replaceWithTop replacements replaceIn)
 
