@@ -15,10 +15,13 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 
 import Kore.Attribute.Axiom.Concrete
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 
 import Test.Kore.Attribute.Parser
 
-parseConcrete :: Attributes -> Parser Concrete
+parseConcrete :: Attributes -> Parser (Concrete Variable)
 parseConcrete (Attributes attrs) =
     Foldable.foldlM (flip parseConcreteAttribute) Default.def attrs
 

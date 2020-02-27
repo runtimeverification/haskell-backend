@@ -22,20 +22,20 @@ import Kore.Debug
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
-newtype Concrete = Concrete { isConcrete :: Bool }
+newtype Concrete variable = Concrete { isConcrete :: Bool }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic Concrete
+instance SOP.Generic (Concrete variable)
 
-instance SOP.HasDatatypeInfo Concrete
+instance SOP.HasDatatypeInfo (Concrete variable)
 
-instance Debug Concrete
+instance Debug (Concrete variable)
 
-instance Diff Concrete
+instance Diff (Concrete variable)
 
-instance NFData Concrete
+instance NFData (Concrete variable)
 
-instance Default Concrete where
+instance Default (Concrete variable) where
     def = Concrete False
 
 -- | Kore identifier representing the @concrete@ attribute symbol.
@@ -54,8 +54,11 @@ concreteSymbol =
 concreteAttribute :: AttributePattern
 concreteAttribute = attributePattern_ concreteSymbol
 
-parseConcreteAttribute :: AttributePattern -> Concrete -> Parser Concrete
+parseConcreteAttribute
+    :: AttributePattern
+    -> Concrete variable
+    -> Parser (Concrete variable)
 parseConcreteAttribute = parseBoolAttribute concreteId
 
-instance From Concrete Attributes where
+instance From (Concrete variable) Attributes where
     from = toBoolAttributes concreteAttribute

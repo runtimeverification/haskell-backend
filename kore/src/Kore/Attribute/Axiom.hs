@@ -81,6 +81,9 @@ import Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
     )
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
@@ -104,7 +107,7 @@ data Axiom symbol =
     -- ^ The axiom is an idempotency axiom.
     , trusted :: !Trusted
     -- ^ The claim is trusted
-    , concrete :: !Concrete
+    , concrete :: !(Concrete Variable)
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
@@ -218,7 +221,7 @@ parseAxiomAttribute attr =
         Monad.>=> typed @Unit (parseAttribute attr)
         Monad.>=> typed @Idem (parseAttribute attr)
         Monad.>=> typed @Trusted (parseAttribute attr)
-        Monad.>=> typed @Concrete (parseConcreteAttribute attr)
+        Monad.>=> typed @(Concrete Variable) (parseConcreteAttribute attr)
         Monad.>=> typed @Simplification (parseAttribute attr)
         Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
         Monad.>=> typed @SmtLemma (parseAttribute attr)
