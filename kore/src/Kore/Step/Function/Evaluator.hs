@@ -331,8 +331,8 @@ maybeEvaluatePattern
     unchangedPatt =
         Conditional
             { term         = termLike
-            , predicate    = (predicate childrenCondition)
-            , substitution = (substitution childrenCondition)
+            , predicate    = predicate childrenCondition
+            , substitution = substitution childrenCondition
             }
 
     simplifyIfNeeded :: Pattern variable -> simplifier (OrPattern variable)

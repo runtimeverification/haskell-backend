@@ -95,7 +95,7 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
             RulePattern.applySubstitution
                 (substitution conditional)
                 rulePattern
-                    { RulePattern.left = (term conditional)
+                    { RulePattern.left = term conditional
                     , RulePattern.requires =
                         Predicate.coerceSort (termLikeSort (term conditional))
                         $ makeAndPredicate (predicate conditional) requires'

@@ -133,7 +133,6 @@ mapVariables
 mapVariables
     mapElemVar
     mapSetVar
-    --Conditional { term, predicate, substitution }
     conditional
   =
     Conditional
@@ -241,24 +240,6 @@ fromTermLike term
         , substitution = mempty
         }
 
-{-
-withCondition
-    :: InternalVariable variable
-    => TermLike variable
-    -> Conditional variable ()
-    -- ^ Condition
-    -> Pattern variable
-withCondition
-    term
-    Conditional
-        { term = ()
-        , predicate
-        , substitution
-        }
-  = syncSort
-    Conditional { term, predicate, substitution }
--}
-
 withCondition
     :: InternalVariable variable
     => TermLike variable
@@ -270,10 +251,9 @@ withCondition
   = syncSort
     Conditional
         { term
-        , predicate = (predicate condition)
-        , substitution = (substitution condition)
+        , predicate = predicate condition
+        , substitution = substitution condition
         }
-
 
 withConditionUnsorted
     :: TermLike variable
@@ -285,8 +265,8 @@ withConditionUnsorted
   =
     Conditional
         { term
-        , predicate = (predicate condition)
-        , substitution = (substitution condition)
+        , predicate = predicate condition
+        , substitution = substitution condition
         }
 
 splitTerm :: Pattern variable -> (TermLike variable, Condition variable)
@@ -306,7 +286,7 @@ coerceSort
         -- Need to override this since a 'ceil' (say) over a predicate is that
         -- predicate with a different sort.
         , predicate = Predicate.coerceSort sort (predicate conditional)
-        , substitution = (substitution conditional)
+        , substitution = substitution conditional
         }
 
 patternSort :: Pattern variable -> Sort

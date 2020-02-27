@@ -192,5 +192,5 @@ coerceSort
     Conditional
         { term = ()
         , predicate = Predicate.coerceSort sort (predicate condition)
-        , substitution = (substitution condition)
+        , substitution = substitution condition
         }
