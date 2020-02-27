@@ -70,4 +70,4 @@ mapConcreteVariables
     ::(ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Concrete variable1 -> Concrete variable2
-mapConcreteVariables = undefined
+mapConcreteVariables _ _ (Concrete b) = Concrete b

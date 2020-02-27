@@ -82,11 +82,11 @@ import Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
     )
+import Kore.Syntax.ElementVariable
+import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
     ( Variable (..)
     )
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
@@ -246,4 +246,5 @@ mapAxiomVariables
     :: (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Axiom symbol variable1 -> Axiom symbol variable2
-mapAxiomVariables = undefined
+mapAxiomVariables e s axiom =
+    axiom & Lens.over (field @"concrete") (mapConcreteVariables e s)
