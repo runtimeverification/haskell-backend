@@ -51,6 +51,7 @@ import qualified Data.Set as Set
 
 import Branch
 import qualified Branch as BranchT
+import Changed
 import Kore.Attribute.Synthetic
     ( synthesize
     )
@@ -231,27 +232,6 @@ makeEvaluate sideCondition first second
   | Pattern.isTop second = return first
   | otherwise = makeEvaluateNonBool sideCondition first second
 
-data Normalized thing
-    = Unchanged !thing
-    | Changed  !thing
-    deriving (Eq, Functor, Show)
-
-instance Applicative Normalized where
-    pure = Unchanged
-
-    Unchanged f <*> Unchanged a = Unchanged (f a)
-    Unchanged f <*> Changed   a =   Changed (f a)
-    Changed   f <*> Unchanged a =   Changed (f a)
-    Changed   f <*> Changed   a =   Changed (f a)
-
-instance Monad Normalized where
-    Unchanged a >>= f = f a
-    Changed a   >>= f = Changed $ fromNormalized $ f a
-
-fromNormalized :: Normalized a -> a
-fromNormalized (Unchanged a) = a
-fromNormalized (Changed a) = a
-
 makeEvaluateNonBool
     ::  ( InternalVariable variable
         , HasCallStack
@@ -295,7 +275,7 @@ promoteSubTermsToTop
     :: forall variable
     .  InternalVariable variable
     => Predicate variable
-    -> Normalized (Predicate variable)
+    -> Changed (Predicate variable)
 promoteSubTermsToTop predicate =
     case normalizedPredicates of
         Unchanged unchanged -> Unchanged $
@@ -316,13 +296,13 @@ promoteSubTermsToTop predicate =
     sortByDepth =
         sortBy (compare `on` Predicate.depth)
 
-    normalizedPredicates :: Normalized [Predicate variable]
+    normalizedPredicates :: Changed [Predicate variable]
     normalizedPredicates = normalizedPredicatesWorker [] sortedAndPredicates
 
     normalizedPredicatesWorker
         :: [Predicate variable]
         -> [Predicate variable]
-        -> Normalized [Predicate variable]
+        -> Changed [Predicate variable]
     normalizedPredicatesWorker result [] = return result
     normalizedPredicatesWorker partialResult (predicate' : predicates) = do
         replacedPredicates <-
@@ -334,7 +314,7 @@ promoteSubTermsToTop predicate =
     replaceWithTopNormalized
         :: Predicate variable
         -> Predicate variable
-        -> Normalized (Predicate variable)
+        -> Changed (Predicate variable)
     replaceWithTopNormalized replaceWithPredicate replaceInPredicate = do
         let replaceIn = Predicate.unwrapPredicate replaceInPredicate
         let replaceWith = Predicate.unwrapPredicate replaceWithPredicate
@@ -355,7 +335,7 @@ promoteSubTermsToTop predicate =
     replaceWithTop
         :: TermLike variable
         -> TermLike variable
-        -> Normalized (TermLike variable)
+        -> Changed (TermLike variable)
     replaceWithTop replaceWith replaceIn
       | replaceWith == replaceIn = Changed (mkTop (termLikeSort replaceIn))
     replaceWithTop replaceWith unchanged
@@ -378,15 +358,15 @@ promoteSubTermsToTop predicate =
 
     replaceWithTopInChildren
         :: TermLike variable
-        -> Normalized (TermLike variable)
+        -> Changed (TermLike variable)
         -> TermLikeF variable (TermLike variable)
-        -> Normalized (TermLike variable)
+        -> Changed (TermLike variable)
     replaceWithTopInChildren replaceWith unchangedValue replaceIn =
         case replaced of
             Unchanged _ -> unchangedValue
             Changed changed -> Changed (synthesize changed)
       where
-        replaced :: Normalized (TermLikeF variable (TermLike variable))
+        replaced :: Changed (TermLikeF variable (TermLike variable))
         replaced = traverse (replaceWithTop replaceWith) replaceIn
 
     makeSimplifiedAndPredicate a b =
