@@ -338,8 +338,8 @@ helpText =
     \save-partial-proof [n] file              creates a file, <file>.kore, containing a kore module\
                                               \ with the name uppercase(<file>)-SPEC, a new claim\n\
     \                                         with the current config (or config <n>) as its LHS\
-                                              \ and all other claims marked as trusted\
-                                              \ (including the original claim)\n\
+                                              \ and all other claims (including the original claim)\
+                                              \ marked as trusted\n\
     \alias <name> = <command>                 adds as an alias for <command>\n\
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
