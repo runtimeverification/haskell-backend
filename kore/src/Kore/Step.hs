@@ -174,7 +174,7 @@ priorityAllStrategy
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAllStrategy rewrites =
-    Strategy.any (fmap allRewrites priorityGroups)
+    Strategy.first (fmap allRewrites priorityGroups)
   where
     priorityGroups =
         groupSortOn
