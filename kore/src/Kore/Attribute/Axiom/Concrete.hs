@@ -9,6 +9,7 @@ Maintainer  : phillip.harris@runtimeverification.com
 module Kore.Attribute.Axiom.Concrete
     ( Concrete (..)
     , concreteId, concreteSymbol, concreteAttribute
+    , mapConcreteVariables
     , parseConcreteAttribute
     ) where
 
@@ -19,6 +20,8 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Kore.Syntax.ElementVariable
+import Kore.Syntax.SetVariable
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
@@ -62,3 +65,9 @@ parseConcreteAttribute = parseBoolAttribute concreteId
 
 instance From (Concrete variable) Attributes where
     from = toBoolAttributes concreteAttribute
+
+mapConcreteVariables
+    ::(ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
+    -> Concrete variable1 -> Concrete variable2
+mapConcreteVariables = undefined

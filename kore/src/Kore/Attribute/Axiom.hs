@@ -27,6 +27,7 @@ module Kore.Attribute.Axiom
     , RuleIndex (..)
     , UniqueId (..)
     , axiomSymbolToSymbolOrAlias
+    , mapAxiomVariables
     , parseAxiomAttributes
     ) where
 
@@ -84,6 +85,8 @@ import Kore.Internal.Symbol
 import Kore.Syntax.Variable
     ( Variable (..)
     )
+import Kore.Syntax.ElementVariable
+import Kore.Syntax.SetVariable
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
@@ -238,3 +241,9 @@ parseAxiomAttribute attr =
 parseAxiomAttributes :: Attributes -> Parser (Axiom SymbolOrAlias Variable)
 parseAxiomAttributes (Attributes attrs) =
     Foldable.foldlM (flip parseAxiomAttribute) Default.def attrs
+
+mapAxiomVariables
+    :: (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
+    -> Axiom symbol variable1 -> Axiom symbol variable2
+mapAxiomVariables = undefined
