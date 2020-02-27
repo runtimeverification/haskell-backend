@@ -36,6 +36,10 @@ import Data.Either
     ( partitionEithers
     )
 import qualified Data.Functor.Foldable as Recursive
+import Data.HashSet
+    ( HashSet
+    )
+import qualified Data.HashSet as HashSet
 import Data.List
     ( foldl'
     , foldl1'
@@ -317,7 +321,7 @@ promoteSubTermsToTop predicate =
         -> TermLike variable
         -> Changed (Predicate variable)
     replaceWithTopNormalized replaceWith replaceIn = do
-        resultTerm <- replaceWithTop replaceWith replaceIn
+        resultTerm <- replaceWithTop (HashSet.singleton replaceWith) replaceIn
         case makePredicate resultTerm of
             -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
             -- should make it impossible to have an error here.
@@ -332,16 +336,16 @@ promoteSubTermsToTop predicate =
             Right p -> return p
 
     replaceWithTop
-        :: TermLike variable
+        :: HashSet (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    replaceWithTop replaceWith original
-      | replaceWith == original = Changed (mkTop originalSort)
+    replaceWithTop replacements original
+      | HashSet.member original replacements = Changed (mkTop originalSort)
 
-      | isQuantified original   = Unchanged original
+      | HashSet.null replacements' = Unchanged original
 
       | otherwise =
-        traverse (replaceWithTop replaceWith) replaceIn
+        traverse (replaceWithTop replacements') replaceIn
         & getChanged
         -- The next line ensures that if the result is Unchanged, any allocation
         -- performed while computing that result is collected.
@@ -351,15 +355,17 @@ promoteSubTermsToTop predicate =
         originalSort = termLikeSort original
         _ :< replaceIn = Recursive.project original
 
-        isQuantified (Exists_ _ var _) =
-            TermLike.hasFreeVariable (ElemVar var) replaceWith
-        isQuantified (Forall_ _ var _) =
-            TermLike.hasFreeVariable (ElemVar var) replaceWith
-        isQuantified (Mu_ var _) =
-            TermLike.hasFreeVariable (SetVar var) replaceWith
-        isQuantified (Nu_ var _) =
-            TermLike.hasFreeVariable (SetVar var) replaceWith
-        isQuantified _ = False
+        replacements'
+          | Exists_ _ var _ <- original = restrictReplacements (ElemVar var)
+          | Forall_ _ var _ <- original = restrictReplacements (ElemVar var)
+          | Mu_       var _ <- original = restrictReplacements (SetVar  var)
+          | Nu_       var _ <- original = restrictReplacements (SetVar  var)
+          | otherwise = replacements
+
+        restrictReplacements unifiedVariable =
+            HashSet.filter
+                (not . TermLike.hasFreeVariable unifiedVariable)
+                replacements
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified
