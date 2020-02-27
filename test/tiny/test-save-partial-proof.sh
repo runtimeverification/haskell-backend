@@ -6,3 +6,4 @@ IGNORE=$($KORE_REPL test-a-to-c-vdefinition.kore -r --repl-script save-config-re
 diff original-config.out partial-config.out
 rm original-config.out
 rm partial-config.out
+rm partial-a-to-c.kore
