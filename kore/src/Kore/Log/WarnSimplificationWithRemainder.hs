@@ -99,7 +99,6 @@ instance SOP.HasDatatypeInfo WarnSimplificationWithRemainder
 
 instance SQL.Table WarnSimplificationWithRemainder
 
--- TODO (thomas.tuegel): Also get the rule which is being skipped.
 {- | Log the @WarnSimplificationWithRemainder@ 'Entry'.
  -}
 warnSimplificationWithRemainder

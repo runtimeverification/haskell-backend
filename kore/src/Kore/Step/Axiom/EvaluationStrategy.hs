@@ -17,6 +17,7 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import Prelude.Kore
 
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -104,17 +105,19 @@ simplificationEvaluation rule =
             remainders' = Results.remainders results'
         Step.recoveryFunctionLikeResults initial results'
         let attemptedAxiom = Results.toAttemptedAxiom results'
-        case attemptedAxiom of
-            AttemptedAxiom.Applied attemptedResults
-              | not . OrPattern.isFalse . AttemptedAxiomResults.remainders
-                $ attemptedResults
-              -> warnSimplificationWithRemainder
-                  term
-                  condition
-                  remainders'
-                  rule
-            _ -> return ()
+        Monad.when (hasRemainder attemptedAxiom)
+            $ warnSimplificationWithRemainder
+                term
+                condition
+                remainders'
+                rule
         return attemptedAxiom
+  where
+    hasRemainder (AttemptedAxiom.Applied attemptedResults) =
+        not . OrPattern.isFalse . AttemptedAxiomResults.remainders
+        $ attemptedResults
+    hasRemainder _ =
+        False
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
