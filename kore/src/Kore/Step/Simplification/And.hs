@@ -28,6 +28,12 @@ import Control.Error
 import Control.Monad
     ( foldM
     )
+import Control.Monad.State.Strict
+    ( StateT (..)
+    , evalStateT
+    )
+import qualified Control.Monad.State.Strict as State
+import qualified Control.Monad.Trans as Trans
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Bifunctor
     ( bimap
@@ -300,22 +306,20 @@ promoteSubTermsToTop predicate =
         sortBy (compare `on` Predicate.depth)
 
     normalizedPredicates :: Changed [Predicate variable]
-    normalizedPredicates = normalizedPredicatesWorker [] sortedAndPredicates
+    normalizedPredicates =
+        traverse normalizedPredicatesWorker sortedAndPredicates
+        & flip evalStateT HashSet.empty
 
     normalizedPredicatesWorker
-        :: [Predicate variable]
-        -> [Predicate variable]
-        -> Changed [Predicate variable]
-    normalizedPredicatesWorker result [] = return result
-    normalizedPredicatesWorker partialResult (predicate' : predicates) = do
-        let termLike' = Predicate.unwrapPredicate predicate'
-        let termLikes = Predicate.unwrapPredicate <$> predicates
-        let replacements = HashSet.singleton termLike'
-        replacedPredicates <-
-            mapM (replaceWithTopNormalized replacements) termLikes
-        normalizedPredicatesWorker
-            (predicate' : partialResult)
-            replacedPredicates
+        ::  Predicate variable
+        ->  StateT (HashSet (TermLike variable)) Changed
+                (Predicate variable)
+    normalizedPredicatesWorker predicate' = do
+        replacements <- State.get
+        let original = Predicate.unwrapPredicate predicate'
+        result <- Trans.lift $ replaceWithTopNormalized replacements original
+        State.modify' $ HashSet.insert (Predicate.unwrapPredicate result)
+        return result
 
     replaceWithTopNormalized
         :: HashSet (TermLike variable)
