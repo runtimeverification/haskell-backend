@@ -319,7 +319,7 @@ instance Goal (OnePathRule Variable) where
       where
         rewrites =
             sortOn
-                (RulePattern.getPriority . toRulePattern)
+                (RulePattern.getPriorityOfRule . toRulePattern)
                 rules
         coinductiveRewrites =
             OnePathRewriteRule
@@ -384,7 +384,7 @@ instance Goal (AllPathRule Variable) where
       where
         priorityGroups =
             groupSortOn
-                (RulePattern.getPriority . toRulePattern)
+                (RulePattern.getPriorityOfRule . toRulePattern)
                 rules
         coinductiveRewrites =
             AllPathRewriteRule
