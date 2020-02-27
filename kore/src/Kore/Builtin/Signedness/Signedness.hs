@@ -15,9 +15,6 @@ import Control.DeepSeq
     ( NFData
     )
 import Data.Functor.Const
-import Data.Hashable
-    ( Hashable
-    )
 import Data.Void
     ( Void
     )

@@ -45,9 +45,6 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
     ( Identity (..)
     )
-import Data.Hashable
-    ( Hashable (..)
-    )
 import Data.Text
     ( Text
     )

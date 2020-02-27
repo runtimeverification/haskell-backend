@@ -44,9 +44,6 @@ import Control.Monad
     )
 import qualified Control.Monad as Monad
 import qualified Data.Functor.Foldable as Recursive
-import Data.Hashable
-    ( Hashable
-    )
 import Data.HashMap.Strict
     ( HashMap
     )

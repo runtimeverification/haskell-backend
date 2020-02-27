@@ -22,7 +22,6 @@ module Kore.AST.Common
 
 import Prelude.Kore
 
-import Data.Hashable
 import Data.String
     ( fromString
     )

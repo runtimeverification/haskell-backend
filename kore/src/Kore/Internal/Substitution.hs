@@ -54,7 +54,6 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Foldable as Foldable
-import Data.Hashable
 import qualified Data.List as List
 import Data.List.NonEmpty
     ( NonEmpty (..)

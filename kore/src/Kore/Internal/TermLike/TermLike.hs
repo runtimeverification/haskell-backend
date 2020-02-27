@@ -57,7 +57,6 @@ import Data.Functor.Identity
     ( Identity (..)
     )
 import qualified Data.Generics.Product as Lens.Product
-import Data.Hashable
 import Data.List
     ( foldl'
     )

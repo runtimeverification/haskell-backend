@@ -19,7 +19,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
