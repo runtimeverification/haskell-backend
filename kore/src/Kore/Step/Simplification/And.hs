@@ -94,7 +94,6 @@ import Kore.Internal.TermLike
     , pattern Nu_
     , Sort
     , TermLike
-    , TermLikeF
     , mkAnd
     , mkBottom_
     , mkNot
@@ -354,20 +353,10 @@ promoteSubTermsToTop predicate =
     replaceWithTop
         replaceWith
         unchanged@(Recursive.project -> _ :< replaceIn)
-      = replaceWithTopInChildren replaceWith (Unchanged unchanged) replaceIn
-
-    replaceWithTopInChildren
-        :: TermLike variable
-        -> Changed (TermLike variable)
-        -> TermLikeF variable (TermLike variable)
-        -> Changed (TermLike variable)
-    replaceWithTopInChildren replaceWith unchangedValue replaceIn =
-        case replaced of
-            Unchanged _ -> unchangedValue
-            Changed changed -> Changed (synthesize changed)
-      where
-        replaced :: Changed (TermLikeF variable (TermLike variable))
-        replaced = traverse (replaceWithTop replaceWith) replaceIn
+      =
+        traverse (replaceWithTop replaceWith) replaceIn
+        & getChanged
+        & maybe (Unchanged unchanged) (Changed . synthesize)
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified
