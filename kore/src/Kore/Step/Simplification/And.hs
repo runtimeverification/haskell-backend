@@ -29,7 +29,8 @@ import Control.Monad
     ( foldM
     )
 import Control.Monad.State.Strict
-    ( evalStateT
+    ( StateT
+    , evalStateT
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Trans
@@ -41,10 +42,10 @@ import Data.Either
     ( partitionEithers
     )
 import qualified Data.Functor.Foldable as Recursive
-import Data.HashSet
-    ( HashSet
+import Data.HashMap.Strict
+    ( HashMap
     )
-import qualified Data.HashSet as HashSet
+import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( foldl'
     , foldl1'
@@ -309,18 +310,28 @@ promoteSubTermsToTop predicate =
 
     normalizedPredicates :: Changed [Predicate variable]
     normalizedPredicates =
-        flip evalStateT HashSet.empty
+        flip evalStateT HashMap.empty
         $ for sortedAndPredicates
         $ \predicate' -> do
             replacements <- State.get
             let original = Predicate.unwrapPredicate predicate'
             result <-
                 Trans.lift $ replaceWithTopNormalized replacements original
-            State.modify' $ HashSet.insert (Predicate.unwrapPredicate result)
+            insertAssumption result
             return result
 
+    insertAssumption
+        :: Predicate variable
+        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
+    insertAssumption predicate1 =
+        State.modify' insert
+      where
+        insert = HashMap.insert termLike (mkTop sort)
+        termLike = Predicate.unwrapPredicate predicate1
+        sort = termLikeSort termLike
+
     replaceWithTopNormalized
-        :: HashSet (TermLike variable)
+        :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (Predicate variable)
     replaceWithTopNormalized replacements replaceIn =
@@ -334,7 +345,7 @@ promoteSubTermsToTop predicate =
             -- should make it impossible to have an error here.
             Left err -> error $ unlines
                 [ "Replacing"
-                , unlines $ map unparseToString $ HashSet.toList replacements
+                , unlines $ map unparseToString $ HashMap.keys replacements
                 , "in"
                 , unparseToString original
                 , "did not produce a predicate!"
@@ -343,13 +354,13 @@ promoteSubTermsToTop predicate =
             Right p -> p
 
     replaceWithTop
-        :: HashSet (TermLike variable)
+        :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
     replaceWithTop replacements original
-      | HashSet.member original replacements = Changed (mkTop originalSort)
+      | Just result <- HashMap.lookup original replacements = Changed result
 
-      | HashSet.null replacements' = Unchanged original
+      | HashMap.null replacements' = Unchanged original
 
       | otherwise =
         traverse (replaceWithTop replacements') replaceIn
@@ -359,7 +370,6 @@ promoteSubTermsToTop predicate =
         & maybe (Unchanged original) (Changed . synthesize)
 
       where
-        originalSort = termLikeSort original
         _ :< replaceIn = Recursive.project original
 
         replacements'
@@ -370,9 +380,11 @@ promoteSubTermsToTop predicate =
           | otherwise = replacements
 
         restrictReplacements unifiedVariable =
-            HashSet.filter
-                (not . TermLike.hasFreeVariable unifiedVariable)
+            HashMap.filterWithKey
+                (\termLike _ -> wouldNotCapture termLike)
                 replacements
+          where
+            wouldNotCapture = not . TermLike.hasFreeVariable unifiedVariable
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified
