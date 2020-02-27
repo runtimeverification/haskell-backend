@@ -304,19 +304,19 @@ promoteSubTermsToTop predicate =
         -> Changed [Predicate variable]
     normalizedPredicatesWorker result [] = return result
     normalizedPredicatesWorker partialResult (predicate' : predicates) = do
+        let termLike' = Predicate.unwrapPredicate predicate'
+        let termLikes = Predicate.unwrapPredicate <$> predicates
         replacedPredicates <-
-            mapM (replaceWithTopNormalized predicate') predicates
+            mapM (replaceWithTopNormalized termLike') termLikes
         normalizedPredicatesWorker
             (predicate' : partialResult)
             replacedPredicates
 
     replaceWithTopNormalized
-        :: Predicate variable
-        -> Predicate variable
+        :: TermLike variable
+        -> TermLike variable
         -> Changed (Predicate variable)
-    replaceWithTopNormalized replaceWithPredicate replaceInPredicate = do
-        let replaceIn = Predicate.unwrapPredicate replaceInPredicate
-        let replaceWith = Predicate.unwrapPredicate replaceWithPredicate
+    replaceWithTopNormalized replaceWith replaceIn = do
         resultTerm <- replaceWithTop replaceWith replaceIn
         case makePredicate resultTerm of
             -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
