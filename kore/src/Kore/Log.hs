@@ -107,18 +107,24 @@ import Log
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
 
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
--- the CPS style because some outputters require cleanup.g. files).
+-- the CPS style because some outputters require cleanup, e.g. files).
 withLogger
     :: KoreLogOptions
     -> (LogAction IO SomeEntry -> IO a)
     -> IO a
-withLogger koreLogOptions = runContT $ do
-    mainLogger <- ContT $ withMainLogger koreLogOptions
-    let KoreLogOptions { debugSolverOptions } = koreLogOptions
-    smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
-    let KoreLogOptions { logSQLiteOptions } = koreLogOptions
-    logSQLite <- ContT $ withLogSQLite logSQLiteOptions
-    return $ mainLogger <> smtSolverLogger <> logSQLite
+withLogger koreLogOptions action =
+    runContT
+        ( do
+            mainLogger <- ContT $ withMainLogger koreLogOptions
+            let KoreLogOptions { debugSolverOptions } = koreLogOptions
+            smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
+            let KoreLogOptions { logSQLiteOptions } = koreLogOptions
+            logSQLite <- ContT $ withLogSQLite logSQLiteOptions
+            return $ mainLogger <> smtSolverLogger <> logSQLite
+        )
+        (action . Colog.cmap (warningsToErrors warnings))
+  where
+    KoreLogOptions { warnings } = koreLogOptions
 
 withMainLogger
     :: KoreLogOptions
@@ -213,7 +219,7 @@ filterSeverity level entry =
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT = do
-    let runLogger = runReaderT . f . getLoggerT $ loggerT
+    let runLogger = runReaderT . getLoggerT $ loggerT
     withLogger options $ \logger -> do
         (asyncThread, modifiedLogger) <- concurrentLogger logger
         finally
