@@ -47,6 +47,8 @@ module Prelude.Kore
     , when
     -- * Typeable
     , Typeable
+    -- * Injection
+    , module Injection
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -105,7 +107,6 @@ import Data.Witherable
     ( Filterable (..)
     )
 import Debug.Trace
-import From
 import GHC.Stack
     ( HasCallStack
     )
@@ -116,6 +117,9 @@ import Prelude hiding
     , filter
     , log
     )
+
+import From
+import Injection
 
 {- | Simultaneously compute the (@min@, @max@) of two values.
  -}
