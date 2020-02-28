@@ -485,8 +485,8 @@ test_applyRewriteRule_ =
         let x' = nextVariable Mock.x
             expect = Left $ UnificationError $ unsupportedPatterns
                 "Unknown unification case."
-                (mkElemVar x')
                 (Mock.plain10 (mkElemVar Mock.y))
+                (mkElemVar x')
             initial = pure $
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId

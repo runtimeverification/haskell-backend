@@ -47,6 +47,9 @@ import Kore.Syntax.Application
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 import qualified Kore.Verified as Verified
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
@@ -134,8 +137,8 @@ verifyAxiomAttributes
     :: forall error attrs
     .  MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
-    -> Attribute.Axiom SymbolOrAlias
-    -> error (Attribute.Axiom Internal.Symbol.Symbol)
+    -> Attribute.Axiom SymbolOrAlias Variable
+    -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
 verifyAxiomAttributes indexedModule axiom = do
     let overload = axiom Lens.^. field @"overload"
     case getOverload overload of

@@ -5,16 +5,13 @@ License     : NCSA
 -}
 module Kore.Attribute.Priority
     ( Priority (..)
+    , defaultPriority, owisePriority
     , priorityId, prioritySymbol, priorityAttribute
     ) where
 
 import Prelude.Kore
 
 import qualified Control.Monad as Monad
-import Data.Text
-    ( Text
-    , pack
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -22,6 +19,11 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 {- | @Priority@ represents the @priority@ attribute.
+
+    It is unsafe to use this directly when handling the priorities of
+    rules with a 'RulePattern' or a 'EqualityRule' representation.
+    'Kore.Step.RulePattern.getPriorityOfRule'
+    or 'Kore.Step.EqualityPattern.getPriorityOfRule' should be used instead.
  -}
 newtype Priority = Priority { getPriority :: Maybe Integer }
     deriving (Eq, GHC.Generic, Ord, Show)
@@ -39,6 +41,15 @@ instance NFData Priority
 instance Default Priority where
     def = Priority Nothing
 
+-- | Default priority for 'EqualityRule' and 'RulePattern'.
+defaultPriority :: Integer
+defaultPriority = 50
+
+-- | Priority for 'EqualityRule' and 'RulePattern' with the
+-- 'owise' attribute.
+owisePriority :: Integer
+owisePriority = 200
+
 -- | Kore identifier representing the @priority@ attribute symbol.
 priorityId :: Id
 priorityId = "priority"
@@ -52,9 +63,9 @@ prioritySymbol =
         }
 
 -- | Kore pattern representing a @priority@ attribute.
-priorityAttribute :: Text -> AttributePattern
+priorityAttribute :: Integer -> AttributePattern
 priorityAttribute name =
-    attributePattern prioritySymbol [attributeString name]
+    attributePattern prioritySymbol [attributeInteger name]
 
 instance ParseAttributes Priority where
     parseAttribute =
@@ -73,4 +84,4 @@ instance From Priority Attributes where
     from =
         maybe def toAttribute . getPriority
       where
-        toAttribute = from @AttributePattern . priorityAttribute . pack . show
+        toAttribute = from @AttributePattern . priorityAttribute

@@ -245,6 +245,8 @@ elementMapId :: Id
 elementMapId = testId "elementMap"
 concatMapId :: Id
 concatMapId = testId "concatMap"
+opaqueMapId :: Id
+opaqueMapId = testId "opaqueMap"
 lessIntId :: Id
 lessIntId = testId "lessIntId"
 greaterEqIntId :: Id
@@ -259,6 +261,8 @@ unitListId :: Id
 unitListId = testId "unitList"
 concatSetId :: Id
 concatSetId = testId "concatSet"
+opaqueSetId :: Id
+opaqueSetId = testId "opaqueSet"
 elementSetId :: Id
 elementSetId = testId "elementSet"
 unitSetId :: Id
@@ -565,6 +569,11 @@ concatMapSymbol =
     symbol concatMapId [mapSort, mapSort] mapSort
     & functional & hook "MAP.concat"
 
+opaqueMapSymbol :: Symbol
+opaqueMapSymbol =
+    symbol opaqueMapId [testSort] mapSort
+    & function
+
 lessIntSymbol :: Symbol
 lessIntSymbol =
     symbol lessIntId [intSort, intSort] boolSort
@@ -605,6 +614,11 @@ elementSetSymbol =
 unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
+
+opaqueSetSymbol :: Symbol
+opaqueSetSymbol =
+    symbol opaqueSetId [testSort] setSort
+    & function
 
 sigmaSymbol :: Symbol
 sigmaSymbol =
@@ -1132,6 +1146,13 @@ concatMap
     -> TermLike variable
 concatMap m1 m2 = Internal.mkApplySymbol concatMapSymbol [m1, m2]
 
+opaqueMap
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+opaqueMap term = Internal.mkApplySymbol opaqueMapSymbol [term]
+
 unitSet :: InternalVariable variable => TermLike variable
 unitSet = Internal.mkApplySymbol unitSetSymbol []
 
@@ -1149,6 +1170,13 @@ concatSet
     -> TermLike variable
     -> TermLike variable
 concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
+
+opaqueSet
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+opaqueSet term = Internal.mkApplySymbol opaqueSetSymbol [term]
 
 lessInt
     :: InternalVariable variable
@@ -1288,12 +1316,14 @@ symbols =
     , unitMapSymbol
     , elementMapSymbol
     , concatMapSymbol
+    , opaqueMapSymbol
     , concatListSymbol
     , elementListSymbol
     , unitListSymbol
     , concatSetSymbol
     , elementSetSymbol
     , unitSetSymbol
+    , opaqueSetSymbol
     , lessIntSymbol
     , greaterEqIntSymbol
     , tdivIntSymbol
@@ -1655,9 +1685,9 @@ builtinMap elements = framedMap elements []
 framedMap
     :: InternalVariable variable
     => [(TermLike variable, TermLike variable)]
-    -> [ElementVariable variable]
+    -> [TermLike variable]
     -> TermLike variable
-framedMap elements (map Internal.mkElemVar -> opaque) =
+framedMap elements opaque =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
@@ -1692,21 +1722,34 @@ builtinList child =
 
 builtinSet
     :: InternalVariable variable
-    => [TermLike Concrete]
+    => [TermLike variable]
     -> TermLike variable
-builtinSet child =
+builtinSet elements = framedSet elements []
+
+framedSet
+    :: InternalVariable variable
+    => [TermLike variable]
+    -> [TermLike variable]
+    -> TermLike variable
+framedSet elements opaque =
     Internal.mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
         , builtinAcConcat = concatSetSymbol
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements =
-                Map.fromList (map (\key -> (key, Domain.SetValue)) child)
-            , opaque = []
+            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+            , concreteElements
+            , opaque
             }
         }
+  where
+    asConcrete key =
+        (,) <$> Internal.asConcrete key <*> pure Domain.SetValue
+        & maybe (Left (key, Domain.SetValue)) Right
+    (abstractElements, Map.fromList -> concreteElements) =
+        asConcrete <$> elements
+        & Either.partitionEithers
 
 builtinInt
     :: InternalVariable variable

@@ -223,15 +223,15 @@ class Goal goal where
 
 class ClaimExtractor claim where
     extractClaim
-        :: (Attribute.Axiom.Axiom Symbol, Verified.SentenceClaim)
-        -> Maybe (Attribute.Axiom.Axiom Symbol, claim)
+        :: (Attribute.Axiom.Axiom Symbol Variable, Verified.SentenceClaim)
+        -> Maybe (Attribute.Axiom.Axiom Symbol Variable, claim)
 
 -- | Extracts all One-Path claims from a verified module.
 extractClaims
     :: ClaimExtractor claim
     => VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    -> [(Attribute.Axiom.Axiom Symbol, claim)]
+    -> [(Attribute.Axiom.Axiom Symbol Variable, claim)]
 extractClaims idxMod =
     mapMaybe
         -- applying on second component
@@ -319,7 +319,7 @@ instance Goal (OnePathRule Variable) where
       where
         rewrites =
             sortOn
-                (RulePattern.getPriority . toRulePattern)
+                (RulePattern.getPriorityOfRule . toRulePattern)
                 rules
         coinductiveRewrites =
             OnePathRewriteRule
@@ -384,7 +384,7 @@ instance Goal (AllPathRule Variable) where
       where
         priorityGroups =
             groupSortOn
-                (RulePattern.getPriority . toRulePattern)
+                (RulePattern.getPriorityOfRule . toRulePattern)
                 rules
         coinductiveRewrites =
             AllPathRewriteRule

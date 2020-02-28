@@ -11,12 +11,19 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
+
 import Kore.Attribute.Axiom.Concrete
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 
 import Test.Kore.Attribute.Parser
 
-parseConcrete :: Attributes -> Parser Concrete
-parseConcrete = parseAttributes
+parseConcrete :: Attributes -> Parser (Concrete Variable)
+parseConcrete (Attributes attrs) =
+    Foldable.foldlM (flip parseConcreteAttribute) Default.def attrs
 
 test_concrete :: TestTree
 test_concrete =

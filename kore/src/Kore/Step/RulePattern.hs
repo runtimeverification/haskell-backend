@@ -21,12 +21,13 @@ module Kore.Step.RulePattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
-    , getPriority
+    , getPriorityOfRule
     , applySubstitution
     , topExistsToImplicitForall
     , isFreeOf
     , Kore.Step.RulePattern.substitute
     , rhsSubstitute
+    , rhsForgetSimplified
     , rhsToTerm
     , termToRHS
     , injectTermIntoRHS
@@ -71,13 +72,14 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Attribute.Owise as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
     , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Priority as Attribute
 import Kore.Debug
 import Kore.Internal.Alias
     ( Alias (..)
@@ -200,7 +202,7 @@ data RulePattern variable = RulePattern
     , antiLeft :: !(Maybe (TermLike.TermLike variable))
     , requires :: !(Predicate variable)
     , rhs :: !(RHS variable)
-    , attributes :: !(Attribute.Axiom Symbol)
+    , attributes :: !(Attribute.Axiom Symbol variable)
     }
     deriving (GHC.Generic)
 
@@ -303,8 +305,16 @@ isNormalRule RulePattern { attributes } =
         Attribute.Normal -> True
         _ -> False
 
-getPriority :: RulePattern variable -> Attribute.Priority
-getPriority = Attribute.priority . attributes
+getPriorityOfRule :: RulePattern variable -> Integer
+getPriorityOfRule RulePattern { attributes } =
+    if isOwise
+        then Attribute.owisePriority
+        else fromMaybe Attribute.defaultPriority getPriority
+  where
+    Attribute.Priority { getPriority } =
+        Attribute.priority attributes
+    Attribute.Owise { isOwise } =
+        Attribute.owise attributes
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm
@@ -381,6 +391,14 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
         }
   where
     subst' = foldr (Map.delete . ElemVar) subst existentials
+
+rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
+rhsForgetSimplified RHS { existentials, right, ensures } =
+    RHS
+        { existentials
+        , right = TermLike.forgetSimplified right
+        , ensures = Predicate.forgetSimplified ensures
+        }
 
 {- | Apply the substitution to the rule.
  -}
@@ -601,6 +619,8 @@ instance InternalVariable variable => Unparse (AllPathRule variable) where
 instance TopBottom (AllPathRule variable) where
     isTop _ = False
     isBottom _ = False
+
+instance ToRulePattern (RewriteRule Variable)
 
 instance ToRulePattern (OnePathRule Variable)
 
@@ -831,11 +851,14 @@ instance UnifyingRule RulePattern where
                 , right = mapTermLikeVariables right
                 , ensures = mapPredicateVariables ensures
                 }
+            , attributes =
+                Attribute.mapAxiomVariables mapElemVar mapSetVar attributes
             }
       where
         RulePattern
             { left, antiLeft, requires
             , rhs = RHS { existentials, right, ensures }
+            , attributes
             } = rule1
         mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
         mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
