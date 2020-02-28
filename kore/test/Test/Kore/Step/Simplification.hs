@@ -110,7 +110,7 @@ simplifiedCondition conditional =
         , predicate = simplifiedPredicate predicate
         , substitution = simplifiedSubstitution substitution
         }
-    where 
+    where
       predicate = Conditional.DoNotUse.predicate conditional
       substitution = Conditional.DoNotUse.substitution conditional
 

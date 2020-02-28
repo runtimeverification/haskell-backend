@@ -285,7 +285,7 @@ unificationProcedureSuccessWithSimplifiers
                 -> ([Assignment Variable], Predicate Variable)
             normalize conditional =
                 (Substitution.unwrap substitution, predicate)
-              where 
+              where
                 substitution = Conditional.substitution conditional
                 predicate = Conditional.predicate conditional
 
