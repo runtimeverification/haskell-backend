@@ -22,6 +22,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 
 import qualified Data.List as List
+import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Domain.Builtin
     ( Element
     , NormalizedAc (..)
@@ -131,8 +132,7 @@ makeEvaluateBuiltinAssocComm
                     , mconcat definedValues
                     , mconcat distinctConcreteKeys
                     , mconcat distinctAbstractKeys
-                    , definedConcreteOpaquePairs
-                    , definedAbstractOpaquePairs
+                    , Foldable.foldMap notMembers opaque
                     , definedOpaquePairs
                     ]
 
@@ -192,16 +192,21 @@ makeEvaluateBuiltinAssocComm
         -- Stabilize the order of terms under Equals.
         (tMin, tMax) = minMax t1 t2
 
-    definedConcreteOpaquePairs =
-        foldMap defineConcreteOpaque $ Map.toList concreteElements
-    definedAbstractOpaquePairs =
-        foldMap defineAbstractOpaque abstractElements
-
-    defineConcreteOpaque
-        :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
+    notMember
+        :: TermLike variable
+        -> Domain.Element normalized (TermLike variable)
         -> MultiAnd (OrCondition variable)
-    defineConcreteOpaque elt =
-        foldMap (defineConcreteOpaquePair elt) opaque
+    notMember termLike element
+      | Just concreteKey <- Builtin.toKey symbolicKey =
+        defineConcreteOpaquePair (concreteKey, value) termLike
+      | otherwise =
+        defineAbstractOpaquePair element termLike
+      where
+        (symbolicKey, value) = Domain.unwrapElement element
+
+    notMembers :: TermLike variable -> MultiAnd (OrCondition variable)
+    notMembers termLike =
+        Lens.foldMapOf foldElements (notMember termLike) normalizedAc
 
     defineConcreteOpaquePair
         :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
@@ -219,12 +224,6 @@ makeEvaluateBuiltinAssocComm
         & mkBuiltin
         & makeSimplified
         & MultiAnd.singleton
-
-    defineAbstractOpaque
-        :: Domain.Element normalized (TermLike variable)
-        -> MultiAnd (OrCondition variable)
-    defineAbstractOpaque elt =
-        foldMap (defineAbstractOpaquePair elt) opaque
 
     defineAbstractOpaquePair
         :: Domain.Element normalized (TermLike variable)
