@@ -56,6 +56,7 @@ import Kore.ASTVerifier.SortVerifier
 import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
+    , parseAxiomAttributes
     )
 import qualified Kore.Attribute.Hook as Attribute
 import Kore.Attribute.Parser
@@ -496,6 +497,9 @@ parseAndVerifyAxiomAttributes
     :: MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
     -> Attributes
-    -> error (Attribute.Axiom Internal.Symbol.Symbol)
+    -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
 parseAndVerifyAxiomAttributes indexModule attrs =
-    parseAttributes' attrs >>= verifyAxiomAttributes indexModule
+    parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
+  where
+    parseAxiomAttributes' =
+        Attribute.Parser.liftParser . Attribute.parseAxiomAttributes
