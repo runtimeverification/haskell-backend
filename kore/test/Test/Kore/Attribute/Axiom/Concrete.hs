@@ -32,7 +32,7 @@ parseConcrete (Attributes attrs) =
 test_concrete :: TestTree
 test_concrete =
     testCase "[concrete{}()] :: Concrete"
-        $ expectSuccess Concrete { freeVariables = FreeVariables.freeVariables concreteAttribute }
+        $ expectSuccess Concrete { freeVariables = def }
         $ parseConcrete $ Attributes [ concreteAttribute ]
 
 test_Attributes :: TestTree
