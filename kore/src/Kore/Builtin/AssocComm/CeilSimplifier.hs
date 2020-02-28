@@ -38,7 +38,8 @@ import Kore.Internal.OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( Predicate
+    , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -66,6 +67,11 @@ type BuiltinAssocComm normalized variable =
 type MkBuiltinAssocComm normalized variable =
     BuiltinAssocComm normalized variable -> TermLike variable
 
+type MkNotMember normalized variable =
+        Element normalized (TermLike variable)
+    ->  TermLike variable
+    ->  Predicate variable
+
 newCeilSimplifier
     ::  forall normalized variable simplifier
     .   Domain.AcWrapper normalized
@@ -83,13 +89,21 @@ newCeilSimplifier
             (OrCondition variable)
 newCeilSimplifier mkBuiltin ceilSimplifierTermLike =
     CeilSimplifier $ \ceil@Ceil { ceilChild } ->
-    ReaderT $ \sideCondition ->
+    ReaderT $ \sideCondition -> do
+        let mkInternalAc normalizedAc =
+                ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
+            mkNotMember element termLike =
+                mkInternalAc (fromElement element) { opaque = [termLike] }
+                & mkBuiltin
+                & makeCeilPredicate_
         makeEvaluateBuiltinAssocComm
             mkBuiltin
+            mkNotMember
             ceilSimplifierTermLike
             sideCondition
             ceil { ceilChild = () }
             ceilChild
+  where
 
 makeEvaluateBuiltinAssocComm
     :: forall normalized variable simplifier
@@ -98,6 +112,7 @@ makeEvaluateBuiltinAssocComm
     =>  Traversable (Domain.Value normalized)
     =>  Domain.AcWrapper normalized
     =>  MkBuiltinAssocComm normalized variable
+    ->  MkNotMember normalized variable
     ->  CeilSimplifier
             (ReaderT (SideCondition variable) simplifier)
             (TermLike variable)
@@ -108,6 +123,7 @@ makeEvaluateBuiltinAssocComm
     ->  simplifier (OrCondition variable)
 makeEvaluateBuiltinAssocComm
     mkBuiltin
+    mkNotMember
     ceilSimplifierTermLike
     sideCondition
     Ceil { ceilResultSort }
@@ -198,12 +214,8 @@ makeEvaluateBuiltinAssocComm
         -> Domain.Element normalized (TermLike variable)
         -> MultiAnd (OrCondition variable)
     notMember termLike element =
-        internalAc
-            { Domain.builtinAcChild =
-                Domain.wrapAc $ (fromElement element) { opaque = [termLike] }
-            }
-        & mkBuiltin
-        & makeSimplified
+        mkNotMember element termLike
+        & makeSimplifiedPredicate
         & MultiAnd.singleton
 
     notMembers :: TermLike variable -> MultiAnd (OrCondition variable)
@@ -234,10 +246,11 @@ makeEvaluateBuiltinAssocComm
         & makeSimplified
         & MultiAnd.singleton
 
-    makeSimplified =
+    makeSimplifiedPredicate =
         OrCondition.fromPredicate
         . Predicate.markSimplifiedMaybeConditional Nothing
-        . makeCeilPredicate_
+
+    makeSimplified = makeSimplifiedPredicate . makeCeilPredicate_
 
 foldElements
     ::  AcWrapper collection
