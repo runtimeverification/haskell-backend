@@ -10,16 +10,22 @@ module Kore.Builtin.AssocComm.CeilSimplifier
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Control.Monad
     ( zipWithM
     )
 import Control.Monad.Reader
     ( ReaderT (..)
     )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 
 import qualified Data.List as List
+import Kore.Domain.Builtin
+    ( Element
+    , NormalizedAc (..)
+    )
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.MultiAnd
     ( MultiAnd
@@ -269,3 +275,21 @@ makeEvaluateBuiltinAssocComm
         OrCondition.fromPredicate
         . Predicate.markSimplifiedMaybeConditional Nothing
         . makeCeilPredicate_
+
+foldElements
+    ::  Domain.AcWrapper collection
+    =>  InternalVariable variable
+    =>  Lens.Fold
+            (NormalizedAc collection (TermLike Concrete) (TermLike variable))
+            (Element collection (TermLike variable))
+foldElements =
+    Lens.folding $ \normalizedAc ->
+        let
+            concreteElements' =
+                concreteElements normalizedAc
+                & Map.toList
+                & map (Bifunctor.first TermLike.fromConcrete)
+                & map Domain.wrapElement
+            symbolicElements' = elementsWithVariables normalizedAc
+        in
+            concreteElements' <> symbolicElements'
