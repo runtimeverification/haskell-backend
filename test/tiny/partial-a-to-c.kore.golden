@@ -1,0 +1,97 @@
+[]
+module PARTIAL-A-TO-C-SPEC
+    import VERIFICATION []
+    claim {} /* Spa */
+    \implies{SortGeneratedTopCell{}}(
+        /* Spa */
+        \and{SortGeneratedTopCell{}}(
+            /* D Sfa */ \top{SortGeneratedTopCell{}}(),
+            /* Fl Fn D Sfa */
+            Lbl'-LT-'generatedTop'-GT-'{}(
+                /* Fl Fn D Sfa */
+                Lbl'-LT-'k'-GT-'{}(
+                    /* Fl Fn D Sfa */
+                    kseq{}(
+                        /* Fl Fn D Sfa Cli */
+                        /* Inj: */ inj{SortS{}, SortKItem{}}(
+                            /* Fl Fn D Sfa Cl */ Lblb'Unds'TINY'Unds'S{}()
+                        ),
+                        /* Fl Fn D Sfa */ VarDotVar1:SortK{}
+                    )
+                ),
+                /* Fl Fn D Sfa */
+                Lbl'-LT-'generatedCounter'-GT-'{}(
+                    /* Fl Fn D Sfa */ VarDotVar00:SortInt{}
+                )
+            )
+        ),
+        /* Spa */
+        weakExistsFinally{SortGeneratedTopCell{}}(
+            /* Fl Fn D Spa */
+            Lbl'-LT-'generatedTop'-GT-'{}(
+                /* Fl Fn D Spa */
+                Lbl'-LT-'k'-GT-'{}(
+                    /* Fl Fn D Spa */
+                    kseq{}(
+                        /* Fl Fn D Sfa Cli */
+                        /* Inj: */ inj{SortS{}, SortKItem{}}(
+                            /* Fl Fn D Sfa Cl */ Lblc'Unds'TINY'Unds'S{}()
+                        ),
+                        /* Fl Fn D Sfa */ VarDotVar1:SortK{}
+                    )
+                ),
+                /* Fl Fn D Spa */
+                Lbl'-LT-'generatedCounter'-GT-'{}(
+                    /* Fl Fn D Sfa */ VarDotVar00:SortInt{}
+                )
+            )
+        )
+    ) []
+    claim {} /* Spa */
+    \implies{SortGeneratedTopCell{}}(
+        /* Spa */
+        \and{SortGeneratedTopCell{}}(
+            /* D Sfa */ \top{SortGeneratedTopCell{}}(),
+            /* Fl Fn D Sfa */
+            Lbl'-LT-'generatedTop'-GT-'{}(
+                /* Fl Fn D Sfa */
+                Lbl'-LT-'k'-GT-'{}(
+                    /* Fl Fn D Sfa */
+                    kseq{}(
+                        /* Fl Fn D Sfa Cli */
+                        /* Inj: */ inj{SortS{}, SortKItem{}}(
+                            /* Fl Fn D Sfa Cl */ Lbla'Unds'TINY'Unds'S{}()
+                        ),
+                        /* Fl Fn D Sfa */ VarDotVar1:SortK{}
+                    )
+                ),
+                /* Fl Fn D Sfa */
+                Lbl'-LT-'generatedCounter'-GT-'{}(
+                    /* Fl Fn D Sfa */ VarDotVar00:SortInt{}
+                )
+            )
+        ),
+        /* Spa */
+        weakExistsFinally{SortGeneratedTopCell{}}(
+            /* Fl Fn D Spa */
+            Lbl'-LT-'generatedTop'-GT-'{}(
+                /* Fl Fn D Spa */
+                Lbl'-LT-'k'-GT-'{}(
+                    /* Fl Fn D Spa */
+                    kseq{}(
+                        /* Fl Fn D Sfa Cli */
+                        /* Inj: */ inj{SortS{}, SortKItem{}}(
+                            /* Fl Fn D Sfa Cl */ Lblc'Unds'TINY'Unds'S{}()
+                        ),
+                        /* Fl Fn D Sfa */ VarDotVar1:SortK{}
+                    )
+                ),
+                /* Fl Fn D Spa */
+                Lbl'-LT-'generatedCounter'-GT-'{}(
+                    /* Fl Fn D Sfa */ VarDotVar00:SortInt{}
+                )
+            )
+        )
+    ) [trusted{}()]
+endmodule
+[]
