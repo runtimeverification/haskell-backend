@@ -30,7 +30,7 @@ import Kore.Internal.Condition
     ( Condition
     )
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.OrCondition
@@ -104,12 +104,15 @@ simplifiedCondition
     :: InternalVariable variable
     => Condition variable
     -> Condition variable
-simplifiedCondition Conditional { term = (), predicate, substitution } =
+simplifiedCondition conditional =
     Conditional
         { term = ()
         , predicate = simplifiedPredicate predicate
         , substitution = simplifiedSubstitution substitution
         }
+    where 
+      predicate = Conditional.DoNotUse.predicate conditional
+      substitution = Conditional.DoNotUse.substitution conditional
 
 simplifiedPattern
     :: InternalVariable variable

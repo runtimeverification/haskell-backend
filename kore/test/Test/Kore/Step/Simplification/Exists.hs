@@ -81,12 +81,12 @@ test_simplify =
                     (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
                     (Mock.functional20 (mkElemVar Mock.y) (mkElemVar Mock.z))
             }
-    quantifyPredicate predicated@Conditional { predicate } =
+    quantifyPredicate predicated =
         predicated
             { Conditional.predicate =
-                Predicate.makeExistsPredicate Mock.x predicate
+                Predicate.makeExistsPredicate Mock.x (Conditional.predicate predicated)
             }
-    quantifySubstitution predicated@Conditional { predicate, substitution } =
+    quantifySubstitution predicated  =
         predicated
             { Conditional.predicate =
                 Predicate.makeAndPredicate predicate
@@ -94,6 +94,10 @@ test_simplify =
                 $ Substitution.toPredicate substitution
             , Conditional.substitution = mempty
             }
+        where
+          predicate = Conditional.predicate predicated
+          substitution = Conditional.substitution predicated
+
     substForX =
         (Pattern.topOf Mock.testSort)
             { Conditional.substitution = Substitution.unsafeWrap

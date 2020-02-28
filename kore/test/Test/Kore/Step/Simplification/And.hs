@@ -591,7 +591,7 @@ makeAnd first second =
 
 findSort :: [Pattern Variable] -> Sort
 findSort [] = testSort
-findSort ( Conditional {term} : _ ) = termLikeSort term
+findSort ( conditional : _ ) = termLikeSort (term conditional)
 
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
 evaluate = runSimplifier Mock.env . simplify SideCondition.top

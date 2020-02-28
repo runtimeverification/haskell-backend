@@ -896,17 +896,17 @@ assertTermEqualsMultiGeneric expectPure first second = do
             , substitution = mempty
             }
     predSubstToPattern :: Condition Variable -> Pattern Variable
-    predSubstToPattern
-        Conditional {predicate = PredicateFalse}
+    predSubstToPattern condition
+      | PredicateFalse <- predicate condition
       =
         Conditional.bottom
-    predSubstToPattern
-        Conditional {predicate, substitution}
+
+      | otherwise
       =
         Conditional
             { term = mkTop_
-            , predicate = predicate
-            , substitution = substitution
+            , predicate = predicate condition
+            , substitution = substitution condition
             }
 
 fOfA :: TermLike Variable

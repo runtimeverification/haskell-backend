@@ -25,6 +25,7 @@ import Data.Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -282,8 +283,12 @@ unificationProcedureSuccessWithSimplifiers
             normalize
                 :: Condition Variable
                 -> ([Assignment Variable], Predicate Variable)
-            normalize Conditional { substitution, predicate } =
+            normalize conditional =
                 (Substitution.unwrap substitution, predicate)
+              where 
+                substitution = Conditional.substitution conditional
+                predicate = Conditional.predicate conditional
+
         assertEqual ""
             expect
             (map normalize results)
