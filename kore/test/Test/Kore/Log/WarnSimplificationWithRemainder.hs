@@ -16,6 +16,10 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.WarnSimplificationWithRemainder
+import Kore.Step.EqualityPattern
+    ( EqualityRule (..)
+    , equalityPattern
+    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SQL
@@ -29,30 +33,20 @@ warn1 =
     WarnSimplificationWithRemainder
         { inputPattern = term1
         , sideCondition = SideCondition.top
-        , results = Results results1
         , remainders = Remainders remainders1
+        , rule = rule1
         }
 warn2 =
     WarnSimplificationWithRemainder
         { inputPattern = term2
         , sideCondition = SideCondition.top
-        , results = Results results2
         , remainders = Remainders remainders2
+        , rule = rule2
         }
 
 term1, term2 :: TermLike Variable
 term1 = Mock.f Mock.a
 term2 = Mock.f Mock.b
-
-results1, results2 :: OrPattern Variable
-results1 =
-    OrPattern.fromPattern $ Pattern.andCondition
-        (Pattern.fromTermLike Mock.a)
-        (Condition.fromPredicate predicate1)
-results2 =
-    OrPattern.fromPattern $ Pattern.andCondition
-        (Pattern.fromTermLike Mock.b)
-        (Condition.fromPredicate predicate2)
 
 predicate1, predicate2 :: Predicate Variable
 predicate1 = makeEqualsPredicate_ (Mock.g Mock.a) (Mock.h Mock.a)
@@ -67,3 +61,7 @@ remainders2 =
     OrPattern.fromPattern $ Pattern.andCondition
         (Pattern.fromTermLike Mock.b)
         (Condition.fromPredicate $ makeNotPredicate predicate2)
+
+rule1, rule2 :: EqualityRule Variable
+rule1 = EqualityRule $ equalityPattern term1 Mock.a
+rule2 = EqualityRule $ equalityPattern term2 Mock.b

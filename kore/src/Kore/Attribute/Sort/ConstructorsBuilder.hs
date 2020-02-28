@@ -82,7 +82,7 @@ indexBySort indexedModule =
         )
 
 parseNoJunkAxiom
-    ::  ( Attribute.Axiom Symbol
+    ::  ( Attribute.Axiom Symbol variable
         , Verified.SentenceAxiom
         )
     -> Maybe (Id, Constructors)
