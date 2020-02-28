@@ -72,6 +72,7 @@ data KoreLogOptions = KoreLogOptions
     , debugSolverOptions :: DebugSolverOptions
     , exeName :: ExeName
     , logSQLiteOptions :: LogSQLiteOptions
+    , warnings :: Warnings
     }
     deriving (Eq, Show)
 
@@ -87,6 +88,7 @@ instance Default KoreLogOptions where
             , debugSolverOptions = def @DebugSolverOptions
             , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
+            , warnings = def @Warnings
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -149,6 +151,7 @@ parseKoreLogOptions exeName =
     <*> parseDebugSolverOptions
     <*> pure exeName
     <*> parseLogSQLiteOptions
+    <*> parseWarnings
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -199,9 +202,24 @@ readSeverity =
         "error"    -> pure Error
         _          -> Nothing
 
+parseWarnings :: Parser Warnings
+parseWarnings =
+    Options.flag
+        AsWarnings
+        AsErrors
+        ( Options.long "warnings-as-errors"
+        <> Options.help "Turn warnings into errors"
+        )
+
 -- | Caller of the logging function
 newtype ExeName = ExeName { getExeName :: String }
     deriving (Eq, Show)
 
 instance Pretty.Pretty ExeName where
     pretty = Pretty.pretty . getExeName
+
+data Warnings = AsWarnings | AsErrors
+    deriving (Eq, Show)
+
+instance Default Warnings where
+    def = AsWarnings
