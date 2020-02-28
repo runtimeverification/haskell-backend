@@ -17,7 +17,6 @@ import Control.Monad
 import Control.Monad.Reader
     ( ReaderT (..)
     )
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 
@@ -287,8 +286,7 @@ foldElements =
             concreteElements' =
                 concreteElements normalizedAc
                 & Map.toList
-                & map (Bifunctor.first TermLike.fromConcrete)
-                & map Domain.wrapElement
+                & map Domain.wrapConcreteElement
             symbolicElements' = elementsWithVariables normalizedAc
         in
             concreteElements' <> symbolicElements'
