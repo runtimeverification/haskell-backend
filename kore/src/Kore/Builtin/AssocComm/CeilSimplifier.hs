@@ -23,8 +23,10 @@ import qualified Data.Map.Strict as Map
 import qualified Data.List as List
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Domain.Builtin
-    ( Element
+    ( AcWrapper
+    , Element
     , NormalizedAc (..)
+    , emptyNormalizedAc
     )
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.MultiAnd
@@ -195,51 +197,18 @@ makeEvaluateBuiltinAssocComm
         :: TermLike variable
         -> Domain.Element normalized (TermLike variable)
         -> MultiAnd (OrCondition variable)
-    notMember termLike element
-      | Just concreteKey <- Builtin.toKey symbolicKey =
-        defineConcreteOpaquePair (concreteKey, value) termLike
-      | otherwise =
-        defineAbstractOpaquePair element termLike
-      where
-        (symbolicKey, value) = Domain.unwrapElement element
+    notMember termLike element =
+        internalAc
+            { Domain.builtinAcChild =
+                Domain.wrapAc $ (fromElement element) { opaque = [termLike] }
+            }
+        & mkBuiltin
+        & makeSimplified
+        & MultiAnd.singleton
 
     notMembers :: TermLike variable -> MultiAnd (OrCondition variable)
     notMembers termLike =
         Lens.foldMapOf foldElements (notMember termLike) normalizedAc
-
-    defineConcreteOpaquePair
-        :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
-        -> TermLike variable
-        -> MultiAnd (OrCondition variable)
-    defineConcreteOpaquePair (key, value) opaque1 =
-        internalAc
-            { Domain.builtinAcChild =
-                Domain.wrapAc Domain.NormalizedAc
-                    { elementsWithVariables = mempty
-                    , concreteElements = Map.singleton key value
-                    , opaque = [opaque1]
-                    }
-            }
-        & mkBuiltin
-        & makeSimplified
-        & MultiAnd.singleton
-
-    defineAbstractOpaquePair
-        :: Domain.Element normalized (TermLike variable)
-        -> TermLike variable
-        -> MultiAnd (OrCondition variable)
-    defineAbstractOpaquePair elt opaque1 =
-        internalAc
-            { Domain.builtinAcChild =
-                Domain.wrapAc Domain.NormalizedAc
-                    { elementsWithVariables = [elt]
-                    , concreteElements = mempty
-                    , opaque = [opaque1]
-                    }
-            }
-        & mkBuiltin
-        & makeSimplified
-        & MultiAnd.singleton
 
     definedOpaquePairs :: MultiAnd (OrCondition variable)
     definedOpaquePairs =
@@ -259,11 +228,7 @@ makeEvaluateBuiltinAssocComm
     defineOpaquePair opaque1 opaque2 =
         internalAc
             { Domain.builtinAcChild =
-                Domain.wrapAc Domain.NormalizedAc
-                    { elementsWithVariables = mempty
-                    , concreteElements = mempty
-                    , opaque = [opaque1, opaque2]
-                    }
+                Domain.wrapAc emptyNormalizedAc { opaque = [opaque1, opaque2] }
             }
         & mkBuiltin
         & makeSimplified
@@ -275,7 +240,7 @@ makeEvaluateBuiltinAssocComm
         . makeCeilPredicate_
 
 foldElements
-    ::  Domain.AcWrapper collection
+    ::  AcWrapper collection
     =>  InternalVariable variable
     =>  Lens.Fold
             (NormalizedAc collection (TermLike Concrete) (TermLike variable))
@@ -290,3 +255,16 @@ foldElements =
             symbolicElements' = elementsWithVariables normalizedAc
         in
             concreteElements' <> symbolicElements'
+
+fromElement
+    :: AcWrapper normalized
+    => InternalVariable variable
+    => Element normalized (TermLike variable)
+    -> NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+fromElement element
+  | Just concreteKey <- Builtin.toKey symbolicKey
+  = emptyNormalizedAc { concreteElements = Map.singleton concreteKey value }
+  | otherwise
+  = emptyNormalizedAc { elementsWithVariables = [element] }
+  where
+    (symbolicKey, value) = Domain.unwrapElement element
