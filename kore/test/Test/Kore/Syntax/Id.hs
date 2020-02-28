@@ -6,8 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Hashable
-
 import Kore.Syntax.Id
 
 import Test.Kore

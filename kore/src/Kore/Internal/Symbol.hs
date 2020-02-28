@@ -38,7 +38,6 @@ import Control.DeepSeq
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
-import Data.Hashable
 import Data.Text
     ( Text
     )

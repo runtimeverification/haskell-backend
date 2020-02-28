@@ -19,9 +19,6 @@ import Control.DeepSeq
 import Data.Data
     ( Data
     )
-import Data.Hashable
-    ( Hashable
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )

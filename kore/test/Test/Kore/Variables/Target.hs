@@ -10,10 +10,6 @@ import Hedgehog
 import Test.Tasty
 import Test.Tasty.Hedgehog
 
-import Data.Hashable
-    ( hash
-    )
-
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Variables.Target

@@ -180,7 +180,6 @@ module Kore.Internal.TermLike
 
 import Prelude.Kore
 
-import Control.Comonad
 import Control.Comonad.Trans.Cofree
 import Data.Align
 import Data.ByteString

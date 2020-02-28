@@ -12,9 +12,6 @@ module Kore.Attribute.Pattern.Created
 import Prelude.Kore
 
 import Control.DeepSeq
-import Data.Hashable
-    ( Hashable (hashWithSalt)
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )

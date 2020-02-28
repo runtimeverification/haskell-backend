@@ -28,6 +28,8 @@ data W = W { value :: String, counter :: Maybe (Sup Natural) }
 mkW :: String -> W
 mkW value = W { value, counter = Nothing }
 
+instance Hashable W
+
 instance SOP.Generic W
 
 instance SOP.HasDatatypeInfo W

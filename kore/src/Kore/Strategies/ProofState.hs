@@ -13,7 +13,6 @@ module Kore.Strategies.ProofState
 
 import Prelude.Kore
 
-import Data.Hashable
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )

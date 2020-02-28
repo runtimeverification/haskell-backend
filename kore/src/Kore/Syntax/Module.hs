@@ -14,9 +14,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
-import Data.Hashable
-    ( Hashable (..)
-    )
 import Data.String
     ( IsString
     )

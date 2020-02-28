@@ -32,7 +32,6 @@ import Control.Comonad
 import Control.DeepSeq
     ( NFData
     )
-import Data.Hashable
 import Data.Monoid
     ( (<>)
     )
