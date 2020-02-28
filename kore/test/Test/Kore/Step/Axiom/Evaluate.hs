@@ -14,6 +14,7 @@ import Data.Generics.Wrapped
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Axiom.Concrete
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
@@ -162,10 +163,11 @@ axiom_
 axiom_ left right = axiom left right makeTruePredicate_
 
 concreteEqualityRule :: EqualityRule Variable -> EqualityRule Variable
-concreteEqualityRule =
+concreteEqualityRule rule =
     Lens.set
         (_Unwrapped . field @"attributes" . field @"concrete")
-        (Concrete True)
+        (Concrete . FreeVariables.freeVariables . getEqualityRule $ rule)
+        rule
 
 -- * Test forms
 

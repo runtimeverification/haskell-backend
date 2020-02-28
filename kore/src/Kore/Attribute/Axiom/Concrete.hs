@@ -15,31 +15,36 @@ module Kore.Attribute.Axiom.Concrete
 
 import Prelude.Kore
 
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Attribute.Pattern.FreeVariables
 import Kore.Debug
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
+import Kore.Variables.UnifiedVariable
+    ( mapUnifiedVariable
+    )
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
-newtype Concrete variable = Concrete { isConcrete :: Bool }
+newtype Concrete variable = Concrete { freeVariables :: FreeVariables variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic (Concrete variable)
 
 instance SOP.HasDatatypeInfo (Concrete variable)
 
-instance Debug (Concrete variable)
+instance Debug variable => Debug (Concrete variable)
 
-instance Diff (Concrete variable)
+instance (Debug variable, Diff variable) => Diff (Concrete variable)
 
-instance NFData (Concrete variable)
+instance NFData variable => NFData (Concrete variable)
 
 instance Default (Concrete variable) where
-    def = Concrete False
+    def = Concrete def
 
 -- | Kore identifier representing the @concrete@ attribute symbol.
 concreteId :: Id
@@ -58,16 +63,34 @@ concreteAttribute :: AttributePattern
 concreteAttribute = attributePattern_ concreteSymbol
 
 parseConcreteAttribute
-    :: AttributePattern
+    :: Ord variable
+    => AttributePattern
+    -> FreeVariables variable
     -> Concrete variable
     -> Parser (Concrete variable)
-parseConcreteAttribute = parseBoolAttribute concreteId
+parseConcreteAttribute
+    attribute
+    (FreeVariables variables)
+    concrete@(Concrete (FreeVariables concreteFreeVariables))
+  = do
+        parsedBool <- parseBoolAttribute concreteId attribute isOK
+        if parsedBool then
+            return concrete
+        else
+            return def
+  where
+    isOK = variables `Set.isSubsetOf` concreteFreeVariables
 
 instance From (Concrete variable) Attributes where
-    from = toBoolAttributes concreteAttribute
+    from (Concrete (FreeVariables set)) =
+        toBoolAttributes concreteAttribute (Set.null set)
 
 mapConcreteVariables
-    ::(ElementVariable variable1 -> ElementVariable variable2)
+    :: Ord variable2
+    => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Concrete variable1 -> Concrete variable2
-mapConcreteVariables _ _ (Concrete b) = Concrete b
+mapConcreteVariables fElemVar fSetVar (Concrete (FreeVariables variables)) =
+    Concrete . FreeVariables
+    . Set.map (mapUnifiedVariable fElemVar fSetVar)
+    $ variables

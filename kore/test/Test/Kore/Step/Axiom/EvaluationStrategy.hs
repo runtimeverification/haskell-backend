@@ -178,14 +178,18 @@ test_definitionEvaluation =
 
             evaluator = definitionEvaluation
                 [ EqualityRule
-                    (equalityPattern
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        (Mock.g (mkElemVar Mock.x))
-                    )
+                    eqPattern
                     { attributes = def
-                        { Attribute.Axiom.concrete = Attribute.Concrete True }
+                        { Attribute.Axiom.concrete =
+                            Attribute.Concrete (freeVariables eqPattern)
+                        }
                     }
                 ]
+              where
+                eqPattern =
+                    equalityPattern
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.g (mkElemVar Mock.x))
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
         assertEqual "" expectConcrete actualConcrete

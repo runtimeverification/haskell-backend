@@ -17,12 +17,14 @@ import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
+import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom (Axiom)
     )
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
+import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
@@ -139,11 +141,19 @@ evaluateAxioms equalityRules sideCondition termLike
             (matchAxiomIdentifier left)
             (DebugAxiomEvaluation.klabelIdentifier left)
 
-    ruleIsConcrete =
-        Attribute.Axiom.Concrete.isConcrete
+    concreteFreeVariablesOfRule =
+        Attribute.Axiom.Concrete.freeVariables
         . Attribute.Axiom.concrete
         . EqualityPattern.attributes
         . getEqualityRule
+
+    freeVariablesOfRule =
+        freeVariables
+        . getEqualityRule
+
+    ruleIsConcrete rule =
+        getFreeVariables (freeVariablesOfRule rule)
+            `Set.isSubsetOf` getFreeVariables (concreteFreeVariablesOfRule rule)
 
     notApplicable =
         Result.Results

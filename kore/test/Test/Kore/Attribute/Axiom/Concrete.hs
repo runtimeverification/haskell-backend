@@ -15,6 +15,7 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 
 import Kore.Attribute.Axiom.Concrete
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Syntax.Variable
     ( Variable (..)
     )
@@ -23,12 +24,15 @@ import Test.Kore.Attribute.Parser
 
 parseConcrete :: Attributes -> Parser (Concrete Variable)
 parseConcrete (Attributes attrs) =
-    Foldable.foldlM (flip parseConcreteAttribute) Default.def attrs
+    Foldable.foldlM
+        (\c a -> parseConcreteAttribute a Default.def c)
+        Default.def
+        attrs
 
 test_concrete :: TestTree
 test_concrete =
     testCase "[concrete{}()] :: Concrete"
-        $ expectSuccess Concrete { isConcrete = True }
+        $ expectSuccess Concrete { freeVariables = FreeVariables.freeVariables concreteAttribute }
         $ parseConcrete $ Attributes [ concreteAttribute ]
 
 test_Attributes :: TestTree
