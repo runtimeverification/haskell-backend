@@ -16,6 +16,7 @@ module Kore.Log
     , runLoggerT
     , module Log
     , module KoreLogOptions
+    , warningsToErrors
     ) where
 
 import Prelude.Kore
@@ -55,6 +56,7 @@ import Control.Monad.Cont
     )
 import Control.Monad.Reader
     ( runReaderT
+    , withReaderT
     )
 import Data.Functor.Contravariant
     ( contramap
@@ -66,6 +68,7 @@ import Data.String
 import Data.Text
     ( Text
     )
+import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Time.Clock
@@ -80,6 +83,7 @@ import Data.Time.LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
     )
+import qualified GHC.Stack as GHC
 
 import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugAxiomEvaluation
@@ -103,7 +107,7 @@ import Log
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
 
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
--- the CPS style because some outputters require cleanup (e.g. files).
+-- the CPS style because some outputters require cleanup.g. files).
 withLogger
     :: KoreLogOptions
     -> (LogAction IO SomeEntry -> IO a)
@@ -155,6 +159,20 @@ koreLogTransformer koreLogOptions baseLogger =
   where
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
 
+warningsToErrors
+    :: Warnings
+    -> SomeEntry
+    -> SomeEntry
+warningsToErrors AsWarnings entry = entry
+warningsToErrors AsErrors (SomeEntry entry)
+    | entrySeverity entry == Warning =
+        toEntry LogMessage
+            { message = Text.pack . show . longDoc $ entry
+            , severity = Error
+            , callstack = GHC.emptyCallStack
+            }
+    | otherwise = SomeEntry entry
+
 koreLogFilters
     :: Applicative m
     => KoreLogOptions
@@ -195,12 +213,15 @@ filterSeverity level entry =
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT = do
-    let runLogger = runReaderT . getLoggerT $ loggerT
+    let runLogger = runReaderT . f . getLoggerT $ loggerT
     withLogger options $ \logger -> do
         (asyncThread, modifiedLogger) <- concurrentLogger logger
         finally
             (runLogger modifiedLogger)
             (wait asyncThread)
+  where
+    f = withReaderT (Colog.cmap $ warningsToErrors warnings)
+    KoreLogOptions { warnings } = options
 
 concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
 concurrentLogger logger = do

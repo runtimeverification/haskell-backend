@@ -10,6 +10,7 @@ module Kore.Log.KoreLogOptions
     , EntryTypes
     , ExeName (..)
     , TimestampsSwitch (..)
+    , Warnings (..)
     , parseKoreLogOptions
     ) where
 
