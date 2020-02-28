@@ -14,6 +14,7 @@ module Kore.Step.Simplification.Floor
 
 import Prelude.Kore
 
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -88,16 +89,20 @@ makeEvaluateNonBoolFloor
     :: InternalVariable variable
     => Pattern variable
     -> OrPattern variable
-makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
-    OrPattern.fromPattern patt {term = mkTop_}  -- remove the term's sort
--- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
--- sorts, and maybe other cases also
+
 makeEvaluateNonBoolFloor
     conditional
+  | Top_ _ <- term
+  = OrPattern.fromPattern conditional {term = mkTop_} -- remove the term's sort
+    -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
+    -- sorts, and maybe other cases also
+
+  | otherwise
   =
     OrPattern.fromPattern Conditional
         { term = mkTop_
         , predicate = Predicate.markSimplified
-            $ makeAndPredicate (makeFloorPredicate_ (term conditional)) (predicate conditional)
+            $ makeAndPredicate (makeFloorPredicate_ (Conditional.term conditional)) (Conditional.predicate conditional)
         , substitution = substitution conditional
         }
+  where term = Conditional.term conditional

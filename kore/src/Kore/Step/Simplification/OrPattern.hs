@@ -24,7 +24,7 @@ import qualified Kore.Internal.Condition as Condition
     , toPredicate
     )
 import Kore.Internal.Conditional
-    ( Conditional ()
+    ( Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)

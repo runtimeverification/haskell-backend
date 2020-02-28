@@ -15,7 +15,7 @@ import Data.Map.Strict
     ( Map
     )
 
-import Kore.Internal.Conditional
+import Kore.Internal.Conditional as Conditional
     ( Conditional (..)
     )
 import Kore.Internal.OrPattern
@@ -81,7 +81,7 @@ simplifyEqualityPattern rule = do
     let EqualityPattern { left } = rule
     simplifiedLeft <- simplifyPattern left
     case OrPattern.toPatterns simplifiedLeft of
-        [ Conditional { term, predicate, substitution } ]
+        [ conditional ]
           | PredicateTrue <- predicate -> do
             let subst = Substitution.toMap substitution
                 left' = TermLike.substitute subst term
@@ -102,11 +102,16 @@ simplifyEqualityPattern rule = do
                 , ensures = Predicate.forgetSimplified ensures'
                 , attributes = attributes
                 }
+          where
+            term = Conditional.term conditional
+            predicate = Conditional.predicate conditional
+            substitution = Conditional.substitution conditional
         _ ->
             -- Unable to simplify the given rule pattern, so we return the
             -- original pattern in the hope that we can do something with it
             -- later.
             return rule
+
 
 {- | Simplify a 'Rule' using only matching logic rules.
 
@@ -134,7 +139,7 @@ simplifyRulePattern rule = do
     let RulePattern { left } = rule
     simplifiedLeft <- simplifyPattern left
     case OrPattern.toPatterns simplifiedLeft of
-        [ Conditional { term, predicate, substitution } ]
+        [ conditional ]
           | PredicateTrue <- predicate -> do
             -- TODO (virgil): Dropping the substitution for equations
             -- and for rewrite rules where the substituted variables occur
@@ -159,6 +164,11 @@ simplifyRulePattern rule = do
                 , rhs = rhsForgetSimplified rhs'
                 , attributes = attributes
                 }
+          where
+            term = Conditional.term conditional
+            predicate = Conditional.predicate conditional
+            substitution = Conditional.substitution conditional
+
         _ ->
             -- Unable to simplify the given rule pattern, so we return the
             -- original pattern in the hope that we can do something with it

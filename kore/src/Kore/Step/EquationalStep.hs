@@ -36,9 +36,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
@@ -135,7 +132,7 @@ unwrapAndQuantifyConfiguration
     .  InternalVariable variable
     => Pattern (Target variable)
     -> Pattern variable
-unwrapAndQuantifyConfiguration config@Conditional { substitution } =
+unwrapAndQuantifyConfiguration config =
     if List.null targetVariables
     then unwrappedConfig
     else
@@ -146,6 +143,7 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
                 targetVariables
             )
   where
+    substitution = Conditional.substitution config
     substitution' =
         Substitution.filter (foldMapVariable Target.isNonTarget)
             substitution
@@ -213,7 +211,7 @@ finalizeAppliedRule sideCondition renamedRule appliedConditions =
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
-            Conditional { substitution } = finalCondition
+            substitution = Conditional.substitution finalCondition
             substitution' = Substitution.toMap substitution
             finalTerm' = TermLike.substitute substitution' finalTerm
         return (finalTerm' `Pattern.withCondition` finalCondition)
@@ -281,8 +279,8 @@ recoveryFunctionLikeResults initial results = do
                             \simplification are built from a single rule."
                             ]
 
-            Conditional { term = ruleTerm, substitution = ruleSubstitution } =
-                appliedRule
+            ruleTerm = Conditional.term appliedRule
+            ruleSubstitution = Conditional.substitution appliedRule
             EqualityPattern { left = alpha_t', requires = alpha_p'} = ruleTerm
 
             substitution' = Substitution.toMap ruleSubstitution

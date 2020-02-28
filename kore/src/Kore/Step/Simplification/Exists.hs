@@ -247,7 +247,7 @@ matchesToVariableSubstitution
     -> simplifier Bool
 matchesToVariableSubstitution
     variable
-    Conditional {term, predicate, substitution = boundSubstitution}
+    conditional
   | Equals_ _sort1 _sort2 first second <-
         Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
@@ -258,6 +258,10 @@ matchesToVariableSubstitution
         Nothing -> return False
         Just results ->
             return (singleVariableSubstitution variable results)
+  where
+    term = Conditional.term conditional
+    predicate = Conditional.predicate conditional
+    boundSubstitution = Conditional.substitution conditional
 
 matchesToVariableSubstitution _ _ = return False
 

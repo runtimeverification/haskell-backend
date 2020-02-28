@@ -216,26 +216,26 @@ makeEvaluateTerm
                 <$> makeSimplifiedCeil sideCondition maybeCondition term
             )
         return (fmap toCondition evaluation)
-    
-    toCondition 
-        :: Conditional variable (TermLike variable) 
+
+    toCondition
+        :: Conditional variable (TermLike variable)
         -> Condition.Condition variable
 
-    toCondition conditional = case Conditional.term conditional of 
-        Top_ _ -> 
-            Conditional 
+    toCondition conditional = case Conditional.term conditional of
+        Top_ _ ->
+            Conditional
                 { term = ()
                 , predicate = predicate conditional
                 , substitution = substitution conditional
                 }
-        _      -> 
+        _      ->
             error
                 (  "Ceil simplification is expected to result in a predicate,"
                 ++ "but  got (" ++ show conditional ++ ")."
                 ++ " The most likely cases are: evaluating predicate symbols, "
                 ++ " and predicate symbols are currently unrecognized as such, "
                 ++ "and programming errors."
-                )  
+                )
 
 ceilSimplifierTermLike
     ::  InternalVariable variable

@@ -1026,7 +1026,7 @@ removalPredicate
           , Pretty.indent 4 (unparse destTerm)
           ]
   where
-    Conditional { term = destTerm } = destination
+    destTerm = term destination
     (configTerm, configPredicate) = Pattern.splitTerm configuration
     sideCondition = SideCondition.assumeTrueCondition configPredicate
     -- The variables of the destination that are missing from the

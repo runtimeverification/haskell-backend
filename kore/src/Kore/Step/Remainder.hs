@@ -21,6 +21,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
+import Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -133,9 +134,11 @@ unificationConditions
     => Condition (Target variable)
     -- ^ Unification solution
     -> MultiAnd (Predicate (Target variable))
-unificationConditions Conditional { predicate, substitution } =
+unificationConditions conditional =
     pure predicate <|> substitutionConditions substitution'
   where
+    predicate = Conditional.predicate conditional
+    substitution = Conditional.substitution conditional
     substitution' =
         Substitution.filter (foldMapVariable Target.isNonTarget)
             substitution

@@ -364,8 +364,9 @@ bottomTermEquals
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
-        [ Conditional { predicate = PredicateTrue, substitution } ]
-          | substitution == mempty -> do
+        [ conditional ]
+          | PredicateTrue <- predicate conditional
+          , substitution conditional == mempty -> do
             explainBottom
                 "Cannot unify bottom with non-bottom pattern."
                 first

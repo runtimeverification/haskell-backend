@@ -34,8 +34,8 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
-    ( andCondition
-    , Conditional (..)
+    ( Conditional (..)
+    , andCondition
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -293,7 +293,7 @@ simplifyInternal term sideCondition = do
           =
             Conditional
                 { term =
-                    TermLike.substitute (Substitution.toMap substitution) 
+                    TermLike.substitute (Substitution.toMap substitution)
                                         (Conditional.term conditional)
                 , predicate = predicate
                 , substitution = substitution
@@ -310,7 +310,7 @@ simplifyInternal term sideCondition = do
                 hasPredicateTerm conditional
                   | isTop term' || isBottom term' = False
                   | otherwise                     = Predicate.isPredicate term'
-                  where 
+                  where
                     term' = Conditional.term conditional
 
                 unsimplified =
@@ -371,9 +371,7 @@ simplifyInternal term sideCondition = do
           | otherwise = continuation
           where
             (resultTerm, resultPredicate) = Pattern.splitTerm result
-            resultSubstitutionIsEmpty =
-                case resultPredicate of
-                    Conditional {substitution} -> substitution == mempty
+            resultSubstitutionIsEmpty = (substitution resultPredicate) == mempty
             termAsPredicate =
                 Condition.fromPredicate <$> Predicate.makePredicate term
 

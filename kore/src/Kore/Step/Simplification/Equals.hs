@@ -265,36 +265,25 @@ makeEvaluate
     -> SideCondition variable
     -> simplifier (OrPattern variable)
 
-makeEvaluate
-    first@Conditional { term = Top_ _ }
-    second@Conditional { term = Top_ _ }
-    _
+makeEvaluate first second sideCondition
+  | Top_ _ <- firstTerm
+  , Top_ _ <- secondTerm
   =
     return
         (Iff.makeEvaluate
             first {term = mkTop_}   -- remove the term's sort
             second {term = mkTop_}  -- remove the term's sort
         )
-makeEvaluate
-    Conditional
-        { term = firstTerm
-        , predicate = PredicateTrue
-        , substitution = (Substitution.unwrap -> [])
-        }
-    Conditional
-        { term = secondTerm
-        , predicate = PredicateTrue
-        , substitution = (Substitution.unwrap -> [])
-        }
-    sideCondition
+
+  | PredicateTrue <- predicate first
+  , PredicateTrue <- predicate second
+  , Substitution.null (substitution first)
+  , Substitution.null (substitution second)
   = do
     result <- makeEvaluateTermsToPredicate firstTerm secondTerm sideCondition
     return (Pattern.fromCondition <$> result)
 
-makeEvaluate
-    first
-    second
-    sideCondition
+  | otherwise
   = do
     let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
     firstCeil <- Ceil.makeEvaluate sideCondition first'
@@ -312,9 +301,6 @@ makeEvaluate
     firstTerm = term first
     secondTerm = term second
     termsAreEqual = firstTerm == secondTerm
-
-
-
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
