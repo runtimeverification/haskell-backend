@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Builtin.AssocComm.CeilSimplifier
     ( newSetCeilSimplifier
+    , newMapCeilSimplifier
     , newCeilSimplifier
     ) where
 
@@ -96,6 +97,35 @@ newSetCeilSimplifier ceilSimplifierTermLike =
                 & makeCeilPredicate_
         makeEvaluateBuiltinAssocComm
             TermLike.mkBuiltinSet
+            mkNotMember
+            ceilSimplifierTermLike
+            sideCondition
+            ceil { ceilChild = () }
+            ceilChild
+
+newMapCeilSimplifier
+    ::  forall variable simplifier
+    .   InternalVariable variable
+    =>  MonadSimplify simplifier
+    =>  CeilSimplifier
+            (ReaderT (SideCondition variable) simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+    ->  CeilSimplifier
+            (ReaderT (SideCondition variable) simplifier)
+            (BuiltinAssocComm Domain.NormalizedMap variable)
+            (OrCondition variable)
+newMapCeilSimplifier ceilSimplifierTermLike =
+    CeilSimplifier $ \ceil@Ceil { ceilChild } ->
+    ReaderT $ \sideCondition -> do
+        let mkInternalAc normalizedAc =
+                ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
+            mkNotMember element termLike =
+                mkInternalAc (fromElement element) { opaque = [termLike] }
+                & TermLike.mkBuiltinMap
+                & makeCeilPredicate_
+        makeEvaluateBuiltinAssocComm
+            TermLike.mkBuiltinMap
             mkNotMember
             ceilSimplifierTermLike
             sideCondition
