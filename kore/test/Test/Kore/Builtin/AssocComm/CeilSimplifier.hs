@@ -15,6 +15,9 @@ import Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
+import Kore.Attribute.Pattern.FreeVariables
+    ( getFreeVariables
+    )
 import Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
@@ -26,6 +29,7 @@ import Kore.Internal.Predicate
     ( Predicate
     , makeCeilPredicate_
     , makeEqualsPredicate_
+    , makeForallPredicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -34,6 +38,9 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
+    )
+import Kore.Variables.UnifiedVariable
+    ( refreshElementVariable
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -50,12 +57,14 @@ hprop_Builtin_Set :: Property
         (Gen.subsequence opaqueMaps)
         fst
         defineMapElement
+        mkNotMemberMap
         Mock.framedMap
     , propertyBuiltinAssocComm
         genKeys
         (Gen.subsequence opaqueSets)
         id
         defineSetElement
+        mkNotMemberSet
         Mock.framedSet
     , testsMap
     , testsSet
@@ -91,6 +100,21 @@ hprop_Builtin_Set :: Property
     defineSetElement key =
         -- symbolic keys are defined
         [ makeCeilPredicate_ key | (not . isConcrete) key ]
+
+    mkNotMemberMap (key, _) term =
+        (makeForallPredicate val . makeCeilPredicate_)
+            (Mock.framedMap [(key, mkElemVar val)] [term])
+      where
+        avoiding = getFreeVariables (freeVariables key <> freeVariables term)
+        val = refreshElementVariable avoiding x & fromMaybe x
+        x =
+            ElementVariable Variable
+                { variableName = "x"
+                , variableCounter = mempty
+                , variableSort = Mock.testSort
+                }
+
+    mkNotMemberSet key term = makeCeilPredicate_ (Mock.framedSet [key] [term])
 
     testsMap =
         [
@@ -148,14 +172,20 @@ hprop_Builtin_Set :: Property
         ,
             let
                 original = Mock.framedMap [cElt1] [opaqueMap1]
-                expect = map makeCeilPredicate_ [original, opaqueMap1]
+                expect =
+                    [ mkNotMemberMap cElt1 opaqueMap1
+                    , makeCeilPredicate_ opaqueMap1
+                    ]
             in
                 test "concrete keys are not in the frame" original expect
         ,
             let
                 original = Mock.framedMap [sElt1] [opaqueMap1]
                 expect =
-                    map makeCeilPredicate_ [original, sKey1, opaqueMap1]
+                    [ mkNotMemberMap sElt1 opaqueMap1
+                    , makeCeilPredicate_ sKey1
+                    , makeCeilPredicate_ opaqueMap1
+                    ]
             in
                 test "symbolic keys are not in the frame" original expect
         ,
@@ -260,6 +290,7 @@ propertyBuiltinAssocComm
     -> Gen [TermLike Variable]
     -> (element -> TermLike Variable)
     -> (element -> [Predicate Variable])
+    -> (element -> TermLike Variable -> Predicate Variable)
     -> ([element] -> [TermLike Variable] -> TermLike Variable)
     -> Property
 propertyBuiltinAssocComm
@@ -267,6 +298,7 @@ propertyBuiltinAssocComm
     genOpaques
     elementKey
     defineElement
+    mkNotMember
     mkAssocComm
   = Hedgehog.property $ do
     opaques <- forAll genOpaques
@@ -288,7 +320,7 @@ propertyBuiltinAssocComm
             ]
         -- | No element occurs in any opaque operand
         expectNoElementInOpaque =
-            [ makeCeilPredicate_ $ mkAssocComm [element] [opaque']
+            [ mkNotMember element opaque'
             | element <- elements
             , opaque' <- opaques
             ]
