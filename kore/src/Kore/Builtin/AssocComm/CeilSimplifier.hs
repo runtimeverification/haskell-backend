@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Builtin.AssocComm.CeilSimplifier
     ( newSetCeilSimplifier
     , newMapCeilSimplifier
+    , generalizeMapElement
     ) where
 
 import Prelude.Kore
@@ -23,13 +24,16 @@ import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
 import Kore.Attribute.Pattern.FreeVariables
-    ( getFreeVariables
+    ( FreeVariables
+    , getFreeVariables
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Domain.Builtin
     ( AcWrapper
     , Element
+    , MapElement
     , NormalizedAc (..)
+    , Value (MapValue)
     , emptyNormalizedAc
     )
 import qualified Kore.Domain.Builtin as Domain
@@ -133,22 +137,12 @@ newMapCeilSimplifier ceilSimplifierTermLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
                 & TermLike.mkBuiltinMap
                 & makeCeilPredicate_
-                & makeForallPredicate value'
+                & makeForallPredicate variable
               where
-                element' =
-                    Domain.wrapElement
-                        (key, Domain.MapValue $ TermLike.mkElemVar value')
-                (key, Domain.MapValue value) = Domain.unwrapElement element
-                avoiding =
-                    (getFreeVariables . foldMap TermLike.freeVariables)
-                        [key, termLike]
-                x =
-                    (ElementVariable . from @Variable @variable) Variable
-                        { variableName = "x"
-                        , variableCounter = mempty
-                        , variableSort = termLikeSort value
-                        }
-                value' = refreshElementVariable avoiding x & fromMaybe x
+                (variable, element') =
+                    generalizeMapElement
+                        (TermLike.freeVariables termLike)
+                        element
         makeEvaluateBuiltinAssocComm
             TermLike.mkBuiltinMap
             mkNotMember
@@ -156,6 +150,33 @@ newMapCeilSimplifier ceilSimplifierTermLike =
             sideCondition
             ceil { ceilChild = () }
             ceilChild
+
+{- | Generalize a 'MapElement' by replacing the 'MapValue' with a variable.
+
+The variable is renamed if required to avoid the given 'FreeVariables' and any
+variables in the key of the 'MapElement'. The variable is returned along with
+the generalized 'MapElement'
+
+ -}
+generalizeMapElement
+    :: forall variable
+    .  InternalVariable variable
+    => FreeVariables variable
+    -> MapElement (TermLike variable)
+    -> (ElementVariable variable, MapElement (TermLike variable))
+generalizeMapElement freeVariables' element =
+    (variable, element')
+  where
+    (key, MapValue value) = Domain.unwrapElement element
+    element' = Domain.wrapElement (key, MapValue $ TermLike.mkElemVar variable)
+    avoiding = getFreeVariables (TermLike.freeVariables key <> freeVariables')
+    x =
+        (ElementVariable . from @Variable @variable) Variable
+            { variableName = "x"
+            , variableCounter = mempty
+            , variableSort = termLikeSort value
+            }
+    variable = refreshElementVariable avoiding x & fromMaybe x
 
 makeEvaluateBuiltinAssocComm
     :: forall normalized variable simplifier

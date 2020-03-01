@@ -15,9 +15,10 @@ import Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
-import Kore.Attribute.Pattern.FreeVariables
-    ( getFreeVariables
+import Kore.Builtin.AssocComm.CeilSimplifier
+    ( generalizeMapElement
     )
+import Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
@@ -38,9 +39,6 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
-    )
-import Kore.Variables.UnifiedVariable
-    ( refreshElementVariable
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -101,18 +99,13 @@ hprop_Builtin_Set :: Property
         -- symbolic keys are defined
         [ makeCeilPredicate_ key | (not . isConcrete) key ]
 
-    mkNotMemberMap (key, _) term =
-        (makeForallPredicate val . makeCeilPredicate_)
-            (Mock.framedMap [(key, mkElemVar val)] [term])
+    mkNotMemberMap (key, value) term =
+        (makeForallPredicate variable . makeCeilPredicate_)
+            (Mock.framedMap [(key', value')] [term])
       where
-        avoiding = getFreeVariables (freeVariables key <> freeVariables term)
-        val = refreshElementVariable avoiding x & fromMaybe x
-        x =
-            ElementVariable Variable
-                { variableName = "x"
-                , variableCounter = mempty
-                , variableSort = Mock.testSort
-                }
+        element = Domain.wrapElement (key, Domain.MapValue value)
+        (variable, element') = generalizeMapElement (freeVariables term) element
+        (key', Domain.MapValue value') = Domain.unwrapElement element'
 
     mkNotMemberSet key term = makeCeilPredicate_ (Mock.framedSet [key] [term])
 
