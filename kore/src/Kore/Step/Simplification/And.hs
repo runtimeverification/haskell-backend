@@ -28,6 +28,12 @@ import Control.Error
 import Control.Monad
     ( foldM
     )
+import Control.Monad.State.Strict
+    ( StateT
+    , evalStateT
+    )
+import qualified Control.Monad.State.Strict as State
+import qualified Control.Monad.Trans as Trans
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Bifunctor
     ( bimap
@@ -36,6 +42,10 @@ import Data.Either
     ( partitionEithers
     )
 import qualified Data.Functor.Foldable as Recursive
+import Data.HashMap.Strict
+    ( HashMap
+    )
+import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( foldl'
     , foldl1'
@@ -48,9 +58,13 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Data.Traversable
+    ( for
+    )
 
 import Branch
 import qualified Branch as BranchT
+import Changed
 import Kore.Attribute.Synthetic
     ( synthesize
     )
@@ -68,7 +82,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , pattern PredicateAnd
+    , getMultiAndPredicate
     , makeAndPredicate
     , makePredicate
     , makeTruePredicate_
@@ -93,8 +107,8 @@ import Kore.Internal.TermLike
     , pattern Nu_
     , Sort
     , TermLike
-    , TermLikeF
     , mkAnd
+    , mkBottom
     , mkBottom_
     , mkNot
     , mkTop
@@ -231,27 +245,6 @@ makeEvaluate sideCondition first second
   | Pattern.isTop second = return first
   | otherwise = makeEvaluateNonBool sideCondition first second
 
-data Normalized thing
-    = Unchanged !thing
-    | Changed  !thing
-    deriving (Eq, Functor, Show)
-
-instance Applicative Normalized where
-    pure = Unchanged
-
-    Unchanged f <*> Unchanged a = Unchanged (f a)
-    Unchanged f <*> Changed   a =   Changed (f a)
-    Changed   f <*> Unchanged a =   Changed (f a)
-    Changed   f <*> Changed   a =   Changed (f a)
-
-instance Monad Normalized where
-    Unchanged a >>= f = f a
-    Changed a   >>= f = Changed $ fromNormalized $ f a
-
-fromNormalized :: Normalized a -> a
-fromNormalized (Unchanged a) = a
-fromNormalized (Changed a) = a
-
 makeEvaluateNonBool
     ::  ( InternalVariable variable
         , HasCallStack
@@ -295,7 +288,7 @@ promoteSubTermsToTop
     :: forall variable
     .  InternalVariable variable
     => Predicate variable
-    -> Normalized (Predicate variable)
+    -> Changed (Predicate variable)
 promoteSubTermsToTop predicate =
     case normalizedPredicates of
         Unchanged unchanged -> Unchanged $
@@ -307,95 +300,99 @@ promoteSubTermsToTop predicate =
             foldl' makeAndPredicate makeTruePredicate_ changed
   where
     andPredicates :: [Predicate variable]
-    andPredicates = children predicate
-
-    children :: Predicate variable -> [Predicate variable]
-    children (PredicateAnd p1 p2) = children p1 ++ children p2
-    children p = [p]
+    andPredicates = getMultiAndPredicate predicate
 
     sortedAndPredicates :: [Predicate variable]
     sortedAndPredicates = sortByDepth andPredicates
 
     sortByDepth :: [Predicate variable] -> [Predicate variable]
-    sortByDepth =
-        sortBy (compare `on` Predicate.depth)
+    sortByDepth = sortBy (compare `on` Predicate.depth)
 
-    normalizedPredicates :: Normalized [Predicate variable]
-    normalizedPredicates = normalizedPredicatesWorker [] sortedAndPredicates
+    normalizedPredicates :: Changed [Predicate variable]
+    normalizedPredicates =
+        flip evalStateT HashMap.empty
+        $ for sortedAndPredicates
+        $ \predicate' -> do
+            let original = Predicate.unwrapPredicate predicate'
+            result <- replaceWithTopNormalized original
+            insertAssumption result
+            return result
 
-    normalizedPredicatesWorker
-        :: [Predicate variable]
-        -> [Predicate variable]
-        -> Normalized [Predicate variable]
-    normalizedPredicatesWorker result [] = return result
-    normalizedPredicatesWorker partialResult (predicate' : predicates) = do
-        replacedPredicates <-
-            mapM (replaceWithTopNormalized predicate') predicates
-        normalizedPredicatesWorker
-            (predicate' : partialResult)
-            replacedPredicates
+    insertAssumption
+        :: Predicate variable
+        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
+    insertAssumption predicate1 =
+        State.modify' insert
+      where
+        insert =
+            case termLike of
+                -- Infer that the predicate is \bottom.
+                Not_ _ notChild -> HashMap.insert notChild (mkBottom sort)
+                -- Infer that the predicate is \top.
+                _               -> HashMap.insert termLike (mkTop    sort)
+        termLike = Predicate.unwrapPredicate predicate1
+        sort = termLikeSort termLike
 
     replaceWithTopNormalized
-        :: Predicate variable
-        -> Predicate variable
-        -> Normalized (Predicate variable)
-    replaceWithTopNormalized replaceWithPredicate replaceInPredicate = do
-        let replaceIn = Predicate.unwrapPredicate replaceInPredicate
-        let replaceWith = Predicate.unwrapPredicate replaceWithPredicate
-        resultTerm <- replaceWithTop replaceWith replaceIn
-        case makePredicate resultTerm of
+        ::  TermLike variable
+        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
+                (Predicate variable)
+    replaceWithTopNormalized replaceIn = do
+        replacements <- State.get
+        Trans.lift $ fmap
+            (unsafeMakePredicate replacements replaceIn)
+            (replaceWithTop replacements replaceIn)
+
+    unsafeMakePredicate replacements original result =
+        case makePredicate result of
             -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
             -- should make it impossible to have an error here.
             Left err -> error $ unlines
                 [ "Replacing"
-                , unparseToString replaceWith
+                , unlines $ map unparseToString $ HashMap.keys replacements
                 , "in"
-                , unparseToString replaceIn
+                , unparseToString original
                 , "did not produce a predicate!"
                 , printError err
                 ]
-            Right p -> return p
+            Right p -> p
 
     replaceWithTop
-        :: TermLike variable
+        :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
-        -> Normalized (TermLike variable)
-    replaceWithTop replaceWith replaceIn
-      | replaceWith == replaceIn = Changed (mkTop (termLikeSort replaceIn))
-    replaceWithTop replaceWith unchanged
-      | isQuantified unchanged
-      = Unchanged unchanged
-      where
-        isQuantified (Exists_ _ var _) =
-            TermLike.hasFreeVariable (ElemVar var) replaceWith
-        isQuantified (Forall_ _ var _) =
-            TermLike.hasFreeVariable (ElemVar var) replaceWith
-        isQuantified (Mu_ var _) =
-            TermLike.hasFreeVariable (SetVar var) replaceWith
-        isQuantified (Nu_ var _) =
-            TermLike.hasFreeVariable (SetVar var) replaceWith
-        isQuantified _ = False
-    replaceWithTop
-        replaceWith
-        unchanged@(Recursive.project -> _ :< replaceIn)
-      = replaceWithTopInChildren replaceWith (Unchanged unchanged) replaceIn
+        -> Changed (TermLike variable)
+    replaceWithTop replacements original
+      | Just result <- HashMap.lookup original replacements = Changed result
 
-    replaceWithTopInChildren
-        :: TermLike variable
-        -> Normalized (TermLike variable)
-        -> TermLikeF variable (TermLike variable)
-        -> Normalized (TermLike variable)
-    replaceWithTopInChildren replaceWith unchangedValue replaceIn =
-        case replaced of
-            Unchanged _ -> unchangedValue
-            Changed changed -> Changed (synthesize changed)
+      | HashMap.null replacements' = Unchanged original
+
+      | otherwise =
+        traverse (replaceWithTop replacements') replaceIn
+        & getChanged
+        -- The next line ensures that if the result is Unchanged, any allocation
+        -- performed while computing that result is collected.
+        & maybe (Unchanged original) (Changed . synthesize)
+
       where
-        replaced :: Normalized (TermLikeF variable (TermLike variable))
-        replaced = traverse (replaceWithTop replaceWith) replaceIn
+        _ :< replaceIn = Recursive.project original
+
+        replacements'
+          | Exists_ _ var _ <- original = restrictReplacements (ElemVar var)
+          | Forall_ _ var _ <- original = restrictReplacements (ElemVar var)
+          | Mu_       var _ <- original = restrictReplacements (SetVar  var)
+          | Nu_       var _ <- original = restrictReplacements (SetVar  var)
+          | otherwise = replacements
+
+        restrictReplacements unifiedVariable =
+            HashMap.filterWithKey
+                (\termLike _ -> wouldNotCapture termLike)
+                replacements
+          where
+            wouldNotCapture = not . TermLike.hasFreeVariable unifiedVariable
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified
-            (Predicate.simplifiedAttribute a <> Predicate.simplifiedAttribute b)
+            (on (<>) Predicate.simplifiedAttribute a b)
             (makeAndPredicate a b)
 
 applyAndIdempotenceAndFindContradictions
