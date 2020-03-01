@@ -19,9 +19,12 @@ import Control.Monad.Reader
     ( ReaderT (..)
     )
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
-import qualified Data.List as List
+import Kore.Attribute.Pattern.FreeVariables
+    ( getFreeVariables
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Domain.Builtin
     ( AcWrapper
@@ -41,6 +44,7 @@ import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
     ( Predicate
     , makeCeilPredicate_
+    , makeForallPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -49,9 +53,12 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( Ceil (..)
     , Concrete
+    , ElementVariable (..)
     , InternalVariable
     , Sort
     , TermLike
+    , Variable (..)
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.AndPredicates as And
@@ -60,6 +67,9 @@ import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
+    )
+import Kore.Variables.UnifiedVariable
+    ( refreshElementVariable
     )
 
 type BuiltinAssocComm normalized variable =
@@ -120,9 +130,25 @@ newMapCeilSimplifier ceilSimplifierTermLike =
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
-                mkInternalAc (fromElement element) { opaque = [termLike] }
+                mkInternalAc (fromElement element') { opaque = [termLike] }
                 & TermLike.mkBuiltinMap
                 & makeCeilPredicate_
+                & makeForallPredicate value'
+              where
+                element' =
+                    Domain.wrapElement
+                        (key, Domain.MapValue $ TermLike.mkElemVar value')
+                (key, Domain.MapValue value) = Domain.unwrapElement element
+                avoiding =
+                    (getFreeVariables . foldMap TermLike.freeVariables)
+                        [key, termLike]
+                x =
+                    (ElementVariable . from @Variable @variable) Variable
+                        { variableName = "x"
+                        , variableCounter = mempty
+                        , variableSort = termLikeSort value
+                        }
+                value' = refreshElementVariable avoiding x & fromMaybe x
         makeEvaluateBuiltinAssocComm
             TermLike.mkBuiltinMap
             mkNotMember
