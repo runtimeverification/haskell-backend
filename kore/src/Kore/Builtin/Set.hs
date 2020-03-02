@@ -31,10 +31,6 @@ module Kore.Builtin.Set
     , unifyEquals
     ) where
 
--- import Kore.Unparser
---     ( unparseToString
---     )
-
 import Prelude.Kore
 
 import Control.Error
@@ -217,6 +213,17 @@ expectBuiltinSet ctx set =
                     $ Text.unpack ctx ++ ": Domain value is not a set"
         _ -> empty
 
+expectSingletonSymbolicSet
+    :: MonadSimplify m
+    => Text  -- ^ Context for error message
+    -> TermLike variable  -- ^ Operand pattern
+    -> MaybeT m (Ac.TermNormalizedAc Domain.NormalizedSet variable)
+expectSingletonSymbolicSet ctx set = do
+    builtinSet <- expectBuiltinSet ctx set
+    if Domain.isSingletonSymbolicAc . Domain.unwrapAc $ builtinSet
+        then return builtinSet
+        else empty
+
 {- | Returns @empty@ if the argument is not a @NormalizedSet@ domain value
 which consists only of concrete elements.
 
@@ -283,38 +290,24 @@ evalIn =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
-                inSingleton = do
-                    -- traceM
-                    --     $ "\n\nThe element:\n"
-                    --     <> unparseToString _elem
-                    --     <> "\n\nThe set:\n"
-                    --     <> unparseToString _set
-                    _set <- expectBuiltinSet Set.inKey _set
+                elemVarInSingleton = do
                     _elem <- expectElementVariable _elem
-                    let _elems =
-                            fmap (fst . Domain.unwrapElement)
-                            . Domain.elementsWithVariables
-                            . Domain.getNormalizedSet
-                            $ _set
-                    _elems <- traverse expectElementVariable _elems
-                    if length _elems == 1
-                        then
-                            (Builtin.appliedFunction . asExpandedBoolPattern)
-                                (_elem `elem` _elems)
-                        else empty
+                    _setElems <- expectSingletonSymbolicSet Set.inKey _set
+                    _setElems <- traverse expectElementVariable _setElems
+                    (Builtin.appliedFunction . asExpandedBoolPattern)
+                        (_elem `elem` _setElems)
                 bothConcrete = do
                     _elem <- hoistMaybe $ Builtin.toKey _elem
                     _set <- expectConcreteBuiltinSet Set.inKey _set
                     (Builtin.appliedFunction . asExpandedBoolPattern)
                         (Map.member _elem _set)
-            inSingleton <|> bothConcrete
+            elemVarInSingleton <|> bothConcrete
       where
         asExpandedBoolPattern = Bool.asPattern resultSort
         expectElementVariable e =
             case e of
                 TermLike.ElemVar_ v -> return v
                 _ -> empty
-
 
 evalUnit :: Builtin.Function
 evalUnit =
