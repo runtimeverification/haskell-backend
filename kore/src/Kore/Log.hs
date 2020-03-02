@@ -211,9 +211,11 @@ withAsyncLogger logAction continue = do
     (_, b) <- tryAgain $ Async.waitBoth logAsync mainAsync
     return b
   where
-    untilDone = Exception.handle ignoreBlockedIndefinitelyOnSTM . forever
-    ignoreBlockedIndefinitelyOnSTM BlockedIndefinitelyOnSTM = return ()
-    tryAgain f = Exception.handle (\BlockedIndefinitelyOnSTM -> f) f
+    handleBlockedIndefinitelyOnSTM handler =
+        Exception.handle $ \BlockedIndefinitelyOnSTM -> handler
+    ignore = return ()
+    untilDone = handleBlockedIndefinitelyOnSTM ignore . forever
+    tryAgain action = handleBlockedIndefinitelyOnSTM action action
 
 -- Creates a kore logger which:
 --     * adds timestamps
