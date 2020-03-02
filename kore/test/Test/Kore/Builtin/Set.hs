@@ -4,6 +4,7 @@ module Test.Kore.Builtin.Set
     ( test_unit
     , test_getUnit
     , test_inElement
+    , test_inElementSymbolic
     , test_inConcat
     , test_concatUnit
     , test_concatAssociates
@@ -222,6 +223,21 @@ test_inElement =
             patKey <- forAll genIntegerPattern
             let patIn = mkApplySymbol inSetSymbol [ patKey, patElement ]
                 patElement = mkApplySymbol elementSetSymbol [ patKey ]
+                patTrue = Test.Bool.asInternal True
+                predicate = mkEquals_ patIn patTrue
+            (===) (Test.Bool.asPattern True) =<< evaluateT patIn
+            (===) Pattern.top                =<< evaluateT predicate
+        )
+
+test_inElementSymbolic :: TestTree
+test_inElementSymbolic =
+    testPropertyWithSolver
+        "in{}(x, element{}(x)) === \\dv{Bool{}}(\"true\")"
+        (do
+            key <- forAll (standaloneGen $ elementVariableGen intSort)
+            let patKey = mkElemVar key
+                patElement = mkApplySymbol elementSetSymbol [ patKey ]
+                patIn = mkApplySymbol inSetSymbol [ patKey, patElement ]
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
