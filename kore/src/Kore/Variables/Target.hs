@@ -22,9 +22,6 @@ module Kore.Variables.Target
 
 import Prelude.Kore
 
-import Data.Hashable
-    ( Hashable (hashWithSalt)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

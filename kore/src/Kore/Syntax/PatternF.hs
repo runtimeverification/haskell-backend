@@ -24,7 +24,6 @@ import Data.Functor.Const
 import Data.Functor.Identity
     ( Identity (..)
     )
-import Data.Hashable
 import Data.Text
     ( Text
     )

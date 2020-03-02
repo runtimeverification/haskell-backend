@@ -35,7 +35,6 @@ import Data.Functor.Const
 import Data.Generics.Product
     ( field
     )
-import Data.Hashable
 import Data.Map.Strict
     ( Map
     )

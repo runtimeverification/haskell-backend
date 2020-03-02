@@ -14,7 +14,6 @@ import Control.DeepSeq
     ( NFData (..)
     )
 import Data.Functor.Const
-import Data.Hashable
 import Data.Text
     ( Text
     )

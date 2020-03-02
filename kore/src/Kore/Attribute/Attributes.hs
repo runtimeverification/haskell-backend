@@ -22,9 +22,6 @@ import Control.DeepSeq
 import Data.Default
     ( Default (..)
     )
-import Data.Hashable
-    ( Hashable
-    )
 import Data.Text
     ( Text
     )

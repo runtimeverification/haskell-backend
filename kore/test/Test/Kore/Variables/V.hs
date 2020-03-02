@@ -27,6 +27,8 @@ data V =
 mkV :: Integer -> V
 mkV value = V { value, counter = Nothing }
 
+instance Hashable V
+
 instance SOP.Generic V
 
 instance SOP.HasDatatypeInfo V

@@ -37,7 +37,6 @@ import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field
     )
-import Data.Hashable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP

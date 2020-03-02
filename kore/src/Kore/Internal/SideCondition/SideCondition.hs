@@ -13,8 +13,7 @@ import Control.DeepSeq
     ( NFData (..)
     )
 import Data.Hashable
-    ( Hashable (..)
-    , Hashed
+    ( Hashed
     , hashed
     )
 

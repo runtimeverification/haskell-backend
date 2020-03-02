@@ -15,7 +15,6 @@ import Prelude.Kore
 
 import Control.DeepSeq
 import qualified Data.Foldable as Foldable
-import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

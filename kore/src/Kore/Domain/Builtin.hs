@@ -44,7 +44,6 @@ import qualified Control.Lens as Lens
 import Control.Lens.Iso
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
-import Data.Hashable
 import Data.Map.Strict
     ( Map
     )
