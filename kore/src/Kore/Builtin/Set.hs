@@ -31,9 +31,9 @@ module Kore.Builtin.Set
     , unifyEquals
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
+-- import Kore.Unparser
+--     ( unparseToString
+--     )
 
 import Prelude.Kore
 
