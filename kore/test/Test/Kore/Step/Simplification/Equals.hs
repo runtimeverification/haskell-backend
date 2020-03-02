@@ -225,7 +225,72 @@ test_equalsSimplification_Or_Pattern =
                     , equalsFirst = second
                     , equalsSecond = first
                     }
-        assertEqual "g or h or f" expect actual2
+        assertEqual "g or h vs f" expect actual2
+
+    , testCase "f vs g or h where f /= g" $ do
+        let expect =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeCeilPredicate_ Mock.cf
+                                , makeCeilPredicate_ Mock.ch
+                                , makeEqualsPredicate_ Mock.cf Mock.ch
+                                , makeNotPredicate $ makeCeilPredicate_ Mock.cg
+                                ]
+                        , substitution = mempty
+                        }
+                    ,  Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeNotPredicate $ makeCeilPredicate_ Mock.cf
+                                , makeNotPredicate $ makeCeilPredicate_ Mock.cg
+                                , makeNotPredicate $ makeCeilPredicate_ Mock.ch
+                                ]
+                        , substitution = mempty
+                        }
+                    ]
+            first =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = Mock.functionalConstr10 Mock.cf
+                        , predicate = makeTruePredicate_
+                        , substitution = mempty
+                        }
+                    ]
+            second =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = Mock.functionalConstr11 Mock.cg
+                        , predicate = makeTruePredicate_
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = Mock.functionalConstr10 Mock.ch
+                        , predicate = makeTruePredicate_
+                        , substitution = mempty
+                        }
+                    ]
+        actual1 <-
+            evaluateOr
+                Equals
+                    { equalsOperandSort = testSort
+                    , equalsResultSort = testSort
+                    , equalsFirst = first
+                    , equalsSecond = second
+                    }
+        assertEqual "f vs g or h" expect actual1
+        actual2 <-
+            evaluateOr
+                Equals
+                    { equalsOperandSort = testSort
+                    , equalsResultSort = testSort
+                    , equalsFirst = second
+                    , equalsSecond = first
+                    }
+        assertEqual "g or h vs f" expect actual2
 
     , testCase "f vs g[x = a] or h" $ do
         let expect =
