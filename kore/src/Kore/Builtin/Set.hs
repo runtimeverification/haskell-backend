@@ -279,10 +279,24 @@ evalIn =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
-            _elem <- hoistMaybe $ Builtin.toKey _elem
-            _set <- expectConcreteBuiltinSet Set.inKey _set
-            (Builtin.appliedFunction . asExpandedBoolPattern)
-                (Map.member _elem _set)
+                inSingleton = do
+                    _set <- expectBuiltinSet Set.inKey _set
+                    let elements =
+                            fmap (fst . Domain.unwrapElement)
+                            . Domain.elementsWithVariables
+                            . Domain.getNormalizedSet
+                            $ _set
+                    if length elements == 1
+                        then
+                            (Builtin.appliedFunction . asExpandedBoolPattern)
+                                (_elem `elem` elements)
+                        else empty
+                bothConcrete = do
+                    _elem <- hoistMaybe $ Builtin.toKey _elem
+                    _set <- expectConcreteBuiltinSet Set.inKey _set
+                    (Builtin.appliedFunction . asExpandedBoolPattern)
+                        (Map.member _elem _set)
+            inSingleton <|> bothConcrete
       where
         asExpandedBoolPattern = Bool.asPattern resultSort
 
