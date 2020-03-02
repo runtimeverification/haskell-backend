@@ -71,11 +71,11 @@ parseConcreteAttribute
 parseConcreteAttribute
     attribute
     (FreeVariables variables)
-    concrete@(Concrete (FreeVariables concreteFreeVariables))
+    (Concrete (FreeVariables concreteFreeVariables))
   = do
-        parsedBool <- parseBoolAttribute concreteId attribute isOK
-        if parsedBool then
-            return concrete
+        boolResult <- parseBoolAttribute concreteId attribute isOK
+        if boolResult then
+            return $ Concrete $ FreeVariables variables
         else
             return def
   where

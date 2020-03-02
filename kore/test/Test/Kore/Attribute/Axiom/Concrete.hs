@@ -14,8 +14,7 @@ import Test.Tasty.HUnit
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 
-import Kore.Attribute.Axiom.Concrete
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Axiom.Concrete as Concrete
 import Kore.Syntax.Variable
     ( Variable (..)
     )
@@ -25,7 +24,7 @@ import Test.Kore.Attribute.Parser
 parseConcrete :: Attributes -> Parser (Concrete Variable)
 parseConcrete (Attributes attrs) =
     Foldable.foldlM
-        (\c a -> parseConcreteAttribute a Default.def c)
+        (\c a -> parseConcreteAttribute a (Concrete.freeVariables c) c)
         Default.def
         attrs
 

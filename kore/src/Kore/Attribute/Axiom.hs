@@ -68,6 +68,7 @@ import Kore.Attribute.Parser
     , SymbolOrAlias
     , toAttributes
     )
+import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Priority
 import Kore.Attribute.ProductionID
 import Kore.Attribute.RuleIndex
@@ -219,10 +220,11 @@ axiomSymbolToSymbolOrAlias axiom =
     axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias
 
 parseAxiomAttribute
-    :: AttributePattern
+    :: FreeVariables Variable
+    -> AttributePattern
     -> Axiom SymbolOrAlias Variable
     -> Parser (Axiom SymbolOrAlias Variable)
-parseAxiomAttribute attr =
+parseAxiomAttribute freeVariables' attr =
         typed @HeatCool (parseAttribute attr)
         Monad.>=> typed @ProductionID (parseAttribute attr)
         Monad.>=> typed @Priority (parseAttribute attr)
@@ -231,7 +233,7 @@ parseAxiomAttribute attr =
         Monad.>=> typed @Unit (parseAttribute attr)
         Monad.>=> typed @Idem (parseAttribute attr)
         Monad.>=> typed @Trusted (parseAttribute attr)
-        Monad.>=> typed @(Concrete Variable) (parseConcreteAttribute attr def)
+        Monad.>=> typed @(Concrete Variable) (parseConcreteAttribute attr freeVariables')
         Monad.>=> typed @Simplification (parseAttribute attr)
         Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
         Monad.>=> typed @SmtLemma (parseAttribute attr)
@@ -243,9 +245,15 @@ parseAxiomAttribute attr =
         Monad.>=> typed @UniqueId (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
 
-parseAxiomAttributes :: Attributes -> Parser (Axiom SymbolOrAlias Variable)
-parseAxiomAttributes (Attributes attrs) =
-    Foldable.foldlM (flip parseAxiomAttribute) Default.def attrs
+parseAxiomAttributes
+    :: [FreeVariables Variable]
+    -> Attributes
+    -> Parser (Axiom SymbolOrAlias Variable)
+parseAxiomAttributes freeVariablesList (Attributes attrs) =
+    Foldable.foldlM
+        (\axiom (attr, freeVariables') -> parseAxiomAttribute freeVariables' attr axiom)
+        Default.def
+        (zip attrs freeVariablesList)
 
 mapAxiomVariables
     :: Ord variable2

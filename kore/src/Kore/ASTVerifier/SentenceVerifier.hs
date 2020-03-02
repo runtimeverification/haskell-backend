@@ -502,4 +502,5 @@ parseAndVerifyAxiomAttributes indexModule attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
   where
     parseAxiomAttributes' =
-        Attribute.Parser.liftParser . Attribute.parseAxiomAttributes
+        Attribute.Parser.liftParser . Attribute.parseAxiomAttributes freeVariables'
+    freeVariables' = fmap (freeVariables . sentenceAxiomPattern . snd) . indexedModuleAxioms $ indexModule
