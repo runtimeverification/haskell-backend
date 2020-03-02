@@ -208,11 +208,12 @@ withAsyncLogger logAction continue = do
         a <- atomically $ readTChan tChan
         logAction Colog.<& a
     mainAsync <- async $ continue asyncLogAction
-    (_, b) <- Async.waitBoth logAsync mainAsync
+    (_, b) <- tryAgain $ Async.waitBoth logAsync mainAsync
     return b
   where
     untilDone = Exception.handle ignoreBlockedIndefinitelyOnSTM . forever
     ignoreBlockedIndefinitelyOnSTM BlockedIndefinitelyOnSTM = return ()
+    tryAgain f = Exception.handle (\BlockedIndefinitelyOnSTM -> f) f
 
 -- Creates a kore logger which:
 --     * adds timestamps
