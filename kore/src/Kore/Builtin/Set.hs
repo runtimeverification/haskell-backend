@@ -31,6 +31,10 @@ module Kore.Builtin.Set
     , unifyEquals
     ) where
 
+import Kore.Unparser
+    ( unparseToString
+    )
+
 import Prelude.Kore
 
 import Control.Error
@@ -280,16 +284,23 @@ evalIn =
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
                 inSingleton = do
+                    -- traceM
+                    --     $ "\n\nThe element:\n"
+                    --     <> unparseToString _elem
+                    --     <> "\n\nThe set:\n"
+                    --     <> unparseToString _set
                     _set <- expectBuiltinSet Set.inKey _set
-                    let elements =
+                    _elem <- expectElementVariable _elem
+                    let _elems =
                             fmap (fst . Domain.unwrapElement)
                             . Domain.elementsWithVariables
                             . Domain.getNormalizedSet
                             $ _set
-                    if length elements == 1
+                    _elems <- traverse expectElementVariable _elems
+                    if length _elems == 1
                         then
                             (Builtin.appliedFunction . asExpandedBoolPattern)
-                                (_elem `elem` elements)
+                                (_elem `elem` _elems)
                         else empty
                 bothConcrete = do
                     _elem <- hoistMaybe $ Builtin.toKey _elem
@@ -299,6 +310,11 @@ evalIn =
             inSingleton <|> bothConcrete
       where
         asExpandedBoolPattern = Bool.asPattern resultSort
+        expectElementVariable e =
+            case e of
+                TermLike.ElemVar_ v -> return v
+                _ -> empty
+
 
 evalUnit :: Builtin.Function
 evalUnit =
