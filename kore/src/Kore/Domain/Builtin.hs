@@ -19,6 +19,8 @@ module Kore.Domain.Builtin
     , NormalizedAc (..)
     , emptyNormalizedAc
     , asSingleOpaqueElem
+    , isSymbolicKeyOfAc
+    , isConcreteKeyOfAc
     --
     , InternalMap
     , MapElement
@@ -160,6 +162,36 @@ data NormalizedAc (collection :: * -> * -> *) key child = NormalizedAc
     -- ^ Unoptimized (i.e. non-element) parts of the structure.
     }
     deriving (GHC.Generic)
+
+isSymbolicKeyOfAc
+    :: AcWrapper normalized
+    => Eq child
+    => child
+    -> normalized key child
+    -> Bool
+isSymbolicKeyOfAc
+    child
+    ( unwrapAc ->
+        NormalizedAc { elementsWithVariables }
+    )
+  =
+    child `elem` symbolicKeys
+  where
+    symbolicKeys = fmap (fst . unwrapElement) elementsWithVariables
+
+isConcreteKeyOfAc
+    :: AcWrapper normalized
+    => Ord key
+    => key
+    -> normalized key child
+    -> Bool
+isConcreteKeyOfAc
+    key
+    ( unwrapAc ->
+        NormalizedAc { concreteElements }
+    )
+  =
+    key `Map.member` concreteElements
 
 deriving instance
     ( Eq key, Eq child

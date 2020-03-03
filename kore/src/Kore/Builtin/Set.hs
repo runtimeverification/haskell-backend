@@ -73,10 +73,14 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern Builtin_
@@ -279,12 +283,35 @@ evalIn =
                     case arguments of
                         [_elem, _set] -> (_elem, _set)
                         _ -> Builtin.wrongArity Set.inKey
-            _elem <- hoistMaybe $ Builtin.toKey _elem
-            _set <- expectConcreteBuiltinSet Set.inKey _set
-            (Builtin.appliedFunction . asExpandedBoolPattern)
-                (Map.member _elem _set)
+            let setSymbolic = do
+                    _elem <- hoistMaybe $ Builtin.toKey _elem
+                    _set' <- expectBuiltinSet Set.inKey _set
+                    let result = Domain.isConcreteKeyOfAc _elem _set'
+                    ifTrueAddDefinednessCondition result _set
+                bothSymbolic = do
+                    _set' <- expectBuiltinSet Set.inKey _set
+                    let result = Domain.isSymbolicKeyOfAc _elem _set'
+                    ifTrueAddDefinednessCondition result _set
+                bothConcrete = do
+                    _elem <- hoistMaybe $ Builtin.toKey _elem
+                    _set <- expectConcreteBuiltinSet Set.inKey _set
+                    (Builtin.appliedFunction . asExpandedBoolPattern)
+                        (Map.member _elem _set)
+            setSymbolic <|> bothSymbolic <|> bothConcrete
       where
         asExpandedBoolPattern = Bool.asPattern resultSort
+        ifTrueAddDefinednessCondition result setTerm =
+            let condition =
+                    Conditional.fromPredicate
+                    $ makeCeilPredicate resultSort setTerm
+                trueWithCondition =
+                    Builtin.appliedFunction
+                    $ Pattern.andCondition
+                        (asExpandedBoolPattern result)
+                        condition
+             in if result
+                then trueWithCondition
+                else empty
 
 evalUnit :: Builtin.Function
 evalUnit =
