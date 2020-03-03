@@ -43,6 +43,7 @@ KORE_EXEC_OPTS =
 export KORE_EXEC
 
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
+export KORE_REPL
 
 $(KORE_EXEC):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
