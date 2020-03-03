@@ -19,8 +19,6 @@ module Kore.Domain.Builtin
     , NormalizedAc (..)
     , emptyNormalizedAc
     , asSingleOpaqueElem
-    , getSymbolicElementKeys
-    , isSingletonSymbolicAc
     --
     , InternalMap
     , MapElement
@@ -256,20 +254,6 @@ asSingleOpaqueElem
       Just singleOpaqueElem
     | otherwise =  Nothing
 
-isSingletonSymbolicAc
-    :: NormalizedAc key valueWrapper child
-    -> Bool
-isSingletonSymbolicAc
-    NormalizedAc
-        { elementsWithVariables
-        , concreteElements
-        , opaque
-        }
-  =
-    length elementsWithVariables == 1
-    && Map.null concreteElements
-    && null opaque
-
 {- | Internal representation of associative-commutative builtin terms.
 -}
 data InternalAc key (normalized :: * -> * -> *) child =
@@ -354,15 +338,6 @@ unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
     concreteElementUnparser =
         concreteElement . unparseConcreteElement keyUnparser childUnparser
-
-getSymbolicElementKeys
-    :: AcWrapper normalized
-    => normalized key child
-    -> [child]
-getSymbolicElementKeys =
-    fmap (fst . unwrapElement)
-    . elementsWithVariables
-    . unwrapAc
 
 instance Hashable (normalized key child)
     => Hashable (InternalAc key normalized child)
