@@ -153,11 +153,11 @@ koreLogTransformer koreLogOptions baseLogger =
   where
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
     KoreLogOptions { warnings } = koreLogOptions
-    warningsToErrors AsErrors entry
+    warningsToErrors AsError entry
         | entrySeverity entry == Warning =
             error . show . longDoc $ entry
         | otherwise = entry
-    warningsToErrors AsWarnings entry = entry
+    warningsToErrors AsWarning entry = entry
 
 koreLogFilters
     :: Applicative m
