@@ -203,8 +203,7 @@ newtype LoggerT m a =
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 instance Monad m => MonadLog (LoggerT m) where
-    logEntry entry =
-        LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+    logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
