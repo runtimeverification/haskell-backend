@@ -125,7 +125,7 @@ verifyAndIndexDefinitionWithBase
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition
-        verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
+        verifyModules = Foldable.traverse_ (verifyModule undefined) definitionModuleNames
 
     -- Verify the contents of the definition.
     (_, index) <-

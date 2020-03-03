@@ -23,7 +23,6 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom (Axiom)
     )
-import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -141,19 +140,11 @@ evaluateAxioms equalityRules sideCondition termLike
             (matchAxiomIdentifier left)
             (DebugAxiomEvaluation.klabelIdentifier left)
 
-    concreteFreeVariablesOfRule =
-        Attribute.Axiom.Concrete.freeVariables
-        . Attribute.Axiom.concrete
-        . EqualityPattern.attributes
-        . getEqualityRule
-
-    freeVariablesOfRule =
-        freeVariables
-        . getEqualityRule
+    freeVariablesOfRule :: EqualityRule Variable -> FreeVariables Variable
+    freeVariablesOfRule = freeVariables . getEqualityRule
 
     ruleIsConcrete rule =
-        getFreeVariables (freeVariablesOfRule rule)
-            `Set.isSubsetOf` getFreeVariables (concreteFreeVariablesOfRule rule)
+        not $ Set.null $ getFreeVariables $ freeVariablesOfRule rule
 
     notApplicable =
         Result.Results

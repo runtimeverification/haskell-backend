@@ -354,18 +354,24 @@ verifyAliasSentence sentence = do
     sortParams   = (aliasParams . sentenceAliasAlias) sentence
     expectedSort = sentenceAliasResultSort
 
-verifyAxioms :: [ParsedSentence] -> SentenceVerifier ()
-verifyAxioms =
-    Foldable.traverse_ verifyAxiomSentence
+verifyAxioms
+    :: [FreeVariables Variable]
+    -> [ParsedSentence]
+    -> SentenceVerifier ()
+verifyAxioms freeVariablesList =
+    Foldable.traverse_ (verifyAxiomSentence freeVariablesList)
     . mapMaybe projectSentenceAxiom
 
-verifyAxiomSentence :: SentenceAxiom ParsedPattern -> SentenceVerifier ()
-verifyAxiomSentence sentence =
+verifyAxiomSentence
+    :: [FreeVariables Variable]
+    -> SentenceAxiom ParsedPattern
+    -> SentenceVerifier ()
+verifyAxiomSentence freeVariablesList sentence =
     withSentenceAxiomContext sentence $ do
         verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker sentence
         attrs <-
-            parseAndVerifyAxiomAttributes verifiedModule'
+            parseAndVerifyAxiomAttributes freeVariablesList verifiedModule'
             $ sentenceAxiomAttributes sentence
         State.modify $ addAxiom verified attrs
   where
@@ -386,19 +392,23 @@ verifyAxiomSentenceWorker sentence = do
         & either throwError return
 
 verifyClaims
-    :: [ParsedSentence]
+    :: [FreeVariables Variable]
+    -> [ParsedSentence]
     -> SentenceVerifier ()
-verifyClaims =
-    Foldable.traverse_ verifyClaimSentence
+verifyClaims freeVariablesList =
+    Foldable.traverse_ (verifyClaimSentence freeVariablesList)
     . mapMaybe projectSentenceClaim
 
-verifyClaimSentence :: SentenceClaim ParsedPattern -> SentenceVerifier ()
-verifyClaimSentence sentence =
+verifyClaimSentence 
+    :: [FreeVariables Variable]
+    -> SentenceClaim ParsedPattern
+    -> SentenceVerifier ()
+verifyClaimSentence freeVariablesList sentence =
     withSentenceClaimContext sentence $ do
         verifiedModule' <- State.get
         verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)
         attrs <-
-            parseAndVerifyAxiomAttributes verifiedModule'
+            parseAndVerifyAxiomAttributes freeVariablesList verifiedModule'
             $ sentenceClaimAttributes sentence
         when (rejectClaim attrs verified)
             $ koreFail "Found claim with universally-quantified variables\
@@ -495,12 +505,13 @@ parseAttributes' =
 
 parseAndVerifyAxiomAttributes
     :: MonadError (Error VerifyError) error
-    => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    => [FreeVariables Variable]
+    -> IndexedModule Verified.Pattern Attribute.Symbol attrs
     -> Attributes
     -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
-parseAndVerifyAxiomAttributes indexModule attrs =
+parseAndVerifyAxiomAttributes freeVariablesList indexModule attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
   where
     parseAxiomAttributes' =
-        Attribute.Parser.liftParser . Attribute.parseAxiomAttributes freeVariables'
-    freeVariables' = fmap (freeVariables . sentenceAxiomPattern . snd) . indexedModuleAxioms $ indexModule
+        Attribute.Parser.liftParser
+        . Attribute.parseAxiomAttributes freeVariablesList

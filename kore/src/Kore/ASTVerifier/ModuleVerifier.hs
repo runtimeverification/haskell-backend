@@ -32,6 +32,7 @@ import Data.Text
 import Kore.AST.Error
 import Kore.ASTVerifier.AliasVerifier
 import Kore.ASTVerifier.Error
+import Kore.Attribute.Pattern.FreeVariables
 import Kore.ASTVerifier.SentenceVerifier
     ( SentenceVerifier
     , verifyAxioms
@@ -78,16 +79,22 @@ verified and cached.
 See also: 'verifyUncachedModule'
 
  -}
-verifyModule :: ModuleName -> Verifier VerifiedModule'
-verifyModule name = lookupVerifiedModule name >>= maybe notCached cached
+verifyModule
+    :: [FreeVariables Variable]
+    -> ModuleName
+    -> Verifier VerifiedModule'
+verifyModule fv name = lookupVerifiedModule name >>= maybe notCached cached
   where
     cached = return
-    notCached = verifyUncachedModule name
+    notCached = verifyUncachedModule fv name
 
 {- | Verify the named module, irrespective of the cache.
  -}
-verifyUncachedModule :: ModuleName -> Verifier VerifiedModule'
-verifyUncachedModule name = whileImporting name $ do
+verifyUncachedModule
+    :: [FreeVariables Variable]
+    -> ModuleName
+    -> Verifier VerifiedModule'
+verifyUncachedModule fv name = whileImporting name $ do
     module' <- lookupParsedModule name
     let Module { moduleSentences } = module'
         sentences = List.sort moduleSentences
@@ -95,7 +102,7 @@ verifyUncachedModule name = whileImporting name $ do
             withModuleContext name (newVerifiedModule module')
         >>= SentenceVerifier.runSentenceVerifier
             (do
-                verifyImports sentences
+                verifyImports fv sentences
                 withModuleContext name $ do
                     verifySorts         sentences
                     verifySymbols       sentences
@@ -103,8 +110,8 @@ verifyUncachedModule name = whileImporting name $ do
                     verifyHookedSymbols sentences
                     verifyNonHooks      sentences
                     verifyAliases       sentences
-                    verifyAxioms        sentences
-                    verifyClaims        sentences
+                    verifyAxioms fv     sentences
+                    verifyClaims fv     sentences
             )
     _ <-
         withModuleContext name
@@ -133,16 +140,23 @@ newVerifiedModule module' = do
 The named modules are verified and imported into the current 'VerifiedModule'.
 
  -}
-verifyImports :: [ParsedSentence] -> SentenceVerifier ()
-verifyImports = Foldable.traverse_ verifyImport . mapMaybe projectSentenceImport
+verifyImports
+    :: [FreeVariables Variable]
+    -> [ParsedSentence]
+    -> SentenceVerifier ()
+verifyImports fv =
+    Foldable.traverse_ (verifyImport fv) . mapMaybe projectSentenceImport
 
-verifyImport :: SentenceImport ParsedPattern -> SentenceVerifier ()
-verifyImport sentence =
+verifyImport
+    :: [FreeVariables Variable]
+    -> SentenceImport ParsedPattern
+    -> SentenceVerifier ()
+verifyImport fv sentence =
     withSentenceImportContext sentence $ do
         let SentenceImport { sentenceImportAttributes = attrs0 } = sentence
         attrs1 <- parseAttributes' attrs0
         let importName = sentenceImportModuleName sentence
-        verified <- Trans.lift $ verifyModule importName
+        verified <- Trans.lift $ verifyModule fv importName
         State.modify' $ addImport verified attrs1 attrs0
   where
     addImport verified attrs1 attrs0 =

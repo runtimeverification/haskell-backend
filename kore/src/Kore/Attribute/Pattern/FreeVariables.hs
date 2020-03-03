@@ -19,7 +19,6 @@ module Kore.Attribute.Pattern.FreeVariables
 import Prelude.Kore
 
 import Control.DeepSeq
-import Data.Default
 import Data.Functor.Const
 import Data.Hashable
 import Data.Set
@@ -55,9 +54,6 @@ instance NFData variable => NFData (FreeVariables variable)
 instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt (FreeVariables freeVars) =
         hashWithSalt salt (Set.toList freeVars)
-
-instance Default (FreeVariables variable) where
-    def = FreeVariables Set.empty
 
 instance Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
   where

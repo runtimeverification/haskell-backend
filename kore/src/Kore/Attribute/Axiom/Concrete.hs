@@ -44,7 +44,7 @@ instance (Debug variable, Diff variable) => Diff (Concrete variable)
 instance NFData variable => NFData (Concrete variable)
 
 instance Default (Concrete variable) where
-    def = Concrete def
+    def = Concrete . FreeVariables $ Set.empty
 
 -- | Kore identifier representing the @concrete@ attribute symbol.
 concreteId :: Id
