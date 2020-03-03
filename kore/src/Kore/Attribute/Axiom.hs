@@ -27,6 +27,8 @@ module Kore.Attribute.Axiom
     , RuleIndex (..)
     , UniqueId (..)
     , axiomSymbolToSymbolOrAlias
+    , mapAxiomVariables
+    , parseAxiomAttributes
     ) where
 
 import Prelude.Kore
@@ -39,12 +41,15 @@ import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
+import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import Data.Proxy
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Assoc
+import Kore.Attribute.Attributes
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Constructor
 import Kore.Attribute.Axiom.Unit
@@ -59,6 +64,7 @@ import Kore.Attribute.Parser
     ( AttributePattern
     , Attributes
     , ParseAttributes (..)
+    , Parser
     , SymbolOrAlias
     , toAttributes
     )
@@ -76,11 +82,16 @@ import Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
     )
+import Kore.Syntax.ElementVariable
+import Kore.Syntax.SetVariable
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
  -}
-data Axiom symbol =
+data Axiom symbol variable =
     Axiom
     { heatCool :: !HeatCool
     -- ^ An axiom may be denoted as a heating or cooling rule.
@@ -99,7 +110,7 @@ data Axiom symbol =
     -- ^ The axiom is an idempotency axiom.
     , trusted :: !Trusted
     -- ^ The claim is trusted
-    , concrete :: !Concrete
+    , concrete :: !(Concrete variable)
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
@@ -127,17 +138,17 @@ data Axiom symbol =
     }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic (Axiom symbol)
+instance SOP.Generic (Axiom symbol variable)
 
-instance SOP.HasDatatypeInfo (Axiom symbol)
+instance SOP.HasDatatypeInfo (Axiom symbol variable)
 
-instance Debug symbol => Debug (Axiom symbol)
+instance Debug symbol => Debug (Axiom symbol variable)
 
-instance (Debug symbol, Diff symbol) => Diff (Axiom symbol)
+instance (Debug symbol, Diff symbol) => Diff (Axiom symbol variable)
 
-instance NFData symbol => NFData (Axiom symbol)
+instance NFData symbol => NFData (Axiom symbol variable)
 
-instance Default (Axiom symbol) where
+instance Default (Axiom symbol variable) where
     def =
         Axiom
             { heatCool = def
@@ -162,29 +173,7 @@ instance Default (Axiom symbol) where
             , owise = def
             }
 
-instance ParseAttributes (Axiom SymbolOrAlias) where
-    parseAttribute attr =
-        typed @HeatCool (parseAttribute attr)
-        Monad.>=> typed @ProductionID (parseAttribute attr)
-        Monad.>=> typed @Priority (parseAttribute attr)
-        Monad.>=> typed @Assoc (parseAttribute attr)
-        Monad.>=> typed @Comm (parseAttribute attr)
-        Monad.>=> typed @Unit (parseAttribute attr)
-        Monad.>=> typed @Idem (parseAttribute attr)
-        Monad.>=> typed @Trusted (parseAttribute attr)
-        Monad.>=> typed @Concrete (parseAttribute attr)
-        Monad.>=> typed @Simplification (parseAttribute attr)
-        Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
-        Monad.>=> typed @SmtLemma (parseAttribute attr)
-        Monad.>=> typed @Label (parseAttribute attr)
-        Monad.>=> typed @SourceLocation (parseAttribute attr)
-        Monad.>=> typed @Constructor (parseAttribute attr)
-        Monad.>=> typed @Functional (parseAttribute attr)
-        Monad.>=> typed @Subsorts (parseAttribute attr)
-        Monad.>=> typed @UniqueId (parseAttribute attr)
-        Monad.>=> typed @Owise (parseAttribute attr)
-
-instance From symbol SymbolOrAlias => From (Axiom symbol) Attributes where
+instance From symbol SymbolOrAlias => From (Axiom symbol variable) Attributes where
     from =
         mconcat . sequence
             [ from . heatCool
@@ -208,16 +197,54 @@ instance From symbol SymbolOrAlias => From (Axiom symbol) Attributes where
             , from . owise
             ]
 
-instance SQL.Column (Axiom SymbolOrAlias) where
+instance SQL.Column (Axiom SymbolOrAlias variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
-instance SQL.Column (Axiom Symbol) where
+instance SQL.Column (Axiom Symbol variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
-axiomSymbolToSymbolOrAlias :: Axiom Symbol -> Axiom SymbolOrAlias
+axiomSymbolToSymbolOrAlias
+    :: Axiom Symbol variable
+    -> Axiom SymbolOrAlias variable
 axiomSymbolToSymbolOrAlias axiom =
     axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias
+
+parseAxiomAttribute
+    :: AttributePattern
+    -> Axiom SymbolOrAlias Variable
+    -> Parser (Axiom SymbolOrAlias Variable)
+parseAxiomAttribute attr =
+        typed @HeatCool (parseAttribute attr)
+        Monad.>=> typed @ProductionID (parseAttribute attr)
+        Monad.>=> typed @Priority (parseAttribute attr)
+        Monad.>=> typed @Assoc (parseAttribute attr)
+        Monad.>=> typed @Comm (parseAttribute attr)
+        Monad.>=> typed @Unit (parseAttribute attr)
+        Monad.>=> typed @Idem (parseAttribute attr)
+        Monad.>=> typed @Trusted (parseAttribute attr)
+        Monad.>=> typed @(Concrete Variable) (parseConcreteAttribute attr)
+        Monad.>=> typed @Simplification (parseAttribute attr)
+        Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
+        Monad.>=> typed @SmtLemma (parseAttribute attr)
+        Monad.>=> typed @Label (parseAttribute attr)
+        Monad.>=> typed @SourceLocation (parseAttribute attr)
+        Monad.>=> typed @Constructor (parseAttribute attr)
+        Monad.>=> typed @Functional (parseAttribute attr)
+        Monad.>=> typed @Subsorts (parseAttribute attr)
+        Monad.>=> typed @UniqueId (parseAttribute attr)
+        Monad.>=> typed @Owise (parseAttribute attr)
+
+parseAxiomAttributes :: Attributes -> Parser (Axiom SymbolOrAlias Variable)
+parseAxiomAttributes (Attributes attrs) =
+    Foldable.foldlM (flip parseAxiomAttribute) Default.def attrs
+
+mapAxiomVariables
+    :: (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable variable1 -> SetVariable variable2)
+    -> Axiom symbol variable1 -> Axiom symbol variable2
+mapAxiomVariables e s axiom =
+    axiom & Lens.over (field @"concrete") (mapConcreteVariables e s)

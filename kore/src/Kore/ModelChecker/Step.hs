@@ -26,7 +26,6 @@ import Control.Monad.State.Strict
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import Data.Hashable
 import Data.Text
     ( Text
     )

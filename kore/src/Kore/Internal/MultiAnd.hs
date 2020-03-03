@@ -24,9 +24,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
-import Data.Hashable
-    ( Hashable
-    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC

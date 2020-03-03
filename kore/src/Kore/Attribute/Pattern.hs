@@ -33,9 +33,6 @@ import Control.DeepSeq
     )
 import qualified Control.Lens as Lens
 import Data.Generics.Product
-import Data.Hashable
-    ( Hashable
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

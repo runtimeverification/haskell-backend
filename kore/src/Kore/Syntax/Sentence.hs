@@ -65,9 +65,6 @@ import Data.Coerce
 import Data.Generics.Sum.Typed
     ( projectTyped
     )
-import Data.Hashable
-    ( Hashable (..)
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

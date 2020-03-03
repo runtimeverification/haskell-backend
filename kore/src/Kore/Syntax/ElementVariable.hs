@@ -16,7 +16,6 @@ import Control.DeepSeq
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
-import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

@@ -15,9 +15,6 @@ module Kore.Attribute.Hook
 import Prelude.Kore
 
 import qualified Control.Monad as Monad
-import Data.Hashable
-    ( Hashable
-    )
 import Data.Text
     ( Text
     )

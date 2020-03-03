@@ -33,6 +33,10 @@ module Prelude.Kore
     , module From
     -- * IO
     , MonadIO (..)
+    -- * Comonad
+    , module Control.Comonad
+    -- * Hashable
+    , Hashable (..)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -43,6 +47,7 @@ import Control.Applicative
     , Applicative (..)
     , optional
     )
+import Control.Comonad
 import Control.Error
     ( either
     , headMay
@@ -58,6 +63,9 @@ import Control.Monad.IO.Class
 import Data.Function
     ( on
     , (&)
+    )
+import Data.Hashable
+    ( Hashable (..)
     )
 import Data.Maybe
     ( fromMaybe

@@ -93,7 +93,7 @@ extractEqualityAxioms =
     -- not a function axiom.
     extractSentenceAxiom
         :: Map AxiomIdentifier [EqualityRule Variable]
-        -> (Attribute.Axiom Symbol, Verified.SentenceAxiom)
+        -> (Attribute.Axiom Symbol Variable, Verified.SentenceAxiom)
         -> Map AxiomIdentifier [EqualityRule Variable]
     extractSentenceAxiom axioms sentence =
         let
@@ -110,7 +110,7 @@ extractEqualityAxioms =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
-    :: (Attribute.Axiom Symbol, SentenceAxiom (TermLike Variable))
+    :: (Attribute.Axiom Symbol Variable, SentenceAxiom (TermLike Variable))
     -> Maybe (AxiomIdentifier, EqualityRule Variable)
 axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of
