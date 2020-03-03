@@ -16,7 +16,6 @@ module Kore.Log
     , runLoggerT
     , module Log
     , module KoreLogOptions
-    , warningsToErrors
     ) where
 
 import Prelude.Kore
@@ -25,10 +24,6 @@ import Colog
     ( LogAction (..)
     )
 import qualified Colog
-import Control.Concurrent
-    ( killThread
-    , myThreadId
-    )
 import Control.Concurrent.Async
     ( Async
     , async
@@ -60,7 +55,6 @@ import Control.Monad.Cont
     )
 import Control.Monad.Reader
     ( runReaderT
-    , withReaderT
     )
 import Data.Functor.Contravariant
     ( contramap
@@ -72,7 +66,6 @@ import Data.String
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Time.Clock
@@ -87,7 +80,6 @@ import Data.Time.LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
     )
-import qualified GHC.Stack as GHC
 
 import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugAxiomEvaluation
@@ -111,24 +103,18 @@ import Log
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
 
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
--- the CPS style because some outputters require cleanup, e.g. files).
+-- the CPS style because some outputters require cleanup (e.g. files).
 withLogger
     :: KoreLogOptions
     -> (LogAction IO SomeEntry -> IO a)
     -> IO a
-withLogger koreLogOptions =
-    runContT
-        ( do
-            mainLogger <- ContT $ withMainLogger koreLogOptions
-            let KoreLogOptions { debugSolverOptions } = koreLogOptions
-            smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
-            let KoreLogOptions { logSQLiteOptions } = koreLogOptions
-            logSQLite <- ContT $ withLogSQLite logSQLiteOptions
-            return $ mainLogger <> smtSolverLogger <> logSQLite
-        )
-        -- (action . Colog.cmap (warningsToErrors warnings))
-  where
-    KoreLogOptions { warnings } = koreLogOptions
+withLogger koreLogOptions = runContT $ do
+    mainLogger <- ContT $ withMainLogger koreLogOptions
+    let KoreLogOptions { debugSolverOptions } = koreLogOptions
+    smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
+    let KoreLogOptions { logSQLiteOptions } = koreLogOptions
+    logSQLite <- ContT $ withLogSQLite logSQLiteOptions
+    return $ mainLogger <> smtSolverLogger <> logSQLite
 
 withMainLogger
     :: KoreLogOptions
@@ -168,26 +154,6 @@ koreLogTransformer koreLogOptions baseLogger =
         baseLogger
   where
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
-    KoreLogOptions { warnings } = koreLogOptions
-    f AsErrors e
-        | entrySeverity e == Warning =
-            error . show . longDoc $ e
-        | otherwise = e
-    f _ e = e
-
-warningsToErrors
-    :: Warnings
-    -> SomeEntry
-    -> SomeEntry
-warningsToErrors AsWarnings entry = entry
-warningsToErrors AsErrors (SomeEntry entry)
-    | entrySeverity entry == Warning =
-        toEntry LogMessage
-            { message = Text.pack . show . longDoc $ entry
-            , severity = Error
-            , callstack = GHC.emptyCallStack
-            }
-    | otherwise = SomeEntry entry
 
 koreLogFilters
     :: Applicative m
@@ -231,30 +197,24 @@ runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
     withLogger options $ \logger -> do
-        (asyncThread, modifiedLogger) <- concurrentLogger logger warnings
+        (asyncThread, modifiedLogger) <- concurrentLogger logger
         finally
             (runLogger modifiedLogger)
             (wait asyncThread)
-  where
-    f = withReaderT (Colog.cmap $ warningsToErrors warnings)
-    KoreLogOptions { warnings } = options
 
-concurrentLogger :: Entry a => LogAction IO a -> Warnings -> IO (Async (), LogAction IO a)
-concurrentLogger logger warningType = do
+concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
+concurrentLogger logger = do
     tChan <- newTChanIO
-    mainId <- myThreadId
     asyncThread <-
         async $ catch
-            (runLoggerThread tChan mainId warningType)
+            (runLoggerThread tChan)
             (\BlockedIndefinitelyOnSTM -> return ())
     return (asyncThread, writeTChanLogger tChan)
   where
-    runLoggerThread tChan mainId warningType =
+    runLoggerThread tChan =
         forever $ do
               val <- atomically $ readTChan tChan
-              if entrySeverity val == Warning && warningType == AsErrors
-                  then killThread mainId
-                  else logger Colog.<& val
+              logger Colog.<& val
 
 writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
