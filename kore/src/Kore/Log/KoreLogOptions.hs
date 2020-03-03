@@ -219,6 +219,7 @@ newtype ExeName = ExeName { getExeName :: String }
 instance Pretty.Pretty ExeName where
     pretty = Pretty.pretty . getExeName
 
+-- TODO: rename to WarningsSwitch
 data Warnings = AsWarnings | AsErrors
     deriving (Eq, Show)
 
