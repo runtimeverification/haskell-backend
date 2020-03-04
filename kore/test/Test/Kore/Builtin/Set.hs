@@ -57,6 +57,10 @@ module Test.Kore.Builtin.Set
     , asInternal
     ) where
 
+import Kore.Unparser
+    ( unparseToString
+    )
+
 import Prelude.Kore
 
 import Hedgehog hiding
@@ -232,17 +236,56 @@ test_inElement =
 test_inElementSymbolic :: TestTree
 test_inElementSymbolic =
     testPropertyWithSolver
-        "in{}(x, element{}(x)) === \\dv{Bool{}}(\"true\")"
+        "in{}(x, element{}(x))\
+        \ === and{Bool{}()}(\\dv{Bool{}}(\"true\"), \\top{Bool{}}())"
         (do
-            key <- forAll (standaloneGen $ elementVariableGen intSort)
-            let patKey = mkElemVar key
-                patElement = mkApplySymbol elementSetSymbol [ patKey ]
-                patIn = mkApplySymbol inSetSymbol [ patKey, patElement ]
+            patKey <- forAll genKey
+            let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
+                patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patElement ]
                 patTrue = Test.Bool.asInternal True
-                predicate = mkEquals_ patIn patTrue
-            (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-            (===) Pattern.top                =<< evaluateT predicate
+                conditionTerm = mkAnd patTrue (mkCeil_ patElement)
+            actual <- evaluateT patIn
+            expected <- evaluateT conditionTerm
+            actual === expected
         )
+  where
+    -- genKeys :: Gen [TermLike Variable]
+    -- genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
+    genKey :: Gen (TermLike Variable)
+    genKey = Gen.element (concreteKeys <> symbolicKeys)
+    concreteKeys :: [TermLike Variable]
+    concreteKeys = [Mock.a, Mock.b, Mock.c]
+    symbolicKeys :: [TermLike Variable]
+    symbolicKeys = Mock.f . mkElemVar <$> elemVars
+    elemVars :: [ElementVariable Variable]
+    elemVars = [Mock.x, Mock.y, Mock.z]
+
+-- test_inConcatSymbolic :: TestTree
+-- test_inConcatSymbolic =
+--     testPropertyWithSolver
+--         "in{}(concat{}(_, element{}(e)), e) === \\dv{Bool{}}(\"true\")"
+--         (do
+--             keys <- forAll genKeys
+--             patKey <- forAll genKey
+--             let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
+--                 patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patElement ]
+--                 patTrue = Test.Bool.asInternal True
+--                 conditionTerm = mkAnd patTrue (mkCeil_ patElement)
+--             actual <- evaluateT patIn
+--             expected <- evaluateT conditionTerm
+--             actual === expected
+--         )
+--   where
+--     genKeys :: Gen [TermLike Variable]
+--     genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
+--     genKey :: Gen (TermLike Variable)
+--     genKey = Gen.element (concreteKeys <> symbolicKeys)
+--     concreteKeys :: [TermLike Variable]
+--     concreteKeys = [Mock.a, Mock.b, Mock.c]
+--     symbolicKeys :: [TermLike Variable]
+--     symbolicKeys = Mock.f . mkElemVar <$> elemVars
+--     elemVars :: [ElementVariable Variable]
+--     elemVars = [Mock.x, Mock.y, Mock.z]
 
 test_inConcat :: TestTree
 test_inConcat =
