@@ -73,7 +73,7 @@ data KoreLogOptions = KoreLogOptions
     , debugSolverOptions :: DebugSolverOptions
     , exeName :: ExeName
     , logSQLiteOptions :: LogSQLiteOptions
-    , warnings :: WarningSwitch
+    , warningSwitch :: WarningSwitch
     }
     deriving (Eq, Show)
 
@@ -89,7 +89,7 @@ instance Default KoreLogOptions where
             , debugSolverOptions = def @DebugSolverOptions
             , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
-            , warnings = def @WarningSwitch
+            , warningSwitch = def @WarningSwitch
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -152,7 +152,7 @@ parseKoreLogOptions exeName =
     <*> parseDebugSolverOptions
     <*> pure exeName
     <*> parseLogSQLiteOptions
-    <*> parseWarnings
+    <*> parseWarningSwitch
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -203,8 +203,8 @@ readSeverity =
         "error"    -> pure Error
         _          -> Nothing
 
-parseWarnings :: Parser WarningSwitch
-parseWarnings =
+parseWarningSwitch :: Parser WarningSwitch
+parseWarningSwitch =
     Options.flag
         AsWarning
         AsError

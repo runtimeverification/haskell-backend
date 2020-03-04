@@ -146,13 +146,13 @@ koreLogTransformer
     -> LogAction m SomeEntry
 koreLogTransformer koreLogOptions baseLogger =
     Colog.cmap
-        ( warningsToErrors warnings
+        ( warningsToErrors warningSwitch
         . mapDebugAxiomEvaluation debugAxiomEvaluationOptions
         )
         baseLogger
   where
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
-    KoreLogOptions { warnings } = koreLogOptions
+    KoreLogOptions { warningSwitch } = koreLogOptions
     warningsToErrors AsError entry
         | entrySeverity entry == Warning =
             error . show . longDoc $ entry
