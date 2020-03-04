@@ -208,24 +208,14 @@ test_equalsSimplification_Or_Pattern =
                         , substitution = mempty
                         }
                     ]
-        actual1 <-
-            evaluateOr
-                Equals
-                    { equalsOperandSort = testSort
-                    , equalsResultSort = testSort
-                    , equalsFirst = first
-                    , equalsSecond = second
-                    }
-        assertEqual "f vs g or h" expect actual1
-        actual2 <-
-            evaluateOr
-                Equals
-                    { equalsOperandSort = testSort
-                    , equalsResultSort = testSort
-                    , equalsFirst = second
-                    , equalsSecond = first
-                    }
-        assertEqual "g or h vs f" expect actual2
+        assertBidirectionalEqualityResult "f" "g or h"
+            expect
+            Equals
+                { equalsOperandSort = testSort
+                , equalsResultSort = testSort
+                , equalsFirst = first
+                , equalsSecond = second
+                }
 
     , testCase "f vs g or h where f /= g" $ do
         let expect =
@@ -273,24 +263,14 @@ test_equalsSimplification_Or_Pattern =
                         , substitution = mempty
                         }
                     ]
-        actual1 <-
-            evaluateOr
-                Equals
-                    { equalsOperandSort = testSort
-                    , equalsResultSort = testSort
-                    , equalsFirst = first
-                    , equalsSecond = second
-                    }
-        assertEqual "f vs g or h" expect actual1
-        actual2 <-
-            evaluateOr
-                Equals
-                    { equalsOperandSort = testSort
-                    , equalsResultSort = testSort
-                    , equalsFirst = second
-                    , equalsSecond = first
-                    }
-        assertEqual "g or h vs f" expect actual2
+        assertBidirectionalEqualityResult "f" "g or h"
+            expect
+            Equals
+                { equalsOperandSort = testSort
+                , equalsResultSort = testSort
+                , equalsFirst = first
+                , equalsSecond = second
+                }
 
     , testCase "f vs g[x = a] or h" $ do
         let expect =
@@ -367,33 +347,14 @@ test_equalsSimplification_Or_Pattern =
                         , substitution = mempty
                         }
                     ]
-            test1 =
-                Equals
-                    { equalsOperandSort = testSort
-                    , equalsResultSort = testSort
-                    , equalsFirst = first
-                    , equalsSecond = second
-                    }
-        actual1 <- evaluateOr test1
-        let message1 =
-                unlines
-                    [ "Expected"
-                    , unparseToString (OrPattern.toPattern <$> test1)
-                    , "would simplify to:"
-                    , unlines (unparseToString <$> Foldable.toList expect)
-                    , "but instead found:"
-                    , unlines (unparseToString <$> Foldable.toList actual1)
-                    ]
-        assertEqual message1 expect actual1
-        actual2 <-
-            evaluateOr
-                Equals
-                    { equalsOperandSort = testSort
-                    , equalsResultSort = testSort
-                    , equalsFirst = second
-                    , equalsSecond = first
-                    }
-        assertEqual "g[x = a] or h or f" expect actual2
+        assertBidirectionalEqualityResult "f" "g[x = a] or h"
+            expect
+            Equals
+                { equalsOperandSort = testSort
+                , equalsResultSort = testSort
+                , equalsFirst = first
+                , equalsSecond = second
+                }
     ]
 
 test_equalsSimplification_Pattern :: [TestTree]
@@ -903,6 +864,39 @@ test_equalsSimplification_TermLike =
         ]
     -- TODO: Add tests for set equality.
     ]
+
+assertBidirectionalEqualityResult
+    :: String
+    -> String
+    -> OrPattern Variable
+    -> Equals Sort (OrPattern Variable)
+    -> IO ()
+assertBidirectionalEqualityResult
+    firstName
+    secondName
+    expect
+    equality@Equals{equalsFirst, equalsSecond}
+  = do
+    testOneDirection equality
+    let reverseEquality = equality
+            { equalsFirst = equalsSecond
+            , equalsSecond = equalsFirst
+            }
+    testOneDirection reverseEquality
+  where
+    testOneDirection orderedEquality = do
+        actual <- evaluateOr orderedEquality
+        let message =
+                unlines
+                    [ firstName ++ " vs " ++ secondName ++ ":"
+                    , "Expected"
+                    , unparseToString (OrPattern.toPattern <$> orderedEquality)
+                    , "would simplify to:"
+                    , unlines (unparseToString <$> Foldable.toList expect)
+                    , "but instead found:"
+                    , unlines (unparseToString <$> Foldable.toList actual)
+                    ]
+        assertEqual message expect actual
 
 assertTermEquals
     :: HasCallStack
