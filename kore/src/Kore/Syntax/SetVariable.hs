@@ -51,3 +51,10 @@ instance
   where
     lensVariableSort = _Unwrapped . lensVariableSort
     {-# INLINE lensVariableSort #-}
+
+instance
+    From variable1 variable2
+    => From (SetVariable variable1) (SetVariable variable2)
+  where
+    from = fmap (from @variable1 @variable2)
+    {-# INLINE from #-}

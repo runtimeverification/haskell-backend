@@ -237,6 +237,8 @@ data ReplCommand
     -- ^ Pipes a repl command into an external script.
     | SaveSession FilePath
     -- ^ Writes all commands executed in this session to a file on disk.
+    | SavePartialProof (Maybe Natural) FilePath
+    -- ^ Saves a partial proof to a file on disk.
     | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
     | Alias AliasDefinition
@@ -333,6 +335,11 @@ helpText =
                                               \ proof graph\n\
     \                                         (defaults to current node)\n\
     \save-session file                        saves the current session to file\n\
+    \save-partial-proof [n] file              creates a file, <file>.kore, containing a kore module\
+                                              \ with the name uppercase(<file>)-SPEC, a new claim\n\
+    \                                         with the current config (or config <n>) as its LHS\
+                                              \ and all other claims (including the original claim)\
+                                              \ marked as trusted\n\
     \alias <name> = <command>                 adds as an alias for <command>\n\
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
