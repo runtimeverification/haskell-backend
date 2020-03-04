@@ -65,6 +65,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import Data.Containers.ListUtils
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
@@ -80,7 +81,6 @@ import Data.Map.Strict
 import Data.Set
     ( Set
     )
-import Data.Containers.ListUtils
 
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
