@@ -72,6 +72,7 @@ import GHC.Stack
 import Options.Applicative
     ( InfoMod
     , Parser
+    , ParserHelp (..)
     , argument
     , defaultPrefs
     , disabled
@@ -89,6 +90,7 @@ import Options.Applicative
     , metavar
     , option
     , optional
+    , overFailure
     , readerError
     , str
     , strOption
@@ -97,6 +99,11 @@ import Options.Applicative
     , (<**>)
     , (<|>)
     )
+import Options.Applicative.Help.Chunk
+    ( Chunk (..)
+    , vsepChunks
+    )
+import Options.Applicative.Help.Pretty as Pretty
 import System.Clock
     ( Clock (Monotonic)
     , diffTimeSpec
@@ -308,6 +315,7 @@ commandLineParse
 commandLineParse localCommandLineParser modifiers = do
     args' <- Env.getArgs
     env <- Env.lookupEnv "KORE_EXEC_OPTS"
+    let opts' = fromMaybe "" env
     let
         args = case env of
             Nothing -> args'
@@ -323,7 +331,20 @@ commandLineParse localCommandLineParser modifiers = do
                 modifiers
             )
             args
-    handleParseResult parseResult
+    handleParseResult $ overFailure (changeHelp args (words opts')) parseResult
+  where
+    changeHelp commandLine koreExecOpts parserHelp@ParserHelp { helpError } =
+        parserHelp
+            { helpError =
+                vsepChunks [Chunk . Just $ exeCommandWithOpts, helpError]
+            }
+      where
+        exeCommandWithOpts =
+            vsep 
+                [ Pretty.pretty ("\nkore-exec " <> unwords commandLine)
+                , Pretty.pretty ("KORE_EXEC_OPTS = " <> unwords koreExecOpts)
+                ]
+    
 
 
 
