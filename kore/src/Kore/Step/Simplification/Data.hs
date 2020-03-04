@@ -98,11 +98,18 @@ instance MonadTrans SimplifierT where
     lift smt = SimplifierT (lift smt)
     {-# INLINE lift #-}
 
-instance Morph.MFunctor SimplifierT where
-    hoist f simplifierT = undefined
-        -- Morph.hoist f (runSimplifierT simplifierT)
+mapSimplifierT
+    :: forall m b
+    .  Monad m
+    => (forall a . m a -> m a)
+    -> SimplifierT m b
+    -> SimplifierT m b
+mapSimplifierT f simplifierT =
+    SimplifierT
+    $ Morph.hoist f (runSimplifierT simplifierT)
 
-instance MonadLog log => MonadLog (SimplifierT log)
+instance MonadLog log => MonadLog (SimplifierT log) where
+    logWhile entry = mapSimplifierT $ logWhile entry
 
 instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
     profile event duration =
