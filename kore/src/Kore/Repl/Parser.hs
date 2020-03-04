@@ -117,6 +117,7 @@ nonRecursiveCommand =
         , tryAxiomClaim
         , clear
         , saveSession
+        , savePartialProof
         , loadScript
         , proofStatus
         , exit
@@ -261,6 +262,13 @@ saveSession :: Parser ReplCommand
 saveSession =
     SaveSession <$$> literal "save-session" *> quotedOrWordWithout ""
 
+savePartialProof :: Parser ReplCommand
+savePartialProof =
+    SavePartialProof
+    <$$> literal "save-partial-proof"
+    *> maybeDecimal
+    <**> quotedOrWordWithout ""
+
 log :: Parser ReplCommand
 log = do
     literal "log"
@@ -382,10 +390,10 @@ spaceNoNewline =
 literal :: String -> Parser ()
 literal str = void $ Char.string str <* spaceNoNewline
 
-decimal :: Parser Int
+decimal :: Integral a => Parser a
 decimal = L.decimal <* spaceNoNewline
 
-maybeDecimal :: Parser (Maybe Int)
+maybeDecimal :: Integral a => Parser (Maybe a)
 maybeDecimal = optional decimal
 
 word :: Parser String

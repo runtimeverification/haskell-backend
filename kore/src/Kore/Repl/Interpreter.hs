@@ -88,6 +88,9 @@ import Data.IORef
     , readIORef
     )
 import qualified Data.List as List
+import Data.List.Extra
+    ( upper
+    )
 import Data.List.NonEmpty
     ( NonEmpty
     )
@@ -105,6 +108,9 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Text.Prettyprint.Doc.Render.Text
+    ( hPutDoc
+    )
 import qualified Data.Typeable as Typeable
 import GHC.Exts
     ( toList
@@ -113,16 +119,42 @@ import GHC.IO.Handle
     ( hGetContents
     , hPutStr
     )
+import GHC.Natural
+    ( naturalToInt
+    )
+import Numeric.Natural
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , findExecutable
+    )
 import System.Exit
+import System.FilePath.Posix
+    ( splitFileName
+    , (<.>)
+    )
+import System.IO
+    ( IOMode (..)
+    , withFile
+    )
+import System.Process
+    ( StdStream (CreatePipe)
+    , createProcess
+    , proc
+    , std_in
+    , std_out
+    )
+import Text.Megaparsec
+    ( ParseErrorBundle (..)
+    , errorBundlePretty
+    , parseMaybe
+    , runParser
+    )
 
 import Kore.Attribute.Axiom
     ( SourceLocation (..)
     )
 import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom (..)
-    , RuleIndex (..)
-    , sourceLocation
-    )
 import qualified Kore.Attribute.Label as AttrLabel
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
@@ -170,6 +202,7 @@ import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
     ( Claim
     , CommonProofState
+    , commonProofStateTransformer
     )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -182,28 +215,6 @@ import Kore.Unparser
     ( Unparse
     , unparse
     , unparseToString
-    )
-import Numeric.Natural
-import System.Directory
-    ( doesDirectoryExist
-    , doesFileExist
-    , findExecutable
-    )
-import System.FilePath.Posix
-    ( splitFileName
-    )
-import System.Process
-    ( StdStream (CreatePipe)
-    , createProcess
-    , proc
-    , std_in
-    , std_out
-    )
-import Text.Megaparsec
-    ( ParseErrorBundle (..)
-    , errorBundlePretty
-    , parseMaybe
-    , runParser
     )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
@@ -244,37 +255,38 @@ replInterpreter0
     -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
-                ShowUsage           -> showUsage           $> Continue
-                Help                -> help                $> Continue
-                ShowClaim mc        -> showClaim mc        $> Continue
-                ShowAxiom ea        -> showAxiom ea        $> Continue
-                Prove i             -> prove i             $> Continue
-                ShowGraph mfile out -> showGraph mfile out $> Continue
-                ProveSteps n        -> proveSteps n        $> Continue
-                ProveStepsF n       -> proveStepsF n       $> Continue
-                SelectNode i        -> selectNode i        $> Continue
-                ShowConfig mc       -> showConfig mc       $> Continue
-                OmitCell c          -> omitCell c          $> Continue
-                ShowLeafs           -> showLeafs           $> Continue
-                ShowRule   mc       -> showRule mc         $> Continue
-                ShowPrecBranch mn   -> showPrecBranch mn   $> Continue
-                ShowChildren mn     -> showChildren mn     $> Continue
-                Label ms            -> label ms            $> Continue
-                LabelAdd l mn       -> labelAdd l mn       $> Continue
-                LabelDel l          -> labelDel l          $> Continue
-                Redirect inn file   -> redirect inn file   $> Continue
-                Try ref             -> tryAxiomClaim ref   $> Continue
-                TryF ac             -> tryFAxiomClaim ac   $> Continue
-                Clear n             -> clear n             $> Continue
-                SaveSession file    -> saveSession file    $> Continue
-                Pipe inn file args  -> pipe inn file args  $> Continue
-                AppendTo inn file   -> appendTo inn file   $> Continue
-                Alias a             -> alias a             $> Continue
-                TryAlias name       -> tryAlias name printAux printKore
-                LoadScript file     -> loadScript file     $> Continue
-                ProofStatus         -> proofStatus         $> Continue
-                Log opts            -> handleLog opts      $> Continue
-                Exit                -> exit
+                ShowUsage             -> showUsage             $> Continue
+                Help                  -> help                  $> Continue
+                ShowClaim mc          -> showClaim mc          $> Continue
+                ShowAxiom ea          -> showAxiom ea          $> Continue
+                Prove i               -> prove i               $> Continue
+                ShowGraph mfile out   -> showGraph mfile out   $> Continue
+                ProveSteps n          -> proveSteps n          $> Continue
+                ProveStepsF n         -> proveStepsF n         $> Continue
+                SelectNode i          -> selectNode i          $> Continue
+                ShowConfig mc         -> showConfig mc         $> Continue
+                OmitCell c            -> omitCell c            $> Continue
+                ShowLeafs             -> showLeafs             $> Continue
+                ShowRule   mc         -> showRule mc           $> Continue
+                ShowPrecBranch mn     -> showPrecBranch mn     $> Continue
+                ShowChildren mn       -> showChildren mn       $> Continue
+                Label ms              -> label ms              $> Continue
+                LabelAdd l mn         -> labelAdd l mn         $> Continue
+                LabelDel l            -> labelDel l            $> Continue
+                Redirect inn file     -> redirect inn file     $> Continue
+                Try ref               -> tryAxiomClaim ref     $> Continue
+                TryF ac               -> tryFAxiomClaim ac     $> Continue
+                Clear n               -> clear n               $> Continue
+                SaveSession file      -> saveSession file      $> Continue
+                SavePartialProof mn f -> savePartialProof mn f $> Continue
+                Pipe inn file args    -> pipe inn file args    $> Continue
+                AppendTo inn file     -> appendTo inn file     $> Continue
+                Alias a               -> alias a               $> Continue
+                TryAlias name         -> tryAlias name printAux printKore
+                LoadScript file       -> loadScript file       $> Continue
+                ProofStatus           -> proofStatus           $> Continue
+                Log opts              -> handleLog opts        $> Continue
+                Exit                  -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
             ( replOut
@@ -991,6 +1003,78 @@ saveSession path =
         putStrLn' "Done."
     seqUnlines :: Seq String -> String
     seqUnlines = unlines . toList
+
+savePartialProof
+    :: forall m claim
+    .  MonadState (ReplState claim) m
+    => MonadWriter ReplOutput m
+    => MonadIO m
+    => Claim claim
+    => From claim (TermLike Variable)
+    => Maybe Natural
+    -> FilePath
+    -> m ()
+savePartialProof maybeNatural file = do
+    currentClaim <- Lens.use (field @"claim")
+    currentIndex <- Lens.use (field @"claimIndex")
+    claims <- Lens.use (field @"claims")
+    maybeConfig <- getConfigAt maybeNode
+    case maybeConfig of
+        Nothing -> putStrLn' "Invalid node!"
+        Just (currentNode, currentProofState) -> do
+            let config = unwrapConfig currentProofState
+                newClaim = createClaim currentClaim config
+                newTrustedClaims =
+                    makeTrusted
+                    <$> removeIfRoot currentNode currentIndex claims
+                newDefinition =
+                    createNewDefinition
+                        (makeModuleName file)
+                        $ newClaim : newTrustedClaims
+            saveUnparsedDefinitionToFile (unparse newDefinition)
+            putStrLn' "Done."
+  where
+    unwrapConfig :: CommonProofState -> Pattern Variable
+    unwrapConfig = proofState commonProofStateTransformer
+
+    saveUnparsedDefinitionToFile
+        :: Pretty.Doc ann
+        -> m ()
+    saveUnparsedDefinitionToFile definition =
+        liftIO
+        $ withFile
+            (file <.> "kore")
+            WriteMode
+            (`hPutDoc` definition)
+
+    maybeNode :: Maybe ReplNode
+    maybeNode =
+        ReplNode . naturalToInt <$> maybeNatural
+
+    makeTrusted :: claim -> claim
+    makeTrusted goal@(toRulePattern -> rule) =
+        fromRulePattern goal
+        $ rule
+            { attributes =
+                (attributes rule)
+                    { Attribute.trusted = Attribute.Trusted True
+                    }
+            }
+
+    removeIfRoot
+        :: ReplNode
+        -> ClaimIndex
+        -> [claim]
+        -> [claim]
+    removeIfRoot (ReplNode node) (ClaimIndex index) claims
+        | index >= 0 && index < length claims
+        , node == 0 =
+            take index claims
+            <> drop (index + 1) claims
+        | otherwise = claims
+
+    makeModuleName :: FilePath -> String
+    makeModuleName name = upper name <> "-SPEC"
 
 -- | Pipe result of the command to the specified program. This function will start
 -- one process for each KoreOut in the command's output. AuxOut will not be piped,
