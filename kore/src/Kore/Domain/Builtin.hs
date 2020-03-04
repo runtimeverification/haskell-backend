@@ -15,6 +15,7 @@ module Kore.Domain.Builtin
     , Value (..)
     , AcWrapper (..)
     , wrapElement, unwrapElement
+    , wrapConcreteElement
     , InternalAc (..)
     , NormalizedAc (..)
     , emptyNormalizedAc
@@ -42,6 +43,8 @@ import Control.DeepSeq
     )
 import qualified Control.Lens as Lens
 import Control.Lens.Iso
+    ( Iso'
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Map.Strict
@@ -297,6 +300,12 @@ class AcWrapper (normalized :: * -> * -> *) where
         -> (child -> Pretty.Doc ann)
         -> (key, Value normalized child) -> Pretty.Doc ann
 
+instance
+    (AcWrapper normalized, From key child)
+    => From (key, Value normalized child) (Element normalized child)
+  where
+    from (key, value) = wrapElement (from @key @child key, value)
+
 unwrapElement
     :: AcWrapper normalized
     => Element normalized child -> (child, Value normalized child)
@@ -306,6 +315,12 @@ wrapElement
     :: AcWrapper normalized
     => (child, Value normalized child) -> Element normalized child
 wrapElement = Lens.review elementIso
+
+wrapConcreteElement
+    :: AcWrapper normalized
+    => From key child
+    => (key, Value normalized child) -> Element normalized child
+wrapConcreteElement = from
 
 unparsedChildren
     :: forall ann child key normalized

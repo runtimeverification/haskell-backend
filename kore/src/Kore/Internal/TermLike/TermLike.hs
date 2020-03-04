@@ -497,6 +497,16 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
+instance
+    (FreshPartialOrd variable, SortedVariable variable)
+    => From (TermLike Concrete) (TermLike variable)
+  where
+    from =
+        mapVariables
+            (from @(ElementVariable Concrete))
+            (from @(SetVariable     Concrete))
+    {-# INLINE from #-}
+
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
 
