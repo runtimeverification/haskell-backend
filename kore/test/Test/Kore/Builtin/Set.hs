@@ -136,11 +136,6 @@ import SMT
     ( SMT
     )
 
--- import Test.ConsistentKore
---     ( Setup (..)
---     , runTermGen
---     , termLikeGen
---     )
 import Test.Kore
     ( elementVariableGen
     , standaloneGen
@@ -164,27 +159,27 @@ import Test.SMT hiding
     )
 import Test.Tasty.HUnit.Ext
 
+genKeys :: Gen [TermLike Variable]
+genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
+
+genKey :: Gen (TermLike Variable)
+genKey = Gen.element (concreteKeys <> symbolicKeys)
+
+concreteKeys :: [TermLike Variable]
+concreteKeys = [Mock.a, Mock.b, Mock.c]
+
+symbolicKeys :: [TermLike Variable]
+symbolicKeys = Mock.f . mkElemVar <$> elemVars'
+
+elemVars' :: [ElementVariable Variable]
+elemVars' = [Mock.x, Mock.y, Mock.z]
+
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
 
 genSetConcreteIntegerPattern :: Gen (Set (TermLike Concrete))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asInternal <$> genSetInteger
-
--- genSymbolicPattern :: Gen (TermLike Variable)
--- genSymbolicPattern =
---     runTermGen generatorSetup termLikeGen
---   where
---     generatorSetup =
---         Mock.generatorSetup
---             { maybeIntSort = Just intSort
---             , maybeBoolSort = Just boolSort
---             , allSorts = [Mock.testSort]
---             }
-
--- genSetSymbolicPattern :: Gen (Set (TermLike Variable))
--- genSetSymbolicPattern =
---     Gen.set (Range.linear 0 32) genSymbolicPattern
 
 genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
@@ -254,8 +249,7 @@ test_inElement =
 test_inElementSymbolic :: TestTree
 test_inElementSymbolic =
     testPropertyWithSolver
-        "in{}(x, element{}(x))\
-        \ === and{Bool{}()}(\\dv{Bool{}}(\"true\"), \\top{Bool{}}())"
+        "in{}(x, element{}(x)) === and(\\dv{Bool{}}(\"true\"), \\top())"
         (do
             patKey <- forAll genKey
             let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
@@ -266,22 +260,12 @@ test_inElementSymbolic =
             expected <- evaluateT conditionTerm
             actual === expected
         )
-  where
-    -- genKeys :: Gen [TermLike Variable]
-    -- genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
-    genKey :: Gen (TermLike Variable)
-    genKey = Gen.element (concreteKeys <> symbolicKeys)
-    concreteKeys :: [TermLike Variable]
-    concreteKeys = [Mock.a, Mock.b, Mock.c]
-    symbolicKeys :: [TermLike Variable]
-    symbolicKeys = Mock.f . mkElemVar <$> elemVars
-    elemVars :: [ElementVariable Variable]
-    elemVars = [Mock.x, Mock.y, Mock.z]
 
 test_inConcatSymbolic :: TestTree
 test_inConcatSymbolic =
     testPropertyWithSolver
-        "TESTING in{}(concat{}(_, element{}(e)), e) === \\dv{Bool{}}(\"true\")"
+        "in{}(concat{}(_, element{}(e)), e)\
+        \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
         (do
             keys <- forAll genKeys
             patKey <- forAll genKey
@@ -297,17 +281,6 @@ test_inConcatSymbolic =
             actual <- evaluateT patIn
             actual === expected
         )
-  where
-    genKeys :: Gen [TermLike Variable]
-    genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
-    genKey :: Gen (TermLike Variable)
-    genKey = Gen.element (concreteKeys <> symbolicKeys)
-    concreteKeys :: [TermLike Variable]
-    concreteKeys = [Mock.a, Mock.b, Mock.c]
-    symbolicKeys :: [TermLike Variable]
-    symbolicKeys = mkElemVar <$> elemVars -- Mock.f . mkElemVar <$> elemVars
-    elemVars :: [ElementVariable Variable]
-    elemVars = [Mock.x, Mock.y, Mock.z]
 
 test_inConcat :: TestTree
 test_inConcat =
@@ -324,31 +297,6 @@ test_inConcat =
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
             (===) Pattern.top                =<< evaluateT predicate
         )
-
--- test_inConcatSymbolic :: TestTree
--- test_inConcatSymbolic =
---     testPropertyWithSolver
---         "TESTING in{}(concat{}(_, element{}(e)), e) === \\dv{Bool{}}(\"true\")"
---         (do
---             patElem <- forAll genSymbolicPattern
---             values <- forAll genSetSymbolicPattern
---             let patIn =
---                     mkApplySymbol
---                         inSetSymbolTestSort
---                         [ patElem, patSet ]
---                 patSet =
---                     asSymbolicTermLike
---                     $ Set.insert patElem values
---                 patTrue = Test.Bool.asPattern True
---                 conditionTerm = mkCeil boolSort patSet
---             condition <- evaluateT conditionTerm
---             let expected =
---                     Condition.andCondition
---                         patTrue
---                         (Conditional.withoutTerm condition)
---             actual <- evaluateT patIn
---             actual === expected
---         )
 
 test_concatUnit :: TestTree
 test_concatUnit =
