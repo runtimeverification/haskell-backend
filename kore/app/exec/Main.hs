@@ -405,7 +405,7 @@ parserInfoModifiers =
 main :: IO ()
 main = do
     options <-
-        mainGlobal (ForKoreExec True) parseKoreExecOptions parserInfoModifiers
+        mainGlobal (ExeName "kore-exec") parseKoreExecOptions parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()

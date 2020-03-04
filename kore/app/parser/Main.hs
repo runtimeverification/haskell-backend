@@ -136,7 +136,7 @@ parserInfoModifiers =
 main :: IO ()
 main = do
     options <-
-        mainGlobal (ForKoreExec False) commandLineParser parserInfoModifiers
+        mainGlobal (ExeName "kore-parser") commandLineParser parserInfoModifiers
     case localOptions options of
         Nothing ->  -- global options parsed, but local failed; exit gracefully
             return ()

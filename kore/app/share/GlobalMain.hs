@@ -5,7 +5,7 @@ module GlobalMain
     , GlobalOptions(..)
     , KoreProveOptions(..)
     , KoreMergeOptions(..)
-    , ForKoreExec (..)
+    , ExeName (..)
     , Main
     , parseKoreProveOptions
     , parseKoreMergeOptions
@@ -264,19 +264,19 @@ Global main function parses command line arguments, handles global flags
 and returns the parsed options
 -}
 mainGlobal
-    :: ForKoreExec
+    :: ExeName
     -> Parser options                -- ^ local options parser
     -> InfoMod (MainOptions options) -- ^ option parser information
     -> IO      (MainOptions options)
-mainGlobal used localOptionsParser modifiers = do
-  options <- commandLineParse used localOptionsParser modifiers
+mainGlobal exeName localOptionsParser modifiers = do
+  options <- commandLineParse exeName localOptionsParser modifiers
   when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
   return options
 
 
 defaultMainGlobal :: IO (MainOptions options)
 defaultMainGlobal =
-    mainGlobal (ForKoreExec False) (argument disabled mempty) mempty
+    mainGlobal (ExeName "kore-exec") (argument disabled mempty) mempty
 
 
 -- | main function to print version information
@@ -309,15 +309,13 @@ globalCommandLineParser =
         (  long "version"
         <> help "Print version information" )
 
-newtype ForKoreExec = ForKoreExec { used :: Bool }
-
 -- | Run argument parser for local executable
 commandLineParse
-    :: ForKoreExec
+    :: ExeName
     -> Parser a                -- ^ local options parser
     -> InfoMod (MainOptions a) -- ^ local parser info modifiers
     -> IO (MainOptions a)
-commandLineParse (ForKoreExec used) localCommandLineParser modifiers = do
+commandLineParse (ExeName exeName) localCommandLineParser modifiers = do
     args' <- Env.getArgs
     env <- Env.lookupEnv "KORE_EXEC_OPTS"
     let opts' = fromMaybe "" env
@@ -335,8 +333,10 @@ commandLineParse (ForKoreExec used) localCommandLineParser modifiers = do
                 modifiers
             )
             args
-    handleParseResult
-        $ (if used then overFailure (changeHelp args opts') else id) parseResult
+        changeHelpOverFailure
+          | exeName == "kore-exec" = overFailure (changeHelp args opts')
+          | otherwise = id
+    handleParseResult $ changeHelpOverFailure parseResult
   where
     changeHelp :: [String] -> String -> ParserHelp -> ParserHelp
     changeHelp commandLine koreExecOpts parserHelp@ParserHelp { helpError } =
