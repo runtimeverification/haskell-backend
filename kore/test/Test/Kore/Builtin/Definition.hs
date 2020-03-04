@@ -1123,6 +1123,16 @@ setSortDecl =
         , concatAttribute concatSetSymbol
         ]
 
+testSort :: Sort
+testSort =
+    SortActualSort SortActual
+        { sortActualName = testId "testSort"
+        , sortActualSorts = []
+        }
+
+testSortDecl :: ParsedSentence
+testSortDecl = sortDecl testSort
+
 builtinSet
     :: [TermLike Concrete]
     -> InternalSet (TermLike Concrete) (TermLike Variable)
@@ -1136,6 +1146,23 @@ builtinSet children =
             { elementsWithVariables = []
             , concreteElements =
                 Map.fromList (map (\x -> (x, SetValue)) children)
+            , opaque = []
+            }
+        }
+
+builtinSymbolicSet
+    :: [TermLike Variable]
+    -> InternalSet key (TermLike Variable)
+builtinSymbolicSet children =
+    InternalAc
+        { builtinAcSort = setSort
+        , builtinAcUnit = unitSetSymbol
+        , builtinAcElement = elementSetSymbolTestSort
+        , builtinAcConcat = concatSetSymbol
+        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
+            { elementsWithVariables =
+                fmap (\x -> wrapElement (x, SetValue)) children
+            , concreteElements = Map.empty
             , opaque = []
             }
         }
@@ -1540,6 +1567,7 @@ setModule =
             , importParsedModule boolModuleName
             , importParsedModule listModuleName
             , setSortDecl
+            , testSortDecl
             , hookedSymbolDecl unitSetSymbol
             , hookedSymbolDecl elementSetSymbol
             , hookedSymbolDecl concatSetSymbol

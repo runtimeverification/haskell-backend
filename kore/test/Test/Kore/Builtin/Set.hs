@@ -6,6 +6,7 @@ module Test.Kore.Builtin.Set
     , test_inElement
     , test_inElementSymbolic
     , test_inConcat
+    , test_inConcatSymbolic
     , test_concatUnit
     , test_concatAssociates
     , test_concatNormalizes
@@ -57,10 +58,6 @@ module Test.Kore.Builtin.Set
     , asInternal
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
-
 import Prelude.Kore
 
 import Hedgehog hiding
@@ -97,6 +94,7 @@ import Kore.Domain.Builtin
     )
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
@@ -138,6 +136,11 @@ import SMT
     ( SMT
     )
 
+-- import Test.ConsistentKore
+--     ( Setup (..)
+--     , runTermGen
+--     , termLikeGen
+--     )
 import Test.Kore
     ( elementVariableGen
     , standaloneGen
@@ -167,6 +170,21 @@ genSetInteger = Gen.set (Range.linear 0 32) genInteger
 genSetConcreteIntegerPattern :: Gen (Set (TermLike Concrete))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asInternal <$> genSetInteger
+
+-- genSymbolicPattern :: Gen (TermLike Variable)
+-- genSymbolicPattern =
+--     runTermGen generatorSetup termLikeGen
+--   where
+--     generatorSetup =
+--         Mock.generatorSetup
+--             { maybeIntSort = Just intSort
+--             , maybeBoolSort = Just boolSort
+--             , allSorts = [Mock.testSort]
+--             }
+
+-- genSetSymbolicPattern :: Gen (Set (TermLike Variable))
+-- genSetSymbolicPattern =
+--     Gen.set (Range.linear 0 32) genSymbolicPattern
 
 genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
@@ -260,32 +278,36 @@ test_inElementSymbolic =
     elemVars :: [ElementVariable Variable]
     elemVars = [Mock.x, Mock.y, Mock.z]
 
--- test_inConcatSymbolic :: TestTree
--- test_inConcatSymbolic =
---     testPropertyWithSolver
---         "in{}(concat{}(_, element{}(e)), e) === \\dv{Bool{}}(\"true\")"
---         (do
---             keys <- forAll genKeys
---             patKey <- forAll genKey
---             let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
---                 patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patElement ]
---                 patTrue = Test.Bool.asInternal True
---                 conditionTerm = mkAnd patTrue (mkCeil_ patElement)
---             actual <- evaluateT patIn
---             expected <- evaluateT conditionTerm
---             actual === expected
---         )
---   where
---     genKeys :: Gen [TermLike Variable]
---     genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
---     genKey :: Gen (TermLike Variable)
---     genKey = Gen.element (concreteKeys <> symbolicKeys)
---     concreteKeys :: [TermLike Variable]
---     concreteKeys = [Mock.a, Mock.b, Mock.c]
---     symbolicKeys :: [TermLike Variable]
---     symbolicKeys = Mock.f . mkElemVar <$> elemVars
---     elemVars :: [ElementVariable Variable]
---     elemVars = [Mock.x, Mock.y, Mock.z]
+test_inConcatSymbolic :: TestTree
+test_inConcatSymbolic =
+    testPropertyWithSolver
+        "TESTING in{}(concat{}(_, element{}(e)), e) === \\dv{Bool{}}(\"true\")"
+        (do
+            keys <- forAll genKeys
+            patKey <- forAll genKey
+            let patSet = asSymbolicTermLike $ Set.insert patKey (Set.fromList keys)
+                patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patSet ]
+                patTrue = Test.Bool.asPattern True
+                conditionTerm = mkCeil boolSort patSet
+            condition <- evaluateT conditionTerm
+            let expected =
+                    Condition.andCondition
+                        patTrue
+                        (Conditional.withoutTerm condition)
+            actual <- evaluateT patIn
+            actual === expected
+        )
+  where
+    genKeys :: Gen [TermLike Variable]
+    genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
+    genKey :: Gen (TermLike Variable)
+    genKey = Gen.element (concreteKeys <> symbolicKeys)
+    concreteKeys :: [TermLike Variable]
+    concreteKeys = [Mock.a, Mock.b, Mock.c]
+    symbolicKeys :: [TermLike Variable]
+    symbolicKeys = mkElemVar <$> elemVars -- Mock.f . mkElemVar <$> elemVars
+    elemVars :: [ElementVariable Variable]
+    elemVars = [Mock.x, Mock.y, Mock.z]
 
 test_inConcat :: TestTree
 test_inConcat =
@@ -302,6 +324,31 @@ test_inConcat =
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
             (===) Pattern.top                =<< evaluateT predicate
         )
+
+-- test_inConcatSymbolic :: TestTree
+-- test_inConcatSymbolic =
+--     testPropertyWithSolver
+--         "TESTING in{}(concat{}(_, element{}(e)), e) === \\dv{Bool{}}(\"true\")"
+--         (do
+--             patElem <- forAll genSymbolicPattern
+--             values <- forAll genSetSymbolicPattern
+--             let patIn =
+--                     mkApplySymbol
+--                         inSetSymbolTestSort
+--                         [ patElem, patSet ]
+--                 patSet =
+--                     asSymbolicTermLike
+--                     $ Set.insert patElem values
+--                 patTrue = Test.Bool.asPattern True
+--                 conditionTerm = mkCeil boolSort patSet
+--             condition <- evaluateT conditionTerm
+--             let expected =
+--                     Condition.andCondition
+--                         patTrue
+--                         (Conditional.withoutTerm condition)
+--             actual <- evaluateT patIn
+--             actual === expected
+--         )
 
 test_concatUnit :: TestTree
 test_concatUnit =
@@ -1804,6 +1851,15 @@ asTermLike
 asTermLike =
     Reflection.give testMetadataTools Set.asTermLike
     . builtinSet
+    . Foldable.toList
+
+asSymbolicTermLike
+    :: Foldable f
+    => f (TermLike Variable)
+    -> TermLike Variable
+asSymbolicTermLike =
+    Reflection.give testMetadataTools Set.asTermLike
+    . builtinSymbolicSet
     . Foldable.toList
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
