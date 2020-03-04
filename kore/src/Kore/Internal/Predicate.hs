@@ -66,6 +66,8 @@ import Control.DeepSeq
     ( NFData
     )
 import Data.Containers.ListUtils
+    ( nubOrd
+    )
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
