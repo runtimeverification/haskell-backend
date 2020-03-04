@@ -80,6 +80,8 @@ import Data.Map.Strict
 import Data.Set
     ( Set
     )
+import Data.Containers.ListUtils
+
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -276,7 +278,7 @@ makeMultipleAndPredicate
     => [Predicate variable]
     -> Predicate variable
 makeMultipleAndPredicate =
-    foldl' makeAndPredicate makeTruePredicate_ . ordNub
+    foldl' makeAndPredicate makeTruePredicate_ . nubOrd
     -- 'and' is idempotent so we eliminate duplicates
 
 {- | Flatten a 'Predicate' with 'And' at the top.
@@ -301,7 +303,7 @@ makeMultipleOrPredicate
     => [Predicate variable]
     -> Predicate variable
 makeMultipleOrPredicate =
-    foldl' makeOrPredicate makeFalsePredicate_ . ordNub
+    foldl' makeOrPredicate makeFalsePredicate_ . nubOrd
     -- 'or' is idempotent so we eliminate duplicates
 
 {-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
