@@ -9,6 +9,7 @@ module Prelude.Kore
     , module Debug.Trace
     -- * Ord
     , minMax
+    , ordNub
     -- * Functions
     , (&)
     , on
@@ -72,6 +73,7 @@ import Data.Maybe
     , isJust
     , isNothing
     )
+import Data.Set as Set
 import Data.Witherable
     ( Filterable (..)
     )
@@ -93,3 +95,12 @@ minMax :: Ord a => a -> a -> (a, a)
 minMax a b
   | a < b     = (a, b)
   | otherwise = (b, a)
+
+{- | O(n log n) nub
+-}
+ordNub :: (Ord a) => [a] -> [a]
+ordNub l = go Set.empty l
+  where
+    go _ [] = []
+    go s (x:xs) = if x `Set.member` s then go s xs
+                                      else x : go (Set.insert x s) xs

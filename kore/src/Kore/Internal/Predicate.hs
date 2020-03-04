@@ -73,7 +73,6 @@ import Data.Functor.Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.List
     ( foldl'
-    , nub
     )
 import Data.Map.Strict
     ( Map
@@ -271,21 +270,20 @@ binaryOperator operator (GenericPredicate first) (GenericPredicate second) =
 {-| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.
 -}
+
 makeMultipleAndPredicate
     :: (HasCallStack, InternalVariable variable)
     => [Predicate variable]
     -> Predicate variable
 makeMultipleAndPredicate =
-    foldl' makeAndPredicate makeTruePredicate_ . nub
+    foldl' makeAndPredicate makeTruePredicate_ . ordNub
     -- 'and' is idempotent so we eliminate duplicates
-    -- TODO: This is O(n^2), consider doing something better.
 
 {- | Flatten a 'Predicate' with 'And' at the top.
-
 'getMultiAndPredicate' is the inverse of 'makeMultipleAndPredicate', up to
 associativity.
-
  -}
+
 getMultiAndPredicate
     :: Predicate variable
     -> [Predicate variable]
@@ -295,7 +293,6 @@ getMultiAndPredicate original@(GenericPredicate termLike) =
             concatMap (getMultiAndPredicate . GenericPredicate) [left, right]
         _ -> [original]
 
-
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
 -}
@@ -304,9 +301,8 @@ makeMultipleOrPredicate
     => [Predicate variable]
     -> Predicate variable
 makeMultipleOrPredicate =
-    foldl' makeOrPredicate makeFalsePredicate_ . nub
+    foldl' makeOrPredicate makeFalsePredicate_ . ordNub
     -- 'or' is idempotent so we eliminate duplicates
-    -- TODO: This is O(n^2), consider doing something better.
 
 {-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
 simplification.
