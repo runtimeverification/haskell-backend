@@ -28,6 +28,10 @@ flags:
     description: Use the threaded runtime. Recommended to disable for profiling.
     manual: true
     default: true
+  release:
+    description: Build a faster runtime, at the expense of a slower build.
+    manual: true
+    default: true
 
 dependencies:
   - base >=4.7
@@ -133,6 +137,12 @@ ghc-options:
   - -Wpartial-fields
   - -Wredundant-constraints
   - -Wmissing-export-lists
+
+when:
+  - condition: "!flag(release)"
+    ghc-options:
+      - -fno-specialise
+
 
 library:
   source-dirs: src

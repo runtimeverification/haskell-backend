@@ -249,7 +249,7 @@ makeEvaluateBuiltin
     -> simplifier (OrCondition variable)
 makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
     runCeilSimplifierWith
-        (AssocComm.newCeilSimplifier mkBuiltinMap ceilSimplifierTermLike)
+        (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
@@ -260,7 +260,7 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
     Domain.InternalAc { builtinAcSort } = internalAc
 makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
     runCeilSimplifierWith
-        (AssocComm.newCeilSimplifier mkBuiltinSet ceilSimplifierTermLike)
+        (AssocComm.newSetCeilSimplifier ceilSimplifierTermLike)
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
