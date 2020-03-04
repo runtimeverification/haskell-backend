@@ -404,7 +404,8 @@ parserInfoModifiers =
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    options <- mainGlobal parseKoreExecOptions parserInfoModifiers
+    options <-
+        mainGlobal (ForKoreExec True) parseKoreExecOptions parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()

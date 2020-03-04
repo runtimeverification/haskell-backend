@@ -135,43 +135,44 @@ parserInfoModifiers =
 -- | Parses a kore file and Check wellformedness
 main :: IO ()
 main = do
-  options <- mainGlobal commandLineParser parserInfoModifiers
-  case localOptions options of
-    Nothing ->  -- global options parsed, but local failed; exit gracefully
-        return ()
-    Just KoreParserOptions
-        { fileName
-        , patternFileName
-        , mainModuleName
-        , willPrintDefinition
-        , willPrintPattern
-        , willVerify
-        , appKore
-        }
-        -> flip runReaderT Log.emptyLogger . getLoggerT $ do
-            parsedDefinition <- mainDefinitionParse fileName
-            indexedModules <- if willVerify
-                then lift $ mainVerify parsedDefinition
-                else return Map.empty
-            lift $ when willPrintDefinition
-                $ if appKore
-                    then putStrLn
-                        $ unparseToString2
-                        $ completeDefinition
-                        $ toVerifiedDefinition indexedModules
-                else putDoc (debug parsedDefinition)
+    options <-
+        mainGlobal (ForKoreExec False) commandLineParser parserInfoModifiers
+    case localOptions options of
+        Nothing ->  -- global options parsed, but local failed; exit gracefully
+            return ()
+        Just KoreParserOptions
+            { fileName
+            , patternFileName
+            , mainModuleName
+            , willPrintDefinition
+            , willPrintPattern
+            , willVerify
+            , appKore
+            }
+            -> flip runReaderT Log.emptyLogger . getLoggerT $ do
+                parsedDefinition <- mainDefinitionParse fileName
+                indexedModules <- if willVerify
+                    then lift $ mainVerify parsedDefinition
+                    else return Map.empty
+                lift $ when willPrintDefinition
+                    $ if appKore
+                        then putStrLn
+                            $ unparseToString2
+                            $ completeDefinition
+                            $ toVerifiedDefinition indexedModules
+                    else putDoc (debug parsedDefinition)
 
-            when (patternFileName /= "") $ do
-                parsedPattern <- mainPatternParse patternFileName
-                when willVerify $ do
-                    indexedModule <-
-                         lift $ lookupMainModule
-                            (ModuleName mainModuleName)
-                            indexedModules
-                    _ <- mainPatternVerify indexedModule parsedPattern
-                    return ()
-                when willPrintPattern $
-                    lift $ putDoc (debug parsedPattern)
+                when (patternFileName /= "") $ do
+                    parsedPattern <- mainPatternParse patternFileName
+                    when willVerify $ do
+                        indexedModule <-
+                            lift $ lookupMainModule
+                                (ModuleName mainModuleName)
+                                indexedModules
+                        _ <- mainPatternVerify indexedModule parsedPattern
+                        return ()
+                    when willPrintPattern $
+                        lift $ putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.

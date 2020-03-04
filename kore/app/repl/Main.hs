@@ -177,7 +177,8 @@ parserInfoModifiers =
 
 main :: IO ()
 main = do
-    options <- mainGlobal parseKoreReplOptions parserInfoModifiers
+    options <-
+        mainGlobal (ForKoreExec False) parseKoreReplOptions parserInfoModifiers
     case localOptions options of
         Nothing -> pure ()
         Just koreReplOptions -> mainWithOptions koreReplOptions

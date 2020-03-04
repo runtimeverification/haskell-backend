@@ -57,7 +57,7 @@ infoMod =
 main :: IO ()
 main =
     do
-        options <- mainGlobal commandLine infoMod
+        options <- mainGlobal (ForKoreExec False) commandLine infoMod
         case localOptions options of
             Nothing ->
                 {-  Global options were parsed, but local options were not.
