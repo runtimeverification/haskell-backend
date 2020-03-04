@@ -28,6 +28,12 @@ testp:
 test-ghci:
 	$(stack) ghci $(package):test:$(package)-test
 
+fast:
+	$(stack) build --fast --test --no-run-tests --work-dir=.stack-work-fast
+
+fast-test:
+	$(stack) build --fast --test --work-dir=.stack-work-fast
+
 pedantic:
 	$(stack) build --haddock --no-haddock-deps --bench --no-run-benchmarks --test --no-run-tests --pedantic --work-dir .stack-work-pedantic
 
@@ -43,10 +49,10 @@ ghcid-repl:
 
 # TODO(Vladimir): remove 'hyperlink-source' when we upgrade from lts-12.10 (8.4.3)
 hoogle-gen:
-	$(stack) haddock; $(stack) hoogle generate --rebuild --no-haddock-hyperlink-source  -- --local
+	$(stack) haddock --work-dir .stack-work-hoogle; $(stack) hoogle generate --rebuild --work-dir .stack-work-hoogle -- --local
 
 hoogle:
-	$(stack) hoogle server -- --local --port 8000
+	$(stack) hoogle server --work-dir .stack-work-hoogle -- --local --port 8000
 
 dev-deps:
 	stack install ghcid

@@ -29,6 +29,7 @@ module Kore.Attribute.Axiom
     , axiomSymbolToSymbolOrAlias
     , mapAxiomVariables
     , parseAxiomAttributes
+    , getPriorityOfAxiom
     ) where
 
 import Prelude.Kore
@@ -248,3 +249,12 @@ mapAxiomVariables
     -> Axiom symbol variable1 -> Axiom symbol variable2
 mapAxiomVariables e s axiom =
     axiom & Lens.over (field @"concrete") (mapConcreteVariables e s)
+
+getPriorityOfAxiom :: Axiom symbol variable -> Integer
+getPriorityOfAxiom
+    Axiom
+    { priority = Priority { getPriority }
+    , owise = Owise { isOwise }
+    }
+  | isOwise   = owisePriority
+  | otherwise = fromMaybe defaultPriority getPriority
