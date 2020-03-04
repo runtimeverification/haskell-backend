@@ -227,6 +227,7 @@ instance MonadLog NoSMT where
     logEntry entry =
         NoSMT $ ReaderT $ \logger ->
             Colog.unLogAction logger (Log.toEntry entry)
+    logWhile _ = id
 
 instance MonadSMT NoSMT where
     withSolver = id

@@ -98,6 +98,10 @@ instance MonadTrans SimplifierT where
     lift smt = SimplifierT (lift smt)
     {-# INLINE lift #-}
 
+instance Morph.MFunctor SimplifierT where
+    hoist f simplifierT = undefined
+        -- Morph.hoist f (runSimplifierT simplifierT)
+
 instance MonadLog log => MonadLog (SimplifierT log)
 
 instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
