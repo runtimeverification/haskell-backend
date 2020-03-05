@@ -45,12 +45,17 @@ import Control.Monad.Except
     ( ExceptT
     )
 import qualified Control.Monad.Except as Except
+import Control.Monad.Morph
+    ( MFunctor
+    )
+import qualified Control.Monad.Morph as Monad.Morph
 import Control.Monad.Trans
     ( MonadTrans
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
     ( AccumT
+    , mapAccumT
     )
 import Control.Monad.Trans.Identity
     ( IdentityT
@@ -184,7 +189,18 @@ class Monad m => MonadLog m where
     logEntry = Monad.Trans.lift . logEntry
     {-# INLINE logEntry #-}
 
-instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log)
+    logWhile :: Entry entry => entry -> m a -> m a
+    default logWhile
+        :: Entry entry
+        => (MFunctor t, MonadLog log, m ~ t log)
+        => entry
+        -> m a
+        -> m a
+    logWhile entry = Monad.Morph.hoist $ logWhile entry
+
+instance (Monoid acc, MonadLog log)
+  => MonadLog (AccumT acc log) where
+      logWhile = mapAccumT . logWhile
 
 instance MonadLog log => MonadLog (CounterT log)
 
@@ -208,6 +224,7 @@ instance Monad m => MonadLog (LoggerT m) where
         logAction <- ask
         let entryLogger = cmap (from @SomeEntry) logAction
         Monad.Trans.lift $ entryLogger <& toEntry entry
+    logWhile _ = id
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift

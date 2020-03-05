@@ -231,6 +231,7 @@ instance MonadLog NoSMT where
         logAction <- ask
         let entryLogger = Colog.cmap (from @SomeEntry) logAction
         Trans.lift $ entryLogger Colog.<& Log.toEntry entry
+    logWhile _ = id
 
 instance MonadSMT NoSMT where
     withSolver = id
