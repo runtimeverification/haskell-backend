@@ -208,7 +208,7 @@ parseWarningSwitch =
     Options.flag
         AsWarning
         AsError
-        ( Options.long "Werror"
+        ( Options.long "warnings-to-errors"
         <> Options.help "Turn warnings into errors"
         )
 
