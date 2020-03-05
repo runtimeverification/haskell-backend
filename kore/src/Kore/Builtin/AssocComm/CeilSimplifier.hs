@@ -108,6 +108,10 @@ newSetCeilSimplifier ceilSimplifierTermLike =
                 mkInternalAc (fromElement element) { opaque = [termLike] }
                 & TermLike.mkBuiltinSet
                 & makeCeilPredicate_
+                -- TODO (thomas.tuegel): Do not mark this simplified.
+                -- Marking here may prevent user-defined axioms from applying.
+                -- At present, we wouldn't apply such an axiom, anyway.
+                & Predicate.markSimplifiedMaybeConditional Nothing
         makeEvaluateBuiltinAssocComm
             TermLike.mkBuiltinSet
             mkNotMember
@@ -137,6 +141,10 @@ newMapCeilSimplifier ceilSimplifierTermLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
                 & TermLike.mkBuiltinMap
                 & makeCeilPredicate_
+                -- TODO (thomas.tuegel): Do not mark this simplified.
+                -- Marking here may prevent user-defined axioms from applying.
+                -- At present, we wouldn't apply such an axiom, anyway.
+                & Predicate.markSimplifiedMaybeConditional Nothing
                 & makeForallPredicate variable
               where
                 (variable, element') =
@@ -288,7 +296,7 @@ makeEvaluateBuiltinAssocComm
         -> MultiAnd (OrCondition variable)
     notMember termLike element =
         mkNotMember element termLike
-        & makeSimplifiedPredicate
+        & OrCondition.fromPredicate
         & MultiAnd.singleton
 
     notMembers :: TermLike variable -> MultiAnd (OrCondition variable)
@@ -316,14 +324,13 @@ makeEvaluateBuiltinAssocComm
                 Domain.wrapAc emptyNormalizedAc { opaque = [opaque1, opaque2] }
             }
         & mkBuiltin
-        & makeSimplified
+        & makeCeilPredicate_
+        -- TODO (thomas.tuegel): Do not mark this simplified.
+        -- Marking here may prevent user-defined axioms from applying.
+        -- At present, we wouldn't apply such an axiom, anyway.
+        & Predicate.markSimplifiedMaybeConditional Nothing
+        & OrCondition.fromPredicate
         & MultiAnd.singleton
-
-    makeSimplifiedPredicate =
-        OrCondition.fromPredicate
-        . Predicate.markSimplifiedMaybeConditional Nothing
-
-    makeSimplified = makeSimplifiedPredicate . makeCeilPredicate_
 
 foldElements
     ::  AcWrapper collection
