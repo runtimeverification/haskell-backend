@@ -28,6 +28,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import Data.List.Extra
     ( groupSortOn
@@ -147,7 +148,10 @@ extractRewriteAxioms idxMod =
     extractRewrites
     . groupSortOn (Attribute.getPriorityOfAxiom . fst)
     . filterRewrites
-    . mapSnd (Recursive.project . stripForall . Syntax.sentenceAxiomPattern)
+    . fmap
+        (Bifunctor.second
+            (Recursive.project . stripForall . Syntax.sentenceAxiomPattern)
+        )
     $ indexedModuleAxioms idxMod
   where
     extractRewrites [] = []
@@ -157,9 +161,6 @@ extractRewriteAxioms idxMod =
 
     stripForall (TermLike.Forall_ _ _ child) = stripForall child
     stripForall child = child
-
-    mapSnd :: forall x y z. (y -> z) -> [(x,y)] -> [(x,z)]
-    mapSnd f xys = [(x, f y) | (x,y) <- xys]
 
     filterRewrites xys =
         [(a,x) | (a, _ TermLike.:< TermLike.RewritesF x) <- xys]
