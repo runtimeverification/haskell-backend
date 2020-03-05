@@ -211,7 +211,6 @@ import Text.Read
     ( readMaybe
     )
 
-import From
 import Kore.Debug hiding
     ( debug
     )
@@ -298,12 +297,9 @@ logMessageWith
     -> Text
     -> IO ()
 logMessageWith severity Solver { logger } a =
-    logger Colog.<& message
+    Log.fromLogAction logger Colog.<& message
   where
-    message =
-        from @Log.SomeEntry
-        $ Log.SomeEntry
-        $ Log.LogMessage a severity callStack
+    message = Log.SomeEntry $ Log.LogMessage a severity callStack
 
 debug :: HasCallStack => Solver -> Text -> IO ()
 debug = logMessageWith Log.Debug

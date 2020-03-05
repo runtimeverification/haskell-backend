@@ -18,6 +18,7 @@ module Log
     , LogAction (..)
     , liftLogAction
     , hoistLogAction
+    , fromLogAction
     -- * Messages (Deprecated)
     , LogMessage (..)
     , log
@@ -222,7 +223,7 @@ newtype LoggerT m a =
 instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ do
         logAction <- ask
-        let entryLogger = cmap (from @SomeEntry) logAction
+        let entryLogger = fromLogAction logAction
         Monad.Trans.lift $ entryLogger <& toEntry entry
     logWhile _ = id
 
@@ -236,5 +237,7 @@ logWith
     -> entry
     -> m ()
 logWith logger entry =
-    let entryLogger = cmap (from @SomeEntry) logger
-     in entryLogger Colog.<& toEntry entry
+    fromLogAction logger Colog.<& toEntry entry
+
+fromLogAction :: From b a => LogAction m a -> LogAction m b
+fromLogAction = cmap from

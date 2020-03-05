@@ -83,7 +83,6 @@ import Data.Text
     ( Text
     )
 
-import From
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     , profileEvent
@@ -95,7 +94,6 @@ import ListT
 import Log
     ( LoggerT (..)
     , MonadLog (..)
-    , SomeEntry
     )
 import qualified Log
 import SMT.SimpleSMT
@@ -229,7 +227,7 @@ runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 instance MonadLog NoSMT where
     logEntry entry = NoSMT $ do
         logAction <- ask
-        let entryLogger = Colog.cmap (from @SomeEntry) logAction
+        let entryLogger = Log.fromLogAction logAction
         Trans.lift $ entryLogger Colog.<& Log.toEntry entry
     logWhile _ = id
 
