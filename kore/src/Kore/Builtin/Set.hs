@@ -287,11 +287,11 @@ evalIn =
                     _elem <- hoistMaybe $ Builtin.toKey _elem
                     _set' <- expectBuiltinSet Set.inKey _set
                     let result = Domain.isConcreteKeyOfAc _elem _set'
-                    ifTrueAddDefinednessCondition result _set
+                    returnIfTrueAndDefined result _set
                 bothSymbolic = do
                     _set' <- expectBuiltinSet Set.inKey _set
                     let result = Domain.isSymbolicKeyOfAc _elem _set'
-                    ifTrueAddDefinednessCondition result _set
+                    returnIfTrueAndDefined result _set
                 bothConcrete = do
                     _elem <- hoistMaybe $ Builtin.toKey _elem
                     _set <- expectConcreteBuiltinSet Set.inKey _set
@@ -300,18 +300,18 @@ evalIn =
             setSymbolic <|> bothSymbolic <|> bothConcrete
       where
         asExpandedBoolPattern = Bool.asPattern resultSort
-        ifTrueAddDefinednessCondition result setTerm =
-            let condition =
-                    Conditional.fromPredicate
-                    $ makeCeilPredicate resultSort setTerm
-                trueWithCondition =
-                    Builtin.appliedFunction
-                    $ Pattern.andCondition
-                        (asExpandedBoolPattern result)
-                        condition
-             in if result
-                then trueWithCondition
-                else empty
+        returnIfTrueAndDefined result setTerm
+            | result =
+                let condition =
+                        Conditional.fromPredicate
+                        $ makeCeilPredicate resultSort setTerm
+                    trueWithCondition =
+                        Builtin.appliedFunction
+                        $ Pattern.andCondition
+                            (asExpandedBoolPattern result)
+                            condition
+                 in trueWithCondition
+            | otherwise = empty
 
 evalUnit :: Builtin.Function
 evalUnit =
