@@ -29,7 +29,7 @@ test-ghci:
 	$(stack) ghci $(package):test:$(package)-test
 
 fast:
-	$(stack) build --fast --test --no-run-tests --work-dir=.stack-work-fast
+	$(stack) install --fast --test --no-run-tests --work-dir=.stack-work-fast
 
 fast-test:
 	$(stack) build --fast --test --work-dir=.stack-work-fast
