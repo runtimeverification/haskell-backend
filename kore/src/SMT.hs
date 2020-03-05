@@ -67,6 +67,7 @@ import Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT (..)
+    , ask
     , runReaderT
     )
 import qualified Control.Monad.Reader as Reader
@@ -82,6 +83,7 @@ import Data.Text
     ( Text
     )
 
+import From
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     , profileEvent
@@ -93,6 +95,7 @@ import ListT
 import Log
     ( LoggerT (..)
     , MonadLog (..)
+    , SomeEntry
     )
 import qualified Log
 import SMT.SimpleSMT
@@ -224,9 +227,10 @@ runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 
 instance MonadLog NoSMT where
-    logEntry entry =
-        NoSMT $ ReaderT $ \logger ->
-            Colog.unLogAction logger (Log.toEntry entry)
+    logEntry entry = NoSMT $ do
+        logAction <- ask
+        let entryLogger = Colog.cmap (from @SomeEntry) logAction
+        Trans.lift $ entryLogger Colog.<& Log.toEntry entry
 
 instance MonadSMT NoSMT where
     withSolver = id

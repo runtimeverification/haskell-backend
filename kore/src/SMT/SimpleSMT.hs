@@ -211,6 +211,7 @@ import Text.Read
     ( readMaybe
     )
 
+import From
 import Kore.Debug hiding
     ( debug
     )
@@ -250,7 +251,7 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 
 --------------------------------------------------------------------------------
 
-type Logger = Log.LogAction IO Log.SomeEntry
+type Logger = Log.LogAction IO Log.ActualEntry
 
 -- | An interactive solver process.
 data Solver = Solver
@@ -299,7 +300,10 @@ logMessageWith
 logMessageWith severity Solver { logger } a =
     logger Colog.<& message
   where
-    message = Log.SomeEntry $ Log.LogMessage a severity callStack
+    message =
+        from @Log.SomeEntry
+        $ Log.SomeEntry
+        $ Log.LogMessage a severity callStack
 
 debug :: HasCallStack => Solver -> Text -> IO ()
 debug = logMessageWith Log.Debug

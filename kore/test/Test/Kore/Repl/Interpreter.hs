@@ -13,6 +13,7 @@ import Test.Tasty.HUnit
     , (@?=)
     )
 
+import qualified Colog
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import Control.Monad.Reader
@@ -595,7 +596,7 @@ runWithState command axioms claims claim stateTransformer = do
     let state = stateTransformer $ mkState axioms claims claim
     let config = mkConfig mvar
     (c, s) <-
-        liftSimplifier (Log.swappableLogger mvar)
+        liftSimplifier (Colog.cmap (from @Log.ActualEntry) (Log.swappableLogger mvar))
         $ flip runStateT state
         $ flip runReaderT config
         $ replInterpreter0

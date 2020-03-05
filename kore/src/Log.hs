@@ -33,6 +33,7 @@ import Prelude.Kore
 import Colog
     ( LogAction (..)
     , Severity (..)
+    , cmap
     , (<&)
     )
 import Control.Monad.Catch
@@ -198,12 +199,15 @@ instance MonadLog log => MonadLog (ReaderT a log)
 instance MonadLog log => MonadLog (Strict.StateT state log)
 
 newtype LoggerT m a =
-    LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
+    LoggerT { getLoggerT :: ReaderT (LogAction m ActualEntry) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 instance Monad m => MonadLog (LoggerT m) where
-    logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+    logEntry entry = LoggerT $ do
+        logAction <- ask
+        let entryLogger = cmap (from @SomeEntry) logAction
+        Monad.Trans.lift $ entryLogger <& toEntry entry
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
@@ -211,8 +215,9 @@ instance MonadTrans LoggerT where
 
 logWith
     :: Entry entry
-    => LogAction m SomeEntry
+    => LogAction m ActualEntry
     -> entry
     -> m ()
 logWith logger entry =
-    logger Colog.<& toEntry entry
+    let entryLogger = cmap (from @SomeEntry) logger
+     in entryLogger Colog.<& toEntry entry
