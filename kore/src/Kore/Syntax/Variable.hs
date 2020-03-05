@@ -223,6 +223,6 @@ instance From Variable Concrete where
     from = error "Cannot construct a variable in a concrete term!"
     {-# INLINE from #-}
 
-instance From Concrete Variable where
+instance From Concrete variable where
     from = \case {}
     {-# INLINE from #-}

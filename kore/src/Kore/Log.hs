@@ -25,14 +25,12 @@ import Colog
     )
 import qualified Colog
 import Control.Concurrent.Async
-    ( Async
-    , async
-    , wait
+    ( async
     )
+import Control.Concurrent.Async as Async
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
-    ( TChan
-    , atomically
+    ( atomically
     , newTChanIO
     , readTChan
     , writeTChan
@@ -45,10 +43,8 @@ import Control.Monad
     )
 import Control.Monad.Catch
     ( MonadMask
-    , bracket
-    , catch
-    , finally
     )
+import qualified Control.Monad.Catch as Exception
 import Control.Monad.Cont
     ( ContT (..)
     , runContT
@@ -150,10 +146,18 @@ koreLogTransformer
     -> LogAction m SomeEntry
 koreLogTransformer koreLogOptions baseLogger =
     Colog.cmap
-        (mapDebugAxiomEvaluation debugAxiomEvaluationOptions)
+        ( warningsToErrors warningSwitch
+        . mapDebugAxiomEvaluation debugAxiomEvaluationOptions
+        )
         baseLogger
   where
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
+    KoreLogOptions { warningSwitch } = koreLogOptions
+    warningsToErrors AsError entry
+        | entrySeverity entry == Warning =
+            error . show . longDoc $ entry
+        | otherwise = entry
+    warningsToErrors AsWarning entry = entry
 
 koreLogFilters
     :: Applicative m
@@ -194,31 +198,32 @@ filterSeverity level entry =
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
-runLoggerT options loggerT = do
-    let runLogger = runReaderT . getLoggerT $ loggerT
-    withLogger options $ \logger -> do
-        (asyncThread, modifiedLogger) <- concurrentLogger logger
-        finally
-            (runLogger modifiedLogger)
-            (wait asyncThread)
-
-concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
-concurrentLogger logger = do
-    tChan <- newTChanIO
-    asyncThread <-
-        async $ catch
-            (runLoggerThread tChan)
-            (\BlockedIndefinitelyOnSTM -> return ())
-    return (asyncThread, writeTChanLogger tChan)
+runLoggerT options loggerT =
+    withLogger options $ \logAction ->
+    withAsyncLogger logAction $ \asyncLogAction ->
+        runLogger asyncLogAction
   where
-    runLoggerThread tChan =
-        forever $ do
-              val <- atomically $ readTChan tChan
-              logger Colog.<& val
+    runLogger = runReaderT . getLoggerT $ loggerT
 
-writeTChanLogger :: TChan a -> LogAction IO a
-writeTChanLogger tChan =
-    LogAction $ \msg -> atomically $ writeTChan tChan msg
+withAsyncLogger
+    :: LogAction IO a
+    -> (LogAction IO a -> IO b)
+    -> IO b
+withAsyncLogger logAction continue = do
+    tChan <- newTChanIO
+    let asyncLogAction = LogAction (atomically . writeTChan tChan)
+    logAsync <- async $ untilDone $ do
+        a <- atomically $ readTChan tChan
+        logAction Colog.<& a
+    mainAsync <- async $ continue asyncLogAction
+    (_, b) <- tryAgain $ Async.waitBoth logAsync mainAsync
+    return b
+  where
+    handleBlockedIndefinitelyOnSTM handler =
+        Exception.handle $ \BlockedIndefinitelyOnSTM -> handler
+    ignore = return ()
+    untilDone = handleBlockedIndefinitelyOnSTM ignore . forever
+    tryAgain action = handleBlockedIndefinitelyOnSTM action action
 
 -- Creates a kore logger which:
 --     * adds timestamps
@@ -281,7 +286,7 @@ swappableLogger
     => MVar (LogAction m a)
     -> LogAction m a
 swappableLogger mvar =
-    Colog.LogAction $ bracket acquire release . worker
+    Colog.LogAction $ Exception.bracket acquire release . worker
   where
     acquire = liftIO $ takeMVar mvar
     release = liftIO . putMVar mvar
