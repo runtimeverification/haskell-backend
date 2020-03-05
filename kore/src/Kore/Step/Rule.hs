@@ -283,9 +283,9 @@ complexRewriteTermToRule attributes pat =
                     , attributes
                     }
         _ -> (error . show. Pretty.vsep)
-                    [ "Expected complex rewrite rule form, but got"
-                    , Pretty.indent 4 $ unparse pat
-                    ]
+            [ "Expected complex rewrite rule form, but got"
+            , Pretty.indent 4 $ unparse pat
+            ]
 
 {- | Match a term encoding an 'QualifiedAxiomPattern'.
 
