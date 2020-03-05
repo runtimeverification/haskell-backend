@@ -32,6 +32,7 @@ module Kore.Repl.State
 
 import Prelude.Kore
 
+import Colog
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import Control.Monad.Error.Class
@@ -473,7 +474,7 @@ liftSimplifierWithLogger
     => MonadSimplify m
     => MonadIO m
     => Monad.Trans.MonadTrans t
-    => MVar (Log.LogAction IO Log.SomeEntry)
+    => MVar (Log.LogAction IO Log.ActualEntry)
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
@@ -486,7 +487,9 @@ liftSimplifierWithLogger mLogger simplifier = do
                 exeName
                 timestampsSwitch
                 textLogger
-    _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
+    _ <-
+        Monad.Trans.lift . liftIO
+        $ swapMVar mLogger (Colog.cmap (from @Log.ActualEntry) logger)
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result
