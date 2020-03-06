@@ -93,11 +93,9 @@ import ListT
     , mapListT
     )
 import Log
-    ( LoggerT (..)
-    , MonadLog (..)
-    )
-import Log
     ( ActualEntry (..)
+    , LoggerT (..)
+    , MonadLog (..)
     )
 import qualified Log
 import SMT.SimpleSMT
