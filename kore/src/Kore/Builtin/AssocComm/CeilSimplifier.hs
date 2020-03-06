@@ -47,6 +47,7 @@ import Kore.Internal.OrCondition
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
     ( Predicate
+    , makeCeilPredicate
     , makeCeilPredicate_
     , makeForallPredicate
     )
@@ -324,7 +325,7 @@ makeEvaluateBuiltinAssocComm
                 Domain.wrapAc emptyNormalizedAc { opaque = [opaque1, opaque2] }
             }
         & mkBuiltin
-        & makeCeilPredicate_
+        & makeCeilPredicate ceilResultSort
         -- TODO (thomas.tuegel): Do not mark this simplified.
         -- Marking here may prevent user-defined axioms from applying.
         -- At present, we wouldn't apply such an axiom, anyway.
