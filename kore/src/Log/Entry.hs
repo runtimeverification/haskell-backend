@@ -79,8 +79,8 @@ entryTypeText (SomeEntry entry) =
 
 data ActualEntry =
     ActualEntry
-        { actualEntry :: SomeEntry
-        , entryContext :: Seq SomeEntry
+        { actualEntry :: !SomeEntry
+        , entryContext :: !(Seq SomeEntry)
         }
 
 instance From ActualEntry SomeEntry where
