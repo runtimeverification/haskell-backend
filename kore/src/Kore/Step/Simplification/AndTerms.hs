@@ -695,8 +695,8 @@ bytesDifferent
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bytesDifferent
-    first@(Recursive.project -> _ :< InternalBytesF (Const bytesFirst))
-    second@(Recursive.project -> _ :< InternalBytesF (Const bytesSecond))
+    (Recursive.project -> _ :< InternalBytesF (Const bytesFirst))
+    (Recursive.project -> _ :< InternalBytesF (Const bytesSecond))
   | bytesFirst /= bytesSecond
     = return Pattern.bottom
 bytesDifferent _ _ = empty
