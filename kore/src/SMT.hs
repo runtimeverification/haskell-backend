@@ -79,6 +79,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
 import Data.Limit
+import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -94,6 +95,9 @@ import ListT
 import Log
     ( LoggerT (..)
     , MonadLog (..)
+    )
+import Log
+    ( ActualEntry (..)
     )
 import qualified Log
 import SMT.SimpleSMT
@@ -229,7 +233,15 @@ instance MonadLog NoSMT where
         logAction <- ask
         let entryLogger = Log.fromLogAction @Log.ActualEntry logAction
         Trans.lift $ entryLogger Colog.<& Log.toEntry entry
-    logWhile _ = id
+    logWhile entry2 action =
+        NoSMT . Reader.local modifyContext $ getNoSMT action
+      where
+        modifyContext = Colog.cmap $ \entry1 ->
+            entry1
+                { entryContext =
+                    entryContext entry1
+                    <> Seq.singleton (Log.toEntry entry2)
+                }
 
 instance MonadSMT NoSMT where
     withSolver = id
