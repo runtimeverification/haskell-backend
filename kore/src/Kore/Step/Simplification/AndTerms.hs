@@ -30,6 +30,7 @@ import Control.Error
 import qualified Control.Error as Error
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -75,6 +76,9 @@ import qualified Kore.Step.Simplification.SimplificationType as SimplificationTy
     ( SimplificationType (..)
     )
 import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Syntax.PatternF
+    ( Const (..)
+    )
 import Kore.TopBottom
 import Kore.Unification.Error
     ( unsupportedPatterns
@@ -203,6 +207,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd s), "expandAlias")
     , (AndT,    \_ _ _ -> boolAnd, "boolAnd")
     , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
+    , (BothT,   \_ _ _ -> bytesDifferent, "bytesDifferent")
     , (EqualsT, \p _ _ -> bottomTermEquals p, "bottomTermEquals")
     , (EqualsT, \p _ _ -> termBottomEquals p, "termBottomEquals")
     , (BothT,   \p t _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
@@ -682,3 +687,16 @@ functionAnd first second
         , substitution = mempty
         }
   | otherwise = empty
+
+bytesDifferent
+    :: InternalVariable variable
+    => MonadUnify unifier
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+bytesDifferent
+    (Recursive.project -> _ :< InternalBytesF (Const bytesFirst))
+    (Recursive.project -> _ :< InternalBytesF (Const bytesSecond))
+  | bytesFirst /= bytesSecond
+    = return Pattern.bottom
+bytesDifferent _ _ = empty
