@@ -11,6 +11,7 @@ module Log.Entry
     -- * Entry
     , Entry (..)
     , SomeEntry (..)
+    , ActualEntry (..)
     , someEntry
     , entryTypeText
     ) where
@@ -24,6 +25,10 @@ import qualified Control.Lens as Lens
 import Control.Lens.Prism
     ( Prism
     )
+import Data.Sequence
+    ( Seq
+    )
+import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -71,6 +76,19 @@ someEntry = Lens.prism' toEntry fromEntry
 entryTypeText :: SomeEntry -> Text
 entryTypeText (SomeEntry entry) =
     Text.pack . show . Reflection.typeOf $ entry
+
+data ActualEntry =
+    ActualEntry
+        { actualEntry :: !SomeEntry
+        , entryContext :: !(Seq SomeEntry)
+        }
+
+instance From ActualEntry SomeEntry where
+    from ActualEntry { actualEntry } = actualEntry
+
+instance From SomeEntry ActualEntry where
+    from actualEntry =
+        ActualEntry { actualEntry, entryContext = Seq.empty }
 
 prettySeverity :: Severity -> Pretty.Doc ann
 prettySeverity = Pretty.pretty . show

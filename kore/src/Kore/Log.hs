@@ -201,7 +201,7 @@ runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT =
     withLogger options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
-        runLogger asyncLogAction
+        runLogger (fromLogAction @SomeEntry asyncLogAction)
   where
     runLogger = runReaderT . getLoggerT $ loggerT
 

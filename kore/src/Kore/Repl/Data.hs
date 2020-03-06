@@ -358,10 +358,9 @@ helpText =
                                               \ types entry1 or entry2 as well as entries of\
                                               \ severity <severity>.\n\
     \                                         See available entry types below.\n\
-    \                                         <type> can be 'stderr' or\n\
+    \                                         <type> can be 'stderr' or 'file filename'\n\
     \                                         <switch-timestamp> can be enable-log-timestamps\
                                               \ or disable-log-timestamps\n\
-    \                                         'file filename'\n\
     \exit                                     exits the repl\
     \\n\n\
     \Available modifiers:\n\
@@ -469,7 +468,7 @@ data Config claim m = Config
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , logger  :: MVar (LogAction IO SomeEntry)
+    , logger  :: MVar (LogAction IO ActualEntry)
     -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.
