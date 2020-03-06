@@ -88,7 +88,8 @@ import Kore.Unparser
     ( unparse
     )
 import Log
-    ( Entry (fromEntry, toEntry)
+    ( ActualEntry (..)
+    , Entry (fromEntry, toEntry)
     , MonadLog
     , Severity (..)
     , SomeEntry
@@ -338,11 +339,11 @@ parseDebugAxiomEvaluationOptions =
  -}
 filterDebugAxiomEvaluation
     :: DebugAxiomEvaluationOptions
-    -> SomeEntry
+    -> ActualEntry
     -> Bool
 filterDebugAxiomEvaluation
     debugAxiomEvaluationOptions
-    entry
+    ActualEntry { actualEntry }
   =
     fromMaybe False findAxiomEvaluation
   where
@@ -350,7 +351,7 @@ filterDebugAxiomEvaluation
     findAxiomEvaluation = do
         DebugAxiomEvaluation
             { identifier, secondaryIdentifier }
-                <- fromEntry entry
+                <- fromEntry actualEntry
         let textIdentifier :: Maybe Text
             textIdentifier =
                 Text.pack . show . Pretty.pretty <$> identifier
@@ -370,17 +371,24 @@ filterDebugAxiomEvaluation
     DebugAxiomEvaluationOptions { debugAxiomEvaluation } =
         debugAxiomEvaluationOptions
 
-mapDebugAxiomEvaluation :: DebugAxiomEvaluationOptions -> SomeEntry -> SomeEntry
-mapDebugAxiomEvaluation debugAxiomEvaluationOptions entry =
+mapDebugAxiomEvaluation
+    :: DebugAxiomEvaluationOptions
+    -> ActualEntry
+    -> ActualEntry
+mapDebugAxiomEvaluation
+    debugAxiomEvaluationOptions
+    entry@ActualEntry { actualEntry }
+  =
     fromMaybe entry mapAxiomEvaluation
   where
-    mapAxiomEvaluation :: Maybe SomeEntry
+    mapAxiomEvaluation :: Maybe ActualEntry
     mapAxiomEvaluation = do
-        axiomEntry@DebugAxiomEvaluation { logPatterns } <- fromEntry entry
-        return
-            (toEntry axiomEntry
-                {logPatterns = logPatterns || debugAxiomEvaluationPatterns}
-            )
+        axiomEntry@DebugAxiomEvaluation { logPatterns } <- fromEntry actualEntry
+        return entry
+            { actualEntry =
+                toEntry axiomEntry
+                    {logPatterns = logPatterns || debugAxiomEvaluationPatterns}
+            }
 
     DebugAxiomEvaluationOptions { debugAxiomEvaluationPatterns } =
         debugAxiomEvaluationOptions
