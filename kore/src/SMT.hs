@@ -227,7 +227,7 @@ runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 instance MonadLog NoSMT where
     logEntry entry = NoSMT $ do
         logAction <- ask
-        let entryLogger = Log.fromLogAction logAction
+        let entryLogger = Log.fromLogAction @Log.ActualEntry logAction
         Trans.lift $ entryLogger Colog.<& Log.toEntry entry
     logWhile _ = id
 

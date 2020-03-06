@@ -223,7 +223,7 @@ newtype LoggerT m a =
 instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ do
         logAction <- ask
-        let entryLogger = fromLogAction logAction
+        let entryLogger = fromLogAction @ActualEntry logAction
         Monad.Trans.lift $ entryLogger <& toEntry entry
     logWhile _ = id
 
@@ -237,7 +237,7 @@ logWith
     -> entry
     -> m ()
 logWith logger entry =
-    fromLogAction logger Colog.<& toEntry entry
+    fromLogAction @ActualEntry logger Colog.<& toEntry entry
 
-fromLogAction :: From b a => LogAction m a -> LogAction m b
+fromLogAction :: forall a b m . From b a => LogAction m a -> LogAction m b
 fromLogAction = cmap from

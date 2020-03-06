@@ -297,7 +297,7 @@ logMessageWith
     -> Text
     -> IO ()
 logMessageWith severity Solver { logger } a =
-    Log.fromLogAction logger Colog.<& message
+    Log.fromLogAction @Log.ActualEntry logger Colog.<& message
   where
     message = Log.SomeEntry $ Log.LogMessage a severity callStack
 
