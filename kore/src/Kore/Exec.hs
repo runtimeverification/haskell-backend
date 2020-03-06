@@ -371,7 +371,7 @@ proveWithRepl
     -- ^ The spec module
     -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
-    -> MVar (Log.LogAction IO Log.SomeEntry)
+    -> MVar (Log.LogAction IO Log.ActualEntry)
     -> Repl.Data.ReplScript
     -- ^ Optional script
     -> Repl.Data.ReplMode
