@@ -92,7 +92,6 @@ import Log
     , Entry (fromEntry, toEntry)
     , MonadLog
     , Severity (..)
-    , SomeEntry
     , logEntry
     )
 import qualified Log as Log.DoNotUse
