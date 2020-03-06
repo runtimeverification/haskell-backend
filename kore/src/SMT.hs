@@ -67,6 +67,7 @@ import Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT (..)
+    , ask
     , runReaderT
     )
 import qualified Control.Monad.Reader as Reader
@@ -224,9 +225,10 @@ runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 
 instance MonadLog NoSMT where
-    logEntry entry =
-        NoSMT $ ReaderT $ \logger ->
-            Colog.unLogAction logger (Log.toEntry entry)
+    logEntry entry = NoSMT $ do
+        logAction <- ask
+        let entryLogger = Log.fromLogAction @Log.ActualEntry logAction
+        Trans.lift $ entryLogger Colog.<& Log.toEntry entry
     logWhile _ = id
 
 instance MonadSMT NoSMT where

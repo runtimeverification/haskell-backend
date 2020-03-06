@@ -473,7 +473,7 @@ liftSimplifierWithLogger
     => MonadSimplify m
     => MonadIO m
     => Monad.Trans.MonadTrans t
-    => MVar (Log.LogAction IO Log.SomeEntry)
+    => MVar (Log.LogAction IO Log.ActualEntry)
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
@@ -486,7 +486,9 @@ liftSimplifierWithLogger mLogger simplifier = do
                 exeName
                 timestampsSwitch
                 textLogger
-    _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
+    _ <-
+        Monad.Trans.lift . liftIO
+        $ swapMVar mLogger (Log.fromLogAction @Log.SomeEntry logger)
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result

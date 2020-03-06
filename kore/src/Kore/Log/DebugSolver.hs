@@ -41,7 +41,8 @@ import Options.Applicative
     )
 
 import Log
-    ( Entry (..)
+    ( ActualEntry
+    , Entry (..)
     , LogAction (..)
     , Severity (Debug)
     , SomeEntry
@@ -77,14 +78,14 @@ instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
 
 logDebugSolverSendWith
-    :: LogAction m SomeEntry
+    :: LogAction m ActualEntry
     -> SExpr
     -> m ()
 logDebugSolverSendWith logger sExpr =
     logWith logger $ DebugSolverSend sExpr
 
 logDebugSolverRecvWith
-    :: LogAction m SomeEntry
+    :: LogAction m ActualEntry
     -> Text
     -> m ()
 logDebugSolverRecvWith logger smtText =
