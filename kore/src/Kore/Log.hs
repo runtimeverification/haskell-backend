@@ -146,10 +146,18 @@ koreLogTransformer
     -> LogAction m SomeEntry
 koreLogTransformer koreLogOptions baseLogger =
     Colog.cmap
-        (mapDebugAxiomEvaluation debugAxiomEvaluationOptions)
+        ( warningsToErrors warningSwitch
+        . mapDebugAxiomEvaluation debugAxiomEvaluationOptions
+        )
         baseLogger
   where
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
+    KoreLogOptions { warningSwitch } = koreLogOptions
+    warningsToErrors AsError entry
+        | entrySeverity entry == Warning =
+            error . show . longDoc $ entry
+        | otherwise = entry
+    warningsToErrors AsWarning entry = entry
 
 koreLogFilters
     :: Applicative m
@@ -193,7 +201,7 @@ runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT =
     withLogger options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
-        runLogger asyncLogAction
+        runLogger (fromLogAction @SomeEntry asyncLogAction)
   where
     runLogger = runReaderT . getLoggerT $ loggerT
 

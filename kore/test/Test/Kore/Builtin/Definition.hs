@@ -56,6 +56,7 @@ import Kore.Internal.TermLike hiding
 import Kore.Syntax.Definition as Syntax
 
 import Test.Kore
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 -- -------------------------------------------------------------
 -- * Builtin symbols
@@ -568,6 +569,11 @@ elementSetSymbol =
     builtinSymbol "elementSet" setSort [intSort]
     & hook "SET.element" & functional
 
+elementSetSymbolTestSort :: Internal.Symbol
+elementSetSymbolTestSort =
+    builtinSymbol "elementSet" setSort [Mock.testSort]
+    & hook "SET.element" & functional
+
 elementSet :: TermLike Variable -> TermLike Variable
 elementSet x = mkApplySymbol elementSetSymbol [x]
 
@@ -584,6 +590,10 @@ concatSet s1 s2 = mkApplySymbol concatSetSymbol [s1, s2]
 inSetSymbol :: Internal.Symbol
 inSetSymbol =
     builtinSymbol "inSet" boolSort [intSort, setSort] & hook "SET.in"
+
+inSetSymbolTestSort :: Internal.Symbol
+inSetSymbolTestSort =
+    builtinSymbol "inSet" boolSort [Mock.testSort, setSort] & hook "SET.in"
 
 differenceSetSymbol :: Internal.Symbol
 differenceSetSymbol =
@@ -1113,6 +1123,16 @@ setSortDecl =
         , concatAttribute concatSetSymbol
         ]
 
+testSort :: Sort
+testSort =
+    SortActualSort SortActual
+        { sortActualName = testId "testSort"
+        , sortActualSorts = []
+        }
+
+testSortDecl :: ParsedSentence
+testSortDecl = sortDecl testSort
+
 builtinSet
     :: [TermLike Concrete]
     -> InternalSet (TermLike Concrete) (TermLike Variable)
@@ -1126,6 +1146,23 @@ builtinSet children =
             { elementsWithVariables = []
             , concreteElements =
                 Map.fromList (map (\x -> (x, SetValue)) children)
+            , opaque = []
+            }
+        }
+
+builtinSymbolicSet
+    :: [TermLike Variable]
+    -> InternalSet key (TermLike Variable)
+builtinSymbolicSet children =
+    InternalAc
+        { builtinAcSort = setSort
+        , builtinAcUnit = unitSetSymbol
+        , builtinAcElement = elementSetSymbolTestSort
+        , builtinAcConcat = concatSetSymbol
+        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
+            { elementsWithVariables =
+                fmap (\x -> wrapElement (x, SetValue)) children
+            , concreteElements = Map.empty
             , opaque = []
             }
         }
@@ -1530,6 +1567,7 @@ setModule =
             , importParsedModule boolModuleName
             , importParsedModule listModuleName
             , setSortDecl
+            , testSortDecl
             , hookedSymbolDecl unitSetSymbol
             , hookedSymbolDecl elementSetSymbol
             , hookedSymbolDecl concatSetSymbol

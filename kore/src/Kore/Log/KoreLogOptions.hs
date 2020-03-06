@@ -10,6 +10,7 @@ module Kore.Log.KoreLogOptions
     , EntryTypes
     , ExeName (..)
     , TimestampsSwitch (..)
+    , WarningSwitch (..)
     , parseKoreLogOptions
     ) where
 
@@ -72,6 +73,7 @@ data KoreLogOptions = KoreLogOptions
     , debugSolverOptions :: DebugSolverOptions
     , exeName :: ExeName
     , logSQLiteOptions :: LogSQLiteOptions
+    , warningSwitch :: WarningSwitch
     }
     deriving (Eq, Show)
 
@@ -87,6 +89,7 @@ instance Default KoreLogOptions where
             , debugSolverOptions = def @DebugSolverOptions
             , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
+            , warningSwitch = def @WarningSwitch
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -149,6 +152,7 @@ parseKoreLogOptions exeName =
     <*> parseDebugSolverOptions
     <*> pure exeName
     <*> parseLogSQLiteOptions
+    <*> parseWarningSwitch
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -199,9 +203,24 @@ readSeverity =
         "error"    -> pure Error
         _          -> Nothing
 
+parseWarningSwitch :: Parser WarningSwitch
+parseWarningSwitch =
+    Options.flag
+        AsWarning
+        AsError
+        ( Options.long "warnings-to-errors"
+        <> Options.help "Turn warnings into errors"
+        )
+
 -- | Caller of the logging function
 newtype ExeName = ExeName { getExeName :: String }
     deriving (Eq, Show)
 
 instance Pretty.Pretty ExeName where
     pretty = Pretty.pretty . getExeName
+
+data WarningSwitch = AsWarning | AsError
+    deriving (Eq, Show)
+
+instance Default WarningSwitch where
+    def = AsWarning

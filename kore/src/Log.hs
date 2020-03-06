@@ -18,6 +18,7 @@ module Log
     , LogAction (..)
     , liftLogAction
     , hoistLogAction
+    , fromLogAction
     -- * Messages (Deprecated)
     , LogMessage (..)
     , log
@@ -33,6 +34,7 @@ import Prelude.Kore
 import Colog
     ( LogAction (..)
     , Severity (..)
+    , cmap
     , (<&)
     )
 import Control.Monad.Catch
@@ -44,12 +46,17 @@ import Control.Monad.Except
     ( ExceptT
     )
 import qualified Control.Monad.Except as Except
+import Control.Monad.Morph
+    ( MFunctor
+    )
+import qualified Control.Monad.Morph as Monad.Morph
 import Control.Monad.Trans
     ( MonadTrans
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
     ( AccumT
+    , mapAccumT
     )
 import Control.Monad.Trans.Identity
     ( IdentityT
@@ -183,7 +190,18 @@ class Monad m => MonadLog m where
     logEntry = Monad.Trans.lift . logEntry
     {-# INLINE logEntry #-}
 
-instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log)
+    logWhile :: Entry entry => entry -> m a -> m a
+    default logWhile
+        :: Entry entry
+        => (MFunctor t, MonadLog log, m ~ t log)
+        => entry
+        -> m a
+        -> m a
+    logWhile entry = Monad.Morph.hoist $ logWhile entry
+
+instance (Monoid acc, MonadLog log)
+  => MonadLog (AccumT acc log) where
+      logWhile = mapAccumT . logWhile
 
 instance MonadLog log => MonadLog (CounterT log)
 
@@ -198,12 +216,16 @@ instance MonadLog log => MonadLog (ReaderT a log)
 instance MonadLog log => MonadLog (Strict.StateT state log)
 
 newtype LoggerT m a =
-    LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
+    LoggerT { getLoggerT :: ReaderT (LogAction m ActualEntry) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 instance Monad m => MonadLog (LoggerT m) where
-    logEntry entry = LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+    logEntry entry = LoggerT $ do
+        logAction <- ask
+        let entryLogger = fromLogAction @ActualEntry logAction
+        Monad.Trans.lift $ entryLogger <& toEntry entry
+    logWhile _ = id
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
@@ -211,8 +233,11 @@ instance MonadTrans LoggerT where
 
 logWith
     :: Entry entry
-    => LogAction m SomeEntry
+    => LogAction m ActualEntry
     -> entry
     -> m ()
 logWith logger entry =
-    logger Colog.<& toEntry entry
+    fromLogAction @ActualEntry logger Colog.<& toEntry entry
+
+fromLogAction :: forall a b m . From b a => LogAction m a -> LogAction m b
+fromLogAction = cmap from
