@@ -134,14 +134,14 @@ newMapCeilSimplifier
             (BuiltinAssocComm Domain.NormalizedMap variable)
             (OrCondition variable)
 newMapCeilSimplifier ceilSimplifierTermLike =
-    CeilSimplifier $ \ceil@Ceil { ceilChild } ->
+    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } ->
     ReaderT $ \sideCondition -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
                 & TermLike.mkBuiltinMap
-                & makeCeilPredicate_
+                & makeCeilPredicate ceilResultSort
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
