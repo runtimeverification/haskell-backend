@@ -48,7 +48,6 @@ import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
     ( Predicate
     , makeCeilPredicate
-    , makeCeilPredicate_
     , makeForallPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -101,14 +100,14 @@ newSetCeilSimplifier
             (BuiltinAssocComm Domain.NormalizedSet variable)
             (OrCondition variable)
 newSetCeilSimplifier ceilSimplifierTermLike =
-    CeilSimplifier $ \ceil@Ceil { ceilChild } ->
+    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } ->
     ReaderT $ \sideCondition -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element) { opaque = [termLike] }
                 & TermLike.mkBuiltinSet
-                & makeCeilPredicate_
+                & makeCeilPredicate ceilResultSort
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
