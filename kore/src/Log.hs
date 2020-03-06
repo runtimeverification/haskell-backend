@@ -227,9 +227,14 @@ instance Monad m => MonadLog (LoggerT m) where
         let entryLogger = fromLogAction @ActualEntry logAction
         Monad.Trans.lift $ entryLogger <& toEntry entry
 
-    logWhile entry2 action = LoggerT $ local f $ getLoggerT action
+    logWhile entry2 action =
+        LoggerT . local modifyContext $ getLoggerT action
       where
-        f = Colog.cmap (\entry1 -> entry1 { entryContext = entryContext entry1 <> Seq.singleton (toEntry entry2) } )
+        modifyContext = Colog.cmap $ \entry1 ->
+            entry1
+                { entryContext =
+                    entryContext entry1 <> Seq.singleton (toEntry entry2)
+                }
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
