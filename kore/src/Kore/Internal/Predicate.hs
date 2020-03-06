@@ -65,6 +65,9 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import Data.Containers.ListUtils
+    ( nubOrd
+    )
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
@@ -73,7 +76,6 @@ import Data.Functor.Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.List
     ( foldl'
-    , nub
     )
 import Data.Map.Strict
     ( Map
@@ -81,6 +83,7 @@ import Data.Map.Strict
 import Data.Set
     ( Set
     )
+
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -271,21 +274,20 @@ binaryOperator operator (GenericPredicate first) (GenericPredicate second) =
 {-| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.
 -}
+
 makeMultipleAndPredicate
     :: (HasCallStack, InternalVariable variable)
     => [Predicate variable]
     -> Predicate variable
 makeMultipleAndPredicate =
-    foldl' makeAndPredicate makeTruePredicate_ . nub
+    foldl' makeAndPredicate makeTruePredicate_ . nubOrd
     -- 'and' is idempotent so we eliminate duplicates
-    -- TODO: This is O(n^2), consider doing something better.
 
 {- | Flatten a 'Predicate' with 'And' at the top.
-
 'getMultiAndPredicate' is the inverse of 'makeMultipleAndPredicate', up to
 associativity.
-
  -}
+
 getMultiAndPredicate
     :: Predicate variable
     -> [Predicate variable]
@@ -295,7 +297,6 @@ getMultiAndPredicate original@(GenericPredicate termLike) =
             concatMap (getMultiAndPredicate . GenericPredicate) [left, right]
         _ -> [original]
 
-
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
 -}
@@ -304,9 +305,8 @@ makeMultipleOrPredicate
     => [Predicate variable]
     -> Predicate variable
 makeMultipleOrPredicate =
-    foldl' makeOrPredicate makeFalsePredicate_ . nub
+    foldl' makeOrPredicate makeFalsePredicate_ . nubOrd
     -- 'or' is idempotent so we eliminate duplicates
-    -- TODO: This is O(n^2), consider doing something better.
 
 {-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
 simplification.
