@@ -21,11 +21,13 @@ import Data.Text.Prettyprint.Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Kore.Attribute.Axiom
+    ( Axiom (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( Variable (..)
@@ -70,22 +72,13 @@ instance Pretty DebugAppliedRewriteRules where
             case appliedRewriteRules of
                 [] -> ["No rules were applied."]
                 rules ->
-                    ["The following rules were applied:"]
-                    <> (rules >>= prettyUnifiedRule)
+                    ["The rules at following locations were applied:"]
+                    <> fmap ruleLocation rules
 
-        prettyUnifiedRule unifiedRule =
+        ruleLocation unifiedRule =
             let rule = extract unifiedRule
-                condition =
-                    Pattern.toTermLike
-                    . Pattern.fromCondition
-                    . Conditional.withoutTerm
-                    $ unifiedRule
-            in
-                [ "Applied rule:"
-                , Pretty.indent 2 . unparse $ rule
-                , "With condition:"
-                , Pretty.indent 2 . unparse $ condition
-                ]
+            in 
+                pretty . sourceLocation . attributes . getRewriteRule $ rule
 
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
