@@ -697,6 +697,6 @@ bytesDifferent
 bytesDifferent
     first@(Recursive.project -> _ :< InternalBytesF (Const bytesFirst))
     second@(Recursive.project -> _ :< InternalBytesF (Const bytesSecond))
-  | isConcrete first && isConcrete second && bytesFirst /= bytesSecond
+  | bytesFirst /= bytesSecond
     = return Pattern.bottom
 bytesDifferent _ _ = empty
