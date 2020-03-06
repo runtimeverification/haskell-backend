@@ -77,7 +77,7 @@ instance Pretty DebugAppliedRewriteRules where
 
         ruleLocation unifiedRule =
             let rule = extract unifiedRule
-            in 
+            in
                 pretty . sourceLocation . attributes . getRewriteRule $ rule
 
 instance Entry DebugAppliedRewriteRules where
