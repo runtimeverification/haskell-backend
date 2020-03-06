@@ -5,6 +5,7 @@ module GlobalMain
     , GlobalOptions(..)
     , KoreProveOptions(..)
     , KoreMergeOptions(..)
+    , ExeName (..)
     , Main
     , parseKoreProveOptions
     , parseKoreMergeOptions
@@ -72,6 +73,7 @@ import GHC.Stack
 import Options.Applicative
     ( InfoMod
     , Parser
+    , ParserHelp (..)
     , argument
     , defaultPrefs
     , disabled
@@ -89,6 +91,7 @@ import Options.Applicative
     , metavar
     , option
     , optional
+    , overFailure
     , readerError
     , str
     , strOption
@@ -97,6 +100,11 @@ import Options.Applicative
     , (<**>)
     , (<|>)
     )
+import Options.Applicative.Help.Chunk
+    ( Chunk (..)
+    , vsepChunks
+    )
+import qualified Options.Applicative.Help.Pretty as Pretty
 import System.Clock
     ( Clock (Monotonic)
     , diffTimeSpec
@@ -256,17 +264,19 @@ Global main function parses command line arguments, handles global flags
 and returns the parsed options
 -}
 mainGlobal
-    :: Parser options                -- ^ local options parser
+    :: ExeName
+    -> Parser options                -- ^ local options parser
     -> InfoMod (MainOptions options) -- ^ option parser information
     -> IO      (MainOptions options)
-mainGlobal localOptionsParser modifiers = do
-  options <- commandLineParse localOptionsParser modifiers
+mainGlobal exeName localOptionsParser modifiers = do
+  options <- commandLineParse exeName localOptionsParser modifiers
   when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
   return options
 
 
 defaultMainGlobal :: IO (MainOptions options)
-defaultMainGlobal = mainGlobal (argument disabled mempty) mempty
+defaultMainGlobal =
+    mainGlobal (ExeName "kore-exec") (argument disabled mempty) mempty
 
 
 -- | main function to print version information
@@ -299,16 +309,16 @@ globalCommandLineParser =
         (  long "version"
         <> help "Print version information" )
 
-
 -- | Run argument parser for local executable
 commandLineParse
-    :: Parser a                -- ^ local options parser
+    :: ExeName
+    -> Parser a                -- ^ local options parser
     -> InfoMod (MainOptions a) -- ^ local parser info modifiers
     -> IO (MainOptions a)
-commandLineParse localCommandLineParser modifiers = do
+commandLineParse (ExeName exeName) localCommandLineParser modifiers = do
     args' <- Env.getArgs
     env <- Env.lookupEnv "KORE_EXEC_OPTS"
-    let
+    let opts' = fromMaybe "" env
         args = case env of
             Nothing -> args'
             Just opts -> args' <> words opts
@@ -323,7 +333,25 @@ commandLineParse localCommandLineParser modifiers = do
                 modifiers
             )
             args
-    handleParseResult parseResult
+        changeHelpOverFailure
+          | exeName == "kore-exec" = overFailure (changeHelp args opts')
+          | otherwise = id
+    handleParseResult $ changeHelpOverFailure parseResult
+  where
+    changeHelp :: [String] -> String -> ParserHelp -> ParserHelp
+    changeHelp commandLine koreExecOpts parserHelp@ParserHelp { helpError } =
+        parserHelp
+            { helpError =
+                vsepChunks [Chunk . Just $ commandWithOpts, helpError]
+            }
+      where
+        commandWithOpts =
+            Pretty.vsep
+                [ Pretty.linebreak
+                , Pretty.pretty ("kore-exec " <> unwords commandLine)
+                , Pretty.pretty ("KORE_EXEC_OPTS = " <> koreExecOpts)
+                ]
+
 
 
 
