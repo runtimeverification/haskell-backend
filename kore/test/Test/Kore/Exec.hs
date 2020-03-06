@@ -111,9 +111,9 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
             , functionalAxiom "b"
             , functionalAxiom "c"
             , functionalAxiom "d"
-            , rewriteAxiomPriority "a" "b" 2
-            , rewriteAxiomPriority "a" "c" 1
-            , rewriteAxiom "c" "d"
+            , complexRewriteAxiomWithPriority "a" "b" 2
+            , simpleRewriteAxiomWithPriority "a" "c" 1
+            , complexRewriteAxiom "c" "d"
             ]
         , moduleAttributes = Attributes []
         }
@@ -144,9 +144,9 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
             , functionalAxiom "b"
             , functionalAxiom "c"
             , functionalAxiom "d"
-            , rewriteAxiom "a" "b"
-            , rewriteAxiom "b" "c"
-            , rewriteAxiom "c" "d"
+            , simpleRewriteAxiom "a" "b"
+            , simpleRewriteAxiom "b" "c"
+            , simpleRewriteAxiom "c" "d"
             ]
         , moduleAttributes = Attributes []
         }
@@ -192,10 +192,10 @@ test_searchPriority =
             , functionalAxiom "c"
             , functionalAxiom "d"
             , functionalAxiom "e"
-            , rewriteAxiomPriority "a" "b" 2
-            , rewriteAxiomPriority "a" "c" 1
-            , rewriteAxiom "c" "d"
-            , rewriteAxiom "e" "a"
+            , complexRewriteAxiomWithPriority "a" "b" 2
+            , simpleRewriteAxiomWithPriority "a" "c" 1
+            , complexRewriteAxiom "c" "d"
+            , complexRewriteAxiom "e" "a"
             ]
         , moduleAttributes = Attributes []
         }
@@ -251,10 +251,10 @@ test_search =
             , functionalAxiom "c"
             , functionalAxiom "d"
             , functionalAxiom "e"
-            , rewriteAxiom "a" "b"
-            , rewriteAxiom "a" "c"
-            , rewriteAxiom "c" "d"
-            , rewriteAxiom "e" "a"
+            , simpleRewriteAxiom "a" "b"
+            , simpleRewriteAxiom "a" "c"
+            , simpleRewriteAxiom "c" "d"
+            , simpleRewriteAxiom "e" "a"
             ]
         , moduleAttributes = Attributes []
         }
@@ -322,10 +322,10 @@ test_searchExeedingBreadthLimit =
             , functionalAxiom "c"
             , functionalAxiom "d"
             , functionalAxiom "e"
-            , rewriteAxiom "a" "b"
-            , rewriteAxiom "a" "c"
-            , rewriteAxiom "c" "d"
-            , rewriteAxiom "e" "a"
+            , simpleRewriteAxiom "a" "b"
+            , simpleRewriteAxiom "a" "c"
+            , simpleRewriteAxiom "c" "d"
+            , simpleRewriteAxiom "e" "a"
             ]
         , moduleAttributes = Attributes []
         }
@@ -457,29 +457,44 @@ functionalAxiom name =
         }
     r = SortVariable $ Id "R" AstLocationTest
 
-{- | Rewrite the left-hand constant into the right-hand constant.
- -}
-rewriteAxiom :: Text -> Text -> Verified.Sentence
-rewriteAxiom lhsName rhsName =
-    mkRewriteAxiom
-        (applyToNoArgs mySort lhsName)
-        (applyToNoArgs mySort rhsName)
-        Nothing
+simpleRewriteAxiom :: Text -> Text -> Verified.Sentence
+simpleRewriteAxiom lhs rhs =
+    rewriteAxiomPriority lhs rhs Nothing Nothing
 
-rewriteAxiomPriority :: Text -> Text -> Integer -> Verified.Sentence
-rewriteAxiomPriority lhsName rhsName priority =
+complexRewriteAxiom :: Text -> Text -> Verified.Sentence
+complexRewriteAxiom lhs rhs =
+    rewriteAxiomPriority lhs rhs Nothing (Just mkTop_)
+
+simpleRewriteAxiomWithPriority :: Text -> Text -> Integer -> Verified.Sentence
+simpleRewriteAxiomWithPriority lhs rhs priority =
+    rewriteAxiomPriority lhs rhs (Just priority) Nothing
+
+complexRewriteAxiomWithPriority :: Text -> Text -> Integer -> Verified.Sentence
+complexRewriteAxiomWithPriority lhs rhs priority =
+    rewriteAxiomPriority lhs rhs (Just priority) (Just mkTop_)
+
+rewriteAxiomPriority
+    :: Text
+    -> Text
+    -> Maybe Integer
+    -> Maybe (TermLike Variable)
+    -> Verified.Sentence
+rewriteAxiomPriority lhsName rhsName priority antiLeft =
     ( Syntax.SentenceAxiomSentence
-    . axiomWithAttribute (Attribute.Axiom.priorityAttribute priority)
+    . withPriority priority
     . TermLike.mkAxiom_
     )
     $ rewriteRuleToTerm
     $ RewriteRule RulePattern
         { left = applyToNoArgs mySort lhsName
-        , antiLeft = Nothing
+        , antiLeft
         , requires = makeTruePredicate_
         , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
         , attributes = def
         }
+  where
+    withPriority =
+        maybe id (axiomWithAttribute . Attribute.Axiom.priorityAttribute)
 
 axiomWithAttribute
     :: AttributePattern
