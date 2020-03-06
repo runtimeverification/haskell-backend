@@ -52,6 +52,9 @@ import Control.Monad.Cont
 import Control.Monad.Reader
     ( runReaderT
     )
+import Data.Foldable
+    ( toList
+    )
 import Data.Functor.Contravariant
     ( contramap
     )
@@ -242,10 +245,13 @@ makeKoreLogger exeName timestampSwitch logToText =
     $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
-    messageToText (WithTimestamp ActualEntry { actualEntry } localTime) =
+    messageToText (WithTimestamp ActualEntry { actualEntry, entryContext } localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ exeName' Pretty.<+> timestamp Pretty.<+> defaultLogPretty actualEntry
+        $ exeName'
+        Pretty.<+> timestamp
+        Pretty.<+> defaultLogPretty actualEntry
+        Pretty.<+> Pretty.hsep (toList (mapMaybe shortDoc entryContext))
       where
         timestamp = case timestampSwitch of
             TimestampsEnable -> Pretty.brackets (formattedTime localTime)
