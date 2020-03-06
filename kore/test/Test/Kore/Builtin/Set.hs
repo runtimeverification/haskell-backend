@@ -4,7 +4,9 @@ module Test.Kore.Builtin.Set
     ( test_unit
     , test_getUnit
     , test_inElement
+    , test_inElementSymbolic
     , test_inConcat
+    , test_inConcatSymbolic
     , test_concatUnit
     , test_concatAssociates
     , test_concatNormalizes
@@ -92,6 +94,7 @@ import Kore.Domain.Builtin
     )
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
@@ -155,6 +158,21 @@ import Test.SMT hiding
     ( runSMT
     )
 import Test.Tasty.HUnit.Ext
+
+genKeys :: Gen [TermLike Variable]
+genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
+
+genKey :: Gen (TermLike Variable)
+genKey = Gen.element (concreteKeys <> symbolicKeys)
+
+concreteKeys :: [TermLike Variable]
+concreteKeys = [Mock.a, Mock.b, Mock.c]
+
+symbolicKeys :: [TermLike Variable]
+symbolicKeys = Mock.f . mkElemVar <$> elemVars'
+
+elemVars' :: [ElementVariable Variable]
+elemVars' = [Mock.x, Mock.y, Mock.z]
 
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
@@ -226,6 +244,42 @@ test_inElement =
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
             (===) Pattern.top                =<< evaluateT predicate
+        )
+
+test_inElementSymbolic :: TestTree
+test_inElementSymbolic =
+    testPropertyWithSolver
+        "in{}(x, element{}(x)) === and(\\dv{Bool{}}(\"true\"), \\top())"
+        (do
+            patKey <- forAll genKey
+            let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
+                patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patElement ]
+                patTrue = Test.Bool.asInternal True
+                conditionTerm = mkAnd patTrue (mkCeil_ patElement)
+            actual <- evaluateT patIn
+            expected <- evaluateT conditionTerm
+            actual === expected
+        )
+
+test_inConcatSymbolic :: TestTree
+test_inConcatSymbolic =
+    testPropertyWithSolver
+        "in{}(concat{}(_, element{}(e)), e)\
+        \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
+        (do
+            keys <- forAll genKeys
+            patKey <- forAll genKey
+            let patSet = asSymbolicTermLike $ Set.insert patKey (Set.fromList keys)
+                patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patSet ]
+                patTrue = Test.Bool.asPattern True
+                conditionTerm = mkCeil boolSort patSet
+            condition <- evaluateT conditionTerm
+            let expected =
+                    Condition.andCondition
+                        patTrue
+                        (Conditional.withoutTerm condition)
+            actual <- evaluateT patIn
+            actual === expected
         )
 
 test_inConcat :: TestTree
@@ -1745,6 +1799,15 @@ asTermLike
 asTermLike =
     Reflection.give testMetadataTools Set.asTermLike
     . builtinSet
+    . Foldable.toList
+
+asSymbolicTermLike
+    :: Foldable f
+    => f (TermLike Variable)
+    -> TermLike Variable
+asSymbolicTermLike =
+    Reflection.give testMetadataTools Set.asTermLike
+    . builtinSymbolicSet
     . Foldable.toList
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.

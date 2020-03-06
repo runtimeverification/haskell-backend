@@ -85,7 +85,8 @@ newtype TransitionT rule m a =
         , Typeable
         )
 
-instance MonadLog m => MonadLog (TransitionT rule m)
+instance MonadLog m => MonadLog (TransitionT rule m) where
+    logWhile entry = mapTransitionT $ logWhile entry
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift
