@@ -3,7 +3,15 @@ let
   haskell-nix = import sources."haskell.nix";
   nixpkgs = import sources."nixpkgs" haskell-nix;
   pkgs = nixpkgs;
+  default =
+    pkgs.haskell-nix.stackProject {
+      src = pkgs.haskell-nix.haskellLib.cleanGit { src = ./.; };
+    };
 in
-  pkgs.haskell-nix.stackProject {
-    src = pkgs.haskell-nix.haskellLib.cleanGit { src = ./.; };
+  {
+    inherit default;
+    cache = [
+      pkgs.haskell-nix.haskellNixRoots
+      (pkgs.haskell-nix.withInputs default)
+    ];
   }
