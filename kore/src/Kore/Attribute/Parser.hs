@@ -32,7 +32,9 @@ module Kore.Attribute.Parser
     , failDuplicate
     , failConflicting
     , parseBoolAttribute
+    , parseBoolAttributeAux
     , toBoolAttributes
+    , toBoolAttributesAux
     , withApplication
     , getZeroParams
     , getTwoParams
@@ -65,6 +67,11 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import Control.Lens
+    ( Getter
+    , Iso'
+    )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Control.Monad.Except
     ( MonadError
@@ -174,22 +181,29 @@ failConflicting idents =
 
 toBoolAttributes
     :: Coercible attr Bool => AttributePattern -> attr -> Attributes
-toBoolAttributes pattern1 attr =
-    Attributes [pattern1 | coerce attr]
+toBoolAttributes = toBoolAttributesAux Lens.coerced
+
+toBoolAttributesAux
+    :: Getter attr Bool -> AttributePattern -> attr -> Attributes
+toBoolAttributesAux asBool pattern1 attr =
+    Attributes [pattern1 | Lens.view asBool attr]
 
 parseBoolAttribute
-    :: (Coercible attr Bool, Coercible Bool attr)
+    :: Coercible attr Bool
     => Id -> AttributePattern -> attr -> Parser attr
-parseBoolAttribute ident =
+parseBoolAttribute = parseBoolAttributeAux Lens.coerced
+
+parseBoolAttributeAux
+    :: Iso' attr Bool -> Id -> AttributePattern -> attr -> Parser attr
+parseBoolAttributeAux asBool ident =
     withApplication' $ \params args attr -> do
         getZeroParams params
         getZeroArguments args
-        Monad.when (coerce attr) failDuplicate'
-        return (coerce True)
+        Monad.when (Lens.view asBool attr) failDuplicate'
+        return (Lens.review asBool True)
   where
     withApplication' = withApplication ident
     failDuplicate' = failDuplicate ident
-
 
 withApplication
     :: Id
