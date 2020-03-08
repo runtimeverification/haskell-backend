@@ -13,10 +13,6 @@ import Data.Default
     ( def
     )
 
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import qualified Kore.Attribute.Axiom.Concrete as Attribute
-    ( Concrete (Concrete)
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
     ( Conditional (Conditional)
@@ -50,6 +46,9 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
 
+import Test.Kore.Step.Axiom.Evaluate
+    ( concreteEqualityRule
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -177,14 +176,9 @@ test_definitionEvaluation =
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator = definitionEvaluation
-                [ EqualityRule
-                    (equalityPattern
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        (Mock.g (mkElemVar Mock.x))
-                    )
-                    { attributes = def
-                        { Attribute.Axiom.concrete = Attribute.Concrete True }
-                    }
+                [ concreteEqualityRule $ EqualityRule $ equalityPattern
+                    (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    (Mock.g (mkElemVar Mock.x))
                 ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
