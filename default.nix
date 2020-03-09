@@ -7,11 +7,12 @@ let
     pkgs.haskell-nix.stackProject {
       src = pkgs.haskell-nix.haskellLib.cleanGit { src = ./.; };
     };
+  shell = import ./shell.nix { inherit default; };
 in
   {
-    inherit default;
+    inherit pkgs default;
     cache = [
       pkgs.haskell-nix.haskellNixRoots
-      (pkgs.haskell-nix.withInputs default)
+      (pkgs.haskell-nix.withInputs shell)
     ];
   }
