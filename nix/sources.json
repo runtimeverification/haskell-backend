@@ -1,14 +1,14 @@
 {
-    "ghcide-nix": {
-        "branch": "overlay",
-        "description": "Nix installation for ghcide",
-        "homepage": "https://github.com/digital-asset/ghcide",
-        "owner": "ttuegel",
-        "repo": "ghcide-nix",
-        "rev": "272729ca4a140baac6b07078336ddd0b797d31f0",
-        "sha256": "13w51rf2bf2k3zi2lgk76xq61axz54y10k5s0g5k162cia5pxhyh",
+    "ghcide": {
+        "branch": "master",
+        "description": "A library for building Haskell IDE tooling",
+        "homepage": "",
+        "owner": "digital-asset",
+        "repo": "ghcide",
+        "rev": "bd25cd01ac9edf9fd6f1ed0f062032b1b80fc91f",
+        "sha256": "0nfnwpabgdx0q3rk41dr7bpmq20k2iqhalw8g667cp2dl3asng4s",
         "type": "tarball",
-        "url": "https://github.com/ttuegel/ghcide-nix/archive/272729ca4a140baac6b07078336ddd0b797d31f0.tar.gz",
+        "url": "https://github.com/digital-asset/ghcide/archive/bd25cd01ac9edf9fd6f1ed0f062032b1b80fc91f.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "haskell.nix": {

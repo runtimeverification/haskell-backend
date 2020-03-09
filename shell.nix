@@ -5,5 +5,9 @@ let
 in
 
 project.shellFor {
-  buildInputs = with pkgs; [ ghcide-ghc865 ];
+  buildInputs =
+    with pkgs;
+    [
+      ghcid ghcide gnumake hlint stylish-haskell yq z3
+    ];
 }
