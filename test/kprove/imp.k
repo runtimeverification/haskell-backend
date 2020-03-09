@@ -60,7 +60,9 @@ semantics.  */
 
 module IMP
   imports IMP-SYNTAX
-  imports DOMAINS
+  imports INT
+  imports BOOL
+  imports MAP
 /*@ \section{Semantics}
 This module defines the semantics of IMP\@.
 Before you start adding semantic rules to a \K definition, you need to
