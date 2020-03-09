@@ -30,12 +30,10 @@ import Data.Text.Prettyprint.Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Owise as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Priority as Attribute
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
@@ -267,12 +265,4 @@ isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
         Attribute.simplification attributes
 
 getPriorityOfRule :: EqualityRule variable -> Integer
-getPriorityOfRule (EqualityRule EqualityPattern { attributes }) =
-    if isOwise
-        then Attribute.owisePriority
-        else fromMaybe Attribute.defaultPriority getPriority
-  where
-    Attribute.Priority { getPriority } =
-        Attribute.priority attributes
-    Attribute.Owise { isOwise } =
-        Attribute.owise attributes
+getPriorityOfRule = Attribute.getPriorityOfAxiom . attributes . getEqualityRule
