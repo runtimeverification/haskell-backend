@@ -36,11 +36,11 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.DebugSkipSimplification
+    ( debugSkipSimplification
+    )
 import Kore.Log.WarnBottomHook
     ( warnBottomHook
-    )
-import Kore.Log.WarnSimplificationWithRemainder
-    ( warnSimplificationWithRemainder
     )
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.EqualityPattern
@@ -106,7 +106,7 @@ simplificationEvaluation rule =
         Step.recoveryFunctionLikeResults initial results'
         let attemptedAxiom = Results.toAttemptedAxiom results'
         Monad.when (hasRemainder attemptedAxiom)
-            $ warnSimplificationWithRemainder
+            $ debugSkipSimplification
                 term
                 condition
                 remainders'
