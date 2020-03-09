@@ -47,7 +47,7 @@ import Kore.Internal.OrCondition
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
     ( Predicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeForallPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -100,14 +100,18 @@ newSetCeilSimplifier
             (BuiltinAssocComm Domain.NormalizedSet variable)
             (OrCondition variable)
 newSetCeilSimplifier ceilSimplifierTermLike =
-    CeilSimplifier $ \ceil@Ceil { ceilChild } ->
+    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } ->
     ReaderT $ \sideCondition -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element) { opaque = [termLike] }
                 & TermLike.mkBuiltinSet
-                & makeCeilPredicate_
+                & makeCeilPredicate ceilResultSort
+                -- TODO (thomas.tuegel): Do not mark this simplified.
+                -- Marking here may prevent user-defined axioms from applying.
+                -- At present, we wouldn't apply such an axiom, anyway.
+                & Predicate.markSimplifiedMaybeConditional Nothing
         makeEvaluateBuiltinAssocComm
             TermLike.mkBuiltinSet
             mkNotMember
@@ -129,14 +133,18 @@ newMapCeilSimplifier
             (BuiltinAssocComm Domain.NormalizedMap variable)
             (OrCondition variable)
 newMapCeilSimplifier ceilSimplifierTermLike =
-    CeilSimplifier $ \ceil@Ceil { ceilChild } ->
+    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } ->
     ReaderT $ \sideCondition -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
                 & TermLike.mkBuiltinMap
-                & makeCeilPredicate_
+                & makeCeilPredicate ceilResultSort
+                -- TODO (thomas.tuegel): Do not mark this simplified.
+                -- Marking here may prevent user-defined axioms from applying.
+                -- At present, we wouldn't apply such an axiom, anyway.
+                & Predicate.markSimplifiedMaybeConditional Nothing
                 & makeForallPredicate variable
               where
                 (variable, element') =
@@ -288,7 +296,7 @@ makeEvaluateBuiltinAssocComm
         -> MultiAnd (OrCondition variable)
     notMember termLike element =
         mkNotMember element termLike
-        & makeSimplifiedPredicate
+        & OrCondition.fromPredicate
         & MultiAnd.singleton
 
     notMembers :: TermLike variable -> MultiAnd (OrCondition variable)
@@ -316,14 +324,13 @@ makeEvaluateBuiltinAssocComm
                 Domain.wrapAc emptyNormalizedAc { opaque = [opaque1, opaque2] }
             }
         & mkBuiltin
-        & makeSimplified
+        & makeCeilPredicate ceilResultSort
+        -- TODO (thomas.tuegel): Do not mark this simplified.
+        -- Marking here may prevent user-defined axioms from applying.
+        -- At present, we wouldn't apply such an axiom, anyway.
+        & Predicate.markSimplifiedMaybeConditional Nothing
+        & OrCondition.fromPredicate
         & MultiAnd.singleton
-
-    makeSimplifiedPredicate =
-        OrCondition.fromPredicate
-        . Predicate.markSimplifiedMaybeConditional Nothing
-
-    makeSimplified = makeSimplifiedPredicate . makeCeilPredicate_
 
 foldElements
     ::  AcWrapper collection
