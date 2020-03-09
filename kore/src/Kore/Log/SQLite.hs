@@ -35,14 +35,14 @@ import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
     )
+import Kore.Log.DebugSkipSimplification
+    ( DebugSkipSimplification
+    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
-    )
-import Kore.Log.DebugSkipSimplification
-    ( DebugSkipSimplification
     )
 import Log
     ( Entry

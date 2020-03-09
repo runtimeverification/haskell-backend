@@ -62,6 +62,9 @@ import Kore.Log.DebugEvaluateCondition
 import Kore.Log.DebugProofState
     ( DebugProofState
     )
+import Kore.Log.DebugSkipSimplification
+    ( DebugSkipSimplification
+    )
 import Kore.Log.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
@@ -74,9 +77,6 @@ import Kore.Log.WarnBottomHook
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
-    )
-import Kore.Log.DebugSkipSimplification
-    ( DebugSkipSimplification
     )
 import Log
     ( Entry
