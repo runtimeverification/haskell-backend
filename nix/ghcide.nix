@@ -15,6 +15,7 @@ let
           packages.ghci.flags.ghci = pkgs.lib.mkForce true;
           # This fixes a performance issue, probably https://gitlab.haskell.org/ghc/ghc/issues/15524
           packages.ghcide.configureFlags = [ "--enable-executable-dynamic" ];
+          packages.haskell-lsp.doHaddock = false;
         })];
       };
   mkHieCore = args@{...}:
