@@ -18,7 +18,7 @@ module Kore.Log.Registry
     , debugSolverRecvType
     , warnBottomHookType
     , warnFunctionWithoutEvaluatorsType
-    , warnSimplificationWithRemainderType
+    , debugSkipSimplificationType
     ) where
 
 import Prelude.Kore
@@ -75,8 +75,8 @@ import Kore.Log.WarnBottomHook
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
-import Kore.Log.WarnSimplificationWithRemainder
-    ( WarnSimplificationWithRemainder
+import Kore.Log.DebugSkipSimplification
+    ( DebugSkipSimplification
     )
 import Log
     ( Entry
@@ -105,7 +105,7 @@ registry =
                 , register debugAppliedRewriteRulesType
                 , register warnBottomHookType
                 , register warnFunctionWithoutEvaluatorsType
-                , register warnSimplificationWithRemainderType
+                , register debugSkipSimplificationType
                 , register logDebugEvaluateConditionType
                 , register criticalExecutionErrorType
                 , register logMessageType
@@ -142,7 +142,7 @@ debugAppliedRuleType
   , debugAppliedRewriteRulesType
   , warnBottomHookType
   , warnFunctionWithoutEvaluatorsType
-  , warnSimplificationWithRemainderType
+  , debugSkipSimplificationType
   , logDebugEvaluateConditionType
   , criticalExecutionErrorType
   , logMessageType
@@ -164,8 +164,8 @@ warnBottomHookType =
     someTypeRep (Proxy :: Proxy WarnBottomHook)
 warnFunctionWithoutEvaluatorsType =
     someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
-warnSimplificationWithRemainderType =
-    someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
+debugSkipSimplificationType =
+    someTypeRep (Proxy :: Proxy DebugSkipSimplification)
 logDebugEvaluateConditionType =
     someTypeRep (Proxy :: Proxy DebugEvaluateCondition)
 criticalExecutionErrorType =
