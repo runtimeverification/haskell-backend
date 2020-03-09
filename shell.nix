@@ -1,4 +1,9 @@
-{ default ? (import ./default.nix).default }:
+{ default ? import ./default.nix }:
 
-default.shellFor {
+let
+  inherit (default) project pkgs;
+in
+
+project.shellFor {
+  buildInputs = with pkgs; [ ghcide-ghc865 ];
 }
