@@ -2,7 +2,7 @@
 \rewrites{SortGeneratedTopCell{}}(
     /* Spc */
     \and{SortGeneratedTopCell{}}(
-        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+        /* Created: Kore.Step.Simplification.And.makeAndPredicate */
         /* Sfc */
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
@@ -38,7 +38,7 @@
             /* Sfc */
             \forall{SortGeneratedTopCell{}}(
                 x:SortKItem{},
-                /* Spc */
+                /* Sfc */
                 \ceil{SortMap{}, SortGeneratedTopCell{}}(
                     /* Fn Spc */
                     /* builtin: */
