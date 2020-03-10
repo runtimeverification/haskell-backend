@@ -49,9 +49,13 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.Log
-    ( emptyLogger
+    ( KoreLogOptions (..)
+    , emptyLogger
     , getLoggerT
     , swappableLogger
+    )
+import Kore.Log.KoreLogOptions
+    ( parseKoreLogOptions
     )
 import Kore.Repl.Data
 import Kore.Step.SMT.Lemma
@@ -70,8 +74,9 @@ data KoreModule = KoreModule
 
 -- | SMT Timeout and (optionally) a custom prelude path.
 data SmtOptions = SmtOptions
-    { timeOut :: !SMT.TimeOut
-    , prelude :: !(Maybe FilePath)
+    { timeOut    :: !SMT.TimeOut
+    , prelude    :: !(Maybe FilePath)
+    , smtSolver  :: Solver
     }
 
 -- | Options for the kore repl.
@@ -82,6 +87,8 @@ data KoreReplOptions = KoreReplOptions
     , replMode         :: !ReplMode
     , replScript       :: !ReplScript
     , outputFile       :: !OutputFile
+    , koreLogOptions   :: !KoreLogOptions
+    , koreProveOptions :: !(Maybe KoreProveOptions)
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -93,6 +100,8 @@ parseKoreReplOptions =
     <*> parseReplMode
     <*> parseReplScript
     <*> parseOutputFile
+    <*> parseKoreLogOptions (ExeName "kore-repl")
+    <*> optional parseKoreProveOptions
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -128,6 +137,7 @@ parseKoreReplOptions =
                 <> help "Path to the SMT prelude file"
                 )
             )
+        <*> parseSolver
 
     parseReplMode :: Parser ReplMode
     parseReplMode =
