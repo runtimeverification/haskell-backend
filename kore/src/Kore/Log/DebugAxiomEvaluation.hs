@@ -191,14 +191,13 @@ start
     -> Maybe Text
     -> log a
     -> log a
-start arguments =
-    logState
-        (Start
-            (map
-                (TermLike.mapVariables (fmap toVariable) (fmap toVariable))
-                arguments
-            )
+start arguments = logState
+    (Start
+        (map
+            (TermLike.mapVariables (fmap toVariable) (fmap toVariable))
+            arguments
         )
+    )
 
 {- | Log the end of a term's axiom evaluation.
 -}
@@ -210,9 +209,7 @@ end
     -> Maybe Text
     -> log a
     -> log a
-end results =
-    logState
-        (End (map convertPatternVariable results))
+end results = logState (End (map convertPatternVariable results))
 
 {- | Log the end of a term's axiom evaluation.
 -}
@@ -223,8 +220,7 @@ endNotApplicable
     -> Maybe Text
     -> log a
     -> log a
-endNotApplicable =
-    logState EndNotApplicable
+endNotApplicable = logState EndNotApplicable
 
 {- | Log the end of a term's axiom evaluation.
 -}
@@ -235,8 +231,7 @@ endNotApplicableConditionally
     -> Maybe Text
     -> log a
     -> log a
-endNotApplicableConditionally =
-    logState EndNotApplicableConditionally
+endNotApplicableConditionally = logState EndNotApplicableConditionally
 
 convertPatternVariable
     :: InternalVariable variable => Pattern variable -> Pattern Variable
