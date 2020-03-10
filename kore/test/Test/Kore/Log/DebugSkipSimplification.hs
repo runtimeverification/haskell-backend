@@ -1,5 +1,5 @@
-module Test.Kore.Log.WarnSimplificationWithRemainder
-    ( test_instance_Table_WarnSimplificationWithRemainder
+module Test.Kore.Log.DebugSkipSimplification
+    ( test_instance_Table_DebugSkipSimplification
     ) where
 
 import Prelude.Kore
@@ -15,7 +15,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Log.WarnSimplificationWithRemainder
+import Kore.Log.DebugSkipSimplification
 import Kore.Step.EqualityPattern
     ( EqualityRule (..)
     , equalityPattern
@@ -24,20 +24,20 @@ import Kore.Step.EqualityPattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SQL
 
-test_instance_Table_WarnSimplificationWithRemainder :: TestTree
-test_instance_Table_WarnSimplificationWithRemainder =
-    testTable @WarnSimplificationWithRemainder [warn1, warn2]
+test_instance_Table_DebugSkipSimplification :: TestTree
+test_instance_Table_DebugSkipSimplification =
+    testTable @DebugSkipSimplification [warn1, warn2]
 
-warn1, warn2 :: WarnSimplificationWithRemainder
+warn1, warn2 :: DebugSkipSimplification
 warn1 =
-    WarnSimplificationWithRemainder
+    DebugSkipSimplification
         { inputPattern = term1
         , sideCondition = SideCondition.top
         , remainders = Remainders remainders1
         , rule = rule1
         }
 warn2 =
-    WarnSimplificationWithRemainder
+    DebugSkipSimplification
         { inputPattern = term2
         , sideCondition = SideCondition.top
         , remainders = Remainders remainders2
