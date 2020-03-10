@@ -1,5 +1,5 @@
 module EQTEST
   imports K-EQUAL
-  imports DOMAINS
+  imports INT
   syntax KItem ::= Int
 endmodule
