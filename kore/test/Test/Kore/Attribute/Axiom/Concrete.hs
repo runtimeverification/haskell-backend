@@ -15,21 +15,34 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 
 import Kore.Attribute.Axiom.Concrete
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariable
+    )
 import Kore.Syntax.Variable
     ( Variable (..)
     )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import Test.Kore.Attribute.Parser
+import qualified Test.Kore.Step.MockSymbols as Mock
 
-parseConcrete :: Attributes -> Parser (Concrete Variable)
-parseConcrete (Attributes attrs) =
-    Foldable.foldlM (flip parseConcreteAttribute) Default.def attrs
+parseConcrete
+    :: FreeVariables Variable -> Attributes -> Parser (Concrete Variable)
+parseConcrete freeVariables (Attributes attrs) =
+    Foldable.foldlM
+        (flip $ parseConcreteAttribute freeVariables )
+        Default.def
+        attrs
 
 test_concrete :: TestTree
 test_concrete =
     testCase "[concrete{}()] :: Concrete"
-        $ expectSuccess Concrete { isConcrete = True }
-        $ parseConcrete $ Attributes [ concreteAttribute ]
+    $ expectSuccess Concrete { unConcrete = freeVars }
+    $ parseConcrete freeVars $ Attributes [ concreteAttribute ]
+  where
+    freeVars = freeVariable (ElemVar Mock.x)
 
 test_Attributes :: TestTree
 test_Attributes =
@@ -41,23 +54,27 @@ test_Attributes =
 test_duplicate :: TestTree
 test_duplicate =
     testCase "[concrete{}(), concrete{}()]"
-        $ expectFailure
-        $ parseConcrete $ Attributes [ concreteAttribute, concreteAttribute ]
+    $ expectFailure
+    $ parseConcrete freeVars
+    $ Attributes [ concreteAttribute, concreteAttribute ]
+  where
+    freeVars = freeVariable (ElemVar Mock.x)
 
 test_arguments :: TestTree
 test_arguments =
     testCase "[concrete{}(\"illegal\")]"
         $ expectFailure
-        $ parseConcrete $ Attributes [ illegalAttribute ]
+        $ parseConcrete freeVars $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
         attributePattern concreteSymbol [attributeString "illegal"]
+    freeVars = freeVariable (ElemVar Mock.x)
 
 test_parameters :: TestTree
 test_parameters =
     testCase "[concrete{illegal}()]"
         $ expectFailure
-        $ parseConcrete $ Attributes [ illegalAttribute ]
+        $ parseConcrete freeVars $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
         attributePattern_
@@ -66,3 +83,4 @@ test_parameters =
                 , symbolOrAliasParams =
                     [ SortVariableSort (SortVariable "illegal") ]
                 }
+    freeVars = freeVariable (ElemVar Mock.x)

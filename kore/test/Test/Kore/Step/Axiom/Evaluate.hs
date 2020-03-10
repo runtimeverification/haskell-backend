@@ -1,5 +1,6 @@
 module Test.Kore.Step.Axiom.Evaluate
     ( test_evaluateAxioms
+    , concreteEqualityRule
     ) where
 
 import Prelude.Kore
@@ -162,10 +163,11 @@ axiom_
 axiom_ left right = axiom left right makeTruePredicate_
 
 concreteEqualityRule :: EqualityRule Variable -> EqualityRule Variable
-concreteEqualityRule =
+concreteEqualityRule equalityRule =
     Lens.set
         (_Unwrapped . field @"attributes" . field @"concrete")
-        (Concrete True)
+        (Concrete $ freeVariables equalityRule)
+        equalityRule
 
 -- * Test forms
 
