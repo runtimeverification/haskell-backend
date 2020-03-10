@@ -343,7 +343,7 @@
                     /* Sfa */
                     \forall{SortGeneratedTopCell{}}(
                         x:SortMemInstCell{},
-                        /* Spa */
+                        /* Sfa */
                         \ceil{SortMemInstCellMap{}, SortGeneratedTopCell{}}(
                             /* Fn Spa */
                             /* builtin: */
@@ -364,7 +364,7 @@
                 /* Sfa */
                 \forall{SortGeneratedTopCell{}}(
                     x:SortModuleInstCell{},
-                    /* Spa */
+                    /* Sfa */
                     \ceil{SortModuleInstCellMap{}, SortGeneratedTopCell{}}(
                         /* Fn Spa */
                         /* builtin: */
