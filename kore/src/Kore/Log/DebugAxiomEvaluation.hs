@@ -191,7 +191,7 @@ start
     -> Maybe Text
     -> log a
     -> log a
-start arguments action =
+start arguments =
     logState
         (Start
             (map
@@ -199,7 +199,6 @@ start arguments action =
                 arguments
             )
         )
-        action
 
 {- | Log the end of a term's axiom evaluation.
 -}
@@ -211,10 +210,9 @@ end
     -> Maybe Text
     -> log a
     -> log a
-end results action =
+end results =
     logState
         (End (map convertPatternVariable results))
-        action
 
 {- | Log the end of a term's axiom evaluation.
 -}
@@ -225,8 +223,8 @@ endNotApplicable
     -> Maybe Text
     -> log a
     -> log a
-endNotApplicable action =
-    logState EndNotApplicable action
+endNotApplicable =
+    logState EndNotApplicable
 
 {- | Log the end of a term's axiom evaluation.
 -}
@@ -237,8 +235,8 @@ endNotApplicableConditionally
     -> Maybe Text
     -> log a
     -> log a
-endNotApplicableConditionally action =
-    logState EndNotApplicableConditionally action
+endNotApplicableConditionally =
+    logState EndNotApplicableConditionally
 
 convertPatternVariable
     :: InternalVariable variable => Pattern variable -> Pattern Variable
