@@ -7,39 +7,48 @@ Maintainer  : phillip.harris@runtimeverification.com
 
 -}
 module Kore.Attribute.Axiom.Concrete
-    ( Concrete (..)
+    ( Concrete (..), isConcrete
     , concreteId, concreteSymbol, concreteAttribute
     , mapConcreteVariables
     , parseConcreteAttribute
+    -- * Re-exports
+    , FreeVariables
     ) where
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , mapFreeVariables
+    , nullFreeVariables
+    )
 import Kore.Debug
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
-newtype Concrete variable = Concrete { isConcrete :: Bool }
+newtype Concrete variable =
+    Concrete { unConcrete :: FreeVariables variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic (Concrete variable)
 
 instance SOP.HasDatatypeInfo (Concrete variable)
 
-instance Debug (Concrete variable)
+instance Debug variable => Debug (Concrete variable)
 
-instance Diff (Concrete variable)
+instance (Debug variable, Diff variable) => Diff (Concrete variable)
 
-instance NFData (Concrete variable)
+instance NFData variable => NFData (Concrete variable)
 
-instance Default (Concrete variable) where
-    def = Concrete False
+instance Ord variable => Default (Concrete variable) where
+    def = Concrete mempty
 
 -- | Kore identifier representing the @concrete@ attribute symbol.
 concreteId :: Id
@@ -58,16 +67,31 @@ concreteAttribute :: AttributePattern
 concreteAttribute = attributePattern_ concreteSymbol
 
 parseConcreteAttribute
-    :: AttributePattern
+    :: forall variable
+    .  Ord variable
+    => FreeVariables variable
+    -> AttributePattern
     -> Concrete variable
     -> Parser (Concrete variable)
-parseConcreteAttribute = parseBoolAttribute concreteId
+parseConcreteAttribute freeVariables =
+    parseBoolAttributeAux iso concreteId
+  where
+    iso :: Lens.Iso' (Concrete variable) Bool
+    iso =
+        Lens.iso
+            isConcrete
+            (\b -> Concrete $ if b then freeVariables else mempty)
 
 instance From (Concrete variable) Attributes where
-    from = toBoolAttributes concreteAttribute
+    from = toBoolAttributesAux (Lens.to isConcrete) concreteAttribute
 
 mapConcreteVariables
-    ::(ElementVariable variable1 -> ElementVariable variable2)
+    :: Ord variable2
+    => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
-    -> Concrete variable1 -> Concrete variable2
-mapConcreteVariables _ _ (Concrete b) = Concrete b
+    ->  Concrete variable1 -> Concrete variable2
+mapConcreteVariables mapElemVar mapSetVar (Concrete freeVariables) =
+    Concrete (mapFreeVariables mapElemVar mapSetVar freeVariables)
+
+isConcrete :: Concrete variable -> Bool
+isConcrete = not . nullFreeVariables . unConcrete

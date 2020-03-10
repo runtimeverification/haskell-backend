@@ -37,7 +37,7 @@ import Kore.Variables.UnifiedVariable
 newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Set (UnifiedVariable variable) }
     deriving GHC.Generic
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
     deriving (Semigroup, Monoid)
 
 instance SOP.Generic (FreeVariables variable)
