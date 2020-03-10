@@ -189,8 +189,8 @@ filterEntry
     :: EntryTypes
     -> ActualEntry
     -> Bool
-filterEntry logEntries ActualEntry { actualEntry } =
-    toSomeEntryType actualEntry `elem` logEntries
+filterEntry logEntries ActualEntry { actualEntry = SomeEntry entry } =
+    toSomeEntryType entry `elem` logEntries
 
 {- | Select log entries with 'Severity' greater than or equal to the level.
  -}
@@ -198,8 +198,8 @@ filterSeverity
     :: Severity
     -> ActualEntry
     -> Bool
-filterSeverity level ActualEntry { actualEntry } =
-    entrySeverity actualEntry >= level
+filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
+    entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
@@ -245,13 +245,12 @@ makeKoreLogger exeName timestampSwitch logToText =
     $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
-    messageToText (WithTimestamp ActualEntry { actualEntry, entryContext } localTime) =
+    messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         $ exeName'
         Pretty.<+> timestamp
-        Pretty.<+> defaultLogPretty actualEntry
-        Pretty.<+> Pretty.hsep (toList (mapMaybe shortDoc entryContext))
+        Pretty.<+> defaultLogPretty entry
       where
         timestamp = case timestampSwitch of
             TimestampsEnable -> Pretty.brackets (formattedTime localTime)
@@ -300,10 +299,16 @@ swappableLogger mvar =
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
 
-defaultLogPretty :: SomeEntry -> Pretty.Doc ann
-defaultLogPretty (SomeEntry entry) =
+defaultLogPretty :: ActualEntry -> Pretty.Doc ann
+defaultLogPretty ActualEntry { actualEntry = SomeEntry entry, entryContext } =
     header Pretty.<+> longDoc entry
   where
     severity = prettySeverity (entrySeverity entry)
     type' = Pretty.pretty (lookupTextFromTypeWithError $ toSomeEntryType entry)
-    header = severity Pretty.<+> Pretty.parens type' <> Pretty.colon
+    header =
+        Pretty.brackets (Pretty.hsep prettyContext)
+        Pretty.<+> severity
+        Pretty.<+> Pretty.parens type'
+        <> Pretty.colon
+    shortDocOfEntry (SomeEntry e) = shortDoc e
+    prettyContext = toList (mapMaybe shortDocOfEntry entryContext)

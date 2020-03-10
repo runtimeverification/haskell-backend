@@ -227,7 +227,8 @@ instance Monad m => MonadLog (LoggerT m) where
         let entryLogger = fromLogAction @ActualEntry logAction
         Monad.Trans.lift $ entryLogger <& toEntry entry
 
-    logWhile entry2 action =
+    logWhile entry2 action = do
+        logEntry entry2
         LoggerT . local modifyContext $ getLoggerT action
       where
         modifyContext = Colog.cmap $ \entry1 ->
