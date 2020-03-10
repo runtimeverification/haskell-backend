@@ -73,6 +73,10 @@ import Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute
     ( Null (..)
     )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
+    , HasFreeVariables (..)
+    )
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Application
@@ -82,6 +86,9 @@ import Kore.Syntax.Pattern
     )
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.Free
+    ( freePureVariables
+    )
 import Kore.Variables.UnifiedVariable
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
@@ -464,6 +471,12 @@ instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse = unparseAxiom "axiom"
     unparse2 = unparseAxiom2 "axiom"
 
+instance
+    Ord variable
+    => HasFreeVariables (SentenceAxiom (Pattern variable annotation)) variable
+  where
+    freeVariables = FreeVariables . freePureVariables . sentenceAxiomPattern
+
 unparseAxiom
     :: Unparse patternType
     => Pretty.Doc ann
@@ -529,6 +542,13 @@ instance
 instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse = unparseAxiom "claim" . getSentenceClaim
     unparse2 = unparseAxiom2 "claim" . getSentenceClaim
+
+instance
+    Ord variable
+    => HasFreeVariables (SentenceClaim (Pattern variable annotation)) variable
+  where
+    freeVariables = freeVariables . getSentenceClaim
+
 
 {- | @SentenceHook@ corresponds to @hook-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
