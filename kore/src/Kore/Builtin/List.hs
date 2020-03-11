@@ -51,7 +51,6 @@ import Control.Error
     , hoistMaybe
     )
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe
     ( mapMaybeT
     )
@@ -435,19 +434,19 @@ unifyEquals
 
     unifyEquals0 pat1@(ElemVar_ _) pat2
       | TermLike.isFunctionPattern pat2 =
-        Monad.Trans.lift $ simplifyChild pat1 pat2
+        lift $ simplifyChild pat1 pat2
       | otherwise = empty
 
     unifyEquals0 pat1 pat2@(ElemVar_ _)
       | TermLike.isFunctionPattern pat1 =
-        Monad.Trans.lift $ simplifyChild pat1 pat2
+        lift $ simplifyChild pat1 pat2
       | otherwise = empty
 
     unifyEquals0 dv1@(Builtin_ (Domain.BuiltinList builtin1)) pat2 =
         case pat2 of
             dv2@(Builtin_ child2)
               | Domain.BuiltinList builtin2 <- child2 ->
-                Monad.Trans.lift $ unifyEqualsConcrete builtin1 builtin2
+                lift $ unifyEqualsConcrete builtin1 builtin2
               | otherwise ->
                 (error . unlines)
                     [ "Cannot unify a builtin List domain value:"
@@ -458,7 +457,7 @@ unifyEquals
                     ]
             app@(App_ symbol2 args2)
               | isSymbolConcat symbol2 ->
-                Monad.Trans.lift $ case args2 of
+                lift $ case args2 of
                     [ Builtin_ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
                         unifyEqualsFramedRight builtin1 builtin2 x
                     [ x@(Var_ _), Builtin_ (Domain.BuiltinList builtin2) ] ->

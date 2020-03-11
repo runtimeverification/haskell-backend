@@ -29,7 +29,6 @@ import Control.Monad.State.Strict
     ( StateT
     , runStateT
     )
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.List.NonEmpty
@@ -376,7 +375,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     deduplicate substitution = do
         (predicate, substitution') <-
             deduplicateSubstitution makeAnd' substitution
-            & Trans.lift . Trans.lift
+            & lift . lift
         addPredicate predicate
         return substitution'
 

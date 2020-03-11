@@ -35,7 +35,6 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -612,7 +611,7 @@ unifyEquals unifyEqualsChildren first second = do
                     tools <- Simplifier.askMetadataTools
                     return (Ac.asInternal tools sort1 normalized)
                 Ac.Bottom ->
-                    Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
+                    lift $ Monad.Unify.explainAndReturnBottom
                         "Duplicated elements in normalization."
                         first
                         second

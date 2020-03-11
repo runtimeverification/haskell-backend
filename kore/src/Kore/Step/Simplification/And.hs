@@ -33,8 +33,6 @@ import Control.Monad.State.Strict
     , evalStateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Trans as Trans
-import qualified Control.Monad.Trans as Monad.Trans
 import Data.Bifunctor
     ( bimap
     )
@@ -339,7 +337,7 @@ promoteSubTermsToTop predicate =
                 (Predicate variable)
     replaceWithTopNormalized replaceIn = do
         replacements <- State.get
-        Trans.lift $ fmap
+        lift $ fmap
             (unsafeMakePredicate replacements replaceIn)
             (replaceWithTop replacements replaceIn)
 
@@ -450,7 +448,7 @@ termAnd
     -> BranchT simplifier (Pattern variable)
 termAnd p1 p2 =
     either (const andTerm) BranchT.scatter
-    =<< (Monad.Trans.lift . runUnifierT) (termAndWorker p1 p2)
+    =<< (lift . runUnifierT) (termAndWorker p1 p2)
   where
     andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
     termAndWorker
