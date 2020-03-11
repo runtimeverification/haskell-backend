@@ -243,7 +243,7 @@ applyRulesWithFinalizer
     .  InternalVariable variable
     => MonadUnify unifier
     => Finalizer unifier variable
-    -> UnificationProcedure
+    -> UnificationProcedure unifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
@@ -266,7 +266,7 @@ applyRulesParallel
     :: forall unifier variable
     .  InternalVariable variable
     => MonadUnify unifier
-    => UnificationProcedure
+    => UnificationProcedure unifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
@@ -283,7 +283,7 @@ applyRewriteRulesParallel
     :: forall unifier variable
     .  InternalVariable variable
     => MonadUnify unifier
-    => UnificationProcedure
+    => UnificationProcedure unifier
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> Pattern variable
@@ -308,7 +308,7 @@ applyRulesSequence
     :: forall unifier variable
     .  InternalVariable variable
     => MonadUnify unifier
-    => UnificationProcedure
+    => UnificationProcedure unifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
@@ -325,7 +325,7 @@ applyRewriteRulesSequence
     :: forall unifier variable
     .  InternalVariable variable
     => MonadUnify unifier
-    => UnificationProcedure
+    => UnificationProcedure unifier
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RewriteRule variable]

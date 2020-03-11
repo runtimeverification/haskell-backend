@@ -6,8 +6,7 @@ Unification of rules (used for stepping with rules or equations)
 
  -}
 module Kore.Step.Step
-    ( UnificationProcedure (..)
-    , UnifiedRule
+    ( UnifiedRule
     , Result
     , Results
     , UnifyingRule (..)
@@ -24,6 +23,8 @@ module Kore.Step.Step
     , checkFunctionLike
     , checkSubstitutionCoverage
     , wouldNarrowWith
+    -- * Re-exports
+    , UnificationProcedure (..)
     -- Below exports are just for tests
     , Step.gatherResults
     , Step.remainders
@@ -92,6 +93,7 @@ import qualified Kore.Step.Result as Step
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
+import Kore.Unification.UnificationProcedure
 import Kore.Unification.Unify
     ( MonadUnify
     )
@@ -111,19 +113,6 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     , foldMapVariable
     )
-
--- | Wraps functions such as 'unificationProcedure' and
--- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
--- 'stepWithRule'.
-newtype UnificationProcedure =
-    UnificationProcedure
-        ( forall variable unifier
-        .  (InternalVariable variable, MonadUnify unifier)
-        => SideCondition variable
-        -> TermLike variable
-        -> TermLike variable
-        -> unifier (Condition variable)
-        )
 
 type UnifiedRule = Conditional
 
@@ -174,7 +163,7 @@ unifyRules
     :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
-    => UnificationProcedure
+    => UnificationProcedure unifier
     -> SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Initial configuration
@@ -203,7 +192,7 @@ unifyRule
     :: InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
-    => UnificationProcedure
+    => UnificationProcedure unifier
     -> SideCondition variable
     -- ^ Top level condition.
     -> Pattern variable
@@ -211,25 +200,22 @@ unifyRule
     -> rule variable
     -- ^ Rule
     -> unifier (UnifiedRule variable (rule variable))
-unifyRule
-    (UnificationProcedure unifyPatterns)
-    sideCondition
-    initial
-    rule
-  = do
+unifyRule unificationProcedure sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
             sideCondition `SideCondition.andCondition` initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- unifyPatterns mergedSideCondition initialTerm ruleLeft
+    unification <- unifyTermLikes mergedSideCondition initialTerm ruleLeft
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         simplifyPredicate mergedSideCondition Nothing (unification <> requires')
     return (rule `Conditional.withCondition` unification')
+  where
+    unifyTermLikes = runUnificationProcedure unificationProcedure
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
