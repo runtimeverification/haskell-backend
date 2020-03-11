@@ -13,6 +13,9 @@ import Control.Monad.Trans.Reader
     ( runReaderT
     )
 import Data.Reflection
+import Data.Functor.Contravariant
+    ( contramap
+    )
 import Data.Semigroup
     ( (<>)
     )
@@ -50,9 +53,13 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import Kore.Log
     ( KoreLogOptions (..)
+    , LogAction (..)
+    , SomeEntry (..)
+    , ActualEntry (..)
     , emptyLogger
     , getLoggerT
     , swappableLogger
+    , withLogger
     )
 import Kore.Log.KoreLogOptions
     ( parseKoreLogOptions
@@ -202,6 +209,7 @@ mainWithOptions
         , replScript
         , replMode
         , outputFile
+        , koreLogOptions
         }
   = do
     mLogger <- newMVar emptyLogger
@@ -225,21 +233,32 @@ mainWithOptions
                 exitFailure
             else
                 lift
-                $ SMT.runSMT smtConfig (swappableLogger mLogger)
-                   $ do
-                        give
-                            (MetadataTools.build indexedModule)
-                            (declareSMTLemmas indexedModule)
-                        proveWithRepl
-                            indexedModule
-                            specDefIndexedModule
-                            Nothing
-                            mLogger
-                            replScript
-                            replMode
-                            outputFile
+                $ withLogger koreLogOptions
+                    $ logActionToIO
+                        smtConfig
+                        (swappableLogger mLogger)
+                        $ do
+                            give
+                                (MetadataTools.build indexedModule)
+                                (declareSMTLemmas indexedModule)
+                            proveWithRepl
+                                indexedModule
+                                specDefIndexedModule
+                                Nothing
+                                mLogger
+                                replScript
+                                replMode
+                                outputFile
 
   where
+    logActionToIO
+        :: SMT.Config
+        -> LogAction IO ActualEntry
+        -> SMT.SMT ()
+        -> ( LogAction IO SomeEntry -> IO () )
+    logActionToIO smtConfig logger smt logAction =
+        SMT.runSMT smtConfig (logger <> contramap from logAction) smt
+
     mainModuleName :: ModuleName
     mainModuleName = moduleName definitionModule
 
