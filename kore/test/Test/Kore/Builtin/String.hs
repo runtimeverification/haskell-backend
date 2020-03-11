@@ -1,5 +1,6 @@
 module Test.Kore.Builtin.String
-    ( test_lt
+    ( test_eq
+    , test_lt
     , test_concat
     , test_substr
     , test_length
@@ -58,6 +59,9 @@ testComparison name impl symb =
         let expect = Test.Bool.asPattern (impl a b)
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
+
+test_eq :: TestTree
+test_eq = testComparison "STRING.eq" (==) eqStringSymbol
 
 test_lt :: TestTree
 test_lt = testComparison "STRING.lt" (<) ltStringSymbol
