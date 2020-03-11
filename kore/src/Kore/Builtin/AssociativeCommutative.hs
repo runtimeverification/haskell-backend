@@ -47,7 +47,6 @@ import Control.Monad
     ( (>=>)
     )
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List
@@ -782,7 +781,7 @@ unifyEqualsNormalized
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
         case toNormalized patt of
-            Bottom -> Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
+            Bottom -> lift $ Monad.Unify.explainAndReturnBottom
                 "Duplicated elements in normalization."
                 first
                 second
@@ -817,19 +816,19 @@ unifyEqualsNormalizedAc
     normalized2
   = do
     (simpleUnifier, opaques) <- case (opaqueDifference1, opaqueDifference2) of
-        ([], []) -> Monad.Trans.lift $
+        ([], []) -> lift $
             unifyEqualsElementLists'
                 allElements1
                 allElements2
                 Nothing
         ([opaque], []) ->
-            Monad.Trans.lift $
+            lift $
                 unifyEqualsElementLists'
                     allElements1
                     allElements2
                     (Just opaque)
         ([], [opaque]) ->
-            Monad.Trans.lift $
+            lift $
                 unifyEqualsElementLists'
                     allElements2
                     allElements1
@@ -843,7 +842,7 @@ unifyEqualsNormalizedAc
         (_, _) -> empty
     let (unifiedElements, unifierCondition) =
             Conditional.splitTerm simpleUnifier
-    Monad.Trans.lift $ do -- unifier monad
+    lift $ do -- unifier monad
         -- unify the parts not sent to unifyEqualsNormalizedElements.
         (commonElementsTerms, commonElementsCondition) <-
             unifyElementList (Map.toList commonElements)
@@ -1357,7 +1356,7 @@ unifyOpaqueVariable
     opaqueTerms
   =
     case elementListAsNormalized pairs of
-        Nothing -> Monad.Trans.lift $ bottomWithExplanation
+        Nothing -> lift $ bottomWithExplanation
             "Duplicated element in unification results"
         Just elementTerm ->
             let secondTerm =
@@ -1387,7 +1386,7 @@ noCheckUnifyOpaqueChildren
             [(TermLike variable, Domain.Value normalized (TermLike variable))]
         , [TermLike variable]
         )
-noCheckUnifyOpaqueChildren unifyChildren v1 second = Monad.Trans.lift $ do
+noCheckUnifyOpaqueChildren unifyChildren v1 second = lift $ do
     unifier <- unifyChildren (mkElemVar v1) second
     let (opaque, predicate) = Conditional.splitTerm unifier
     return ([] `Conditional.withCondition` predicate, [opaque])

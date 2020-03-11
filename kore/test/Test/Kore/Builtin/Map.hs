@@ -61,7 +61,6 @@ import qualified Hedgehog.Range as Range
 import Test.Tasty
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Either as Either
@@ -1038,7 +1037,7 @@ unifiesWithMulti
     -> [Pattern Variable]
     -> PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
-    actualResults <- Trans.lift $ evaluateToList (mkAnd pat1 pat2)
+    actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults
   where
     compareElements [] actuals = [] === actuals

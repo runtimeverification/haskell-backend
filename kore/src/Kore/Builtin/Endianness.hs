@@ -18,7 +18,6 @@ import Control.Error
     ( MaybeT
     )
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Trans
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.String
@@ -97,7 +96,7 @@ unifyEquals
 unifyEquals termLike1@(Endianness_ end1) termLike2@(Endianness_ end2)
   | end1 == end2 = return (Pattern.fromTermLike termLike1)
   | otherwise =
-    Trans.lift $ explainAndReturnBottom
+    lift $ explainAndReturnBottom
         "Cannot unify distinct constructors."
         termLike1
         termLike2

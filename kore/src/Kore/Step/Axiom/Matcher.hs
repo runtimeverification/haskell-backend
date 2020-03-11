@@ -28,7 +28,6 @@ import Control.Monad.State.Strict
     , StateT
     )
 import qualified Control.Monad.State.Strict as Monad.State
-import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Maybe
     ( MaybeT (..)
     )
@@ -686,8 +685,8 @@ matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
           | otherwise ->
             push (Pair frame1 normalized2')
         _ -> empty
-    Monad.Trans.lift $ Foldable.traverse_ pushValue concrete12
-    Monad.Trans.lift $ Foldable.traverse_ pushValue abstractMerge
+    lift $ Foldable.traverse_ pushValue concrete12
+    lift $ Foldable.traverse_ pushValue abstractMerge
   where
     normalized2' =
         wrapTermLike normalized2
