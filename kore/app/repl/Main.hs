@@ -12,10 +12,10 @@ import Control.Monad.Trans
 import Control.Monad.Trans.Reader
     ( runReaderT
     )
-import Data.Reflection
 import Data.Functor.Contravariant
     ( contramap
     )
+import Data.Reflection
 import Data.Semigroup
     ( (<>)
     )
@@ -52,10 +52,10 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.Log
-    ( KoreLogOptions (..)
+    ( ActualEntry (..)
+    , KoreLogOptions (..)
     , LogAction (..)
     , SomeEntry (..)
-    , ActualEntry (..)
     , emptyLogger
     , getLoggerT
     , swappableLogger
