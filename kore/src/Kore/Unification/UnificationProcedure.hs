@@ -7,6 +7,9 @@ module Kore.Unification.UnificationProcedure
     ( UnificationProcedure (..)
     ) where
 
+import Branch
+    ( BranchT
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -27,5 +30,5 @@ newtype UnificationProcedure unifier =
             => SideCondition variable
             -> TermLike variable
             -> TermLike variable
-            -> unifier (Condition variable)
+            -> BranchT unifier (Condition variable)
         }

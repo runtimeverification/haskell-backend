@@ -213,7 +213,9 @@ unifyRule unificationProcedure sideCondition initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- unifyTermLikes mergedSideCondition initialTerm ruleLeft
+    unification <-
+        unifyTermLikes mergedSideCondition initialTerm ruleLeft
+        & Branch.alternate
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
