@@ -143,13 +143,15 @@ instance SOP.Generic (Axiom symbol variable)
 
 instance SOP.HasDatatypeInfo (Axiom symbol variable)
 
-instance Debug symbol => Debug (Axiom symbol variable)
+instance (Debug symbol, Debug variable) => Debug (Axiom symbol variable)
 
-instance (Debug symbol, Diff symbol) => Diff (Axiom symbol variable)
+instance
+    (Debug symbol, Debug variable, Diff symbol, Diff variable)
+    => Diff (Axiom symbol variable)
 
-instance NFData symbol => NFData (Axiom symbol variable)
+instance (NFData symbol, NFData variable) => NFData (Axiom symbol variable)
 
-instance Default (Axiom symbol variable) where
+instance Ord variable => Default (Axiom symbol variable) where
     def =
         Axiom
             { heatCool = def
@@ -215,10 +217,11 @@ axiomSymbolToSymbolOrAlias axiom =
     axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias
 
 parseAxiomAttribute
-    :: AttributePattern
+    :: FreeVariables Variable
+    -> AttributePattern
     -> Axiom SymbolOrAlias Variable
     -> Parser (Axiom SymbolOrAlias Variable)
-parseAxiomAttribute attr =
+parseAxiomAttribute freeVariables attr =
         typed @HeatCool (parseAttribute attr)
         Monad.>=> typed @ProductionID (parseAttribute attr)
         Monad.>=> typed @Priority (parseAttribute attr)
@@ -227,7 +230,9 @@ parseAxiomAttribute attr =
         Monad.>=> typed @Unit (parseAttribute attr)
         Monad.>=> typed @Idem (parseAttribute attr)
         Monad.>=> typed @Trusted (parseAttribute attr)
-        Monad.>=> typed @(Concrete Variable) (parseConcreteAttribute attr)
+        Monad.>=>
+            typed @(Concrete Variable)
+                (parseConcreteAttribute freeVariables attr)
         Monad.>=> typed @Simplification (parseAttribute attr)
         Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
         Monad.>=> typed @SmtLemma (parseAttribute attr)
@@ -239,12 +244,16 @@ parseAxiomAttribute attr =
         Monad.>=> typed @UniqueId (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
 
-parseAxiomAttributes :: Attributes -> Parser (Axiom SymbolOrAlias Variable)
-parseAxiomAttributes (Attributes attrs) =
-    Foldable.foldlM (flip parseAxiomAttribute) Default.def attrs
+parseAxiomAttributes
+    :: FreeVariables Variable
+    -> Attributes
+    -> Parser (Axiom SymbolOrAlias Variable)
+parseAxiomAttributes freeVariables (Attributes attrs) =
+    Foldable.foldlM (flip $ parseAxiomAttribute freeVariables) Default.def attrs
 
 mapAxiomVariables
-    :: (ElementVariable variable1 -> ElementVariable variable2)
+    :: Ord variable2
+    => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Axiom symbol variable1 -> Axiom symbol variable2
 mapAxiomVariables e s axiom =

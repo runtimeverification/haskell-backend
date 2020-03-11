@@ -105,7 +105,6 @@ module IMP
   imports IMP-SYNTAX
   imports IMP-STRICT
   imports IMP-STATE
-  imports DOMAINS
 
   imports SYMBOLIC-INT
 

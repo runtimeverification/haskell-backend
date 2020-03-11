@@ -76,7 +76,7 @@ endmodule
 module IMP
   imports IMP-SYNTAX
   imports IMP-STRICT
-  imports DOMAINS
+  imports MAP
   imports SYMBOLIC-INT
 
   configuration <T color="yellow">

@@ -366,7 +366,8 @@ verifyAxiomSentence sentence =
         verified <- verifyAxiomSentenceWorker sentence
         attrs <-
             parseAndVerifyAxiomAttributes verifiedModule'
-            $ sentenceAxiomAttributes sentence
+                (freeVariables sentence)
+                (sentenceAxiomAttributes sentence)
         State.modify $ addAxiom verified attrs
   where
     addAxiom verified attrs =
@@ -399,7 +400,8 @@ verifyClaimSentence sentence =
         verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)
         attrs <-
             parseAndVerifyAxiomAttributes verifiedModule'
-            $ sentenceClaimAttributes sentence
+                (freeVariables sentence)
+                (sentenceClaimAttributes sentence)
         when (rejectClaim attrs verified)
             $ koreFail "Found claim with universally-quantified variables\
                         \ appearing only on the right-hand side"
@@ -496,10 +498,11 @@ parseAttributes' =
 parseAndVerifyAxiomAttributes
     :: MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    -> FreeVariables Variable
     -> Attributes
     -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
-parseAndVerifyAxiomAttributes indexModule attrs =
+parseAndVerifyAxiomAttributes indexModule freeVars attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
   where
     parseAxiomAttributes' =
-        Attribute.Parser.liftParser . Attribute.parseAxiomAttributes
+        Attribute.Parser.liftParser . Attribute.parseAxiomAttributes freeVars

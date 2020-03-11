@@ -157,6 +157,12 @@ instance
     unparse = unparse . equalityRuleToTerm
     unparse2 = unparse2 . equalityRuleToTerm
 
+instance
+    InternalVariable variable
+    => HasFreeVariables (EqualityRule variable) variable
+  where
+    freeVariables (EqualityRule equality) = freeVariables equality
+
 instance InternalVariable variable => SQL.Column (EqualityRule variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
