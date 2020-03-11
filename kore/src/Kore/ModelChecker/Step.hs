@@ -17,6 +17,10 @@ module Kore.ModelChecker.Step
 
 import Prelude.Kore
 
+import Control.Error
+    ( ExceptT
+    , runExceptT
+    )
 import Control.Monad
     ( when
     )
@@ -65,7 +69,9 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Variable
     ( Variable
     )
+import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
+import Kore.Unification.UnificationProcedure
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 
@@ -208,6 +214,13 @@ transitionRule
     transitionComputeWeakNext _ (GoalRemLHS _)
       = return (GoalLHS Pattern.bottom)
 
+    unificationProcedure
+        :: UnificationProcedure (ExceptT UnificationOrSubstitutionError m)
+    unificationProcedure =
+        Step.UnificationProcedure $ \sideCondition term1 term2 ->
+            Unification.unificationProcedure sideCondition term1 term2
+            & Monad.Unify.getUnifierT
+
     transitionComputeWeakNextHelper
         :: [RewriteRule Variable]
         -> Pattern Variable
@@ -216,11 +229,11 @@ transitionRule
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
         eitherResults <-
-            lift . lift . Monad.Unify.runUnifierT
-            $ Step.applyRewriteRulesParallel
-                (Step.UnificationProcedure Unification.unificationProcedure)
+            Step.applyRewriteRulesParallel
+                unificationProcedure
                 rules
                 config
+            & lift . lift . runExceptT
         case eitherResults of
             Left _ ->
                 (error . show . Pretty.vsep)
@@ -241,8 +254,7 @@ transitionRule
                         StepResult.mapConfigs
                             GoalLHS
                             GoalRemLHS
-                StepResult.transitionResults
-                    (mapConfigs $ mapRules (StepResult.mergeResults results))
+                StepResult.transitionResults (mapConfigs $ mapRules results)
 
 defaultOneStepStrategy
     :: patt

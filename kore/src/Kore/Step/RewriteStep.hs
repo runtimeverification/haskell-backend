@@ -42,7 +42,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Log as Log
 import Kore.Log.DebugAppliedRewriteRules
     ( debugAppliedRewriteRules
     )
@@ -54,6 +53,9 @@ import Kore.Step.RulePattern
     , RulePattern
     )
 import qualified Kore.Step.RulePattern as Rule
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import Kore.Step.Step
     ( Result
     , Results
@@ -70,11 +72,6 @@ import Kore.Step.Step
     )
 import Kore.Unification.Unify
     ( InternalVariable
-    , MonadUnify
-    )
-import qualified Kore.Unification.Unify as Monad.Unify
-    ( gather
-    , scatter
     )
 import Kore.Variables.Target
     ( Target
@@ -82,6 +79,9 @@ import Kore.Variables.Target
 import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
+    )
+import Log
+    ( MonadLog
     )
 
 withoutUnification :: UnifiedRule variable rule -> rule
@@ -120,17 +120,17 @@ See also: 'applyInitialConditions'
 
  -}
 finalizeAppliedRule
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => RulePattern variable
     -- ^ Applied rule
     -> OrCondition variable
     -- ^ Conditions of applied rule
-    -> unifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 finalizeAppliedRule renamedRule appliedConditions =
-    fmap OrPattern.fromPatterns . Monad.Unify.gather
-    $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
+    MultiOr.gather
+    $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
   where
     ruleRHS = Rule.rhs renamedRule
     finalizeAppliedRuleWorker appliedCondition = do
@@ -158,8 +158,8 @@ finalizeAppliedRule renamedRule appliedConditions =
 
 finalizeRule
     ::  ( InternalVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifier
+        , MonadLog unifier
+        , MonadSimplify unifier
         )
     => Pattern (Target variable)
     -- ^ Initial conditions
@@ -169,7 +169,7 @@ finalizeRule
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule initial unifiedRule =
-    Monad.Unify.gather $ do
+    Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions
@@ -185,7 +185,7 @@ finalizeRule initial unifiedRule =
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer unifier variable
     =   InternalVariable variable
-    =>  MonadUnify unifier
+    =>  MonadSimplify unifier
     =>  Pattern (Target variable)
     ->  [UnifiedRule (Target variable) (RulePattern (Target variable))]
     ->  unifier (Results RulePattern variable)
@@ -245,7 +245,7 @@ finalizeRulesSequence initial unifiedRules = do
 applyRulesWithFinalizer
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => Finalizer unifier variable
     -> UnificationProcedure unifier
     -> [RulePattern variable]
@@ -269,7 +269,7 @@ See also: 'applyRewriteRule'
 applyRulesParallel
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => UnificationProcedure unifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
@@ -286,7 +286,7 @@ See also: 'applyRewriteRule'
 applyRewriteRulesParallel
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => UnificationProcedure unifier
     -> [RewriteRule variable]
     -- ^ Rewrite rules
@@ -311,7 +311,7 @@ See also: 'applyRewriteRule'
 applyRulesSequence
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => UnificationProcedure unifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
@@ -328,7 +328,7 @@ See also: 'applyRewriteRulesParallel'
 applyRewriteRulesSequence
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => UnificationProcedure unifier
     -> Pattern variable
     -- ^ Configuration being rewritten

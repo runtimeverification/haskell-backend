@@ -26,6 +26,10 @@ module Kore.Strategies.Goal
 
 import Prelude.Kore
 
+import Control.Error
+    ( ExceptT
+    , runExceptT
+    )
 import Control.Exception
     ( throw
     )
@@ -147,7 +151,9 @@ import Kore.TopBottom
     ( isBottom
     , isTop
     )
+import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
+import Kore.Unification.UnificationProcedure
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
@@ -875,11 +881,11 @@ derivePar
 derivePar rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        lift . Monad.Unify.runUnifierT
-        $ Step.applyRewriteRulesParallel
-            (Step.UnificationProcedure Unification.unificationProcedure)
+        Step.applyRewriteRulesParallel
+            unificationProcedure
             rewrites
             configuration
+        & lift . runExceptT
     case eitherResults of
         Left err ->
             (error . show . Pretty.vsep)
@@ -894,6 +900,14 @@ derivePar rules goal = withConfiguration goal $ do
   where
     configuration :: Pattern Variable
     configuration = getConfiguration goal
+
+unificationProcedure
+    :: MonadSimplify simplifier
+    => UnificationProcedure (ExceptT UnificationOrSubstitutionError simplifier)
+unificationProcedure =
+    Step.UnificationProcedure $ \sideCondition term1 term2 ->
+        Unification.unificationProcedure sideCondition term1 term2
+        & Monad.Unify.getUnifierT
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -911,11 +925,11 @@ deriveSeq
 deriveSeq rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        lift . Monad.Unify.runUnifierT
-        $ Step.applyRewriteRulesSequence
-            (Step.UnificationProcedure Unification.unificationProcedure)
+        Step.applyRewriteRulesSequence
+            unificationProcedure
             configuration
             rewrites
+        & lift . runExceptT
     case eitherResults of
         Left err ->
             (error . show . Pretty.vsep)
@@ -935,7 +949,7 @@ deriveResults
     => (Goal goal, FromRulePattern goal, ToRulePattern goal)
     => FromRulePattern (Rule goal)
     => goal
-    -> [Step.Results RulePattern Variable]
+    -> Step.Results RulePattern Variable
     -> Strategy.TransitionT (Rule goal) simplifier (ProofState.ProofState goal)
 deriveResults goal results = do
     let mapRules =
@@ -951,7 +965,7 @@ deriveResults goal results = do
             Result.mapConfigs
                 (flip (configurationDestinationToRule goal) destination)
                 (flip (configurationDestinationToRule goal) destination)
-                (Result.mergeResults results)
+                results
     results' <-
         traverseConfigs (mapRules onePathResults)
     Result.transitionResults results'

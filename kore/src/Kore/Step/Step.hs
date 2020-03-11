@@ -34,7 +34,6 @@ module Kore.Step.Step
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
@@ -100,13 +99,6 @@ import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.UnificationProcedure
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
-import qualified Kore.Unification.Unify as Monad.Unify
-    ( gather
-    , scatter
-    )
 import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshPartialOrd
@@ -167,7 +159,7 @@ class UnifyingRule rule where
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
     :: InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => UnifyingRule rule
     => UnificationProcedure unifier
     -> SideCondition (Target variable)
@@ -177,8 +169,8 @@ unifyRules
     -- ^ Rule
     -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
 unifyRules unificationProcedure sideCondition initial rules =
-    Monad.Unify.gather $ do
-        rule <- Monad.Unify.scatter rules
+    Branch.gather $ do
+        rule <- Branch.scatter rules
         unifyRule unificationProcedure sideCondition initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
@@ -196,16 +188,16 @@ unification. The substitution is not applied to the renamed rule.
  -}
 unifyRule
     :: InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => UnifyingRule rule
-    => UnificationProcedure unifier
+    => UnificationProcedure simplifier
     -> SideCondition variable
     -- ^ Top level condition.
     -> Pattern variable
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
-    -> unifier (UnifiedRule variable (rule variable))
+    -> BranchT simplifier (UnifiedRule variable (rule variable))
 unifyRule unificationProcedure sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
@@ -215,13 +207,11 @@ unifyRule unificationProcedure sideCondition initial rule = do
     let ruleLeft = matchingPattern rule
     unification <-
         unifyTermLikes mergedSideCondition initialTerm ruleLeft
-        & Branch.alternate
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         simplifyPredicate mergedSideCondition Nothing (unification <> requires')
-        & Branch.alternate
     return (rule `Conditional.withCondition` unification')
   where
     unifyTermLikes = runUnificationProcedure unificationProcedure
@@ -337,16 +327,16 @@ we added to the result.
 the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
-    :: forall variable unifier rule
+    :: forall variable monad rule
     .  InternalVariable variable
-    => MonadUnify unifier
+    => Monad monad
     => UnifyingRule rule
     => Pretty.Pretty (rule (Target variable))
     => Pattern (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable) (rule (Target variable))
     -- ^ Unified rule
-    -> unifier ()
+    -> monad ()
 checkSubstitutionCoverage initial unified
   | isCoveringSubstitution || isSymbolic = return ()
   | otherwise =
@@ -389,23 +379,22 @@ The rule is considered to apply if the result is not @\\bottom@.
 applyInitialConditions
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => SideCondition variable
     -- ^ Top-level conditions
     -> Maybe (Condition variable)
     -- ^ Initial conditions
     -> Condition variable
     -- ^ Unification conditions
-    -> unifier (OrCondition variable)
+    -> BranchT unifier (OrCondition variable)
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
 applyInitialConditions sideCondition initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
-        Monad.liftM MultiOr.make
-        $ Branch.gather
-        $ simplifyPredicate sideCondition initial unification
+        simplifyPredicate sideCondition initial unification
+        & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
