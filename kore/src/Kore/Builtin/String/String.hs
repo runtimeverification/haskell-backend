@@ -12,6 +12,7 @@ module Kore.Builtin.String.String
     , asTermLike
     , asPartialPattern
       -- * keys
+    , eqKey
     , ltKey
     , plusKey
     , string2IntKey
@@ -110,6 +111,9 @@ asPartialPattern
     -> Pattern variable
 asPartialPattern resultSort =
     maybe Pattern.bottom (asPattern resultSort)
+
+eqKey :: IsString s => s
+eqKey = "STRING.eq"
 
 ltKey :: IsString s => s
 ltKey = "STRING.lt"
