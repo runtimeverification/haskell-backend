@@ -144,7 +144,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
             )
         ),
         /* Spa */
-        weakExistsFinally{SortGeneratedTopCell{}}(
+        weakAlwaysFinally{SortGeneratedTopCell{}}(
             /* Fn Spa */
             Lbl'-LT-'generatedTop'-GT-'{}(
                 /* Fn Spa */
