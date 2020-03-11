@@ -81,8 +81,8 @@ data KoreModule = KoreModule
 
 -- | SMT Timeout and (optionally) a custom prelude path.
 data SmtOptions = SmtOptions
-    { timeOut    :: !SMT.TimeOut
-    , prelude    :: !(Maybe FilePath)
+    { timeOut :: !SMT.TimeOut
+    , prelude :: !(Maybe FilePath)
     }
 
 -- | Options for the kore repl.
