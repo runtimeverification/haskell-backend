@@ -46,6 +46,9 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Branch
+    ( BranchT
+    )
 import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
@@ -90,6 +93,9 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
@@ -213,6 +219,7 @@ unifyRule unificationProcedure sideCondition initial rule = do
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         simplifyPredicate mergedSideCondition Nothing (unification <> requires')
+        & Branch.alternate
     return (rule `Conditional.withCondition` unification')
   where
     unifyTermLikes = runUnificationProcedure unificationProcedure
@@ -395,7 +402,7 @@ applyInitialConditions sideCondition initial unification = do
     -- The axiom requires clause is included in the unification conditions.
     applied <-
         Monad.liftM MultiOr.make
-        $ Monad.Unify.gather
+        $ Branch.gather
         $ simplifyPredicate sideCondition initial unification
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
@@ -424,16 +431,16 @@ toConfigurationVariablesCondition =
 
  -}
 applyRemainder
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => SideCondition variable
     -- ^ Top level condition
     -> Pattern variable
     -- ^ Initial configuration
     -> Condition variable
     -- ^ Remainder
-    -> unifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 applyRemainder sideCondition initial remainder = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
     normalizedCondition <-
@@ -442,19 +449,18 @@ applyRemainder sideCondition initial remainder = do
 
 -- | Simplifies the predicate obtained upon matching/unification.
 simplifyPredicate
-    :: forall unifier variable term
+    :: forall simplifier variable term
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => SideCondition variable
     -> Maybe (Condition variable)
     -> Conditional variable term
-    -> unifier (Conditional variable term)
+    -> BranchT simplifier (Conditional variable term)
 simplifyPredicate sideCondition (Just initialCondition) conditional = do
-    partialResult <- Branch.alternate
-        (Simplifier.simplifyCondition
+    partialResult <-
+        Simplifier.simplifyCondition
             (sideCondition `SideCondition.andCondition` initialCondition)
             conditional
-        )
     -- TODO (virgil): Consider using different simplifyPredicate implementations
     -- for rewrite rules and equational rules.
     -- Right now this double simplification both allows using the same code for
@@ -462,16 +468,12 @@ simplifyPredicate sideCondition (Just initialCondition) conditional = do
     -- for simplifying the `conditional`. However, it's not obvious that
     -- using the strongest background condition actually helps in our
     -- use cases, so we may be able to do something better for equations.
-    Branch.alternate
-        (Simplifier.simplifyCondition
-            sideCondition
-            ( partialResult
-            `Pattern.andCondition` initialCondition
-            )
+    Simplifier.simplifyCondition
+        sideCondition
+        ( partialResult
+        `Pattern.andCondition` initialCondition
         )
 simplifyPredicate sideCondition Nothing conditional =
-    Branch.alternate
-        (Simplifier.simplifyCondition
-            sideCondition
-            conditional
-        )
+    Simplifier.simplifyCondition
+        sideCondition
+        conditional

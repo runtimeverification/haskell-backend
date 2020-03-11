@@ -19,6 +19,7 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 
+import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -145,6 +146,7 @@ finalizeAppliedRule renamedRule appliedConditions =
         finalCondition <-
             simplifyPredicate
                 SideCondition.topTODO (Just appliedCondition) ensuresCondition
+            & Branch.alternate
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
@@ -193,8 +195,9 @@ finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-    remainders' <- Monad.Unify.gather $
+    remainders' <-
         applyRemainder SideCondition.topTODO initial remainder
+        & Branch.gather
     return Step.Results
         { results = Seq.fromList results
         , remainders =
@@ -209,8 +212,9 @@ finalizeRulesSequence initial unifiedRules = do
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $
+    remainders' <-
         applyRemainder SideCondition.topTODO initial remainder
+        & Branch.gather
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =

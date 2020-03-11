@@ -195,8 +195,8 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule sideCondition renamedRule appliedConditions =
-    fmap OrPattern.fromPatterns . Monad.Unify.gather
-    $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
+    fmap OrPattern.fromPatterns . Branch.gather
+    $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
@@ -335,8 +335,9 @@ finalizeRulesSequence sideCondition initial unifiedRules
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $
+    remainders' <-
         applyRemainder sideCondition initial remainder
+        & Branch.gather
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
