@@ -83,7 +83,6 @@ data KoreModule = KoreModule
 data SmtOptions = SmtOptions
     { timeOut    :: !SMT.TimeOut
     , prelude    :: !(Maybe FilePath)
-    , smtSolver  :: Solver
     }
 
 -- | Options for the kore repl.
@@ -95,7 +94,6 @@ data KoreReplOptions = KoreReplOptions
     , replScript       :: !ReplScript
     , outputFile       :: !OutputFile
     , koreLogOptions   :: !KoreLogOptions
-    , koreProveOptions :: !(Maybe KoreProveOptions)
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -108,7 +106,6 @@ parseKoreReplOptions =
     <*> parseReplScript
     <*> parseOutputFile
     <*> parseKoreLogOptions (ExeName "kore-repl")
-    <*> optional parseKoreProveOptions
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -144,7 +141,6 @@ parseKoreReplOptions =
                 <> help "Path to the SMT prelude file"
                 )
             )
-        <*> parseSolver
 
     parseReplMode :: Parser ReplMode
     parseReplMode =

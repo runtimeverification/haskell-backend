@@ -6,12 +6,9 @@ module GlobalMain
     , KoreProveOptions(..)
     , KoreMergeOptions(..)
     , ExeName (..)
-    , Solver (..)
     , Main
     , parseKoreProveOptions
     , parseKoreMergeOptions
-    , parseSolver
-    , readSum
     , mainGlobal
     , defaultMainGlobal
     , enableDisableFlag
@@ -40,7 +37,6 @@ import qualified Control.Monad as Monad
 import Control.Monad.Trans.Class
     ( lift
     )
-import qualified Data.Char as Char
 import Data.List
     ( intercalate
     )
@@ -78,7 +74,6 @@ import Options.Applicative
     ( InfoMod
     , Parser
     , ParserHelp (..)
-    , ReadM
     , argument
     , defaultPrefs
     , disabled
@@ -514,31 +509,3 @@ loadDefinitions filePaths =
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . fst
-
--- | Available SMT solvers
-data Solver = Z3 | None
-    deriving (Eq, Ord, Show)
-    deriving (Enum, Bounded)
-
-parseSolver :: Parser Solver
-parseSolver =
-    option (readSum longName options)
-    $  metavar "SOLVER"
-    <> long longName
-    <> help ("SMT solver for checking constraints: " <> knownOptions)
-    <> value Z3
-  where
-    longName = "smt"
-    knownOptions = intercalate ", " (map fst options)
-    options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
-
-readSum :: String -> [(String, value)] -> ReadM value
-readSum longName options = do
-    opt <- str
-    case lookup opt options of
-        Just val -> pure val
-        _ -> readerError (unknown opt ++ known)
-  where
-    knownOptions = intercalate ", " (map fst options)
-    unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
-    known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."

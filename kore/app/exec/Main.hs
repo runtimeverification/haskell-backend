@@ -12,6 +12,7 @@ import qualified Control.Monad.Reader.Class as Reader
 import Control.Monad.Trans
     ( lift
     )
+import qualified Data.Char as Char
 import Data.Default
     ( def
     )
@@ -62,6 +63,7 @@ import Options.Applicative
     , strOption
     , value
     )
+import qualified Options.Applicative as Options
 import System.Directory
     ( doesFileExist
     )
@@ -213,6 +215,17 @@ parseSum metaName longName helpMsg options =
   where
     knownOptions = intercalate ", " (map fst options)
 
+readSum :: String -> [(String, value)] -> Options.ReadM value
+readSum longName options = do
+    opt <- str
+    case lookup opt options of
+        Just val -> pure val
+        _ -> readerError (unknown opt ++ known)
+  where
+    knownOptions = intercalate ", " (map fst options)
+    unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
+    known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
+
 applyKoreSearchOptions
     :: Maybe KoreSearchOptions
     -> KoreExecOptions
@@ -233,6 +246,23 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         case searchType of
             ONE -> Limit 1
             _ -> Unlimited
+
+-- | Available SMT solvers
+data Solver = Z3 | None
+    deriving (Eq, Ord, Show)
+    deriving (Enum, Bounded)
+
+parseSolver :: Parser Solver
+parseSolver =
+    option (readSum longName options)
+    $  metavar "SOLVER"
+    <> long longName
+    <> help ("SMT solver for checking constraints: " <> knownOptions)
+    <> value Z3
+  where
+    longName = "smt"
+    knownOptions = intercalate ", " (map fst options)
+    options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
 
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
