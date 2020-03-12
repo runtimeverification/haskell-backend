@@ -33,15 +33,6 @@ import Kore.Unification.Error
 -- and provides functions to throw these errors. The point of this is to be able
 -- to display information about unification failures through 'explainFailure'.
 class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
-    throwSubstitutionError
-        :: SubstitutionError
-        -> unifier a
-    default throwSubstitutionError
-        :: (MonadTrans t, MonadUnify m, unifier ~ t m)
-        => SubstitutionError -> unifier a
-    throwSubstitutionError = lift . throwSubstitutionError
-    {-# INLINE throwSubstitutionError #-}
-
     throwUnificationError
         :: UnificationError
         -> unifier a

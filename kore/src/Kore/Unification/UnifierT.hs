@@ -93,13 +93,6 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
-    throwSubstitutionError =
-        UnifierT
-        . lift
-        . Error.throwError
-        . SubstitutionError
-    {-# INLINE throwSubstitutionError #-}
-
     throwUnificationError =
         UnifierT
         . lift
@@ -126,7 +119,7 @@ throwUnificationOrSubstitutionError
     => UnificationOrSubstitutionError
     -> unifier a
 throwUnificationOrSubstitutionError (SubstitutionError s) =
-    throwSubstitutionError s
+    case s of {}
 throwUnificationOrSubstitutionError (UnificationError u) =
     throwUnificationError u
 
