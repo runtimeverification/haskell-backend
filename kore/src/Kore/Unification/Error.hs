@@ -8,8 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Unification.Error
-    ( SubstitutionError
-    , UnificationError (..)
+    ( UnificationError (..)
     , UnificationOrSubstitutionError (..)
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
