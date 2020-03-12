@@ -1006,18 +1006,17 @@ saveSession path =
 
 savePartialProof
     :: forall m claim
-    .  MonadState (ReplState claim) m
-    => MonadWriter ReplOutput m
+    .  Claim claim
     => MonadIO m
-    => Claim claim
     => From claim (TermLike Variable)
     => Maybe Natural
     -> FilePath
-    -> m ()
+    -> ReplM claim m ()
 savePartialProof maybeNatural file = do
     currentClaim <- Lens.use (field @"claim")
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
+    Config { mainModuleName } <- ask
     maybeConfig <- getConfigAt maybeNode
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
@@ -1029,6 +1028,7 @@ savePartialProof maybeNatural file = do
                     <$> removeIfRoot currentNode currentIndex claims
                 newDefinition =
                     createNewDefinition
+                        mainModuleName
                         (makeModuleName file)
                         $ newClaim : newTrustedClaims
             saveUnparsedDefinitionToFile (unparse newDefinition)
@@ -1039,7 +1039,7 @@ savePartialProof maybeNatural file = do
 
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
-        -> m ()
+        -> ReplM claim m ()
     saveUnparsedDefinitionToFile definition =
         liftIO
         $ withFile

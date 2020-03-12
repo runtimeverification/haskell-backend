@@ -807,10 +807,11 @@ createNewDefinition
     :: forall claim
     .  Claim claim
     => From claim (TermLike Variable)
-    => String
+    => ModuleName
+    -> String
     -> [claim]
     -> Definition (Sentence (TermLike Variable))
-createNewDefinition name claims =
+createNewDefinition mainModuleName name claims =
     Definition
         { definitionAttributes = mempty
         , definitionModules = [newModule]
@@ -830,8 +831,7 @@ createNewDefinition name claims =
     importVerification =
         SentenceImportSentence
             SentenceImport
-                { sentenceImportModuleName =
-                    ModuleName "VERIFICATION"
+                { sentenceImportModuleName = mainModuleName
                 , sentenceImportAttributes = mempty
                 }
 

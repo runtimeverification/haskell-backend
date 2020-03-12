@@ -228,6 +228,7 @@ mainWithOptions
                             replScript
                             replMode
                             outputFile
+                            mainModuleName
 
   where
     mainModuleName :: ModuleName

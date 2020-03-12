@@ -69,6 +69,9 @@ import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Syntax.Module
+    ( ModuleName
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
@@ -378,6 +381,7 @@ proveWithRepl
     -- ^ Run in a specific repl mode
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
+    -> ModuleName
     -> SMT ()
 proveWithRepl
     definitionModule
@@ -387,11 +391,12 @@ proveWithRepl
     replScript
     replMode
     outputFile
+    mainModuleName
   =
     evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
-        Repl.runRepl axioms claims mvar replScript replMode outputFile
+        Repl.runRepl axioms claims mvar replScript replMode outputFile mainModuleName
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck

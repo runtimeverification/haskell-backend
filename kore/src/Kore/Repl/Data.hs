@@ -95,6 +95,10 @@ import Kore.Strategies.Goal
 import Kore.Strategies.Verification
     ( CommonProofState
     )
+
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -472,6 +476,7 @@ data Config claim m = Config
     -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.
+    , mainModuleName :: ModuleName
     }
     deriving (GHC.Generic)
 
