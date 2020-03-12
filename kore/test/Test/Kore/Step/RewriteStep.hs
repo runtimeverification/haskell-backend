@@ -12,8 +12,7 @@ import Prelude.Kore
 import Test.Tasty
 
 import Control.Error
-    ( ExceptT
-    , runExceptT
+    ( runExceptT
     )
 import qualified Control.Exception as Exception
 import Data.Default as Default
@@ -69,21 +68,12 @@ import Kore.Step.RulePattern
     , rulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    )
-import Kore.Step.Step
-    ( UnificationProcedure (..)
-    )
 import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
     ( UnificationError (..)
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.UnifierT
-    ( getUnifierT
-    )
 import Kore.Variables.Fresh
     ( nextVariable
     )
@@ -165,17 +155,13 @@ unifyRule
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    Step.unifyRule unificationProcedure SideCondition.top initial rule
+    Step.unifyRule
+        Unification.unificationProcedure
+        SideCondition.top
+        initial
+        rule
     & runExceptT . Branch.gather
     & runSimplifier Mock.env
-
-unificationProcedure
-    :: MonadSimplify simplifier
-    => UnificationProcedure (ExceptT UnificationError simplifier)
-unificationProcedure =
-    UnificationProcedure $ \sideCondition term1 term2 ->
-        Unification.unificationProcedure sideCondition term1 term2
-        & getUnifierT
 
 test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =
@@ -810,7 +796,7 @@ applyRewriteRulesParallel
       )
 applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
-        unificationProcedure
+        Unification.unificationProcedure
         rules
         (simplifiedPattern initial)
     & runSimplifierNoSMT Mock.env . runExceptT
@@ -1199,7 +1185,7 @@ applyRewriteRulesSequence
       )
 applyRewriteRulesSequence initial rules =
     Step.applyRewriteRulesSequence
-        unificationProcedure
+        Unification.unificationProcedure
         (simplifiedPattern initial)
         rules
     & runSimplifier Mock.env . runExceptT

@@ -18,8 +18,7 @@ module Kore.ModelChecker.Step
 import Prelude.Kore
 
 import Control.Error
-    ( ExceptT
-    , runExceptT
+    ( runExceptT
     )
 import Control.Monad
     ( when
@@ -72,10 +71,7 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Variable
     ( Variable
     )
-import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.UnificationProcedure
-import qualified Kore.Unification.UnifierT as Monad.Unify
 
 data Prim patt rewrite =
       CheckProofState
@@ -216,11 +212,7 @@ transitionRule
     transitionComputeWeakNext _ (GoalRemLHS _)
       = return (GoalLHS Pattern.bottom)
 
-    unificationProcedure :: UnificationProcedure (ExceptT UnificationError m)
-    unificationProcedure =
-        Step.UnificationProcedure $ \sideCondition term1 term2 ->
-            Unification.unificationProcedure sideCondition term1 term2
-            & Monad.Unify.getUnifierT
+    unificationProcedure = Unification.unificationProcedure
 
     transitionComputeWeakNextHelper
         :: [RewriteRule Variable]

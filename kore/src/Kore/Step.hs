@@ -28,8 +28,7 @@ module Kore.Step
 import Prelude.Kore
 
 import Control.Error
-    ( ExceptT
-    , runExceptT
+    ( runExceptT
     )
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
@@ -66,12 +65,7 @@ import Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
-import Kore.Unification.Error
-    ( UnificationError
-    )
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.UnificationProcedure
-import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 
 
@@ -120,15 +114,13 @@ transitionRule =
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
         Foldable.asum (pure <$> filteredConfigs)
-    unificationProcedure :: UnificationProcedure (ExceptT UnificationError m)
-    unificationProcedure =
-        UnificationProcedure $ \sideCondition term1 term2 ->
-            Unification.unificationProcedure sideCondition term1 term2
-            & Monad.Unify.getUnifierT
     transitionRewrite rule config = do
         Transition.addRule rule
         eitherResults <-
-            Step.applyRewriteRulesParallel unificationProcedure [rule] config
+            Step.applyRewriteRulesParallel
+                Unification.unificationProcedure
+                [rule]
+                config
             & lift . runExceptT
         case eitherResults of
             Left err ->

@@ -65,7 +65,7 @@ import Kore.Step.Substitution
     )
 import Kore.TopBottom
 import Kore.Unification.Procedure
-    ( unificationProcedure
+    ( unificationProcedureWorker
     )
 import qualified Kore.Unification.UnifierT as Unifier
 
@@ -139,7 +139,7 @@ matchWith
 matchWith sideCondition e1 e2 = do
     eitherUnifiers <-
         lift $ Unifier.runUnifierT
-        $ unificationProcedure sideCondition t1 t2
+        $ unificationProcedureWorker sideCondition t1 t2
     let
         maybeUnifiers :: Maybe [Condition variable]
         maybeUnifiers = hush eitherUnifiers

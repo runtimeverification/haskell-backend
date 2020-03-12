@@ -120,7 +120,6 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unification.UnificationProcedure
-import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString
     )
@@ -308,10 +307,7 @@ runStepResult configuration axiom =
 unificationProcedure
     :: MonadSimplify simplifier
     => UnificationProcedure (ExceptT UnificationError simplifier)
-unificationProcedure =
-    Step.UnificationProcedure $ \sideCondition term1 term2 ->
-        Unification.unificationProcedure sideCondition term1 term2
-        & Monad.Unify.getUnifierT
+unificationProcedure = Unification.unificationProcedure
 
 -- | Test unparsing internalized patterns.
 hpropUnparse

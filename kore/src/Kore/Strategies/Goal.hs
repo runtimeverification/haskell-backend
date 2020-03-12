@@ -156,8 +156,6 @@ import Kore.TopBottom
     )
 import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.UnificationProcedure
-import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
@@ -881,7 +879,8 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar = deriveWith (Step.applyRewriteRulesParallel unificationProcedure)
+derivePar =
+    deriveWith $ Step.applyRewriteRulesParallel Unification.unificationProcedure
 
 type Deriver monad =
         [RewriteRule Variable]
@@ -911,14 +910,6 @@ deriveWith takeStep rules goal = withConfiguration goal $ do
     configuration = getConfiguration goal
     rewrites = RewriteRule . toRulePattern <$> rules
 
-unificationProcedure
-    :: MonadSimplify simplifier
-    => UnificationProcedure (ExceptT UnificationError simplifier)
-unificationProcedure =
-    Step.UnificationProcedure $ \sideCondition term1 term2 ->
-        Unification.unificationProcedure sideCondition term1 term2
-        & Monad.Unify.getUnifierT
-
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
     :: forall m goal
@@ -932,7 +923,9 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq = deriveWith (flip $ Step.applyRewriteRulesSequence unificationProcedure)
+deriveSeq =
+    deriveWith . flip
+    $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
 deriveResults
     :: MonadSimplify simplifier

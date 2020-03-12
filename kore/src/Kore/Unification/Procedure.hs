@@ -9,9 +9,14 @@ Portability : portable
 -}
 module Kore.Unification.Procedure
     ( unificationProcedure
+    , unificationProcedureWorker
     ) where
 
 import Prelude.Kore
+
+import Control.Error
+    ( ExceptT
+    )
 
 import qualified Branch as BranchT
 import Kore.Internal.Condition
@@ -35,9 +40,17 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
     )
 import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
+import Kore.Step.Simplification.Simplify
     ( simplifyCondition
     )
 import qualified Kore.TopBottom as TopBottom
+import Kore.Unification.Error
+import Kore.Unification.UnificationProcedure
+import Kore.Unification.UnifierT
+    ( getUnifierT
+    )
 import Kore.Unification.Unify
     ( InternalVariable
     , MonadUnify
@@ -48,7 +61,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 -- @t2@ are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
 -- If failing, it gives a 'UnificationError' reason for the failure.
-unificationProcedure
+unificationProcedureWorker
     ::  ( InternalVariable variable
         , MonadUnify unifier
         )
@@ -56,7 +69,7 @@ unificationProcedure
     -> TermLike variable
     -> TermLike variable
     -> unifier (Condition variable)
-unificationProcedure sideCondition p1 p2
+unificationProcedureWorker sideCondition p1 p2
   | p1Sort /= p2Sort =
     Monad.Unify.explainAndReturnBottom "Cannot unify different sorts."  p1 p2
   | otherwise = infoAttemptUnification p1 p2 $ do
@@ -72,3 +85,11 @@ unificationProcedure sideCondition p1 p2
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
+
+unificationProcedure
+    :: MonadSimplify simplifier
+    => UnificationProcedure (ExceptT UnificationError simplifier)
+unificationProcedure =
+    UnificationProcedure $ \sideCondition term1 term2 ->
+        unificationProcedureWorker sideCondition term1 term2
+        & getUnifierT
