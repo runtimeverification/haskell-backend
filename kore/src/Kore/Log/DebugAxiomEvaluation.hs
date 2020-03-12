@@ -127,16 +127,22 @@ instance Entry DebugAxiomEvaluation where
     shortDoc DebugAxiomEvaluation { identifier, state } =
         case state of
             Start _ ->
-                Just
-                $ Pretty.hsep ["While starting axiom evaluation of", Pretty.pretty identifier]
+                Just $ Pretty.hsep
+                    [ "While starting axiom evaluation of"
+                    , Pretty.pretty identifier
+                    ]
                 Pretty.<+> Pretty.colon
             AttemptingAxiom _ ->
-                Just
-                $ Pretty.hsep ["While attempting axiom", Pretty.pretty identifier]
+                Just $ Pretty.hsep
+                    [ "While attempting axiom"
+                    , Pretty.pretty identifier
+                    ]
                 Pretty.<+> Pretty.colon
             Reevaluation _ ->
-                Just
-                $ Pretty.hsep ["During reevaluation of", Pretty.pretty identifier]
+                Just $ Pretty.hsep
+                    [ "During reevaluation of"
+                    , Pretty.pretty identifier
+                    ]
                 Pretty.<+> Pretty.colon
             _ -> Nothing
 
