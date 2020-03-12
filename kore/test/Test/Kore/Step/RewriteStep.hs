@@ -50,9 +50,6 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
-import Kore.Internal.Substitution
-    ( Normalization (..)
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Result as Result
@@ -67,13 +64,15 @@ import Kore.Step.RulePattern
     , rulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
+import Kore.Step.Simplification.Data
+    ( SimplifierT
+    )
 import Kore.Step.Step
     ( UnificationProcedure (..)
     )
 import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
-    ( SubstitutionError (..)
-    , UnificationOrSubstitutionError (..)
+    ( UnificationOrSubstitutionError (..)
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
@@ -90,6 +89,9 @@ import Kore.Variables.Target
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import SMT
+    ( NoSMT
+    )
 
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
@@ -99,9 +101,9 @@ import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 evalUnifier
-    :: UnifierT Simplifier a
+    :: UnifierT (SimplifierT NoSMT) a
     -> IO (Either UnificationOrSubstitutionError [a])
-evalUnifier = runSimplifier Mock.env . runUnifierT
+evalUnifier = runSimplifierNoSMT Mock.env . runUnifierT
 
 applyInitialConditions
     :: Condition Variable
@@ -455,17 +457,17 @@ test_applyRewriteRule_ =
     -- sigma(a, h(b)) with substitution b=a
     , testCase "circular dependency error" $ do
         let expect =
-                -- TODO(virgil): This should probably be a normal result with
-                -- b=h(b) in the predicate.
-                Left . SubstitutionError
-                $ SimplifiableCycle [ElemVar Mock.y] normalization
-            fy = Mock.functional10 (mkElemVar Mock.y)
-            normalization =
-                mempty
-                    { denormalized =
-                        Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, fy)]
+                Conditional
+                    { term = fy
+                    , predicate =
+                        makeEqualsPredicate Mock.testSort (mkElemVar Mock.y) fy
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, fy)]
                     }
+                & Right . pure . OrPattern.fromPattern
+            fy = Mock.functional10 (mkElemVar Mock.y)
             initial =
                 Conditional
                     { term = Mock.sigma (mkElemVar Mock.x) fy
@@ -809,7 +811,7 @@ applyRewriteRulesParallel
       )
 applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
-    $ runSimplifier Mock.env
+    $ runSimplifierNoSMT Mock.env
     $ runUnifierT
     $ Step.applyRewriteRulesParallel
         unificationProcedure
@@ -1203,7 +1205,7 @@ applyRewriteRulesSequence
       )
 applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
-    $ runSimplifier Mock.env
+    $ runSimplifierNoSMT Mock.env
     $ runUnifierT
     $ Step.applyRewriteRulesSequence
         unificationProcedure

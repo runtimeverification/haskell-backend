@@ -10,7 +10,6 @@ module Kore.Unification.UnifierT
     , runUnifierT
     , maybeUnifierT
     , substitutionSimplifier
-    , unificationMakeAnd
     -- * Re-exports
     , module Kore.Unification.Unify
     ) where
@@ -34,18 +33,11 @@ import qualified Branch as BranchT
 import Kore.Profiler.Data
     ( MonadProfiler
     )
-import Kore.Step.Simplification.AndTerms
-    ( termUnification
-    )
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.Simplify
     ( ConditionSimplifier (..)
     , InternalVariable
     , MonadSimplify (..)
-    )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Step.Simplification.SubstitutionSimplifier
-    ( MakeAnd (..)
     )
 import Kore.Unification.Error
 import Kore.Unification.SubstitutionSimplifier
@@ -148,12 +140,3 @@ runUnifierT = runExceptT . BranchT.gather . getUnifierT
  -}
 maybeUnifierT :: MonadSimplify m => UnifierT m a -> MaybeT m [a]
 maybeUnifierT = hushT . BranchT.gather . getUnifierT
-
-unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
-unificationMakeAnd =
-    MakeAnd { makeAnd }
-  where
-    makeAnd termLike1 termLike2 sideCondition = do
-        unified <- termUnification termLike1 termLike2
-        BranchT.alternate
-            $ Simplifier.simplifyCondition sideCondition unified
