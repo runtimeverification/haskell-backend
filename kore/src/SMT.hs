@@ -231,7 +231,8 @@ instance MonadLog NoSMT where
         logAction <- ask
         let entryLogger = Log.fromLogAction @Log.ActualEntry logAction
         Trans.lift $ entryLogger Colog.<& Log.toEntry entry
-    logWhile entry2 action =
+    logWhile entry2 action = do
+        logEntry entry2
         NoSMT . Reader.local modifyContext $ getNoSMT action
       where
         modifyContext = Colog.cmap $ \entry1 ->

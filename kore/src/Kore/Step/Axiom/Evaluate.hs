@@ -138,7 +138,6 @@ evaluateAxioms equalityRules sideCondition termLike
             sourceLocation
             (matchAxiomIdentifier left)
             (DebugAxiomEvaluation.klabelIdentifier left)
-            $ return ()
 
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete

@@ -249,16 +249,16 @@ maybeEvaluatePattern
                 Profile.axiomEvaluation identifier
                 $ evaluator termLike sideConditions
             flattened <- case result of
-                AttemptedAxiom.NotApplicable ->
+                AttemptedAxiom.NotApplicable -> do
                     DebugAxiomEvaluation.notEvaluated
                         identifier
                         klabelIdentifier
-                        $ return AttemptedAxiom.NotApplicable
-                na@(AttemptedAxiom.NotApplicableUntilConditionChanges _) ->
+                    return AttemptedAxiom.NotApplicable
+                na@(AttemptedAxiom.NotApplicableUntilConditionChanges _) -> do
                     DebugAxiomEvaluation.notEvaluatedConditionally
                         identifier
                         klabelIdentifier
-                        $ return na
+                    return na
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = orResults
                     , remainders = orRemainders
@@ -323,18 +323,15 @@ maybeEvaluatePattern
                     DebugAxiomEvaluation.endNotApplicable
                         identifier
                         klabelIdentifier
-                        $ return ()
                 AttemptedAxiom.NotApplicableUntilConditionChanges _ ->
                     DebugAxiomEvaluation.endNotApplicableConditionally
                         identifier
                         klabelIdentifier
-                        $ return ()
                 AttemptedAxiom.Applied attemptResults ->
                     DebugAxiomEvaluation.end
                         (OrPattern.toPatterns $ MultiOr.merge results remainders)
                         identifier
                         klabelIdentifier
-                        $ return ()
                   where
                     AttemptedAxiomResults { results, remainders } =
                         attemptResults

@@ -92,6 +92,7 @@ import Log
     , Entry (fromEntry, toEntry)
     , MonadLog
     , Severity (..)
+    , logEntry
     , logWhile
     )
 import qualified Log as Log.DoNotUse
@@ -191,7 +192,7 @@ start
     -> Maybe Text
     -> log a
     -> log a
-start arguments = logState
+start arguments = logStateWhile
     (Start
         (map
             (TermLike.mapVariables (fmap toVariable) (fmap toVariable))
@@ -202,35 +203,32 @@ start arguments = logState
 {- | Log the end of a term's axiom evaluation.
 -}
 end
-    :: forall log variable a
+    :: forall log variable
     .  (MonadLog log, InternalVariable variable)
     => [Pattern variable]
     -> Maybe AxiomIdentifier
     -> Maybe Text
-    -> log a
-    -> log a
+    -> log ()
 end results = logState (End (map convertPatternVariable results))
 
 {- | Log the end of a term's axiom evaluation.
 -}
 endNotApplicable
-    :: forall log a
+    :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
     -> Maybe Text
-    -> log a
-    -> log a
+    -> log ()
 endNotApplicable = logState EndNotApplicable
 
 {- | Log the end of a term's axiom evaluation.
 -}
 endNotApplicableConditionally
-    :: forall log a
+    :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
     -> Maybe Text
-    -> log a
-    -> log a
+    -> log ()
 endNotApplicableConditionally = logState EndNotApplicableConditionally
 
 convertPatternVariable
@@ -245,23 +243,21 @@ convertPatternVariable patt =
 {- | Log the start of a term's axiom evaluation.
 -}
 notEvaluated
-    :: forall log a
+    :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
     -> Maybe Text
-    -> log a
-    -> log a
+    -> log ()
 notEvaluated = logState NotEvaluated
 
 {- | Log the start of a term's axiom evaluation.
 -}
 notEvaluatedConditionally
-    :: forall log a
+    :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
     -> Maybe Text
-    -> log a
-    -> log a
+    -> log ()
 notEvaluatedConditionally = logState NotEvaluatedConditionally
 
 {- | Log the start of a term's axiom evaluation.
@@ -275,25 +271,24 @@ reevaluation
     -> log a
     -> log a
 reevaluation results =
-    logState (Reevaluation (map convertPatternVariable results))
+    logStateWhile (Reevaluation (map convertPatternVariable results))
 
 attemptAxiom
     :: MonadLog log
     => SourceLocation
     -> Maybe AxiomIdentifier
     -> Maybe Text
-    -> log a
-    -> log a
+    -> log ()
 attemptAxiom sourceLocation = logState (AttemptingAxiom sourceLocation)
 
-logState
+logStateWhile
     :: MonadLog log
     => AxiomEvaluationState
     -> Maybe AxiomIdentifier
     -> Maybe Text
     -> log a
     -> log a
-logState state identifier secondaryIdentifier action =
+logStateWhile state identifier secondaryIdentifier action =
     logWhile
         DebugAxiomEvaluation
             { identifier
@@ -302,6 +297,21 @@ logState state identifier secondaryIdentifier action =
             , state
             }
         action
+
+logState
+    :: MonadLog log
+    => AxiomEvaluationState
+    -> Maybe AxiomIdentifier
+    -> Maybe Text
+    -> log ()
+logState state identifier secondaryIdentifier =
+    logEntry
+        DebugAxiomEvaluation
+            { identifier
+            , secondaryIdentifier
+            , logPatterns = False
+            , state
+            }
 
 {- | Options (from the command-line) specifying when to log specific axiom
 applications.
