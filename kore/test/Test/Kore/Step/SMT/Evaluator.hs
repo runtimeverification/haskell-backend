@@ -15,8 +15,6 @@ import Hedgehog hiding
     )
 import Test.Tasty
 
-import qualified Control.Monad.Trans as Trans
-
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -203,7 +201,7 @@ test_andNegation =
 evaluateSMT
     :: Predicate Variable
     -> PropertyT SMT (Maybe Bool)
-evaluateSMT = Trans.lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
+evaluateSMT = lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates

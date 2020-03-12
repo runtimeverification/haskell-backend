@@ -9,8 +9,6 @@ module Kore.Step.Simplification.OrPattern
 
 import Prelude.Kore
 
-import qualified Control.Monad.Trans as Monad.Trans
-
 import Branch
     ( BranchT
     )
@@ -84,9 +82,11 @@ simplifyConditionsWithSmt sideCondition unsimplified =
         :: Pattern variable -> BranchT simplifier (Pattern variable)
     simplifyAndPrune (Pattern.splitTerm -> (term, condition)) = do
         simplified <- simplifyCondition sideCondition condition
-        filtered <- Monad.Trans.lift $ resultWithFilter
-            rejectCondition
-            (resultWithFilter pruneCondition (return simplified))
+        filtered <-
+            return simplified
+            & resultWithFilter pruneCondition
+            & resultWithFilter rejectCondition
+            & lift
         return (term `Pattern.withCondition` filtered)
 
     resultWithFilter

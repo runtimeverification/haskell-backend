@@ -20,7 +20,6 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import qualified Control.Monad.Reader.Class as Reader
 import qualified Control.Monad.State.Class as State
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import qualified Data.List as List
@@ -142,7 +141,7 @@ verifyImport sentence =
         let SentenceImport { sentenceImportAttributes = attrs0 } = sentence
         attrs1 <- parseAttributes' attrs0
         let importName = sentenceImportModuleName sentence
-        verified <- Trans.lift $ verifyModule importName
+        verified <- lift $ verifyModule importName
         State.modify' $ addImport verified attrs1 attrs0
   where
     addImport verified attrs1 attrs0 =

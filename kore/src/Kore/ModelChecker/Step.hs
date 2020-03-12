@@ -24,7 +24,6 @@ import Control.Monad.State.Strict
     ( StateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import Data.Text
     ( Text
@@ -141,7 +140,7 @@ transitionRule
         :: CommonProofState
         -> Transition m CommonProofState
     transitionCheckProofState proofState0 = do
-        execState <- Monad.Trans.lift State.get
+        execState <- lift State.get
         -- End early if any unprovable state was reached
         when (isJust execState) empty
         case proofState0 of
@@ -162,7 +161,7 @@ transitionRule
     applySimplify wrapper config =
         do
             configs <-
-                Monad.Trans.lift . Monad.Trans.lift
+                lift . lift
                 $ Pattern.simplifyTopConfiguration config
             filteredConfigs <- SMT.Evaluator.filterMultiOr configs
             if null filteredConfigs
@@ -185,12 +184,12 @@ transitionRule
     applyUnroll ModalPattern { modalOp, term } wrapper config
         | modalOp == allPathGlobally = do
             result <-
-                Monad.Trans.lift . Monad.Trans.lift
+                lift . lift
                 $ checkImplicationIsTop config term
             if result
                 then return (wrapper config)
                 else do
-                    (Monad.Trans.lift . State.put) (Just ())
+                    (lift . State.put) (Just ())
                     return (Unprovable config)
         | otherwise = (error . show . Pretty.vsep)
                       [ "Not implemented error:"
@@ -217,8 +216,7 @@ transitionRule
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
         eitherResults <-
-            Monad.Trans.lift . Monad.Trans.lift
-            $ Monad.Unify.runUnifierT
+            lift . lift . Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel
                 (Step.UnificationProcedure Unification.unificationProcedure)
                 rules

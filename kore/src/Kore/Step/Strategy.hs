@@ -70,7 +70,6 @@ import Control.Monad.State.Strict
     , StateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
@@ -422,8 +421,7 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
         emptyExecutionGraph config0
     initialSeed = Seq.singleton (root, instrs0)
 
-    transit' instr config =
-        (Monad.Trans.lift . runTransitionT) (transit instr config)
+    transit' instr config = (lift . runTransitionT) (transit instr config)
 
     unfoldWorker
         :: Seq (Graph.Node, [instr])

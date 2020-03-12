@@ -348,6 +348,15 @@ Valid domain values are strings.
     \dv{String{}}("string")
 ~~~
 
+### STRING.eq
+
+Comparison: are the two strings equal?
+
+~~~
+    hooked-symbol eq{}(String{}, String{}) : Bool{}
+        [hook{}("STRING.eq")]
+~~~
+
 ### STRING.lt
 
 Comparison: is the first argument less than the second?

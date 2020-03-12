@@ -18,7 +18,6 @@ import Control.Error
     ( MaybeT (..)
     )
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Except
     ( ExceptT
     , runExceptT
@@ -97,12 +96,12 @@ overloadedConstructorSortInjectionAndEquals
     -> MaybeT unifier (Pattern variable)
 overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
   = do
-    eunifier <- Monad.Trans.lift . runExceptT
+    eunifier <- lift . runExceptT
         $ unifyOverloading (Pair firstTerm secondTerm)
     case eunifier of
-        Right (Pair firstTerm' secondTerm') -> Monad.Trans.lift $
+        Right (Pair firstTerm' secondTerm') -> lift $
             termMerger firstTerm' secondTerm'
-        Left (Clash message) -> Monad.Trans.lift $
+        Left (Clash message) -> lift $
             explainAndReturnBottom (fromString message) firstTerm secondTerm
         Left NotApplicable -> empty
 
@@ -250,4 +249,3 @@ notUnifiableError (BuiltinMap_ _) = throwBottom "injected builtin map"
 notUnifiableError (BuiltinSet_ _) = throwBottom "injected builtin set"
 notUnifiableError (BuiltinString_ _) = throwBottom "injected builtin string"
 notUnifiableError _ = notApplicable
-

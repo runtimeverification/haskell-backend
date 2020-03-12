@@ -31,12 +31,15 @@ module Prelude.Kore
     , optional
     -- * From
     , module From
-    -- * IO
-    , MonadIO (..)
     -- * Comonad
     , module Control.Comonad
     -- * Hashable
     , Hashable (..)
+    -- * Monad
+    , Monad (..)
+    , MonadPlus (..)
+    , MonadIO (..)
+    , MonadTrans (..)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -57,8 +60,15 @@ import Control.Error
 import Control.Exception
     ( assert
     )
+import Control.Monad
+    ( Monad (..)
+    , MonadPlus (..)
+    )
 import Control.Monad.IO.Class
     ( MonadIO (..)
+    )
+import Control.Monad.Trans.Class
+    ( MonadTrans (..)
     )
 import Data.Function
     ( on
@@ -82,6 +92,7 @@ import GHC.Stack
     )
 import Prelude hiding
     ( Applicative (..)
+    , Monad (..)
     , either
     , filter
     , log
