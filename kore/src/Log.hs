@@ -66,6 +66,7 @@ import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Strict as Strict
     ( StateT
     )
+import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -223,7 +224,16 @@ instance Monad m => MonadLog (LoggerT m) where
         logAction <- ask
         let entryLogger = fromLogAction @ActualEntry logAction
         lift $ entryLogger <& toEntry entry
-    logWhile _ = id
+
+    logWhile entry2 action = do
+        logEntry entry2
+        LoggerT . local modifyContext $ getLoggerT action
+      where
+        modifyContext = Colog.cmap $ \entry1 ->
+            entry1
+                { entryContext =
+                    entryContext entry1 <> Seq.singleton (toEntry entry2)
+                }
 
 instance MonadTrans LoggerT where
     lift = LoggerT . lift

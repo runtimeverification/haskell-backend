@@ -41,7 +41,7 @@ import Options.Applicative
     )
 
 import Log
-    ( ActualEntry
+    ( ActualEntry (..)
     , Entry (..)
     , LogAction (..)
     , Severity (Debug)
@@ -94,12 +94,14 @@ logDebugSolverRecvWith logger smtText =
 solverTranscriptLogger
     :: Applicative m
     => LogAction m Text
-    -> LogAction m SomeEntry
+    -> LogAction m ActualEntry
 solverTranscriptLogger textLogger =
     LogAction
-    $ \entry -> case matchDebugSolverSend entry of
-        Just sendEntry -> unLogAction textLogger (messageToText sendEntry)
-        Nothing -> unLogAction mempty entry
+    $ \ActualEntry { actualEntry } ->
+        case matchDebugSolverSend actualEntry of
+            Just sendEntry ->
+                unLogAction textLogger (messageToText sendEntry)
+            Nothing -> unLogAction mempty actualEntry
   where
     messageToText :: DebugSolverSend -> Text
     messageToText =
