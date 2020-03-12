@@ -2,7 +2,7 @@
 module A-TO-C-SPEC
 
 // imports
-import VERIFICATION []
+import KARL []
 
 
 // claims
