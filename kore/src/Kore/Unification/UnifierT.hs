@@ -118,8 +118,6 @@ throwUnificationOrSubstitutionError
     :: MonadUnify unifier
     => UnificationOrSubstitutionError
     -> unifier a
-throwUnificationOrSubstitutionError (SubstitutionError s) =
-    case s of {}
 throwUnificationOrSubstitutionError (UnificationError u) =
     throwUnificationError u
 

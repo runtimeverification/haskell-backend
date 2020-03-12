@@ -10,7 +10,6 @@ Portability : portable
 module Kore.Unification.Error
     ( UnificationError (..)
     , UnificationOrSubstitutionError (..)
-    , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
     , unsupportedPatterns
     ) where
@@ -38,7 +37,6 @@ import Kore.Unparser
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError
     = UnificationError UnificationError
-    | SubstitutionError SubstitutionError
     deriving (GHC.Generic, Show)
 
 instance SOP.Generic UnificationOrSubstitutionError
@@ -51,7 +49,6 @@ instance Diff UnificationOrSubstitutionError
 
 instance Pretty UnificationOrSubstitutionError where
     pretty (UnificationError  err) = Pretty.pretty err
-    pretty (SubstitutionError err) = Pretty.pretty err
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
@@ -93,29 +90,6 @@ data ClashReason
     | DomainValueClash String
     | SortInjectionClash Sort Sort
     deriving (Eq, Show)
-
-{-| 'SubstitutionError' specifies the various error cases related to
-substitutions.
--}
-data SubstitutionError
-
-instance Debug SubstitutionError where
-    debugPrec = \case {}
-
-instance Diff SubstitutionError where
-    diffPrec = diffPrecIgnore
-
-instance Show SubstitutionError where
-    showsPrec _ = \case {}
-
-instance Pretty SubstitutionError where
-    pretty = \case {}
-
--- Trivially promote substitution errors to sum-type errors
-substitutionToUnifyOrSubError
-    :: SubstitutionError
-    -> UnificationOrSubstitutionError
-substitutionToUnifyOrSubError = SubstitutionError
 
 -- Trivially promote unification errors to sum-type errors
 unificationToUnifyOrSubError
