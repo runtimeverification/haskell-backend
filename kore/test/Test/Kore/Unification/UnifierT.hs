@@ -239,29 +239,6 @@ test_mergeAndNormalizeSubstitutions =
         assertEqual "" expect actual
         assertNormalizedPredicates actual
 
-    , testCase "Constructor and constructor of functional symbol" $ do
-        let f = Mock.functional10
-            ctor = Mock.constr10
-            y = mkElemVar Mock.y
-        let denormCondition =
-                Predicate.makeEqualsPredicate_ y (f y)
-                & Condition.fromPredicate
-            substCondition =
-                Substitution.assign
-                    (ElemVar Mock.x)
-                    (ctor (f y))
-                & Condition.fromSingleSubstitution
-        let
-            expect =
-                denormCondition <> substCondition
-                & Right . pure
-        actual <-
-            merge
-                [(ElemVar Mock.x, ctor    y )]
-                [(ElemVar Mock.x, ctor (f y))]
-        assertEqual "" expect actual
-        assertNormalizedPredicates actual
-
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
