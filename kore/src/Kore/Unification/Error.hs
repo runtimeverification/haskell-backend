@@ -9,8 +9,6 @@ Portability : portable
 -}
 module Kore.Unification.Error
     ( UnificationError (..)
-    , UnificationOrSubstitutionError (..)
-    , unificationToUnifyOrSubError
     , unsupportedPatterns
     ) where
 
@@ -34,23 +32,7 @@ import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
 
--- | Hack sum-type to wrap unification and substitution errors
-data UnificationOrSubstitutionError
-    = UnificationError UnificationError
-    deriving (GHC.Generic, Show)
-
-instance SOP.Generic UnificationOrSubstitutionError
-
-instance SOP.HasDatatypeInfo UnificationOrSubstitutionError
-
-instance Debug UnificationOrSubstitutionError
-
-instance Diff UnificationOrSubstitutionError
-
-instance Pretty UnificationOrSubstitutionError where
-    pretty (UnificationError  err) = Pretty.pretty err
-
--- |'UnificationError' specifies various error cases encountered during
+-- | 'UnificationError' specifies various error cases encountered during
 -- unification
 data UnificationError = UnsupportedPatterns
     { message :: String
@@ -90,9 +72,3 @@ data ClashReason
     | DomainValueClash String
     | SortInjectionClash Sort Sort
     deriving (Eq, Show)
-
--- Trivially promote unification errors to sum-type errors
-unificationToUnifyOrSubError
-    :: UnificationError
-    -> UnificationOrSubstitutionError
-unificationToUnifyOrSubError = UnificationError

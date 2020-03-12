@@ -170,7 +170,7 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         $ do
-            let expect = Left $ UnificationError $ unsupportedPatterns
+            let expect = Left $ unsupportedPatterns
                     "Unknown unification case."
                     (Mock.constr10 (mkElemVar Mock.y))
                     (mkElemVar Mock.y)
@@ -265,7 +265,7 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
-            let expect = Left $ UnificationError $ unsupportedPatterns
+            let expect = Left $ unsupportedPatterns
                     "Unknown unification case."
                     (Mock.constr10 (mkElemVar Mock.x))
                     (mkElemVar Mock.y)
@@ -385,7 +385,7 @@ test_mergeAndNormalizeSubstitutions =
 merge
     :: [(UnifiedVariable Variable, TermLike Variable)]
     -> [(UnifiedVariable Variable, TermLike Variable)]
-    -> IO (Either UnificationOrSubstitutionError [Condition Variable])
+    -> IO (Either UnificationError [Condition Variable])
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2)
@@ -421,7 +421,7 @@ normalizeExcept
     :: Conditional Variable ()
     -> IO
         (Either
-            UnificationOrSubstitutionError
+            UnificationError
             (MultiOr (Conditional Variable ()))
         )
 normalizeExcept predicated =

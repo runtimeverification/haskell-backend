@@ -5,7 +5,6 @@ License     : NCSA
  -}
 module Kore.Unification.UnifierT
     ( UnifierT (..)
-    , throwUnificationOrSubstitutionError
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT
@@ -52,8 +51,7 @@ import SMT
     )
 
 newtype UnifierT (m :: * -> *) a =
-    UnifierT
-        { getUnifierT :: BranchT (ExceptT UnificationOrSubstitutionError m) a }
+    UnifierT { getUnifierT :: BranchT (ExceptT UnificationError m) a }
     deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
 
 instance MonadTrans UnifierT where
@@ -93,11 +91,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
-    throwUnificationError =
-        UnifierT
-        . lift
-        . Error.throwError
-        . UnificationError
+    throwUnificationError = UnifierT . lift . Error.throwError
     {-# INLINE throwUnificationError #-}
 
     gather = UnifierT . lift . BranchT.gather . getUnifierT
@@ -106,25 +100,17 @@ instance MonadSimplify m => MonadUnify (UnifierT m) where
     scatter = UnifierT . BranchT.scatter
     {-# INLINE scatter #-}
 
--- | Lower an 'ExceptT UnificationOrSubstitutionError' into a 'MonadUnify'.
+-- | Lower an 'ExceptT UnificationError' into a 'MonadUnify'.
 lowerExceptT
     :: MonadUnify unifier
-    => ExceptT UnificationOrSubstitutionError unifier a
+    => ExceptT UnificationError unifier a
     -> unifier a
-lowerExceptT e =
-    runExceptT e >>= either throwUnificationOrSubstitutionError pure
-
-throwUnificationOrSubstitutionError
-    :: MonadUnify unifier
-    => UnificationOrSubstitutionError
-    -> unifier a
-throwUnificationOrSubstitutionError (UnificationError u) =
-    throwUnificationError u
+lowerExceptT e = runExceptT e >>= either throwUnificationError pure
 
 runUnifierT
     :: MonadSimplify m
     => UnifierT m a
-    -> m (Either UnificationOrSubstitutionError [a])
+    -> m (Either UnificationError [a])
 runUnifierT = runExceptT . BranchT.gather . getUnifierT
 
 {- | Run a 'Unifier', returning 'Nothing' upon error.

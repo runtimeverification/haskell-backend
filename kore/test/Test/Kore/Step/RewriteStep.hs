@@ -72,7 +72,7 @@ import Kore.Step.Step
     )
 import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
-    ( UnificationOrSubstitutionError (..)
+    ( UnificationError (..)
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
@@ -102,13 +102,13 @@ import Test.Tasty.HUnit.Ext
 
 evalUnifier
     :: UnifierT (SimplifierT NoSMT) a
-    -> IO (Either UnificationOrSubstitutionError [a])
+    -> IO (Either UnificationError [a])
 evalUnifier = runSimplifierNoSMT Mock.env . runUnifierT
 
 applyInitialConditions
     :: Condition Variable
     -> Condition Variable
-    -> IO (Either UnificationOrSubstitutionError [OrCondition Variable])
+    -> IO (Either UnificationError [OrCondition Variable])
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
@@ -169,7 +169,7 @@ unifyRule
     -> RulePattern Variable
     -> IO
         (Either
-            UnificationOrSubstitutionError
+            UnificationError
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
@@ -246,7 +246,7 @@ applyRewriteRule_
           -> [RewriteRule Variable]
           -> IO
             (Either
-                UnificationOrSubstitutionError
+                UnificationError
                 (Step.Results RulePattern Variable)
             )
         )
@@ -255,7 +255,7 @@ applyRewriteRule_
     -- ^ Configuration
     -> RewriteRule Variable
     -- ^ Rewrite rule
-    -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
+    -> IO (Either UnificationError [OrPattern Variable])
 applyRewriteRule_ applyRewriteRules initial rule =
     applyRewriteRules_ applyRewriteRules initial [rule]
 
@@ -265,7 +265,7 @@ applyRewriteRules_
           -> [RewriteRule Variable]
           -> IO
             (Either
-                UnificationOrSubstitutionError
+                UnificationError
                 (Step.Results RulePattern Variable)
             )
         )
@@ -274,7 +274,7 @@ applyRewriteRules_
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
-    -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
+    -> IO (Either UnificationError [OrPattern Variable])
 applyRewriteRules_ applyRewriteRules initial rules = do
     result <- applyRewriteRules initial rules
     return (Foldable.toList . discardRemainders <$> result)
@@ -485,7 +485,7 @@ test_applyRewriteRule_ =
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
         let x' = nextVariable Mock.x
-            expect = Left $ UnificationError $ unsupportedPatterns
+            expect = Left $ unsupportedPatterns
                 "Unknown unification case."
                 (Mock.plain10 (mkElemVar Mock.y))
                 (mkElemVar x')
@@ -667,7 +667,7 @@ test_applyRewriteRule_ =
                     (Mock.functional10 (mkElemVar Mock.x))
             rhs = (RulePattern.rhs ruleId) { ensures }
             expect :: Either
-                UnificationOrSubstitutionError [OrPattern Variable]
+                UnificationError [OrPattern Variable]
             expect = Right
                 [ OrPattern.fromPatterns
                     [ Conditional
@@ -806,7 +806,7 @@ applyRewriteRulesParallel
     -- ^ Rewrite rule
     -> IO
       (Either
-          UnificationOrSubstitutionError
+          UnificationError
           (Step.Results RulePattern Variable)
       )
 applyRewriteRulesParallel initial rules =
@@ -1200,7 +1200,7 @@ applyRewriteRulesSequence
     -- ^ Rewrite rule
     -> IO
       (Either
-          UnificationOrSubstitutionError
+          UnificationError
           (Step.Results RulePattern Variable)
       )
 applyRewriteRulesSequence initial rules =

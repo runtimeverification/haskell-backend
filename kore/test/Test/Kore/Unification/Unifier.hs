@@ -229,8 +229,8 @@ andSimplifyFailure
     -> UnificationError
     -> Assertion
 andSimplifyFailure term1 term2 err = do
-    let expect :: Either UnificationOrSubstitutionError (Pattern Variable)
-        expect = Left (UnificationError err)
+    let expect :: Either UnificationError (Pattern Variable)
+        expect = Left err
     actual <-
         runSMT
         $ runSimplifier testEnv
