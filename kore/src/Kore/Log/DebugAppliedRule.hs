@@ -142,10 +142,10 @@ parseDebugAppliedRuleOptions =
  -}
 filterDebugAppliedRule
     :: DebugAppliedRuleOptions
-    -> SomeEntry
+    -> ActualEntry
     -> Bool
-filterDebugAppliedRule debugAppliedRuleOptions entry
-  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedRule entry
+filterDebugAppliedRule debugAppliedRuleOptions ActualEntry { actualEntry }
+  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedRule actualEntry
   = isSelectedRule debugAppliedRuleOptions appliedRule
   | otherwise = False
 

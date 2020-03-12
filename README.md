@@ -63,6 +63,13 @@ For integration testing, we also recommend:
 - The [K Framework] frontend, or [curl] to fetch an appropriate version.
   The frontend has other dependencies, most notably a Java runtime.
 
+### Developing with Nix
+
+For developers so inclined, we provide a `shell.nix` expression with a suitable
+development environment and a binary cache at [kore.cachix.org]. The development
+environment is intended to be used with `nix-shell` and `stack --no-nix
+--system-ghc`.
+
 
 [git]: https://git-scm.com/
 [stack]: https://www.haskellstack.org/
@@ -75,3 +82,4 @@ For integration testing, we also recommend:
 [yq]: https://github.com/kislyuk/yq
 [hlint]: https://github.com/ndmitchell/hlint
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
+[kore.cachix.org]: https://kore.cachix.org/
