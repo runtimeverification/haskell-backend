@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Unification.Error
-    ( SubstitutionError (..)
+    ( SubstitutionError
     , UnificationError (..)
     , UnificationOrSubstitutionError (..)
     , substitutionToUnifyOrSubError
@@ -26,11 +26,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
-import Kore.Internal.Substitution
-    ( Normalization
-    , wrapNormalization
-    )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -40,9 +35,6 @@ import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError
@@ -106,41 +98,19 @@ data ClashReason
 {-| 'SubstitutionError' specifies the various error cases related to
 substitutions.
 -}
-data SubstitutionError =
-    forall variable.
-    InternalVariable variable =>
-    SimplifiableCycle [UnifiedVariable variable] (Normalization variable)
-    -- ^ the circularity path may pass through non-constructors: maybe solvable.
+data SubstitutionError
 
 instance Debug SubstitutionError where
-    debugPrec (SimplifiableCycle variables normalization) prec =
-        (if prec >= 10 then Pretty.parens else id)
-        $ Pretty.hsep
-            [ "SimplifiableCycle"
-            , debugPrec variables 10
-            , debugPrec normalization 10
-            ]
+    debugPrec = \case {}
 
 instance Diff SubstitutionError where
     diffPrec = diffPrecIgnore
 
 instance Show SubstitutionError where
-    showsPrec prec (SimplifiableCycle variables normalization) =
-        showParen (prec >= 10)
-        $ showString "SimplifiableCycle "
-        . showList variables
-        . showString " "
-        . showsPrec 10 normalization
+    showsPrec _ = \case {}
 
 instance Pretty SubstitutionError where
-    pretty (SimplifiableCycle variables substitution) =
-        Pretty.vsep
-            [ "Simplifiable circular variable dependency:"
-            , (Pretty.indent 4 . Pretty.vsep) (unparse <$> variables)
-            , "in substitution:"
-            , (Pretty.indent 4 . unparse)
-                (Substitution.toPredicate $ wrapNormalization substitution)
-            ]
+    pretty = \case {}
 
 -- Trivially promote substitution errors to sum-type errors
 substitutionToUnifyOrSubError
