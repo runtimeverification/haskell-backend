@@ -450,7 +450,9 @@ showCurrentClaim =
     in do
         Result { output, continue } <-
             run command axioms claims claim
-        output `equalsOutput` makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
+        equalsOutput
+            output
+            (makeAuxReplOutput (showCurrentClaimWithIndex claim expectedCindex))
         continue `equals` Continue
 
 showClaim1 :: IO ()
