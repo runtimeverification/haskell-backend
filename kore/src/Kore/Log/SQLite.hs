@@ -45,10 +45,12 @@ import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
 import Log
-    ( Entry
+    ( ActualEntry
+    , Entry
     , LogAction (..)
     , SomeEntry
     , fromEntry
+    , fromLogAction
     )
 import SQL
     ( SQL
@@ -91,7 +93,7 @@ automatically.
  -}
 withLogSQLite
     :: LogSQLiteOptions
-    -> (LogAction IO SomeEntry -> IO a)  -- ^ Continuation
+    -> (LogAction IO ActualEntry -> IO a)  -- ^ Continuation
     -> IO a
 withLogSQLite options cont =
     case sqlog of
@@ -143,9 +145,9 @@ database is already connected. See 'withLogSQLite' to obtain a 'LogAction' in
 'IO'.
 
  -}
-logSQLite :: LogAction SQL SomeEntry
+logSQLite :: LogAction SQL ActualEntry
 logSQLite =
-    foldMapEntries logEntry
+    foldMapEntries (fromLogAction @SomeEntry . logEntry)
   where
     logEntry
         :: forall entry
