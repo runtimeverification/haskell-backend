@@ -901,10 +901,12 @@ deriveWith
     -> [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveWith takeStep rules goal = withConfiguration goal $ do
-    (lift . runExceptT) (takeStep rewrites configuration) >>= either
-        (errorRewritesInstantiation configuration)
-        (deriveResults goal)
+deriveWith takeStep rules goal =
+    withConfiguration goal
+        $ (lift . runExceptT) (takeStep rewrites configuration)
+        >>= either
+            (errorRewritesInstantiation configuration)
+            (deriveResults goal)
   where
     configuration :: Pattern Variable
     configuration = getConfiguration goal

@@ -41,9 +41,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
-    )
-import Kore.Step.Simplification.Simplify
-    ( simplifyCondition
+    , simplifyCondition
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Error
