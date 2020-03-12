@@ -110,7 +110,10 @@ sortDeclVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [   ( ltKey
+    [   ( eqKey
+        , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
+        )
+    ,   ( ltKey
         , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
         )
     ,   ( plusKey
@@ -407,7 +410,8 @@ evalString2Token = Builtin.functionEvaluator evalString2Token0
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-    [ comparator ltKey (<)
+    [ comparator eqKey (==)
+    , comparator ltKey (<)
     , binaryOperator plusKey Text.append
     , (substrKey, evalSubstr)
     , (lengthKey, evalLength)

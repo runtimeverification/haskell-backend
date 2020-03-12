@@ -629,6 +629,10 @@ list2setSet list =
 
 -- ** String
 
+eqStringSymbol :: Internal.Symbol
+eqStringSymbol =
+    comparisonSymbol "eqString" stringSort & hook "STRING.eq"
+
 ltStringSymbol :: Internal.Symbol
 ltStringSymbol =
     comparisonSymbol "ltString" stringSort & hook "STRING.lt"
@@ -1596,6 +1600,7 @@ stringModule =
             , importParsedModule intModuleName
             , stringSortDecl
             , userTokenSortDecl
+            , hookedSymbolDecl eqStringSymbol
             , hookedSymbolDecl ltStringSymbol
             , hookedSymbolDecl concatStringSymbol
             , hookedSymbolDecl substrStringSymbol

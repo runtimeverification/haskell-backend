@@ -21,7 +21,6 @@ import Control.Error
     , maybeT
     , throwE
     )
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Text
@@ -122,7 +121,7 @@ evaluateApplication
             unevaluated
             sideCondition
         & maybeT (unevaluated Nothing) return
-        & Trans.lift
+        & lift
     Foldable.for_ canMemoize (recordOrPattern results)
     return results
   where
@@ -240,7 +239,7 @@ maybeEvaluatePattern
     sideCondition
   = do
     BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
-    Trans.lift . tracing $ do
+    lift . tracing $ do
         merged <- bracketAxiomEvaluationLog $ do
             let sideConditions =
                     sideCondition

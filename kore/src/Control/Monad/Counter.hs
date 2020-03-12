@@ -46,10 +46,6 @@ import Control.Monad.State
 import qualified Control.Monad.State.Class as Monad.State
 import qualified Control.Monad.State.Lazy as Monad.State.Lazy
 import qualified Control.Monad.State.Strict as Monad.State.Strict
-import Control.Monad.Trans
-    ( MonadTrans
-    )
-import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Maybe
     ( MaybeT
     )
@@ -78,7 +74,7 @@ instance MonadIO m => MonadIO (CounterT m) where
     {-# INLINE liftIO #-}
 
 instance MonadReader e m => MonadReader e (CounterT m) where
-    ask = Monad.Trans.lift Monad.Reader.ask
+    ask = lift Monad.Reader.ask
     {-# INLINE ask #-}
 
     local f =  CounterT . Monad.Reader.local f . getCounterT
@@ -162,55 +158,55 @@ incrementState = do
     return n
 
 instance MonadCounter m => MonadCounter (Monad.Except.ExceptT e m) where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance MonadCounter m => MonadCounter (Monad.Identity.IdentityT m) where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance MonadCounter m => MonadCounter (MaybeT m) where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance
     (MonadCounter m, Monoid w) =>
     MonadCounter (Monad.RWS.Lazy.RWST r w s m)
   where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance
     (MonadCounter m, Monoid w) =>
     MonadCounter (Monad.RWS.Strict.RWST r w s m)
   where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance MonadCounter m => MonadCounter (Monad.Reader.ReaderT r m) where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance MonadCounter m => MonadCounter (Monad.State.Lazy.StateT s m) where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance MonadCounter m => MonadCounter (Monad.State.Strict.StateT s m) where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance
     (MonadCounter m, Monoid w) =>
     MonadCounter (Monad.Writer.Lazy.WriterT w m)
   where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 instance
     (MonadCounter m, Monoid w) =>
     MonadCounter (Monad.Writer.Strict.WriterT w m)
   where
-    increment = Monad.Trans.lift increment
+    increment = lift increment
     {-# INLINE increment #-}
 
 {- | Execute a list of actions until one satisfies the given predicate.

@@ -4,11 +4,11 @@ License     : NCSA
 
 -}
 
-module Kore.Log.WarnSimplificationWithRemainder
-    ( WarnSimplificationWithRemainder (..)
+module Kore.Log.DebugSkipSimplification
+    ( DebugSkipSimplification (..)
     , Results (..)
     , Remainders (..)
-    , warnSimplificationWithRemainder
+    , debugSkipSimplification
     ) where
 
 import Prelude.Kore
@@ -54,8 +54,8 @@ We want to warn the user when a simplification rule has remainders because we
 will skip the rule in that case.
 
  -}
-data WarnSimplificationWithRemainder =
-    WarnSimplificationWithRemainder
+data DebugSkipSimplification =
+    DebugSkipSimplification
         { inputPattern :: TermLike Variable
         , sideCondition :: SideCondition Variable
         , remainders :: Remainders
@@ -93,15 +93,15 @@ toTermLike = worker . OrPattern.toPatterns
             [x] -> Pattern.toTermLike x
             (x : xs) -> TermLike.mkOr (Pattern.toTermLike x) (worker xs)
 
-instance SOP.Generic WarnSimplificationWithRemainder
+instance SOP.Generic DebugSkipSimplification
 
-instance SOP.HasDatatypeInfo WarnSimplificationWithRemainder
+instance SOP.HasDatatypeInfo DebugSkipSimplification
 
-instance SQL.Table WarnSimplificationWithRemainder
+instance SQL.Table DebugSkipSimplification
 
-{- | Log the @WarnSimplificationWithRemainder@ 'Entry'.
+{- | Log the @DebugSkipSimplification@ 'Entry'.
  -}
-warnSimplificationWithRemainder
+debugSkipSimplification
     :: MonadLog logger
     => InternalVariable variable
     => TermLike variable  -- ^ input pattern
@@ -109,7 +109,7 @@ warnSimplificationWithRemainder
     -> OrPattern variable  -- ^ remainders
     -> EqualityRule Variable
     -> logger ()
-warnSimplificationWithRemainder
+debugSkipSimplification
     (TermLike.mapVariables (fmap toVariable) (fmap toVariable) -> inputPattern)
     (SideCondition.mapVariables (fmap toVariable) (fmap toVariable)
         -> sideCondition
@@ -119,20 +119,20 @@ warnSimplificationWithRemainder
     )
     rule
   =
-    logEntry WarnSimplificationWithRemainder
+    logEntry DebugSkipSimplification
         { inputPattern
         , sideCondition
         , remainders
         , rule
         }
 
-instance Entry WarnSimplificationWithRemainder where
-    entrySeverity _ = Warning
+instance Entry DebugSkipSimplification where
+    entrySeverity _ = Debug
 
-instance Pretty WarnSimplificationWithRemainder where
+instance Pretty DebugSkipSimplification where
     pretty entry =
         Pretty.vsep
-            [ "Simplification result with non-empty remainder."
+            [ "Skipping simplification rule due to pre-condition being unmet."
             , (Pretty.indent 2 . Pretty.vsep)
                 [ "remainders:"
                 , Pretty.indent 2 (unparseOrPattern $ getRemainders remainders)
@@ -146,7 +146,7 @@ instance Pretty WarnSimplificationWithRemainder where
             , "Rule will be skipped."
             ]
       where
-        WarnSimplificationWithRemainder { inputPattern, sideCondition } = entry
-        WarnSimplificationWithRemainder { remainders, rule } = entry
+        DebugSkipSimplification { inputPattern, sideCondition } = entry
+        DebugSkipSimplification { remainders, rule } = entry
         unparseOrPattern = Pretty.vsep . map unparse . OrPattern.toPatterns
         location = Attribute.Axiom.sourceLocation . EqualityPattern.attributes . getEqualityRule $ rule

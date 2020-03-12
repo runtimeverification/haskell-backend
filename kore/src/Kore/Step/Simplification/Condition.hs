@@ -12,7 +12,6 @@ module Kore.Step.Simplification.Condition
 
 import Prelude.Kore
 
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Branch
@@ -94,7 +93,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
         ->  BranchT simplifier (Conditional variable any')
     normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
-        predicates' <- Monad.Trans.lift $
+        predicates' <- lift $
             simplifySubstitution sideCondition substitution
         predicate' <- Branch.scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
@@ -117,10 +116,10 @@ simplifyPredicate
     ->  BranchT simplifier (Condition variable)
 simplifyPredicate sideCondition predicate = do
     patternOr <-
-        Monad.Trans.lift
+        lift
         $ simplifyConditionalTermToOr sideCondition
         $ unwrapPredicate predicate
-    -- Despite using Monad.Trans.lift above, we do not need to
+    -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)
   where

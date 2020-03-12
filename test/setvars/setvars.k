@@ -1,14 +1,14 @@
 module SETVARS
   imports K-EQUAL
-  imports DOMAINS
+  imports INT
   syntax KItem ::= Int
   syntax KResult ::= Int
 
   syntax Int ::= f(Int) [function]
   rule f(X:Int) => X +Int 1
 
-  syntax KItem ::= g(Int)
-  rule g(@X:Int) => @X +Int 1 [simplification] // This is not yet supported
+//  syntax KItem ::= g(Int)
+//  rule g(@X:Int) => @X +Int 1 [simplification] // This is not yet supported
 
   syntax Int ::= h(Int) [function]
   rule h(@X:Int) => @X +Int 1 [simplification]

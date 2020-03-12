@@ -35,14 +35,14 @@ import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
     )
+import Kore.Log.DebugSkipSimplification
+    ( DebugSkipSimplification
+    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
-    )
-import Kore.Log.WarnSimplificationWithRemainder
-    ( WarnSimplificationWithRemainder
     )
 import Log
     ( ActualEntry
@@ -129,7 +129,7 @@ foldMapEntries mapEntry =
         , mapEntry (Proxy @DebugEvaluateCondition)
         , mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
-        , mapEntry (Proxy @WarnSimplificationWithRemainder)
+        , mapEntry (Proxy @DebugSkipSimplification)
         ]
 
 -- | Declare the SQL tables for all known 'SQL.Table' 'Entry' types.

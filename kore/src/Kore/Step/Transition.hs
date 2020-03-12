@@ -29,9 +29,7 @@ import Control.Monad.Catch
 import Control.Monad.Except
     ( MonadError (..)
     )
-import qualified Control.Monad.Morph as Monad.Morph
 import Control.Monad.Reader
-import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
 import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
@@ -89,22 +87,22 @@ instance MonadLog m => MonadLog (TransitionT rule m) where
     logWhile entry = mapTransitionT $ logWhile entry
 
 instance MonadTrans (TransitionT rule) where
-    lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift
+    lift = TransitionT . lift . lift
     {-# INLINE lift #-}
 
 instance MonadError e m => MonadError e (TransitionT rule m) where
-    throwError = Monad.Trans.lift . throwError
+    throwError = lift . throwError
     {-# INLINE throwError #-}
 
     catchError action handler =
-        Monad.Trans.lift (catchError action' handler') >>= scatter
+        lift (catchError action' handler') >>= scatter
       where
         action' = runTransitionT action
         handler' e = runTransitionT (handler e)
     {-# INLINE catchError #-}
 
 instance MonadReader e m => MonadReader e (TransitionT rule m) where
-    ask     = Monad.Trans.lift ask
+    ask     = lift ask
     {-# INLINE ask #-}
 
     local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
@@ -117,11 +115,11 @@ deriving instance MonadProfiler m => MonadProfiler (TransitionT rule m)
 deriving instance MonadSimplify m => MonadSimplify (TransitionT rule m)
 
 instance MonadThrow m => MonadThrow (TransitionT rule m) where
-    throwM = Monad.Trans.lift . throwM
+    throwM = lift . throwM
 
 instance MonadCatch m => MonadCatch (TransitionT rule m) where
     catch action handler =
-        Monad.Trans.lift (catch action' handler') >>= scatter
+        lift (catch action' handler') >>= scatter
       where
         action' = runTransitionT action
         handler' e = runTransitionT (handler e)
@@ -133,7 +131,7 @@ tryTransitionT
     :: Monad m
     => TransitionT rule m a
     -> TransitionT rule' m [(a, Seq rule)]
-tryTransitionT = Monad.Trans.lift . runTransitionT
+tryTransitionT = lift . runTransitionT
 
 mapTransitionT
     :: Monad m
@@ -145,7 +143,7 @@ mapTransitionT mapping =
 
 scatter :: [(a, Seq rule)] -> TransitionT rule m a
 scatter edges = do
-    (a, rules) <- TransitionT (Monad.Trans.lift (ListT.scatter edges))
+    (a, rules) <- TransitionT (lift (ListT.scatter edges))
     addRules rules
     return a
 

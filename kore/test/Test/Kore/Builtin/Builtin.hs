@@ -31,7 +31,6 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import qualified Control.Monad.Trans as Trans
 import Data.Map.Strict
     ( Map
     )
@@ -269,11 +268,11 @@ evaluate
 evaluate = runSimplifier testEnv . (`TermLike.simplify` SideCondition.top)
 
 evaluateT
-    :: Trans.MonadTrans t
+    :: MonadTrans t
     => (MonadSMT smt, MonadProfiler smt, MonadLog smt)
     => TermLike Variable
     -> t smt (Pattern Variable)
-evaluateT = Trans.lift . evaluate
+evaluateT = lift . evaluate
 
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =

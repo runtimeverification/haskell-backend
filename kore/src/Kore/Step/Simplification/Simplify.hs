@@ -44,9 +44,7 @@ import Control.Monad.Morph
     ( MFunctor
     )
 import qualified Control.Monad.Morph as Monad.Morph
-import Control.Monad.Reader
 import qualified Control.Monad.State.Strict as Strict
-import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
@@ -135,14 +133,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     default askMetadataTools
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m (SmtMetadataTools Attribute.Symbol)
-    askMetadataTools = Monad.Trans.lift askMetadataTools
+    askMetadataTools = lift askMetadataTools
     {-# INLINE askMetadataTools #-}
 
     askSimplifierTermLike :: m TermLikeSimplifier
     default askSimplifierTermLike
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m TermLikeSimplifier
-    askSimplifierTermLike = Monad.Trans.lift askSimplifierTermLike
+    askSimplifierTermLike = lift askSimplifierTermLike
     {-# INLINE askSimplifierTermLike #-}
 
     localSimplifierTermLike
@@ -170,7 +168,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         ->  BranchT m (Conditional variable term)
     simplifyCondition sideCondition conditional = do
         results <-
-            Monad.Trans.lift . Monad.Trans.lift
+            lift . lift
             $ Branch.gather $ simplifyCondition sideCondition conditional
         Branch.scatter results
     {-# INLINE simplifyCondition #-}
@@ -179,7 +177,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     default askSimplifierAxioms
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m BuiltinAndAxiomSimplifierMap
-    askSimplifierAxioms = Monad.Trans.lift askSimplifierAxioms
+    askSimplifierAxioms = lift askSimplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
 
     localSimplifierAxioms
@@ -197,7 +195,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     default askMemo
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m (Memo.Self m)
-    askMemo = Memo.liftSelf Monad.Trans.lift <$> Monad.Trans.lift askMemo
+    askMemo = Memo.liftSelf lift <$> lift askMemo
     {-# INLINE askMemo #-}
 
     -- | Retrieve the 'InjSimplifier' for the Kore context.
@@ -205,7 +203,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     default askInjSimplifier
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m InjSimplifier
-    askInjSimplifier = Monad.Trans.lift askInjSimplifier
+    askInjSimplifier = lift askInjSimplifier
     {-# INLINE askInjSimplifier #-}
 
     -- | Retrieve the 'OverloadSimplifier' for the Kore context.
@@ -213,7 +211,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     default askOverloadSimplifier
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m OverloadSimplifier
-    askOverloadSimplifier = Monad.Trans.lift askOverloadSimplifier
+    askOverloadSimplifier = lift askOverloadSimplifier
     {-# INLINE askOverloadSimplifier #-}
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
@@ -318,7 +316,7 @@ termLikeSimplifier simplifier =
         sideCondition
         termLike
       = do
-        results <- Monad.Trans.lift $ simplifier sideCondition termLike
+        results <- lift $ simplifier sideCondition termLike
         scatter results
 
 -- * Predicate simplifiers
@@ -348,7 +346,7 @@ liftConditionSimplifier
 liftConditionSimplifier (ConditionSimplifier simplifier) =
     ConditionSimplifier $ \sideCondition predicate -> do
         results <-
-            Monad.Trans.lift . Monad.Trans.lift
+            lift . lift
             $ Branch.gather $ simplifier sideCondition predicate
         Branch.scatter results
 
@@ -399,7 +397,7 @@ lookupAxiomSimplifier
     => TermLike variable
     -> MaybeT simplifier BuiltinAndAxiomSimplifier
 lookupAxiomSimplifier termLike = do
-    simplifierMap <- Monad.Trans.lift askSimplifierAxioms
+    simplifierMap <- lift askSimplifierAxioms
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
             -- remove this check. At startup, the definition's rules are

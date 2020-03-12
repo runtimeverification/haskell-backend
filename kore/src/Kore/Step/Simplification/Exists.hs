@@ -17,7 +17,6 @@ import Prelude.Kore
 import Control.Monad
     ( foldM
     )
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import Data.List
     ( sortBy
@@ -203,7 +202,7 @@ makeEvaluate sideCondition variables original = do
                     boundTerm
                     normalized { Conditional.substitution = freeSubstitution }
             (Right boundSubstitution, freeSubstitution) -> do
-                matched <- Monad.Trans.lift $ matchesToVariableSubstitution
+                matched <- lift $ matchesToVariableSubstitution
                     variable
                     normalized { Conditional.substitution = boundSubstitution }
                 if matched
@@ -317,7 +316,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
                         $ Conditional.predicate normalized
                     }
         orPattern <-
-            Monad.Trans.lift $ Pattern.simplify sideCondition substituted
+            lift $ Pattern.simplify sideCondition substituted
         Branch.scatter (MultiOr.extractPatterns orPattern)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
@@ -339,7 +338,7 @@ makeEvaluateBoundRight
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
-    orCondition <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
+    orCondition <- lift $ And.simplifyEvaluatedMultiPredicate
         sideCondition
         (MultiAnd.make
             [   OrCondition.fromCondition quantifyCondition

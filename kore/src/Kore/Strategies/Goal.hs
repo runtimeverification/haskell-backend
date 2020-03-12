@@ -35,7 +35,6 @@ import Control.Monad.Catch
     , SomeException (..)
     , handle
     )
-import qualified Control.Monad.Trans as Trans
 import Data.Coerce
     ( Coercible
     , coerce
@@ -799,7 +798,7 @@ removeDestination
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 removeDestination stateConstructor goal =
-    withConfiguration goal $ Trans.lift $ do
+    withConfiguration goal $ lift $ do
         removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal
@@ -826,7 +825,7 @@ simplify
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = withConfiguration goal $ do
-    configs <- Trans.lift $
+    configs <- lift $
         simplifyTopConfiguration configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
@@ -876,8 +875,7 @@ derivePar
 derivePar rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Trans.lift
-        . Monad.Unify.runUnifierT
+        lift . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesParallel
             (Step.UnificationProcedure Unification.unificationProcedure)
             rewrites
@@ -913,8 +911,7 @@ deriveSeq
 deriveSeq rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Trans.lift
-        . Monad.Unify.runUnifierT
+        lift . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesSequence
             (Step.UnificationProcedure Unification.unificationProcedure)
             configuration

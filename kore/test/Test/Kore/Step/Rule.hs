@@ -1,6 +1,7 @@
 module Test.Kore.Step.Rule
     ( test_axiomPatterns
     , test_patternToAxiomPatternAndBack
+    , test_rewritePatternToRewriteRuleAndBack
     ) where
 
 import Prelude.Kore
@@ -60,7 +61,7 @@ axiomPatternsUnitTests =
         "Rule Unit Tests"
         [ testCase "I1:AInt => I2:AInt"
             (assertEqual ""
-                (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
+                (RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
                     , requires = Predicate.makeTruePredicate sortAInt
@@ -72,11 +73,13 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (fromSentence (def, mkRewriteAxiom varI1 varI2 Nothing))
+                (simpleRewriteTermToRule def
+                    (mkRewriteAxiomPattern varI1 varI2 Nothing)
+                )
             )
         , testCase "alias as rule LHS"
             (assertEqual ""
-                ( Right $ RewriteAxiomPattern $ RewriteRule RulePattern
+                ( RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
                     , requires = Predicate.makeTruePredicate sortAInt
@@ -88,10 +91,8 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (fromSentence . (,) def . SentenceAxiomSentence . mkAxiom_ $
-                    mkRewrites
-                        applyAliasLHS
-                        (mkAnd (mkTop sortAInt) varI2)
+                (simpleRewriteTermToRule def
+                    (mkAliasAxiomPattern applyAliasLHS varI2)
                 )
             )
         ,   let
@@ -127,10 +128,12 @@ axiomPatternsUnitTests =
                             }
             in
                 testCase "definition containing I1:AInt => I2:AInt"
+                --TODO(traiansf): such checks should be made during verification
                 $ assertErrorIO
                     (assertSubstring "" "Unsupported pattern type in axiom")
-                    (evaluate $ force $ extractRewriteAxioms
-                        (extractIndexedModule "TEST" indexedDefinition)
+                    (evaluate . force
+                    . map fromSentenceAxiom . indexedModuleAxioms
+                    $ extractIndexedModule "TEST" indexedDefinition
                     )
         , testCase "\\ceil(I1:AInt <= I2:AInt)" $ do
             let term = applyLeqAInt varI1 varI2
@@ -167,8 +170,10 @@ axiomPatternsIntegrationTests =
         "Rule Unit Tests"
         [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
             (assertEqual ""
-                (Right $ RewriteAxiomPattern $ RewriteRule rule)
-                (fromSentence . (,) def $ mkRewriteAxiom left right Nothing)
+                (RewriteRule rule)
+                (simpleRewriteTermToRule def
+                    (mkRewriteAxiomPattern left right Nothing)
+                )
             )
         ]
   where
@@ -211,36 +216,48 @@ axiomPatternsIntegrationTests =
             , attributes = def
             }
 
-test_patternToAxiomPatternAndBack :: TestTree
-test_patternToAxiomPatternAndBack =
+test_rewritePatternToRewriteRuleAndBack :: TestTree
+test_rewritePatternToRewriteRuleAndBack =
     testGroup
-        "pattern to axiomPattern to pattern"
+        "rewrite pattern to rewrite rule to pattern"
         [
-            let initialPattern = mkRewrites
-                    (mkAnd
+            let initialLhs =
+                    mkAnd
                         (mkNot antiLeftP)
-                        (mkAnd (Predicate.unwrapPredicate requiresP) leftP))
-                    (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
+                        (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
+                initialPattern =
+                    Rewrites Mock.testSort initialLhs initialRhs
+                finalTerm = mkRewrites initialLhs initialRhs
             in
                 testCase "RewriteRule with antileft" $
                     assertEqual ""
-                        (Right initialPattern)
+                        finalTerm
                         (perhapsFinalPattern
                             attributesWithPriority
                             initialPattern
                         )
         ,
-            let initialPattern = mkRewrites
-                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                    (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
+            let initialLhs = mkAnd (Predicate.unwrapPredicate requiresP) leftP
+                initialPattern =
+                    Rewrites Mock.testSort initialLhs initialRhs
+                finalTerm = mkRewrites initialLhs initialRhs
             in
                 testCase "RewriteRule without antileft" $
                     assertEqual ""
-                        (Right initialPattern)
+                        finalTerm
                         (perhapsFinalPattern def initialPattern)
-        ,
-            let op = wEF $ termLikeSort leftP
-                initialPattern = mkImplies
+        ]
+  where
+    perhapsFinalPattern attribute initialPattern =
+        rewriteRuleToTerm $ simpleRewriteTermToRule attribute initialPattern
+
+test_patternToAxiomPatternAndBack :: TestTree
+test_patternToAxiomPatternAndBack =
+    testGroup
+        "pattern to axiomPattern to pattern"
+        [
+             let op = wEF $ termLikeSort leftP
+                 initialPattern = mkImplies
                     (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
                     (mkApplyAlias
                         op
@@ -300,15 +317,22 @@ test_patternToAxiomPatternAndBack =
                         (perhapsFinalPattern def initialPattern)
         ]
   where
-    leftP = mkElemVar Mock.x
-    antiLeftP = mkElemVar Mock.u
-    rightP = mkExists Mock.y (mkElemVar Mock.y)
-    requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
-    ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
-    attributesWithPriority =
-        def & setField @"priority" (Attribute.Priority (Just 0))
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
+
+leftP, antiLeftP, rightP, initialRhs :: TermLike Variable
+leftP = mkElemVar Mock.x
+antiLeftP = mkElemVar Mock.u
+rightP = mkExists Mock.y (mkElemVar Mock.y)
+initialRhs = mkAnd (Predicate.unwrapPredicate ensuresP) rightP
+
+requiresP, ensuresP :: Predicate.Predicate Variable
+requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
+ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
+
+attributesWithPriority :: Ord variable => Attribute.Axiom symbol variable
+attributesWithPriority =
+    def & setField @"priority" (Attribute.Priority (Just 0))
 
 varI1, varI2, varKRemainder, varStateCell :: TermLike Variable
 
@@ -480,3 +504,28 @@ sortParam name = SortVariable (testId name)
 
 sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
+
+mkRewriteAxiomPattern
+    :: TermLike Variable  -- ^ left-hand side
+    -> TermLike Variable  -- ^ right-hand side
+    -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
+    -> Rewrites Sort (TermLike Variable)
+mkRewriteAxiomPattern lhs rhs requires =
+    Rewrites
+        patternSort
+        (mkAnd (fromMaybe mkTop requires patternSort) lhs)
+        (mkAnd (mkTop patternSort) rhs)
+  where
+    patternSort = termLikeSort lhs
+
+mkAliasAxiomPattern
+    :: TermLike Variable  -- ^ left-hand side
+    -> TermLike Variable  -- ^ right-hand side
+    -> Rewrites Sort (TermLike Variable)
+mkAliasAxiomPattern aliasLhs rhs =
+    Rewrites
+        patternSort
+        aliasLhs
+        (mkAnd (mkTop patternSort) rhs)
+  where
+    patternSort = termLikeSort aliasLhs

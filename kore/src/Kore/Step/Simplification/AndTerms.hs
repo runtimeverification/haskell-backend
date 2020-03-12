@@ -28,8 +28,8 @@ import Control.Error
     , mapMaybeT
     )
 import qualified Control.Error as Error
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -75,6 +75,9 @@ import qualified Kore.Step.Simplification.SimplificationType as SimplificationTy
     ( SimplificationType (..)
     )
 import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Syntax.PatternF
+    ( Const (..)
+    )
 import Kore.TopBottom
 import Kore.Unification.Error
     ( unsupportedPatterns
@@ -203,6 +206,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd s), "expandAlias")
     , (AndT,    \_ _ _ -> boolAnd, "boolAnd")
     , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
+    , (BothT,   \_ _ _ -> bytesDifferent, "bytesDifferent")
     , (EqualsT, \p _ _ -> bottomTermEquals p, "bottomTermEquals")
     , (EqualsT, \p _ _ -> termBottomEquals p, "termBottomEquals")
     , (BothT,   \p t _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
@@ -268,7 +272,7 @@ Each @TermTransformationOld@ should represent one unification case and each
 unification case should be handled by only one @TermTransformationOld@. If the
 pattern heads do not match the case under consideration, call 'empty' to allow
 another case to handle the patterns. If the pattern heads do match the
-unification case, then use 'Control.Monad.Trans.lift' to wrap the implementation
+unification case, then use 'lift' to wrap the implementation
 of that case.
 
 All the @TermTransformationOld@s and similar functions defined in this module
@@ -333,7 +337,7 @@ explainBoolAndBottom
     -> TermLike variable
     -> MaybeT unifier ()
 explainBoolAndBottom term1 term2 =
-    Monad.Trans.lift $ explainBottom "Cannot unify bottom." term1 term2
+    lift $ explainBottom "Cannot unify bottom." term1 term2
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
@@ -359,7 +363,7 @@ bottomTermEquals
     sideCondition
     first@(Bottom_ _)
     second
-  = Monad.Trans.lift $ do -- MonadUnify
+  = lift $ do -- MonadUnify
     secondCeil <- Ceil.makeEvaluateTerm sideCondition second
 
     case MultiOr.extractPatterns secondCeil of
@@ -422,7 +426,7 @@ variableFunctionAndEquals
     simplificationType
     first@(ElemVar_ v)
     second
-  | isFunctionPattern second = Monad.Trans.lift $ do -- MonadUnify
+  | isFunctionPattern second = lift $ do -- MonadUnify
     predicate <-
         case simplificationType of -- Simplifier
             SimplificationType.And ->
@@ -494,9 +498,9 @@ sortInjectionAndEquals termMerger first@(Inj_ inj1) second@(Inj_ inj2) = do
     unifyInj inj1 inj2 & either distinct merge
   where
     emptyIntersection = explainAndReturnBottom "Empty sort intersection"
-    distinct Distinct = Monad.Trans.lift $ emptyIntersection first second
+    distinct Distinct = lift $ emptyIntersection first second
     distinct Unknown = empty
-    merge inj@Inj { injChild = Pair child1 child2 } = Monad.Trans.lift $ do
+    merge inj@Inj { injChild = Pair child1 child2 } = lift $ do
         childPattern <- termMerger child1 child2
         InjSimplifier { evaluateInj } <- askInjSimplifier
         let (childTerm, childCondition) = Pattern.splitTerm childPattern
@@ -518,10 +522,10 @@ constructorSortInjectionAndEquals
     -> MaybeT unifier a
 constructorSortInjectionAndEquals first@(Inj_ _) second@(App_ symbol2 _)
   | Symbol.isConstructor symbol2 =
-    Monad.Trans.lift $ noConfusionInjectionConstructor first second
+    lift $ noConfusionInjectionConstructor first second
 constructorSortInjectionAndEquals first@(App_ symbol1 _) second@(Inj_ _)
   | Symbol.isConstructor symbol1 =
-    Monad.Trans.lift $ noConfusionInjectionConstructor first second
+    lift $ noConfusionInjectionConstructor first second
 constructorSortInjectionAndEquals _ _ = empty
 
 noConfusionInjectionConstructor
@@ -605,19 +609,19 @@ domainValueAndEqualsAssumesDifferent
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ _)
     second@(DV_ _ _)
-  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+  = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinBool _))
     second@(Builtin_ (Domain.BuiltinBool _))
-  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+  = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinInt _))
     second@(Builtin_ (Domain.BuiltinInt _))
-  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+  = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinString _))
     second@(Builtin_ (Domain.BuiltinString _))
-  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+  = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
 
 cannotUnifyDistinctDomainValues :: Pretty.Doc ()
@@ -656,7 +660,7 @@ stringLiteralAndEqualsAssumesDifferent
 stringLiteralAndEqualsAssumesDifferent
     first@(StringLiteral_ _)
     second@(StringLiteral_ _)
-  = Monad.Trans.lift $ cannotUnifyDomainValues first second
+  = lift $ cannotUnifyDomainValues first second
 stringLiteralAndEqualsAssumesDifferent _ _ = empty
 
 {- | Unify any two function patterns.
@@ -682,3 +686,16 @@ functionAnd first second
         , substitution = mempty
         }
   | otherwise = empty
+
+bytesDifferent
+    :: InternalVariable variable
+    => MonadUnify unifier
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+bytesDifferent
+    (Recursive.project -> _ :< InternalBytesF (Const bytesFirst))
+    (Recursive.project -> _ :< InternalBytesF (Const bytesSecond))
+  | bytesFirst /= bytesSecond
+    = return Pattern.bottom
+bytesDifferent _ _ = empty

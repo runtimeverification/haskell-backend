@@ -35,7 +35,6 @@ import Control.Monad.Reader
     ( Reader
     )
 import qualified Control.Monad.Reader as Reader
-import Control.Monad.Trans as Trans
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Functor.Adjunction
@@ -783,7 +782,7 @@ renameElementBinder
             (Binder (ElementVariable variable2) any)
 renameElementBinder trElemVar avoiding binder = do
     let Binder { binderVariable, binderChild } = binder
-    elementVariable2 <- Trans.lift $ trElemVar binderVariable
+    elementVariable2 <- lift $ trElemVar binderVariable
     let binderVariable' =
             refreshElementVariable avoiding elementVariable2
             & fromMaybe elementVariable2
@@ -809,7 +808,7 @@ renameSetBinder
             (Binder (SetVariable variable2) any)
 renameSetBinder trSetVar avoiding binder = do
     let Binder { binderVariable, binderChild } = binder
-    setVariable2 <- Trans.lift $ trSetVar binderVariable
+    setVariable2 <- lift $ trSetVar binderVariable
     let binderVariable' =
             refreshSetVariable avoiding setVariable2
             & fromMaybe setVariable2
