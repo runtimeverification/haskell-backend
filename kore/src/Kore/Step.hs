@@ -67,7 +67,7 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import Kore.Unification.Error
-    ( UnificationOrSubstitutionError
+    ( UnificationError
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unification.UnificationProcedure
@@ -120,8 +120,7 @@ transitionRule =
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
         Foldable.asum (pure <$> filteredConfigs)
-    unificationProcedure
-        :: UnificationProcedure (ExceptT UnificationOrSubstitutionError m)
+    unificationProcedure :: UnificationProcedure (ExceptT UnificationError m)
     unificationProcedure =
         UnificationProcedure $ \sideCondition term1 term2 ->
             Unification.unificationProcedure sideCondition term1 term2

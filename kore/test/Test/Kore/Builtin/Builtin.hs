@@ -297,11 +297,7 @@ runStepResult
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT
-        (Either
-            UnificationError
-            (Step.Results RulePattern Variable)
-        )
+    -> SMT (Either UnificationError (Step.Results RulePattern Variable))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
@@ -311,7 +307,7 @@ runStepResult configuration axiom =
 
 unificationProcedure
     :: MonadSimplify simplifier
-    => UnificationProcedure (ExceptT UnificationOrSubstitutionError simplifier)
+    => UnificationProcedure (ExceptT UnificationError simplifier)
 unificationProcedure =
     Step.UnificationProcedure $ \sideCondition term1 term2 ->
         Unification.unificationProcedure sideCondition term1 term2

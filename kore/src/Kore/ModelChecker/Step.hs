@@ -214,8 +214,7 @@ transitionRule
     transitionComputeWeakNext _ (GoalRemLHS _)
       = return (GoalLHS Pattern.bottom)
 
-    unificationProcedure
-        :: UnificationProcedure (ExceptT UnificationOrSubstitutionError m)
+    unificationProcedure :: UnificationProcedure (ExceptT UnificationError m)
     unificationProcedure =
         Step.UnificationProcedure $ \sideCondition term1 term2 ->
             Unification.unificationProcedure sideCondition term1 term2

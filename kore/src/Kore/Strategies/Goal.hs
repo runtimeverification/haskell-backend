@@ -903,7 +903,7 @@ derivePar rules goal = withConfiguration goal $ do
 
 unificationProcedure
     :: MonadSimplify simplifier
-    => UnificationProcedure (ExceptT UnificationOrSubstitutionError simplifier)
+    => UnificationProcedure (ExceptT UnificationError simplifier)
 unificationProcedure =
     Step.UnificationProcedure $ \sideCondition term1 term2 ->
         Unification.unificationProcedure sideCondition term1 term2
