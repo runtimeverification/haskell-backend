@@ -76,10 +76,10 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
-import Kore.Syntax.Variable
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
+import Kore.Syntax.Variable
 
 import Kore.Unification.Procedure
     ( unificationProcedure

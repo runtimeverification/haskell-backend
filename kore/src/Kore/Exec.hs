@@ -69,9 +69,6 @@ import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
-import Kore.Syntax.Module
-    ( ModuleName
-    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
@@ -160,6 +157,9 @@ import Kore.Strategies.Verification
     )
 import qualified Kore.Strategies.Verification as StuckVerification
     ( StuckVerification (..)
+    )
+import Kore.Syntax.Module
+    ( ModuleName
     )
 import Kore.Unparser
     ( unparseToText
