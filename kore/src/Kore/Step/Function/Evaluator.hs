@@ -65,8 +65,8 @@ import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
     , klabelIdentifier
     , notEvaluated
     , notEvaluatedConditionally
-    , reevaluation
-    , start
+    , reevaluationWhile
+    , startWhile
     )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
@@ -263,7 +263,7 @@ maybeEvaluatePattern
                     { results = orResults
                     , remainders = orRemainders
                     } ->
-                        DebugAxiomEvaluation.reevaluation
+                        DebugAxiomEvaluation.reevaluationWhile
                             ( OrPattern.toPatterns
                             $ MultiOr.merge orResults orRemainders
                             )
@@ -316,7 +316,7 @@ maybeEvaluatePattern
         :: simplifier (AttemptedAxiom variable)
         -> simplifier (AttemptedAxiom variable)
     bracketAxiomEvaluationLog action =
-        DebugAxiomEvaluation.start children identifier klabelIdentifier $ do
+        DebugAxiomEvaluation.startWhile children identifier klabelIdentifier $ do
             result <- action
             case result of
                 AttemptedAxiom.NotApplicable ->

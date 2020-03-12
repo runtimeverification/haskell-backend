@@ -19,8 +19,8 @@ module Kore.Log.DebugAxiomEvaluation
     , endNotApplicableConditionally
     , notEvaluated
     , notEvaluatedConditionally
-    , reevaluation
-    , start
+    , reevaluationWhile
+    , startWhile
 
     -- * Helpers
     , klabelIdentifier
@@ -186,7 +186,7 @@ instance Pretty DebugAxiomEvaluation where
 
 {- | Log the start of a term's axiom evaluation.
 -}
-start
+startWhile
     :: forall log variable a
     .  (MonadLog log, InternalVariable variable)
     => [TermLike variable]
@@ -194,7 +194,7 @@ start
     -> Maybe Text
     -> log a
     -> log a
-start arguments = logStateWhile
+startWhile arguments = logStateWhile
     (Start
         (map
             (TermLike.mapVariables (fmap toVariable) (fmap toVariable))
@@ -264,7 +264,7 @@ notEvaluatedConditionally = logState NotEvaluatedConditionally
 
 {- | Log the start of a term's axiom evaluation.
 -}
-reevaluation
+reevaluationWhile
     :: forall log variable a
     .  (MonadLog log, InternalVariable variable)
     => [Pattern variable]
@@ -272,7 +272,7 @@ reevaluation
     -> Maybe Text
     -> log a
     -> log a
-reevaluation results =
+reevaluationWhile results =
     logStateWhile (Reevaluation (map convertPatternVariable results))
 
 attemptAxiom
