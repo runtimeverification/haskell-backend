@@ -98,6 +98,9 @@ import Kore.Internal.TermLike
     , mkAnd
     )
 import Kore.Log.DebugProofState
+import Kore.Log.ErrorRewritesInstantiation
+    ( errorRewritesInstantiation
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -878,28 +881,35 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = withConfiguration goal $ do
-    let rewrites = RewriteRule . toRulePattern <$> rules
-    eitherResults <-
-        Step.applyRewriteRulesParallel
-            unificationProcedure
-            rewrites
-            configuration
-        & lift . runExceptT
-    case eitherResults of
-        Left err ->
-            (error . show . Pretty.vsep)
-            [ "Not implemented error:"
-            , Pretty.indent 4 (Pretty.pretty err)
-            , "while applying a \\rewrite axiom to the pattern:"
-            , Pretty.indent 4 (unparse configuration)
-            ,   "We decided to end the execution because we don't \
-                \understand this case well enough at the moment."
-            ]
-        Right results -> deriveResults goal results
+derivePar = deriveWith (Step.applyRewriteRulesParallel unificationProcedure)
+
+type Deriver monad =
+        [RewriteRule Variable]
+    ->  Pattern Variable
+    ->  ExceptT UnificationError monad (Step.Results RulePattern Variable)
+
+-- | Apply 'Rule's to the goal in parallel.
+deriveWith
+    :: forall m goal
+    .  (MonadCatch m, MonadSimplify m)
+    => Goal goal
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ToRulePattern goal
+    => FromRulePattern goal
+    => ToRulePattern (Rule goal)
+    => FromRulePattern (Rule goal)
+    => Deriver m
+    -> [Rule goal]
+    -> goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+deriveWith takeStep rules goal = withConfiguration goal $ do
+    (lift . runExceptT) (takeStep rewrites configuration) >>= either
+        (errorRewritesInstantiation configuration)
+        (deriveResults goal)
   where
     configuration :: Pattern Variable
     configuration = getConfiguration goal
+    rewrites = RewriteRule . toRulePattern <$> rules
 
 unificationProcedure
     :: MonadSimplify simplifier
@@ -922,27 +932,7 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = withConfiguration goal $ do
-    let rewrites = RewriteRule . toRulePattern <$> rules
-    eitherResults <-
-        Step.applyRewriteRulesSequence
-            unificationProcedure
-            configuration
-            rewrites
-        & lift . runExceptT
-    case eitherResults of
-        Left err ->
-            (error . show . Pretty.vsep)
-            [ "Not implemented error:"
-            , Pretty.indent 4 (Pretty.pretty err)
-            , "while applying a \\rewrite axiom to the pattern:"
-            , Pretty.indent 4 (unparse configuration)
-            ,   "We decided to end the execution because we don't \
-                \understand this case well enough at the moment."
-            ]
-        Right results -> deriveResults goal results
-  where
-    configuration = getConfiguration goal
+deriveSeq = deriveWith (flip $ Step.applyRewriteRulesSequence unificationProcedure)
 
 deriveResults
     :: MonadSimplify simplifier

@@ -42,6 +42,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
     )
+import Kore.Log.ErrorRewritesInstantiation
+    ( errorRewritesInstantiation
+    )
 import Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     )
@@ -73,7 +76,6 @@ import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unification.UnificationProcedure
 import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Unparser
 
 data Prim patt rewrite =
       CheckProofState
@@ -234,14 +236,8 @@ transitionRule
                 config
             & lift . lift . runExceptT
         case eitherResults of
-            Left _ ->
-                (error . show . Pretty.vsep)
-                [ "Not implemented error:"
-                , "while applying a \\rewrite axiom to the pattern:"
-                , Pretty.indent 4 (unparse config)
-                ,   "We decided to end the execution because we don't \
-                    \understand this case well enough at the moment."
-                ]
+            Left unificationError ->
+                errorRewritesInstantiation config unificationError
             Right results -> do
                 let
                     mapRules =
