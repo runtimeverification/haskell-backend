@@ -124,19 +124,21 @@ data AxiomEvaluationState
 
 instance Entry DebugAxiomEvaluation where
     entrySeverity _ = Debug
-    shortDoc DebugAxiomEvaluation { state } =
-        Just $ Pretty.hcat ["DebugAxiomEvaluation_", showState]
-      where
-        showState =
-            case state of
-                Start _ -> "Start"
-                AttemptingAxiom _ -> "AttemptingAxiom"
-                NotEvaluated -> "NotEvaluated"
-                NotEvaluatedConditionally -> "NotEvaluatedConditionally"
-                Reevaluation _ -> "Reevaluation"
-                End _ -> "End"
-                EndNotApplicable -> "EndNotApplicable"
-                EndNotApplicableConditionally -> "EndNotApplicableConditionally"
+    shortDoc DebugAxiomEvaluation { identifier, state } =
+        case state of
+            Start _ ->
+                Just
+                $ Pretty.hsep ["While starting axiom evaluation of", Pretty.pretty identifier]
+                Pretty.<+> Pretty.colon
+            AttemptingAxiom _ ->
+                Just
+                $ Pretty.hsep ["While attempting axiom", Pretty.pretty identifier]
+                Pretty.<+> Pretty.colon
+            Reevaluation _ ->
+                Just
+                $ Pretty.hsep ["During reevaluation of", Pretty.pretty identifier]
+                Pretty.<+> Pretty.colon
+            _ -> Nothing
 
 instance Pretty DebugAxiomEvaluation where
     pretty DebugAxiomEvaluation { identifier, state, logPatterns } =

@@ -248,13 +248,28 @@ makeKoreLogger exeName timestampSwitch logToText =
     messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ exeName' Pretty.<+> timestamp Pretty.<+> defaultLogPretty entry
+        $ formattedLog exeName' timestamp entry prettyContext
       where
         timestamp = case timestampSwitch of
             TimestampsEnable -> Pretty.brackets (formattedTime localTime)
             TimestampsDisable -> mempty
         exeName' = Pretty.pretty exeName <> Pretty.colon
+        ActualEntry { entryContext } = entry
+        shortDocOfEntry (SomeEntry e) = shortDoc e
+        prettyContext = toList (mapMaybe shortDocOfEntry entryContext)
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
+    formattedLog exeName' timestamp entry prettyContext =
+        if null prettyContext
+            then
+                exeName'
+                Pretty.<+> timestamp
+                Pretty.<+> defaultLogPretty entry
+            else
+                Pretty.vsep
+                    [ exeName' Pretty.<+> timestamp
+                    , Pretty.indent 2 (Pretty.vsep prettyContext)
+                    , Pretty.indent 4 (defaultLogPretty entry)
+                    ]
 
 -- | Adds the current timestamp to a log entry.
 withTimestamp :: MonadIO io => ActualEntry -> io WithTimestamp
@@ -298,15 +313,9 @@ swappableLogger mvar =
     worker a logAction = Colog.unLogAction logAction a
 
 defaultLogPretty :: ActualEntry -> Pretty.Doc ann
-defaultLogPretty ActualEntry { actualEntry = SomeEntry entry, entryContext } =
+defaultLogPretty ActualEntry { actualEntry = SomeEntry entry } =
     header Pretty.<+> longDoc entry
   where
     severity = prettySeverity (entrySeverity entry)
     type' = Pretty.pretty (lookupTextFromTypeWithError $ toSomeEntryType entry)
-    header =
-        Pretty.brackets (Pretty.hsep prettyContext)
-        Pretty.<+> severity
-        Pretty.<+> Pretty.parens type'
-        <> Pretty.colon
-    shortDocOfEntry (SomeEntry e) = shortDoc e
-    prettyContext = toList (mapMaybe shortDocOfEntry entryContext)
+    header = severity Pretty.<+> Pretty.parens type' <> Pretty.colon
