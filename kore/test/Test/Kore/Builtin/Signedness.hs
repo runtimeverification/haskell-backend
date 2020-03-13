@@ -24,7 +24,7 @@ import Kore.Step.Simplification.Data
     ( runSimplifier
     )
 import Kore.Unification.Error
-    ( UnificationOrSubstitutionError
+    ( UnificationError
     )
 import Kore.Unification.UnifierT
     ( runUnifierT
@@ -112,7 +112,7 @@ unify
     :: HasCallStack
     => TermLike Variable
     -> TermLike Variable
-    -> IO (Either UnificationOrSubstitutionError [Pattern Variable])
+    -> IO (Either UnificationError [Pattern Variable])
 unify term1 term2 =
     runNoSMT mempty
     $ runSimplifier testEnv

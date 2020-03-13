@@ -26,22 +26,13 @@ import Kore.Step.Simplification.Simplify
 import Kore.Unification.Error
 
 -- | @MonadUnify@ is used throughout the step and unification modules. Its main
--- goal is to abstract over an 'ExceptT' over a 'UnificationOrSubstitutionError'
+-- goal is to abstract over an 'ExceptT' over a 'UnificationError'
 -- running in a 'Simplifier' monad.
 --
--- 'MonadUnify' chooses its error/left type to 'UnificationOrSubstitutionError'
+-- 'MonadUnify' chooses its error/left type to 'UnificationError'
 -- and provides functions to throw these errors. The point of this is to be able
 -- to display information about unification failures through 'explainFailure'.
 class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
-    throwSubstitutionError
-        :: SubstitutionError
-        -> unifier a
-    default throwSubstitutionError
-        :: (MonadTrans t, MonadUnify m, unifier ~ t m)
-        => SubstitutionError -> unifier a
-    throwSubstitutionError = lift . throwSubstitutionError
-    {-# INLINE throwSubstitutionError #-}
-
     throwUnificationError
         :: UnificationError
         -> unifier a

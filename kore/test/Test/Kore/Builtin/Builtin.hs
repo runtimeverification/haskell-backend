@@ -115,7 +115,7 @@ import Kore.Syntax.Definition
     , ParsedDefinition
     )
 import Kore.Unification.Error
-    ( UnificationOrSubstitutionError
+    ( UnificationError
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -285,7 +285,7 @@ runStep
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT (Either UnificationOrSubstitutionError (OrPattern Variable))
+    -> SMT (Either UnificationError (OrPattern Variable))
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return (Step.gatherResults <$> results)
@@ -297,7 +297,7 @@ runStepResult
     -- ^ axiom
     -> SMT
         (Either
-            UnificationOrSubstitutionError
+            UnificationError
             (Step.Results RulePattern Variable)
         )
 runStepResult configuration axiom = do
