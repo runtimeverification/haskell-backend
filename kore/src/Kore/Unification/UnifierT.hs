@@ -5,12 +5,10 @@ License     : NCSA
  -}
 module Kore.Unification.UnifierT
     ( UnifierT (..)
-    , throwUnificationOrSubstitutionError
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT
     , substitutionSimplifier
-    , unificationMakeAnd
     -- * Re-exports
     , module Kore.Unification.Unify
     ) where
@@ -34,18 +32,11 @@ import qualified Branch as BranchT
 import Kore.Profiler.Data
     ( MonadProfiler
     )
-import Kore.Step.Simplification.AndTerms
-    ( termUnification
-    )
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.Simplify
     ( ConditionSimplifier (..)
     , InternalVariable
     , MonadSimplify (..)
-    )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Step.Simplification.SubstitutionSimplifier
-    ( MakeAnd (..)
     )
 import Kore.Unification.Error
 import Kore.Unification.SubstitutionSimplifier
@@ -60,8 +51,7 @@ import SMT
     )
 
 newtype UnifierT (m :: * -> *) a =
-    UnifierT
-        { getUnifierT :: BranchT (ExceptT UnificationOrSubstitutionError m) a }
+    UnifierT { getUnifierT :: BranchT (ExceptT UnificationError m) a }
     deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
 
 instance MonadTrans UnifierT where
@@ -101,18 +91,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
-    throwSubstitutionError =
-        UnifierT
-        . lift
-        . Error.throwError
-        . SubstitutionError
-    {-# INLINE throwSubstitutionError #-}
-
-    throwUnificationError =
-        UnifierT
-        . lift
-        . Error.throwError
-        . UnificationError
+    throwUnificationError = UnifierT . lift . Error.throwError
     {-# INLINE throwUnificationError #-}
 
     gather = UnifierT . lift . BranchT.gather . getUnifierT
@@ -121,39 +100,20 @@ instance MonadSimplify m => MonadUnify (UnifierT m) where
     scatter = UnifierT . BranchT.scatter
     {-# INLINE scatter #-}
 
--- | Lower an 'ExceptT UnificationOrSubstitutionError' into a 'MonadUnify'.
+-- | Lower an 'ExceptT UnificationError' into a 'MonadUnify'.
 lowerExceptT
     :: MonadUnify unifier
-    => ExceptT UnificationOrSubstitutionError unifier a
+    => ExceptT UnificationError unifier a
     -> unifier a
-lowerExceptT e =
-    runExceptT e >>= either throwUnificationOrSubstitutionError pure
-
-throwUnificationOrSubstitutionError
-    :: MonadUnify unifier
-    => UnificationOrSubstitutionError
-    -> unifier a
-throwUnificationOrSubstitutionError (SubstitutionError s) =
-    throwSubstitutionError s
-throwUnificationOrSubstitutionError (UnificationError u) =
-    throwUnificationError u
+lowerExceptT e = runExceptT e >>= either throwUnificationError pure
 
 runUnifierT
     :: MonadSimplify m
     => UnifierT m a
-    -> m (Either UnificationOrSubstitutionError [a])
+    -> m (Either UnificationError [a])
 runUnifierT = runExceptT . BranchT.gather . getUnifierT
 
 {- | Run a 'Unifier', returning 'Nothing' upon error.
  -}
 maybeUnifierT :: MonadSimplify m => UnifierT m a -> MaybeT m [a]
 maybeUnifierT = hushT . BranchT.gather . getUnifierT
-
-unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
-unificationMakeAnd =
-    MakeAnd { makeAnd }
-  where
-    makeAnd termLike1 termLike2 sideCondition = do
-        unified <- termUnification termLike1 termLike2
-        BranchT.alternate
-            $ Simplifier.simplifyCondition sideCondition unified

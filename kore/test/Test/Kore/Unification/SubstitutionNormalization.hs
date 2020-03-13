@@ -8,31 +8,16 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Exception
-    ( evaluate
-    )
 import Data.Map.Strict
     ( Map
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Substitution
-    ( assignedVariable
-    , mkUnwrappedSubstitution
+    ( mkUnwrappedSubstitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.TopBottom
-    ( isBottom
-    )
-import Kore.Unification.Error
-    ( SubstitutionError (..)
-    )
 import Kore.Unification.SubstitutionNormalization
-import Kore.Unparser
-    ( unparse
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -91,8 +76,6 @@ test_normalize =
                     mkUnwrappedSubstitution [(z, a)]
                 , denormalized = []
                 }
-        , testCase "length 2" $ assertVariableOnlyCycle
-            $ normalizeSubstitution [(x, mkVar y), (y, mkVar x)]
         ]
     , testGroup "set-variable-only cycle"
         [ test "length 1, alone"
@@ -115,8 +98,6 @@ test_normalize =
                     mkUnwrappedSubstitution [(z, a)]
                 , denormalized = []
                 }
-        , testCase "length 2" $ assertVariableOnlyCycle
-            $ normalizeSubstitution [(xs, mkVar ys), (ys, mkVar xs)]
         ]
     , testGroup "element variable simplifiable cycle"
         [ test "length 1, alone"
@@ -330,26 +311,10 @@ test_normalize =
         -- ^ Expected output
         -> TestTree
     test testName input normalization =
-        testGroup testName
-            [ testCase "normalize" $ do
-                let actual = normalize input
-                let expect = normalization
-                assertEqual "" (Just expect) actual
-            , testCase "normalizeSubstitution" $ do
-                let actual = normalizeSubstitution input
-                let expect
-                      | null denormalized =
-                        Right
-                        $ Condition.fromSubstitution
-                        $ Substitution.wrap normalized
-                      | otherwise =
-                        Left $ SimplifiableCycle
-                            (assignedVariable <$> denormalized)
-                            normalization
-                assertEqual "" expect actual
-            ]
-      where
-        Normalization { normalized, denormalized } = normalization
+        testCase testName $ do
+            let actual = normalize input
+            let expect = normalization
+            assertEqual "" (Just expect) actual
 
     testBottom
         :: HasCallStack
@@ -358,21 +323,9 @@ test_normalize =
         -- ^ Test input
         -> TestTree
     testBottom testName input =
-        testGroup testName
-            [ testCase "normalize" $ do
-                let actual = normalize input
-                assertEqual "" Nothing actual
-            , testCase "normalizeSubstitution" $ do
-                let actual =
-                        either (error . show) id
-                        $ normalizeSubstitution input
-                    message =
-                        (show . Pretty.vsep)
-                            [ "Expected \\bottom, but found:"
-                            , Pretty.indent 4 (unparse actual)
-                            ]
-                assertBool message (isBottom actual)
-            ]
+        testCase testName $ do
+            let actual = normalize input
+            assertEqual "" Nothing actual
 
 x, y, z, xs, ys :: UnifiedVariable Variable
 x = ElemVar Mock.x
@@ -396,11 +349,3 @@ sigma = Mock.sigma
 
 testSort :: Sort
 testSort = Mock.testSort
-
-assertVariableOnlyCycle :: a -> IO ()
-assertVariableOnlyCycle anything =
-    assertErrorIO
-        (assertSubstring ""
-            "order on variables should prevent variable-only cycles"
-        )
-        (evaluate anything)

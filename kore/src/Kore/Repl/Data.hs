@@ -499,8 +499,6 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    throwSubstitutionError =
-        UnifierWithExplanation . Monad.Unify.throwSubstitutionError
     throwUnificationError =
         UnifierWithExplanation . Monad.Unify.throwUnificationError
 
@@ -563,7 +561,7 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
     either explainError failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  m (Either UnificationOrSubstitutionError ([a], First ReplOutput))
+        ::  m (Either UnificationError ([a], First ReplOutput))
     unificationResults =
         fmap (\(r, ex) -> flip (,) ex <$> r)
         . flip runAccumT mempty

@@ -53,6 +53,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Error
 import Kore.Unification.Procedure
+import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
@@ -192,7 +193,7 @@ simplifyAnds
     => NonEmpty (TermLike Variable)
     -> unifier (Pattern Variable)
 simplifyAnds =
-    SubstitutionSimplifier.simplifyAnds Monad.Unify.unificationMakeAnd
+    SubstitutionSimplifier.simplifyAnds Unification.unificationMakeAnd
 
 andSimplifySuccess
     :: HasCallStack
@@ -228,8 +229,8 @@ andSimplifyFailure
     -> UnificationError
     -> Assertion
 andSimplifyFailure term1 term2 err = do
-    let expect :: Either UnificationOrSubstitutionError (Pattern Variable)
-        expect = Left (UnificationError err)
+    let expect :: Either UnificationError (Pattern Variable)
+        expect = Left err
     actual <-
         runSMT
         $ runSimplifier testEnv
