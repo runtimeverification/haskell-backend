@@ -12,9 +12,6 @@ import Control.Monad.Trans
 import Control.Monad.Trans.Reader
     ( runReaderT
     )
-import Data.Functor.Contravariant
-    ( contramap
-    )
 import Data.Reflection
 import Data.Semigroup
     ( (<>)
@@ -55,9 +52,9 @@ import Kore.Log
     ( ActualEntry (..)
     , KoreLogOptions (..)
     , LogAction (..)
-    , SomeEntry (..)
     , emptyLogger
     , getLoggerT
+    , koreLogTransformer
     , swappableLogger
     , withLogger
     )
@@ -208,9 +205,9 @@ mainWithOptions
         , koreLogOptions
         }
   = do
-    mLogger <- newMVar emptyLogger
-    let emptySwappableLogger = swappableLogger mLogger
-    flip runReaderT emptySwappableLogger . getLoggerT $ do
+    mLogger <- newMVar $ koreLogTransformer koreLogOptions emptyLogger
+    let initialLogger = swappableLogger mLogger
+    flip runReaderT initialLogger . getLoggerT $ do
         definition <- loadDefinitions [definitionFileName, specFile]
         indexedModule <- loadModule mainModuleName definition
         specDefIndexedModule <- loadModule specModule definition
@@ -251,9 +248,9 @@ mainWithOptions
         :: SMT.Config
         -> LogAction IO ActualEntry
         -> SMT.SMT ()
-        -> ( LogAction IO SomeEntry -> IO () )
+        -> ( LogAction IO ActualEntry -> IO () )
     logActionToIO smtConfig logger smt logAction =
-        SMT.runSMT smtConfig (logger <> contramap from logAction) smt
+        SMT.runSMT smtConfig (logger <> logAction) smt
 
     mainModuleName :: ModuleName
     mainModuleName = moduleName definitionModule
