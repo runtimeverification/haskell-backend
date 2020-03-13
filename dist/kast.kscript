@@ -15,4 +15,4 @@ alias ktryf-d x y = tryf x | kast -i kore -o pretty -d y /dev/stdin
 alias krule = rule | kast -i kore -o pretty -d . /dev/stdin
 alias krule-d x = rule | kast -i kore -o pretty -d x /dev/stdin
 alias krule-n x = rule x | kast -i kore -o pretty -d . /dev/stdin
-alias krule-nd x y= rule x | kast -i kore -o pretty -d y /dev/stdin
+alias krule-nd x y = rule x | kast -i kore -o pretty -d y /dev/stdin
