@@ -367,16 +367,10 @@ showClaim
 showClaim =
     \case
         Nothing -> do
-<<<<<<< HEAD
             currentClaimIndex <- Lens.use (field @"claimIndex")
             currentClaim <- Lens.use (field @"claim")
             putStrLn' . showCurrentClaimIndex $ currentClaimIndex
             tell . makeAuxReplOutput . unparseToString $ currentClaim
-=======
-            currentCindex <- Lens.use (field @"claimIndex")
-            currentClaim <- Lens.use (field @"claim")
-            putStrLn' $ showCurrentClaimWithIndex currentClaim currentCindex
->>>>>>> e8b3155850d14211a2ff5e587c2864bd6b7e8d3a
         Just indexOrName -> do
             claim <- either
                         (getClaimByIndex . unClaimIndex)
