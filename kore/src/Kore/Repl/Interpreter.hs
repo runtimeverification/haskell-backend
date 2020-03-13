@@ -20,7 +20,7 @@ module Kore.Repl.Interpreter
     , formatUnificationMessage
     , allProofs
     , ReplStatus(..)
-    , showCurrentClaimIndex
+    , showCurrentClaimWithIndex
     ) where
 
 import Prelude.Kore
@@ -367,10 +367,16 @@ showClaim
 showClaim =
     \case
         Nothing -> do
+<<<<<<< HEAD
             currentClaimIndex <- Lens.use (field @"claimIndex")
             currentClaim <- Lens.use (field @"claim")
             putStrLn' . showCurrentClaimIndex $ currentClaimIndex
             tell . makeAuxReplOutput . unparseToString $ currentClaim
+=======
+            currentCindex <- Lens.use (field @"claimIndex")
+            currentClaim <- Lens.use (field @"claim")
+            putStrLn' $ showCurrentClaimWithIndex currentClaim currentCindex
+>>>>>>> e8b3155850d14211a2ff5e587c2864bd6b7e8d3a
         Just indexOrName -> do
             claim <- either
                         (getClaimByIndex . unClaimIndex)
@@ -1498,10 +1504,11 @@ showProofStatus m =
         <> ": "
         <> show elm
 
-showCurrentClaimIndex :: ClaimIndex -> String
-showCurrentClaimIndex ci =
+showCurrentClaimWithIndex :: Unparse claim => claim -> ClaimIndex -> String
+showCurrentClaimWithIndex claim claimIndex =
     "You are currently proving claim "
-    <> show (unClaimIndex ci)
+    <> show (unClaimIndex claimIndex) <> ":\n"
+    <> unparseToString claim
 
 execStateReader :: Monad m => env -> st -> ReaderT env (StateT st m) a -> m st
 execStateReader config st = flip execStateT st . flip runReaderT config

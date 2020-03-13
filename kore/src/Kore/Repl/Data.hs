@@ -291,7 +291,12 @@ helpText =
     \claim [n|<name>]                         shows the nth claim, the claim with\
                                               \ <name> or if used without args\
                                               \ shows the currently focused claim\
+<<<<<<< HEAD
                                               \ in the form: LHS => (Operator) RHS \n\
+=======
+                                              \ claim in the form:\
+                                              \ LHS => (Operator) RHS \n\
+>>>>>>> e8b3155850d14211a2ff5e587c2864bd6b7e8d3a
     \axiom <n|name>                           shows the nth axiom or the axiom\
                                               \ with <name>\n\
     \prove <n|name>                           initializes proof mode for the nth\
