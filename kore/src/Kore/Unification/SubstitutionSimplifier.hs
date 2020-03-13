@@ -18,9 +18,6 @@ import Control.Error
     )
 
 import qualified Branch as BranchT
-import Kore.Internal.Condition
-    ( Condition
-    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrCondition
     ( OrCondition
@@ -30,10 +27,8 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.Substitution
-    ( Normalization (..)
-    , Substitution
+    ( Substitution
     )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -45,13 +40,12 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     , simplifySubstitutionWorker
     )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Error
 import Kore.Unification.Unify
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
-If the 'Substitution' cannot be normalized, this simplifier uses
-'Unifier.throwSubstitutionError'.
+If multiple assignments to a single variable cannot be unified, this simplifier
+uses 'Unifier.throwUnificationError'.
 
  -}
 substitutionSimplifier
@@ -69,28 +63,13 @@ substitutionSimplifier =
         -> unifier (OrCondition variable)
     wrapper sideCondition substitution = do
         (predicate, result) <- worker substitution & maybeT empty return
-        condition <- fromNormalization result
+        let condition = Condition.fromNormalizationSimplified result
         let condition' = Condition.fromPredicate predicate <> condition
             conditions = OrCondition.fromCondition condition'
         TopBottom.guardAgainstBottom conditions
         return conditions
       where
         worker = simplifySubstitutionWorker sideCondition unificationMakeAnd
-
-    fromNormalization
-        :: InternalVariable variable
-        => Normalization variable
-        -> unifier (Condition variable)
-    fromNormalization normalization@Normalization { denormalized }
-      | null denormalized =
-        return (Condition.fromNormalizationSimplified normalization)
-      | otherwise =
-        simplifiableCycle
-      where
-        simplifiableCycle =
-            throwSubstitutionError $ SimplifiableCycle variables normalization
-          where
-            variables = fmap Substitution.assignedVariable denormalized
 
 unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =

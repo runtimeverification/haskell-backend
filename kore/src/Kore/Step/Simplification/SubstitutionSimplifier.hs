@@ -11,6 +11,7 @@ module Kore.Step.Simplification.SubstitutionSimplifier
     , MakeAnd (..)
     , deduplicateSubstitution
     , simplifyAnds
+    , simplificationMakeAnd
     ) where
 
 import Prelude.Kore
@@ -144,7 +145,7 @@ substitutionSimplifier =
             TopBottom.guardAgainstBottom condition'
             return condition'
       where
-        worker = simplifySubstitutionWorker sideCondition simplifierMakeAnd
+        worker = simplifySubstitutionWorker sideCondition simplificationMakeAnd
 
 -- * Implementation
 
@@ -162,8 +163,9 @@ newtype MakeAnd monad =
             -- the given 'Predicate.Predicate'.
         }
 
-simplifierMakeAnd :: MonadSimplify simplifier => MakeAnd (BranchT simplifier)
-simplifierMakeAnd =
+simplificationMakeAnd
+    :: MonadSimplify simplifier => MakeAnd (BranchT simplifier)
+simplificationMakeAnd =
     MakeAnd { makeAnd }
   where
     makeAnd termLike1 termLike2 sideCondition = do
