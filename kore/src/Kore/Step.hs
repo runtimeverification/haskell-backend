@@ -27,7 +27,6 @@ module Kore.Step
 
 import Prelude.Kore
 
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
@@ -111,19 +110,16 @@ transitionRule =
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
-    transitionSimplify config =
-        do
-            configs <- Monad.Trans.lift $
-                Pattern.simplifyTopConfiguration config
-            filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-            Foldable.asum (pure <$> filteredConfigs)
+    transitionSimplify config = do
+        configs <- lift $ Pattern.simplifyTopConfiguration config
+        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        Foldable.asum (pure <$> filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
         let unificationProcedure =
                 Step.UnificationProcedure Unification.unificationProcedure
         eitherResults <-
-            Monad.Trans.lift
-            $ Monad.Unify.runUnifierT
+            lift . Monad.Unify.runUnifierT
             $ Step.applyRewriteRulesParallel unificationProcedure [rule] config
         case eitherResults of
             Left err ->

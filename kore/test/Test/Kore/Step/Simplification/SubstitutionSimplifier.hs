@@ -22,10 +22,6 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as Simplification
-import Kore.Unification.Error
-    ( SubstitutionError (..)
-    , UnificationOrSubstitutionError (..)
-    )
 import Kore.Unification.SubstitutionNormalization
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
     ( substitutionSimplifier
@@ -215,15 +211,7 @@ test_SubstitutionSimplifier =
                 actual <-
                     runSimplifier Mock.env . runUnifierT
                     $ simplifySubstitution SideCondition.top input
-                let expect1 normalization@Normalization { denormalized }
-                      | null denormalized =
-                        Right $
-                            Condition.fromNormalizationSimplified normalization
-                      | otherwise =
-                        Left . SubstitutionError
-                        $ SimplifiableCycle
-                            (Substitution.assignedVariable <$> denormalized)
-                            normalization
+                let expect1 = Right . Condition.fromNormalizationSimplified
                     expect
                       | null results = Right []
                       | otherwise    = (: []) <$> traverse expect1 results

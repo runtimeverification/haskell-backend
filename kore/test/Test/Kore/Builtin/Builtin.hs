@@ -31,7 +31,6 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import qualified Control.Monad.Trans as Trans
 import Data.Map.Strict
     ( Map
     )
@@ -116,7 +115,7 @@ import Kore.Syntax.Definition
     , ParsedDefinition
     )
 import Kore.Unification.Error
-    ( UnificationOrSubstitutionError
+    ( UnificationError
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -269,11 +268,11 @@ evaluate
 evaluate = runSimplifier testEnv . (`TermLike.simplify` SideCondition.top)
 
 evaluateT
-    :: Trans.MonadTrans t
+    :: MonadTrans t
     => (MonadSMT smt, MonadProfiler smt, MonadLog smt)
     => TermLike Variable
     -> t smt (Pattern Variable)
-evaluateT = Trans.lift . evaluate
+evaluateT = lift . evaluate
 
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
@@ -286,7 +285,7 @@ runStep
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT (Either UnificationOrSubstitutionError (OrPattern Variable))
+    -> SMT (Either UnificationError (OrPattern Variable))
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return (Step.gatherResults <$> results)
@@ -298,7 +297,7 @@ runStepResult
     -- ^ axiom
     -> SMT
         (Either
-            UnificationOrSubstitutionError
+            UnificationError
             (Step.Results RulePattern Variable)
         )
 runStepResult configuration axiom = do

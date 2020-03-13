@@ -21,7 +21,6 @@ import Control.Monad.Catch
     , catch
     , throwM
     )
-import qualified Control.Monad.Trans as Trans
 import Data.List
     ( isInfixOf
     )
@@ -89,9 +88,8 @@ test_simplifiesToSimplified =
         traceM ("Error for input: " ++ unparseToString term)
         throwM err
 
-evaluateT
-    :: Trans.MonadTrans t => Pattern Variable -> t SMT.SMT (OrPattern Variable)
-evaluateT = Trans.lift . evaluate
+evaluateT :: MonadTrans t => Pattern Variable -> t SMT.SMT (OrPattern Variable)
+evaluateT = lift . evaluate
 
 evaluate :: Pattern Variable -> SMT.SMT (OrPattern Variable)
 evaluate = evaluateWithAxioms Map.empty

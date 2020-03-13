@@ -45,7 +45,6 @@ import Control.Monad.Catch
 import Control.Monad.Except
     ( ExceptT
     )
-import qualified Control.Monad.Except as Except
 import Control.Monad.Morph
     ( MFunctor
     )
@@ -53,7 +52,6 @@ import qualified Control.Monad.Morph as Monad.Morph
 import Control.Monad.Trans
     ( MonadTrans
     )
-import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
     ( AccumT
     , mapAccumT
@@ -68,6 +66,7 @@ import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Strict as Strict
     ( StateT
     )
+import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -115,13 +114,13 @@ instance Pretty LogMessage where
 
 type WithLog msg = MonadLog
 
--- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
+-- | 'lift' any 'LogAction' into a monad transformer.
 liftLogAction
     :: (Monad m, MonadTrans t)
     => LogAction m msg
     -> LogAction (t m) msg
 liftLogAction logAction =
-    Colog.LogAction (Monad.Trans.lift . Colog.unLogAction logAction)
+    Colog.LogAction (lift . Colog.unLogAction logAction)
 
 -- | Use a natural transform on a 'LogAction'.
 hoistLogAction
@@ -187,7 +186,7 @@ class Monad m => MonadLog m where
         => (MonadTrans trans, MonadLog log, m ~ trans log)
         => entry
         -> m ()
-    logEntry = Monad.Trans.lift . logEntry
+    logEntry = lift . logEntry
     {-# INLINE logEntry #-}
 
     logWhile :: Entry entry => entry -> m a -> m a
@@ -224,11 +223,20 @@ instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ do
         logAction <- ask
         let entryLogger = fromLogAction @ActualEntry logAction
-        Monad.Trans.lift $ entryLogger <& toEntry entry
-    logWhile _ = id
+        lift $ entryLogger <& toEntry entry
+
+    logWhile entry2 action = do
+        logEntry entry2
+        LoggerT . local modifyContext $ getLoggerT action
+      where
+        modifyContext = Colog.cmap $ \entry1 ->
+            entry1
+                { entryContext =
+                    entryContext entry1 <> Seq.singleton (toEntry entry2)
+                }
 
 instance MonadTrans LoggerT where
-    lift = LoggerT . Monad.Trans.lift
+    lift = LoggerT . lift
     {-# INLINE lift #-}
 
 logWith

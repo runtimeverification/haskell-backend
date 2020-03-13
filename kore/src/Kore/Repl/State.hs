@@ -488,7 +488,7 @@ liftSimplifierWithLogger mLogger simplifier = do
                 textLogger
     _ <-
         Monad.Trans.lift . liftIO
-        $ swapMVar mLogger (Log.fromLogAction @Log.SomeEntry logger)
+        $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result

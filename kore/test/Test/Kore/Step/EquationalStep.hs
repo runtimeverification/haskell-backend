@@ -42,7 +42,7 @@ import qualified Kore.Step.Step as Step
     , results
     )
 import Kore.Unification.Error
-    ( UnificationOrSubstitutionError (..)
+    ( UnificationError (..)
     )
 import Kore.Unification.UnifierT
     ( InternalVariable
@@ -63,7 +63,7 @@ applyEquationalRule_
           -> [EqualityRule Variable]
           -> IO
             (Either
-                UnificationOrSubstitutionError
+                UnificationError
                 (Step.Results EqualityPattern Variable)
             )
         )
@@ -72,7 +72,7 @@ applyEquationalRule_
     -- ^ Configuration
     -> EqualityRule Variable
     -- ^ Equational rule
-    -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
+    -> IO (Either UnificationError [OrPattern Variable])
 applyEquationalRule_ applyEquationalRules initial rule =
     applyEquationalRules_ applyEquationalRules initial [rule]
 
@@ -82,7 +82,7 @@ applyEquationalRules_
           -> [EqualityRule Variable]
           -> IO
             (Either
-                UnificationOrSubstitutionError
+                UnificationError
                 (Step.Results EqualityPattern Variable)
             )
         )
@@ -91,7 +91,7 @@ applyEquationalRules_
     -- ^ Configuration
     -> [EqualityRule Variable]
     -- ^ Equational rule
-    -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
+    -> IO (Either UnificationError [OrPattern Variable])
 applyEquationalRules_ applyEquationalRules initial rules = do
     result <- applyEquationalRules initial rules
     return (Foldable.toList . discardRemainders <$> result)
@@ -326,7 +326,7 @@ test_applyEquationalRule_ =
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             expect :: Either
-                UnificationOrSubstitutionError [OrPattern Variable]
+                UnificationError [OrPattern Variable]
             expect = Right
                 [ OrPattern.fromPatterns
                     [ Conditional
@@ -469,7 +469,7 @@ applyEquationalRulesSequence
     -- ^ Equational rule
     -> IO
       (Either
-          UnificationOrSubstitutionError
+          UnificationError
           (Step.Results EqualityPattern Variable)
       )
 applyEquationalRulesSequence initial rules =
