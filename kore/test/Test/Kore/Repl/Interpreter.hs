@@ -50,9 +50,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Unparser
-    ( unparseToString
-    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -84,6 +81,9 @@ import Kore.Unification.Procedure
     )
 import Kore.Unification.Unify
     ( explainBottom
+    )
+import Kore.Unparser
+    ( unparseToString
     )
 import qualified SMT
 
