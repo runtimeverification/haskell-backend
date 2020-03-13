@@ -50,6 +50,9 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Unparser
+    ( unparseToString
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -450,7 +453,10 @@ showCurrentClaim =
     in do
         Result { output, continue } <-
             run command axioms claims claim
-        output `equalsOutput` makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
+        equalsOutput
+            output
+            $ makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
+                <> (makeKoreReplOutput . unparseToString $ zeroToTen)
         continue `equals` Continue
 
 showClaim1 :: IO ()
