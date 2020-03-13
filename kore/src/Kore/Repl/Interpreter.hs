@@ -370,7 +370,7 @@ showClaim =
             currentClaimIndex <- Lens.use (field @"claimIndex")
             currentClaim <- Lens.use (field @"claim")
             putStrLn' . showCurrentClaimIndex $ currentClaimIndex
-            tell . makeAuxReplOutput . unparseToString $ currentClaim
+            tell . makeKoreReplOutput . unparseToString $ currentClaim
         Just indexOrName -> do
             claim <- either
                         (getClaimByIndex . unClaimIndex)
