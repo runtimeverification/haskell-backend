@@ -176,7 +176,7 @@ instance Ord variable => Default (Axiom symbol variable) where
             , owise = def
             }
 
-instance From symbol SymbolOrAlias => From (Axiom symbol variable) Attributes where
+instance From symbol SymbolOrAlias => From (Axiom symbol Variable) Attributes where
     from =
         mconcat . sequence
             [ from . heatCool
@@ -200,12 +200,12 @@ instance From symbol SymbolOrAlias => From (Axiom symbol variable) Attributes wh
             , from . owise
             ]
 
-instance SQL.Column (Axiom SymbolOrAlias variable) where
+instance SQL.Column (Axiom SymbolOrAlias Variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
-instance SQL.Column (Axiom Symbol variable) where
+instance SQL.Column (Axiom Symbol Variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes

@@ -17,25 +17,36 @@ module Kore.Attribute.Axiom.Concrete
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
+    , freeVariable
+    , getFreeVariables
+    , isFreeVariable
     , mapFreeVariables
     , nullFreeVariables
     )
 import Kore.Debug
+import qualified Kore.Error
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
 newtype Concrete variable =
     Concrete { unConcrete :: FreeVariables variable }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show, Semigroup, Monoid)
 
 instance SOP.Generic (Concrete variable)
 
@@ -63,27 +74,42 @@ concreteSymbol =
         }
 
 -- | Kore pattern representing the @concrete@ attribute.
-concreteAttribute :: AttributePattern
-concreteAttribute = attributePattern_ concreteSymbol
+concreteAttribute :: [UnifiedVariable Variable] -> AttributePattern
+concreteAttribute = attributePattern concreteSymbol . map attributeVariable
 
 parseConcreteAttribute
-    :: forall variable
-    .  Ord variable
-    => FreeVariables variable
+    :: FreeVariables Variable
     -> AttributePattern
-    -> Concrete variable
-    -> Parser (Concrete variable)
+    -> Concrete Variable
+    -> Parser (Concrete Variable)
 parseConcreteAttribute freeVariables =
-    parseBoolAttributeAux iso concreteId
+    Parser.withApplication concreteId parseApplication
   where
-    iso :: Lens.Iso' (Concrete variable) Bool
-    iso =
-        Lens.iso
-            isConcrete
-            (\b -> Concrete $ if b then freeVariables else mempty)
+    parseApplication
+        :: [Sort]
+        -> [AttributePattern]
+        -> Concrete Variable
+        -> Parser (Concrete Variable)
+    parseApplication params args (Concrete concreteVars) = do
+        Parser.getZeroParams params
+        vars <- mapM getVariable args
+        mapM_ checkFree vars
+        let newVars =
+                if null vars then freeVariables else foldMap freeVariable vars
+        mapM_ (checkDups concreteVars) (getFreeVariables newVars)
+        return (Concrete $ concreteVars <> newVars)
+    checkFree :: UnifiedVariable Variable -> Parser ()
+    checkFree variable =
+        Monad.unless (isFreeVariable variable freeVariables)
+        $ Kore.Error.koreFail
+            ("expected free variable, found " ++ show variable)
+    checkDups :: FreeVariables Variable -> UnifiedVariable Variable -> Parser ()
+    checkDups freeVars var = Monad.when (isFreeVariable var freeVars)
+        $ Kore.Error.koreFail
+            ("duplicate concrete variable declaration for " ++ show var)
 
-instance From (Concrete variable) Attributes where
-    from = toBoolAttributesAux (Lens.to isConcrete) concreteAttribute
+instance From (Concrete Variable) Attributes where
+    from = from . concreteAttribute . Set.toList . getFreeVariables . unConcrete
 
 mapConcreteVariables
     :: Ord variable2

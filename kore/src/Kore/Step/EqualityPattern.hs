@@ -19,9 +19,6 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Default as Default
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -45,6 +42,7 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
+    , Variable
     )
 import Kore.Step.Step
     ( UnifyingRule (..)
@@ -108,13 +106,9 @@ instance TopBottom (EqualityPattern variable) where
     isTop _ = False
     isBottom _ = False
 
-instance
-    (InternalVariable variable, Typeable variable)
-    => SQL.Table (EqualityPattern variable)
+instance SQL.Table (EqualityPattern Variable)
 
-instance
-    (InternalVariable variable, Typeable variable)
-    => SQL.Column (EqualityPattern variable)
+instance SQL.Column (EqualityPattern Variable)
   where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
