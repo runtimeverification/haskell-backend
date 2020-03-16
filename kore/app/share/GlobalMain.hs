@@ -269,9 +269,13 @@ mainGlobal
     -> InfoMod (MainOptions options) -- ^ option parser information
     -> IO      (MainOptions options)
 mainGlobal exeName localOptionsParser modifiers = do
-  options <- commandLineParse exeName localOptionsParser modifiers
-  when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
-  return options
+    options <- commandLineParse exeName localOptionsParser modifiers
+    when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion name)
+    return options
+  where
+    name
+      | getExeName exeName == "kore-exec" = "Kore"
+      | otherwise = "K framework"
 
 
 defaultMainGlobal :: IO (MainOptions options)
@@ -280,15 +284,15 @@ defaultMainGlobal =
 
 
 -- | main function to print version information
-mainVersion :: ZonedTime -> IO ()
-mainVersion time =
+mainVersion :: String -> ZonedTime -> IO ()
+mainVersion name time =
       mapM_ putStrLn
-      [ "K framework version " ++ packageVersion
+      [ name ++ " version " ++ packageVersion
       , "Git:"
-      , "  revision:\t"    ++ $gitHash
-      , "  branch:\t"      ++ $gitBranch
-      , "  last commit:\t" ++  gitTime
-      , "Build date:\t"    ++  exeTime
+      , "  revision:\t"     ++ $gitHash
+      , "  branch:\t"       ++ $gitBranch
+      , "  last commit:\t"  ++  gitTime
+      , "Build date:\t"     ++  exeTime
       ]
     where
       packageVersion = showVersion MetaData.version
