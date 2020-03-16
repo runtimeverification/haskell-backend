@@ -18,6 +18,7 @@ module Kore.Attribute.Axiom
     , Idem (..)
     , Trusted (..)
     , Concrete (..)
+    , Symbolic (..)
     , Simplification (..)
     , Overload (..)
     , SmtLemma (..)
@@ -53,6 +54,7 @@ import Kore.Attribute.Assoc
 import Kore.Attribute.Attributes
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Constructor
+import Kore.Attribute.Axiom.Symbolic
 import Kore.Attribute.Axiom.Unit
 import Kore.Attribute.Comm
 import Kore.Attribute.Functional
@@ -112,6 +114,7 @@ data Axiom symbol variable =
     , trusted :: !Trusted
     -- ^ The claim is trusted
     , concrete :: !(Concrete variable)
+    , symbolic :: !(Symbolic variable)
     , simplification :: !Simplification
     -- ^ This is an axiom used for simplification
     -- (as opposed to, e.g., function evaluation).
@@ -163,6 +166,7 @@ instance Ord variable => Default (Axiom symbol variable) where
             , idem = def
             , trusted = def
             , concrete = def
+            , symbolic = def
             , simplification = def
             , overload = def
             , smtLemma = def
@@ -188,6 +192,7 @@ instance From symbol SymbolOrAlias => From (Axiom symbol Variable) Attributes wh
             , from . idem
             , from . trusted
             , from . concrete
+            , from . symbolic
             , from . simplification
             , from . overload
             , from . smtLemma
@@ -233,6 +238,9 @@ parseAxiomAttribute freeVariables attr =
         Monad.>=>
             typed @(Concrete Variable)
                 (parseConcreteAttribute freeVariables attr)
+        Monad.>=>
+            typed @(Symbolic Variable)
+                (parseSymbolicAttribute freeVariables attr)
         Monad.>=> typed @Simplification (parseAttribute attr)
         Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
         Monad.>=> typed @SmtLemma (parseAttribute attr)
@@ -256,8 +264,11 @@ mapAxiomVariables
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Axiom symbol variable1 -> Axiom symbol variable2
-mapAxiomVariables e s axiom =
-    axiom & Lens.over (field @"concrete") (mapConcreteVariables e s)
+mapAxiomVariables e s axiom@Axiom { concrete, symbolic } =
+    axiom
+        { concrete = mapConcreteVariables e s concrete
+        , symbolic = mapSymbolicVariables e s symbolic
+        }
 
 getPriorityOfAxiom :: Axiom symbol variable -> Integer
 getPriorityOfAxiom
