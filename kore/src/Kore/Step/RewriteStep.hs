@@ -80,9 +80,6 @@ import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
     )
-import Log
-    ( MonadLog
-    )
 
 withoutUnification :: UnifiedRule variable rule -> rule
 withoutUnification = Conditional.term
@@ -158,16 +155,13 @@ finalizeAppliedRule renamedRule appliedConditions =
 
 finalizeRule
     ::  ( InternalVariable variable
-        , MonadLog unifier
-        , MonadSimplify unifier
+        , MonadSimplify simplifier
         )
     => Pattern (Target variable)
     -- ^ Initial conditions
     -> UnifiedRule (Target variable) (RulePattern (Target variable))
     -- ^ Rewriting axiom
-    -> unifier [Result RulePattern variable]
-    -- TODO (virgil): This is broken, it should take advantage of the unifier's
-    -- branching and not return a list.
+    -> simplifier [Result RulePattern variable]
 finalizeRule initial unifiedRule =
     Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
@@ -183,14 +177,14 @@ finalizeRule initial unifiedRule =
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
-type Finalizer unifier variable
+type Finalizer simplifier variable
     =   InternalVariable variable
-    =>  MonadSimplify unifier
+    =>  MonadSimplify simplifier
     =>  Pattern (Target variable)
     ->  [UnifiedRule (Target variable) (RulePattern (Target variable))]
-    ->  unifier (Results RulePattern variable)
+    ->  simplifier (Results RulePattern variable)
 
-finalizeRulesParallel :: forall unifier variable. Finalizer unifier variable
+finalizeRulesParallel :: forall simplifier variable. Finalizer simplifier variable
 finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
@@ -206,7 +200,7 @@ finalizeRulesParallel initial unifiedRules = do
             <$> remainders'
         }
 
-finalizeRulesSequence :: forall unifier variable. Finalizer unifier variable
+finalizeRulesSequence :: forall simplifier variable. Finalizer simplifier variable
 finalizeRulesSequence initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
@@ -228,7 +222,7 @@ finalizeRulesSequence initial unifiedRules = do
         :: UnifiedRule (Target variable) (RulePattern (Target variable))
         -> State.StateT
             (Condition (Target variable))
-            unifier
+            simplifier
             [Result RulePattern variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
@@ -243,16 +237,16 @@ finalizeRulesSequence initial unifiedRules = do
         return results
 
 applyRulesWithFinalizer
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadSimplify unifier
-    => Finalizer unifier variable
-    -> UnificationProcedure unifier
+    => MonadSimplify simplifier
+    => Finalizer simplifier variable
+    -> UnificationProcedure simplifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     let sideCondition = SideCondition.topTODO
         rules' = targetRuleVariables sideCondition initial <$> rules
@@ -267,15 +261,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRulesParallel
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadSimplify unifier
-    => UnificationProcedure unifier
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRulesParallel = applyRulesWithFinalizer finalizeRulesParallel
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -284,15 +278,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRewriteRulesParallel
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadSimplify unifier
-    => UnificationProcedure unifier
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
@@ -309,15 +303,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRulesSequence
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadSimplify unifier
-    => UnificationProcedure unifier
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRulesSequence = applyRulesWithFinalizer finalizeRulesSequence
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -326,15 +320,15 @@ See also: 'applyRewriteRulesParallel'
 
  -}
 applyRewriteRulesSequence
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadSimplify unifier
-    => UnificationProcedure unifier
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RewriteRule variable]
     -- ^ Rewrite rules
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRewriteRulesSequence
     unificationProcedure
     (toConfigurationVariables -> initialConfig)
