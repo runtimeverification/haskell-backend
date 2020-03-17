@@ -27,6 +27,9 @@ module Kore.Step
 
 import Prelude.Kore
 
+import Control.Error
+    ( runExceptT
+    )
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
@@ -39,9 +42,6 @@ import Numeric.Natural
 
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import qualified Kore.Step.Result as Result
-    ( mergeResults
     )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
@@ -66,7 +66,6 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 
 
@@ -99,7 +98,8 @@ rewriteStep a =
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: HasCallStack
+    :: forall m
+    .  HasCallStack
     => MonadSimplify m
     => Prim (RewriteRule Variable)
     -> Pattern Variable
@@ -116,11 +116,12 @@ transitionRule =
         Foldable.asum (pure <$> filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
-        let unificationProcedure =
-                Step.UnificationProcedure Unification.unificationProcedure
         eitherResults <-
-            lift . Monad.Unify.runUnifierT
-            $ Step.applyRewriteRulesParallel unificationProcedure [rule] config
+            Step.applyRewriteRulesParallel
+                Unification.unificationProcedure
+                [rule]
+                config
+            & lift . runExceptT
         case eitherResults of
             Left err ->
                 (error . show . Pretty.vsep)
@@ -133,7 +134,7 @@ transitionRule =
                     ]
             Right results ->
                 Foldable.asum
-                    (pure <$> Step.gatherResults (Result.mergeResults results))
+                    (pure <$> Step.gatherResults results)
 
 
 {- | A strategy that applies all the rewrites in parallel.

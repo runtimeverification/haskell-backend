@@ -269,10 +269,9 @@ mainGlobal
     -> InfoMod (MainOptions options) -- ^ option parser information
     -> IO      (MainOptions options)
 mainGlobal exeName localOptionsParser modifiers = do
-  options <- commandLineParse exeName localOptionsParser modifiers
-  when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
-  return options
-
+    options <- commandLineParse exeName localOptionsParser modifiers
+    when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
+    return options
 
 defaultMainGlobal :: IO (MainOptions options)
 defaultMainGlobal =
@@ -283,7 +282,7 @@ defaultMainGlobal =
 mainVersion :: ZonedTime -> IO ()
 mainVersion time =
       mapM_ putStrLn
-      [ "K framework version " ++ packageVersion
+      [ "Kore version "    ++ packageVersion
       , "Git:"
       , "  revision:\t"    ++ $gitHash
       , "  branch:\t"      ++ $gitBranch

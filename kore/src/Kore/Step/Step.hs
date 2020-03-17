@@ -6,8 +6,7 @@ Unification of rules (used for stepping with rules or equations)
 
  -}
 module Kore.Step.Step
-    ( UnificationProcedure (..)
-    , UnifiedRule
+    ( UnifiedRule
     , Result
     , Results
     , UnifyingRule (..)
@@ -24,6 +23,8 @@ module Kore.Step.Step
     , checkFunctionLike
     , checkSubstitutionCoverage
     , wouldNarrowWith
+    -- * Re-exports
+    , UnificationProcedure (..)
     -- Below exports are just for tests
     , Step.gatherResults
     , Step.remainders
@@ -33,7 +34,6 @@ module Kore.Step.Step
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
@@ -45,6 +45,9 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Branch
+    ( BranchT
+    )
 import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
@@ -89,16 +92,13 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
-import qualified Kore.Unification.Unify as Monad.Unify
-    ( gather
-    , scatter
-    )
+import Kore.Unification.UnificationProcedure
 import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshPartialOrd
@@ -111,19 +111,6 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     , foldMapVariable
     )
-
--- | Wraps functions such as 'unificationProcedure' and
--- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
--- 'stepWithRule'.
-newtype UnificationProcedure =
-    UnificationProcedure
-        ( forall variable unifier
-        .  (InternalVariable variable, MonadUnify unifier)
-        => SideCondition variable
-        -> TermLike variable
-        -> TermLike variable
-        -> unifier (Condition variable)
-        )
 
 type UnifiedRule = Conditional
 
@@ -172,18 +159,18 @@ class UnifyingRule rule where
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
     :: InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => UnifyingRule rule
-    => UnificationProcedure
+    => UnificationProcedure simplifier
     -> SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Initial configuration
     -> [rule (Target variable)]
     -- ^ Rule
-    -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
+    -> simplifier [UnifiedRule (Target variable) (rule (Target variable))]
 unifyRules unificationProcedure sideCondition initial rules =
-    Monad.Unify.gather $ do
-        rule <- Monad.Unify.scatter rules
+    Branch.gather $ do
+        rule <- Branch.scatter rules
         unifyRule unificationProcedure sideCondition initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
@@ -201,35 +188,33 @@ unification. The substitution is not applied to the renamed rule.
  -}
 unifyRule
     :: InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => UnifyingRule rule
-    => UnificationProcedure
+    => UnificationProcedure simplifier
     -> SideCondition variable
     -- ^ Top level condition.
     -> Pattern variable
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
-    -> unifier (UnifiedRule variable (rule variable))
-unifyRule
-    (UnificationProcedure unifyPatterns)
-    sideCondition
-    initial
-    rule
-  = do
+    -> BranchT simplifier (UnifiedRule variable (rule variable))
+unifyRule unificationProcedure sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
             sideCondition `SideCondition.andCondition` initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- unifyPatterns mergedSideCondition initialTerm ruleLeft
+    unification <-
+        unifyTermLikes mergedSideCondition initialTerm ruleLeft
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         simplifyPredicate mergedSideCondition Nothing (unification <> requires')
     return (rule `Conditional.withCondition` unification')
+  where
+    unifyTermLikes = runUnificationProcedure unificationProcedure
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
@@ -342,16 +327,16 @@ we added to the result.
 the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
-    :: forall variable unifier rule
+    :: forall variable monad rule
     .  InternalVariable variable
-    => MonadUnify unifier
+    => Monad monad
     => UnifyingRule rule
     => Pretty.Pretty (rule (Target variable))
     => Pattern (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable) (rule (Target variable))
     -- ^ Unified rule
-    -> unifier ()
+    -> monad ()
 checkSubstitutionCoverage initial unified
   | isCoveringSubstitution || isSymbolic = return ()
   | otherwise =
@@ -392,25 +377,24 @@ The rule is considered to apply if the result is not @\\bottom@.
 
  -}
 applyInitialConditions
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => SideCondition variable
     -- ^ Top-level conditions
     -> Maybe (Condition variable)
     -- ^ Initial conditions
     -> Condition variable
     -- ^ Unification conditions
-    -> unifier (OrCondition variable)
-    -- TODO(virgil): This should take advantage of the unifier's branching and
-    -- not return an Or.
+    -> BranchT simplifier (OrCondition variable)
+    -- TODO(virgil): This should take advantage of the BranchT and not return
+    -- an OrCondition.
 applyInitialConditions sideCondition initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
-        Monad.liftM MultiOr.make
-        $ Monad.Unify.gather
-        $ simplifyPredicate sideCondition initial unification
+        simplifyPredicate sideCondition initial unification
+        & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
@@ -438,16 +422,16 @@ toConfigurationVariablesCondition =
 
  -}
 applyRemainder
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => SideCondition variable
     -- ^ Top level condition
     -> Pattern variable
     -- ^ Initial configuration
     -> Condition variable
     -- ^ Remainder
-    -> unifier (Pattern variable)
+    -> BranchT simplifier (Pattern variable)
 applyRemainder sideCondition initial remainder = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
     normalizedCondition <-
@@ -456,19 +440,18 @@ applyRemainder sideCondition initial remainder = do
 
 -- | Simplifies the predicate obtained upon matching/unification.
 simplifyPredicate
-    :: forall unifier variable term
+    :: forall simplifier variable term
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => SideCondition variable
     -> Maybe (Condition variable)
     -> Conditional variable term
-    -> unifier (Conditional variable term)
+    -> BranchT simplifier (Conditional variable term)
 simplifyPredicate sideCondition (Just initialCondition) conditional = do
-    partialResult <- Branch.alternate
-        (Simplifier.simplifyCondition
+    partialResult <-
+        Simplifier.simplifyCondition
             (sideCondition `SideCondition.andCondition` initialCondition)
             conditional
-        )
     -- TODO (virgil): Consider using different simplifyPredicate implementations
     -- for rewrite rules and equational rules.
     -- Right now this double simplification both allows using the same code for
@@ -476,16 +459,12 @@ simplifyPredicate sideCondition (Just initialCondition) conditional = do
     -- for simplifying the `conditional`. However, it's not obvious that
     -- using the strongest background condition actually helps in our
     -- use cases, so we may be able to do something better for equations.
-    Branch.alternate
-        (Simplifier.simplifyCondition
-            sideCondition
-            ( partialResult
-            `Pattern.andCondition` initialCondition
-            )
+    Simplifier.simplifyCondition
+        sideCondition
+        ( partialResult
+        `Pattern.andCondition` initialCondition
         )
 simplifyPredicate sideCondition Nothing conditional =
-    Branch.alternate
-        (Simplifier.simplifyCondition
-            sideCondition
-            conditional
-        )
+    Simplifier.simplifyCondition
+        sideCondition
+        conditional
