@@ -159,15 +159,15 @@ class UnifyingRule rule where
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
     :: InternalVariable variable
-    => MonadSimplify unifier
+    => MonadSimplify simplifier
     => UnifyingRule rule
-    => UnificationProcedure unifier
+    => UnificationProcedure simplifier
     -> SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Initial configuration
     -> [rule (Target variable)]
     -- ^ Rule
-    -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
+    -> simplifier [UnifiedRule (Target variable) (rule (Target variable))]
 unifyRules unificationProcedure sideCondition initial rules =
     Branch.gather $ do
         rule <- Branch.scatter rules
@@ -377,18 +377,18 @@ The rule is considered to apply if the result is not @\\bottom@.
 
  -}
 applyInitialConditions
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadSimplify unifier
+    => MonadSimplify simplifier
     => SideCondition variable
     -- ^ Top-level conditions
     -> Maybe (Condition variable)
     -- ^ Initial conditions
     -> Condition variable
     -- ^ Unification conditions
-    -> BranchT unifier (OrCondition variable)
-    -- TODO(virgil): This should take advantage of the unifier's branching and
-    -- not return an Or.
+    -> BranchT simplifier (OrCondition variable)
+    -- TODO(virgil): This should take advantage of the BranchT and not return
+    -- an OrCondition.
 applyInitialConditions sideCondition initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
