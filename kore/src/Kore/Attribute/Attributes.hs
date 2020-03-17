@@ -12,6 +12,7 @@ module Kore.Attribute.Attributes
     , attributePattern_
     , attributeString
     , attributeInteger
+    , attributeVariable
     ) where
 
 import Prelude.Kore
@@ -35,6 +36,9 @@ import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 import qualified Pretty
 import qualified SQL
 
@@ -68,6 +72,9 @@ attributeString literal =
 
 attributeInteger :: Integer -> AttributePattern
 attributeInteger = attributeString . Text.pack . show
+
+attributeVariable :: UnifiedVariable Variable -> AttributePattern
+attributeVariable v = (asAttributePattern . VariableF . Const) v
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.
