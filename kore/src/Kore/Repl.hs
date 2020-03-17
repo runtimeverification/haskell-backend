@@ -78,7 +78,7 @@ import Kore.Strategies.Goal
 import Kore.Strategies.Verification
 import Kore.Syntax.Variable
 import Kore.Unification.Procedure
-    ( unificationProcedure
+    ( unificationProcedureWorker
     )
 import Kore.Unparser
     ( unparseToString
@@ -170,7 +170,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     config =
         Config
             { stepper    = stepper0
-            , unifier    = unificationProcedure
+            , unifier    = unificationProcedureWorker
             , logger
             , outputFile
             }
