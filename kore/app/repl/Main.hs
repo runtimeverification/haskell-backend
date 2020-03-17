@@ -227,9 +227,9 @@ mainWithOptions
             else
                 lift
                 $ withLogger koreLogOptions
-                    $ logActionToIO
+                    $ runSMT
                         smtConfig
-                        (swappableLogger mLogger)
+                        initialLogger
                         $ do
                             give
                                 (MetadataTools.build indexedModule)
@@ -244,12 +244,12 @@ mainWithOptions
                                 outputFile
 
   where
-    logActionToIO
+    runSMT
         :: SMT.Config
         -> LogAction IO ActualEntry
         -> SMT.SMT ()
         -> ( LogAction IO ActualEntry -> IO () )
-    logActionToIO smtConfig logger smt logAction =
+    runSMT smtConfig logger smt logAction =
         SMT.runSMT smtConfig (logger <> logAction) smt
 
     mainModuleName :: ModuleName
