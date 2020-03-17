@@ -21,8 +21,9 @@ module Kore.Domain.Builtin
     , emptyNormalizedAc
     , asSingleOpaqueElem
     , isSymbolicKeyOfAc
-    , isConcreteKeyOfAc
     , lookupSymbolicKeyOfAc
+    , removeSymbolicKeyOfAc
+    , isConcreteKeyOfAc
     --
     , InternalMap
     , MapElement
@@ -196,6 +197,27 @@ lookupSymbolicKeyOfAc
     snd <$> Foldable.find (\(key, _) -> child == key) elements
   where
     elements = unwrapElement <$> elementsWithVariables
+
+removeSymbolicKeyOfAc
+    :: AcWrapper normalized
+    => Ord child
+    => child
+    -> NormalizedAc normalized key child
+    -> NormalizedAc normalized key child
+removeSymbolicKeyOfAc
+    child
+    normalized@NormalizedAc { elementsWithVariables }
+  =
+    normalized
+        { elementsWithVariables =
+            fmap wrapElement
+            $ Map.toList
+            $ Map.delete
+                child
+                ( Map.fromList
+                $ fmap unwrapElement elementsWithVariables
+                )
+        }
 
 isConcreteKeyOfAc
     :: AcWrapper normalized

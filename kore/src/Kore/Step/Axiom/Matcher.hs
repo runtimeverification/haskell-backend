@@ -716,32 +716,16 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
             , Just value2 <- Builtin.lookupSymbolicKeyOfAc key1 normalized2 -> do
                 lift $ pushValue (Pair value1 value2)
                 let ac2 =
-                        wrapTermLike normalized2
-                            { Builtin.elementsWithVariables =
-                                fmap Builtin.wrapElement
-                                $ Map.toList
-                                $ Map.delete
-                                    key1
-                                    ( Map.fromList
-                                    $ fmap Builtin.unwrapElement abstract2
-                                    )
-                            }
+                        wrapTermLike
+                        $ Builtin.removeSymbolicKeyOfAc key1 normalized2
                 push (Pair frame1 ac2)
             | [element1] <- abstract1
             , (element2 : _) <- abstract2 -> do
                 lift $ pushElement (Pair element1 element2)
                 let (key2, _) = Builtin.unwrapElement element2
                     ac2 =
-                        wrapTermLike normalized2
-                            { Builtin.elementsWithVariables =
-                                fmap Builtin.wrapElement
-                                $ Map.toList
-                                $ Map.delete
-                                    key2
-                                    ( Map.fromList
-                                    $ fmap Builtin.unwrapElement abstract2
-                                    )
-                            }
+                        wrapTermLike
+                        $ Builtin.removeSymbolicKeyOfAc key2 normalized2
                 push (Pair frame1 ac2)
             | otherwise -> empty
           _ -> empty
