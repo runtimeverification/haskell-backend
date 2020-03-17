@@ -19,6 +19,7 @@ module Kore.Log.Registry
     , warnBottomHookType
     , warnFunctionWithoutEvaluatorsType
     , debugSkipSimplificationType
+    , infoAttemptUnificationType
     ) where
 
 import Prelude.Kore
@@ -72,6 +73,9 @@ import Kore.Log.DebugSolver
 import Kore.Log.ErrorException
     ( ErrorException
     )
+import Kore.Log.InfoAttemptUnification
+    ( InfoAttemptUnification
+    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
@@ -109,6 +113,7 @@ registry =
                 , register logDebugEvaluateConditionType
                 , register criticalExecutionErrorType
                 , register logMessageType
+                , register infoAttemptUnificationType
                 ]
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
@@ -146,6 +151,7 @@ debugAppliedRuleType
   , logDebugEvaluateConditionType
   , criticalExecutionErrorType
   , logMessageType
+  , infoAttemptUnificationType
   :: SomeTypeRep
 
 debugAppliedRuleType =
@@ -172,6 +178,8 @@ criticalExecutionErrorType =
     someTypeRep (Proxy :: Proxy ErrorException)
 logMessageType =
     someTypeRep (Proxy :: Proxy LogMessage)
+infoAttemptUnificationType =
+    someTypeRep (Proxy :: Proxy InfoAttemptUnification)
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =
