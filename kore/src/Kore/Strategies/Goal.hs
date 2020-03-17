@@ -946,13 +946,13 @@ deriveResults goal results = do
             Result.traverseConfigs
                 (pure . GoalRewritten)
                 (pure . GoalRemainder)
-    let onePathResults =
+    let reachabilityResults =
             Result.mapConfigs
                 (flip (configurationDestinationToRule goal) destination)
                 (flip (configurationDestinationToRule goal) destination)
                 results
     results' <-
-        traverseConfigs (mapRules onePathResults)
+        traverseConfigs (mapRules reachabilityResults)
     Result.transitionResults results'
   where
     destination = getDestination goal
