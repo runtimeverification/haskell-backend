@@ -282,12 +282,12 @@ defaultMainGlobal =
 mainVersion :: ZonedTime -> IO ()
 mainVersion time =
       mapM_ putStrLn
-      [ "Kore version " ++ packageVersion
+      [ "Kore version "    ++ packageVersion
       , "Git:"
-      , "  revision:\t"     ++ $gitHash
-      , "  branch:\t"       ++ $gitBranch
-      , "  last commit:\t"  ++  gitTime
-      , "Build date:\t"     ++  exeTime
+      , "  revision:\t"    ++ $gitHash
+      , "  branch:\t"      ++ $gitBranch
+      , "  last commit:\t" ++  gitTime
+      , "Build date:\t"    ++  exeTime
       ]
     where
       packageVersion = showVersion MetaData.version
