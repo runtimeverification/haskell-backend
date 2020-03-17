@@ -320,11 +320,12 @@ matchBuiltinSet
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
-    matchNormalizedAc pushSetValue wrapTermLike normalized1 normalized2
+    matchNormalizedAc pushSetElement pushSetValue wrapTermLike normalized1 normalized2
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild set1
     normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild set2
     pushSetValue _ = return ()
+    pushSetElement = push . fmap Builtin.getSetElement
     wrapTermLike unwrapped =
         set2
         & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
@@ -336,11 +337,16 @@ matchBuiltinMap
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
-    matchNormalizedAc pushMapValue wrapTermLike normalized1 normalized2
+    matchNormalizedAc pushMapElement pushMapValue wrapTermLike normalized1 normalized2
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild map1
     normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild map2
     pushMapValue = push . fmap Builtin.getMapValue
+    pushMapElement (Pair element1 element2) = do
+        let (key1, value1) = Builtin.getMapElement element1
+            (key2, value2) = Builtin.getMapElement element2
+        push (Pair key1 key2)
+        push (Pair value1 value2)
     wrapTermLike unwrapped =
         map2
         & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
@@ -659,7 +665,10 @@ matchNormalizedAc
         , MatchingVariable variable
         , Monad unifier
         )
-    =>  ( Pair (Builtin.Value normalized (TermLike variable))
+    =>  ( Pair (Builtin.Element normalized (TermLike variable))
+        -> MatcherT variable unifier ()
+        )
+    ->  ( Pair (Builtin.Value normalized (TermLike variable))
         -> MatcherT variable unifier ()
         )
     ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
@@ -668,7 +677,7 @@ matchNormalizedAc
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
+matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
   | [] <- excessAbstract1
   = do
     Monad.guard (null excessConcrete1)
@@ -687,6 +696,55 @@ matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
         _ -> empty
     lift $ Foldable.traverse_ pushValue concrete12
     lift $ Foldable.traverse_ pushValue abstractMerge
+  | otherwise = do
+      Monad.guard (null concrete1)
+      case opaque1 of
+          [frame1]
+            | [frame2] <- opaque2 -> do
+                push (Pair frame1 frame2)
+                let ac1 =
+                        wrapTermLike normalized1
+                            { Builtin.opaque = []
+                            }
+                    ac2 =
+                        wrapTermLike normalized2
+                            { Builtin.opaque = []
+                            }
+                push (Pair ac1 ac2)
+            | [element1] <- abstract1
+            , (key1, value1) <- Builtin.unwrapElement element1
+            , Just value2 <- Builtin.lookupSymbolicKeyOfAc key1 normalized2 -> do
+                lift $ pushValue (Pair value1 value2)
+                let ac2 =
+                        wrapTermLike normalized2
+                            { Builtin.elementsWithVariables =
+                                fmap Builtin.wrapElement
+                                $ Map.toList
+                                $ Map.delete
+                                    key1
+                                    ( Map.fromList
+                                    $ fmap Builtin.unwrapElement abstract2
+                                    )
+                            }
+                push (Pair frame1 ac2)
+            | [element1] <- abstract1
+            , (element2 : _) <- abstract2 -> do
+                lift $ pushElement (Pair element1 element2)
+                let (key2, _) = Builtin.unwrapElement element2
+                    ac2 =
+                        wrapTermLike normalized2
+                            { Builtin.elementsWithVariables =
+                                fmap Builtin.wrapElement
+                                $ Map.toList
+                                $ Map.delete
+                                    key2
+                                    ( Map.fromList
+                                    $ fmap Builtin.unwrapElement abstract2
+                                    )
+                            }
+                push (Pair frame1 ac2)
+            | otherwise -> empty
+          _ -> empty
   where
     normalized2' =
         wrapTermLike normalized2
@@ -746,7 +804,6 @@ matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
             -> Builtin.Element normalized (TermLike variable)
             -> Pair (Builtin.Value normalized (TermLike variable))
         elementMerger = Pair `on` (snd . Builtin.unwrapElement)
-matchNormalizedAc _ _ _ _ = empty
 
 data IntersectionDifference a b
     = IntersectionDifference

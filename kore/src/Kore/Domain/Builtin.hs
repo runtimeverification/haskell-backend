@@ -22,6 +22,7 @@ module Kore.Domain.Builtin
     , asSingleOpaqueElem
     , isSymbolicKeyOfAc
     , isConcreteKeyOfAc
+    , lookupSymbolicKeyOfAc
     --
     , InternalMap
     , MapElement
@@ -181,6 +182,20 @@ isSymbolicKeyOfAc
     child `elem` symbolicKeys
   where
     symbolicKeys = fmap (fst . unwrapElement) elementsWithVariables
+
+lookupSymbolicKeyOfAc
+    :: AcWrapper normalized
+    => Eq child
+    => child
+    -> NormalizedAc normalized key child
+    -> Maybe (Value normalized child)
+lookupSymbolicKeyOfAc
+    child
+    NormalizedAc { elementsWithVariables }
+  =
+    snd <$> Foldable.find (\(key, _) -> child == key) elements
+  where
+    elements = unwrapElement <$> elementsWithVariables
 
 isConcreteKeyOfAc
     :: AcWrapper normalized
