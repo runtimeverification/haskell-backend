@@ -13,21 +13,21 @@ module Kore.Attribute.Axiom.Symbolic
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Axiom.Concrete
+    ( parseFreeVariables
+    )
 import Kore.Attribute.Parser as Parser
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
-    , freeVariable
     , getFreeVariables
     , isFreeVariable
     , mapFreeVariables
     )
 import Kore.Debug
-import qualified Kore.Error
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
@@ -80,28 +80,8 @@ parseSymbolicAttribute
 parseSymbolicAttribute freeVariables =
     Parser.withApplication symbolicId parseApplication
   where
-    parseApplication
-        :: [Sort]
-        -> [AttributePattern]
-        -> Symbolic Variable
-        -> Parser (Symbolic Variable)
-    parseApplication params args (Symbolic symbolicVars) = do
-        Parser.getZeroParams params
-        vars <- mapM getVariable args
-        mapM_ checkFree vars
-        let newVars =
-                if null vars then freeVariables else foldMap freeVariable vars
-        mapM_ (checkDups symbolicVars) (getFreeVariables newVars)
-        return (Symbolic $ symbolicVars <> newVars)
-    checkFree :: UnifiedVariable Variable -> Parser ()
-    checkFree variable =
-        Monad.unless (isFreeVariable variable freeVariables)
-        $ Kore.Error.koreFail
-            ("expected free variable, found " ++ show variable)
-    checkDups :: FreeVariables Variable -> UnifiedVariable Variable -> Parser ()
-    checkDups freeVars var = Monad.when (isFreeVariable var freeVars)
-        $ Kore.Error.koreFail
-            ("duplicate symbolic variable declaration for " ++ show var)
+    parseApplication params args (Symbolic concreteVars) =
+        Symbolic <$> parseFreeVariables freeVariables params args concreteVars
 
 instance From (Symbolic Variable) Attributes where
     from = from . symbolicAttribute . Set.toList . getFreeVariables . unSymbolic

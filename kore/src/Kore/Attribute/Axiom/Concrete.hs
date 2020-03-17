@@ -11,21 +11,23 @@ module Kore.Attribute.Axiom.Concrete
     , concreteId, concreteSymbol, concreteAttribute
     , mapConcreteVariables
     , parseConcreteAttribute
+    , parseFreeVariables -- used by Symbolic
     -- * Re-exports
     , FreeVariables
     ) where
 
 import Prelude.Kore
 
+import qualified Control.Error as Safe
 import qualified Control.Monad as Monad
+import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , freeVariable
+    ( FreeVariables (..)
     , getFreeVariables
     , isFreeVariable
     , mapFreeVariables
@@ -85,28 +87,39 @@ parseConcreteAttribute
 parseConcreteAttribute freeVariables =
     Parser.withApplication concreteId parseApplication
   where
-    parseApplication
-        :: [Sort]
-        -> [AttributePattern]
-        -> Concrete Variable
-        -> Parser (Concrete Variable)
-    parseApplication params args (Concrete concreteVars) = do
-        Parser.getZeroParams params
-        vars <- mapM getVariable args
-        mapM_ checkFree vars
-        let newVars =
-                if null vars then freeVariables else foldMap freeVariable vars
-        mapM_ (checkDups concreteVars) (getFreeVariables newVars)
-        return (Concrete $ concreteVars <> newVars)
+    parseApplication params args (Concrete concreteVars) =
+        Concrete <$> parseFreeVariables freeVariables params args concreteVars
+
+parseFreeVariables
+    :: FreeVariables Variable
+    -> [Sort]
+    -> [AttributePattern]
+    -> FreeVariables Variable
+    -> Parser (FreeVariables Variable)
+parseFreeVariables freeVariables params args concreteVars = do
+    Parser.getZeroParams params
+    vars <- mapM getVariable args
+    mapM_ checkFree vars
+    let newVars = -- if no arguments are provides, assume all free variables
+            if null vars
+                then Set.toList (getFreeVariables freeVariables)
+                else vars
+        allVars = newVars ++ Set.toList (getFreeVariables concreteVars)
+        groupedVars = List.group . List.sort $ allVars
+        nubVars = mapMaybe Safe.headMay groupedVars
+        duplicateVars =
+            mapMaybe (Safe.headMay Monad.<=< Safe.tailMay) groupedVars
+    Monad.unless (null duplicateVars)
+        $ Kore.Error.koreFail
+            ("duplicate concrete/symbolic variable annotations for "
+            ++ show duplicateVars)
+    return (FreeVariables . Set.fromAscList $ nubVars)
+  where
     checkFree :: UnifiedVariable Variable -> Parser ()
     checkFree variable =
         Monad.unless (isFreeVariable variable freeVariables)
         $ Kore.Error.koreFail
             ("expected free variable, found " ++ show variable)
-    checkDups :: FreeVariables Variable -> UnifiedVariable Variable -> Parser ()
-    checkDups freeVars var = Monad.when (isFreeVariable var freeVars)
-        $ Kore.Error.koreFail
-            ("duplicate concrete variable declaration for " ++ show var)
 
 instance From (Concrete Variable) Attributes where
     from = from . concreteAttribute . Set.toList . getFreeVariables . unConcrete
