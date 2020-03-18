@@ -367,8 +367,10 @@ showClaim
 showClaim =
     \case
         Nothing -> do
-            currentCindex <- Lens.use (field @"claimIndex")
-            putStrLn' . showCurrentClaimIndex $ currentCindex
+            currentClaimIndex <- Lens.use (field @"claimIndex")
+            currentClaim <- Lens.use (field @"claim")
+            putStrLn' . showCurrentClaimIndex $ currentClaimIndex
+            tell . makeKoreReplOutput . unparseToString $ currentClaim
         Just indexOrName -> do
             claim <- either
                         (getClaimByIndex . unClaimIndex)
@@ -1304,8 +1306,7 @@ unparseStrategy omitList =
            . TermLike.symbolConstructor
 
 putStrLn' :: MonadWriter ReplOutput m => String -> m ()
-putStrLn' str =
-    tell . makeAuxReplOutput $ str
+putStrLn' = tell . makeAuxReplOutput
 
 printIfNotEmpty :: String -> IO ()
 printIfNotEmpty =
