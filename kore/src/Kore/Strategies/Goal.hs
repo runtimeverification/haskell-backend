@@ -60,6 +60,7 @@ import Data.Typeable
     )
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
+import Log.Entry
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
@@ -621,6 +622,47 @@ data TransitionRuleTemplate monad goal =
         -> goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
+
+data InfoReachability goal 
+    = InfoSimplify !goal
+    | InfoRemoveDestination !goal
+    | InfoDeriveSeq ![Rule goal] !goal
+    | InfoDerivePar ![Rule goal] !goal
+
+instance Pretty.Pretty (InfoReachability (ReachabilityRule Variable)) where
+    pretty (InfoSimplify rule) =
+        Pretty.vsep
+            [ "transition: Simplify"
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoRemoveDestination rule) =
+        Pretty.vsep
+            [ "transition: RemoveDestination"
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoDeriveSeq rules rule) =
+        Pretty.vsep
+            [ "transition: DeriveSeq"
+            , "rules to be derived:"
+            , Pretty.pretty
+                $ getRewriteRule . unReachabilityRewriteRule <$> rules
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoDerivePar rules rule) =
+        Pretty.vsep
+            [ "transition: DerivePar"
+            , "rules to be derived:"
+            , Pretty.pretty
+                $ getRewriteRule . unReachabilityRewriteRule <$> rules
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+
+instance Entry (InfoReachability (ReachabilityRule Variable)) where
+    entrySeverity _ = Info
 
 transitionRuleTemplate
     :: forall m goal
