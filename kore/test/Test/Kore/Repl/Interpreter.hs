@@ -77,7 +77,7 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Unification.Procedure
-    ( unificationProcedure
+    ( unificationProcedureWorker
     )
 import Kore.Unification.Unify
     ( explainBottom
@@ -697,7 +697,7 @@ mkConfig
 mkConfig logger =
     Config
         { stepper     = stepper0
-        , unifier     = unificationProcedure
+        , unifier     = unificationProcedureWorker
         , logger
         , outputFile  = OutputFile Nothing
         }

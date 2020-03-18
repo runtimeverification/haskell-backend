@@ -70,6 +70,9 @@ import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Step.Step
@@ -186,7 +189,7 @@ See also: 'applyInitialConditions'
 finalizeAppliedRule
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => SideCondition variable
     -- ^ Top level condition
     -> EqualityPattern variable
@@ -195,8 +198,8 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule sideCondition renamedRule appliedConditions =
-    fmap OrPattern.fromPatterns . Monad.Unify.gather
-    $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
+    MultiOr.gather
+    $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
@@ -233,7 +236,7 @@ finalizeRule
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule sideCondition initial unifiedRule =
-    Monad.Unify.gather $ do
+    Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions
@@ -335,8 +338,9 @@ finalizeRulesSequence sideCondition initial unifiedRules
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $
+    remainders' <-
         applyRemainder sideCondition initial remainder
+        & Branch.gather
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =

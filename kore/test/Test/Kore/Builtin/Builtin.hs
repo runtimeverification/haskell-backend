@@ -31,6 +31,10 @@ import Test.Tasty.HUnit
     , testCase
     )
 
+import Control.Error
+    ( ExceptT
+    , runExceptT
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -93,9 +97,6 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.Result as Result
-    ( mergeResults
-    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule
@@ -118,7 +119,7 @@ import Kore.Unification.Error
     ( UnificationError
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.UnifierT as Monad.Unify
+import Kore.Unification.UnificationProcedure
 import Kore.Unparser
     ( unparseToString
     )
@@ -295,20 +296,18 @@ runStepResult
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT
-        (Either
-            UnificationError
-            (Step.Results RulePattern Variable)
-        )
-runStepResult configuration axiom = do
-    results <-
-        runSimplifier testEnv
-        $ Monad.Unify.runUnifierT
-        $ Step.applyRewriteRulesParallel
-            (Step.UnificationProcedure Unification.unificationProcedure)
-            [axiom]
-            configuration
-    return (Result.mergeResults <$> results)
+    -> SMT (Either UnificationError (Step.Results RulePattern Variable))
+runStepResult configuration axiom =
+    Step.applyRewriteRulesParallel
+        unificationProcedure
+        [axiom]
+        configuration
+    & runSimplifier testEnv . runExceptT
+
+unificationProcedure
+    :: MonadSimplify simplifier
+    => UnificationProcedure (ExceptT UnificationError simplifier)
+unificationProcedure = Unification.unificationProcedure
 
 -- | Test unparsing internalized patterns.
 hpropUnparse
