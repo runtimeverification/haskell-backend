@@ -811,6 +811,7 @@ removeDestination
     => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
+    => FromRulePattern goal
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -825,7 +826,10 @@ removeDestination stateConstructor goal =
                     =<< simplifyTopConfiguration
                         (Conditional.andPredicate configuration removal)
                 if not (isBottom simplifiedRemoval)
-                    then return . GoalStuck $ goal
+                    then
+                        let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+                            (left, requiresCondition) = Conditional.splitTerm stuckConfiguration
+                         in return . GoalStuck $ stuckGoal left requiresCondition
                     else return Proven
   where
     configuration = getConfiguration goal
@@ -834,6 +838,15 @@ removeDestination stateConstructor goal =
     RulePattern { rhs } = toRulePattern goal
 
     destination = topExistsToImplicitForall configFreeVars rhs
+
+    stuckGoal left requiresCondition =
+        fromRulePattern goal RulePattern
+            { left
+            , antiLeft = Nothing
+            , requires = Condition.toPredicate requiresCondition
+            , rhs = rhs
+            , attributes = attributes . toRulePattern $ goal
+            }
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
