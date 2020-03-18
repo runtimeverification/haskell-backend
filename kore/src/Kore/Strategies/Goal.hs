@@ -946,7 +946,7 @@ deriveResults
     => goal
     -> Step.Results RulePattern Variable
     -> Strategy.TransitionT (Rule goal) simplifier (ProofState.ProofState goal)
-deriveResults goal Results { results, remainders } = do
+deriveResults goal Results { results, remainders } =
     addResults <|> addRemainders
   where
     destination = getDestination goal
