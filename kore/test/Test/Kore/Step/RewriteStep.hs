@@ -11,6 +11,9 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Control.Error
+    ( runExceptT
+    )
 import qualified Control.Exception as Exception
 import Data.Default as Default
     ( def
@@ -21,6 +24,7 @@ import Data.Function
     )
 import qualified Data.Set as Set
 
+import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -50,11 +54,11 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Step.Result as Result
-    ( mergeResults
-    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RHS (..)
@@ -64,22 +68,12 @@ import Kore.Step.RulePattern
     , rulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.Data
-    ( SimplifierT
-    )
-import Kore.Step.Step
-    ( UnificationProcedure (..)
-    )
 import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
     ( UnificationError (..)
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.UnifierT
-    ( UnifierT
-    , runUnifierT
-    )
 import Kore.Variables.Fresh
     ( nextVariable
     )
@@ -89,30 +83,18 @@ import Kore.Variables.Target
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import SMT
-    ( NoSMT
-    )
 
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-evalUnifier
-    :: UnifierT (SimplifierT NoSMT) a
-    -> IO (Either UnificationError [a])
-evalUnifier = runSimplifierNoSMT Mock.env . runUnifierT
-
 applyInitialConditions
     :: Condition Variable
     -> Condition Variable
-    -> IO (Either UnificationError [OrCondition Variable])
+    -> IO [OrCondition Variable]
 applyInitialConditions initial unification =
-    (fmap . fmap) Foldable.toList
-    $ evalUnifier
-    $ Step.applyInitialConditions SideCondition.top (Just initial) unification
+    Step.applyInitialConditions SideCondition.top (Just initial) unification
+    & runSimplifier Mock.env . Branch.gather
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -124,14 +106,14 @@ test_applyInitialConditions =
                     , substitution = mempty
                     }
             initial = Condition.bottom
-            expect = Right mempty
+            expect = mempty
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
         let unification = Condition.top
             initial = Condition.top
-            expect = Right [MultiOr.singleton initial]
+            expect = [MultiOr.singleton initial]
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
@@ -148,7 +130,7 @@ test_applyInitialConditions =
                     Mock.b
             expect =
                 MultiOr.singleton (Predicate.makeAndPredicate expect1 expect2)
-        Right [applied] <- applyInitialConditions initial unification
+        [applied] <- applyInitialConditions initial unification
         let actual = Conditional.predicate <$> applied
         assertEqual "" expect actual
 
@@ -158,7 +140,7 @@ test_applyInitialConditions =
             initial =
                 Condition.fromPredicate
                 $ Predicate.makeNotPredicate predicate
-            expect = Right mempty
+            expect = mempty
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
@@ -173,10 +155,13 @@ unifyRule
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    evalUnifier
-    $ Step.unifyRule unificationProcedure SideCondition.top initial rule
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    Step.unifyRule
+        Unification.unificationProcedure
+        SideCondition.top
+        initial
+        rule
+    & runExceptT . Branch.gather
+    & runSimplifier Mock.env
 
 test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =
@@ -810,16 +795,11 @@ applyRewriteRulesParallel
           (Step.Results RulePattern Variable)
       )
 applyRewriteRulesParallel initial rules =
-    (fmap . fmap) Result.mergeResults
-    $ runSimplifierNoSMT Mock.env
-    $ runUnifierT
-    $ Step.applyRewriteRulesParallel
-        unificationProcedure
+    Step.applyRewriteRulesParallel
+        Unification.unificationProcedure
         rules
         (simplifiedPattern initial)
-  where
-    unificationProcedure =
-        UnificationProcedure Unification.unificationProcedure
+    & runSimplifierNoSMT Mock.env . runExceptT
 
 checkResults
     :: HasCallStack
@@ -1204,15 +1184,11 @@ applyRewriteRulesSequence
           (Step.Results RulePattern Variable)
       )
 applyRewriteRulesSequence initial rules =
-    (fmap . fmap) Result.mergeResults
-    $ runSimplifierNoSMT Mock.env
-    $ runUnifierT
-    $ Step.applyRewriteRulesSequence
-        unificationProcedure
+    Step.applyRewriteRulesSequence
+        Unification.unificationProcedure
         (simplifiedPattern initial)
         rules
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    & runSimplifier Mock.env . runExceptT
 
 test_applyRewriteRulesSequence :: [TestTree]
 test_applyRewriteRulesSequence =

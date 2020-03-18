@@ -1,8 +1,13 @@
 module Test.Kore.Attribute.Axiom.Concrete
     ( test_concrete
+    , test_concrete_select
+    , test_concrete_selectx2
     , test_Attributes
     , test_parameters
     , test_duplicate
+    , test_duplicate2
+    , test_duplicate3
+    , test_notfree
     , test_arguments
     ) where
 
@@ -40,23 +45,75 @@ test_concrete :: TestTree
 test_concrete =
     testCase "[concrete{}()] :: Concrete"
     $ expectSuccess Concrete { unConcrete = freeVars }
-    $ parseConcrete freeVars $ Attributes [ concreteAttribute ]
+    $ parseConcrete freeVars $ Attributes [ concreteAttribute [] ]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = foldMap freeVariable [ElemVar Mock.x, ElemVar Mock.y]
+
+test_concrete_select :: TestTree
+test_concrete_select =
+    testCase "[concrete{}(x:testSort)] :: Concrete"
+    $ expectSuccess Concrete { unConcrete = concreteVars }
+    $ parseConcrete freeVars $ Attributes [ concreteAttribute [ElemVar Mock.x] ]
+  where
+    freeVars = foldMap freeVariable [ElemVar Mock.x, ElemVar Mock.y]
+    concreteVars = freeVariable (ElemVar Mock.x)
+
+test_concrete_selectx2 :: TestTree
+test_concrete_selectx2 =
+    testCase "[concrete{}(x:testSort),concrete{}(z:testSort)] :: Concrete"
+    $ expectSuccess Concrete { unConcrete = concreteVars }
+    $ parseConcrete freeVars
+    $ Attributes
+        [ concreteAttribute [ElemVar Mock.x]
+        , concreteAttribute [ElemVar Mock.z]
+        ]
+  where
+    freeVars = foldMap freeVariable $ ElemVar <$> [Mock.x, Mock.y, Mock.z]
+    concreteVars = foldMap (freeVariable . ElemVar) [Mock.x, Mock.z]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[concrete{}()] :: Attributes"
         $ expectSuccess attrs $ parseAttributes attrs
   where
-    attrs = Attributes [ concreteAttribute ]
+    attrs = Attributes [ concreteAttribute []]
+
+test_notfree :: TestTree
+test_notfree =
+    testCase "[concrete{}(y:testSort)] -- not free"
+    $ expectFailure
+    $ parseConcrete freeVars
+    $ Attributes [ concreteAttribute [ElemVar Mock.y] ]
+  where
+    freeVars = freeVariable (ElemVar Mock.x)
 
 test_duplicate :: TestTree
 test_duplicate =
     testCase "[concrete{}(), concrete{}()]"
     $ expectFailure
     $ parseConcrete freeVars
-    $ Attributes [ concreteAttribute, concreteAttribute ]
+    $ Attributes [ concreteAttribute [], concreteAttribute []]
+  where
+    freeVars = freeVariable (ElemVar Mock.x)
+
+test_duplicate2 :: TestTree
+test_duplicate2 =
+    testCase "[concrete{}(), concrete{}(x:testSort)]"
+    $ expectFailure
+    $ parseConcrete freeVars
+    $ Attributes [ concreteAttribute [], concreteAttribute [ElemVar Mock.x]]
+  where
+    freeVars = freeVariable (ElemVar Mock.x)
+
+test_duplicate3 :: TestTree
+test_duplicate3 =
+    testCase "[concrete{}(x:testSort), concrete{}(x:testSort)]"
+    $ expectFailure
+    $ parseConcrete freeVars
+    $ Attributes
+        [ concreteAttribute [ElemVar Mock.x]
+        , concreteAttribute [ElemVar Mock.x]
+        ]
   where
     freeVars = freeVariable (ElemVar Mock.x)
 
