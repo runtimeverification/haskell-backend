@@ -537,6 +537,10 @@ instance TopBottom (OnePathRule variable) where
     isTop _ = False
     isBottom _ = False
 
+instance Pretty (OnePathRule Variable) where
+    pretty (OnePathRule rule) =
+        Pretty.vsep ["One-Path rule:", Pretty.pretty rule]
+
 {-  | Unified One-Path and All-Path Claim rule pattern.
 -}
 data ReachabilityRule variable
@@ -639,6 +643,10 @@ instance FromRulePattern (ReachabilityRule Variable) where
         OnePath $ coerce rulePat
     fromRulePattern (AllPath _) rulePat =
         AllPath $ coerce rulePat
+
+instance Pretty (AllPathRule Variable) where
+    pretty (AllPathRule rule) =
+        Pretty.vsep ["All-Path rule:", Pretty.pretty rule]
 
 {-| Reverses an 'RewriteRule' back into its 'Pattern' representation.
   Should be the inverse of 'Rule.termToAxiomPattern'.

@@ -30,6 +30,10 @@ import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
+    , vsep
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -51,7 +55,9 @@ import qualified Kore.Step.Transition as Transition
 import qualified Kore.Strategies.Goal as Goal
 import qualified Kore.Strategies.ProofState as ProofState
 import Log
-    ( MonadLog (..)
+    ( Entry (..)
+    , MonadLog (..)
+    , Severity (..)
     )
 import SMT
     ( MonadSMT (..)
@@ -289,6 +295,9 @@ instance Debug K
 
 instance Diff K
 
+instance Pretty K where
+    pretty = pretty . show
+
 matches :: K -> K -> Bool
 matches B BorC = True
 matches C BorC = True
@@ -367,6 +376,40 @@ instance Goal.Goal Goal where
                     deriveSeq
                 }
 
+instance Entry (Goal.InfoReachability Goal) where
+    entrySeverity _ = Info
+
+instance Pretty (Goal.InfoReachability Goal) where
+    pretty (Goal.InfoSimplify rule) =
+        vsep
+            [ "transition: Simplify"
+            , "rule:"
+            , pretty rule
+            ]
+    pretty (Goal.InfoRemoveDestination rule) =
+        vsep
+            [ "transition: RemoveDestination"
+            , "rule:"
+            , pretty rule
+            ]
+    pretty (Goal.InfoDeriveSeq rules rule) =
+        vsep
+            [ "transition: DeriveSeq"
+            , "rules to be derived:"
+            , pretty
+                $ unRule <$> rules
+            , "rule:"
+            , pretty rule
+            ]
+    pretty (Goal.InfoDerivePar rules rule) =
+        vsep
+            [ "transition: DerivePar"
+            , "rules to be derived:"
+            , pretty
+                $ unRule <$> rules
+            , "rule:"
+            , pretty rule
+            ]
 instance SOP.Generic (Goal.Rule Goal)
 
 instance SOP.HasDatatypeInfo (Goal.Rule Goal)

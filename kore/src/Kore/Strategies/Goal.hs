@@ -10,6 +10,7 @@ module Kore.Strategies.Goal
     , Rule (..)
     , TransitionRuleTemplate (..)
     , WithConfiguration (..)
+    , InfoReachability (..)
     , extractClaims
     , unprovenNodes
     , proven
@@ -296,7 +297,7 @@ Things to note when implementing your own:
 instance Goal (OnePathRule Variable) where
 
     newtype Rule (OnePathRule Variable) =
-        OnePathRewriteRule { unRule :: RewriteRule Variable }
+        OnePathRewriteRule { unRuleOnePath :: RewriteRule Variable }
         deriving (GHC.Generic, Show, Unparse)
 
     type Prim (OnePathRule Variable) =
@@ -361,7 +362,7 @@ instance ClaimExtractor (OnePathRule Variable) where
 instance Goal (AllPathRule Variable) where
 
     newtype Rule (AllPathRule Variable) =
-        AllPathRewriteRule { unRule :: RewriteRule Variable }
+        AllPathRewriteRule { unRuleAllPath :: RewriteRule Variable }
         deriving (GHC.Generic, Show, Unparse)
 
     type Prim (AllPathRule Variable) =
@@ -623,7 +624,7 @@ data TransitionRuleTemplate monad goal =
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
 
-data InfoReachability goal 
+data InfoReachability goal
     = InfoSimplify !goal
     | InfoRemoveDestination !goal
     | InfoDeriveSeq ![Rule goal] !goal
@@ -661,14 +662,93 @@ instance Pretty.Pretty (InfoReachability (ReachabilityRule Variable)) where
             , Pretty.pretty rule
             ]
 
+instance Pretty.Pretty (InfoReachability (OnePathRule Variable)) where
+    pretty (InfoSimplify rule) =
+        Pretty.vsep
+            [ "transition: Simplify"
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoRemoveDestination rule) =
+        Pretty.vsep
+            [ "transition: RemoveDestination"
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoDeriveSeq rules rule) =
+        Pretty.vsep
+            [ "transition: DeriveSeq"
+            , "rules to be derived:"
+            , Pretty.pretty
+                $ getRewriteRule . unRuleOnePath <$> rules
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoDerivePar rules rule) =
+        Pretty.vsep
+            [ "transition: DerivePar"
+            , "rules to be derived:"
+            , Pretty.pretty
+                $ getRewriteRule . unRuleOnePath <$> rules
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+
+instance Pretty.Pretty (InfoReachability (AllPathRule Variable)) where
+    pretty (InfoSimplify rule) =
+        Pretty.vsep
+            [ "transition: Simplify"
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoRemoveDestination rule) =
+        Pretty.vsep
+            [ "transition: RemoveDestination"
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoDeriveSeq rules rule) =
+        Pretty.vsep
+            [ "transition: DeriveSeq"
+            , "rules to be derived:"
+            , Pretty.pretty
+                $ getRewriteRule . unRuleAllPath <$> rules
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+    pretty (InfoDerivePar rules rule) =
+        Pretty.vsep
+            [ "transition: DerivePar"
+            , "rules to be derived:"
+            , Pretty.pretty
+                $ getRewriteRule . unRuleAllPath <$> rules
+            , "rule:"
+            , Pretty.pretty rule
+            ]
+
 instance Entry (InfoReachability (ReachabilityRule Variable)) where
     entrySeverity _ = Info
+
+instance Entry (InfoReachability (OnePathRule Variable)) where
+    entrySeverity _ = Info
+
+instance Entry (InfoReachability (AllPathRule Variable)) where
+    entrySeverity _ = Info
+
+whileSimplify
+    :: MonadLog log
+    => Entry (InfoReachability goal)
+    => goal
+    -> log a
+    -> log a
+whileSimplify goal = logWhile (InfoSimplify goal)
 
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
+    => Entry (InfoReachability goal)
     => TransitionRuleTemplate m goal
     -> Prim goal
     -> ProofState goal goal
@@ -697,22 +777,26 @@ transitionRuleTemplate
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
     transitionRuleWorker Simplify (Goal goal) =
-        Profile.timeStrategy "Goal.Simplify" $ do
-            results <- tryTransitionT (simplifyTemplate goal)
-            case results of
-                [] -> return Proven
-                _  -> Goal <$> Transition.scatter results
+        whileSimplify goal
+            $ Profile.timeStrategy "Goal.Simplify" $ do
+                results <- tryTransitionT (simplifyTemplate goal)
+                case results of
+                    [] -> return Proven
+                    _  -> Goal <$> Transition.scatter results
 
     transitionRuleWorker Simplify (GoalRemainder goal) =
-        Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplifyTemplate goal
+        whileSimplify goal
+            $ Profile.timeStrategy "Goal.SimplifyRemainder"
+            $ GoalRemainder <$> simplifyTemplate goal
 
     transitionRuleWorker RemoveDestination (Goal goal) =
-        Profile.timeStrategy "Goal.RemoveDestination"
-        $ removeDestinationTemplate Goal goal
+        whileSimplify goal
+            $ Profile.timeStrategy "Goal.RemoveDestination"
+            $ removeDestinationTemplate Goal goal
     transitionRuleWorker RemoveDestination (GoalRemainder goal) =
-        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ removeDestinationTemplate GoalRemainder goal
+        whileSimplify goal
+            $ Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+            $ removeDestinationTemplate GoalRemainder goal
 
     transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValidTemplate goal =
