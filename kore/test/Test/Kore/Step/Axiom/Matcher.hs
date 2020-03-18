@@ -818,10 +818,13 @@ test_matching_Set =
         "[x:Int] does not match [0]"
         (mkSet [mkElemVar xInt] [])
         (mkSet [mkInt 0   ] [])
-    , doesn'tMatch
-        "[x:Int] s:Set does not match [0]"
+    , matches
+        "[x:Int] s:Set matches [0, 1]"
         (mkSet [mkElemVar xInt]         [mkVar sSet])
         (mkSet [mkInt 0   , mkInt 1   ] [          ])
+        [ (ElemVar xInt, mkInt 0)
+        , (sSet, mkSet [mkInt 1] [])
+        ]
     ]
 
 sSet :: UnifiedVariable.UnifiedVariable Variable
@@ -933,11 +936,11 @@ test_matching_Map =
         [ (ElemVar yInt, mkInt 2)
         , (ElemVar mMap, mkElemVar nMap)
         ]
-    , matches "x:Int |-> y:Int  m:Map matches x:Int |-> 0  n:Map"
+    , matches "TESTING x:Int |-> y:Int  m:Map matches x:Int |-> 0  n:Map"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkElemVar xInt, mkInt 0       )] [mkElemVar nMap])
         [ (ElemVar yInt, mkInt 0)
-        , (ElemVar mMap, mkElemVar nMap)
+        , (ElemVar mMap, mkMap [] [mkElemVar nMap])
         ]
     , matchesP "x:Int |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2  n:Map"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])

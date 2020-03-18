@@ -34,6 +34,7 @@ import Control.Monad.Trans.Maybe
 import qualified Data.Align as Align
     ( align
     )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import Data.List
@@ -678,63 +679,62 @@ matchNormalizedAc
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
-  | [] <- excessAbstract1
-  = do
-    Monad.guard (null excessConcrete1)
-    case opaque1 of
-        [] -> do
-            Monad.guard (null opaque2)
-            Monad.guard (null excessConcrete2)
-            Monad.guard (null excessAbstract2)
-        [frame1]
-          | null excessAbstract2
-          , null excessConcrete2
-          , [frame2] <- opaque2 ->
-            push (Pair frame1 frame2)
-          | otherwise ->
-            push (Pair frame1 normalized2')
-        _ -> empty
-    lift $ Foldable.traverse_ pushValue concrete12
-    lift $ Foldable.traverse_ pushValue abstractMerge
-  | otherwise = do
-      Monad.guard (null concrete1)
-      case opaque1 of
-          [frame1]
-            | [frame2] <- opaque2 -> do
-                push (Pair frame1 frame2)
-                let ac1 =
-                        wrapTermLike normalized1
-                            { Builtin.opaque = []
-                            }
-                    ac2 =
-                        wrapTermLike normalized2
-                            { Builtin.opaque = []
-                            }
-                push (Pair ac1 ac2)
-            | [element1] <- abstract1
-            , (key1, value1) <- Builtin.unwrapElement element1
-            , Just value2 <- Builtin.lookupSymbolicKeyOfAc key1 normalized2 -> do
+    | [element1] <- abstract1
+    , [frame1] <- opaque1
+    , null concrete1 = do
+        let (key1, value1) = Builtin.unwrapElement element1
+        case Builtin.lookupSymbolicKeyOfAc key1 normalized2 of
+            Just value2 -> do
                 lift $ pushValue (Pair value1 value2)
-                let ac2 =
+                let normalized2' =
                         wrapTermLike
                         $ Builtin.removeSymbolicKeyOfAc key1 normalized2
-                push (Pair frame1 ac2)
-            | [element1] <- abstract1
-            , (element2 : _) <- abstract2 -> do
-                lift $ pushElement (Pair element1 element2)
-                let (key2, _) = Builtin.unwrapElement element2
-                    ac2 =
-                        wrapTermLike
-                        $ Builtin.removeSymbolicKeyOfAc key2 normalized2
-                push (Pair frame1 ac2)
-            | otherwise -> empty
+                push (Pair frame1 normalized2')
+            Nothing ->
+                case (headMay . Map.toList $ concrete2, headMay abstract2) of
+                    (Just concreteElement2, _) -> do
+                        let liftedConcreteElement2 =
+                                Builtin.wrapElement
+                                $ Bifunctor.first TermLike.fromConcrete concreteElement2
+                        lift $ pushElement (Pair element1 liftedConcreteElement2)
+                        let (key2, _) = concreteElement2
+                            normalized2' =
+                                wrapTermLike
+                                $ Builtin.removeConcreteKeyOfAc key2 normalized2
+                        push (Pair frame1 normalized2')
+                    (_, Just abstractElement2) -> do
+                        lift $ pushElement (Pair element1 abstractElement2)
+                        let (key2, _) = Builtin.unwrapElement abstractElement2
+                            normalized2' =
+                                wrapTermLike
+                                $ Builtin.removeSymbolicKeyOfAc key2 normalized2
+                        push (Pair frame1 normalized2')
+                    _ -> empty
+    | [] <- excessAbstract1
+    = do
+      Monad.guard (null excessConcrete1)
+      case opaque1 of
+          [] -> do
+              Monad.guard (null opaque2)
+              Monad.guard (null excessConcrete2)
+              Monad.guard (null excessAbstract2)
+          [frame1]
+            | null excessAbstract2
+            , null excessConcrete2
+            , [frame2] <- opaque2 ->
+                push (Pair frame1 frame2)
+            | otherwise ->
+                let normalized2' =
+                        wrapTermLike normalized2
+                            { Builtin.concreteElements = excessConcrete2
+                            , Builtin.elementsWithVariables = excessAbstract2
+                            }
+                 in push (Pair frame1 normalized2')
           _ -> empty
+      lift $ Foldable.traverse_ pushValue concrete12
+      lift $ Foldable.traverse_ pushValue abstractMerge
+    | otherwise = empty
   where
-    normalized2' =
-        wrapTermLike normalized2
-            { Builtin.concreteElements = excessConcrete2
-            , Builtin.elementsWithVariables = excessAbstract2
-            }
     abstract1 = Builtin.elementsWithVariables normalized1
     concrete1 = Builtin.concreteElements normalized1
     opaque1 = Builtin.opaque normalized1

@@ -24,6 +24,7 @@ module Kore.Domain.Builtin
     , lookupSymbolicKeyOfAc
     , removeSymbolicKeyOfAc
     , isConcreteKeyOfAc
+    , removeConcreteKeyOfAc
     --
     , InternalMap
     , MapElement
@@ -232,6 +233,20 @@ isConcreteKeyOfAc
     )
   =
     key `Map.member` concreteElements
+
+removeConcreteKeyOfAc
+    :: Ord key
+    => key
+    -> NormalizedAc normalized key child
+    -> NormalizedAc normalized key child
+removeConcreteKeyOfAc
+    key
+    normalized@NormalizedAc { concreteElements }
+  =
+    normalized
+        { concreteElements =
+            Map.delete key concreteElements
+        }
 
 deriving instance
     ( Eq key, Eq child
