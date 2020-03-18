@@ -104,7 +104,10 @@ import Kore.Log.ErrorRewritesInstantiation
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
-import qualified Kore.Step.Result as Result
+import Kore.Step.Result
+    ( Result (..)
+    , Results (..)
+    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)
@@ -139,6 +142,9 @@ import Kore.Step.Strategy
     ( Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
+import Kore.Step.Transition
+    ( tryTransitionT
+    )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( Prim
@@ -649,8 +655,12 @@ transitionRuleTemplate
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
     transitionRuleWorker Simplify (Goal goal) =
-        Profile.timeStrategy "Goal.Simplify"
-        $ Goal <$> simplifyTemplate goal
+        Profile.timeStrategy "Goal.Simplify" $ do
+            results <- tryTransitionT (simplifyTemplate goal)
+            case results of
+                [] -> return Proven
+                _  -> Goal <$> Transition.scatter results
+
     transitionRuleWorker Simplify (GoalRemainder goal) =
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate goal
@@ -936,26 +946,33 @@ deriveResults
     => goal
     -> Step.Results RulePattern Variable
     -> Strategy.TransitionT (Rule goal) simplifier (ProofState.ProofState goal)
-deriveResults goal results = do
-    let mapRules =
-            Result.mapRules
-            $ (fromRulePattern . goalToRule $ goal)
-            . Step.unTargetRule
-            . Step.withoutUnification
-        traverseConfigs =
-            Result.traverseConfigs
-                (pure . GoalRewritten)
-                (pure . GoalRemainder)
-    let reachabilityResults =
-            Result.mapConfigs
-                (flip (configurationDestinationToRule goal) destination)
-                (flip (configurationDestinationToRule goal) destination)
-                results
-    results' <-
-        traverseConfigs (mapRules reachabilityResults)
-    Result.transitionResults results'
+deriveResults goal Results { results, remainders } =
+    addResults <|> addRemainders
   where
     destination = getDestination goal
+    toGoal config = configurationDestinationToRule goal config destination
+
+    addResults = Foldable.asum (addResult <$> results)
+    addRemainders = Foldable.asum (addRemainder <$> Foldable.toList remainders)
+
+    addResult Result { appliedRule, result } = do
+        addRule appliedRule
+        case Foldable.toList result of
+            []      ->
+                -- If the rule returns \bottom, the goal is proven on the
+                -- current branch.
+                pure Proven
+            configs -> Foldable.asum (addRewritten <$> configs)
+
+    addRewritten = pure . GoalRewritten . toGoal
+    addRemainder = pure . GoalRemainder . toGoal
+
+    addRule = Transition.addRule . fromAppliedRule
+
+    fromAppliedRule =
+        (fromRulePattern . goalToRule $ goal)
+            . Step.unTargetRule
+            . Step.withoutUnification
 
 withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a
 withConfiguration goal = handle (throw . WithConfiguration configuration)
