@@ -565,9 +565,8 @@ the result is the given default.
 
 If the given key is in the map, the result is `\dv{Bool{}}("true")`; otherwise
 the result is `\dv{Bool{}}("false")`.
-
 ~~~
-    hooked-symbol inKeys{}(Map{}, Key{}) : Bool{}
+    hooked-symbol inKeys{}(Key{}, Map{}) : Bool{}
         [hook{}("MAP.in_keys")]
 ~~~
 

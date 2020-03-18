@@ -192,6 +192,9 @@ symbolVerifiers =
     , ( Map.valuesKey
       , Builtin.verifySymbol Builtin.List.assertSort [assertSort]
       )
+    , ( Map.inclusionKey
+      , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
+      )
     ]
 
 {- | Abort function evaluation if the argument is not a Map domain value.
@@ -379,6 +382,23 @@ evalInKeys =
                 $ Bool.asPattern resultSort
                 $ Map.member _key _map
 
+evalInclusion :: Builtin.Function
+evalInclusion =
+    Builtin.functionEvaluator evalInclusion0
+  where
+    evalInclusion0 resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let (_mapLeft, _mapRight) =
+                    case arguments of
+                        [_mapLeft, _mapRight] -> (_mapLeft, _mapRight)
+                        _ -> Builtin.wrongArity Map.inclusionKey
+            _mapLeft <- expectConcreteBuiltinMap Map.inclusionKey _mapLeft
+            _mapRight <- expectConcreteBuiltinMap Map.inclusionKey _mapRight
+
+            Builtin.appliedFunction
+                $ Bool.asPattern resultSort
+                $ Map.isSubmapOf _mapLeft _mapRight
+
 evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
@@ -516,6 +536,7 @@ builtinFunctions =
         , (Map.removeAllKey, evalRemoveAll)
         , (Map.sizeKey, evalSize)
         , (Map.valuesKey, evalValues)
+        , (Map.inclusionKey, evalInclusion)
         ]
 
 {- | Convert a Map-sorted 'TermLike' to its internal representation.
