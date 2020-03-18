@@ -27,11 +27,16 @@ import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch
+import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (FreeVariables)
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -94,8 +99,6 @@ import Kore.Step.Step
     , wouldNarrowWith
     )
 import qualified Kore.Step.Step as EqualityPattern
-    ( targetRuleVariables
-    )
 import Kore.Unification.UnifierT
     ( UnifierT
     )
@@ -421,7 +424,8 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 matchRule
-    :: InternalVariable variable
+    :: forall variable rule unifier
+    .  InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => SideCondition variable
@@ -432,28 +436,59 @@ matchRule
     -- ^ Rule
     -> unifier (UnifiedRule variable (rule variable))
 matchRule sideCondition initial rule = do
-    let (initialTerm, initialCondition) = Pattern.splitTerm initial
-    -- Unify the left-hand side of the rule with the term of the initial
-    -- configuration.
-    let ruleLeft = matchingPattern rule
-    unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
+    unification <- unifyPatterns >>= maybe empty return
     -- Combine the unification solution with the rule's requirement clause,
     let requires = precondition rule
     unification' <-
         evaluateRequires sideCondition initialCondition unification requires
+    checkConcrete concreteVars symbolicVars unification'
     return (rule `Conditional.withCondition` unification')
   where
+    (initialTerm, initialCondition) = Pattern.splitTerm initial
+    -- Unify the left-hand side of the rule with the term of the initial
+    -- configuration.
+    ruleLeft = matchingPattern rule
+
+    concreteVars = Attribute.concrete . EqualityPattern.ruleAttributes $ rule
+    symbolicVars = Attribute.symbolic . EqualityPattern.ruleAttributes $ rule
+
     unifyPatterns = ignoreUnificationErrors matchIncremental
 
-    ignoreUnificationErrors unification pattern1 pattern2 =
-        Unifier.runUnifierT (unification pattern1 pattern2)
-        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
+    ignoreUnificationErrors unification =
+        Unifier.runUnifierT (unification ruleLeft initialTerm)
+        >>= either couldNotMatch Unifier.scatter
 
-    couldNotMatch pattern1 pattern2 _ =
+    checkConcrete
+        :: Attribute.Concrete variable
+        -> Attribute.Symbolic variable
+        -> Condition variable
+        -> unifier ()
+    checkConcrete
+        (Attribute.Concrete (FreeVariables concretes))
+        (Attribute.Symbolic (FreeVariables symbolics))
+        Conditional { substitution }
+      = do
+        let substitutionMap = Substitution.toMap substitution
+            check p var = case Map.lookup var substitutionMap of
+                Nothing -> True
+                Just t -> p t
+            isNotConcrete = check (not . TermLike.isConstructorLike)
+            isNotSymbolic = check TermLike.isConstructorLike
+            notConcretes =
+                filter isNotConcrete (Set.toList concretes)
+            notSymbolics =
+                filter isNotSymbolic (Set.toList symbolics)
+        Monad.unless (null notConcretes && null notSymbolics)
+            $ Unifier.explainAndReturnBottom
+                "Substitution not satisfying concrete/symbolic constraints"
+                ruleLeft
+                initialTerm
+
+    couldNotMatch _ =
         Unifier.explainAndReturnBottom
             "Could not match patterns"
-            pattern1
-            pattern2
+            ruleLeft
+            initialTerm
 
 {- | Evaluate the pre-condition of a rule, subject to the given constraints.
  -}

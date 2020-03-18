@@ -49,6 +49,7 @@ import Branch
     ( BranchT
     )
 import qualified Branch
+import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
     , HasFreeVariables (freeVariables)
@@ -154,6 +155,9 @@ class UnifyingRule rule where
         -> (SetVariable variable1 -> SetVariable variable2)
         -> rule variable1
         -> rule variable2
+
+    -- | Axiom attributes for this rule
+    ruleAttributes :: rule variable -> Attribute.Axiom TermLike.Symbol variable
 
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.

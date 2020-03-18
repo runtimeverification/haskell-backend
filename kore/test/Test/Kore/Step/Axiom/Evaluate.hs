@@ -1,6 +1,7 @@
 module Test.Kore.Step.Axiom.Evaluate
     ( test_evaluateAxioms
-    , concreteEqualityRule
+    , concrete
+    , symbolic
     ) where
 
 import Prelude.Kore
@@ -15,6 +16,7 @@ import Data.Generics.Wrapped
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Axiom.Concrete
+import Kore.Attribute.Axiom.Symbolic
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
@@ -57,20 +59,37 @@ test_evaluateAxioms =
         [axiom_ (f x) (g x)]
         (f x, makeTruePredicate_)
         [Pattern.fromTermLike $ g x]
-    , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to F(x)"
-        [axiom_ (f x) (g x) & concreteEqualityRule]
+    , applies "F(x) => G(x) [symbolic(x)] applies to F(x)"
+        [axiom_ (f x) (g x) & symbolic [x]]
+        (f x, makeTruePredicate_)
+        [Pattern.fromTermLike $ g x]
+     , doesn'tApply "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
+        [axiom_ (f x) (g x) & concrete [x]]
         (f x, makeTruePredicate_)
     , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to f(cf)"
-        [axiom_ (f x) (g x) & concreteEqualityRule]
+        [axiom_ (f x) (g x) & concrete [x]]
         (f cf, makeTruePredicate_)
     , doesn'tApply "F(x) => G(x) doesn't apply to F(top)"
         [axiom_ (f x) (g x)]
         (f mkTop_, makeTruePredicate_)
-    , applies "F(x) => G(x) [concrete] apply to F(a)"
-        [axiom_ (f x) (g x) & concreteEqualityRule]
+    , applies "F(x) => G(x) [concrete] applies to F(a)"
+        [axiom_ (f x) (g x) & concrete [x]]
         (f a, makeTruePredicate_)
         [Pattern.fromTermLike $ g a]
-    , doesn'tApply "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
+    , applies
+        "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
+        [axiom_ (sigma x y) a & symbolic [x] & concrete [y]]
+        (sigma x a, makeTruePredicate_)
+        [Pattern.fromTermLike a]
+    , doesn'tApply
+        "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
+        [axiom_ (sigma x y) a & symbolic [x] & concrete [y]]
+        (sigma a a, makeTruePredicate_)
+    , doesn'tApply
+        "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
+        [axiom_ (sigma x y) a & symbolic [x] & concrete [y]]
+        (sigma x x, makeTruePredicate_)
+     , doesn'tApply "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
         [axiom (f x) (g x) makeFalsePredicate_]
         (f x, makeTruePredicate_)
     , doesn'tApply "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
@@ -162,11 +181,20 @@ axiom_
     -> EqualityRule Variable
 axiom_ left right = axiom left right makeTruePredicate_
 
-concreteEqualityRule :: EqualityRule Variable -> EqualityRule Variable
-concreteEqualityRule equalityRule =
+concrete
+    :: [TermLike Variable] -> EqualityRule Variable -> EqualityRule Variable
+concrete vars equalityRule =
     Lens.set
         (_Unwrapped . field @"attributes" . field @"concrete")
-        (Concrete $ freeVariables equalityRule)
+        (Concrete $ foldMap freeVariables vars)
+        equalityRule
+
+symbolic
+    :: [TermLike Variable] -> EqualityRule Variable -> EqualityRule Variable
+symbolic vars equalityRule =
+    Lens.set
+        (_Unwrapped . field @"attributes" . field @"symbolic")
+        (Symbolic $ foldMap freeVariables vars)
         equalityRule
 
 -- * Test forms
