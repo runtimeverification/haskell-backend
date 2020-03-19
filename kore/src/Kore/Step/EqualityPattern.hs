@@ -47,8 +47,8 @@ import Kore.Internal.Variable
     , Variable
     )
 import Kore.Step.Step
-    ( UnifyingRule (..)
-    , InstantiationFailure (..)
+    ( InstantiationFailure (..)
+    , UnifyingRule (..)
     )
 import Kore.TopBottom
     ( TopBottom (..)
