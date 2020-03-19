@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Log
     ( koreLogFilters
+    , koreLogTransformer
     , withLogger
     , emptyLogger
     , stderrLogger

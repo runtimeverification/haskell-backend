@@ -95,6 +95,10 @@ import Kore.Strategies.Goal
 import Kore.Strategies.Verification
     ( CommonProofState
     )
+
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -290,7 +294,8 @@ helpText =
     \help                                     shows this help message\n\
     \claim [n|<name>]                         shows the nth claim, the claim with\
                                               \ <name> or if used without args\
-                                              \ shows the currently focused claim\n\
+                                              \ shows the currently focused claim\
+                                              \ in the form: LHS => (modality) RHS \n\
     \axiom <n|name>                           shows the nth axiom or the axiom\
                                               \ with <name>\n\
     \prove <n|name>                           initializes proof mode for the nth\
@@ -472,6 +477,7 @@ data Config claim m = Config
     -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.
+    , mainModuleName :: ModuleName
     }
     deriving (GHC.Generic)
 

@@ -397,9 +397,19 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expectedGoal =
-                makeOnePathRule
-                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
-                    (Mock.functionalConstr11 Mock.a)
+                makeOnePathRuleFromPatterns
+                    Conditional
+                        { term =
+                            Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
+                        , predicate =
+                            makeNotPredicate
+                                ( makeEqualsPredicate Mock.testSort
+                                    (TermLike.mkElemVar Mock.x)
+                                    Mock.a
+                                )
+                        , substitution = mempty
+                        }
+                    (Pattern.fromTermLike $ Mock.functionalConstr11 Mock.a)
         assertStuck expectedGoal actual actualReach
     , testCase "Stuck pattern" $ do
         -- Goal: constr10(x) => constr11(a)
@@ -452,9 +462,19 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expectedGoal =
-                makeOnePathRule
-                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
-                    (Mock.functionalConstr11 Mock.a)
+                makeOnePathRuleFromPatterns
+                    Conditional
+                        { term =
+                            Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
+                        , predicate =
+                            makeNotPredicate
+                                ( makeEqualsPredicate Mock.testSort
+                                    (TermLike.mkElemVar Mock.x)
+                                    Mock.a
+                                )
+                        , substitution = mempty
+                        }
+                    (Pattern.fromTermLike $ Mock.functionalConstr11 Mock.a)
         assertStuck expectedGoal actual actualReach
     , testCase "Axiom with requires" $ do
         -- Goal:  constr10(b) => a
