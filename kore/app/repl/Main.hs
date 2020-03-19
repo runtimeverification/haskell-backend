@@ -49,9 +49,17 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.Log
-    ( emptyLogger
+    ( ActualEntry (..)
+    , KoreLogOptions (..)
+    , LogAction (..)
+    , emptyLogger
     , getLoggerT
+    , koreLogTransformer
     , swappableLogger
+    , withLogger
+    )
+import Kore.Log.KoreLogOptions
+    ( parseKoreLogOptions
     )
 import Kore.Repl.Data
 import Kore.Step.SMT.Lemma
@@ -82,6 +90,7 @@ data KoreReplOptions = KoreReplOptions
     , replMode         :: !ReplMode
     , replScript       :: !ReplScript
     , outputFile       :: !OutputFile
+    , koreLogOptions   :: !KoreLogOptions
     }
 
 parseKoreReplOptions :: Parser KoreReplOptions
@@ -93,6 +102,7 @@ parseKoreReplOptions =
     <*> parseReplMode
     <*> parseReplScript
     <*> parseOutputFile
+    <*> parseKoreLogOptions (ExeName "kore-repl")
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -192,11 +202,12 @@ mainWithOptions
         , replScript
         , replMode
         , outputFile
+        , koreLogOptions
         }
   = do
-    mLogger <- newMVar emptyLogger
-    let emptySwappableLogger = swappableLogger mLogger
-    flip runReaderT emptySwappableLogger . getLoggerT $ do
+    mLogger <- newMVar $ koreLogTransformer koreLogOptions emptyLogger
+    let initialLogger = swappableLogger mLogger
+    flip runReaderT initialLogger . getLoggerT $ do
         definition <- loadDefinitions [definitionFileName, specFile]
         indexedModule <- loadModule mainModuleName definition
         specDefIndexedModule <- loadModule specModule definition
@@ -215,22 +226,33 @@ mainWithOptions
                 exitFailure
             else
                 lift
-                $ SMT.runSMT smtConfig (swappableLogger mLogger)
-                   $ do
-                        give
-                            (MetadataTools.build indexedModule)
-                            (declareSMTLemmas indexedModule)
-                        proveWithRepl
-                            indexedModule
-                            specDefIndexedModule
-                            Nothing
-                            mLogger
-                            replScript
-                            replMode
-                            outputFile
-                            mainModuleName
+                $ withLogger koreLogOptions
+                    $ runSMT
+                        smtConfig
+                        initialLogger
+                        $ do
+                            give
+                                (MetadataTools.build indexedModule)
+                                (declareSMTLemmas indexedModule)
+                            proveWithRepl
+                                indexedModule
+                                specDefIndexedModule
+                                Nothing
+                                mLogger
+                                replScript
+                                replMode
+                                outputFile
+                                mainModuleName
 
   where
+    runSMT
+        :: SMT.Config
+        -> LogAction IO ActualEntry
+        -> SMT.SMT ()
+        -> ( LogAction IO ActualEntry -> IO () )
+    runSMT smtConfig logger smt logAction =
+        SMT.runSMT smtConfig (logger <> logAction) smt
+
     mainModuleName :: ModuleName
     mainModuleName = moduleName definitionModule
 

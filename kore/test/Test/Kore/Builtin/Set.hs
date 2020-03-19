@@ -70,7 +70,6 @@ import qualified Hedgehog.Range as Range
 import Test.Tasty
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -585,7 +584,7 @@ test_unifyFramingVariable =
                         Substitution.unsafeWrap
                             [(ElemVar frameVar, asInternal remainder)]
                     }
-            actual <- Trans.lift $
+            actual <- lift $
                 evaluateToList (mkAnd patConcreteSet patFramedSet)
 
             (===) [expect] actual
@@ -1750,7 +1749,7 @@ unifiesWithMulti
     -> [Pattern Variable]
     -> PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
-    actualResults <- Trans.lift $ evaluateToList (mkAnd pat1 pat2)
+    actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults
   where
     compareElements [] actuals = [] === actuals
@@ -1787,7 +1786,7 @@ unifiedBy (termLike1, termLike2) substitution testName =
             runSimplifier testEnv
             $ runUnifierT
             $ termUnification termLike1 termLike2
-        Trans.liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
+        liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
   where
     expect = Condition.fromSubstitution $ Substitution.unsafeWrap substitution
 

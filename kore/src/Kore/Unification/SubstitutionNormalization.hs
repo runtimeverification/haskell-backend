@@ -9,17 +9,13 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Unification.SubstitutionNormalization
-    ( normalizeSubstitution
-    , Normalization (..)
+    ( Normalization (..)
     , normalize
     ) where
 
 import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import Control.Monad.Except
-    ( throwError
-    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import Data.Functor
@@ -41,10 +37,6 @@ import qualified Data.Set as Set
 
 import Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Substitution
     ( Assignment
     , pattern Assignment
@@ -55,39 +47,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
-import Kore.Unification.Error
-    ( SubstitutionError (..)
-    )
 import Kore.Variables.UnifiedVariable
-
-{-| 'normalizeSubstitution' transforms a substitution into an equivalent one
-in which no variable that occurs on the left hand side also occurs on the
-right side.
-
-The substitution is presented as a 'Map' where any duplication has already been
-resolved.
-
-Returns an error when the substitution is not normalizable (i.e. it contains
-x = f(x) or something equivalent).
--}
-normalizeSubstitution
-    :: forall variable
-    .  InternalVariable variable
-    => Map (UnifiedVariable variable) (TermLike variable)
-    -> Either SubstitutionError (Condition variable)
-normalizeSubstitution substitution =
-    maybe bottom fromNormalization $ normalize substitution
-  where
-    bottom = return Condition.bottom
-    fromNormalization normalization@Normalization { normalized, denormalized }
-      | null denormalized =
-        pure
-        $ Condition.fromSubstitution
-        $ Substitution.unsafeWrap (Substitution.assignmentToPair <$> normalized)
-      | otherwise =
-        throwError $ SimplifiableCycle variables normalization
-      where
-        (variables, _) = unzip (Substitution.assignmentToPair <$> denormalized)
 
 {- | 'normalize' a substitution as far as possible.
 

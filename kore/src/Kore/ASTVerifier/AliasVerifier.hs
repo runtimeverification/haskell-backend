@@ -15,7 +15,6 @@ import Control.Monad.Reader
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Class as State
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
@@ -125,7 +124,7 @@ verifyUncachedAlias name = do
     sentence <- lookupParsedAlias name
     dependencies <- aliasDependencies sentence
     Foldable.traverse_ verifyAlias dependencies
-    verified <- SentenceVerifier.verifyAliasSentence sentence & Trans.lift
+    verified <- SentenceVerifier.verifyAliasSentence sentence & lift
     attrs <- parseAttributes (sentenceAliasAttributes verified) & liftParser
     State.modify' $ addAlias verified attrs
   where

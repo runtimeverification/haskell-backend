@@ -36,7 +36,6 @@ import Control.Monad.Except
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
@@ -285,7 +284,7 @@ verifyClaim
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
     modifiedTransitionRule destination prim proofState' = do
         transitions <-
-            Monad.Trans.lift . Monad.Trans.lift . runTransitionT
+            lift . lift . runTransitionT
             $ transitionRule' goal destination prim proofState'
         Transition.scatter transitions
 

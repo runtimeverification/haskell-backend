@@ -16,7 +16,6 @@ import Control.Error
     )
 import qualified Control.Error as Error
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Pattern
@@ -51,7 +50,7 @@ equalInjectiveHeadsAndEquals
     (App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
-    Monad.Trans.lift $ do
+    lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let merged = Foldable.foldMap Pattern.withoutTerm children
             -- TODO (thomas.tuegel): This is tricky!
@@ -86,7 +85,7 @@ constructorAndEqualsAssumesDifferentHeads
   = do
     Monad.guard =<< Simplifier.isConstructorOrOverloaded firstHead
     Monad.guard =<< Simplifier.isConstructorOrOverloaded secondHead
-    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
+    assert (firstHead /= secondHead) $ lift $ do
         explainBottom
             "Cannot unify different constructors or incompatible \
             \sort injections."

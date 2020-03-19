@@ -82,7 +82,7 @@ import Kore.Syntax.Module
 import Kore.Syntax.Variable
 
 import Kore.Unification.Procedure
-    ( unificationProcedure
+    ( unificationProcedureWorker
     )
 import Kore.Unparser
     ( unparseToString
@@ -175,7 +175,7 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
     config =
         Config
             { stepper    = stepper0
-            , unifier    = unificationProcedure
+            , unifier    = unificationProcedureWorker
             , logger
             , outputFile
             , mainModuleName

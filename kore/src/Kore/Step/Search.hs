@@ -21,7 +21,6 @@ import Control.Error
 import Control.Error.Util
     ( hush
     )
-import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Class
     ( lift
     )
@@ -66,7 +65,7 @@ import Kore.Step.Substitution
     )
 import Kore.TopBottom
 import Kore.Unification.Procedure
-    ( unificationProcedure
+    ( unificationProcedureWorker
     )
 import qualified Kore.Unification.UnifierT as Unifier
 
@@ -139,8 +138,8 @@ matchWith
     -> MaybeT m (OrCondition variable)
 matchWith sideCondition e1 e2 = do
     eitherUnifiers <-
-        Monad.Trans.lift $ Unifier.runUnifierT
-        $ unificationProcedure sideCondition t1 t2
+        lift $ Unifier.runUnifierT
+        $ unificationProcedureWorker sideCondition t1 t2
     let
         maybeUnifiers :: Maybe [Condition variable]
         maybeUnifiers = hush eitherUnifiers
@@ -164,7 +163,7 @@ matchWith sideCondition e1 e2 = do
                     [ Conditional.substitution predSubst ]
             let simplified = merged
             smtEvaluation <-
-                Monad.Trans.lift $ SMT.Evaluator.evaluate simplified
+                lift $ SMT.Evaluator.evaluate simplified
             case smtEvaluation of
                     Nothing ->
                         mergePredicatesAndSubstitutions

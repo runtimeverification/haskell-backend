@@ -294,7 +294,8 @@ helpText =
     \help                                     shows this help message\n\
     \claim [n|<name>]                         shows the nth claim, the claim with\
                                               \ <name> or if used without args\
-                                              \ shows the currently focused claim\n\
+                                              \ shows the currently focused claim\
+                                              \ in the form: LHS => (modality) RHS \n\
     \axiom <n|name>                           shows the nth axiom or the axiom\
                                               \ with <name>\n\
     \prove <n|name>                           initializes proof mode for the nth\
@@ -503,8 +504,6 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    throwSubstitutionError =
-        UnifierWithExplanation . Monad.Unify.throwSubstitutionError
     throwUnificationError =
         UnifierWithExplanation . Monad.Unify.throwUnificationError
 
@@ -567,7 +566,7 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
     either explainError failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  m (Either UnificationOrSubstitutionError ([a], First ReplOutput))
+        ::  m (Either UnificationError ([a], First ReplOutput))
     unificationResults =
         fmap (\(r, ex) -> flip (,) ex <$> r)
         . flip runAccumT mempty

@@ -17,6 +17,9 @@ module Kore.ModelChecker.Step
 
 import Prelude.Kore
 
+import Control.Error
+    ( runExceptT
+    )
 import Control.Monad
     ( when
     )
@@ -24,7 +27,6 @@ import Control.Monad.State.Strict
     ( StateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import Data.Text
     ( Text
@@ -38,6 +40,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
+    )
+import Kore.Log.ErrorRewritesInstantiation
+    ( errorRewritesInstantiation
     )
 import Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
@@ -67,8 +72,6 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Unparser
 
 data Prim patt rewrite =
       CheckProofState
@@ -141,7 +144,7 @@ transitionRule
         :: CommonProofState
         -> Transition m CommonProofState
     transitionCheckProofState proofState0 = do
-        execState <- Monad.Trans.lift State.get
+        execState <- lift State.get
         -- End early if any unprovable state was reached
         when (isJust execState) empty
         case proofState0 of
@@ -162,7 +165,7 @@ transitionRule
     applySimplify wrapper config =
         do
             configs <-
-                Monad.Trans.lift . Monad.Trans.lift
+                lift . lift
                 $ Pattern.simplifyTopConfiguration config
             filteredConfigs <- SMT.Evaluator.filterMultiOr configs
             if null filteredConfigs
@@ -185,12 +188,12 @@ transitionRule
     applyUnroll ModalPattern { modalOp, term } wrapper config
         | modalOp == allPathGlobally = do
             result <-
-                Monad.Trans.lift . Monad.Trans.lift
+                lift . lift
                 $ checkImplicationIsTop config term
             if result
                 then return (wrapper config)
                 else do
-                    (Monad.Trans.lift . State.put) (Just ())
+                    (lift . State.put) (Just ())
                     return (Unprovable config)
         | otherwise = (error . show . Pretty.vsep)
                       [ "Not implemented error:"
@@ -209,6 +212,8 @@ transitionRule
     transitionComputeWeakNext _ (GoalRemLHS _)
       = return (GoalLHS Pattern.bottom)
 
+    unificationProcedure = Unification.unificationProcedure
+
     transitionComputeWeakNextHelper
         :: [RewriteRule Variable]
         -> Pattern Variable
@@ -217,21 +222,14 @@ transitionRule
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
         eitherResults <-
-            Monad.Trans.lift . Monad.Trans.lift
-            $ Monad.Unify.runUnifierT
-            $ Step.applyRewriteRulesParallel
-                (Step.UnificationProcedure Unification.unificationProcedure)
+            Step.applyRewriteRulesParallel
+                unificationProcedure
                 rules
                 config
+            & lift . lift . runExceptT
         case eitherResults of
-            Left _ ->
-                (error . show . Pretty.vsep)
-                [ "Not implemented error:"
-                , "while applying a \\rewrite axiom to the pattern:"
-                , Pretty.indent 4 (unparse config)
-                ,   "We decided to end the execution because we don't \
-                    \understand this case well enough at the moment."
-                ]
+            Left unificationError ->
+                errorRewritesInstantiation config unificationError
             Right results -> do
                 let
                     mapRules =
@@ -243,8 +241,7 @@ transitionRule
                         StepResult.mapConfigs
                             GoalLHS
                             GoalRemLHS
-                StepResult.transitionResults
-                    (mapConfigs $ mapRules (StepResult.mergeResults results))
+                StepResult.transitionResults (mapConfigs $ mapRules results)
 
 defaultOneStepStrategy
     :: patt

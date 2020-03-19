@@ -11,6 +11,9 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Control.Error
+    ( runExceptT
+    )
 import qualified Control.Exception as Exception
 import Data.Default as Default
     ( def
@@ -21,6 +24,7 @@ import Data.Function
     )
 import qualified Data.Set as Set
 
+import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -50,14 +54,11 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
-import Kore.Internal.Substitution
-    ( Normalization (..)
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Step.Result as Result
-    ( mergeResults
-    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RHS (..)
@@ -67,20 +68,12 @@ import Kore.Step.RulePattern
     , rulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Step
-    ( UnificationProcedure (..)
-    )
 import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
-    ( SubstitutionError (..)
-    , UnificationOrSubstitutionError (..)
+    ( UnificationError (..)
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.UnifierT
-    ( UnifierT
-    , runUnifierT
-    )
 import Kore.Variables.Fresh
     ( nextVariable
     )
@@ -91,26 +84,17 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-evalUnifier
-    :: UnifierT Simplifier a
-    -> IO (Either UnificationOrSubstitutionError [a])
-evalUnifier = runSimplifier Mock.env . runUnifierT
-
 applyInitialConditions
     :: Condition Variable
     -> Condition Variable
-    -> IO (Either UnificationOrSubstitutionError [OrCondition Variable])
+    -> IO [OrCondition Variable]
 applyInitialConditions initial unification =
-    (fmap . fmap) Foldable.toList
-    $ evalUnifier
-    $ Step.applyInitialConditions SideCondition.top (Just initial) unification
+    Step.applyInitialConditions SideCondition.top (Just initial) unification
+    & runSimplifier Mock.env . Branch.gather
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -122,14 +106,14 @@ test_applyInitialConditions =
                     , substitution = mempty
                     }
             initial = Condition.bottom
-            expect = Right mempty
+            expect = mempty
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
         let unification = Condition.top
             initial = Condition.top
-            expect = Right [MultiOr.singleton initial]
+            expect = [MultiOr.singleton initial]
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
@@ -146,7 +130,7 @@ test_applyInitialConditions =
                     Mock.b
             expect =
                 MultiOr.singleton (Predicate.makeAndPredicate expect1 expect2)
-        Right [applied] <- applyInitialConditions initial unification
+        [applied] <- applyInitialConditions initial unification
         let actual = Conditional.predicate <$> applied
         assertEqual "" expect actual
 
@@ -156,7 +140,7 @@ test_applyInitialConditions =
             initial =
                 Condition.fromPredicate
                 $ Predicate.makeNotPredicate predicate
-            expect = Right mempty
+            expect = mempty
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
@@ -167,14 +151,17 @@ unifyRule
     -> RulePattern Variable
     -> IO
         (Either
-            UnificationOrSubstitutionError
+            UnificationError
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    evalUnifier
-    $ Step.unifyRule unificationProcedure SideCondition.top initial rule
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    Step.unifyRule
+        Unification.unificationProcedure
+        SideCondition.top
+        initial
+        rule
+    & runExceptT . Branch.gather
+    & runSimplifier Mock.env
 
 test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =
@@ -244,7 +231,7 @@ applyRewriteRule_
           -> [RewriteRule Variable]
           -> IO
             (Either
-                UnificationOrSubstitutionError
+                UnificationError
                 (Step.Results RulePattern Variable)
             )
         )
@@ -253,7 +240,7 @@ applyRewriteRule_
     -- ^ Configuration
     -> RewriteRule Variable
     -- ^ Rewrite rule
-    -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
+    -> IO (Either UnificationError [OrPattern Variable])
 applyRewriteRule_ applyRewriteRules initial rule =
     applyRewriteRules_ applyRewriteRules initial [rule]
 
@@ -263,7 +250,7 @@ applyRewriteRules_
           -> [RewriteRule Variable]
           -> IO
             (Either
-                UnificationOrSubstitutionError
+                UnificationError
                 (Step.Results RulePattern Variable)
             )
         )
@@ -272,7 +259,7 @@ applyRewriteRules_
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
-    -> IO (Either UnificationOrSubstitutionError [OrPattern Variable])
+    -> IO (Either UnificationError [OrPattern Variable])
 applyRewriteRules_ applyRewriteRules initial rules = do
     result <- applyRewriteRules initial rules
     return (Foldable.toList . discardRemainders <$> result)
@@ -455,17 +442,17 @@ test_applyRewriteRule_ =
     -- sigma(a, h(b)) with substitution b=a
     , testCase "circular dependency error" $ do
         let expect =
-                -- TODO(virgil): This should probably be a normal result with
-                -- b=h(b) in the predicate.
-                Left . SubstitutionError
-                $ SimplifiableCycle [ElemVar Mock.y] normalization
-            fy = Mock.functional10 (mkElemVar Mock.y)
-            normalization =
-                mempty
-                    { denormalized =
-                        Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, fy)]
+                Conditional
+                    { term = fy
+                    , predicate =
+                        makeEqualsPredicate Mock.testSort (mkElemVar Mock.y) fy
+                    , substitution =
+                        Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
+                        [(ElemVar Mock.x, fy)]
                     }
+                & Right . pure . OrPattern.fromPattern
+            fy = Mock.functional10 (mkElemVar Mock.y)
             initial =
                 Conditional
                     { term = Mock.sigma (mkElemVar Mock.x) fy
@@ -483,7 +470,7 @@ test_applyRewriteRule_ =
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
         let x' = nextVariable Mock.x
-            expect = Left $ UnificationError $ unsupportedPatterns
+            expect = Left $ unsupportedPatterns
                 "Unknown unification case."
                 (Mock.plain10 (mkElemVar Mock.y))
                 (mkElemVar x')
@@ -665,7 +652,7 @@ test_applyRewriteRule_ =
                     (Mock.functional10 (mkElemVar Mock.x))
             rhs = (RulePattern.rhs ruleId) { ensures }
             expect :: Either
-                UnificationOrSubstitutionError [OrPattern Variable]
+                UnificationError [OrPattern Variable]
             expect = Right
                 [ OrPattern.fromPatterns
                     [ Conditional
@@ -804,20 +791,15 @@ applyRewriteRulesParallel
     -- ^ Rewrite rule
     -> IO
       (Either
-          UnificationOrSubstitutionError
+          UnificationError
           (Step.Results RulePattern Variable)
       )
 applyRewriteRulesParallel initial rules =
-    (fmap . fmap) Result.mergeResults
-    $ runSimplifier Mock.env
-    $ runUnifierT
-    $ Step.applyRewriteRulesParallel
-        unificationProcedure
+    Step.applyRewriteRulesParallel
+        Unification.unificationProcedure
         rules
         (simplifiedPattern initial)
-  where
-    unificationProcedure =
-        UnificationProcedure Unification.unificationProcedure
+    & runSimplifierNoSMT Mock.env . runExceptT
 
 checkResults
     :: HasCallStack
@@ -1198,19 +1180,15 @@ applyRewriteRulesSequence
     -- ^ Rewrite rule
     -> IO
       (Either
-          UnificationOrSubstitutionError
+          UnificationError
           (Step.Results RulePattern Variable)
       )
 applyRewriteRulesSequence initial rules =
-    (fmap . fmap) Result.mergeResults
-    $ runSimplifier Mock.env
-    $ runUnifierT
-    $ Step.applyRewriteRulesSequence
-        unificationProcedure
+    Step.applyRewriteRulesSequence
+        Unification.unificationProcedure
         (simplifiedPattern initial)
         rules
-  where
-    unificationProcedure = UnificationProcedure Unification.unificationProcedure
+    & runSimplifier Mock.env . runExceptT
 
 test_applyRewriteRulesSequence :: [TestTree]
 test_applyRewriteRulesSequence =

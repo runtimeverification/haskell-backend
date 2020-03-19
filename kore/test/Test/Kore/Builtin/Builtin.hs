@@ -31,7 +31,10 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import qualified Control.Monad.Trans as Trans
+import Control.Error
+    ( ExceptT
+    , runExceptT
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -94,9 +97,6 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.Result as Result
-    ( mergeResults
-    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule
@@ -116,10 +116,10 @@ import Kore.Syntax.Definition
     , ParsedDefinition
     )
 import Kore.Unification.Error
-    ( UnificationOrSubstitutionError
+    ( UnificationError
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.UnifierT as Monad.Unify
+import Kore.Unification.UnificationProcedure
 import Kore.Unparser
     ( unparseToString
     )
@@ -269,11 +269,11 @@ evaluate
 evaluate = runSimplifier testEnv . (`TermLike.simplify` SideCondition.top)
 
 evaluateT
-    :: Trans.MonadTrans t
+    :: MonadTrans t
     => (MonadSMT smt, MonadProfiler smt, MonadLog smt)
     => TermLike Variable
     -> t smt (Pattern Variable)
-evaluateT = Trans.lift . evaluate
+evaluateT = lift . evaluate
 
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
@@ -286,7 +286,7 @@ runStep
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT (Either UnificationOrSubstitutionError (OrPattern Variable))
+    -> SMT (Either UnificationError (OrPattern Variable))
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return (Step.gatherResults <$> results)
@@ -296,20 +296,18 @@ runStepResult
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT
-        (Either
-            UnificationOrSubstitutionError
-            (Step.Results RulePattern Variable)
-        )
-runStepResult configuration axiom = do
-    results <-
-        runSimplifier testEnv
-        $ Monad.Unify.runUnifierT
-        $ Step.applyRewriteRulesParallel
-            (Step.UnificationProcedure Unification.unificationProcedure)
-            [axiom]
-            configuration
-    return (Result.mergeResults <$> results)
+    -> SMT (Either UnificationError (Step.Results RulePattern Variable))
+runStepResult configuration axiom =
+    Step.applyRewriteRulesParallel
+        unificationProcedure
+        [axiom]
+        configuration
+    & runSimplifier testEnv . runExceptT
+
+unificationProcedure
+    :: MonadSimplify simplifier
+    => UnificationProcedure (ExceptT UnificationError simplifier)
+unificationProcedure = Unification.unificationProcedure
 
 -- | Test unparsing internalized patterns.
 hpropUnparse

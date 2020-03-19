@@ -21,7 +21,6 @@ import Control.Error
     , maybeT
     , throwE
     )
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Text
@@ -65,8 +64,8 @@ import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
     , klabelIdentifier
     , notEvaluated
     , notEvaluatedConditionally
-    , reevaluation
-    , start
+    , reevaluationWhile
+    , startWhile
     )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
@@ -122,7 +121,7 @@ evaluateApplication
             unevaluated
             sideCondition
         & maybeT (unevaluated Nothing) return
-        & Trans.lift
+        & lift
     Foldable.for_ canMemoize (recordOrPattern results)
     return results
   where
@@ -240,7 +239,7 @@ maybeEvaluatePattern
     sideCondition
   = do
     BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
-    Trans.lift . tracing $ do
+    lift . tracing $ do
         merged <- bracketAxiomEvaluationLog $ do
             let sideConditions =
                     sideCondition
@@ -262,28 +261,29 @@ maybeEvaluatePattern
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = orResults
                     , remainders = orRemainders
-                    } -> do
-                        DebugAxiomEvaluation.reevaluation
+                    } ->
+                        DebugAxiomEvaluation.reevaluationWhile
                             ( OrPattern.toPatterns
                             $ MultiOr.merge orResults orRemainders
                             )
                             identifier
                             klabelIdentifier
-                        simplified <-
-                            Profile.resimplification
-                                identifier (length orResults)
-                            $ mapM simplifyIfNeeded orResults
-                        let simplifiedResult = MultiOr.flatten simplified
-                        Profile.axiomBranching
-                            identifier
-                            (length orResults)
-                            (length simplifiedResult)
-                        return
-                            (AttemptedAxiom.Applied AttemptedAxiomResults
-                                { results = simplifiedResult
-                                , remainders = orRemainders
-                                }
-                            )
+                            $ do
+                                simplified <-
+                                    Profile.resimplification
+                                        identifier (length orResults)
+                                    $ mapM simplifyIfNeeded orResults
+                                let simplifiedResult = MultiOr.flatten simplified
+                                Profile.axiomBranching
+                                    identifier
+                                    (length orResults)
+                                    (length simplifiedResult)
+                                return
+                                    (AttemptedAxiom.Applied AttemptedAxiomResults
+                                        { results = simplifiedResult
+                                        , remainders = orRemainders
+                                        }
+                                    )
             Profile.mergeSubstitutions identifier
                 $ mergeWithConditionAndSubstitution
                     sideCondition
@@ -314,27 +314,27 @@ maybeEvaluatePattern
     bracketAxiomEvaluationLog
         :: simplifier (AttemptedAxiom variable)
         -> simplifier (AttemptedAxiom variable)
-    bracketAxiomEvaluationLog action = do
-        DebugAxiomEvaluation.start children identifier klabelIdentifier
-        result <- action
-        case result of
-            AttemptedAxiom.NotApplicable ->
-                DebugAxiomEvaluation.endNotApplicable
-                    identifier
-                    klabelIdentifier
-            AttemptedAxiom.NotApplicableUntilConditionChanges _ ->
-                DebugAxiomEvaluation.endNotApplicableConditionally
-                    identifier
-                    klabelIdentifier
-            AttemptedAxiom.Applied attemptResults ->
-                DebugAxiomEvaluation.end
-                    (OrPattern.toPatterns $ MultiOr.merge results remainders)
-                    identifier
-                    klabelIdentifier
-              where
-                AttemptedAxiomResults { results, remainders } =
-                    attemptResults
-        return result
+    bracketAxiomEvaluationLog action =
+        DebugAxiomEvaluation.startWhile children identifier klabelIdentifier $ do
+            result <- action
+            case result of
+                AttemptedAxiom.NotApplicable ->
+                    DebugAxiomEvaluation.endNotApplicable
+                        identifier
+                        klabelIdentifier
+                AttemptedAxiom.NotApplicableUntilConditionChanges _ ->
+                    DebugAxiomEvaluation.endNotApplicableConditionally
+                        identifier
+                        klabelIdentifier
+                AttemptedAxiom.Applied attemptResults ->
+                    DebugAxiomEvaluation.end
+                        (OrPattern.toPatterns $ MultiOr.merge results remainders)
+                        identifier
+                        klabelIdentifier
+                  where
+                    AttemptedAxiomResults { results, remainders } =
+                        attemptResults
+            return result
 
     unchangedPatt =
         Conditional

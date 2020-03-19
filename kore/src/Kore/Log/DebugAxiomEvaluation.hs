@@ -19,8 +19,8 @@ module Kore.Log.DebugAxiomEvaluation
     , endNotApplicableConditionally
     , notEvaluated
     , notEvaluatedConditionally
-    , reevaluation
-    , start
+    , reevaluationWhile
+    , startWhile
 
     -- * Helpers
     , klabelIdentifier
@@ -88,11 +88,12 @@ import Kore.Unparser
     ( unparse
     )
 import Log
-    ( Entry (fromEntry, toEntry)
+    ( ActualEntry (..)
+    , Entry (fromEntry, toEntry)
     , MonadLog
     , Severity (..)
-    , SomeEntry
     , logEntry
+    , logWhile
     )
 import qualified Log as Log.DoNotUse
 
@@ -123,6 +124,27 @@ data AxiomEvaluationState
 
 instance Entry DebugAxiomEvaluation where
     entrySeverity _ = Debug
+    shortDoc DebugAxiomEvaluation { identifier, state } =
+        case state of
+            Start _ ->
+                Just $ Pretty.hsep
+                    [ "While starting axiom evaluation of"
+                    , Pretty.pretty identifier
+                    ]
+                Pretty.<+> Pretty.colon
+            AttemptingAxiom _ ->
+                Just $ Pretty.hsep
+                    [ "While attempting axiom"
+                    , Pretty.pretty identifier
+                    ]
+                Pretty.<+> Pretty.colon
+            Reevaluation _ ->
+                Just $ Pretty.hsep
+                    [ "During reevaluation of"
+                    , Pretty.pretty identifier
+                    ]
+                Pretty.<+> Pretty.colon
+            _ -> Nothing
 
 instance Pretty DebugAxiomEvaluation where
     pretty DebugAxiomEvaluation { identifier, state, logPatterns } =
@@ -170,14 +192,15 @@ instance Pretty DebugAxiomEvaluation where
 
 {- | Log the start of a term's axiom evaluation.
 -}
-start
-    :: forall log variable
+startWhile
+    :: forall log variable a
     .  (MonadLog log, InternalVariable variable)
     => [TermLike variable]
     -> Maybe AxiomIdentifier
     -> Maybe Text
-    -> log ()
-start arguments = logState
+    -> log a
+    -> log a
+startWhile arguments = logStateWhile
     (Start
         (map
             (TermLike.mapVariables (fmap toVariable) (fmap toVariable))
@@ -225,7 +248,6 @@ convertPatternVariable patt =
         (fmap toVariable)
         patt
 
-
 {- | Log the start of a term's axiom evaluation.
 -}
 notEvaluated
@@ -248,15 +270,16 @@ notEvaluatedConditionally = logState NotEvaluatedConditionally
 
 {- | Log the start of a term's axiom evaluation.
 -}
-reevaluation
-    :: forall log variable
+reevaluationWhile
+    :: forall log variable a
     .  (MonadLog log, InternalVariable variable)
     => [Pattern variable]
     -> Maybe AxiomIdentifier
     -> Maybe Text
-    -> log ()
-reevaluation results =
-    logState (Reevaluation (map convertPatternVariable results))
+    -> log a
+    -> log a
+reevaluationWhile results =
+    logStateWhile (Reevaluation (map convertPatternVariable results))
 
 attemptAxiom
     :: MonadLog log
@@ -266,6 +289,23 @@ attemptAxiom
     -> log ()
 attemptAxiom sourceLocation = logState (AttemptingAxiom sourceLocation)
 
+logStateWhile
+    :: MonadLog log
+    => AxiomEvaluationState
+    -> Maybe AxiomIdentifier
+    -> Maybe Text
+    -> log a
+    -> log a
+logStateWhile state identifier secondaryIdentifier action =
+    logWhile
+        DebugAxiomEvaluation
+            { identifier
+            , secondaryIdentifier
+            , logPatterns = False
+            , state
+            }
+        action
+
 logState
     :: MonadLog log
     => AxiomEvaluationState
@@ -273,12 +313,13 @@ logState
     -> Maybe Text
     -> log ()
 logState state identifier secondaryIdentifier =
-    logEntry DebugAxiomEvaluation
-        { identifier
-        , secondaryIdentifier
-        , logPatterns = False
-        , state
-        }
+    logEntry
+        DebugAxiomEvaluation
+            { identifier
+            , secondaryIdentifier
+            , logPatterns = False
+            , state
+            }
 
 {- | Options (from the command-line) specifying when to log specific axiom
 applications.
@@ -338,11 +379,11 @@ parseDebugAxiomEvaluationOptions =
  -}
 filterDebugAxiomEvaluation
     :: DebugAxiomEvaluationOptions
-    -> SomeEntry
+    -> ActualEntry
     -> Bool
 filterDebugAxiomEvaluation
     debugAxiomEvaluationOptions
-    entry
+    ActualEntry { actualEntry }
   =
     fromMaybe False findAxiomEvaluation
   where
@@ -350,7 +391,7 @@ filterDebugAxiomEvaluation
     findAxiomEvaluation = do
         DebugAxiomEvaluation
             { identifier, secondaryIdentifier }
-                <- fromEntry entry
+                <- fromEntry actualEntry
         let textIdentifier :: Maybe Text
             textIdentifier =
                 Text.pack . show . Pretty.pretty <$> identifier
@@ -370,17 +411,24 @@ filterDebugAxiomEvaluation
     DebugAxiomEvaluationOptions { debugAxiomEvaluation } =
         debugAxiomEvaluationOptions
 
-mapDebugAxiomEvaluation :: DebugAxiomEvaluationOptions -> SomeEntry -> SomeEntry
-mapDebugAxiomEvaluation debugAxiomEvaluationOptions entry =
+mapDebugAxiomEvaluation
+    :: DebugAxiomEvaluationOptions
+    -> ActualEntry
+    -> ActualEntry
+mapDebugAxiomEvaluation
+    debugAxiomEvaluationOptions
+    entry@ActualEntry { actualEntry }
+  =
     fromMaybe entry mapAxiomEvaluation
   where
-    mapAxiomEvaluation :: Maybe SomeEntry
+    mapAxiomEvaluation :: Maybe ActualEntry
     mapAxiomEvaluation = do
-        axiomEntry@DebugAxiomEvaluation { logPatterns } <- fromEntry entry
-        return
-            (toEntry axiomEntry
-                {logPatterns = logPatterns || debugAxiomEvaluationPatterns}
-            )
+        axiomEntry@DebugAxiomEvaluation { logPatterns } <- fromEntry actualEntry
+        return entry
+            { actualEntry =
+                toEntry axiomEntry
+                    {logPatterns = logPatterns || debugAxiomEvaluationPatterns}
+            }
 
     DebugAxiomEvaluationOptions { debugAxiomEvaluationPatterns } =
         debugAxiomEvaluationOptions
