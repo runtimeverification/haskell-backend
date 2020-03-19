@@ -158,6 +158,9 @@ import Kore.Strategies.Verification
 import qualified Kore.Strategies.Verification as StuckVerification
     ( StuckVerification (..)
     )
+import Kore.Syntax.Module
+    ( ModuleName
+    )
 import Kore.Unparser
     ( unparseToText
     , unparseToText2
@@ -378,6 +381,7 @@ proveWithRepl
     -- ^ Run in a specific repl mode
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
+    -> ModuleName
     -> SMT ()
 proveWithRepl
     definitionModule
@@ -387,11 +391,12 @@ proveWithRepl
     replScript
     replMode
     outputFile
+    mainModuleName
   =
     evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
-        Repl.runRepl axioms claims mvar replScript replMode outputFile
+        Repl.runRepl axioms claims mvar replScript replMode outputFile mainModuleName
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
