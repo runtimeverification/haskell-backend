@@ -242,6 +242,7 @@ mainWithOptions
                                 replScript
                                 replMode
                                 outputFile
+                                mainModuleName
 
   where
     runSMT
