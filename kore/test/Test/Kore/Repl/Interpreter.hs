@@ -73,6 +73,9 @@ import Kore.Strategies.Goal
 import Kore.Strategies.Verification
     ( verifyClaimStep
     )
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -700,6 +703,7 @@ mkConfig logger =
         , unifier     = unificationProcedureWorker
         , logger
         , outputFile  = OutputFile Nothing
+        , mainModuleName = ModuleName "TEST"
         }
   where
     stepper0
