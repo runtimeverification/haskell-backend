@@ -64,10 +64,6 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -77,7 +73,6 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike hiding
     ( substitute
     )
@@ -140,11 +135,21 @@ matchIncremental
     .  (MatchingVariable variable, MonadSimplify unifier)
     => TermLike variable
     -> TermLike variable
-    -> unifier (Maybe (Condition variable))
+    -> unifier
+        (Maybe
+            ( Predicate variable
+            , Map (UnifiedVariable variable) (TermLike variable)
+            )
+        )
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable unifier (Maybe (Condition variable))
+    matcher :: MatcherT variable unifier
+        (Maybe
+            ( Predicate variable
+            , Map (UnifiedVariable variable) (TermLike variable)
+            )
+        )
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -161,7 +166,13 @@ matchIncremental termLike1 termLike2 =
     free2 = (getFreeVariables . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable unifier (Maybe (Condition variable))
+    done
+        :: MatcherT variable unifier
+            (Maybe
+                ( Predicate variable
+                , Map (UnifiedVariable variable) (TermLike variable)
+                )
+            )
     done = do
         MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
@@ -169,18 +180,16 @@ matchIncremental termLike1 termLike2 =
             then Just <$> assembleResult
             else return Nothing
 
-    assembleResult :: MatcherT variable unifier (Condition variable)
+    assembleResult
+        :: MatcherT variable unifier
+            ( Predicate variable
+            , Map (UnifiedVariable variable) (TermLike variable)
+            )
     assembleResult = do
         final <- Monad.State.get
         let MatcherState { predicate, substitution } = final
-            predicate' =
-                Condition.fromPredicate
-                $ MultiAnd.toPredicate predicate
-            substitution' =
-                Condition.fromSubstitution
-                $ Substitution.fromMap substitution
-            solution = predicate' <> substitution'
-        return solution
+            predicate' = MultiAnd.toPredicate predicate
+        return (predicate', substitution)
 
 matchEqualHeads
     :: Monad unifier

@@ -429,26 +429,24 @@ matchRule
     -- ^ Rule
     -> unifier (UnifiedRule variable (rule variable))
 matchRule sideCondition initial rule = do
-    unification <- unifyPatterns >>= maybe empty return
+    -- Unify the left-hand side of the rule with the term of the initial
+    -- configuration.
+    (substPredicate, substitutionMap) <- unifyPatterns >>= maybe empty return
+    -- check instantiation
+    let failures = checkInstantiation rule substitutionMap
+        unification =
+            from (Substitution.fromMap substitutionMap) <> from substPredicate
     -- Combine the unification solution with the rule's requirement clause,
-    let requires = precondition rule
-    unification' <-
-        evaluateRequires sideCondition initialCondition unification requires
-    let substitutionMap =
-            Substitution.toMap (Conditional.substitution unification')
-        failures = checkInstantiation rule substitutionMap
     if null failures
-        then return (rule `Conditional.withCondition` unification')
+        then ruleWithSubstitution unification
         else Unifier.explainAndReturnBottom
             (Pretty.pretty failures)
             ruleLeft
             initialTerm
   where
     (initialTerm, initialCondition) = Pattern.splitTerm initial
-    -- Unify the left-hand side of the rule with the term of the initial
-    -- configuration.
     ruleLeft = matchingPattern rule
-
+    requires = precondition rule
 
     unifyPatterns = ignoreUnificationErrors matchIncremental
 
@@ -461,6 +459,14 @@ matchRule sideCondition initial rule = do
             "Could not match patterns"
             ruleLeft
             initialTerm
+
+    ruleWithSubstitution
+        :: Condition variable -> unifier (UnifiedRule variable (rule variable))
+    ruleWithSubstitution unification
+      = do
+        unification' <-
+            evaluateRequires sideCondition initialCondition unification requires
+        return (rule `Conditional.withCondition` unification')
 
 {- | Evaluate the pre-condition of a rule, subject to the given constraints.
  -}

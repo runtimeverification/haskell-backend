@@ -23,20 +23,17 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Data.Map.Strict as Map
+
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
-import Kore.Internal.Condition
-    ( Condition
-    , Conditional (..)
-    )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Predicate
     ( Predicate
     , makeCeilPredicate_
+    , makeFalsePredicate_
     , makeTruePredicate_
     )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
@@ -91,18 +88,16 @@ test_matcherEqualHeads =
         ]
 
     , testCase "Bottom" $ do
-        let expect = Just Condition.topCondition
+        let expect = Just (makeTruePredicate_, Map.empty)
         actual <- matchDefinition mkBottom_ mkBottom_
         assertEqual "" expect actual
 
     , testCase "Ceil" $ do
         let expect =
-                Just Conditional
-                    { term = ()
-                    , predicate = makeTruePredicate_
-                    , substitution = Substitution.unsafeWrap
-                        [(UnifiedVariable.ElemVar Mock.x, Mock.a)]
-                    }
+                Just
+                    ( makeTruePredicate_
+                    , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.a
+                    )
         actual <-
             matchDefinition
                 (mkCeil_ (Mock.plain10 (mkElemVar Mock.x)))
@@ -111,13 +106,12 @@ test_matcherEqualHeads =
 
     , testCase "Equals" $ do
         let expect =
-                Just Conditional
-                    { term = ()
-                    , predicate = makeTruePredicate_
-                    , substitution = Substitution.unsafeWrap
-                        [ (UnifiedVariable.ElemVar Mock.x, mkElemVar Mock.y)
-                        ]
-                    }
+                Just
+                    ( makeTruePredicate_
+                    , Map.singleton
+                        (UnifiedVariable.ElemVar Mock.x)
+                        (mkElemVar Mock.y)
+                    )
         actual <-
             matchDefinition
                 (mkEquals_ (Mock.plain10 (mkElemVar Mock.x)) (Mock.plain10 Mock.a))
@@ -180,12 +174,10 @@ test_matcherEqualHeads =
     , testGroup "Simplification"
         [ testCase "same symbol" $ do
             let expect =
-                    Just Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate_
-                        , substitution = Substitution.unsafeWrap
-                            [(UnifiedVariable.ElemVar Mock.x, Mock.a)]
-                        }
+                    Just
+                        ( makeTruePredicate_
+                        , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.a
+                        )
             actual <-
                 matchSimplification
                     (Mock.plain10 (mkElemVar Mock.x))
@@ -198,49 +190,43 @@ test_matcherVariableFunction :: [TestTree]
 test_matcherVariableFunction =
     [ testCase "Functional" $ do
         let expect =
-                Just Conditional
-                    { predicate = makeTruePredicate_
-                    , substitution =
-                        Substitution.unsafeWrap
-                            [ ( UnifiedVariable.ElemVar Mock.x
-                              , Mock.functional00
-                              )
-                            ]
-                    , term = ()
-                    }
+                Just
+                    ( makeTruePredicate_
+                    , Map.singleton
+                       (UnifiedVariable.ElemVar Mock.x)
+                        Mock.functional00
+                    )
         actual <- matchDefinition (mkElemVar Mock.x) Mock.functional00
         assertEqual "" expect actual
 
     , testCase "SetVariable vs Function" $ do
         let expect =
-                Just Conditional
-                    { predicate = makeTruePredicate_
-                    , substitution = Substitution.unsafeWrap
-                        [(UnifiedVariable.SetVar Mock.setX, Mock.cf)]
-                    , term = ()
-                    }
+                Just
+                    ( makeTruePredicate_
+                    , Map.singleton
+                        (UnifiedVariable.SetVar Mock.setX)
+                        Mock.cf
+                    )
         actual <- matchDefinition (mkSetVar Mock.setX) Mock.cf
         assertEqual "" expect actual
 
     , testCase "SetVariable vs Bottom" $ do
         let expect =
-                Just Conditional
-                    { predicate = makeTruePredicate_
-                    , substitution = Substitution.unsafeWrap
-                        [(UnifiedVariable.SetVar Mock.setX, mkBottom Mock.testSort)]
-                    , term = ()
-                    }
+                Just
+                    ( makeTruePredicate_
+                    , Map.singleton
+                        (UnifiedVariable.SetVar Mock.setX)
+                        (mkBottom Mock.testSort)
+                    )
         actual <- matchDefinition (mkSetVar Mock.setX) (mkBottom Mock.testSort)
         assertEqual "" expect actual
 
     , testCase "Function" $ do
         let expect =
-                Just Conditional
-                    { predicate = makeCeilPredicate_ Mock.cf
-                    , substitution = Substitution.unsafeWrap
-                        [(UnifiedVariable.ElemVar Mock.x, Mock.cf)]
-                    , term = ()
-                    }
+                Just
+                    ( makeCeilPredicate_ Mock.cf
+                    , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.cf
+                    )
         actual <- matchDefinition (mkElemVar Mock.x) Mock.cf
         assertEqual "" expect actual
 
@@ -262,15 +248,12 @@ test_matcherVariableFunction =
             a = Mock.functional00SubSubSort
             x = ElementVariable $ Variable (testId "x") mempty Mock.subSort
             expect =
-                Just Conditional
-                    { predicate = makeTruePredicate_
-                    , substitution = Substitution.unsafeWrap
-                        [ ( UnifiedVariable.ElemVar x
-                          , Mock.sortInjectionSubSubToSub a
-                          )
-                        ]
-                    , term = ()
-                    }
+                Just
+                    ( makeTruePredicate_
+                    , Map.singleton
+                        (UnifiedVariable.ElemVar x)
+                        (Mock.sortInjectionSubSubToSub a)
+                    )
         actual <-
             matchDefinition
                 (Mock.sortInjectionSubToTop (mkElemVar x))
@@ -291,9 +274,9 @@ test_matcherVariableFunction =
     , testCase "Injection + substitution" $ do
         let
             expect =
-                Just Conditional
-                    { predicate = makeTruePredicate_
-                    , substitution = Substitution.unsafeWrap
+                Just
+                    ( makeTruePredicate_
+                    , Map.fromList
                         [ ( UnifiedVariable.ElemVar xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
                           )
@@ -301,8 +284,7 @@ test_matcherVariableFunction =
                           , Mock.functional10 Mock.a
                           )
                         ]
-                    , term = ()
-                    }
+                    )
         actual <-
             matchDefinition
                 (Mock.functionalTopConstr20
@@ -318,9 +300,9 @@ test_matcherVariableFunction =
     , testCase "substitution + Injection" $ do
         let
             expect =
-                Just Conditional
-                    { predicate = makeTruePredicate_
-                    , substitution = Substitution.unsafeWrap
+                Just
+                    ( makeTruePredicate_
+                    , Map.fromList
                         [ ( UnifiedVariable.ElemVar xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
                           )
@@ -328,8 +310,7 @@ test_matcherVariableFunction =
                           , Mock.functional10 Mock.a
                           )
                         ]
-                    , term = ()
-                    }
+                    )
         actual <-
             matchDefinition
                 (Mock.functionalTopConstr21
@@ -345,13 +326,10 @@ test_matcherVariableFunction =
     , testGroup "Simplification"
         [ testCase "Function" $ do
             let expect =
-                    Just Conditional
-                        { predicate = makeCeilPredicate_ Mock.cf
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [(UnifiedVariable.ElemVar Mock.x, Mock.cf)]
-                        , term = ()
-                        }
+                    Just
+                        ( makeCeilPredicate_ Mock.cf
+                        , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.cf
+                        )
             actual <- matchSimplification (mkElemVar Mock.x) Mock.cf
             assertEqual "" expect actual
 
@@ -367,8 +345,9 @@ test_matcherVariableFunction =
         [ testCase "Functional" $ do
             let evaluated = mkEvaluated Mock.functional00
                 expect =
-                    (Just . Condition.fromSingleSubstitution)
-                        ( Substitution.assign
+                    Just
+                        ( makeTruePredicate_
+                        , Map.singleton
                             (UnifiedVariable.ElemVar Mock.x)
                             evaluated
                         )
@@ -378,13 +357,12 @@ test_matcherVariableFunction =
         , testCase "Function" $ do
             let evaluated = mkEvaluated Mock.cf
                 expect =
-                    Just (Condition.fromSingleSubstitution
-                            (Substitution.assign
-                                (UnifiedVariable.ElemVar Mock.x)
-                                evaluated
-                            )
-                         )
-                        { predicate = makeCeilPredicate_ evaluated }
+                    Just
+                        ( makeCeilPredicate_ evaluated
+                        , Map.singleton
+                            (UnifiedVariable.ElemVar Mock.x)
+                            evaluated
+                        )
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
             assertEqual "" expect actual
         ]
@@ -408,14 +386,13 @@ test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults =
     [ testCase "Application" $ do
         let expect =
-                Just Conditional
-                    { predicate = makeCeilPredicate_ Mock.cf
-                    , substitution = Substitution.unsafeWrap
+                Just
+                    ( makeCeilPredicate_ Mock.cf
+                    , Map.fromList
                         [ (UnifiedVariable.ElemVar Mock.x, Mock.cf)
                         , (UnifiedVariable.ElemVar Mock.y, Mock.b)
                         ]
-                    , term = ()
-                    }
+                    )
         actual <-
             matchDefinition
                 (Mock.plain20
@@ -461,12 +438,10 @@ test_matching_Bool =
   where
     top = topCondition
     substitution subst =
-        Just Conditional
-            { term = ()
-            , predicate = makeTruePredicate_
-            , substitution =
-                Substitution.unsafeWrap ((fmap . fmap) mkBool subst)
-            }
+        Just
+            ( makeTruePredicate_
+            , Map.fromList ((fmap . fmap) mkBool subst)
+            )
     mkBool = Bool.asInternal Mock.boolSort
     matchConcrete = matchDefinition `on` mkBool
     matchVariable var val =
@@ -490,12 +465,10 @@ test_matching_Int =
   where
     top = topCondition
     substitution subst =
-        Just Conditional
-            { term = ()
-            , predicate = makeTruePredicate_
-            , substitution =
-                Substitution.unsafeWrap ((fmap . fmap) mkInt subst)
-            }
+        Just
+            ( makeTruePredicate_
+            , Map.fromList ((fmap . fmap) mkInt subst)
+            )
     matchConcrete = matchDefinition `on` mkInt
     matchVariable var val =
         matchDefinition (mkElemVar var) (mkInt val)
@@ -521,12 +494,10 @@ test_matching_String =
     ]
   where
     substitution subst =
-        Just Conditional
-            { term = ()
-            , predicate = makeTruePredicate_
-            , substitution =
-                Substitution.unsafeWrap ((fmap . fmap) mkStr subst)
-            }
+        Just
+            ( makeTruePredicate_
+            , Map.fromList ((fmap . fmap) mkStr subst)
+            )
     mkStr = String.asInternal Mock.stringSort
     matchConcrete = matchDefinition `on` mkStr
     matchVariable var val =
@@ -795,8 +766,8 @@ test_matching_Pair =
 mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 mkPair = Test.pair
 
-topCondition :: Maybe (Condition Variable)
-topCondition = Just Condition.topCondition
+topCondition :: MatchResult
+topCondition = Just (makeTruePredicate_, Map.empty)
 
 test_matching_Set :: [TestTree]
 test_matching_Set =
@@ -1034,16 +1005,20 @@ mkMap elements opaques =
 matchDefinition
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Condition Variable))
+    -> IO MatchResult
 matchDefinition = match
 
 matchSimplification
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (Condition Variable))
+    -> IO MatchResult
 matchSimplification = matchDefinition
 
-type MatchResult = Maybe (Condition Variable)
+type MatchResult =
+    Maybe
+        ( Predicate Variable
+        , Map.Map (UnifiedVariable Variable) (TermLike Variable)
+        )
 
 match
     :: TermLike Variable
@@ -1108,12 +1083,7 @@ matchesAux comment term1 term2 expectPredicate expect =
   where
     solution =
         case expect of
-            Nothing -> Condition.bottom
-            Just substs ->
-                Conditional
-                    { term = ()
-                    , predicate = expectPredicate
-                    , substitution = Substitution.unsafeWrap substs
-                    }
+            Nothing -> (makeFalsePredicate_, Map.empty)
+            Just substs -> (expectPredicate, Map.fromList substs)
     check Nothing = assertFailure "Expected matching solution."
     check (Just actual) = assertEqual "" solution actual
