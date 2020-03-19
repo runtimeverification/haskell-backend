@@ -32,7 +32,6 @@ import Data.Stream.Infinite
 import qualified Data.Stream.Infinite as Stream
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
-    , vsep
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -380,36 +379,15 @@ instance Entry (Goal.InfoReachability Goal) where
     entrySeverity _ = Info
 
 instance Pretty (Goal.InfoReachability Goal) where
-    pretty (Goal.InfoSimplify rule) =
-        vsep
-            [ "transition: Simplify"
-            , "rule:"
-            , pretty rule
-            ]
-    pretty (Goal.InfoRemoveDestination rule) =
-        vsep
-            [ "transition: RemoveDestination"
-            , "rule:"
-            , pretty rule
-            ]
-    pretty (Goal.InfoDeriveSeq rules rule) =
-        vsep
-            [ "transition: DeriveSeq"
-            , "rules to be derived:"
-            , pretty
-                $ unRule <$> rules
-            , "rule:"
-            , pretty rule
-            ]
-    pretty (Goal.InfoDerivePar rules rule) =
-        vsep
-            [ "transition: DerivePar"
-            , "rules to be derived:"
-            , pretty
-                $ unRule <$> rules
-            , "rule:"
-            , pretty rule
-            ]
+    pretty (Goal.InfoSimplify goal) =
+        Goal.prettyInfoReachabilityGoal "Simplify" goal
+    pretty (Goal.InfoRemoveDestination goal) =
+        Goal.prettyInfoReachabilityGoal "RemoveDestination" goal
+    pretty (Goal.InfoDeriveSeq rules goal) =
+        Goal.prettyInfoReachabilityGoalAndRules "DeriveSeq" goal rules unRule
+    pretty (Goal.InfoDerivePar rules goal) =
+        Goal.prettyInfoReachabilityGoalAndRules "DerivePar" goal rules unRule
+
 instance SOP.Generic (Goal.Rule Goal)
 
 instance SOP.HasDatatypeInfo (Goal.Rule Goal)
