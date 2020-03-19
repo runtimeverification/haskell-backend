@@ -731,6 +731,14 @@ whileSimplify
     -> log a
 whileSimplify goal = logWhile (InfoSimplify goal)
 
+whileRemoveDestination
+    :: MonadLog log
+    => Entry (InfoReachability goal)
+    => goal
+    -> log a
+    -> log a
+whileRemoveDestination goal = logWhile (InfoRemoveDestination goal)
+
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
@@ -778,11 +786,11 @@ transitionRuleTemplate
             $ GoalRemainder <$> simplifyTemplate goal
 
     transitionRuleWorker RemoveDestination (Goal goal) =
-        whileSimplify goal
+        whileRemoveDestination goal
             $ Profile.timeStrategy "Goal.RemoveDestination"
             $ removeDestinationTemplate Goal goal
     transitionRuleWorker RemoveDestination (GoalRemainder goal) =
-        whileSimplify goal
+        whileRemoveDestination goal
             $ Profile.timeStrategy "Goal.RemoveDestinationRemainder"
             $ removeDestinationTemplate GoalRemainder goal
 
