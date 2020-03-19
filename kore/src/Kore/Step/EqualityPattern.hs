@@ -20,6 +20,7 @@ import Control.DeepSeq
     )
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -47,6 +48,7 @@ import Kore.Internal.Variable
     )
 import Kore.Step.Step
     ( UnifyingRule (..)
+    , InstantiationFailure (..)
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -259,7 +261,30 @@ instance UnifyingRule EqualityPattern where
             FreeVariables.getFreeVariables
             $ freeVariables rule1
 
-    ruleAttributes = attributes
+    checkInstantiation
+        rule
+        substitutionMap
+      = notConcretes ++ notSymbolics
+      where
+        attrs = attributes rule
+        concretes = FreeVariables.getFreeVariables
+            . Attribute.unConcrete . Attribute.concrete $ attrs
+        symbolics = FreeVariables.getFreeVariables
+            . Attribute.unSymbolic . Attribute.symbolic $ attrs
+        checkConcrete var = case Map.lookup var substitutionMap of
+            Nothing -> Just (UninstantiatedConcrete var)
+            Just t ->
+                if TermLike.isConstructorLike t
+                    then Nothing
+                    else Just (ConcreteFailure var t)
+        checkSymbolic var = case Map.lookup var substitutionMap of
+            Nothing -> Just (UninstantiatedSymbolic var)
+            Just t ->
+                if not(TermLike.isConstructorLike t)
+                    then Nothing
+                    else Just (SymbolicFailure var t)
+        notConcretes = mapMaybe checkConcrete (Set.toList concretes)
+        notSymbolics = mapMaybe checkSymbolic (Set.toList symbolics)
 
 instance
     InternalVariable variable

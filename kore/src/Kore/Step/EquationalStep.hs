@@ -27,16 +27,11 @@ import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch
-import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (FreeVariables)
-    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -85,14 +80,12 @@ import Kore.Step.Step
     , Results
     , UnificationProcedure (..)
     , UnifiedRule
-    , UnifyingRule
+    , UnifyingRule (..)
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
     , checkFunctionLike
     , checkSubstitutionCoverage
-    , matchingPattern
-    , precondition
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
@@ -441,48 +434,27 @@ matchRule sideCondition initial rule = do
     let requires = precondition rule
     unification' <-
         evaluateRequires sideCondition initialCondition unification requires
-    checkConcrete concreteVars symbolicVars unification'
-    return (rule `Conditional.withCondition` unification')
+    let substitutionMap =
+            Substitution.toMap (Conditional.substitution unification')
+        failures = checkInstantiation rule substitutionMap
+    if null failures
+        then return (rule `Conditional.withCondition` unification')
+        else Unifier.explainAndReturnBottom
+            (Pretty.pretty failures)
+            ruleLeft
+            initialTerm
   where
     (initialTerm, initialCondition) = Pattern.splitTerm initial
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     ruleLeft = matchingPattern rule
 
-    concreteVars = Attribute.concrete . EqualityPattern.ruleAttributes $ rule
-    symbolicVars = Attribute.symbolic . EqualityPattern.ruleAttributes $ rule
 
     unifyPatterns = ignoreUnificationErrors matchIncremental
 
     ignoreUnificationErrors unification =
         Unifier.runUnifierT (unification ruleLeft initialTerm)
         >>= either couldNotMatch Unifier.scatter
-
-    checkConcrete
-        :: Attribute.Concrete variable
-        -> Attribute.Symbolic variable
-        -> Condition variable
-        -> unifier ()
-    checkConcrete
-        (Attribute.Concrete (FreeVariables concretes))
-        (Attribute.Symbolic (FreeVariables symbolics))
-        Conditional { substitution }
-      = do
-        let substitutionMap = Substitution.toMap substitution
-            check p var = case Map.lookup var substitutionMap of
-                Nothing -> True
-                Just t -> p t
-            isNotConcrete = check (not . TermLike.isConstructorLike)
-            isNotSymbolic = check TermLike.isConstructorLike
-            notConcretes =
-                filter isNotConcrete (Set.toList concretes)
-            notSymbolics =
-                filter isNotSymbolic (Set.toList symbolics)
-        Monad.unless (null notConcretes && null notSymbolics)
-            $ Unifier.explainAndReturnBottom
-                "Substitution not satisfying concrete/symbolic constraints"
-                ruleLeft
-                initialTerm
 
     couldNotMatch _ =
         Unifier.explainAndReturnBottom

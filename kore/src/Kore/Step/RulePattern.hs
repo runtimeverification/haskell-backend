@@ -853,8 +853,6 @@ instance UnifyingRule RulePattern where
         mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
         mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
 
-    ruleAttributes = attributes
-
 instance UnifyingRule RewriteRule where
     matchingPattern (RewriteRule rule) = matchingPattern rule
     {-# INLINE matchingPattern #-}
@@ -869,6 +867,3 @@ instance UnifyingRule RewriteRule where
     mapRuleVariables mapElemVar mapSetVar (RewriteRule rule) =
         RewriteRule (mapRuleVariables mapElemVar mapSetVar rule)
     {-# INLINE mapRuleVariables #-}
-
-    ruleAttributes (RewriteRule rule) = ruleAttributes rule
-    {-# INLINE ruleAttributes #-}
