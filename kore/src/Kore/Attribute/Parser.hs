@@ -43,6 +43,7 @@ module Kore.Attribute.Parser
     , getTwoArguments
     , getSymbolOrAlias
     , Kore.Attribute.Parser.getStringLiteral
+    , getVariable
     , parseSExpr
     , parseReadS
     , parseInteger
@@ -53,6 +54,7 @@ module Kore.Attribute.Parser
     , attributePattern_
     , attributeString
     , attributeInteger
+    , attributeVariable
     , Default (..)
     , StringLiteral (StringLiteral)
     , Generic
@@ -110,6 +112,12 @@ import Kore.Syntax.Application
 import Kore.Syntax.Pattern
 import Kore.Syntax.StringLiteral
     ( StringLiteral (StringLiteral)
+    )
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
     )
 import SMT.SimpleSMT
     ( SExpr
@@ -311,6 +319,14 @@ getStringLiteral kore =
     case Recursive.project kore of
         _ :< StringLiteralF (Const lit) -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
+
+{- | Accept a string literal.
+ -}
+getVariable :: AttributePattern -> Parser (UnifiedVariable Variable)
+getVariable kore =
+    case Recursive.project kore of
+        _ :< VariableF (Const var) -> return var
+        _ -> Kore.Error.koreFail "expected variable pattern"
 
 {- | Parse a 'Text' through 'ReadS'.
 

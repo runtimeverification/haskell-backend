@@ -82,6 +82,9 @@ import Kore.Unification.Procedure
 import Kore.Unification.Unify
     ( explainBottom
     )
+import Kore.Unparser
+    ( unparseToString
+    )
 import qualified SMT
 
 import Test.Kore.Builtin.Builtin
@@ -450,7 +453,10 @@ showCurrentClaim =
     in do
         Result { output, continue } <-
             run command axioms claims claim
-        output `equalsOutput` makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
+        equalsOutput
+            output
+            $ makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
+                <> (makeKoreReplOutput . unparseToString $ zeroToTen)
         continue `equals` Continue
 
 showClaim1 :: IO ()
