@@ -58,7 +58,7 @@ module K
 
 endmodule []
 
-module VERIFICATION
+module KARL
 
 // imports
   import K []
