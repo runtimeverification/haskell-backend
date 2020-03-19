@@ -17,6 +17,7 @@ module TEST
   
   syntax Map ::= f(Map) [function] 
 
+  rule f(.Map) => .Map
   rule f(KEY:Key |-> VAL:Int M:Map) => g(KEY) |-> h(VAL) f(M)
 
 endmodule
