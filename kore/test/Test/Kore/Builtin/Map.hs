@@ -552,6 +552,37 @@ test_inclusion =
             (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
             (===) Pattern.top                =<< evaluateT predicate
         )
+     , testPropertyWithSolver
+        "MAP.inclusion success: empty map <= empty map"
+        (do
+            let
+                patInclusion = inclusionMap unitMap unitMap
+                predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
+            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
+            (===) Pattern.top                =<< evaluateT predicate
+        )
+    , testPropertyWithSolver
+        "MAP.inclusion success: empty map <= any map"
+        (do
+            patSomeMap <- forAll genMapPattern
+            let
+                patInclusion = inclusionMap unitMap patSomeMap
+                predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
+            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
+            (===) Pattern.top                =<< evaluateT predicate
+        )
+    , testPropertyWithSolver
+        "MAP.inclusion failure: !(some map <= empty map)"
+        (do
+            patKey1 <- forAll genIntegerPattern
+            patVal1 <- forAll genIntegerPattern
+            let
+                patSomeMap = elementMap patKey1 patVal1
+                patInclusion = inclusionMap patSomeMap unitMap
+                predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
+            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
+            (===) Pattern.top                =<< evaluateT predicate
+        )
     , testPropertyWithSolver
         "MAP.inclusion failure: lhs key not included in rhs map"
         (do
