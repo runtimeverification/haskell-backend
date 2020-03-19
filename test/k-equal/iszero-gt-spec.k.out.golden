@@ -1,9 +1,3 @@
-  #Not ( {
-    I
-  #Equals
-    0
-  } )
-#And
   <T>
     <k>
       #done ( 0 )
