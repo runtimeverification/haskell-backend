@@ -1,12 +1,12 @@
   #Not ( {
-    I
+    bool2Int ( I ==Int 0 )
   #Equals
-    0
+    1
   } )
 #And
   <T>
     <k>
-      #done ( 0 )
+      #done ( bool2Int ( I ==Int 0 ) )
     </k>
   </T>
 #And
