@@ -211,14 +211,12 @@ removeSymbolicKeyOfAc
   =
     normalized
         { elementsWithVariables =
-            fmap wrapElement
-            $ Map.toList
-            $ Map.delete
-                child
-                ( Map.fromList
-                $ fmap unwrapElement elementsWithVariables
-                )
+            fmap wrapElement . Map.toList
+            $ Map.delete child unwrappedMap
         }
+  where
+    unwrappedMap =
+        Map.fromList $ fmap unwrapElement elementsWithVariables
 
 isConcreteKeyOfAc
     :: AcWrapper normalized
