@@ -98,6 +98,11 @@ import Pair
 
 -- * Matching
 
+type MatchResult variable =
+    ( Predicate variable
+    , Map.Map (UnifiedVariable variable) (TermLike variable)
+    )
+
 {- | Dispatch a single matching constraint.
 
 @matchOne@ is the heart of the matching algorithm. Each matcher is applied to
@@ -135,21 +140,11 @@ matchIncremental
     .  (MatchingVariable variable, MonadSimplify unifier)
     => TermLike variable
     -> TermLike variable
-    -> unifier
-        (Maybe
-            ( Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
-            )
-        )
+    -> unifier (Maybe (MatchResult variable))
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable unifier
-        (Maybe
-            ( Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
-            )
-        )
+    matcher :: MatcherT variable unifier (Maybe (MatchResult variable))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -166,13 +161,7 @@ matchIncremental termLike1 termLike2 =
     free2 = (getFreeVariables . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done
-        :: MatcherT variable unifier
-            (Maybe
-                ( Predicate variable
-                , Map (UnifiedVariable variable) (TermLike variable)
-                )
-            )
+    done :: MatcherT variable unifier (Maybe (MatchResult variable))
     done = do
         MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
@@ -180,11 +169,7 @@ matchIncremental termLike1 termLike2 =
             then Just <$> assembleResult
             else return Nothing
 
-    assembleResult
-        :: MatcherT variable unifier
-            ( Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
-            )
+    assembleResult :: MatcherT variable unifier (MatchResult variable)
     assembleResult = do
         final <- Monad.State.get
         let MatcherState { predicate, substitution } = final

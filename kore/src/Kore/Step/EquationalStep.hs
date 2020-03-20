@@ -434,11 +434,12 @@ matchRule sideCondition initial rule = do
     (substPredicate, substitutionMap) <- unifyPatterns >>= maybe empty return
     -- check instantiation
     let failures = checkInstantiation rule substitutionMap
+        unification :: Condition variable
         unification =
             from (Substitution.fromMap substitutionMap) <> from substPredicate
     -- Combine the unification solution with the rule's requirement clause,
     if null failures
-        then ruleWithSubstitution unification
+        then simplifyRequiresAndInstantiateRuleUsing unification
         else Unifier.explainAndReturnBottom
             (Pretty.pretty failures)
             ruleLeft
@@ -460,9 +461,9 @@ matchRule sideCondition initial rule = do
             ruleLeft
             initialTerm
 
-    ruleWithSubstitution
+    simplifyRequiresAndInstantiateRuleUsing
         :: Condition variable -> unifier (UnifiedRule variable (rule variable))
-    ruleWithSubstitution unification
+    simplifyRequiresAndInstantiateRuleUsing unification
       = do
         unification' <-
             evaluateRequires sideCondition initialCondition unification requires
