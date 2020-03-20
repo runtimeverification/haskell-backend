@@ -204,8 +204,11 @@ proven
     -> Bool
 proven = Foldable.null . unprovenNodes
 
+{- | @Rule goal@ is the type of rule to take a single step toward @goal@.
+ -}
+data family Rule goal
+
 class Goal goal where
-    data Rule goal
     type Prim goal
     type ProofState goal a
 
@@ -296,11 +299,11 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-instance Goal (OnePathRule Variable) where
+newtype instance Rule (OnePathRule Variable) =
+    OnePathRewriteRule { unRuleOnePath :: RewriteRule Variable }
+    deriving (GHC.Generic, Show, Unparse)
 
-    newtype Rule (OnePathRule Variable) =
-        OnePathRewriteRule { unRuleOnePath :: RewriteRule Variable }
-        deriving (GHC.Generic, Show, Unparse)
+instance Goal (OnePathRule Variable) where
 
     type Prim (OnePathRule Variable) =
         ProofState.Prim (Rule (OnePathRule Variable))
@@ -361,11 +364,11 @@ instance ClaimExtractor (OnePathRule Variable) where
             Right (OnePathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
 
-instance Goal (AllPathRule Variable) where
+newtype instance Rule (AllPathRule Variable) =
+    AllPathRewriteRule { unRuleAllPath :: RewriteRule Variable }
+    deriving (GHC.Generic, Show, Unparse)
 
-    newtype Rule (AllPathRule Variable) =
-        AllPathRewriteRule { unRuleAllPath :: RewriteRule Variable }
-        deriving (GHC.Generic, Show, Unparse)
+instance Goal (AllPathRule Variable) where
 
     type Prim (AllPathRule Variable) =
         ProofState.Prim (Rule (AllPathRule Variable))
@@ -426,12 +429,12 @@ instance ClaimExtractor (AllPathRule Variable) where
             Right (AllPathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
 
-instance Goal (ReachabilityRule Variable) where
+newtype instance Rule (ReachabilityRule Variable) =
+    ReachabilityRewriteRule
+        { unReachabilityRewriteRule :: RewriteRule Variable }
+    deriving (GHC.Generic, Show, Unparse)
 
-    newtype Rule (ReachabilityRule Variable) =
-        ReachabilityRewriteRule
-            { unReachabilityRewriteRule :: RewriteRule Variable }
-        deriving (GHC.Generic, Show, Unparse)
+instance Goal (ReachabilityRule Variable) where
 
     type Prim (ReachabilityRule Variable) =
         ProofState.Prim (Rule (ReachabilityRule Variable))
