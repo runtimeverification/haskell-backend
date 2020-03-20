@@ -315,12 +315,11 @@ type ProofState = Goal.ProofState Goal Goal
 
 type Prim = Goal.Prim Goal
 
+newtype instance Goal.Rule Goal =
+    Rule { unRule :: (K, K) }
+    deriving (Eq, GHC.Generic, Show)
+
 instance Goal.Goal Goal where
-
-    newtype Rule Goal =
-        Rule { unRule :: (K, K) }
-        deriving (Eq, GHC.Generic, Show)
-
     type Prim Goal = ProofState.Prim (Goal.Rule Goal)
 
     type ProofState Goal a = ProofState.ProofState a

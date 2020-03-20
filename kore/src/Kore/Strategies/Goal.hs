@@ -7,7 +7,6 @@ module Kore.Strategies.Goal
     , ToRulePattern (..)
     , FromRulePattern (..)
     , ClaimExtractor (..)
-    , Rule (..)
     , TransitionRuleTemplate (..)
     , WithConfiguration (..)
     , InfoReachability (..)
@@ -25,6 +24,8 @@ module Kore.Strategies.Goal
     , prettyInfoReachabilityGoalAndRules
     , transitionRuleTemplate
     , isTrusted
+    -- * Re-exports
+    , module Kore.Strategies.Rule
     ) where
 
 import Prelude.Kore
@@ -61,8 +62,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
     )
-import qualified Generics.SOP as SOP
-import GHC.Generics as GHC
 import Log.Entry
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
@@ -71,7 +70,6 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
-import Kore.Debug
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
@@ -156,6 +154,7 @@ import Kore.Strategies.ProofState hiding
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
+import Kore.Strategies.Rule
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
     ( Variable
@@ -167,8 +166,7 @@ import Kore.TopBottom
 import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
-    ( Unparse
-    , unparse
+    ( unparse
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
@@ -203,10 +201,6 @@ proven
     => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
-
-{- | @Rule goal@ is the type of rule to take a single step toward @goal@.
- -}
-data family Rule goal
 
 class Goal goal where
     type Prim goal
@@ -299,10 +293,6 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-newtype instance Rule (OnePathRule Variable) =
-    OnePathRewriteRule { unRuleOnePath :: RewriteRule Variable }
-    deriving (GHC.Generic, Show, Unparse)
-
 instance Goal (OnePathRule Variable) where
 
     type Prim (OnePathRule Variable) =
@@ -346,27 +336,11 @@ instance Goal (OnePathRule Variable) where
             . getOnePathRule
             <$> goals
 
-instance SOP.Generic (Rule (OnePathRule Variable))
-
-instance SOP.HasDatatypeInfo (Rule (OnePathRule Variable))
-
-instance Debug (Rule (OnePathRule Variable))
-
-instance Diff (Rule (OnePathRule Variable))
-
-instance ToRulePattern (Rule (OnePathRule Variable))
-
-instance FromRulePattern (Rule (OnePathRule Variable))
-
 instance ClaimExtractor (OnePathRule Variable) where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (OnePathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
-
-newtype instance Rule (AllPathRule Variable) =
-    AllPathRewriteRule { unRuleAllPath :: RewriteRule Variable }
-    deriving (GHC.Generic, Show, Unparse)
 
 instance Goal (AllPathRule Variable) where
 
@@ -411,28 +385,11 @@ instance Goal (AllPathRule Variable) where
             . getAllPathRule
             <$> goals
 
-instance SOP.Generic (Rule (AllPathRule Variable))
-
-instance SOP.HasDatatypeInfo (Rule (AllPathRule Variable))
-
-instance Debug (Rule (AllPathRule Variable))
-
-instance Diff (Rule (AllPathRule Variable))
-
-instance ToRulePattern (Rule (AllPathRule Variable))
-
-instance FromRulePattern (Rule (AllPathRule Variable))
-
 instance ClaimExtractor (AllPathRule Variable) where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (AllPathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
-
-newtype instance Rule (ReachabilityRule Variable) =
-    ReachabilityRewriteRule
-        { unReachabilityRewriteRule :: RewriteRule Variable }
-    deriving (GHC.Generic, Show, Unparse)
 
 instance Goal (ReachabilityRule Variable) where
 
@@ -521,18 +478,6 @@ instance Goal (ReachabilityRule Variable) where
                     rule
                     (mapMaybe maybeAllPath claims)
                     (fmap ruleReachabilityToRuleAllPath axioms)
-
-instance SOP.Generic (Rule (ReachabilityRule Variable))
-
-instance SOP.HasDatatypeInfo (Rule (ReachabilityRule Variable))
-
-instance Debug (Rule (ReachabilityRule Variable))
-
-instance Diff (Rule (ReachabilityRule Variable))
-
-instance ToRulePattern (Rule (ReachabilityRule Variable))
-
-instance FromRulePattern (Rule (ReachabilityRule Variable))
 
 instance ClaimExtractor (ReachabilityRule Variable) where
     extractClaim (attrs, sentence) =
