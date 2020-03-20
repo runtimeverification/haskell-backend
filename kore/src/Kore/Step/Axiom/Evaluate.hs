@@ -9,20 +9,17 @@ module Kore.Step.Axiom.Evaluate
 
 import Prelude.Kore
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( maybeT
     )
 import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
-import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom (Axiom)
     )
-import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
@@ -79,12 +76,6 @@ evaluateAxioms
     -> TermLike variable
     -> simplifier (Step.Results EqualityPattern variable)
 evaluateAxioms equalityRules sideCondition termLike
-  | any ruleIsConcrete equalityRules
-  -- All of the current pattern's children (most likely an ApplicationF)
-  -- must be ConstructorLike in order to be evaluated with "concrete" rules.
-  , not (all TermLike.isConstructorLike termLikeF)
-  = return notApplicable
-  | otherwise
   = maybeNotApplicable $ do
     let
         expanded :: Pattern variable
@@ -124,8 +115,6 @@ evaluateAxioms equalityRules sideCondition termLike
     return simplified
 
   where
-    termLikeF = Cofree.tailF (Recursive.project termLike)
-
     targetSideCondition = Step.toConfigurationVariablesCondition sideCondition
 
     logAppliedRule :: MonadLog log => EqualityRule Variable -> log ()
@@ -138,12 +127,6 @@ evaluateAxioms equalityRules sideCondition termLike
             sourceLocation
             (matchAxiomIdentifier left)
             (DebugAxiomEvaluation.klabelIdentifier left)
-
-    ruleIsConcrete =
-        Attribute.Axiom.Concrete.isConcrete
-        . Attribute.Axiom.concrete
-        . EqualityPattern.attributes
-        . getEqualityRule
 
     notApplicable =
         Result.Results

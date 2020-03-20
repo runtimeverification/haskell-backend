@@ -10,6 +10,7 @@ module Kore.Step.Step
     , Result
     , Results
     , UnifyingRule (..)
+    , InstantiationFailure (..)
     , unifyRules
     , unifyRule
     , applyInitialConditions
@@ -127,6 +128,42 @@ type Results rule variable =
 type Renaming variable =
     Map (UnifiedVariable variable) (UnifiedVariable variable)
 
+data InstantiationFailure variable
+    = ConcreteFailure (UnifiedVariable variable) (TermLike variable)
+    | SymbolicFailure (UnifiedVariable variable) (TermLike variable)
+    | UninstantiatedConcrete (UnifiedVariable variable)
+    | UninstantiatedSymbolic (UnifiedVariable variable)
+
+instance InternalVariable variable
+    => Pretty.Pretty (InstantiationFailure variable)
+  where
+    pretty (ConcreteFailure var term) =
+        Pretty.vsep
+            [ "Rule instantiation failure:"
+            , Pretty.indent 4 (unparse var <> " is marked as concrete.")
+            , Pretty.indent 4
+                ("However, " <> unparse term <> " is not concrete.")
+            ]
+    pretty (SymbolicFailure var term) =
+        Pretty.vsep
+            [ "Rule instantiation failure:"
+            , Pretty.indent 4 (unparse var <> " is marked as symbolic.")
+            , Pretty.indent 4
+                ("However, " <> unparse term <> " is not symbolic.")
+            ]
+    pretty (UninstantiatedConcrete var) =
+        Pretty.vsep
+            [ "Rule instantiation failure:"
+            , Pretty.indent 4 (unparse var <> " is marked as concrete.")
+            , Pretty.indent 4 "However, it was not instantiated."
+            ]
+    pretty (UninstantiatedSymbolic var) =
+        Pretty.vsep
+            [ "Rule instantiation failure:"
+            , Pretty.indent 4 (unparse var <> " is marked as symbolic.")
+            , Pretty.indent 4 "However, it was not instantiated."
+            ]
+
 -- | A rule which can be unified against a configuration
 class UnifyingRule rule where
     -- | The pattern used for matching/unifying the rule with the configuration.
@@ -154,6 +191,15 @@ class UnifyingRule rule where
         -> (SetVariable variable1 -> SetVariable variable2)
         -> rule variable1
         -> rule variable2
+
+    -- | Checks whether a given substitution is acceptable for a rule
+    checkInstantiation
+        :: InternalVariable variable
+        => rule variable
+        -> Map.Map (UnifiedVariable variable) (TermLike variable)
+        -> [InstantiationFailure variable]
+    checkInstantiation _ _ = []
+    {-# INLINE checkInstantiation #-}
 
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.

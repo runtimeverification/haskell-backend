@@ -27,9 +27,6 @@ import Branch
     ( BranchT
     )
 import qualified Branch
-import Kore.Internal.Condition
-    ( Condition
-    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -59,8 +56,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.Substitution
-    ( pattern Assignment
-    , Substitution
+    ( Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -254,34 +250,32 @@ matchesToVariableSubstitution
   = do
     matchResult <- matchIncremental first second
     case matchResult of
-        Nothing -> return False
-        Just results ->
+        Just (Predicate.PredicateTrue, results) ->
             return (singleVariableSubstitution variable results)
+        _ -> return False
 
 matchesToVariableSubstitution _ _ = return False
 
 singleVariableSubstitution
     :: InternalVariable variable
-    => ElementVariable variable -> Condition variable -> Bool
+    => ElementVariable variable
+    -> Map.Map (UnifiedVariable variable) (TermLike variable)
+    -> Bool
 singleVariableSubstitution
     variable
-    Conditional
-        { term = ()
-        , predicate = Predicate.PredicateTrue
-        , substitution
-        }
-  = case Substitution.unwrap substitution of
-    [] -> (error . unlines)
+    substitution
+  | Map.null substitution
+  = (error . unlines)
         [ "This should not happen. This is called with matching results, and,"
         , "if matching can be resolved without generating predicates or "
         , "substitutions, then the equality should have already been resolved."
         ]
-    [Assignment substVariable substTerm]
-        | substVariable == ElemVar variable ->
-            TermLike.withoutFreeVariable substVariable substTerm
-                True
-    _ -> False
-singleVariableSubstitution _ _ = False
+  | Map.size substitution == 1
+  = case Map.lookup (ElemVar variable) substitution of
+        Nothing -> False
+        Just substTerm ->
+            TermLike.withoutFreeVariable (ElemVar variable) substTerm True
+  | otherwise = False
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
