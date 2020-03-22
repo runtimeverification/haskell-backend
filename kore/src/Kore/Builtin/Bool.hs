@@ -46,6 +46,10 @@ import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -53,9 +57,10 @@ import qualified Kore.Error
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.SimplificationType
-    ( SimplificationType (..)
+import Kore.Step.Simplification.Simplify
+    ( TermSimplifier
     )
 import Kore.Unification.Unify
     ( MonadUnify
@@ -173,22 +178,39 @@ termAndEquals
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
-    => SimplificationType
+    => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termAndEquals
-    _
-    termLike1@(Builtin_ (Domain.BuiltinBool internalBool1))
-    termLike2@(Builtin_ (Domain.BuiltinBool internalBool2))
-  = lift $ do
-    let value1 = Domain.builtinBoolValue internalBool1
-    let value2 = Domain.builtinBoolValue internalBool2
-    if value1 == value2
-        then return (from @(TermLike variable) @(Pattern variable) termLike1)
-        else
-            Unify.explainAndReturnBottom
-                "different Bool domain values"
-                termLike1
-                termLike2
-termAndEquals _ _ _ = empty
+termAndEquals unifyChildren a b =
+    worker a b <|> worker b a
+  where
+    worker
+        termLike1@(Builtin_ (Domain.BuiltinBool internalBool1))
+        termLike2@(Builtin_ (Domain.BuiltinBool internalBool2))
+      = lift $ do
+        let value1 = Domain.builtinBoolValue internalBool1
+        let value2 = Domain.builtinBoolValue internalBool2
+        if value1 == value2
+            then return (Pattern.fromTermLike termLike1)
+            else
+                Unify.explainAndReturnBottom
+                    "different Bool domain values"
+                    termLike1
+                    termLike2
+
+    worker
+        termLike1@(Builtin_ (Domain.BuiltinBool internalBool1))
+        termLike2@(App_ symbol2 arguments)
+      | Domain.builtinBoolValue internalBool1
+      , isFunctionPattern termLike2
+      , Just hook2 <- (getHook . Attribute.Symbol.hook . symbolAttributes) symbol2
+      , hook2 == andKey
+      , [argument1, argument2] <- arguments
+      = lift $ do
+        (_, unification1) <- Pattern.splitTerm <$> unifyChildren termLike1 argument1
+        (_, unification2) <- Pattern.splitTerm <$> unifyChildren termLike1 argument2
+        let conditions = unification1 <> unification2
+        pure (Pattern.withCondition termLike1 conditions)
+
+    worker _ _ = empty
