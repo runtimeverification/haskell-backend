@@ -13,6 +13,7 @@ module Kore.Builtin.Bool
     , asPattern
     , extractBoolDomainValue
     , parse
+    , termAndEquals
       -- * Keys
     , orKey
     , andKey
@@ -27,6 +28,9 @@ module Kore.Builtin.Bool
 
 import Prelude.Kore
 
+import Control.Error
+    ( MaybeT
+    )
 import Data.Functor
     ( ($>)
     )
@@ -46,7 +50,17 @@ import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.SimplificationType
+    ( SimplificationType (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
+import qualified Kore.Unification.Unify as Unify
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
 
@@ -154,3 +168,27 @@ builtinFunctions =
         Builtin.binaryOperator extractBoolDomainValue asPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
+
+termAndEquals
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => SimplificationType
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termAndEquals
+    _
+    termLike1@(Builtin_ (Domain.BuiltinBool internalBool1))
+    termLike2@(Builtin_ (Domain.BuiltinBool internalBool2))
+  = lift $ do
+    let value1 = Domain.builtinBoolValue internalBool1
+    let value2 = Domain.builtinBoolValue internalBool2
+    if value1 == value2
+        then return (from @(TermLike variable) @(Pattern variable) termLike1)
+        else
+            Unify.explainAndReturnBottom
+                "different Bool domain values"
+                termLike1
+                termLike2
+termAndEquals _ _ _ = empty

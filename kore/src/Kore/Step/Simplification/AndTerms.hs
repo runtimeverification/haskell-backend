@@ -33,6 +33,7 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
@@ -216,6 +217,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
+    , (BothT,  \_ t _ -> Builtin.Bool.termAndEquals t, "Builtin.Bool.termAndEquals")
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
@@ -609,10 +611,6 @@ domainValueAndEqualsAssumesDifferent
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ _)
     second@(DV_ _ _)
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
-    first@(Builtin_ (Domain.BuiltinBool _))
-    second@(Builtin_ (Domain.BuiltinBool _))
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinInt _))
