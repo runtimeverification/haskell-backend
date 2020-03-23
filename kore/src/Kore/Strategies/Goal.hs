@@ -578,7 +578,6 @@ logTransitionRule
     .  MonadSimplify m
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => Entry (InfoReachability goal)
     =>  (  Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -597,9 +596,9 @@ logTransitionRule rule prim proofState = case proofState of
             whileSimplify goal $ rule prim proofState
         RemoveDestination ->
             whileRemoveDestination goal $ rule prim proofState
-        (DeriveSeq rules) ->
+        (DeriveSeq rules) -> undefined
             whileDeriveSeq rules goal $ rule prim proofState
-        (DerivePar rules) ->
+        (DerivePar rules) -> undefined
             whileDerivePar rules goal $ rule prim proofState
         _ ->
             rule prim proofState
@@ -609,7 +608,6 @@ transitionRuleTemplate
     .  MonadSimplify m
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => Entry (InfoReachability goal)
     => TransitionRuleTemplate m goal
     -> Prim goal
     -> ProofState goal goal
