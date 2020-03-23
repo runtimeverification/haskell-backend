@@ -573,6 +573,37 @@ data TransitionRuleTemplate monad goal =
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
 
+logTransitionRule
+    :: forall m goal
+    .  MonadSimplify m
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
+    => Entry (InfoReachability goal)
+    =>  (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+        )
+    ->  (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+        )
+logTransitionRule rule prim proofState = case proofState of
+    Goal goal          -> logWith goal
+    GoalRemainder goal -> logWith goal
+    _                  -> rule prim proofState
+  where
+    logWith goal = case prim of
+        Simplify ->
+            whileSimplify goal $ rule prim proofState
+        RemoveDestination ->
+            whileRemoveDestination goal $ rule prim proofState
+        (DeriveSeq rules) ->
+            whileDeriveSeq rules goal $ rule prim proofState
+        (DerivePar rules) ->
+            whileDerivePar rules goal $ rule prim proofState
+        _ ->
+            rule prim proofState
+
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
@@ -592,7 +623,7 @@ transitionRuleTemplate
         , deriveSeqTemplate
         }
   =
-    transitionRuleWorker
+    logTransitionRule transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim goal
@@ -607,26 +638,22 @@ transitionRuleTemplate
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
     transitionRuleWorker Simplify (Goal goal) =
-        whileSimplify goal
-            $ Profile.timeStrategy "Goal.Simplify" $ do
-                results <- tryTransitionT (simplifyTemplate goal)
-                case results of
-                    [] -> return Proven
-                    _  -> Goal <$> Transition.scatter results
+        Profile.timeStrategy "Goal.Simplify" $ do
+            results <- tryTransitionT (simplifyTemplate goal)
+            case results of
+                [] -> return Proven
+                _  -> Goal <$> Transition.scatter results
 
     transitionRuleWorker Simplify (GoalRemainder goal) =
-        whileSimplify goal
-            $ Profile.timeStrategy "Goal.SimplifyRemainder"
-            $ GoalRemainder <$> simplifyTemplate goal
+        Profile.timeStrategy "Goal.SimplifyRemainder"
+        $ GoalRemainder <$> simplifyTemplate goal
 
     transitionRuleWorker RemoveDestination (Goal goal) =
-        whileRemoveDestination goal
-            $ Profile.timeStrategy "Goal.RemoveDestination"
-            $ removeDestinationTemplate Goal goal
+        Profile.timeStrategy "Goal.RemoveDestination"
+        $ removeDestinationTemplate Goal goal
     transitionRuleWorker RemoveDestination (GoalRemainder goal) =
-        whileRemoveDestination goal
-            $ Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-            $ removeDestinationTemplate GoalRemainder goal
+        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+        $ removeDestinationTemplate GoalRemainder goal
 
     transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValidTemplate goal =

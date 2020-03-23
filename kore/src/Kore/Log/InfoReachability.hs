@@ -7,6 +7,8 @@ module Kore.Log.InfoReachability
     ( InfoReachability (..)
     , whileSimplify
     , whileRemoveDestination
+    , whileDeriveSeq
+    , whileDerivePar
     , prettyInfoReachabilityGoal
     , prettyInfoReachabilityGoalAndRules
     ) where
@@ -135,3 +137,21 @@ whileRemoveDestination
     -> log a
     -> log a
 whileRemoveDestination goal = logWhile (InfoRemoveDestination goal)
+
+whileDeriveSeq
+    :: MonadLog log
+    => Entry (InfoReachability goal)
+    => [Rule goal]
+    -> goal
+    -> log a
+    -> log a
+whileDeriveSeq rules goal = logWhile (InfoDeriveSeq rules goal)
+
+whileDerivePar
+    :: MonadLog log
+    => Entry (InfoReachability goal)
+    => [Rule goal]
+    -> goal
+    -> log a
+    -> log a
+whileDerivePar rules goal = logWhile (InfoDerivePar rules goal)
