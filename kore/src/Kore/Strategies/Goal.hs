@@ -175,7 +175,6 @@ import qualified Kore.Verified as Verified
 import Log
     ( MonadLog (..)
     )
-import Log.Entry
 
 {- | The final nodes of an execution graph which were not proven.
 
@@ -417,7 +416,7 @@ instance Goal (ReachabilityRule Variable) where
                 (ReachabilityRule Variable)
                 (ReachabilityRule Variable)
             )
-    transitionRule prim proofstate =
+    transitionRule = logTransitionRule $ \prim proofstate ->
         case proofstate of
             Goal (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
@@ -576,8 +575,7 @@ data TransitionRuleTemplate monad goal =
 logTransitionRule
     :: forall m goal
     .  MonadSimplify m
-    => ProofState goal goal ~ ProofState.ProofState goal
-    => Prim goal ~ ProofState.Prim (Rule goal)
+    => goal ~ (ReachabilityRule Variable)
     =>  (  Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -596,9 +594,9 @@ logTransitionRule rule prim proofState = case proofState of
             whileSimplify goal $ rule prim proofState
         RemoveDestination ->
             whileRemoveDestination goal $ rule prim proofState
-        (DeriveSeq rules) -> undefined
+        (DeriveSeq rules) ->
             whileDeriveSeq rules goal $ rule prim proofState
-        (DerivePar rules) -> undefined
+        (DerivePar rules) ->
             whileDerivePar rules goal $ rule prim proofState
         _ ->
             rule prim proofState
@@ -621,7 +619,7 @@ transitionRuleTemplate
         , deriveSeqTemplate
         }
   =
-    logTransitionRule transitionRuleWorker
+    transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim goal

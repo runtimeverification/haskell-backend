@@ -54,9 +54,7 @@ import qualified Kore.Step.Transition as Transition
 import qualified Kore.Strategies.Goal as Goal
 import qualified Kore.Strategies.ProofState as ProofState
 import Log
-    ( Entry (..)
-    , MonadLog (..)
-    , Severity (..)
+    ( MonadLog (..)
     )
 import SMT
     ( MonadSMT (..)
@@ -373,19 +371,6 @@ instance Goal.Goal Goal where
                 , deriveSeqTemplate =
                     deriveSeq
                 }
-
-instance Entry (Goal.InfoReachability Goal) where
-    entrySeverity _ = Info
-
-instance Pretty (Goal.InfoReachability Goal) where
-    pretty (Goal.InfoSimplify goal) =
-        Goal.prettyInfoReachabilityGoal "Simplify" goal
-    pretty (Goal.InfoRemoveDestination goal) =
-        Goal.prettyInfoReachabilityGoal "RemoveDestination" goal
-    pretty (Goal.InfoDeriveSeq rules goal) =
-        Goal.prettyInfoReachabilityGoalAndRules "DeriveSeq" goal rules unRule
-    pretty (Goal.InfoDerivePar rules goal) =
-        Goal.prettyInfoReachabilityGoalAndRules "DerivePar" goal rules unRule
 
 instance SOP.Generic (Goal.Rule Goal)
 
