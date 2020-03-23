@@ -185,24 +185,18 @@ termAndEquals
 termAndEquals unifyChildren a b =
     worker a b <|> worker b a
   where
-    worker
-        termLike1@(Builtin_ (Domain.BuiltinBool internalBool1))
-        termLike2@(Builtin_ (Domain.BuiltinBool internalBool2))
-      = lift $ do
-        let value1 = Domain.builtinBoolValue internalBool1
-        let value2 = Domain.builtinBoolValue internalBool2
-        if value1 == value2
+    worker termLike1 termLike2
+      | Just value1 <- matchBool termLike1
+      , Just value2 <- matchBool termLike2
+      = lift $ if value1 == value2
             then return (Pattern.fromTermLike termLike1)
             else
                 Unify.explainAndReturnBottom
                     "different Bool domain values"
                     termLike1
                     termLike2
-
-    worker
-        termLike1@(Builtin_ (Domain.BuiltinBool internalBool1))
-        termLike2@(App_ symbol2 arguments)
-      | Domain.builtinBoolValue internalBool1
+      | Just value1 <- matchBool termLike1, value1
+      , App_ symbol2 arguments <- termLike2
       , isFunctionPattern termLike2
       , Just hook2 <- (getHook . Attribute.Symbol.hook . symbolAttributes) symbol2
       , hook2 == andKey
@@ -214,3 +208,8 @@ termAndEquals unifyChildren a b =
         pure (Pattern.withCondition termLike1 conditions)
 
     worker _ _ = empty
+
+matchBool :: TermLike variable -> Maybe Bool
+matchBool (BuiltinBool_ Domain.InternalBool { builtinBoolValue }) =
+    Just builtinBoolValue
+matchBool _ = Nothing
