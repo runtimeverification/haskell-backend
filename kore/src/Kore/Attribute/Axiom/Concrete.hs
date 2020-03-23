@@ -31,7 +31,6 @@ import Kore.Attribute.Pattern.FreeVariables
     , getFreeVariables
     , isFreeVariable
     , mapFreeVariables
-    , nullFreeVariables
     )
 import Kore.Debug
 import qualified Kore.Error
@@ -132,5 +131,6 @@ mapConcreteVariables
 mapConcreteVariables mapElemVar mapSetVar (Concrete freeVariables) =
     Concrete (mapFreeVariables mapElemVar mapSetVar freeVariables)
 
-isConcrete :: Concrete variable -> Bool
-isConcrete = not . nullFreeVariables . unConcrete
+isConcrete
+    :: Ord variable => Concrete variable -> UnifiedVariable variable -> Bool
+isConcrete Concrete { unConcrete } var = isFreeVariable var unConcrete

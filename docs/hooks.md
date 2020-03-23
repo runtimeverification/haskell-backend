@@ -565,9 +565,8 @@ the result is the given default.
 
 If the given key is in the map, the result is `\dv{Bool{}}("true")`; otherwise
 the result is `\dv{Bool{}}("false")`.
-
 ~~~
-    hooked-symbol inKeys{}(Map{}, Key{}) : Bool{}
+    hooked-symbol inKeys{}(Key{}, Map{}) : Bool{}
         [hook{}("MAP.in_keys")]
 ~~~
 
@@ -596,6 +595,16 @@ Takes a map and returns a list of its values.
 ~~~
     hooked-symbol values{}(Map{}) : List{}
         [hook{}("MAP.values")]
+~~~
+
+### MAP.inclusion
+
+If the first map is a submap of the second, the result is`\dv{Bool{}}("true")`;
+otherwise the result is `\dv{Bool{}}("false")`.
+
+~~~
+    hooked-symbol inclusion{}(Map{}, Map{}) : Bool{}
+        [hook{}("MAP.inclusion")]
 ~~~
 
 ## LIST
