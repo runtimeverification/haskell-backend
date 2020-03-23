@@ -186,6 +186,8 @@ termAndEquals
 termAndEquals unifyChildren a b =
     worker a b <|> worker b a
   where
+    unifyChildren' term1 term2 =
+        Pattern.withoutTerm <$> unifyChildren term1 term2
     worker termLike1 termLike2
       | Just value1 <- matchBool termLike1
       , Just value2 <- matchBool termLike2
@@ -201,27 +203,33 @@ termAndEquals unifyChildren a b =
       , Just BoolAnd { operand1, operand2 } <- matchBoolAnd termLike2
       , isFunctionPattern termLike2
       = lift $ do
-        (_, unification1) <- Pattern.splitTerm <$> unifyChildren termLike1 operand1
-        (_, unification2) <- Pattern.splitTerm <$> unifyChildren termLike1 operand2
+        unification1 <- unifyChildren' termLike1 operand1
+        unification2 <- unifyChildren' termLike1 operand2
         let conditions = unification1 <> unification2
         pure (Pattern.withCondition termLike1 conditions)
 
     worker _ _ = empty
 
+getSymbolHook :: Symbol -> Maybe Text
+getSymbolHook = getHook . Attribute.Symbol.hook . symbolAttributes
+
+{- | Match a @BOOL.Bool@ builtin value.
+ -}
 matchBool :: TermLike variable -> Maybe Bool
 matchBool (BuiltinBool_ Domain.InternalBool { builtinBoolValue }) =
     Just builtinBoolValue
 matchBool _ = Nothing
 
+{- | The @BOOL.and@ hooked symbol applied to @term@-type arguments.
+ -}
 data BoolAnd term =
     BoolAnd
         { symbol :: !Symbol
         , operand1, operand2 :: !term
         }
 
-getSymbolHook :: Symbol -> Maybe Text
-getSymbolHook = getHook . Attribute.Symbol.hook . symbolAttributes
-
+{- | Match the @BOOL.and@ hooked symbol.
+ -}
 matchBoolAnd :: TermLike variable -> Maybe (BoolAnd (TermLike variable))
 matchBoolAnd (App_ symbol [operand1, operand2]) = do
     hook2 <- getSymbolHook symbol
