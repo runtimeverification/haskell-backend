@@ -44,8 +44,7 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import Data.Sequence
-    ( pattern (:<|)
-    , pattern (:|>)
+    ( pattern (:|>)
     , Seq
     )
 import qualified Data.Sequence as Seq
@@ -461,7 +460,7 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
  -}
 substitute
     :: forall unifier variable
-    .  (Eq variable, MatchingVariable variable, MonadSimplify unifier)
+    .  (MatchingVariable variable, MonadSimplify unifier)
     => ElementVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -486,7 +485,7 @@ substitute eVariable termLike = do
 
     Monad.State.get
         -- Apply the substitution to the queued pairs.
-        >>= (field @"queued" . traverse) substitute2
+        >>= (field @"queued" . (\f x -> Set.fromAscList <$> traverse f (Set.toAscList x))) substitute2
         -- Apply the substitution to the accumulated matching solution.
         >>= (field @"substitution" . traverse) substitute1
         >>= Monad.State.put
@@ -500,8 +499,9 @@ substitute eVariable termLike = do
 
     substitute2
         :: Constraint variable
-        -> MaybeT (MatcherT variable unifier) (Pair (TermLike variable))
-    substitute2 = traverse substitute1
+        -> MaybeT (MatcherT variable unifier) (Constraint variable)
+    substitute2 (Constraint pair) =
+        Constraint <$> traverse substitute1 pair
 
     substitute1
         :: TermLike variable
@@ -524,7 +524,8 @@ the variable does not occur on the right-hand side of the substitution.
 
  -}
 setSubstitute
-    :: (MatchingVariable variable, MonadSimplify unifier)
+    :: forall variable unifier
+    .  (MatchingVariable variable, MonadSimplify unifier)
     => SetVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -543,7 +544,7 @@ setSubstitute sVariable termLike = do
     -- Push the dependent deferred pairs to the front of the queue.
     Foldable.traverse_ push dep
     -- Apply the substitution to the queued pairs.
-    field @"queued" . Lens.mapped %= substitute2
+    field @"queued" . (\f x -> Set.fromAscList <$> Lens.mapped f (Set.toAscList x)) %= substitute2
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
@@ -554,7 +555,8 @@ setSubstitute sVariable termLike = do
     variable = SetVar sVariable
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
-    substitute2 = fmap substitute1
+    substitute2 :: Constraint variable -> Constraint variable
+    substitute2 (Constraint pair) = Constraint $ fmap substitute1 pair
     substitute1 = substituteTermLike subst
 
 substituteTermLike
