@@ -269,44 +269,57 @@
                     /* Created: Kore.Internal.Predicate.makeAndPredicate */
                     /* Sfa */
                     \and{SortGeneratedTopCell{}}(
+                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
                         /* Sfa */
-                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                            /* Fl Fn D Sfa */
-                            Lbl'Unds'andBool'Unds'{}(
-                                /* Fl Fn D Sfa */
-                                Lbl'Unds'andBool'Unds'{}(
-                                    /* Fl Fn D Sfa */
-                                    Lbl'Unds-LT-Eqls'Int'Unds'{}(
+                        \and{SortGeneratedTopCell{}}(
+                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                            /* Sfa */
+                            \and{SortGeneratedTopCell{}}(
+                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                /* Sfa */
+                                \and{SortGeneratedTopCell{}}(
+                                    /* Sfa */
+                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
                                         /* Fl Fn D Sfa */
-                                        Lbl'UndsPlus'Int'Unds'{}(
-                                            /* Fl Fn D Sfa */ VarADDR:SortInt{},
-                                            /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("8")
+                                        Lbl'Unds-LT-Eqls'Int'Unds'{}(
+                                            /* Fl Fn D Sfa */
+                                            Lbl'UndsPlus'Int'Unds'{}(
+                                                /* Fl Fn D Sfa */
+                                                VarADDR:SortInt{},
+                                                /* Fl Fn D Sfa Cl */
+                                                /* builtin: */
+                                                \dv{SortInt{}}("4")
+                                            ),
+                                            /* Fl Fn D Sfa */
+                                            Lbl'UndsStar'Int'Unds'{}(
+                                                /* Fl Fn D Sfa */
+                                                VarSIZE:SortInt{},
+                                                /* Fl Fn D Sfa Cl */
+                                                /* builtin: */
+                                                \dv{SortInt{}}("65536")
+                                            )
                                         ),
-                                        /* Fl Fn D Sfa */
-                                        Lbl'UndsStar'Int'Unds'{}(
-                                            /* Fl Fn D Sfa */ VarSIZE:SortInt{},
-                                            /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
-                                            \dv{SortInt{}}("65536")
-                                        )
+                                        /* Fl Fn D Sfa Cl */
+                                        /* builtin: */ \dv{SortBool{}}("true")
                                     ),
-                                    /* Fl Fn D Sfa */
-                                    Lbl'Hash'isByteMap'LParUndsRParUnds'KWASM-LEMMAS'Unds'Bool'Unds'ByteMap{}(
+                                    /* Sfa */
+                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        /* builtin: */ \dv{SortBool{}}("true"),
                                         /* Fl Fn D Sfa */
-                                        LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
-                                            /* Fl Fn D Sfa */ VarBM0:SortMap{}
+                                        Lbl'Hash'isByteMap'LParUndsRParUnds'KWASM-LEMMAS'Unds'Bool'Unds'ByteMap{}(
+                                            /* Fl Fn D Sfa */
+                                            LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
+                                                /* Fl Fn D Sfa */
+                                                VarBM0:SortMap{}
+                                            )
                                         )
                                     )
                                 ),
-                                /* Fl Fn D Sfa */
-                                Lbl'Unds'andBool'Unds'{}(
-                                    /* Fl Fn D Sfa */
-                                    Lbl'Unds-LT-Eqls'Int'Unds'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0"),
-                                        /* Fl Fn D Sfa */ VarADDR:SortInt{}
-                                    ),
+                                /* Sfa */
+                                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    /* builtin: */ \dv{SortBool{}}("true"),
                                     /* Fl Fn D Sfa */
                                     Lbl'Unds-LT-'Int'Unds'{}(
                                         /* Fl Fn D Sfa */ VarADDR:SortInt{},
@@ -316,28 +329,37 @@
                                     )
                                 )
                             ),
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortBool{}}("true")
+                            /* Sfa */
+                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                /* Fl Fn D Sfa Cl */
+                                /* builtin: */ \dv{SortBool{}}("true"),
+                                /* Fl Fn D Sfa */
+                                Lbl'Unds-LT-Eqls'Int'Unds'{}(
+                                    /* Fl Fn D Sfa */
+                                    Lbl'UndsPlus'Int'Unds'{}(
+                                        /* Fl Fn D Sfa */ VarADDR:SortInt{},
+                                        /* Fl Fn D Sfa Cl */
+                                        /* builtin: */ \dv{SortInt{}}("8")
+                                    ),
+                                    /* Fl Fn D Sfa */
+                                    Lbl'UndsStar'Int'Unds'{}(
+                                        /* Fl Fn D Sfa */ VarSIZE:SortInt{},
+                                        /* Fl Fn D Sfa Cl */
+                                        /* builtin: */ \dv{SortInt{}}("65536")
+                                    )
+                                )
+                            )
                         ),
                         /* Sfa */
                         \equals{SortBool{}, SortGeneratedTopCell{}}(
+                            /* Fl Fn D Sfa Cl */
+                            /* builtin: */ \dv{SortBool{}}("true"),
                             /* Fl Fn D Sfa */
                             Lbl'Unds-LT-Eqls'Int'Unds'{}(
-                                /* Fl Fn D Sfa */
-                                Lbl'UndsPlus'Int'Unds'{}(
-                                    /* Fl Fn D Sfa */ VarADDR:SortInt{},
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("4")
-                                ),
-                                /* Fl Fn D Sfa */
-                                Lbl'UndsStar'Int'Unds'{}(
-                                    /* Fl Fn D Sfa */ VarSIZE:SortInt{},
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("65536")
-                                )
-                            ),
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortBool{}}("true")
+                                /* Fl Fn D Sfa Cl */
+                                /* builtin: */ \dv{SortInt{}}("0"),
+                                /* Fl Fn D Sfa */ VarADDR:SortInt{}
+                            )
                         )
                     ),
                     /* Sfa */

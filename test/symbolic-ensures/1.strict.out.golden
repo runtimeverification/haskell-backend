@@ -3,7 +3,13 @@
   </k>
 #And
   {
-    ?X >=Int 1 andBool ?X <=Int 3
-  #Equals
     true
+  #Equals
+    ?X <=Int 3
+  }
+#And
+  {
+    true
+  #Equals
+    ?X >=Int 1
   }
