@@ -72,6 +72,7 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike hiding
     ( substitute
     )
@@ -103,28 +104,44 @@ newtype Constraint variable =
         }
     deriving (Eq)
 
-instance Eq variable => Ord (Constraint variable) where
-    compare p1 p2
-        | p1 == p2 = EQ
-        | leftIsVariable p1 = LT
-        | leftIsConcreteBuiltin p1 = LT
-        | leftHasConstrAtTop p1 = LT
-        | not (leftInList p1) = LT
-        | leftIsList p1 = LT
-        | leftIsMapOrSet p1 = LT
-        | otherwise = GT
-      where
-        leftIsVariable = undefined
-        leftIsConcreteBuiltin = undefined
-        leftHasConstrAtTop = undefined
-        leftIsList = undefined
-        leftIsMapOrSet = undefined
-        leftInList p =
-            leftIsVariable p
-            || leftIsConcreteBuiltin p
-            || leftHasConstrAtTop p
-            || leftIsList
-            || leftIsMapOrSet
+data OrderClass = One | Two | Three | Four | Five | Six
+    deriving (Eq)
+
+toInt :: OrderClass -> Int
+toInt One = 1
+toInt Two = 2
+toInt Three = 3
+toInt Four = 4
+toInt Five = 5
+toInt Six = 6
+
+instance Ord OrderClass where
+    c1 <= c2 = toInt c1 <= toInt c2
+
+findClass :: Constraint variable -> OrderClass
+findClass (Constraint (Pair left _)) = findClassWorker left
+  where
+    findClassWorker (Var_ _) = One
+    findClassWorker (ElemVar_ _) = One
+    findClassWorker (SetVar_ _) = One
+    findClassWorker (StringLiteral_ _) = Two
+    findClassWorker (BuiltinInt_ _) = Two
+    findClassWorker (BuiltinBool_ _) = Two
+    findClassWorker (BuiltinString_ _) = Two
+    findClassWorker (App_ symbol _) =
+        if Symbol.isConstructor symbol
+            then Three
+            else Four
+    findClassWorker (BuiltinList_ _) = Five
+    findClassWorker (BuiltinSet_ _) = Six
+    findClassWorker (BuiltinMap_ _) = Six
+    findClassWorker _ = Four
+
+instance Ord variable => Ord (Constraint variable) where
+    c1@(Constraint p1) <= c2@(Constraint p2)
+        | findClass c1 == findClass c2 =
+            p1 <= p2
+        | otherwise = findClass c1 <= findClass c2
 
 type MatchResult variable =
     ( Predicate variable
@@ -205,7 +222,7 @@ matchIncremental termLike1 termLike2 =
         return (predicate', substitution)
 
 matchEqualHeads
-    :: Eq variable
+    :: Ord variable
     => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
@@ -300,7 +317,7 @@ matchVariable (Pair (SetVar_ variable1) term2) = do
 matchVariable _ = empty
 
 matchApplication
-    :: Eq variable
+    :: Ord variable
     => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
@@ -431,7 +448,7 @@ pop = do
 {- | Push a new constraint onto the matching queue.
  -}
 push
-    :: Eq variable
+    :: Ord variable
     => MonadState (MatcherState variable) matcher
     => Pair (TermLike variable)
     -> matcher ()
