@@ -50,7 +50,6 @@ import qualified Text.Megaparsec.Char as Parsec
 import Kore.Attribute.Hook
     ( Hook (..)
     )
-import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
@@ -59,6 +58,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
     ( TermSimplifier
@@ -210,9 +210,6 @@ termAndEquals unifyChildren a b =
 
     worker _ _ = empty
 
-getSymbolHook :: Symbol -> Maybe Text
-getSymbolHook = getHook . Attribute.Symbol.hook . symbolAttributes
-
 {- | Match a @BOOL.Bool@ builtin value.
  -}
 matchBool :: TermLike variable -> Maybe Bool
@@ -232,7 +229,7 @@ data BoolAnd term =
  -}
 matchBoolAnd :: TermLike variable -> Maybe (BoolAnd (TermLike variable))
 matchBoolAnd (App_ symbol [operand1, operand2]) = do
-    hook2 <- getSymbolHook symbol
+    hook2 <- (getHook . symbolHook) symbol
     Monad.guard (hook2 == andKey)
     return BoolAnd { symbol, operand1, operand2 }
 matchBoolAnd _ = Nothing
