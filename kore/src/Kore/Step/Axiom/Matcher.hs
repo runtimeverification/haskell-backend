@@ -178,7 +178,7 @@ matchIncremental termLike1 termLike2 =
 
     initial =
         MatcherState
-            { queued = Seq.singleton (Pair termLike1 termLike2)
+            { queued = Set.singleton (Constraint (Pair termLike1 termLike2))
             , deferred = empty
             , predicate = empty
             , substitution = mempty
@@ -206,7 +206,8 @@ matchIncremental termLike1 termLike2 =
         return (predicate', substitution)
 
 matchEqualHeads
-    :: Monad unifier
+    :: Eq variable
+    => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 -- Terminal patterns
@@ -300,7 +301,8 @@ matchVariable (Pair (SetVar_ variable1) term2) = do
 matchVariable _ = empty
 
 matchApplication
-    :: Monad unifier
+    :: Eq variable
+    => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
@@ -393,7 +395,7 @@ type MatchingVariable variable = InternalVariable variable
  -}
 data MatcherState variable =
     MatcherState
-        { queued :: !(Seq (Pair (TermLike variable)))
+        { queued :: !(Set (Constraint variable))
         -- ^ Solvable matching constraints.
         , deferred :: !(Seq (Pair (TermLike variable)))
         -- ^ Unsolvable matching constraints; may become solvable with more
@@ -418,21 +420,23 @@ type MatcherT variable unifier = StateT (MatcherState variable) unifier
 pop
     :: MonadState (MatcherState variable) matcher
     => matcher (Maybe (Pair (TermLike variable)))
-pop =
-    Lens.use (field @"queued") >>= \case
-        next :<| queued' -> do
+pop = do
+    queued <- Lens.use (field @"queued")
+    case Set.minView queued of
+        Just (next, queued') -> do
             field @"queued" .= queued'
-            return (Just next)
+            return (Just . getConstraint $ next)
         _ ->
             return Nothing
 
 {- | Push a new constraint onto the matching queue.
  -}
 push
-    :: MonadState (MatcherState variable) matcher
+    :: Eq variable
+    => MonadState (MatcherState variable) matcher
     => Pair (TermLike variable)
     -> matcher ()
-push pair = field @"queued" %= (pair :<|)
+push pair = field @"queued" %= (Set.insert $ Constraint pair)
 
 {- | Defer a constraint until more information is available.
 
@@ -457,7 +461,7 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
  -}
 substitute
     :: forall unifier variable
-    .  (MatchingVariable variable, MonadSimplify unifier)
+    .  (Eq variable, MatchingVariable variable, MonadSimplify unifier)
     => ElementVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -495,7 +499,7 @@ substitute eVariable termLike = do
     subst = Map.singleton variable termLike
 
     substitute2
-        :: Pair (TermLike variable)
+        :: Constraint variable
         -> MaybeT (MatcherT variable unifier) (Pair (TermLike variable))
     substitute2 = traverse substitute1
 
