@@ -98,6 +98,35 @@ import Pair
 
 -- * Matching
 
+newtype Constraint variable =
+    Constraint
+        { getConstraint :: Pair (TermLike variable)
+        }
+    deriving (Eq)
+
+instance Eq variable => Ord (Constraint variable) where
+    compare p1 p2
+        | p1 == p2 = EQ
+        | leftIsVariable p1 = LT
+        | leftIsConcreteBuiltin p1 = LT
+        | leftHasConstrAtTop p1 = LT
+        | not (leftInList p1) = LT
+        | leftIsList p1 = LT
+        | leftIsMapOrSet p1 = LT
+        | otherwise = GT
+      where
+        leftIsVariable = undefined
+        leftIsConcreteBuiltin = undefined
+        leftHasConstrAtTop = undefined
+        leftIsList = undefined
+        leftIsMapOrSet = undefined
+        leftInList p =
+            leftIsVariable p
+            || leftIsConcreteBuiltin p
+            || leftHasConstrAtTop p
+            || leftIsList
+            || leftIsMapOrSet
+
 type MatchResult variable =
     ( Predicate variable
     , Map.Map (UnifiedVariable variable) (TermLike variable)
