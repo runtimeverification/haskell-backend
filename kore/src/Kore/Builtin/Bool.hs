@@ -31,6 +31,7 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
+import qualified Control.Monad as Monad
 import Data.Functor
     ( ($>)
     )
@@ -195,15 +196,13 @@ termAndEquals unifyChildren a b =
                     "different Bool domain values"
                     termLike1
                     termLike2
-      | Just value1 <- matchBool termLike1, value1
-      , App_ symbol2 arguments <- termLike2
+      | Just value1 <- matchBool termLike1
+      , value1
+      , Just BoolAnd { operand1, operand2 } <- matchBoolAnd termLike2
       , isFunctionPattern termLike2
-      , Just hook2 <- (getHook . Attribute.Symbol.hook . symbolAttributes) symbol2
-      , hook2 == andKey
-      , [argument1, argument2] <- arguments
       = lift $ do
-        (_, unification1) <- Pattern.splitTerm <$> unifyChildren termLike1 argument1
-        (_, unification2) <- Pattern.splitTerm <$> unifyChildren termLike1 argument2
+        (_, unification1) <- Pattern.splitTerm <$> unifyChildren termLike1 operand1
+        (_, unification2) <- Pattern.splitTerm <$> unifyChildren termLike1 operand2
         let conditions = unification1 <> unification2
         pure (Pattern.withCondition termLike1 conditions)
 
@@ -213,3 +212,19 @@ matchBool :: TermLike variable -> Maybe Bool
 matchBool (BuiltinBool_ Domain.InternalBool { builtinBoolValue }) =
     Just builtinBoolValue
 matchBool _ = Nothing
+
+data BoolAnd term =
+    BoolAnd
+        { symbol :: !Symbol
+        , operand1, operand2 :: !term
+        }
+
+getSymbolHook :: Symbol -> Maybe Text
+getSymbolHook = getHook . Attribute.Symbol.hook . symbolAttributes
+
+matchBoolAnd :: TermLike variable -> Maybe (BoolAnd (TermLike variable))
+matchBoolAnd (App_ symbol [operand1, operand2]) = do
+    hook2 <- getSymbolHook symbol
+    Monad.guard (hook2 == andKey)
+    return BoolAnd { symbol, operand1, operand2 }
+matchBoolAnd _ = Nothing
