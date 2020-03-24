@@ -721,18 +721,16 @@ rightAlignLists internal1 internal2
     list12 = Seq.zipWith Pair list1 tail2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
+type Push variable unifier a = Pair a -> MatcherT variable unifier ()
+
 matchNormalizedAc
     :: forall normalized unifier variable
     .   ( Builtin.AcWrapper normalized
         , MatchingVariable variable
         , Monad unifier
         )
-    =>  ( Pair (Builtin.Element normalized (TermLike variable))
-        -> MatcherT variable unifier ()
-        )
-    ->  ( Pair (Builtin.Value normalized (TermLike variable))
-        -> MatcherT variable unifier ()
-        )
+    =>  Push variable unifier (Builtin.Element normalized (TermLike variable))
+    ->  Push variable unifier (Builtin.Value normalized (TermLike variable))
     ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
         -> TermLike variable
         )
@@ -768,26 +766,26 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
     , null concrete1 = do
         let (key1, value1) = Builtin.unwrapElement element1
         case Builtin.lookupSymbolicKeyOfAc key1 normalized2 of
-            Just value2 -> do
-                lift $ pushValue (Pair value1 value2)
+            Just value2 -> lift $ do
+                pushValue (Pair value1 value2)
                 let normalized2' =
                         wrapTermLike
                         $ Builtin.removeSymbolicKeyOfAc key1 normalized2
                 push (Pair frame1 normalized2')
             Nothing ->
                 case (headMay . Map.toList $ concrete2, headMay abstract2) of
-                    (Just concreteElement2, _) -> do
+                    (Just concreteElement2, _) -> lift $ do
                         let liftedConcreteElement2 =
                                 Builtin.wrapElement
                                 $ Bifunctor.first TermLike.fromConcrete concreteElement2
-                        lift $ pushElement (Pair element1 liftedConcreteElement2)
+                        pushElement (Pair element1 liftedConcreteElement2)
                         let (key2, _) = concreteElement2
                             normalized2' =
                                 wrapTermLike
                                 $ Builtin.removeConcreteKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
-                    (_, Just abstractElement2) -> do
-                        lift $ pushElement (Pair element1 abstractElement2)
+                    (_, Just abstractElement2) -> lift $ do
+                        pushElement (Pair element1 abstractElement2)
                         let (key2, _) = Builtin.unwrapElement abstractElement2
                             normalized2' =
                                 wrapTermLike
