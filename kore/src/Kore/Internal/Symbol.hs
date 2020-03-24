@@ -175,7 +175,8 @@ isMemo :: Symbol -> Bool
 isMemo = Attribute.isMemo . Attribute.memo . symbolAttributes
 
 noEvaluators :: Symbol -> Bool
-noEvaluators = Attribute.hasNoEvaluators . Attribute.noEvaluators . symbolAttributes
+noEvaluators =
+    Attribute.hasNoEvaluators . Attribute.noEvaluators . symbolAttributes
 
 symbolHook :: Symbol -> Attribute.Hook
 symbolHook = Attribute.hook . symbolAttributes
