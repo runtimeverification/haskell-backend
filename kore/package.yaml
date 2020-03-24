@@ -31,7 +31,7 @@ flags:
   release:
     description: Build a faster runtime, at the expense of a slower build.
     manual: true
-    default: true
+    default: false
 
 dependencies:
   - base >=4.7
