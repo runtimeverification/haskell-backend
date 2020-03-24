@@ -740,6 +740,29 @@ matchNormalizedAc
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
+    | [] <- excessAbstract1
+    = do
+      Monad.guard (null excessConcrete1)
+      case opaque1 of
+          [] -> do
+              Monad.guard (null opaque2)
+              Monad.guard (null excessConcrete2)
+              Monad.guard (null excessAbstract2)
+          [frame1]
+            | null excessAbstract2
+            , null excessConcrete2
+            , [frame2] <- opaque2 ->
+                push (Pair frame1 frame2)
+            | otherwise ->
+                let normalized2' =
+                        wrapTermLike normalized2
+                            { Builtin.concreteElements = excessConcrete2
+                            , Builtin.elementsWithVariables = excessAbstract2
+                            }
+                 in push (Pair frame1 normalized2')
+          _ -> empty
+      lift $ Foldable.traverse_ pushValue concrete12
+      lift $ Foldable.traverse_ pushValue abstractMerge
     | [element1] <- abstract1
     , [frame1] <- opaque1
     , null concrete1 = do
@@ -771,29 +794,6 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                                 $ Builtin.removeSymbolicKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     _ -> empty
-    | [] <- excessAbstract1
-    = do
-      Monad.guard (null excessConcrete1)
-      case opaque1 of
-          [] -> do
-              Monad.guard (null opaque2)
-              Monad.guard (null excessConcrete2)
-              Monad.guard (null excessAbstract2)
-          [frame1]
-            | null excessAbstract2
-            , null excessConcrete2
-            , [frame2] <- opaque2 ->
-                push (Pair frame1 frame2)
-            | otherwise ->
-                let normalized2' =
-                        wrapTermLike normalized2
-                            { Builtin.concreteElements = excessConcrete2
-                            , Builtin.elementsWithVariables = excessAbstract2
-                            }
-                 in push (Pair frame1 normalized2')
-          _ -> empty
-      lift $ Foldable.traverse_ pushValue concrete12
-      lift $ Foldable.traverse_ pushValue abstractMerge
     | otherwise = empty
   where
     abstract1 = Builtin.elementsWithVariables normalized1
