@@ -76,6 +76,7 @@ translatePredicate
         ( Given (SmtMetadataTools Attribute.Symbol)
         , p ~ TermLike variable
         , Monad m
+        , InternalVariable variable
         )
     => (SExpr -> p -> Translator m p SExpr)
     -> Predicate variable
@@ -106,7 +107,9 @@ translatePredicate translateUninterpreted predicate =
 
             -- Uninterpreted: translate as variables
             CeilF _ -> translateUninterpreted SMT.tBool pat
-            ExistsF _ -> translateUninterpreted SMT.tBool pat
+            ExistsF exists' ->
+                translatePredicateExists exists'
+                <|> translateUninterpreted SMT.tBool pat
             FloorF _ -> translateUninterpreted SMT.tBool pat
             ForallF _ -> translateUninterpreted SMT.tBool pat
             InF _ -> translateUninterpreted SMT.tBool pat
@@ -218,6 +221,29 @@ translatePredicate translateUninterpreted predicate =
         return $ shortenSExpr (applySExpr sexpr children)
       where
         applicationChildrenSorts = termLikeSort <$> applicationChildren
+
+    translatePredicateExists Exists { existsVariable, existsChild } =
+        case  getHook of
+            Just builtinSort
+              | builtinSort == Builtin.Bool.sort
+              -> translateExists SMT.tBool varTerm existsChild
+              | builtinSort == Builtin.Int.sort
+              -> translateExists SMT.tInt varTerm existsChild
+            _ -> empty
+            
+      where
+        varTerm = mkElemVar existsVariable
+        varSort = sortedVariableSort (getElementVariable existsVariable)
+        tools :: SmtMetadataTools Attribute.Symbol
+        tools = given
+        Attribute.Sort { hook = Hook { getHook } } =
+            sortAttributes tools varSort
+
+    translateExists varSort varTerm predTerm
+      = do
+        var <- translateUninterpreted varSort varTerm
+        SMT.existsQ [SMT.List [var, varSort]]
+            <$> translatePredicatePattern predTerm
 
     translatePattern :: Sort -> p -> Translator m p SExpr
     translatePattern sort pat =
