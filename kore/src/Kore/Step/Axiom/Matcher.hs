@@ -104,38 +104,44 @@ newtype Constraint variable =
         }
     deriving (Eq)
 
-data OrderClass = One | Two | Three | Four | Five | Six
+data TermLikeClass =
+    Variables
+    | ConcreteBuiltins
+    | ConstructorAtTop
+    | OtherTermLike
+    | ListBuiltin
+    | AssocCommBuiltin
     deriving (Eq)
 
-toInt :: OrderClass -> Int
-toInt One = 1
-toInt Two = 2
-toInt Three = 3
-toInt Four = 4
-toInt Five = 5
-toInt Six = 6
+termPriority :: TermLikeClass -> Int
+termPriority Variables = 1
+termPriority ConcreteBuiltins = 2
+termPriority ConstructorAtTop = 3
+termPriority OtherTermLike = 4
+termPriority ListBuiltin = 5
+termPriority AssocCommBuiltin = 6
 
-instance Ord OrderClass where
-    c1 <= c2 = toInt c1 <= toInt c2
+instance Ord TermLikeClass where
+    c1 <= c2 = termPriority c1 <= termPriority c2
 
-findClass :: Constraint variable -> OrderClass
+findClass :: Constraint variable -> TermLikeClass
 findClass (Constraint (Pair left _)) = findClassWorker left
   where
-    findClassWorker (Var_ _) = One
-    findClassWorker (ElemVar_ _) = One
-    findClassWorker (SetVar_ _) = One
-    findClassWorker (StringLiteral_ _) = Two
-    findClassWorker (BuiltinInt_ _) = Two
-    findClassWorker (BuiltinBool_ _) = Two
-    findClassWorker (BuiltinString_ _) = Two
+    findClassWorker (Var_ _)           = Variables
+    findClassWorker (ElemVar_ _)       = Variables
+    findClassWorker (SetVar_ _)        = Variables
+    findClassWorker (StringLiteral_ _) = ConcreteBuiltins
+    findClassWorker (BuiltinInt_ _)    = ConcreteBuiltins
+    findClassWorker (BuiltinBool_ _)   = ConcreteBuiltins
+    findClassWorker (BuiltinString_ _) = ConcreteBuiltins
     findClassWorker (App_ symbol _) =
         if Symbol.isConstructor symbol
-            then Three
-            else Four
-    findClassWorker (BuiltinList_ _) = Five
-    findClassWorker (BuiltinSet_ _) = Six
-    findClassWorker (BuiltinMap_ _) = Six
-    findClassWorker _ = Four
+            then ConstructorAtTop
+            else OtherTermLike
+    findClassWorker (BuiltinList_ _)   = ListBuiltin
+    findClassWorker (BuiltinSet_ _)    = AssocCommBuiltin
+    findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
+    findClassWorker _                  = OtherTermLike
 
 instance Ord variable => Ord (Constraint variable) where
     c1@(Constraint p1) <= c2@(Constraint p2)
@@ -441,7 +447,7 @@ pop = do
     case Set.minView queued of
         Just (next, queued') -> do
             field @"queued" .= queued'
-            return (Just . getConstraint $ next)
+            return . Just . getConstraint $ next
         _ ->
             return Nothing
 
@@ -452,7 +458,7 @@ push
     => MonadState (MatcherState variable) matcher
     => Pair (TermLike variable)
     -> matcher ()
-push pair = field @"queued" %= (Set.insert $ Constraint pair)
+push pair = field @"queued" %= Set.insert (Constraint pair)
 
 {- | Defer a constraint until more information is available.
 
@@ -502,7 +508,7 @@ substitute eVariable termLike = do
 
     Monad.State.get
         -- Apply the substitution to the queued pairs.
-        >>= (field @"queued" . (\f x -> Set.fromAscList <$> traverse f (Set.toAscList x))) substitute2
+        >>= (field @"queued" . transformQueue traverse) substitute2
         -- Apply the substitution to the accumulated matching solution.
         >>= (field @"substitution" . traverse) substitute1
         >>= Monad.State.put
@@ -561,7 +567,7 @@ setSubstitute sVariable termLike = do
     -- Push the dependent deferred pairs to the front of the queue.
     Foldable.traverse_ push dep
     -- Apply the substitution to the queued pairs.
-    field @"queued" . (\f x -> Set.fromAscList <$> Lens.mapped f (Set.toAscList x)) %= substitute2
+    field @"queued" . transformQueue Lens.mapped %= substitute2
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
@@ -575,6 +581,15 @@ setSubstitute sVariable termLike = do
     substitute2 :: Constraint variable -> Constraint variable
     substitute2 (Constraint pair) = Constraint $ fmap substitute1 pair
     substitute1 = substituteTermLike subst
+
+transformQueue
+    :: Functor f
+    => Ord a
+    => ((a -> f a) -> [a] -> f [a])
+    -> (a -> f a)
+    -> Set a
+    -> f (Set a)
+transformQueue trans f x = Set.fromList <$> trans f (Set.toAscList x)
 
 substituteTermLike
     :: MatchingVariable variable
