@@ -275,10 +275,13 @@ unificationProcedureSuccessWithSimplifiers
     testCase message $ do
         let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
         Right results <-
-            runSMT
-            $ runSimplifier mockEnv
-            $ Monad.Unify.runUnifierT
-            $ unificationProcedure SideCondition.topTODO term1 term2
+            unificationProcedureWorker
+                SideCondition.topTODO
+                term1
+                term2
+            & Monad.Unify.runUnifierT
+            & runSimplifier mockEnv
+            & runSMT
         let
             normalize
                 :: Condition Variable

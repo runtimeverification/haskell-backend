@@ -70,6 +70,9 @@ import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Step.Step
@@ -77,22 +80,18 @@ import Kore.Step.Step
     , Results
     , UnificationProcedure (..)
     , UnifiedRule
-    , UnifyingRule
+    , UnifyingRule (..)
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
     , checkFunctionLike
     , checkSubstitutionCoverage
-    , matchingPattern
-    , precondition
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
     , wouldNarrowWith
     )
 import qualified Kore.Step.Step as EqualityPattern
-    ( targetRuleVariables
-    )
 import Kore.Unification.UnifierT
     ( UnifierT
     )
@@ -186,7 +185,7 @@ See also: 'applyInitialConditions'
 finalizeAppliedRule
     :: forall unifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify unifier
     => SideCondition variable
     -- ^ Top level condition
     -> EqualityPattern variable
@@ -195,8 +194,8 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule sideCondition renamedRule appliedConditions =
-    fmap OrPattern.fromPatterns . Monad.Unify.gather
-    $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
+    MultiOr.gather
+    $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
@@ -233,7 +232,7 @@ finalizeRule
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule sideCondition initial unifiedRule =
-    Monad.Unify.gather $ do
+    Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions
@@ -335,8 +334,9 @@ finalizeRulesSequence sideCondition initial unifiedRules
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $
+    remainders' <-
         applyRemainder sideCondition initial remainder
+        & Branch.gather
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -417,7 +417,8 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 matchRule
-    :: InternalVariable variable
+    :: forall variable rule unifier
+    .  InternalVariable variable
     => MonadUnify unifier
     => UnifyingRule rule
     => SideCondition variable
@@ -428,28 +429,45 @@ matchRule
     -- ^ Rule
     -> unifier (UnifiedRule variable (rule variable))
 matchRule sideCondition initial rule = do
-    let (initialTerm, initialCondition) = Pattern.splitTerm initial
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
-    let ruleLeft = matchingPattern rule
-    unification <- unifyPatterns ruleLeft initialTerm >>= maybe empty return
+    (substPredicate, substitutionMap) <- unifyPatterns >>= maybe empty return
+    -- check instantiation
+    let failures = checkInstantiation rule substitutionMap
+        unification :: Condition variable
+        unification =
+            from (Substitution.fromMap substitutionMap) <> from substPredicate
     -- Combine the unification solution with the rule's requirement clause,
-    let requires = precondition rule
-    unification' <-
-        evaluateRequires sideCondition initialCondition unification requires
-    return (rule `Conditional.withCondition` unification')
+    if null failures
+        then simplifyRequiresAndInstantiateRuleUsing unification
+        else Unifier.explainAndReturnBottom
+            (Pretty.pretty failures)
+            ruleLeft
+            initialTerm
   where
+    (initialTerm, initialCondition) = Pattern.splitTerm initial
+    ruleLeft = matchingPattern rule
+    requires = precondition rule
+
     unifyPatterns = ignoreUnificationErrors matchIncremental
 
-    ignoreUnificationErrors unification pattern1 pattern2 =
-        Unifier.runUnifierT (unification pattern1 pattern2)
-        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
+    ignoreUnificationErrors unification =
+        Unifier.runUnifierT (unification ruleLeft initialTerm)
+        >>= either couldNotMatch Unifier.scatter
 
-    couldNotMatch pattern1 pattern2 _ =
+    couldNotMatch _ =
         Unifier.explainAndReturnBottom
             "Could not match patterns"
-            pattern1
-            pattern2
+            ruleLeft
+            initialTerm
+
+    simplifyRequiresAndInstantiateRuleUsing
+        :: Condition variable -> unifier (UnifiedRule variable (rule variable))
+    simplifyRequiresAndInstantiateRuleUsing unification
+      = do
+        unification' <-
+            evaluateRequires sideCondition initialCondition unification requires
+        return (rule `Conditional.withCondition` unification')
 
 {- | Evaluate the pre-condition of a rule, subject to the given constraints.
  -}

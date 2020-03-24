@@ -15,6 +15,7 @@ module Kore.Builtin.Map.Map
     , lookupSymbolRemoveAll
     , lookupSymbolSize
     , lookupSymbolValues
+    , lookupSymbolInclusion
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
@@ -22,6 +23,7 @@ module Kore.Builtin.Map.Map
     , isSymbolRemoveAll
     , isSymbolSize
     , isSymbolValues
+    , isSymbolInclusion
     -- * Keys
     , concatKey
     , elementKey
@@ -36,6 +38,7 @@ module Kore.Builtin.Map.Map
     , updateKey
     , sizeKey
     , valuesKey
+    , inclusionKey
     ) where
 
 import Prelude.Kore
@@ -101,6 +104,9 @@ sizeKey = "MAP.size"
 valuesKey :: IsString s => s
 valuesKey = "MAP.values"
 
+inclusionKey :: IsString s => s
+inclusionKey = "MAP.inclusion"
+
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
 lookupSymbolUpdate
@@ -165,6 +171,14 @@ lookupSymbolValues
     -> Either (Kore.Error e) Symbol
 lookupSymbolValues = Builtin.lookupSymbol valuesKey
 
+{- | Find the symbol hooked to @MAP.inclusion@ in an indexed module.
+ -}
+lookupSymbolInclusion
+    :: Sort
+    -> VerifiedModule Attribute.Symbol
+    -> Either (Kore.Error e) Symbol
+lookupSymbolInclusion = Builtin.lookupSymbol inclusionKey
+
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat :: Symbol -> Bool
@@ -199,6 +213,11 @@ isSymbolSize = Builtin.isSymbol sizeKey
 -}
 isSymbolValues :: Symbol -> Bool
 isSymbolValues = Builtin.isSymbol valuesKey
+
+{- | Check if the given symbol is hooked to @MAP.inclusion@.
+-}
+isSymbolInclusion :: Symbol -> Bool
+isSymbolInclusion = Builtin.isSymbol inclusionKey
 
 {- | Externalizes a 'Domain.InternalMap' as a 'TermLike'.
  -}

@@ -47,7 +47,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     )
 
 import Test.Kore.Step.Axiom.Evaluate
-    ( concreteEqualityRule
+    ( concrete
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -176,7 +176,7 @@ test_definitionEvaluation =
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator = definitionEvaluation
-                [ concreteEqualityRule $ EqualityRule $ equalityPattern
+                [ concrete [mkElemVar Mock.x] $ EqualityRule $ equalityPattern
                     (Mock.functionalConstr10 (mkElemVar Mock.x))
                     (Mock.g (mkElemVar Mock.x))
                 ]

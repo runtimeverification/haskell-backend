@@ -45,8 +45,7 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import Data.Sequence
-    ( pattern (:<|)
-    , pattern (:|>)
+    ( pattern (:|>)
     , Seq
     )
 import qualified Data.Sequence as Seq
@@ -65,10 +64,6 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -78,7 +73,7 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Substitution as Substitution
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike hiding
     ( substitute
     )
@@ -103,6 +98,62 @@ import Kore.Variables.UnifiedVariable
 import Pair
 
 -- * Matching
+
+newtype Constraint variable =
+    Constraint
+        { getConstraint :: Pair (TermLike variable)
+        }
+    deriving (Eq)
+
+data TermLikeClass =
+    Variables
+    | ConcreteBuiltins
+    | ConstructorAtTop
+    | OtherTermLike
+    | ListBuiltin
+    | AssocCommBuiltin
+    deriving (Eq)
+
+termPriority :: TermLikeClass -> Int
+termPriority Variables = 1
+termPriority ConcreteBuiltins = 2
+termPriority ConstructorAtTop = 3
+termPriority OtherTermLike = 4
+termPriority ListBuiltin = 5
+termPriority AssocCommBuiltin = 6
+
+instance Ord TermLikeClass where
+    c1 <= c2 = termPriority c1 <= termPriority c2
+
+findClass :: Constraint variable -> TermLikeClass
+findClass (Constraint (Pair left _)) = findClassWorker left
+  where
+    findClassWorker (Var_ _)           = Variables
+    findClassWorker (ElemVar_ _)       = Variables
+    findClassWorker (SetVar_ _)        = Variables
+    findClassWorker (StringLiteral_ _) = ConcreteBuiltins
+    findClassWorker (BuiltinInt_ _)    = ConcreteBuiltins
+    findClassWorker (BuiltinBool_ _)   = ConcreteBuiltins
+    findClassWorker (BuiltinString_ _) = ConcreteBuiltins
+    findClassWorker (App_ symbol _) =
+        if Symbol.isConstructor symbol
+            then ConstructorAtTop
+            else OtherTermLike
+    findClassWorker (BuiltinList_ _)   = ListBuiltin
+    findClassWorker (BuiltinSet_ _)    = AssocCommBuiltin
+    findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
+    findClassWorker _                  = OtherTermLike
+
+instance Ord variable => Ord (Constraint variable) where
+    c1@(Constraint p1) <= c2@(Constraint p2)
+        | findClass c1 == findClass c2 =
+            p1 <= p2
+        | otherwise = findClass c1 <= findClass c2
+
+type MatchResult variable =
+    ( Predicate variable
+    , Map.Map (UnifiedVariable variable) (TermLike variable)
+    )
 
 {- | Dispatch a single matching constraint.
 
@@ -141,16 +192,16 @@ matchIncremental
     .  (MatchingVariable variable, MonadSimplify unifier)
     => TermLike variable
     -> TermLike variable
-    -> unifier (Maybe (Condition variable))
+    -> unifier (Maybe (MatchResult variable))
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable unifier (Maybe (Condition variable))
+    matcher :: MatcherT variable unifier (Maybe (MatchResult variable))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
         MatcherState
-            { queued = Seq.singleton (Pair termLike1 termLike2)
+            { queued = Set.singleton (Constraint (Pair termLike1 termLike2))
             , deferred = empty
             , predicate = empty
             , substitution = mempty
@@ -162,7 +213,7 @@ matchIncremental termLike1 termLike2 =
     free2 = (getFreeVariables . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable unifier (Maybe (Condition variable))
+    done :: MatcherT variable unifier (Maybe (MatchResult variable))
     done = do
         MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
@@ -170,21 +221,16 @@ matchIncremental termLike1 termLike2 =
             then Just <$> assembleResult
             else return Nothing
 
-    assembleResult :: MatcherT variable unifier (Condition variable)
+    assembleResult :: MatcherT variable unifier (MatchResult variable)
     assembleResult = do
         final <- Monad.State.get
         let MatcherState { predicate, substitution } = final
-            predicate' =
-                Condition.fromPredicate
-                $ MultiAnd.toPredicate predicate
-            substitution' =
-                Condition.fromSubstitution
-                $ Substitution.fromMap substitution
-            solution = predicate' <> substitution'
-        return solution
+            predicate' = MultiAnd.toPredicate predicate
+        return (predicate', substitution)
 
 matchEqualHeads
-    :: Monad unifier
+    :: Ord variable
+    => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 -- Terminal patterns
@@ -278,7 +324,8 @@ matchVariable (Pair (SetVar_ variable1) term2) = do
 matchVariable _ = empty
 
 matchApplication
-    :: Monad unifier
+    :: Ord variable
+    => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
@@ -377,7 +424,7 @@ type MatchingVariable variable = InternalVariable variable
  -}
 data MatcherState variable =
     MatcherState
-        { queued :: !(Seq (Pair (TermLike variable)))
+        { queued :: !(Set (Constraint variable))
         -- ^ Solvable matching constraints.
         , deferred :: !(Seq (Pair (TermLike variable)))
         -- ^ Unsolvable matching constraints; may become solvable with more
@@ -402,21 +449,23 @@ type MatcherT variable unifier = StateT (MatcherState variable) unifier
 pop
     :: MonadState (MatcherState variable) matcher
     => matcher (Maybe (Pair (TermLike variable)))
-pop =
-    Lens.use (field @"queued") >>= \case
-        next :<| queued' -> do
+pop = do
+    queued <- Lens.use (field @"queued")
+    case Set.minView queued of
+        Just (next, queued') -> do
             field @"queued" .= queued'
-            return (Just next)
+            return . Just . getConstraint $ next
         _ ->
             return Nothing
 
 {- | Push a new constraint onto the matching queue.
  -}
 push
-    :: MonadState (MatcherState variable) matcher
+    :: Ord variable
+    => MonadState (MatcherState variable) matcher
     => Pair (TermLike variable)
     -> matcher ()
-push pair = field @"queued" %= (pair :<|)
+push pair = field @"queued" %= Set.insert (Constraint pair)
 
 {- | Defer a constraint until more information is available.
 
@@ -466,7 +515,7 @@ substitute eVariable termLike = do
 
     Monad.State.get
         -- Apply the substitution to the queued pairs.
-        >>= (field @"queued" . traverse) substitute2
+        >>= (field @"queued" . transformQueue traverse) substitute2
         -- Apply the substitution to the accumulated matching solution.
         >>= (field @"substitution" . traverse) substitute1
         >>= Monad.State.put
@@ -479,9 +528,10 @@ substitute eVariable termLike = do
     subst = Map.singleton variable termLike
 
     substitute2
-        :: Pair (TermLike variable)
-        -> MaybeT (MatcherT variable unifier) (Pair (TermLike variable))
-    substitute2 = traverse substitute1
+        :: Constraint variable
+        -> MaybeT (MatcherT variable unifier) (Constraint variable)
+    substitute2 (Constraint pair) =
+        Constraint <$> traverse substitute1 pair
 
     substitute1
         :: TermLike variable
@@ -504,7 +554,8 @@ the variable does not occur on the right-hand side of the substitution.
 
  -}
 setSubstitute
-    :: (MatchingVariable variable, MonadSimplify unifier)
+    :: forall variable unifier
+    .  (MatchingVariable variable, MonadSimplify unifier)
     => SetVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -523,7 +574,7 @@ setSubstitute sVariable termLike = do
     -- Push the dependent deferred pairs to the front of the queue.
     Foldable.traverse_ push dep
     -- Apply the substitution to the queued pairs.
-    field @"queued" . Lens.mapped %= substitute2
+    field @"queued" . transformQueue Lens.mapped %= substitute2
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
@@ -534,8 +585,18 @@ setSubstitute sVariable termLike = do
     variable = SetVar sVariable
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
-    substitute2 = fmap substitute1
+    substitute2 :: Constraint variable -> Constraint variable
+    substitute2 (Constraint pair) = Constraint $ fmap substitute1 pair
     substitute1 = substituteTermLike subst
+
+transformQueue
+    :: Functor f
+    => Ord a
+    => ((a -> f a) -> [a] -> f [a])
+    -> (a -> f a)
+    -> Set a
+    -> f (Set a)
+transformQueue trans f x = Set.fromList <$> trans f (Set.toAscList x)
 
 substituteTermLike
     :: MatchingVariable variable

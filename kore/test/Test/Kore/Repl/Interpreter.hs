@@ -73,14 +73,20 @@ import Kore.Strategies.Goal
 import Kore.Strategies.Verification
     ( verifyClaimStep
     )
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Unification.Procedure
-    ( unificationProcedure
+    ( unificationProcedureWorker
     )
 import Kore.Unification.Unify
     ( explainBottom
+    )
+import Kore.Unparser
+    ( unparseToString
     )
 import qualified SMT
 
@@ -450,7 +456,10 @@ showCurrentClaim =
     in do
         Result { output, continue } <-
             run command axioms claims claim
-        output `equalsOutput` makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
+        equalsOutput
+            output
+            $ makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
+                <> (makeKoreReplOutput . unparseToString $ zeroToTen)
         continue `equals` Continue
 
 showClaim1 :: IO ()
@@ -691,9 +700,10 @@ mkConfig
 mkConfig logger =
     Config
         { stepper     = stepper0
-        , unifier     = unificationProcedure
+        , unifier     = unificationProcedureWorker
         , logger
         , outputFile  = OutputFile Nothing
+        , mainModuleName = ModuleName "TEST"
         }
   where
     stepper0

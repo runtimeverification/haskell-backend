@@ -76,9 +76,13 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import Kore.Syntax.Variable
+
 import Kore.Unification.Procedure
-    ( unificationProcedure
+    ( unificationProcedureWorker
     )
 import Kore.Unparser
     ( unparseToString
@@ -106,15 +110,16 @@ runRepl
     -- ^ mode to run in
     -> OutputFile
     -- ^ optional output file
+    -> ModuleName
     -> m ()
-runRepl _ [] _ _ _ outputFile =
+runRepl _ [] _ _ _ outputFile _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
     in liftIO . printTerm . unparseToString $ topTerm
   where
     topTerm :: TermLike Variable
     topTerm = mkTop $ mkSortVariable "R"
 
-runRepl axioms' claims' logger replScript replMode outputFile = do
+runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = do
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
             $ evaluateScript replScript
@@ -170,9 +175,10 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     config =
         Config
             { stepper    = stepper0
-            , unifier    = unificationProcedure
+            , unifier    = unificationProcedureWorker
             , logger
             , outputFile
+            , mainModuleName
             }
 
     firstClaimIndex :: ClaimIndex

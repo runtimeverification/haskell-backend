@@ -19,9 +19,8 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Default as Default
-import Data.Typeable
-    ( Typeable
-    )
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -45,9 +44,11 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
+    , Variable
     )
 import Kore.Step.Step
-    ( UnifyingRule (..)
+    ( InstantiationFailure (..)
+    , UnifyingRule (..)
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -58,6 +59,9 @@ import Kore.Unparser
     , unparse2
     )
 import qualified Kore.Variables.Fresh as Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified Pretty
 import qualified SQL
 
@@ -108,13 +112,9 @@ instance TopBottom (EqualityPattern variable) where
     isTop _ = False
     isBottom _ = False
 
-instance
-    (InternalVariable variable, Typeable variable)
-    => SQL.Table (EqualityPattern variable)
+instance SQL.Table (EqualityPattern Variable)
 
-instance
-    (InternalVariable variable, Typeable variable)
-    => SQL.Column (EqualityPattern variable)
+instance SQL.Column (EqualityPattern Variable)
   where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
@@ -233,24 +233,58 @@ instance UnifyingRule EqualityPattern where
         rule1@(EqualityPattern _ _ _ _ _)
       =
         let rename = Fresh.refreshVariables avoid originalFreeVariables
+            mapElemVars elemVar = case Map.lookup (ElemVar elemVar) rename of
+                Just (ElemVar elemVar') -> elemVar'
+                _ -> elemVar
+            mapSetVars setVar = case Map.lookup (SetVar setVar) rename of
+                Just (SetVar setVar') -> setVar'
+                _ -> setVar
             subst = TermLike.mkVar <$> rename
             left' = TermLike.substitute subst left
             requires' = Predicate.substitute subst requires
             right' = TermLike.substitute subst right
             ensures' = Predicate.substitute subst ensures
+            attributes' =
+                Attribute.mapAxiomVariables mapElemVars mapSetVars attributes
             rule2 =
                 rule1
                     { left = left'
                     , requires = requires'
                     , right = right'
                     , ensures = ensures'
+                    , attributes = attributes'
                     }
         in (rename, rule2)
       where
-        EqualityPattern { left, requires, right, ensures } = rule1
+        EqualityPattern { left, requires, right, ensures, attributes } = rule1
         originalFreeVariables =
             FreeVariables.getFreeVariables
             $ freeVariables rule1
+
+    checkInstantiation
+        rule
+        substitutionMap
+      = notConcretes ++ notSymbolics
+      where
+        attrs = attributes rule
+        concretes = FreeVariables.getFreeVariables
+            . Attribute.unConcrete . Attribute.concrete $ attrs
+        symbolics = FreeVariables.getFreeVariables
+            . Attribute.unSymbolic . Attribute.symbolic $ attrs
+        checkConcrete var = case Map.lookup var substitutionMap of
+            Nothing -> Just (UninstantiatedConcrete var)
+            Just t ->
+                if TermLike.isConstructorLike t
+                    then Nothing
+                    else Just (ConcreteFailure var t)
+        checkSymbolic var = case Map.lookup var substitutionMap of
+            Nothing -> Just (UninstantiatedSymbolic var)
+            Just t ->
+                if not(TermLike.isConstructorLike t)
+                    then Nothing
+                    else Just (SymbolicFailure var t)
+        notConcretes = mapMaybe checkConcrete (Set.toList concretes)
+        notSymbolics = mapMaybe checkSymbolic (Set.toList symbolics)
 
 instance
     InternalVariable variable

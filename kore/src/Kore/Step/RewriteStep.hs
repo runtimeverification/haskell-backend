@@ -19,6 +19,7 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 
+import qualified Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -41,7 +42,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Log as Log
 import Kore.Log.DebugAppliedRewriteRules
     ( debugAppliedRewriteRules
     )
@@ -53,6 +53,9 @@ import Kore.Step.RulePattern
     , RulePattern
     )
 import qualified Kore.Step.RulePattern as Rule
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import Kore.Step.Step
     ( Result
     , Results
@@ -69,11 +72,6 @@ import Kore.Step.Step
     )
 import Kore.Unification.Unify
     ( InternalVariable
-    , MonadUnify
-    )
-import qualified Kore.Unification.Unify as Monad.Unify
-    ( gather
-    , scatter
     )
 import Kore.Variables.Target
     ( Target
@@ -119,17 +117,17 @@ See also: 'applyInitialConditions'
 
  -}
 finalizeAppliedRule
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
+    => MonadSimplify simplifier
     => RulePattern variable
     -- ^ Applied rule
     -> OrCondition variable
     -- ^ Conditions of applied rule
-    -> unifier (OrPattern variable)
+    -> simplifier (OrPattern variable)
 finalizeAppliedRule renamedRule appliedConditions =
-    fmap OrPattern.fromPatterns . Monad.Unify.gather
-    $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
+    MultiOr.gather
+    $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
   where
     ruleRHS = Rule.rhs renamedRule
     finalizeAppliedRuleWorker appliedCondition = do
@@ -145,6 +143,7 @@ finalizeAppliedRule renamedRule appliedConditions =
         finalCondition <-
             simplifyPredicate
                 SideCondition.topTODO (Just appliedCondition) ensuresCondition
+            & Branch.alternate
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
@@ -156,18 +155,15 @@ finalizeAppliedRule renamedRule appliedConditions =
 
 finalizeRule
     ::  ( InternalVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifier
+        , MonadSimplify simplifier
         )
     => Pattern (Target variable)
     -- ^ Initial conditions
     -> UnifiedRule (Target variable) (RulePattern (Target variable))
     -- ^ Rewriting axiom
-    -> unifier [Result RulePattern variable]
-    -- TODO (virgil): This is broken, it should take advantage of the unifier's
-    -- branching and not return a list.
+    -> simplifier [Result RulePattern variable]
 finalizeRule initial unifiedRule =
-    Monad.Unify.gather $ do
+    Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions
@@ -181,20 +177,21 @@ finalizeRule initial unifiedRule =
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
-type Finalizer unifier variable
+type Finalizer simplifier variable
     =   InternalVariable variable
-    =>  MonadUnify unifier
+    =>  MonadSimplify simplifier
     =>  Pattern (Target variable)
     ->  [UnifiedRule (Target variable) (RulePattern (Target variable))]
-    ->  unifier (Results RulePattern variable)
+    ->  simplifier (Results RulePattern variable)
 
-finalizeRulesParallel :: forall unifier variable. Finalizer unifier variable
+finalizeRulesParallel :: forall simplifier variable. Finalizer simplifier variable
 finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-    remainders' <- Monad.Unify.gather $
+    remainders' <-
         applyRemainder SideCondition.topTODO initial remainder
+        & Branch.gather
     return Step.Results
         { results = Seq.fromList results
         , remainders =
@@ -203,14 +200,15 @@ finalizeRulesParallel initial unifiedRules = do
             <$> remainders'
         }
 
-finalizeRulesSequence :: forall unifier variable. Finalizer unifier variable
+finalizeRulesSequence :: forall simplifier variable. Finalizer simplifier variable
 finalizeRulesSequence initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $
+    remainders' <-
         applyRemainder SideCondition.topTODO initial remainder
+        & Branch.gather
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -224,7 +222,7 @@ finalizeRulesSequence initial unifiedRules = do
         :: UnifiedRule (Target variable) (RulePattern (Target variable))
         -> State.StateT
             (Condition (Target variable))
-            unifier
+            simplifier
             [Result RulePattern variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
@@ -239,16 +237,16 @@ finalizeRulesSequence initial unifiedRules = do
         return results
 
 applyRulesWithFinalizer
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
-    => Finalizer unifier variable
-    -> UnificationProcedure
+    => MonadSimplify simplifier
+    => Finalizer simplifier variable
+    -> UnificationProcedure simplifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     let sideCondition = SideCondition.topTODO
         rules' = targetRuleVariables sideCondition initial <$> rules
@@ -263,15 +261,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRulesParallel
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
-    => UnificationProcedure
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRulesParallel = applyRulesWithFinalizer finalizeRulesParallel
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -280,15 +278,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRewriteRulesParallel
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
-    => UnificationProcedure
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
@@ -305,15 +303,15 @@ See also: 'applyRewriteRule'
 
  -}
 applyRulesSequence
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
-    => UnificationProcedure
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRulesSequence = applyRulesWithFinalizer finalizeRulesSequence
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -322,15 +320,15 @@ See also: 'applyRewriteRulesParallel'
 
  -}
 applyRewriteRulesSequence
-    :: forall unifier variable
+    :: forall simplifier variable
     .  InternalVariable variable
-    => MonadUnify unifier
-    => UnificationProcedure
+    => MonadSimplify simplifier
+    => UnificationProcedure simplifier
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> [RewriteRule variable]
     -- ^ Rewrite rules
-    -> unifier (Results RulePattern variable)
+    -> simplifier (Results RulePattern variable)
 applyRewriteRulesSequence
     unificationProcedure
     (toConfigurationVariables -> initialConfig)

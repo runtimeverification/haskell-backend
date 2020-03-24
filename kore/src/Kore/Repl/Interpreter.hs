@@ -367,8 +367,10 @@ showClaim
 showClaim =
     \case
         Nothing -> do
-            currentCindex <- Lens.use (field @"claimIndex")
-            putStrLn' . showCurrentClaimIndex $ currentCindex
+            currentClaimIndex <- Lens.use (field @"claimIndex")
+            currentClaim <- Lens.use (field @"claim")
+            putStrLn' . showCurrentClaimIndex $ currentClaimIndex
+            tell . makeKoreReplOutput . unparseToString $ currentClaim
         Just indexOrName -> do
             claim <- either
                         (getClaimByIndex . unClaimIndex)
@@ -1006,18 +1008,17 @@ saveSession path =
 
 savePartialProof
     :: forall m claim
-    .  MonadState (ReplState claim) m
-    => MonadWriter ReplOutput m
+    .  Claim claim
     => MonadIO m
-    => Claim claim
     => From claim (TermLike Variable)
     => Maybe Natural
     -> FilePath
-    -> m ()
+    -> ReplM claim m ()
 savePartialProof maybeNatural file = do
     currentClaim <- Lens.use (field @"claim")
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
+    Config { mainModuleName } <- ask
     maybeConfig <- getConfigAt maybeNode
     case maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
@@ -1029,6 +1030,7 @@ savePartialProof maybeNatural file = do
                     <$> removeIfRoot currentNode currentIndex claims
                 newDefinition =
                     createNewDefinition
+                        mainModuleName
                         (makeModuleName file)
                         $ newClaim : newTrustedClaims
             saveUnparsedDefinitionToFile (unparse newDefinition)
@@ -1039,7 +1041,7 @@ savePartialProof maybeNatural file = do
 
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
-        -> m ()
+        -> ReplM claim m ()
     saveUnparsedDefinitionToFile definition =
         liftIO
         $ withFile
@@ -1304,8 +1306,7 @@ unparseStrategy omitList =
            . TermLike.symbolConstructor
 
 putStrLn' :: MonadWriter ReplOutput m => String -> m ()
-putStrLn' str =
-    tell . makeAuxReplOutput $ str
+putStrLn' = tell . makeAuxReplOutput
 
 printIfNotEmpty :: String -> IO ()
 printIfNotEmpty =

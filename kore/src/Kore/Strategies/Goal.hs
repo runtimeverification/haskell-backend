@@ -26,6 +26,10 @@ module Kore.Strategies.Goal
 
 import Prelude.Kore
 
+import Control.Error
+    ( ExceptT
+    , runExceptT
+    )
 import Control.Exception
     ( throw
     )
@@ -94,10 +98,16 @@ import Kore.Internal.TermLike
     , mkAnd
     )
 import Kore.Log.DebugProofState
+import Kore.Log.ErrorRewritesInstantiation
+    ( errorRewritesInstantiation
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
-import qualified Kore.Step.Result as Result
+import Kore.Step.Result
+    ( Result (..)
+    , Results (..)
+    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)
@@ -132,6 +142,9 @@ import Kore.Step.Strategy
     ( Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
+import Kore.Step.Transition
+    ( tryTransitionT
+    )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( Prim
@@ -147,8 +160,8 @@ import Kore.TopBottom
     ( isBottom
     , isTop
     )
+import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
@@ -642,8 +655,12 @@ transitionRuleTemplate
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
     transitionRuleWorker Simplify (Goal goal) =
-        Profile.timeStrategy "Goal.Simplify"
-        $ Goal <$> simplifyTemplate goal
+        Profile.timeStrategy "Goal.Simplify" $ do
+            results <- tryTransitionT (simplifyTemplate goal)
+            case results of
+                [] -> return Proven
+                _  -> Goal <$> Transition.scatter results
+
     transitionRuleWorker Simplify (GoalRemainder goal) =
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate goal
@@ -794,6 +811,7 @@ removeDestination
     => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
+    => FromRulePattern goal
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -808,7 +826,10 @@ removeDestination stateConstructor goal =
                     =<< simplifyTopConfiguration
                         (Conditional.andPredicate configuration removal)
                 if not (isBottom simplifiedRemoval)
-                    then return . GoalStuck $ goal
+                    then
+                        let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+                            (left, requiresCondition) = Conditional.splitTerm stuckConfiguration
+                         in return . GoalStuck $ stuckGoal left requiresCondition
                     else return Proven
   where
     configuration = getConfiguration goal
@@ -817,6 +838,15 @@ removeDestination stateConstructor goal =
     RulePattern { rhs } = toRulePattern goal
 
     destination = topExistsToImplicitForall configFreeVars rhs
+
+    stuckGoal left requiresCondition =
+        fromRulePattern goal RulePattern
+            { left
+            , antiLeft = Nothing
+            , requires = Condition.toPredicate requiresCondition
+            , rhs = rhs
+            , attributes = attributes . toRulePattern $ goal
+            }
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
@@ -872,28 +902,38 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = withConfiguration goal $ do
-    let rewrites = RewriteRule . toRulePattern <$> rules
-    eitherResults <-
-        lift . Monad.Unify.runUnifierT
-        $ Step.applyRewriteRulesParallel
-            (Step.UnificationProcedure Unification.unificationProcedure)
-            rewrites
-            configuration
-    case eitherResults of
-        Left err ->
-            (error . show . Pretty.vsep)
-            [ "Not implemented error:"
-            , Pretty.indent 4 (Pretty.pretty err)
-            , "while applying a \\rewrite axiom to the pattern:"
-            , Pretty.indent 4 (unparse configuration)
-            ,   "We decided to end the execution because we don't \
-                \understand this case well enough at the moment."
-            ]
-        Right results -> deriveResults goal results
+derivePar =
+    deriveWith $ Step.applyRewriteRulesParallel Unification.unificationProcedure
+
+type Deriver monad =
+        [RewriteRule Variable]
+    ->  Pattern Variable
+    ->  ExceptT UnificationError monad (Step.Results RulePattern Variable)
+
+-- | Apply 'Rule's to the goal in parallel.
+deriveWith
+    :: forall m goal
+    .  (MonadCatch m, MonadSimplify m)
+    => Goal goal
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ToRulePattern goal
+    => FromRulePattern goal
+    => ToRulePattern (Rule goal)
+    => FromRulePattern (Rule goal)
+    => Deriver m
+    -> [Rule goal]
+    -> goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+deriveWith takeStep rules goal =
+    withConfiguration goal
+        $ (lift . runExceptT) (takeStep rewrites configuration)
+        >>= either
+            (errorRewritesInstantiation configuration)
+            (deriveResults goal)
   where
     configuration :: Pattern Variable
     configuration = getConfiguration goal
+    rewrites = RewriteRule . toRulePattern <$> rules
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -908,55 +948,44 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = withConfiguration goal $ do
-    let rewrites = RewriteRule . toRulePattern <$> rules
-    eitherResults <-
-        lift . Monad.Unify.runUnifierT
-        $ Step.applyRewriteRulesSequence
-            (Step.UnificationProcedure Unification.unificationProcedure)
-            configuration
-            rewrites
-    case eitherResults of
-        Left err ->
-            (error . show . Pretty.vsep)
-            [ "Not implemented error:"
-            , Pretty.indent 4 (Pretty.pretty err)
-            , "while applying a \\rewrite axiom to the pattern:"
-            , Pretty.indent 4 (unparse configuration)
-            ,   "We decided to end the execution because we don't \
-                \understand this case well enough at the moment."
-            ]
-        Right results -> deriveResults goal results
-  where
-    configuration = getConfiguration goal
+deriveSeq =
+    deriveWith . flip
+    $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
 deriveResults
     :: MonadSimplify simplifier
     => (Goal goal, FromRulePattern goal, ToRulePattern goal)
     => FromRulePattern (Rule goal)
     => goal
-    -> [Step.Results RulePattern Variable]
+    -> Step.Results RulePattern Variable
     -> Strategy.TransitionT (Rule goal) simplifier (ProofState.ProofState goal)
-deriveResults goal results = do
-    let mapRules =
-            Result.mapRules
-            $ (fromRulePattern . goalToRule $ goal)
-            . Step.unTargetRule
-            . Step.withoutUnification
-        traverseConfigs =
-            Result.traverseConfigs
-                (pure . GoalRewritten)
-                (pure . GoalRemainder)
-    let onePathResults =
-            Result.mapConfigs
-                (flip (configurationDestinationToRule goal) destination)
-                (flip (configurationDestinationToRule goal) destination)
-                (Result.mergeResults results)
-    results' <-
-        traverseConfigs (mapRules onePathResults)
-    Result.transitionResults results'
+deriveResults goal Results { results, remainders } =
+    addResults <|> addRemainders
   where
     destination = getDestination goal
+    toGoal config = configurationDestinationToRule goal config destination
+
+    addResults = Foldable.asum (addResult <$> results)
+    addRemainders = Foldable.asum (addRemainder <$> Foldable.toList remainders)
+
+    addResult Result { appliedRule, result } = do
+        addRule appliedRule
+        case Foldable.toList result of
+            []      ->
+                -- If the rule returns \bottom, the goal is proven on the
+                -- current branch.
+                pure Proven
+            configs -> Foldable.asum (addRewritten <$> configs)
+
+    addRewritten = pure . GoalRewritten . toGoal
+    addRemainder = pure . GoalRemainder . toGoal
+
+    addRule = Transition.addRule . fromAppliedRule
+
+    fromAppliedRule =
+        (fromRulePattern . goalToRule $ goal)
+            . Step.unTargetRule
+            . Step.withoutUnification
 
 withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a
 withConfiguration goal = handle (throw . WithConfiguration configuration)
