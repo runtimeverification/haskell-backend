@@ -266,6 +266,8 @@ redirectTests =
     , "config 5 > file"   `parsesTo_` redirectConfig (Just $ ReplNode 5) "file"
     , "claim 3 > cf"      `parsesTo_` redirectClaim (Just . Left . ClaimIndex $ 3) "cf"
     , "claim 3 > \"c f\"" `parsesTo_` redirectClaim (Just . Left . ClaimIndex $ 3) "c f"
+    , "claim > cf"        `parsesTo_` redirectClaim Nothing "cf"
+    , "claim > \"c f\""   `parsesTo_` redirectClaim Nothing "c f"
     , "config 5 > "       `fails`     ()
     ]
   where
@@ -279,6 +281,8 @@ pipeTests =
     , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" ["arg1", "arg2"]
     , "step 5 | script"                     `parsesTo_` pipeStep 5 "script" []
     , "step 5 | \"s c ri p t\""             `parsesTo_` pipeStep 5 "s c ri p t" []
+    , "claim | exe a1 a2"                   `parsesTo_` pipeClaim Nothing "exe" ["a1", "a2"]
+    , "claim | \"e x e\" a1 \"a2\""         `parsesTo_` pipeClaim Nothing "e x e" ["a1", "a2"]
     , "config 5 | "                         `fails`     ()
     ]
   where
@@ -296,6 +300,13 @@ pipeTests =
         -> ReplCommand
     pipeStep n s xs =
         Pipe (ProveSteps n) s xs
+    pipeClaim
+        :: Maybe (Either ClaimIndex RuleName)
+        -> String
+        -> [String]
+        -> ReplCommand
+    pipeClaim maybeClaim exe opts =
+        Pipe (ShowClaim maybeClaim) exe opts
 
 
 pipeRedirectTests :: [ParserTest ReplCommand]
