@@ -918,7 +918,7 @@ test_matching_Map =
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkElemVar xInt, mkInt 0       )] [mkElemVar nMap])
         [ (ElemVar yInt, mkInt 0)
-        , (ElemVar mMap, mkMap [] [mkElemVar nMap])
+        , (ElemVar mMap, mkElemVar nMap)
         ]
     , matchesP "x:Int |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2  n:Map"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
