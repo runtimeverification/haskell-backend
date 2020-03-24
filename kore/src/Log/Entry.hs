@@ -69,6 +69,7 @@ instance Entry SomeEntry where
     fromEntry = Just
     entrySeverity (SomeEntry entry) = entrySeverity entry
     longDoc (SomeEntry entry) = longDoc entry
+    shortDoc (SomeEntry entry) = shortDoc entry
 
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry
