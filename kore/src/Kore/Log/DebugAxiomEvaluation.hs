@@ -39,10 +39,6 @@ import Data.Text
 import qualified Data.Text as Text
     ( pack
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
 import Options.Applicative
     ( Parser
@@ -96,6 +92,10 @@ import Log
     , logWhile
     )
 import qualified Log as Log.DoNotUse
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 {- | A log 'Entry' when a rule is applied.
 
@@ -128,22 +128,16 @@ instance Entry DebugAxiomEvaluation where
         case state of
             Start _ ->
                 Just $ Pretty.hsep
-                    [ "While starting axiom evaluation of"
+                    [ "while evaluating"
                     , Pretty.pretty identifier
                     ]
-                Pretty.<+> Pretty.colon
-            AttemptingAxiom _ ->
+            AttemptingAxiom sourceLocation ->
                 Just $ Pretty.hsep
-                    [ "While attempting axiom"
-                    , Pretty.pretty identifier
+                    [ "while attempting axiom at"
+                    , pretty sourceLocation
                     ]
-                Pretty.<+> Pretty.colon
             Reevaluation _ ->
-                Just $ Pretty.hsep
-                    [ "During reevaluation of"
-                    , Pretty.pretty identifier
-                    ]
-                Pretty.<+> Pretty.colon
+                Just $ "while re-evaluting results"
             _ -> Nothing
 
 instance Pretty DebugAxiomEvaluation where
@@ -157,14 +151,9 @@ instance Pretty DebugAxiomEvaluation where
                         else []
                     )
             AttemptingAxiom sourceLocation ->
-                Pretty.sep
-                    [ "Attempting axiom "
-                    , Pretty.pretty sourceLocation
-                    , "for:"
-                    , Pretty.pretty identifier
-                    ]
+                Pretty.hsep ["attempting axiom at", pretty sourceLocation]
             NotEvaluated ->
-                Pretty.sep ["Not evaluated:", Pretty.pretty identifier]
+                Pretty.hsep ["Not evaluated:", Pretty.pretty identifier]
             NotEvaluatedConditionally ->
                 Pretty.sep
                     [ "Under certain conditions, not evaluated:"
