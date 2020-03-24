@@ -14,6 +14,7 @@ module Kore.Internal.Conditional
     , fromPredicate
     , fromSubstitution
     , fromSingleSubstitution
+    , assign
     , andPredicate
     , splitTerm
     , isPredicate
@@ -77,6 +78,7 @@ import Kore.TopBottom
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( MapVariables
+    , UnifiedVariable
     )
 import qualified SQL
 
@@ -380,6 +382,18 @@ fromSingleSubstitution
     => Assignment variable
     -> Conditional variable ()
 fromSingleSubstitution = from
+
+{- | A 'Conditional' assigning the 'UnifiedVariable' to the 'TermLike'.
+
+The result has a true 'Predicate'.
+
+ -}
+assign
+    :: InternalVariable variable
+    => UnifiedVariable variable
+    -> TermLike variable
+    -> Conditional variable ()
+assign uVar term = fromSingleSubstitution (Substitution.assign uVar term)
 
 {- | Combine the predicate with the conditions of the first argument.
  -}

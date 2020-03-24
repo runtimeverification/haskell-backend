@@ -1,18 +1,7 @@
 {- |
-Module      : Kore.Builtin.Bool
-Description : Built-in Boolean sort
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-Stability   : experimental
-Portability : portable
 
-This module is intended to be imported qualified, to avoid collision with other
-builtin modules.
-
-@
-    import qualified Kore.Builtin.Bool as Bool
-@
  -}
 module Kore.Builtin.Bool
     ( sort
@@ -24,6 +13,7 @@ module Kore.Builtin.Bool
     , asPattern
     , extractBoolDomainValue
     , parse
+    , termAndEquals
       -- * Keys
     , orKey
     , andKey
@@ -38,6 +28,10 @@ module Kore.Builtin.Bool
 
 import Prelude.Kore
 
+import Control.Error
+    ( MaybeT
+    )
+import qualified Control.Monad as Monad
 import Data.Functor
     ( ($>)
     )
@@ -53,11 +47,26 @@ import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Symbol
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplify
+    ( TermSimplifier
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
+import qualified Kore.Unification.Unify as Unify
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
 
@@ -165,3 +174,62 @@ builtinFunctions =
         Builtin.binaryOperator extractBoolDomainValue asPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
+
+termAndEquals
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termAndEquals unifyChildren a b =
+    worker a b <|> worker b a
+  where
+    unifyChildren' term1 term2 =
+        Pattern.withoutTerm <$> unifyChildren term1 term2
+    worker termLike1 termLike2
+      | Just value1 <- matchBool termLike1
+      , Just value2 <- matchBool termLike2
+      = lift $ if value1 == value2
+            then return (Pattern.fromTermLike termLike1)
+            else
+                Unify.explainAndReturnBottom
+                    "different Bool domain values"
+                    termLike1
+                    termLike2
+      | Just value1 <- matchBool termLike1
+      , value1
+      , Just BoolAnd { operand1, operand2 } <- matchBoolAnd termLike2
+      , isFunctionPattern termLike2
+      = lift $ do
+        unification1 <- unifyChildren' termLike1 operand1
+        unification2 <- unifyChildren' termLike1 operand2
+        let conditions = unification1 <> unification2
+        pure (Pattern.withCondition termLike1 conditions)
+
+    worker _ _ = empty
+
+{- | Match a @BOOL.Bool@ builtin value.
+ -}
+matchBool :: TermLike variable -> Maybe Bool
+matchBool (BuiltinBool_ Domain.InternalBool { builtinBoolValue }) =
+    Just builtinBoolValue
+matchBool _ = Nothing
+
+{- | The @BOOL.and@ hooked symbol applied to @term@-type arguments.
+ -}
+data BoolAnd term =
+    BoolAnd
+        { symbol :: !Symbol
+        , operand1, operand2 :: !term
+        }
+
+{- | Match the @BOOL.and@ hooked symbol.
+ -}
+matchBoolAnd :: TermLike variable -> Maybe (BoolAnd (TermLike variable))
+matchBoolAnd (App_ symbol [operand1, operand2]) = do
+    hook2 <- (getHook . symbolHook) symbol
+    Monad.guard (hook2 == andKey)
+    return BoolAnd { symbol, operand1, operand2 }
+matchBoolAnd _ = Nothing
