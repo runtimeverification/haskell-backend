@@ -14,7 +14,7 @@ module Kore.Log
     , makeKoreLogger
     , Colog.logTextStderr
     , Colog.logTextHandle
-    , runLoggerT
+    , runKoreLog
     , module Log
     , module KoreLogOptions
     ) where
@@ -203,8 +203,8 @@ filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
-runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
-runLoggerT options loggerT =
+runKoreLog :: KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLog options loggerT =
     withLogger options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
         runLogger asyncLogAction

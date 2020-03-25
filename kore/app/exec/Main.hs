@@ -8,7 +8,6 @@ import Control.Monad.Catch
     , handle
     , throwM
     )
-import qualified Control.Monad.Reader.Class as Reader
 import Control.Monad.Trans
     ( lift
     )
@@ -111,11 +110,10 @@ import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
     , LogMessage
-    , LoggerT (..)
     , WithLog
     , askLogAction
     , parseKoreLogOptions
-    , runLoggerT
+    , runKoreLog
     )
 import Kore.Log.ErrorException
     ( errorException
@@ -413,7 +411,7 @@ mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
     exitCode <-
-        runLoggerT koreLogOptions
+        runKoreLog koreLogOptions
         $ handle handleSomeException
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
