@@ -144,10 +144,8 @@ findClass (Constraint (Pair left _)) = findClassWorker left
     findClassWorker _                  = OtherTermLike
 
 instance Ord variable => Ord (Constraint variable) where
-    c1@(Constraint p1) <= c2@(Constraint p2)
-        | findClass c1 == findClass c2 =
-            p1 <= p2
-        | otherwise = findClass c1 <= findClass c2
+    compare constraint1@(Constraint pair1) constraint2@(Constraint pair2) =
+        compare (findClass constraint1) (findClass constraint2) <> compare pair1 pair2
 
 type MatchResult variable =
     ( Predicate variable
