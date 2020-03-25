@@ -230,7 +230,6 @@ translatePredicate translateUninterpreted predicate =
               | builtinSort == Builtin.Int.sort
               -> translateExists SMT.tInt varTerm existsChild
             _ -> empty
-            
       where
         varTerm = mkElemVar existsVariable
         varSort = sortedVariableSort (getElementVariable existsVariable)
