@@ -1,0 +1,19 @@
+module TEST
+
+  imports INT
+  imports SET
+
+  syntax Element ::= "a" | "b" | "c"
+
+  syntax Element ::= g(Element) [function]
+
+  rule g(a) => b
+  rule g(b) => c
+  rule g(c) => a
+  
+  syntax Set ::= f(Set) [function] 
+
+  rule f(.Set) => .Set
+  rule f(SetItem(E:Element) S:Set) => SetItem(g(E)) f(S)
+
+endmodule
