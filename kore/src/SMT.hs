@@ -96,6 +96,7 @@ import Log
     ( ActualEntry (..)
     , LoggerT (..)
     , MonadLog (..)
+    , runLoggerT
     )
 import qualified Log
 import SMT.SimpleSMT
@@ -397,7 +398,7 @@ newSolver :: Config -> Logger -> IO (MVar SolverHandle)
 newSolver config logger = do
     solverHandle <- SimpleSMT.newSolver exe args logger
     mvar <- newMVar solverHandle
-    runReaderT (getLoggerT (runReaderT getSMT mvar)) logger
+    runLoggerT (runReaderT getSMT mvar) logger
     return mvar
   where
     Config { timeOut } = config
@@ -441,7 +442,7 @@ runSMT config logger smt =
 
 runSMT' :: MVar SolverHandle -> Logger -> SMT a -> IO a
 runSMT' mvar logger SMT { getSMT } =
-    (runReaderT . getLoggerT) (runReaderT getSMT mvar) logger
+    runLoggerT (runReaderT getSMT mvar) logger
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars

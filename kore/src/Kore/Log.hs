@@ -50,9 +50,6 @@ import Control.Monad.Cont
     ( ContT (..)
     , runContT
     )
-import Control.Monad.Reader
-    ( runReaderT
-    )
 import Data.Foldable
     ( toList
     )
@@ -207,9 +204,7 @@ runKoreLog :: KoreLogOptions -> LoggerT IO a -> IO a
 runKoreLog options loggerT =
     withLogger options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
-        runLogger asyncLogAction
-  where
-    runLogger = runReaderT . getLoggerT $ loggerT
+        runLoggerT loggerT asyncLogAction
 
 withAsyncLogger
     :: LogAction IO a
