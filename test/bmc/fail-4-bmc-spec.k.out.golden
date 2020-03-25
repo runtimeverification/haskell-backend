@@ -8,13 +8,19 @@
   </T>
 #And
   {
-    5 <Int X andBool X <Int 8
+    X >Int 5
   #Equals
     true
   }
 #And
   {
-    X >Int 5
-  #Equals
     true
+  #Equals
+    5 <Int X
+  }
+#And
+  {
+    true
+  #Equals
+    X <Int 8
   }
