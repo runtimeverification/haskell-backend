@@ -658,7 +658,7 @@ execute
     -> LoadedModule  -- ^ Main module
     -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
     -> Main r
-execute options mainModule worker = do
+execute options mainModule worker =
     clockSomethingIO "Executing"
         $ case smtSolver of
             Z3   -> withZ3
