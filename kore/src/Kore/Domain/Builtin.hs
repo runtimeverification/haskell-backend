@@ -21,7 +21,10 @@ module Kore.Domain.Builtin
     , emptyNormalizedAc
     , asSingleOpaqueElem
     , isSymbolicKeyOfAc
+    , lookupSymbolicKeyOfAc
+    , removeSymbolicKeyOfAc
     , isConcreteKeyOfAc
+    , removeConcreteKeyOfAc
     --
     , InternalMap
     , MapElement
@@ -182,6 +185,39 @@ isSymbolicKeyOfAc
   where
     symbolicKeys = fmap (fst . unwrapElement) elementsWithVariables
 
+lookupSymbolicKeyOfAc
+    :: AcWrapper normalized
+    => Eq child
+    => child
+    -> NormalizedAc normalized key child
+    -> Maybe (Value normalized child)
+lookupSymbolicKeyOfAc
+    child
+    NormalizedAc { elementsWithVariables }
+  =
+    snd <$> Foldable.find (\(key, _) -> child == key) elements
+  where
+    elements = unwrapElement <$> elementsWithVariables
+
+removeSymbolicKeyOfAc
+    :: AcWrapper normalized
+    => Ord child
+    => child
+    -> NormalizedAc normalized key child
+    -> NormalizedAc normalized key child
+removeSymbolicKeyOfAc
+    child
+    normalized@NormalizedAc { elementsWithVariables }
+  =
+    normalized
+        { elementsWithVariables =
+            fmap wrapElement . Map.toList
+            $ Map.delete child unwrappedMap
+        }
+  where
+    unwrappedMap =
+        Map.fromList $ fmap unwrapElement elementsWithVariables
+
 isConcreteKeyOfAc
     :: AcWrapper normalized
     => Ord key
@@ -195,6 +231,20 @@ isConcreteKeyOfAc
     )
   =
     key `Map.member` concreteElements
+
+removeConcreteKeyOfAc
+    :: Ord key
+    => key
+    -> NormalizedAc normalized key child
+    -> NormalizedAc normalized key child
+removeConcreteKeyOfAc
+    key
+    normalized@NormalizedAc { concreteElements }
+  =
+    normalized
+        { concreteElements =
+            Map.delete key concreteElements
+        }
 
 deriving instance
     ( Eq key, Eq child
