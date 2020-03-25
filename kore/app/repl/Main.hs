@@ -218,34 +218,20 @@ mainWithOptions
                     \ in order to run the repl in run-script mode."
                 exitFailure
             else
-                lift
-                $ withLogger koreLogOptions
-                    $ runSMT
-                        smtConfig
-                        initialLogger
-                        $ do
-                            give
-                                (MetadataTools.build indexedModule)
-                                (declareSMTLemmas indexedModule)
-                            proveWithRepl
-                                indexedModule
-                                specDefIndexedModule
-                                Nothing
-                                mLogger
-                                replScript
-                                replMode
-                                outputFile
-                                mainModuleName
+                SMT.runSMT smtConfig $ do
+                    give (MetadataTools.build indexedModule)
+                        $ declareSMTLemmas indexedModule
+                    proveWithRepl
+                        indexedModule
+                        specDefIndexedModule
+                        Nothing
+                        mvarLogAction
+                        replScript
+                        replMode
+                        outputFile
+                        mainModuleName
 
   where
-    runSMT
-        :: SMT.Config
-        -> LogAction IO ActualEntry
-        -> SMT.SMT ()
-        -> ( LogAction IO ActualEntry -> IO () )
-    runSMT smtConfig logger smt logAction =
-        SMT.runSMT smtConfig (logger <> logAction) smt
-
     mainModuleName :: ModuleName
     mainModuleName = moduleName definitionModule
 

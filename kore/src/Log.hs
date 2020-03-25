@@ -39,6 +39,7 @@ import Colog
     , cmap
     , (<&)
     )
+import qualified Control.Lens as Lens
 import Control.Monad.Catch
     ( MonadCatch
     , MonadMask
@@ -68,6 +69,12 @@ import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Strict as Strict
     ( StateT
     )
+import Data.Generics.Product
+    ( field
+    )
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
@@ -76,6 +83,7 @@ import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
 import Control.Monad.Counter
@@ -199,10 +207,11 @@ class Monad m => MonadLog m where
         -> m a
         -> m a
     logWhile entry = Monad.Morph.hoist $ logWhile entry
+    {-# INLINE logWhile #-}
 
-instance (Monoid acc, MonadLog log)
-  => MonadLog (AccumT acc log) where
-      logWhile = mapAccumT . logWhile
+instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log) where
+    logWhile = mapAccumT . logWhile
+    {-# INLINE logWhile #-}
 
 instance MonadLog log => MonadLog (CounterT log)
 
@@ -216,13 +225,23 @@ instance MonadLog log => MonadLog (ReaderT a log)
 
 instance MonadLog log => MonadLog (Strict.StateT state log)
 
+data LoggerEnv monad =
+    LoggerEnv
+        { logAction :: !(LogAction monad ActualEntry)
+        , context :: !(Seq SomeEntry)
+        }
+    deriving (GHC.Generic)
+
 newtype LoggerT m a =
-    LoggerT { getLoggerT :: ReaderT (LogAction m ActualEntry) m a }
+    LoggerT { getLoggerT :: ReaderT (LoggerEnv m) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 askLogAction :: Monad m => LoggerT m (LogAction m SomeEntry)
-askLogAction = fromLogAction @ActualEntry <$> LoggerT ask
+askLogAction = LoggerT $ do
+    LoggerEnv { logAction, context = entryContext } <- ask
+    let mkActualEntry actualEntry = ActualEntry { actualEntry, entryContext }
+    pure (Colog.cmap mkActualEntry logAction)
 {-# INLINE askLogAction #-}
 
 runLoggerT
@@ -230,24 +249,23 @@ runLoggerT
     -> LogAction monad ActualEntry
     -> monad a
 runLoggerT LoggerT { getLoggerT } logAction =
-    runReaderT getLoggerT logAction
+    runReaderT getLoggerT LoggerEnv { logAction, context = mempty }
 {-# INLINE runLoggerT #-}
 
 instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ do
-        logAction <- ask
+        LoggerEnv { logAction } <- ask
         let entryLogger = fromLogAction @ActualEntry logAction
         lift $ entryLogger <& toEntry entry
+    {-# INLINE logEntry #-}
 
-    logWhile entry2 action = do
+    logWhile !entry2 action = do
         logEntry entry2
-        LoggerT . local modifyContext $ getLoggerT action
+        LoggerT . addContext $ getLoggerT action
       where
-        modifyContext = Colog.cmap $ \entry1 ->
-            entry1
-                { entryContext =
-                    entryContext entry1 <> Seq.singleton (toEntry entry2)
-                }
+        addContext =
+            local $ Lens.over (field @"context") (Seq.|> toEntry entry2)
+    {-# INLINE logWhile #-}
 
 instance MonadTrans LoggerT where
     lift = LoggerT . lift

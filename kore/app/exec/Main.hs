@@ -111,7 +111,6 @@ import Kore.Log
     , KoreLogOptions (..)
     , LogMessage
     , WithLog
-    , askLogAction
     , parseKoreLogOptions
     , runKoreLog
     )
@@ -660,17 +659,16 @@ execute
     -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
     -> Main r
 execute options mainModule worker = do
-    logger <- askLogAction
     clockSomethingIO "Executing"
         $ case smtSolver of
-            Z3   -> withZ3 logger
-            None -> withoutSMT logger
+            Z3   -> withZ3
+            None -> withoutSMT
   where
-    withZ3 logger =
-        SMT.runSMT config logger $ do
+    withZ3 =
+        SMT.runSMT config $ do
             give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
             worker
-    withoutSMT logger = SMT.runNoSMT logger worker
+    withoutSMT = SMT.runNoSMT worker
     KoreExecOptions { smtTimeOut, smtPrelude, smtSolver } = options
     config =
         SMT.defaultConfig
