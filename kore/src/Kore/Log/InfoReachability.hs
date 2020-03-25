@@ -9,12 +9,7 @@ module Kore.Log.InfoReachability
     , whileRemoveDestination
     , whileDeriveSeq
     , whileDerivePar
-    , prettyInfoReachabilityGoal
-    , prettyInfoReachabilityGoalAndRules
     ) where
-
--- TODO: Do not export prettyInfoReachabilityGoal.
--- TODO: Do not export prettyInfoReachabilityGoalAndRules.
 
 import Prelude.Kore
 

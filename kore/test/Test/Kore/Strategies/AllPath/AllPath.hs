@@ -432,7 +432,7 @@ newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
 
 instance MonadLog AllPathIdentity where
     logEntry = undefined
-    logWhile _ = id
+    logWhile _ = undefined
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined
