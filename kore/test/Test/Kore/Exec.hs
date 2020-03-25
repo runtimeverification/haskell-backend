@@ -81,10 +81,12 @@ import Kore.Syntax.Definition hiding
     )
 import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
-import qualified SMT
 
 import Test.Kore
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.SMT
+    ( runNoSMT
+    )
 import Test.Tasty.HUnit.Ext
 
 test_execPriority :: TestTree
@@ -93,12 +95,12 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
     unlimited :: Limit Integer
     unlimited = Unlimited
     actual =
-        SMT.runSMT SMT.defaultConfig emptyLogger
-        $ exec
+        exec
             Unlimited
             verifiedModule
             (Limit.replicate unlimited . priorityAnyStrategy)
             inputPattern
+        & runNoSMT
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
@@ -126,12 +128,12 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
     unlimited :: Limit Integer
     unlimited = Unlimited
     actual =
-        SMT.runSMT SMT.defaultConfig emptyLogger
-        $ exec
+        exec
             Unlimited
             verifiedModule
             (Limit.replicate unlimited . priorityAnyStrategy)
             inputPattern
+        & runNoSMT
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
         , moduleSentences =
@@ -165,14 +167,14 @@ test_searchPriority =
         actual searchType >>= assertEqual "" (expected searchType)
     actual searchType = do
         finalPattern <-
-            SMT.runSMT SMT.defaultConfig emptyLogger
-            $ search
+            search
                 Unlimited
                 verifiedModule
                 (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
+            & runNoSMT
         let results =
                 fromMaybe
                     (error "Expected search results")
@@ -224,14 +226,14 @@ test_search =
         actual searchType >>= assertEqual "" (expected searchType)
     actual searchType = do
         finalPattern <-
-            SMT.runSMT SMT.defaultConfig emptyLogger
-            $ search
+            search
                 Unlimited
                 verifiedModule
                 (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
+            & runNoSMT
         let results =
                 fromMaybe
                     (error "Expected search results")
@@ -295,14 +297,14 @@ test_searchExeedingBreadthLimit =
 
     actual searchType = do
         finalPattern <-
-            SMT.runSMT SMT.defaultConfig emptyLogger
-            $ search
+            search
                 (Limit 0)
                 verifiedModule
                 (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
+            & runNoSMT
         let results =
                 fromMaybe
                     (error "Expected search results")
@@ -540,11 +542,11 @@ test_execGetExitCode =
             $ actual testModule inputInteger >>= assertEqual "" expectedCode
 
     actual testModule exitCode =
-        SMT.runSMT SMT.defaultConfig emptyLogger
-        $ execGetExitCode
+        execGetExitCode
             (verifiedMyModule testModule)
             (Limit.replicate unlimited . priorityAnyStrategy)
-            $ Int.asInternal myIntSort exitCode
+            (Int.asInternal myIntSort exitCode)
+        & runNoSMT
 
     -- Module with no getExitCode symbol
     testModuleNoSymbol = Module
