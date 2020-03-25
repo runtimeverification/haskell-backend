@@ -278,7 +278,7 @@ makeKoreLogger exeName timestampSwitch logToText =
             $ lookupTextFromTypeWithError
             $ typeOfSomeEntry actualEntry
         context' =
-            mapMaybe (\e -> (<> Pretty.colon) <$> shortDoc e ) entryContext
+            mapMaybe (fmap (<> Pretty.colon) . shortDoc) entryContext
             & toList
     indent = Pretty.indent 4
 

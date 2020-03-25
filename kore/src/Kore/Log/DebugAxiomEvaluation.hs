@@ -137,7 +137,7 @@ instance Entry DebugAxiomEvaluation where
                     , pretty sourceLocation
                     ]
             Reevaluation _ ->
-                Just $ "while re-evaluting results"
+                Just "while re-evaluting results"
             _ -> Nothing
 
 instance Pretty DebugAxiomEvaluation where
