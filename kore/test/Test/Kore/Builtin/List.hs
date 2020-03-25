@@ -6,6 +6,7 @@ module Test.Kore.Builtin.List
     , test_concatUnit
     , test_concatUnitSymbolic
     , test_concatAssociates
+    , test_concatHeadTailSymbolic
     , test_simplify
     , test_isBuiltin
     , test_inUnit
@@ -257,6 +258,51 @@ test_concatAssociates =
         evalConcat1_23 <- evaluateT patConcat1_23
         (===) evalConcat12_3 evalConcat1_23
         (===) Pattern.top =<< evaluateT predicate
+
+test_concatHeadTailSymbolic :: TestTree
+test_concatHeadTailSymbolic =
+    testPropertyWithSolver
+        "ceil(and{}(concat{}(element{}(x), xs), concat{}(element{}(y), ys))) ===\
+        \ \\dv{Bool{}}(\"true\")"
+        prop
+  where
+    prop = do
+        value <- forAll genInteger
+        values <- forAll genSeqInteger
+        let patValue = Test.Int.asInternal value
+            patValues = asTermLike (Test.Int.asInternal <$> values)
+            patSymbolicX = mkElemVar $ ElementVariable Variable
+                { variableName = testId "x"
+                , variableCounter = mempty
+                , variableSort = listSort
+                }
+            patSymbolicY = mkElemVar $ ElementVariable Variable
+                { variableName = testId "y"
+                , variableCounter = mempty
+                , variableSort = listSort
+                }
+            patSymbolicXs = mkElemVar $ ElementVariable Variable
+                { variableName = testId "xs"
+                , variableCounter = mempty
+                , variableSort = listSort
+                }
+            patSymbolicYs = mkElemVar $ ElementVariable Variable
+                { variableName = testId "ys"
+                , variableCounter = mempty
+                , variableSort = listSort
+                }
+            patElemX = elementList patSymbolicX
+            patElemY = elementList patSymbolicY
+            patConcatX =
+                mkApplySymbol concatListSymbol [ patElemX, patSymbolicXs ]
+            patConcatY =
+                mkApplySymbol concatListSymbol [ patElemY, patSymbolicYs ]
+            patConcatValues =
+                mkApplySymbol concatListSymbol [ patValue, patValues ]
+            patUnifiedXY = mkCeil_ $ mkAnd patConcatX patConcatY
+            patUnifiedValuesY = mkCeil_ $ mkAnd patConcatValues patConcatY
+        (===) Pattern.top  =<< evaluateT patUnifiedXY
+        (===) Pattern.top  =<< evaluateT patUnifiedValuesY
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
