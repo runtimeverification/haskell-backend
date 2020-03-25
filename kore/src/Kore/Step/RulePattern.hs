@@ -564,6 +564,12 @@ instance TopBottom (ReachabilityRule variable) where
     isTop _ = False
     isBottom _ = False
 
+instance Pretty (ReachabilityRule Variable) where
+    pretty (OnePath (OnePathRule rule)) =
+        Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
+    pretty (AllPath (AllPathRule rule)) =
+        Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
+
 toSentence :: ReachabilityRule Variable -> Verified.Sentence
 toSentence rule =
     Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom

@@ -30,6 +30,9 @@ import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -289,6 +292,9 @@ instance Debug K
 
 instance Diff K
 
+instance Pretty K where
+    pretty = pretty . show
+
 matches :: K -> K -> Bool
 matches B BorC = True
 matches C BorC = True
@@ -307,12 +313,11 @@ type ProofState = Goal.ProofState Goal Goal
 
 type Prim = Goal.Prim Goal
 
+newtype instance Goal.Rule Goal =
+    Rule { unRule :: (K, K) }
+    deriving (Eq, GHC.Generic, Show)
+
 instance Goal.Goal Goal where
-
-    newtype Rule Goal =
-        Rule { unRule :: (K, K) }
-        deriving (Eq, GHC.Generic, Show)
-
     type Prim Goal = ProofState.Prim (Goal.Rule Goal)
 
     type ProofState Goal a = ProofState.ProofState a
@@ -427,7 +432,7 @@ newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
 
 instance MonadLog AllPathIdentity where
     logEntry = undefined
-    logWhile = undefined
+    logWhile _ = undefined
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined

@@ -134,7 +134,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-    ( Goal (..)
+    ( Rule (..)
     )
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
