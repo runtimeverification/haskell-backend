@@ -19,6 +19,7 @@ module Kore.Internal.Condition
     , fromPattern
     , Conditional.fromPredicate
     , Conditional.fromSingleSubstitution
+    , Conditional.assign
     , Conditional.fromSubstitution
     , toPredicate
     , hasFreeVariable

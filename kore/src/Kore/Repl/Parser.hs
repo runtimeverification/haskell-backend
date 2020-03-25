@@ -251,7 +251,7 @@ claimIndexParser :: Parser ClaimIndex
 claimIndexParser = ClaimIndex <$$> Char.string "c" *> decimal
 
 ruleNameParser :: Parser RuleName
-ruleNameParser = RuleName <$$> quotedOrWordWithout ""
+ruleNameParser = RuleName <$$> quotedOrWordWithout "|>"
 
 clear :: Parser ReplCommand
 clear = do
