@@ -80,6 +80,9 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
+import Kore.Log.InfoReachability
+    ( InfoReachability
+    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
@@ -118,6 +121,7 @@ registry =
                 , register criticalExecutionErrorType
                 , register logMessageType
                 , register infoAttemptUnificationType
+                , register infoReachabilityType
                 , register errorRewritesInstantiationType
                 ]
         typeToText = makeInverse textToType
@@ -157,6 +161,7 @@ debugAppliedRuleType
   , criticalExecutionErrorType
   , logMessageType
   , infoAttemptUnificationType
+  , infoReachabilityType
   , errorRewritesInstantiationType
   :: SomeTypeRep
 
@@ -186,6 +191,8 @@ logMessageType =
     someTypeRep (Proxy :: Proxy LogMessage)
 infoAttemptUnificationType =
     someTypeRep (Proxy :: Proxy InfoAttemptUnification)
+infoReachabilityType =
+    someTypeRep (Proxy :: Proxy InfoReachability)
 errorRewritesInstantiationType =
     someTypeRep (Proxy :: Proxy ErrorRewritesInstantiation)
 
