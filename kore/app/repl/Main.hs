@@ -9,9 +9,6 @@ import Control.Concurrent.MVar
 import Control.Monad.Trans
     ( lift
     )
-import Control.Monad.Trans.Reader
-    ( runReaderT
-    )
 import Data.Reflection
 import Data.Semigroup
     ( (<>)
@@ -49,12 +46,8 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.Log
-    ( ActualEntry (..)
-    , KoreLogOptions (..)
-    , LogAction (..)
-    , emptyLogger
-    , getLoggerT
-    , koreLogTransformer
+    ( KoreLogOptions (..)
+    , runLoggerT
     , swappableLogger
     , withLogger
     )
@@ -204,10 +197,10 @@ mainWithOptions
         , outputFile
         , koreLogOptions
         }
-  = do
-    mLogger <- newMVar $ koreLogTransformer koreLogOptions emptyLogger
-    let initialLogger = swappableLogger mLogger
-    flip runReaderT initialLogger . getLoggerT $ do
+  = withLogger koreLogOptions $ \actualLogAction -> do
+    mvarLogAction <- newMVar actualLogAction
+    let swapLogAction = swappableLogger mvarLogAction
+    flip runLoggerT swapLogAction $ do
         definition <- loadDefinitions [definitionFileName, specFile]
         indexedModule <- loadModule mainModuleName definition
         specDefIndexedModule <- loadModule specModule definition

@@ -29,15 +29,15 @@ import Kore.Unification.Error
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import SMT
-    ( runNoSMT
-    )
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Axiom.Matcher
     ( doesn'tMatch
     , matches
+    )
+import Test.SMT
+    ( runNoSMT
     )
 import Test.Tasty.HUnit.Ext
 
@@ -114,7 +114,7 @@ unify
     -> TermLike Variable
     -> IO (Either UnificationError [Pattern Variable])
 unify term1 term2 =
-    runNoSMT mempty
+    runNoSMT
     $ runSimplifier testEnv
     $ runUnifierT
     $ termUnification term1 term2

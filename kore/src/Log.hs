@@ -221,8 +221,8 @@ newtype LoggerT m a =
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
-askLogAction :: Monad m => LoggerT m (LogAction m ActualEntry)
-askLogAction = LoggerT ask
+askLogAction :: Monad m => LoggerT m (LogAction m SomeEntry)
+askLogAction = fromLogAction @ActualEntry <$> LoggerT ask
 {-# INLINE askLogAction #-}
 
 runLoggerT
@@ -255,11 +255,12 @@ instance MonadTrans LoggerT where
 
 logWith
     :: Entry entry
-    => LogAction m ActualEntry
+    => LogAction m SomeEntry
     -> entry
     -> m ()
-logWith logger entry =
-    fromLogAction @ActualEntry logger Colog.<& toEntry entry
+logWith logger entry = logger Colog.<& toEntry entry
+{-# INLINE logWith #-}
 
 fromLogAction :: forall a b m . From b a => LogAction m a -> LogAction m b
 fromLogAction = cmap from
+{-# INLINE fromLogAction #-}
