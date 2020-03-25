@@ -7,7 +7,6 @@ module Kore.Strategies.Goal
     , ToRulePattern (..)
     , FromRulePattern (..)
     , ClaimExtractor (..)
-    , Rule (..)
     , TransitionRuleTemplate (..)
     , WithConfiguration (..)
     , extractClaims
@@ -22,6 +21,9 @@ module Kore.Strategies.Goal
     , getDestination
     , transitionRuleTemplate
     , isTrusted
+    -- * Re-exports
+    , module Kore.Strategies.Rule
+    , module Kore.Log.InfoReachability
     ) where
 
 import Prelude.Kore
@@ -58,8 +60,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
     )
-import qualified Generics.SOP as SOP
-import GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
@@ -67,7 +67,6 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
-import Kore.Debug
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
@@ -101,6 +100,7 @@ import Kore.Log.DebugProofState
 import Kore.Log.ErrorRewritesInstantiation
     ( errorRewritesInstantiation
     )
+import Kore.Log.InfoReachability
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -152,6 +152,7 @@ import Kore.Strategies.ProofState hiding
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
+import Kore.Strategies.Rule
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
     ( Variable
@@ -163,8 +164,7 @@ import Kore.TopBottom
 import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
-    ( Unparse
-    , unparse
+    ( unparse
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
@@ -201,7 +201,6 @@ proven
 proven = Foldable.null . unprovenNodes
 
 class Goal goal where
-    data Rule goal
     type Prim goal
     type ProofState goal a
 
@@ -294,10 +293,6 @@ Things to note when implementing your own:
 
 instance Goal (OnePathRule Variable) where
 
-    newtype Rule (OnePathRule Variable) =
-        OnePathRewriteRule { unRule :: RewriteRule Variable }
-        deriving (GHC.Generic, Show, Unparse)
-
     type Prim (OnePathRule Variable) =
         ProofState.Prim (Rule (OnePathRule Variable))
 
@@ -339,18 +334,6 @@ instance Goal (OnePathRule Variable) where
             . getOnePathRule
             <$> goals
 
-instance SOP.Generic (Rule (OnePathRule Variable))
-
-instance SOP.HasDatatypeInfo (Rule (OnePathRule Variable))
-
-instance Debug (Rule (OnePathRule Variable))
-
-instance Diff (Rule (OnePathRule Variable))
-
-instance ToRulePattern (Rule (OnePathRule Variable))
-
-instance FromRulePattern (Rule (OnePathRule Variable))
-
 instance ClaimExtractor (OnePathRule Variable) where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
@@ -358,10 +341,6 @@ instance ClaimExtractor (OnePathRule Variable) where
             _ -> Nothing
 
 instance Goal (AllPathRule Variable) where
-
-    newtype Rule (AllPathRule Variable) =
-        AllPathRewriteRule { unRule :: RewriteRule Variable }
-        deriving (GHC.Generic, Show, Unparse)
 
     type Prim (AllPathRule Variable) =
         ProofState.Prim (Rule (AllPathRule Variable))
@@ -404,18 +383,6 @@ instance Goal (AllPathRule Variable) where
             . getAllPathRule
             <$> goals
 
-instance SOP.Generic (Rule (AllPathRule Variable))
-
-instance SOP.HasDatatypeInfo (Rule (AllPathRule Variable))
-
-instance Debug (Rule (AllPathRule Variable))
-
-instance Diff (Rule (AllPathRule Variable))
-
-instance ToRulePattern (Rule (AllPathRule Variable))
-
-instance FromRulePattern (Rule (AllPathRule Variable))
-
 instance ClaimExtractor (AllPathRule Variable) where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
@@ -423,11 +390,6 @@ instance ClaimExtractor (AllPathRule Variable) where
             _ -> Nothing
 
 instance Goal (ReachabilityRule Variable) where
-
-    newtype Rule (ReachabilityRule Variable) =
-        ReachabilityRewriteRule
-            { unReachabilityRewriteRule :: RewriteRule Variable }
-        deriving (GHC.Generic, Show, Unparse)
 
     type Prim (ReachabilityRule Variable) =
         ProofState.Prim (Rule (ReachabilityRule Variable))
@@ -454,7 +416,7 @@ instance Goal (ReachabilityRule Variable) where
                 (ReachabilityRule Variable)
                 (ReachabilityRule Variable)
             )
-    transitionRule prim proofstate =
+    transitionRule = logTransitionRule $ \prim proofstate ->
         case proofstate of
             Goal (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
@@ -514,18 +476,6 @@ instance Goal (ReachabilityRule Variable) where
                     rule
                     (mapMaybe maybeAllPath claims)
                     (fmap ruleReachabilityToRuleAllPath axioms)
-
-instance SOP.Generic (Rule (ReachabilityRule Variable))
-
-instance SOP.HasDatatypeInfo (Rule (ReachabilityRule Variable))
-
-instance Debug (Rule (ReachabilityRule Variable))
-
-instance Diff (Rule (ReachabilityRule Variable))
-
-instance ToRulePattern (Rule (ReachabilityRule Variable))
-
-instance FromRulePattern (Rule (ReachabilityRule Variable))
 
 instance ClaimExtractor (ReachabilityRule Variable) where
     extractClaim (attrs, sentence) =
@@ -621,6 +571,35 @@ data TransitionRuleTemplate monad goal =
         -> goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
+
+logTransitionRule
+    :: forall m goal
+    .  MonadSimplify m
+    => goal ~ (ReachabilityRule Variable)
+    =>  (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+        )
+    ->  (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+        )
+logTransitionRule rule prim proofState = case proofState of
+    Goal goal          -> logWith goal
+    GoalRemainder goal -> logWith goal
+    _                  -> rule prim proofState
+  where
+    logWith goal = case prim of
+        Simplify ->
+            whileSimplify goal $ rule prim proofState
+        RemoveDestination ->
+            whileRemoveDestination goal $ rule prim proofState
+        (DeriveSeq rules) ->
+            whileDeriveSeq rules goal $ rule prim proofState
+        (DerivePar rules) ->
+            whileDerivePar rules goal $ rule prim proofState
+        _ ->
+            rule prim proofState
 
 transitionRuleTemplate
     :: forall m goal
