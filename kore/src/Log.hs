@@ -14,6 +14,7 @@ module Log
     , WithLog
     -- * Implementation
     , LoggerT (..)
+    , askLogAction
     -- * Log actions
     , LogAction (..)
     , liftLogAction
@@ -218,6 +219,10 @@ newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m ActualEntry) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
+
+askLogAction :: Monad m => LoggerT m (LogAction m ActualEntry)
+askLogAction = LoggerT ask
+{-# INLINE askLogAction #-}
 
 instance Monad m => MonadLog (LoggerT m) where
     logEntry entry = LoggerT $ do

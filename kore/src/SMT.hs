@@ -283,8 +283,9 @@ newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action = SMT $ do
     mvar <- Reader.ask
-    Trans.lift
-        $ LoggerT $ ReaderT $ withMVar mvar . flip (curryForSolver action)
+    Trans.lift $ do
+        logger <- Log.askLogAction
+        Trans.lift $ withMVar mvar $ flip (curryForSolver action) logger
   where
     curryForSolver :: (Solver -> IO a) -> SolverHandle -> Logger -> IO a
     curryForSolver fromSolver =
