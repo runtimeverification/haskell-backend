@@ -78,12 +78,13 @@ translatePredicate
         , Monad m
         , InternalVariable variable
         )
-    => (SExpr -> p -> Translator m p SExpr)
+    => (Bool -> SExpr -> p -> Translator m p SExpr)
     -> Predicate variable
     -> Translator m p SExpr
 translatePredicate translateUninterpreted predicate =
     translatePredicatePattern $ unwrapPredicate predicate
   where
+    translateUninterpreted' = translateUninterpreted False
     translatePredicatePattern
         :: TermLike variable
         -> Translator m (TermLike variable) SExpr
@@ -98,7 +99,7 @@ translatePredicate translateUninterpreted predicate =
                 -- equality in the SMT solver, but other patterns must remain
                 -- uninterpreted.
                     translatePredicateEquals eq
-                <|> translateUninterpreted SMT.tBool pat
+                <|> translateUninterpreted' SMT.tBool pat
             IffF iff -> translatePredicateIff iff
             ImpliesF implies -> translatePredicateImplies implies
             NotF not' -> translatePredicateNot not'
@@ -106,13 +107,13 @@ translatePredicate translateUninterpreted predicate =
             TopF _ -> return (SMT.bool True)
 
             -- Uninterpreted: translate as variables
-            CeilF _ -> translateUninterpreted SMT.tBool pat
+            CeilF _ -> translateUninterpreted' SMT.tBool pat
             ExistsF exists' ->
                 translatePredicateExists exists'
-                <|> translateUninterpreted SMT.tBool pat
-            FloorF _ -> translateUninterpreted SMT.tBool pat
-            ForallF _ -> translateUninterpreted SMT.tBool pat
-            InF _ -> translateUninterpreted SMT.tBool pat
+                <|> translateUninterpreted' SMT.tBool pat
+            FloorF _ -> translateUninterpreted' SMT.tBool pat
+            ForallF _ -> translateUninterpreted' SMT.tBool pat
+            InF _ -> translateUninterpreted' SMT.tBool pat
 
             -- Invalid: no translation, should not occur in predicates
             MuF _ -> empty
@@ -178,21 +179,21 @@ translatePredicate translateUninterpreted predicate =
     translateInt :: p -> Translator m p SExpr
     translateInt pat =
         case Cofree.tailF (Recursive.project pat) of
-            VariableF _ -> translateUninterpreted SMT.tInt pat
+            VariableF _ -> translateUninterpreted' SMT.tInt pat
             BuiltinF dv ->
                 return $ SMT.int $ Builtin.Int.extractIntDomainValue
                     "while translating dv to SMT.int" dv
             ApplySymbolF app ->
                 (<|>)
                     (translateApplication app)
-                    (translateUninterpreted SMT.tInt pat)
+                    (translateUninterpreted' SMT.tInt pat)
             _ -> empty
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
     translateBool :: p -> Translator m p SExpr
     translateBool pat =
         case Cofree.tailF (Recursive.project pat) of
-            VariableF _ -> translateUninterpreted SMT.tBool pat
+            VariableF _ -> translateUninterpreted' SMT.tBool pat
             BuiltinF dv ->
                 return $ SMT.bool $ Builtin.Bool.extractBoolDomainValue
                     "while translating dv to SMT.bool" dv
@@ -204,7 +205,7 @@ translatePredicate translateUninterpreted predicate =
             ApplySymbolF app ->
                 (<|>)
                     (translateApplication app)
-                    (translateUninterpreted SMT.tBool pat)
+                    (translateUninterpreted' SMT.tBool pat)
             _ -> empty
 
     translateApplication :: Application Symbol p -> Translator m p SExpr
@@ -240,7 +241,7 @@ translatePredicate translateUninterpreted predicate =
 
     translateExists varSort varTerm predTerm
       = do
-        var <- translateUninterpreted varSort varTerm
+        var <- translateUninterpreted True varSort varTerm
         SMT.existsQ [SMT.List [var, varSort]]
             <$> translatePredicatePattern predTerm
 
@@ -253,7 +254,7 @@ translatePredicate translateUninterpreted predicate =
             _ -> case Cofree.tailF $ Recursive.project pat of
                     VariableF _ -> do
                         smtSort <- hoistMaybe $ translateSort sort
-                        translateUninterpreted smtSort pat
+                        translateUninterpreted' smtSort pat
                     ApplySymbolF app -> translateApplication app
                     _ -> empty
       where

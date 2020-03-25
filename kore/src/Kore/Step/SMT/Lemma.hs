@@ -91,10 +91,11 @@ translateUninterpreted
        , p ~ TermLike variable
        , Monad m
        )
-    => SExpr  -- ^ type name
+    => Bool  -- ^ is quantified variable
+    -> SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr
-translateUninterpreted t pat | isVariable pat =
+translateUninterpreted _ t pat | isVariable pat =
     lookupPattern <|> freeVariable
   where
     isVariable p =
@@ -109,4 +110,4 @@ translateUninterpreted t pat | isVariable pat =
         let var = SMT.Atom ("<" <> Text.pack (show n) <> ">")
         State.modify' (Map.insert pat (var, t))
         return var
-translateUninterpreted _ _ = empty
+translateUninterpreted _ _ _ = empty

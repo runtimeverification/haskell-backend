@@ -74,6 +74,7 @@ import SMT
     , SExpr (..)
     )
 import qualified SMT
+import qualified SMT.SimpleSMT as SimpleSMT
 
 {- | Class for things that can be evaluated with an SMT solver,
 or which contain things that can be evaluated with an SMT solver.
@@ -180,10 +181,11 @@ translateUninterpreted
     => p ~ TermLike variable
     => SMT.MonadSMT m
     => MonadLog m
-    => SExpr  -- ^ type name
+    => Bool -- ^ is the expression a variable being quantified
+    -> SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr
-translateUninterpreted t pat =
+translateUninterpreted isQuantifiedVariable t pat =
     lookupPattern <|> freeVariable
   where
     lookupPattern = do
@@ -191,7 +193,11 @@ translateUninterpreted t pat =
         maybe empty (return . fst) result
     freeVariable = do
         n <- Counter.increment
-        var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
+        let varName = "<" <> Text.pack (show n) <> ">"
+        var <-
+            if isQuantifiedVariable
+                then return (SimpleSMT.const varName)
+                else SMT.declare varName t
         State.modify' (Map.insert pat (var, t))
         logVariableAssignment n
         return var
