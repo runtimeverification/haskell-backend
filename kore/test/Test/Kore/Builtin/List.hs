@@ -295,7 +295,6 @@ test_concatHeadTailSymbolic =
                 mkApplySymbol concatListSymbol [ patElemY, patSymbolicYs ]
             patUnifiedXY = mkAnd patConcatX patConcatY
         unified <- evaluateT patUnifiedXY
-        traceM $ unparseToString unified
         (/==) Pattern.bottom unified
 
 -- | Check that simplification is carried out on list elements.
