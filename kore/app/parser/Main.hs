@@ -8,9 +8,6 @@ import Control.Monad
 import Control.Monad.Trans
     ( lift
     )
-import Control.Monad.Trans.Reader
-    ( runReaderT
-    )
 import qualified Data.Map.Strict as Map
 import Data.Semigroup
     ( (<>)
@@ -53,7 +50,7 @@ import Kore.IndexedModule.IndexedModule
     , toVerifiedDefinition
     )
 import Kore.Log
-    ( getLoggerT
+    ( runLoggerT
     )
 import qualified Kore.Log as Log
 import Kore.Parser
@@ -149,7 +146,7 @@ main = do
             , willVerify
             , appKore
             }
-            -> flip runReaderT Log.emptyLogger . getLoggerT $ do
+            -> flip runLoggerT Log.emptyLogger $ do
                 parsedDefinition <- mainDefinitionParse fileName
                 indexedModules <- if willVerify
                     then lift $ mainVerify parsedDefinition
@@ -194,11 +191,9 @@ mainVerify
             ModuleName
             (VerifiedModule StepperAttributes)
         )
-mainVerify definition = do
+mainVerify definition = flip runLoggerT Log.emptyLogger $ do
     verifyResult <-
-        flip runReaderT Log.emptyLogger
-        . getLoggerT
-        $ clockSomething "Verifying the definition"
+        clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
                 Builtin.koreVerifiers
                 definition

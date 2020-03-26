@@ -604,7 +604,8 @@ runWithState command axioms claims claim stateTransformer = do
     let state = stateTransformer $ mkState axioms claims claim
     let config = mkConfig mvar
     (c, s) <-
-        liftSimplifier (Log.swappableLogger mvar)
+        flip Log.runLoggerT (Log.swappableLogger mvar)
+        $ liftSimplifier
         $ flip runStateT state
         $ flip runReaderT config
         $ replInterpreter0
@@ -614,8 +615,7 @@ runWithState command axioms claims claim stateTransformer = do
     output' <- readIORef output
     return $ Result output' c s
   where
-    liftSimplifier logger =
-        SMT.runSMT SMT.defaultConfig logger . Kore.runSimplifier testEnv
+    liftSimplifier = SMT.runSMT SMT.defaultConfig . Kore.runSimplifier testEnv
 
     modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
     modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)

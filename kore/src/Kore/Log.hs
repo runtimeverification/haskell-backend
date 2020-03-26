@@ -14,7 +14,7 @@ module Kore.Log
     , makeKoreLogger
     , Colog.logTextStderr
     , Colog.logTextHandle
-    , runLoggerT
+    , runKoreLog
     , module Log
     , module KoreLogOptions
     ) where
@@ -49,9 +49,6 @@ import qualified Control.Monad.Catch as Exception
 import Control.Monad.Cont
     ( ContT (..)
     , runContT
-    )
-import Control.Monad.Reader
-    ( runReaderT
     )
 import Data.Foldable
     ( toList
@@ -202,13 +199,11 @@ filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
-runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
-runLoggerT options loggerT =
+runKoreLog :: KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLog options loggerT =
     withLogger options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
-        runLogger asyncLogAction
-  where
-    runLogger = runReaderT . getLoggerT $ loggerT
+        runLoggerT loggerT asyncLogAction
 
 withAsyncLogger
     :: LogAction IO a

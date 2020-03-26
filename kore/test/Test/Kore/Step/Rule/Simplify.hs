@@ -44,9 +44,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Log
-    ( emptyLogger
-    )
 import Kore.Sort
     ( predicateSort
     )
@@ -71,9 +68,11 @@ import Kore.Syntax.Variable
     ( Variable
     , fromVariable
     )
-import qualified SMT
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.SMT
+    ( runNoSMT
+    )
 import Test.Tasty.HUnit.Ext
 
 class OnePathRuleBase base where
@@ -243,7 +242,7 @@ runSimplifyRule
     -> IO [OnePathRule Variable]
 runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ runNoSMT
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
         simplifyRuleLhs rule
@@ -296,7 +295,7 @@ test_simplifyClaimRule =
             actual <- run $ simplifyRuleLhs input
             assertEqual "" expect (MultiAnd.extractPatterns actual)
       where
-        run = SMT.runNoSMT emptyLogger . runSimplifier env
+        run = runNoSMT . runSimplifier env
         env =
             Mock.env
                 { simplifierTermLike

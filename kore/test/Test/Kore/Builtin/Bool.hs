@@ -39,7 +39,6 @@ import Kore.Unification.UnifierT
     ( runUnifierT
     )
 import Kore.Variables.UnifiedVariable
-import qualified SMT
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -170,7 +169,7 @@ test_termAndEquals =
         >>= expectRight
 
     run =
-        SMT.runNoSMT mempty
+        runNoSMT
         . runSimplifier testEnv
         . runUnifierT
         . runMaybeT

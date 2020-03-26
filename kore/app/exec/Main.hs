@@ -8,7 +8,6 @@ import Control.Monad.Catch
     , handle
     , throwM
     )
-import qualified Control.Monad.Reader.Class as Reader
 import Control.Monad.Trans
     ( lift
     )
@@ -111,10 +110,9 @@ import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
     , LogMessage
-    , LoggerT (..)
     , WithLog
     , parseKoreLogOptions
-    , runLoggerT
+    , runKoreLog
     )
 import Kore.Log.ErrorException
     ( errorException
@@ -412,7 +410,7 @@ mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
     exitCode <-
-        runLoggerT koreLogOptions
+        runKoreLog koreLogOptions
         $ handle handleSomeException
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
@@ -660,18 +658,17 @@ execute
     -> LoadedModule  -- ^ Main module
     -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
     -> Main r
-execute options mainModule worker = do
-    logger <- LoggerT Reader.ask
+execute options mainModule worker =
     clockSomethingIO "Executing"
         $ case smtSolver of
-            Z3   -> withZ3 logger
-            None -> withoutSMT logger
+            Z3   -> withZ3
+            None -> withoutSMT
   where
-    withZ3 logger =
-        SMT.runSMT config logger $ do
+    withZ3 =
+        SMT.runSMT config $ do
             give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
             worker
-    withoutSMT logger = SMT.runNoSMT logger worker
+    withoutSMT = SMT.runNoSMT worker
     KoreExecOptions { smtTimeOut, smtPrelude, smtSolver } = options
     config =
         SMT.defaultConfig
