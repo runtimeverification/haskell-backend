@@ -262,24 +262,20 @@ test_concatAssociates =
 test_concatHeadTailSymbolic :: TestTree
 test_concatHeadTailSymbolic =
     testPropertyWithSolver
-        "ceil(and{}(concat{}(element{}(x), xs), concat{}(element{}(y), ys))) ===\
+        "qqceil(and{}(concat{}(element{}(x), xs), concat{}(element{}(y), ys))) ===\
         \ \\dv{Bool{}}(\"true\")"
         prop
   where
     prop = do
-        value <- forAll genInteger
-        values <- forAll genSeqInteger
-        let patValue = Test.Int.asInternal value
-            patValues = asTermLike (Test.Int.asInternal <$> values)
-            patSymbolicX = mkElemVar $ ElementVariable Variable
+        let patSymbolicX = mkElemVar $ ElementVariable Variable
                 { variableName = testId "x"
                 , variableCounter = mempty
-                , variableSort = listSort
+                , variableSort = intSort
                 }
             patSymbolicY = mkElemVar $ ElementVariable Variable
                 { variableName = testId "y"
                 , variableCounter = mempty
-                , variableSort = listSort
+                , variableSort = intSort
                 }
             patSymbolicXs = mkElemVar $ ElementVariable Variable
                 { variableName = testId "xs"
@@ -297,12 +293,10 @@ test_concatHeadTailSymbolic =
                 mkApplySymbol concatListSymbol [ patElemX, patSymbolicXs ]
             patConcatY =
                 mkApplySymbol concatListSymbol [ patElemY, patSymbolicYs ]
-            patConcatValues =
-                mkApplySymbol concatListSymbol [ patValue, patValues ]
-            patUnifiedXY = mkCeil_ $ mkAnd patConcatX patConcatY
-            patUnifiedValuesY = mkCeil_ $ mkAnd patConcatValues patConcatY
-        (===) Pattern.top  =<< evaluateT patUnifiedXY
-        (===) Pattern.top  =<< evaluateT patUnifiedValuesY
+            patUnifiedXY = mkAnd patConcatX patConcatY
+        unified <- evaluateT patUnifiedXY
+        traceM $ unparseToString unified
+        (/==) Pattern.bottom unified
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
