@@ -1,4 +1,4 @@
-{ default ? import ./default.nix }:
+{ default ? import ./default.nix {} }:
 
 let
   inherit (default) project pkgs;
