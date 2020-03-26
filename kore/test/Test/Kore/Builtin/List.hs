@@ -28,14 +28,14 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
+import Data.List
+    ( sort
+    )
 import qualified Data.Reflection as Reflection
 import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
-import Data.List
-    ( sort
-    )
 
 import qualified Kore.Builtin.List as List
 import Kore.Internal.Pattern as Pattern
