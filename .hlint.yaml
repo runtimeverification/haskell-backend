@@ -71,7 +71,7 @@
 - ignore: {name: "Monad law, left identity"}
 - ignore: {name: "Monoid law, left identity"}
 - ignore: {name: "Replace case with maybe"}
-
+- ignore: {name: "Hoist not"}
 
 # Permit existing duplication in tests.
 # Please reflect before adding new modules to this list.
