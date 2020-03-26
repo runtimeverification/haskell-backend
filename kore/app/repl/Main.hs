@@ -111,16 +111,14 @@ parseKoreReplOptions =
             (  metavar "MAIN_DEFINITION_FILE"
             <> help "Kore definition file to verify and use for execution"
             )
-        <*> parseModuleName "MAIN" "Kore main module name." "module"
+        <*> parseModuleName' "MAIN" "Kore main module name." "module"
 
-    parseModuleName :: String -> String -> String -> Parser ModuleName
-    parseModuleName name helpMessage longName =
-        GlobalMain.parseModuleName
-        <$> strOption
-            (  metavar (name <> "_MODULE")
-            <> long longName
-            <> help helpMessage
-            )
+    parseModuleName' :: String -> String -> String -> Parser ModuleName
+    parseModuleName' name helpMessage longName =
+        GlobalMain.parseModuleName 
+            (name <> "_MODULE")
+            longName
+            helpMessage
 
     parseSmtOptions :: Parser SmtOptions
     parseSmtOptions =

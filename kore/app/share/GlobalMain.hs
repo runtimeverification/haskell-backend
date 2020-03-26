@@ -71,6 +71,7 @@ import Development.GitRev
 import GHC.Stack
     ( emptyCallStack
     )
+
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -105,6 +106,8 @@ import Options.Applicative.Help.Chunk
     ( Chunk (..)
     , vsepChunks
     )
+
+import qualified Options.Applicative as Options
 import qualified Options.Applicative.Help.Pretty as Pretty
 import System.Clock
     ( Clock (Monotonic)
@@ -171,11 +174,20 @@ data KoreProveOptions =
         -- fails.
         }
 
-parseModuleName :: String -> ModuleName
-parseModuleName input = 
-    case parseOnly (moduleNameIdParser <* endOfInput) "<test-string>" input of 
-        Left err -> error err
-        Right name -> name
+parseModuleName :: String -> String -> String -> Parser ModuleName
+parseModuleName metaName longName helpMsg =
+    option readSum
+        ( metavar metaName
+        <> long longName
+        <> help helpMsg
+        )
+
+readSum :: Options.ReadM ModuleName
+readSum = do
+    opt <- str
+    case parseOnly (moduleNameIdParser <* endOfInput) "<test-string>" opt of
+        Left err        -> readerError err
+        Right something -> pure something
 
 parseKoreProveOptions :: Parser KoreProveOptions
 parseKoreProveOptions =
@@ -187,11 +199,9 @@ parseKoreProveOptions =
                 \Needs --spec-module."
         )
     <*> (parseModuleName
-        <$> strOption
-            (  metavar "SPEC_MODULE"
-            <> long "spec-module"
-            <> help "The name of the main module in the spec to be proven."
-            )
+            "SPEC_MODULE"
+            "spec-module"
+            "The name of the main module in the spec to be proven."
         )
     <*> parseGraphSearch
     <*> switch
