@@ -1,46 +1,42 @@
-module Test.SMT.AST (test_parseSexpr) where
+module Test.SMT.AST
+    ( test_parseSExpr
+    ) where
 
 import Prelude.Kore
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Text
+    ( Text
+    )
 import qualified Text.Megaparsec as Parser
 
 import SMT.AST
 
-test_parseSexpr :: [TestTree]
-test_parseSexpr =
-    [ testCase "parse atom" $
-        assertEqual ""
-            (Right [Atom "a"])
-            (Parser.runParser parseSExprFile "fileName" "a")
-    ,  testCase "parse atom with spaces" $
-        assertEqual ""
-            (Right [Atom "a"])
-            (Parser.runParser parseSExprFile "fileName" " a ")
-    ,  testCase "parse atom with comment" $
-        assertEqual ""
-            (Right [Atom "a"])
-            (Parser.runParser parseSExprFile "fileName" ";comment\n a ")
-    , testCase "parse list" $
-        assertEqual ""
-            (Right [List [Atom "a", Atom "b"]])
-            (Parser.runParser parseSExprFile "fileName" "(a b)")
-    , testCase "parse list with spaces" $
-        assertEqual ""
-            (Right [List [Atom "a", Atom "b"]])
-            (Parser.runParser parseSExprFile "fileName" " (a b) ")
-    , testCase "parse list in list" $
-        assertEqual ""
-            (Right [List [Atom "a", List [Atom "b", Atom "c"]]])
-            (Parser.runParser parseSExprFile "fileName" " (a (b c)) ")
-    , testCase "parse multiple sexpr" $
-        assertEqual ""
-            (Right [Atom "a", Atom "b"])
-            (Parser.runParser parseSExprFile "fileName" "a\nb")
-    , testCase "parse multiple sexpr with spaces and comments" $
-        assertEqual ""
-            (Right [Atom "a", Atom "b"])
-            (Parser.runParser parseSExprFile "fileName" ";comment\na;c\nb;")
+test_parseSExpr :: [TestTree]
+test_parseSExpr =
+    [ parse "atom" [Atom "a"] "a"
+    , parse "atom with whitespace" [Atom "a"] " a "
+    , parse "atom with comment" [Atom "a"] ";comment\n a "
+    , parse "list" [List [Atom "a", Atom "b"]] "(a b)"
+    , parse "list with whitespace" [List [Atom "a", Atom "b"]] " (a b) "
+    , parse "nested list"
+        [List [Atom "a", List [Atom "b", Atom "c"]]]
+        " (a (b c)) "
+    , parse "multiple S-expressions" [Atom "a", Atom "b"] "a\nb"
+    , parse "multiple S-expressions with whitespace and comments"
+        [Atom "a", Atom "b"]
+        ";comment\na;c\nb;"
     ]
+  where
+    parse
+        :: HasCallStack
+        => TestName
+        -> [SExpr]
+        -> Text
+        -> TestTree
+    parse testName results input =
+        testCase testName
+        $ assertEqual "" (Right results)
+        $ Parser.runParser parseSExprFile "<string>" input
