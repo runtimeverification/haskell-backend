@@ -28,6 +28,15 @@ test_parseSExpr =
     , parse "multiple S-expressions with whitespace and comments"
         [Atom "a", Atom "b"]
         ";comment\na;c\nb;"
+    , parse "(ite (< #1 #2) #1 #2)"
+        [ List
+            [ Atom "ite"
+            , List [Atom "<", Atom "#1", Atom "#2"]
+            , Atom "#1"
+            , Atom "#2"
+            ]
+        ]
+        "(ite (< #1 #2) #1 #2)"
     ]
   where
     parse
