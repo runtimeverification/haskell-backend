@@ -137,8 +137,8 @@ import Kore.Parser.Lexeme
     ( moduleNameIdParser
     )
 import Kore.Parser.ParserUtils
-    ( parseOnly
-    , endOfInput
+    ( endOfInput
+    , parseOnly
     )
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
