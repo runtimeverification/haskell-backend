@@ -19,7 +19,6 @@ module Test.Kore.Builtin.List
     , asTermLike
     , genSeqInteger
     ) where
-
 import Prelude.Kore
 
 import Hedgehog
@@ -34,10 +33,23 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import Data.List
+    ( sort
+    )
 
 import qualified Kore.Builtin.List as List
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeTruePredicate
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
+import SMT
+    ( SMT
+    )
 
 import Test.Kore
     ( testId
@@ -48,6 +60,7 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
+
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
@@ -262,21 +275,23 @@ test_concatAssociates =
 test_concatHeadTailSymbolic :: TestTree
 test_concatHeadTailSymbolic =
     testPropertyWithSolver
-        "qqceil(and{}(concat{}(element{}(x), xs), concat{}(element{}(y), ys))) ===\
+        "and{}(concat{}(element{}(x), xs), concat{}(element{}(y), ys)) ===\
         \ \\dv{Bool{}}(\"true\")"
         prop
   where
     prop = do
-        let patSymbolicX = mkElemVar $ ElementVariable Variable
+        let elemVarX = ElementVariable Variable
                 { variableName = testId "x"
                 , variableCounter = mempty
                 , variableSort = intSort
                 }
-            patSymbolicY = mkElemVar $ ElementVariable Variable
+            patSymbolicX = mkElemVar elemVarX
+            elemVarY = ElementVariable Variable
                 { variableName = testId "y"
                 , variableCounter = mempty
                 , variableSort = intSort
                 }
+            patSymbolicY = mkElemVar elemVarY
             patSymbolicXs = mkElemVar $ ElementVariable Variable
                 { variableName = testId "xs"
                 , variableCounter = mempty
@@ -293,9 +308,19 @@ test_concatHeadTailSymbolic =
                 mkApplySymbol concatListSymbol [ patElemX, patSymbolicXs ]
             patConcatY =
                 mkApplySymbol concatListSymbol [ patElemY, patSymbolicYs ]
-            patUnifiedXY = mkAnd patConcatX patConcatY
-        unified <- evaluateT patUnifiedXY
-        (/==) Pattern.bottom unified
+            --patUnifiedXY = mkAnd patConcatX patConcatY
+            expect = Conditional
+                        { term = patSymbolicY
+                        , predicate = makeTruePredicate listSort
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (ElemVar elemVarX, patSymbolicY)
+                                , (ElemVar elemVarY, patSymbolicYs)
+                                ]
+                        }
+        --unified <- evaluateT patUnifiedXY
+        --traceM $ "Unified\n" <> unparseToString unified
+        (patConcatX `unifiesWith` patConcatY) expect
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
@@ -391,3 +416,46 @@ asPattern =
 hprop_unparse :: Property
 hprop_unparse =
     hpropUnparse (asInternal . (<$>) Test.Int.asInternal <$> genSeqInteger)
+
+-- use as (pat1 `unifiesWith` pat2) expect
+unifiesWith
+    :: HasCallStack
+    => TermLike Variable
+    -> TermLike Variable
+    -> Pattern Variable
+    -> PropertyT SMT ()
+unifiesWith pat1 pat2 expected =
+    unifiesWithMulti pat1 pat2 [expected]
+
+-- use as (pat1 `unifiesWithMulti` pat2) expect
+unifiesWithMulti
+    :: HasCallStack
+    => TermLike Variable
+    -> TermLike Variable
+    -> [Pattern Variable]
+    -> PropertyT SMT ()
+unifiesWithMulti pat1 pat2 expectedResults = do
+    actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
+    compareElements (sort expectedResults) actualResults
+  where
+    compareElements [] actuals = [] === actuals
+    compareElements expecteds [] =  expecteds === []
+    compareElements (expected : expecteds) (actual : actuals) = do
+        compareElement expected actual
+        compareElements expecteds actuals
+    compareElement
+        Conditional
+            { term = expectedTerm
+            , predicate = expectedPredicate
+            , substitution = expectedSubstitution
+            }
+        Conditional
+            { term = actualTerm
+            , predicate = actualPredicate
+            , substitution = actualSubstitution
+            }
+      = do
+        Substitution.toMap expectedSubstitution
+            === Substitution.toMap actualSubstitution
+        expectedPredicate === actualPredicate
+        expectedTerm === actualTerm
