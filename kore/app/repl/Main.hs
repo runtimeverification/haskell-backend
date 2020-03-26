@@ -115,7 +115,7 @@ parseKoreReplOptions =
 
     parseModuleName :: String -> String -> String -> Parser ModuleName
     parseModuleName name helpMessage longName =
-        ModuleName
+        GlobalMain.parseModuleName
         <$> strOption
             (  metavar (name <> "_MODULE")
             <> long longName

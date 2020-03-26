@@ -16,6 +16,7 @@ module GlobalMain
     , clockSomethingIO
     , mainPatternVerify
     , parseDefinition
+    , parseModuleName
     , verifyDefinitionWithBase
     , mainParse
     , lookupMainModule
@@ -129,6 +130,13 @@ import Kore.Parser
     ( ParsedPattern
     , parseKoreDefinition
     )
+import Kore.Parser.Lexeme
+    ( moduleNameIdParser
+    )
+import Kore.Parser.ParserUtils
+    ( parseOnly
+    , endOfInput
+    )
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
@@ -163,6 +171,12 @@ data KoreProveOptions =
         -- fails.
         }
 
+parseModuleName :: String -> ModuleName
+parseModuleName input = 
+    case parseOnly (moduleNameIdParser <* endOfInput) "<test-string>" input of 
+        Left err -> error err
+        Right name -> name
+
 parseKoreProveOptions :: Parser KoreProveOptions
 parseKoreProveOptions =
     KoreProveOptions
@@ -172,7 +186,7 @@ parseKoreProveOptions =
         <> help "Kore source file representing spec to be proven.\
                 \Needs --spec-module."
         )
-    <*> (ModuleName
+    <*> (parseModuleName
         <$> strOption
             (  metavar "SPEC_MODULE"
             <> long "spec-module"

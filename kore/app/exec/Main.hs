@@ -375,7 +375,7 @@ parseKoreExecOptions =
             <> help "Execute up to DEPTH steps."
             )
     parseMainModuleName =
-        ModuleName <$> strOption info
+        GlobalMain.parseModuleName <$> strOption info
       where
         info =
             mconcat
