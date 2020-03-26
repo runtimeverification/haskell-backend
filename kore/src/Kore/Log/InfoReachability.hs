@@ -81,11 +81,11 @@ instance Entry InfoReachability where
     shortDoc (InfoSimplify _) =
         Just "While simplifying the configuration"
     shortDoc (InfoRemoveDestination _) =
-        Just "While removing the destination of the configuration"
+        Just "While checking implication of the proof goal"
     shortDoc (InfoDeriveSeq _ _) =
-        Just "While deriving the rules in sequence"
+        Just "While applying axioms in sequence"
     shortDoc (InfoDerivePar _ _) =
-        Just "While deriving the rules in parallel"
+        Just "While applying axioms in parallel"
 
 whileSimplify
     :: MonadLog log
