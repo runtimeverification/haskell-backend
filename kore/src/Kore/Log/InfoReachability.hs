@@ -78,6 +78,14 @@ instance Pretty.Pretty InfoReachability where
 
 instance Entry InfoReachability where
     entrySeverity _ = Info
+    shortDoc (InfoSimplify _) =
+        Just "While simplifying the configuration"
+    shortDoc (InfoRemoveDestination _) =
+        Just "While removing the destination of the configuration"
+    shortDoc (InfoDeriveSeq _ _) =
+        Just "While deriving the rules in sequence"
+    shortDoc (InfoDerivePar _ _) =
+        Just "While deriving the rules in parallel"
 
 whileSimplify
     :: MonadLog log
