@@ -11,6 +11,7 @@ module Kore.Log.Registry
     , typeToText
     , textToType
     , getEntryTypesAsText
+    , typeOfSomeEntry
     -- entry types
     , debugAppliedRuleType
     , debugAxiomEvaluationType
@@ -92,6 +93,7 @@ import Kore.Log.WarnFunctionWithoutEvaluators
 import Log
     ( Entry
     , LogMessage
+    , SomeEntry (..)
     )
 
 data Registry =
@@ -215,6 +217,11 @@ parseEntryType entryText =
 toSomeEntryType :: Entry entry => entry -> SomeTypeRep
 toSomeEntryType =
     SomeTypeRep . typeOf
+
+{- | The entry type underlying the 'SomeEntry' wrapper.
+ -}
+typeOfSomeEntry :: SomeEntry -> SomeTypeRep
+typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
 
 getEntryTypesAsText :: [Text]
 getEntryTypesAsText = Map.keys . textToType $ registry
