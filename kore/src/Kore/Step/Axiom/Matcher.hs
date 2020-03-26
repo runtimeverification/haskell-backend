@@ -34,6 +34,7 @@ import Control.Monad.Trans.Maybe
 import qualified Data.Align as Align
     ( align
     )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import Data.List
@@ -44,8 +45,7 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import Data.Sequence
-    ( pattern (:<|)
-    , pattern (:|>)
+    ( pattern (:|>)
     , Seq
     )
 import qualified Data.Sequence as Seq
@@ -73,6 +73,7 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike hiding
     ( substitute
     )
@@ -97,6 +98,56 @@ import Kore.Variables.UnifiedVariable
 import Pair
 
 -- * Matching
+
+newtype Constraint variable =
+    Constraint
+        { getConstraint :: Pair (TermLike variable)
+        }
+    deriving (Eq)
+
+data TermLikeClass =
+    Variables
+    | ConcreteBuiltins
+    | ConstructorAtTop
+    | OtherTermLike
+    | ListBuiltin
+    | AssocCommBuiltin
+    deriving (Eq)
+
+termPriority :: TermLikeClass -> Int
+termPriority Variables = 1
+termPriority ConcreteBuiltins = 2
+termPriority ConstructorAtTop = 3
+termPriority OtherTermLike = 4
+termPriority ListBuiltin = 5
+termPriority AssocCommBuiltin = 6
+
+instance Ord TermLikeClass where
+    c1 <= c2 = termPriority c1 <= termPriority c2
+
+findClass :: Constraint variable -> TermLikeClass
+findClass (Constraint (Pair left _)) = findClassWorker left
+  where
+    findClassWorker (Var_ _)           = Variables
+    findClassWorker (ElemVar_ _)       = Variables
+    findClassWorker (SetVar_ _)        = Variables
+    findClassWorker (StringLiteral_ _) = ConcreteBuiltins
+    findClassWorker (BuiltinInt_ _)    = ConcreteBuiltins
+    findClassWorker (BuiltinBool_ _)   = ConcreteBuiltins
+    findClassWorker (BuiltinString_ _) = ConcreteBuiltins
+    findClassWorker (App_ symbol _) =
+        if Symbol.isConstructor symbol
+            then ConstructorAtTop
+            else OtherTermLike
+    findClassWorker (BuiltinList_ _)   = ListBuiltin
+    findClassWorker (BuiltinSet_ _)    = AssocCommBuiltin
+    findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
+    findClassWorker _                  = OtherTermLike
+
+instance Ord variable => Ord (Constraint variable) where
+    compare constraint1@(Constraint pair1) constraint2@(Constraint pair2) =
+        compare (findClass constraint1) (findClass constraint2)
+        <> compare pair1 pair2
 
 type MatchResult variable =
     ( Predicate variable
@@ -149,7 +200,7 @@ matchIncremental termLike1 termLike2 =
 
     initial =
         MatcherState
-            { queued = Seq.singleton (Pair termLike1 termLike2)
+            { queued = Set.singleton (Constraint (Pair termLike1 termLike2))
             , deferred = empty
             , predicate = empty
             , substitution = mempty
@@ -177,7 +228,8 @@ matchIncremental termLike1 termLike2 =
         return (predicate', substitution)
 
 matchEqualHeads
-    :: Monad unifier
+    :: Ord variable
+    => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 -- Terminal patterns
@@ -271,7 +323,8 @@ matchVariable (Pair (SetVar_ variable1) term2) = do
 matchVariable _ = empty
 
 matchApplication
-    :: Monad unifier
+    :: Ord variable
+    => Monad unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
@@ -314,11 +367,12 @@ matchBuiltinSet
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
-    matchNormalizedAc pushSetValue wrapTermLike normalized1 normalized2
+    matchNormalizedAc pushSetElement pushSetValue wrapTermLike normalized1 normalized2
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild set1
     normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild set2
     pushSetValue _ = return ()
+    pushSetElement = push . fmap Builtin.getSetElement
     wrapTermLike unwrapped =
         set2
         & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
@@ -330,11 +384,16 @@ matchBuiltinMap
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
-    matchNormalizedAc pushMapValue wrapTermLike normalized1 normalized2
+    matchNormalizedAc pushMapElement pushMapValue wrapTermLike normalized1 normalized2
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild map1
     normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild map2
     pushMapValue = push . fmap Builtin.getMapValue
+    pushMapElement (Pair element1 element2) = do
+        let (key1, value1) = Builtin.getMapElement element1
+            (key2, value2) = Builtin.getMapElement element2
+        push (Pair key1 key2)
+        push (Pair value1 value2)
     wrapTermLike unwrapped =
         map2
         & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
@@ -364,7 +423,7 @@ type MatchingVariable variable = InternalVariable variable
  -}
 data MatcherState variable =
     MatcherState
-        { queued :: !(Seq (Pair (TermLike variable)))
+        { queued :: !(Set (Constraint variable))
         -- ^ Solvable matching constraints.
         , deferred :: !(Seq (Pair (TermLike variable)))
         -- ^ Unsolvable matching constraints; may become solvable with more
@@ -389,21 +448,23 @@ type MatcherT variable unifier = StateT (MatcherState variable) unifier
 pop
     :: MonadState (MatcherState variable) matcher
     => matcher (Maybe (Pair (TermLike variable)))
-pop =
-    Lens.use (field @"queued") >>= \case
-        next :<| queued' -> do
+pop = do
+    queued <- Lens.use (field @"queued")
+    case Set.minView queued of
+        Just (next, queued') -> do
             field @"queued" .= queued'
-            return (Just next)
+            return . Just . getConstraint $ next
         _ ->
             return Nothing
 
 {- | Push a new constraint onto the matching queue.
  -}
 push
-    :: MonadState (MatcherState variable) matcher
+    :: Ord variable
+    => MonadState (MatcherState variable) matcher
     => Pair (TermLike variable)
     -> matcher ()
-push pair = field @"queued" %= (pair :<|)
+push pair = field @"queued" %= Set.insert (Constraint pair)
 
 {- | Defer a constraint until more information is available.
 
@@ -453,7 +514,7 @@ substitute eVariable termLike = do
 
     Monad.State.get
         -- Apply the substitution to the queued pairs.
-        >>= (field @"queued" . traverse) substitute2
+        >>= (field @"queued" . transformQueue traverse) substitute2
         -- Apply the substitution to the accumulated matching solution.
         >>= (field @"substitution" . traverse) substitute1
         >>= Monad.State.put
@@ -466,9 +527,10 @@ substitute eVariable termLike = do
     subst = Map.singleton variable termLike
 
     substitute2
-        :: Pair (TermLike variable)
-        -> MaybeT (MatcherT variable unifier) (Pair (TermLike variable))
-    substitute2 = traverse substitute1
+        :: Constraint variable
+        -> MaybeT (MatcherT variable unifier) (Constraint variable)
+    substitute2 (Constraint pair) =
+        Constraint <$> traverse substitute1 pair
 
     substitute1
         :: TermLike variable
@@ -491,7 +553,8 @@ the variable does not occur on the right-hand side of the substitution.
 
  -}
 setSubstitute
-    :: (MatchingVariable variable, MonadSimplify unifier)
+    :: forall variable unifier
+    .  (MatchingVariable variable, MonadSimplify unifier)
     => SetVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -510,7 +573,7 @@ setSubstitute sVariable termLike = do
     -- Push the dependent deferred pairs to the front of the queue.
     Foldable.traverse_ push dep
     -- Apply the substitution to the queued pairs.
-    field @"queued" . Lens.mapped %= substitute2
+    field @"queued" . transformQueue Lens.mapped %= substitute2
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
@@ -521,8 +584,18 @@ setSubstitute sVariable termLike = do
     variable = SetVar sVariable
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
-    substitute2 = fmap substitute1
+    substitute2 :: Constraint variable -> Constraint variable
+    substitute2 (Constraint pair) = Constraint $ fmap substitute1 pair
     substitute1 = substituteTermLike subst
+
+transformQueue
+    :: Functor f
+    => Ord a
+    => ((a -> f a) -> [a] -> f [a])
+    -> (a -> f a)
+    -> Set a
+    -> f (Set a)
+transformQueue trans f x = Set.fromList <$> trans f (Set.toAscList x)
 
 substituteTermLike
     :: MatchingVariable variable
@@ -647,46 +720,79 @@ rightAlignLists internal1 internal2
     list12 = Seq.zipWith Pair list1 tail2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
+type Push variable unifier a = Pair a -> MatcherT variable unifier ()
+
 matchNormalizedAc
     :: forall normalized unifier variable
     .   ( Builtin.AcWrapper normalized
         , MatchingVariable variable
         , Monad unifier
         )
-    =>  ( Pair (Builtin.Value normalized (TermLike variable))
-        -> MatcherT variable unifier ()
-        )
+    =>  Push variable unifier (Builtin.Element normalized (TermLike variable))
+    ->  Push variable unifier (Builtin.Value normalized (TermLike variable))
     ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
         -> TermLike variable
         )
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
-  | [] <- excessAbstract1
-  = do
-    Monad.guard (null excessConcrete1)
-    case opaque1 of
-        [] -> do
-            Monad.guard (null opaque2)
-            Monad.guard (null excessConcrete2)
-            Monad.guard (null excessAbstract2)
-        [frame1]
-          | null excessAbstract2
-          , null excessConcrete2
-          , [frame2] <- opaque2 ->
-            push (Pair frame1 frame2)
-          | otherwise ->
-            push (Pair frame1 normalized2')
-        _ -> empty
-    lift $ Foldable.traverse_ pushValue concrete12
-    lift $ Foldable.traverse_ pushValue abstractMerge
+matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
+    | [] <- excessAbstract1
+    = do
+      Monad.guard (null excessConcrete1)
+      case opaque1 of
+          [] -> do
+              Monad.guard (null opaque2)
+              Monad.guard (null excessConcrete2)
+              Monad.guard (null excessAbstract2)
+          [frame1]
+            | null excessAbstract2
+            , null excessConcrete2
+            , [frame2] <- opaque2 ->
+                push (Pair frame1 frame2)
+            | otherwise ->
+                let normalized2' =
+                        wrapTermLike normalized2
+                            { Builtin.concreteElements = excessConcrete2
+                            , Builtin.elementsWithVariables = excessAbstract2
+                            }
+                 in push (Pair frame1 normalized2')
+          _ -> empty
+      lift $ Foldable.traverse_ pushValue concrete12
+      lift $ Foldable.traverse_ pushValue abstractMerge
+    | [element1] <- abstract1
+    , [frame1] <- opaque1
+    , null concrete1 = do
+        let (key1, value1) = Builtin.unwrapElement element1
+        case Builtin.lookupSymbolicKeyOfAc key1 normalized2 of
+            Just value2 -> lift $ do
+                pushValue (Pair value1 value2)
+                let normalized2' =
+                        wrapTermLike
+                        $ Builtin.removeSymbolicKeyOfAc key1 normalized2
+                push (Pair frame1 normalized2')
+            Nothing ->
+                case (headMay . Map.toList $ concrete2, headMay abstract2) of
+                    (Just concreteElement2, _) -> lift $ do
+                        let liftedConcreteElement2 =
+                                Builtin.wrapElement
+                                $ Bifunctor.first TermLike.fromConcrete concreteElement2
+                        pushElement (Pair element1 liftedConcreteElement2)
+                        let (key2, _) = concreteElement2
+                            normalized2' =
+                                wrapTermLike
+                                $ Builtin.removeConcreteKeyOfAc key2 normalized2
+                        push (Pair frame1 normalized2')
+                    (_, Just abstractElement2) -> lift $ do
+                        pushElement (Pair element1 abstractElement2)
+                        let (key2, _) = Builtin.unwrapElement abstractElement2
+                            normalized2' =
+                                wrapTermLike
+                                $ Builtin.removeSymbolicKeyOfAc key2 normalized2
+                        push (Pair frame1 normalized2')
+                    _ -> empty
+    | otherwise = empty
   where
-    normalized2' =
-        wrapTermLike normalized2
-            { Builtin.concreteElements = excessConcrete2
-            , Builtin.elementsWithVariables = excessAbstract2
-            }
     abstract1 = Builtin.elementsWithVariables normalized1
     concrete1 = Builtin.concreteElements normalized1
     opaque1 = Builtin.opaque normalized1
@@ -740,7 +846,6 @@ matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
             -> Builtin.Element normalized (TermLike variable)
             -> Pair (Builtin.Value normalized (TermLike variable))
         elementMerger = Pair `on` (snd . Builtin.unwrapElement)
-matchNormalizedAc _ _ _ _ = empty
 
 data IntersectionDifference a b
     = IntersectionDifference

@@ -28,9 +28,6 @@ import Kore.Internal.TermLike
     , mkAnd
     , mkElemVar
     )
-import Kore.Log
-    ( emptyLogger
-    )
 import Kore.Step.Rule.Combine
 import Kore.Step.RulePattern
     ( RHS (..)
@@ -44,9 +41,11 @@ import Kore.Step.Simplification.Data
 import Kore.Syntax.Variable
     ( Variable
     )
-import qualified SMT
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.SMT
+    ( runNoSMT
+    )
 import Test.Tasty.HUnit.Ext
 
 class RewriteRuleBase base where
@@ -308,7 +307,7 @@ runMergeRules
     :: [RewriteRule Variable]
     -> IO [RewriteRule Variable]
 runMergeRules (rule : rules) =
-    SMT.runSMT SMT.defaultConfig emptyLogger
+    runNoSMT
     $ runSimplifier Mock.env
     $ mergeRules (rule :| rules)
 runMergeRules [] = error "Unexpected empty list of rules."
@@ -317,7 +316,7 @@ runMergeRulesGrouped
     :: [RewriteRule Variable]
     -> IO [RewriteRule Variable]
 runMergeRulesGrouped (rule : rules) =
-    SMT.runSMT SMT.defaultConfig emptyLogger
+    runNoSMT
     $ runSimplifier Mock.env
     $ mergeRulesConsecutiveBatches 2 (rule :| rules)
 runMergeRulesGrouped [] = error "Unexpected empty list of rules."
