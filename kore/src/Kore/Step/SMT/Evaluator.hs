@@ -24,8 +24,8 @@ import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import Data.Reflection
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -72,7 +72,7 @@ import Kore.TopBottom
     )
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable(..)
+    ( UnifiedVariable (..)
     )
 import Log
 import SMT
@@ -194,7 +194,7 @@ translateTerm smtType (QuantifiedVariable var) = do
     let varName = "<" <> Text.pack (show n) <> ">"
         smtVar = SimpleSMT.const varName
     State.modify'
-        (Lens.over (field @"quantifiedVars") $ Map.insert var 
+        (Lens.over (field @"quantifiedVars") $ Map.insert var
             SmtEncoding
             { smtName = varName
             , smtType
@@ -211,7 +211,7 @@ translateTerm t (UninterpretedTerm pat) = do
             Map.filterWithKey
                 (\k _ -> ElemVar k `Set.member` freeVars)
                 quantifiedVars
-        boundVars = Map.keys boundVarsMap 
+        boundVars = Map.keys boundVarsMap
         boundPat = TermLike.mkExistsN boundVars pat
     lookupUninterpreted boundPat quantifiedVars terms
         <|> declareUninterpreted boundPat boundVars boundVarsMap
@@ -232,7 +232,7 @@ translateTerm t (UninterpretedTerm pat) = do
                 smtType <$> mapMaybe (`Map.lookup` boundVarsMap) boundVars
             , resultSort = t
             }
-        State.modify' 
+        State.modify'
             ( Lens.over (field @"terms") $ Map.insert boundPat cache )
         translateSmtEncoding boundVarsMap cache
 
@@ -269,7 +269,7 @@ translateSmtEncoding
     => Map.Map (TermLike.ElementVariable variable) (SmtEncoding variable)
     -> SmtEncoding variable
     -> Translator m variable SExpr
-translateSmtEncoding 
+translateSmtEncoding
     quantifiedVars
     SmtEncoding { smtName = funName, boundVars }
   =

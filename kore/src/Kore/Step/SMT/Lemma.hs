@@ -98,7 +98,7 @@ translateUninterpreted
     -> TranslateItem variable -- ^ uninterpreted pattern
     -> Translator m variable SExpr
 translateUninterpreted _ (QuantifiedVariable _) =
-    error "Lemma encodings don't support quantified variables (yet)" 
+    error "Lemma encodings don't support quantified variables (yet)"
 translateUninterpreted t (UninterpretedTerm pat)
   | isVariable pat =
     lookupPattern <|> freeVariable
