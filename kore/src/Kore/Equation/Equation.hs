@@ -30,10 +30,11 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( TermLike
-    , termLikeSort
+    ( InternalVariable
+    , TermLike
+    , Variable
     )
-import Kore.Internal.Variable
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
@@ -53,6 +54,24 @@ data Equation variable = Equation
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
+
+-- | Creates a basic, unconstrained, Equality pattern
+mkEquation
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> Equation variable
+mkEquation left right =
+    assert (TermLike.termLikeSort left == TermLike.termLikeSort right)
+    Equation
+        { left
+        , requires = Predicate.makeTruePredicate sort
+        , right
+        , ensures = Predicate.makeTruePredicate sort
+        , attributes = Default.def
+        }
+  where
+    sort = TermLike.termLikeSort left
 
 instance NFData variable => NFData (Equation variable)
 
@@ -94,20 +113,31 @@ instance SQL.Column (Equation Variable) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
--- | Creates a basic, unconstrained, Equality pattern
-mkEquation
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> Equation variable
-mkEquation left right =
-    assert (termLikeSort left == termLikeSort right)
-    Equation
-        { left
-        , requires = Predicate.makeTruePredicate sort
-        , right
-        , ensures = Predicate.makeTruePredicate sort
-        , attributes = Default.def
-        }
+instance
+    InternalVariable variable
+    => From (Equation variable) (TermLike variable)
   where
-    sort = termLikeSort left
+    from equation
+      -- \ceil axiom
+      | isTop requires
+      , isTop ensures
+      , TermLike.Ceil_ _ sort1 _ <- left
+      , TermLike.Top_ sort2 <- right
+      , sort1 == sort2
+      = left
+
+      -- unconditional equation
+      | isTop requires
+      , isTop ensures
+      = TermLike.mkEquals_ left right
+
+      -- conditional equation
+      | otherwise =
+        TermLike.mkImplies
+            (from @(Predicate variable) requires)
+            (TermLike.mkAnd
+                (TermLike.mkEquals_ left right)
+                (from @(Predicate variable) ensures)
+            )
+      where
+        Equation { left, requires, right, ensures } = equation
