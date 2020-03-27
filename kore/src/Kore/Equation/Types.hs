@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Equation.Types
     ( Equation (..)
+    , mkEquation
     ) where
 
 import Prelude.Kore
@@ -13,6 +14,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Default as Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -23,11 +25,13 @@ import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.Predicate
     ( Predicate
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
     ( TermLike
+    , termLikeSort
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -89,3 +93,21 @@ instance SQL.Table (Equation Variable)
 instance SQL.Column (Equation Variable) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
+
+-- | Creates a basic, unconstrained, Equality pattern
+mkEquation
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> Equation variable
+mkEquation left right =
+    assert (termLikeSort left == termLikeSort right)
+    Equation
+        { left
+        , requires = Predicate.makeTruePredicate sort
+        , right
+        , ensures = Predicate.makeTruePredicate sort
+        , attributes = Default.def
+        }
+  where
+    sort = termLikeSort left
