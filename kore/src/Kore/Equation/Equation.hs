@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Equation.Types
+module Kore.Equation.Equation
     ( Equation (..)
     , mkEquation
     ) where
