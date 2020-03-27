@@ -176,16 +176,16 @@ data KoreProveOptions =
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
 parseModuleName metaName longName helpMsg =
-    option readSum
+    option readModuleName
         ( metavar metaName
         <> long longName
         <> help helpMsg
         )
 
-readSum :: Options.ReadM ModuleName
-readSum = do
+readModuleName :: Options.ReadM ModuleName
+readModuleName = do
     opt <- str
-    case parseOnly (moduleNameIdParser <* endOfInput) "<test-string>" opt of
+    case parseOnly (moduleNameIdParser <* endOfInput) "<command-line>" opt of
         Left err        -> readerError err
         Right something -> pure something
 
