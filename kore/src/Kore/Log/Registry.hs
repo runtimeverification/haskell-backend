@@ -11,6 +11,7 @@ module Kore.Log.Registry
     , typeToText
     , textToType
     , getEntryTypesAsText
+    , typeOfSomeEntry
     -- entry types
     , debugAppliedRuleType
     , debugAxiomEvaluationType
@@ -80,6 +81,9 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
+import Kore.Log.InfoReachability
+    ( InfoReachability
+    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
@@ -89,6 +93,7 @@ import Kore.Log.WarnFunctionWithoutEvaluators
 import Log
     ( Entry
     , LogMessage
+    , SomeEntry (..)
     )
 
 data Registry =
@@ -118,6 +123,7 @@ registry =
                 , register criticalExecutionErrorType
                 , register logMessageType
                 , register infoAttemptUnificationType
+                , register infoReachabilityType
                 , register errorRewritesInstantiationType
                 ]
         typeToText = makeInverse textToType
@@ -157,6 +163,7 @@ debugAppliedRuleType
   , criticalExecutionErrorType
   , logMessageType
   , infoAttemptUnificationType
+  , infoReachabilityType
   , errorRewritesInstantiationType
   :: SomeTypeRep
 
@@ -186,6 +193,8 @@ logMessageType =
     someTypeRep (Proxy :: Proxy LogMessage)
 infoAttemptUnificationType =
     someTypeRep (Proxy :: Proxy InfoAttemptUnification)
+infoReachabilityType =
+    someTypeRep (Proxy :: Proxy InfoReachability)
 errorRewritesInstantiationType =
     someTypeRep (Proxy :: Proxy ErrorRewritesInstantiation)
 
@@ -208,6 +217,11 @@ parseEntryType entryText =
 toSomeEntryType :: Entry entry => entry -> SomeTypeRep
 toSomeEntryType =
     SomeTypeRep . typeOf
+
+{- | The entry type underlying the 'SomeEntry' wrapper.
+ -}
+typeOfSomeEntry :: SomeEntry -> SomeTypeRep
+typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
 
 getEntryTypesAsText :: [Text]
 getEntryTypesAsText = Map.keys . textToType $ registry

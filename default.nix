@@ -1,3 +1,5 @@
+{ profiling ? false }:
+
 let
   sources = import ./nix/sources.nix;
   haskell-nix = import sources."haskell.nix";
@@ -18,6 +20,18 @@ let
   project =
     pkgs.haskell-nix.stackProject {
       src = pkgs.haskell-nix.haskellLib.cleanGit { src = ./.; };
+      modules = [
+        {
+          # package *
+          enableLibraryProfiling = true;
+          profilingDetail = "none";
+          # package kore
+          packages.kore = {
+            enableExecutableProfiling = profiling;
+            profilingDetail = "toplevel-functions";
+          };
+        }
+      ];
     };
   shell = import ./shell.nix { inherit default; };
   default =
