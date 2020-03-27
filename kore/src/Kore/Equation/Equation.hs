@@ -10,6 +10,8 @@ module Kore.Equation.Equation
     , mapVariables
     , refreshVariables
     , checkInstantiation, InstantiationFailure (..)
+    , isSimplificationRule
+    , equationPriority
     ) where
 
 import Prelude.Kore
@@ -272,3 +274,13 @@ checkInstantiation rule substitutionMap =
               | otherwise -> Nothing
     notConcretes = mapMaybe checkConcrete (Set.toList concretes)
     notSymbolics = mapMaybe checkSymbolic (Set.toList symbolics)
+
+isSimplificationRule :: Equation variable -> Bool
+isSimplificationRule Equation { attributes } =
+    isSimplification
+  where
+    Attribute.Simplification { isSimplification } =
+        Attribute.simplification attributes
+
+equationPriority :: Equation variable -> Integer
+equationPriority = Attribute.getPriorityOfAxiom . attributes
