@@ -55,7 +55,8 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     )
 import Kore.Step.Axiom.Registry
 import Kore.Step.EqualityPattern
-    ( getPriorityOfRule
+    ( EqualityRule
+    , getPriorityOfRule
     )
 import Kore.Step.Rule
     ( extractRewriteAxioms
@@ -396,11 +397,15 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
+    axiomPatternsToEvaluators
+    $ (fmap . map) (from @_ @(EqualityRule Variable))
+    $ extractEqualityAxioms testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEqualityRulesMap
 testProcessedAxiomPatterns =
-    processEqualityRules <$> extractEqualityAxioms testIndexedModule
+    processEqualityRules
+    . map (from @_ @(EqualityRule Variable))
+    <$> extractEqualityAxioms testIndexedModule
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule

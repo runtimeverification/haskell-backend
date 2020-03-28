@@ -132,7 +132,9 @@ test_dont_ignore =
             Just _ -> return ()
   where
     evaluators =
-        axiomPatternsToEvaluators $ extractEqualityAxioms indexedModule
+        axiomPatternsToEvaluators
+        $ (fmap . map) from
+        $ extractEqualityAxioms indexedModule
     verifiedModules =
         assertRight
         $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition

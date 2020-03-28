@@ -76,16 +76,16 @@ import qualified Kore.Verified as Verified
  -}
 extractEqualityAxioms
     :: VerifiedModule StepperAttributes
-    -> Map AxiomIdentifier [EqualityRule Variable]
+    -> Map AxiomIdentifier [Equation Variable]
 extractEqualityAxioms =
     Foldable.foldl' extractModuleAxioms Map.empty
     . indexedModulesInScope
   where
     -- | Update the map of function axioms with all the axioms in one module.
     extractModuleAxioms
-        :: Map AxiomIdentifier [EqualityRule Variable]
+        :: Map AxiomIdentifier [Equation Variable]
         -> VerifiedModule StepperAttributes
-        -> Map AxiomIdentifier [EqualityRule Variable]
+        -> Map AxiomIdentifier [Equation Variable]
     extractModuleAxioms axioms imod =
         Foldable.foldl' extractSentenceAxiom axioms sentences
       where
@@ -95,9 +95,9 @@ extractEqualityAxioms =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     extractSentenceAxiom
-        :: Map AxiomIdentifier [EqualityRule Variable]
+        :: Map AxiomIdentifier [Equation Variable]
         -> (Attribute.Axiom Symbol Variable, Verified.SentenceAxiom)
-        -> Map AxiomIdentifier [EqualityRule Variable]
+        -> Map AxiomIdentifier [Equation Variable]
     extractSentenceAxiom axioms sentence =
         let
             namedAxiom = axiomToIdAxiomPatternPair sentence
@@ -106,19 +106,19 @@ extractEqualityAxioms =
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map AxiomIdentifier [EqualityRule Variable]
-        -> (AxiomIdentifier, EqualityRule Variable)
-        -> Map AxiomIdentifier [EqualityRule Variable]
+        :: Map AxiomIdentifier [Equation Variable]
+        -> (AxiomIdentifier, Equation Variable)
+        -> Map AxiomIdentifier [Equation Variable]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 axiomToIdAxiomPatternPair
     :: (Attribute.Axiom Symbol Variable, SentenceAxiom (TermLike Variable))
-    -> Maybe (AxiomIdentifier, EqualityRule Variable)
+    -> Maybe (AxiomIdentifier, Equation Variable)
 axiomToIdAxiomPatternPair axiom = do
     equation@Equation { left } <- hush $ Equation.fromSentenceAxiom axiom
     identifier <- AxiomIdentifier.matchAxiomIdentifier left
-    pure (identifier, from @(Equation Variable) equation)
+    pure (identifier, equation)
 
 data PartitionedEqualityRules =
     PartitionedEqualityRules

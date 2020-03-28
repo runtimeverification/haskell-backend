@@ -46,11 +46,17 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.Variable
+    ( Variable
+    )
 import Kore.Profiler.Data
     ( MonadProfiler (profile)
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Registry as Axiom.Registry
+import Kore.Step.EqualityPattern
+    ( EqualityRule
+    )
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.InjSimplifier
@@ -218,6 +224,7 @@ evalSimplifier verifiedModule simplifier = do
     initialize = do
         let equalityAxioms =
                 Axiom.Registry.extractEqualityAxioms verifiedModule'
+                & (fmap . map) (from @_ @(EqualityRule Variable))
         functionAxioms <- Rule.simplifyFunctionAxioms equalityAxioms
         let
             builtinEvaluators, userEvaluators, simplifierAxioms
