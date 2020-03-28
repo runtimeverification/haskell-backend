@@ -16,6 +16,9 @@ module Kore.Step.Axiom.Registry
 
 import Prelude.Kore
 
+import Control.Error
+    ( hush
+    )
 import qualified Data.Foldable as Foldable
 import Data.List
     ( partition
@@ -38,6 +41,10 @@ import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
+import Kore.Equation
+    ( Equation (..)
+    )
+import qualified Kore.Equation as Equation
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -56,10 +63,6 @@ import Kore.Step.EqualityPattern
     , getPriorityOfRule
     , isSimplificationRule
     )
-import Kore.Step.Rule
-    ( QualifiedAxiomPattern (..)
-    )
-import qualified Kore.Step.Rule as Rule
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier (..)
     )
@@ -112,20 +115,10 @@ extractEqualityAxioms =
 axiomToIdAxiomPatternPair
     :: (Attribute.Axiom Symbol Variable, SentenceAxiom (TermLike Variable))
     -> Maybe (AxiomIdentifier, EqualityRule Variable)
-axiomToIdAxiomPatternPair axiom =
-    case Rule.fromSentenceAxiom axiom of
-        Left _ -> Nothing
-        Right
-            (FunctionAxiomPattern
-                axiomPat@(EqualityRule EqualityPattern { left })
-            )
-          -> do
-            identifier <- AxiomIdentifier.matchAxiomIdentifier left
-            return (identifier, axiomPat)
-        Right (RewriteAxiomPattern _) -> Nothing
-        Right (OnePathClaimPattern _) -> Nothing
-        Right (AllPathClaimPattern _) -> Nothing
-        Right (ImplicationAxiomPattern _) -> Nothing
+axiomToIdAxiomPatternPair axiom = do
+    equation@Equation { left } <- hush $ Equation.fromSentenceAxiom axiom
+    identifier <- AxiomIdentifier.matchAxiomIdentifier left
+    pure (identifier, from @(Equation Variable) equation)
 
 data PartitionedEqualityRules =
     PartitionedEqualityRules
