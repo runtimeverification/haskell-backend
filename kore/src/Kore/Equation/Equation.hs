@@ -46,6 +46,7 @@ import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
     , SetVariable
+    , Sort
     , TermLike
     , Variable
     )
@@ -80,10 +81,11 @@ data Equation variable = Equation
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation
     :: InternalVariable variable
-    => TermLike variable
+    => Sort
+    -> TermLike variable
     -> TermLike variable
     -> Equation variable
-mkEquation left right =
+mkEquation sort left right =
     assert (TermLike.termLikeSort left == TermLike.termLikeSort right)
     Equation
         { left
@@ -92,8 +94,6 @@ mkEquation left right =
         , ensures = Predicate.makeTruePredicate sort
         , attributes = Default.def
         }
-  where
-    sort = TermLike.termLikeSort left
 
 instance NFData variable => NFData (Equation variable)
 

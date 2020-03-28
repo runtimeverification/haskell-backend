@@ -26,14 +26,14 @@ test_fromSentenceAxiom =
     [ testCase "⌈I1 / I2⌉" $ do
         let term = Mock.tdivInt varI1 varI2
             original = mkAxiom [sortVariableR] $ mkCeil sortR term
-            expect = mkEquation (mkCeil sortR term) (mkTop sortR)
+            expect = mkEquation sortR (mkCeil sortR term) (mkTop sortR)
         actual <- expectRight $ fromSentenceAxiom (def, original)
         assertEqual "" expect actual
     , testCase "I1 < I2 = I2 >= I1" $ do
         let left = Mock.lessInt varI1 varI2
             right = Mock.greaterEqInt varI2 varI1
             original = mkAxiom [sortVariableR] $ mkEquals sortR left right
-            expect = mkEquation left right
+            expect = mkEquation sortR left right
         actual <- expectRight $ fromSentenceAxiom (def, original)
         assertEqual "" expect actual
     , testCase "⌈f(x))⌉ → f(x) = g(x) ∧ ⌈h(x)⌉" $ do
@@ -45,7 +45,7 @@ test_fromSentenceAxiom =
                 mkAxiom [sortVariableR]
                 $ mkImplies requires
                 $ mkAnd (mkEquals sortR left right) ensures
-            expect = (mkEquation left right)
+            expect = (mkEquation sortR left right)
                 { requires = wrapPredicate requires
                 , ensures = wrapPredicate ensures
                 }
