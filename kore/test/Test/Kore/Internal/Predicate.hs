@@ -29,6 +29,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
+import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -382,9 +383,6 @@ test_predicate =
     ]
 
 data Simplified = IsSimplified | NotSimplified
-
-expectRight :: Debug left => Either left right -> IO right
-expectRight = either (assertFailure . show . debug) return
 
 makesPredicate
     :: HasCallStack
