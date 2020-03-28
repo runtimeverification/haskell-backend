@@ -49,6 +49,7 @@ import Kore.Internal.TermLike
     , Sort
     , TermLike
     , Variable
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Step
@@ -151,17 +152,20 @@ instance
       -- unconditional equation
       | isTop requires
       , isTop ensures
-      = TermLike.mkEquals_ left right
+      = TermLike.mkEquals sort left right
 
       -- conditional equation
       | otherwise =
         TermLike.mkImplies
-            (from @(Predicate variable) requires)
+            requires'
             (TermLike.mkAnd
-                (TermLike.mkEquals_ left right)
-                (from @(Predicate variable) ensures)
+                (TermLike.mkEquals sort left right)
+                ensures'
             )
       where
+        requires' = from @(Predicate variable) requires
+        ensures' = from @(Predicate variable) ensures
+        sort = termLikeSort requires'
         Equation { left, requires, right, ensures } = equation
 
 instance
