@@ -12,6 +12,7 @@ module Kore.Equation.Equation
     , checkInstantiation, InstantiationFailure (..)
     , isSimplificationRule
     , equationPriority
+    , matchEquation, MatchEquationError (..)
     ) where
 
 import Prelude.Kore
@@ -19,6 +20,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import Data.Map.Strict
     ( Map
@@ -30,13 +32,24 @@ import qualified GHC.Generics as GHC
 
 import Debug
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom.Constructor
+    ( Constructor (..)
+    )
+import Kore.Attribute.Functional
+    ( Functional (..)
+    )
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Subsort
+    ( Subsorts (..)
+    )
 import Kore.Internal.Predicate
-    ( Predicate
+    ( NotPredicate
+    , Predicate
+    , makePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
@@ -48,6 +61,7 @@ import Kore.Internal.TermLike
     , SetVariable
     , TermLike
     , Variable
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Step
@@ -238,13 +252,13 @@ an 'Equation'.
  -}
 data InstantiationFailure variable
     = NotConcrete (UnifiedVariable variable) (TermLike variable)
-    -- ^ The instantiation was rejected because a variable was instantiated with
-    -- a symbolic term where a concrete term was required.
+    -- ^ The variable was instantiated with a symbolic term where a concrete
+    -- term was required.
     | NotSymbolic (UnifiedVariable variable) (TermLike variable)
-    -- ^ The instantiation was rejected because a variable was instantiated with
-    -- a concrete term where a symbolic term was required.
+    -- ^ The variable was instantiated with a concrete term where a symbolic
+    -- term was required.
     | NotInstantiated (UnifiedVariable variable)
-    -- ^ The instantiation was rejected because a variable was not instantiated.
+    -- ^ The variable was not instantiated.
 
 checkInstantiation
     :: InternalVariable variable
@@ -284,3 +298,79 @@ isSimplificationRule Equation { attributes } =
 
 equationPriority :: Equation variable -> Integer
 equationPriority = Attribute.getPriorityOfAxiom . attributes
+
+data MatchEquationError variable
+    = NotEquation !(TermLike variable)
+    | RequiresError !(NotPredicate variable)
+    | EnsuresError !(NotPredicate variable)
+    | FunctionalAxiom
+    | ConstructorAxiom
+    | SubsortAxiom
+
+{- | Match a term encoding an 'QualifiedAxiomPattern'.
+
+@patternToAxiomPattern@ returns an error if the given 'TermLike' does
+not encode a normal rewrite or function axiom.
+-}
+matchEquation
+    :: forall variable
+    .  InternalVariable variable
+    => Attribute.Axiom Symbol variable
+    -> TermLike variable
+    -> Either (MatchEquationError variable) (Equation variable)
+matchEquation attributes termLike
+  | isFunctionalAxiom = Left FunctionalAxiom
+  | isConstructorAxiom = Left ConstructorAxiom
+  | isSubsortAxiom = Left SubsortAxiom
+  | TermLike.Forall_ _ _ child <- termLike = matchEquation attributes child
+  | otherwise = match termLike >>= removeRedundantEnsures
+  where
+    isFunctionalAxiom = (isDeclaredFunctional . Attribute.functional) attributes
+    isConstructorAxiom = (isConstructor . Attribute.constructor) attributes
+    isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
+    match
+        (TermLike.Implies_ _
+            requires
+            (TermLike.And_ _
+                (TermLike.Equals_ _ _ left right)
+                ensures
+            )
+        )
+      = do
+        requires' <- makePredicate requires & Bifunctor.first RequiresError
+        ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+        pure Equation
+            { requires = requires'
+            , left
+            , right
+            , ensures = ensures'
+            , attributes
+            }
+
+    match (TermLike.Equals_ _ sort left right) =
+        pure Equation
+            { requires = Predicate.makeTruePredicate sort
+            , left
+            , right
+            , ensures = Predicate.makeTruePredicate sort
+            , attributes
+            }
+
+    match left@(TermLike.Ceil_ _ sort _) =
+        pure Equation
+            { requires = Predicate.makeTruePredicate sort
+            , left
+            , right = TermLike.mkTop sort
+            , ensures = Predicate.makeTruePredicate sort
+            , attributes
+            }
+
+    match termLike' = Left (NotEquation termLike')
+
+    -- If the ensures and requires are the same, then the ensures is redundant.
+    removeRedundantEnsures equation@Equation { requires, ensures }
+      | ensures == requires =
+        return equation { ensures = Predicate.makeTruePredicate sort }
+      | otherwise = return equation
+      where
+        sort = termLikeSort (Predicate.unwrapPredicate ensures)
