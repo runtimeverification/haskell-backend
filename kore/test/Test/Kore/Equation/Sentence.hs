@@ -12,7 +12,6 @@ import Data.Default
 
 import Kore.Equation
 import Kore.Internal.TermLike
-import qualified Kore.Verified as Verified
 
 import Test.Expect
 import Test.Kore
@@ -21,13 +20,16 @@ import Test.Tasty.HUnit.Ext
 
 test_fromSentenceAxiom :: [TestTree]
 test_fromSentenceAxiom =
-    [ testCase "\\ceil(I1:AInt <= I2:AInt)" $ do
+    [ testCase "\\ceil(tdivInt(I1:AInt, I2:AInt))" $ do
         let term = Mock.tdivInt varI1 varI2
-            sortR = mkSortVariable (testId "R")
-        actual <- expectRight $ fromSentenceAxiom (def, mkCeilEquation term)
-        let expect = mkEquation (mkCeil sortR term) (mkTop sortR)
+            original = mkAxiom [sortVariableR] $ mkCeil sortR term
+            expect = mkEquation (mkCeil sortR term) (mkTop sortR)
+        actual <- expectRight $ fromSentenceAxiom (def, original)
         assertEqual "" expect actual
     ]
+  where
+    sortVariableR = SortVariable (testId "R")
+    sortR = SortVariableSort sortVariableR
 
 varI1, varI2 :: TermLike Variable
 varI1 =
@@ -43,14 +45,3 @@ varI2 =
         , variableCounter = mempty
         , variableSort = Mock.intSort
         }
-
-{- | Construct a 'SentenceAxiom' corresponding to a 'Ceil' axiom.
-
- -}
-mkCeilEquation
-    :: TermLike Variable  -- ^ the child of 'Ceil'
-    -> Verified.SentenceAxiom
-mkCeilEquation child = mkAxiom [sortVariableR] $ mkCeil sortR child
-  where
-    sortVariableR = SortVariable "R"
-    sortR = SortVariableSort sortVariableR
