@@ -35,7 +35,6 @@ import Kore.Internal.ApplicationSorts
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Step.EqualityPattern
 import Kore.Step.Rule
 import Kore.Step.RulePattern
 import Kore.Syntax.Definition hiding
@@ -135,15 +134,6 @@ axiomPatternsUnitTests =
                     . map fromSentenceAxiom . indexedModuleAxioms
                     $ extractIndexedModule "TEST" indexedDefinition
                     )
-        , testCase "\\ceil(I1:AInt <= I2:AInt)" $ do
-            let term = applyLeqAInt varI1 varI2
-                sortR = mkSortVariable (testId "R")
-            assertEqual ""
-                (Right $ FunctionAxiomPattern $ EqualityRule $ equalityPattern
-                    (mkCeil sortR term)
-                    (mkTop sortR)
-                )
-                (fromSentence . (,) def $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
             $ assertErrorIO
                 (assertSubstring "" "Unsupported pattern type in axiom")
