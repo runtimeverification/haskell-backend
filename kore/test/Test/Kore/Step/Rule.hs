@@ -272,30 +272,6 @@ test_patternToAxiomPatternAndBack =
                         (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
-            let initialPattern = mkImplies
-                    (Predicate.unwrapPredicate requiresP)
-                    (mkAnd (mkEquals_ leftP rightP) mkTop_)
-            in
-                testCase "Function axioms: general" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
-            let initialPattern = mkEquals_ leftP rightP
-            in
-                testCase "Function axioms: trivial pre- and post-conditions" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
-            let initialPattern = mkCeil (termLikeSort (mkElemVar Mock.x))
-                                    $ mkElemVar Mock.x
-            in
-                testCase "Definedness axioms" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
             let op = aPG $ termLikeSort leftP
                 initialPattern = mkImplies
                     leftP
