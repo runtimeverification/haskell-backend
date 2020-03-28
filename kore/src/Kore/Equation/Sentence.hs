@@ -12,7 +12,10 @@ module Kore.Equation.Sentence
 import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Debug
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor
     ( Constructor (..)
@@ -55,6 +58,13 @@ data MatchEquationError variable
     | FunctionalAxiom
     | ConstructorAxiom
     | SubsortAxiom
+    deriving (GHC.Generic)
+
+instance SOP.Generic (MatchEquationError variable)
+
+instance SOP.HasDatatypeInfo (MatchEquationError variable)
+
+instance Debug variable => Debug (MatchEquationError variable)
 
 {- | Match a term encoding an 'QualifiedAxiomPattern'.
 
