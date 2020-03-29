@@ -9,7 +9,6 @@ module Kore.Equation.Equation
     , mkEquation
     , mapVariables
     , refreshVariables
-    , checkInstantiation, InstantiationFailure (..)
     , isSimplificationRule
     , equationPriority
     , substitute
@@ -25,7 +24,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -237,48 +235,6 @@ refreshVariables
     Equation { left, requires, right, ensures, attributes } = equation
     originalFreeVariables =
         FreeVariables.getFreeVariables $ freeVariables equation
-
-{- | @InstantiationFailure@ represents a reason to reject the instantiation of
-an 'Equation'.
- -}
-data InstantiationFailure variable
-    = NotConcrete (UnifiedVariable variable) (TermLike variable)
-    -- ^ The variable was instantiated with a symbolic term where a concrete
-    -- term was required.
-    | NotSymbolic (UnifiedVariable variable) (TermLike variable)
-    -- ^ The variable was instantiated with a concrete term where a symbolic
-    -- term was required.
-    | NotInstantiated (UnifiedVariable variable)
-    -- ^ The variable was not instantiated.
-
-checkInstantiation
-    :: InternalVariable variable
-    => Equation variable
-    -> Map (UnifiedVariable variable) (TermLike variable)
-    -> [InstantiationFailure variable]
-checkInstantiation rule substitutionMap =
-    notConcretes <> notSymbolics
-  where
-    attrs = attributes rule
-    concretes = FreeVariables.getFreeVariables
-        . Attribute.unConcrete . Attribute.concrete $ attrs
-    symbolics = FreeVariables.getFreeVariables
-        . Attribute.unSymbolic . Attribute.symbolic $ attrs
-    checkConcrete var =
-        case Map.lookup var substitutionMap of
-            Nothing -> Just (NotInstantiated var)
-            Just termLike
-              | TermLike.isConstructorLike termLike -> Nothing
-              | otherwise -> Just (NotConcrete var termLike)
-    checkSymbolic var =
-        case Map.lookup var substitutionMap of
-            Nothing -> Just (NotInstantiated var)
-            Just termLike
-              | TermLike.isConstructorLike termLike ->
-                Just (NotSymbolic var termLike)
-              | otherwise -> Nothing
-    notConcretes = mapMaybe checkConcrete (Set.toList concretes)
-    notSymbolics = mapMaybe checkSymbolic (Set.toList symbolics)
 
 isSimplificationRule :: Equation variable -> Bool
 isSimplificationRule Equation { attributes } =
