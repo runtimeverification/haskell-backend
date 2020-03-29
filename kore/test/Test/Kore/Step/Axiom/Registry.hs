@@ -394,11 +394,11 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    mkEvaluatorRegistry $ extractEqualityAxioms testIndexedModule
+    mkEvaluatorRegistry $ extractEquations testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
-    partitionEquations <$> extractEqualityAxioms testIndexedModule
+    partitionEquations <$> extractEquations testIndexedModule
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule

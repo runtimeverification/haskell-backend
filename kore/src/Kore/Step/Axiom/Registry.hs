@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Axiom.Registry
-    ( extractEqualityAxioms
+    ( extractEquations
     , mkEvaluatorRegistry
     , partitionEquations
     , PartitionedEquations (..)
@@ -68,35 +68,32 @@ import qualified Kore.Verified as Verified
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
  -}
-extractEqualityAxioms
+extractEquations
     :: VerifiedModule StepperAttributes
     -> Map AxiomIdentifier [Equation Variable]
-extractEqualityAxioms =
-    Foldable.foldl' extractModuleAxioms Map.empty
+extractEquations =
+    Foldable.foldl' moduleWorker Map.empty
     . indexedModulesInScope
   where
     -- | Update the map of function axioms with all the axioms in one module.
-    extractModuleAxioms
+    moduleWorker
         :: Map AxiomIdentifier [Equation Variable]
         -> VerifiedModule StepperAttributes
         -> Map AxiomIdentifier [Equation Variable]
-    extractModuleAxioms axioms imod =
-        Foldable.foldl' extractSentenceAxiom axioms sentences
+    moduleWorker axioms imod =
+        Foldable.foldl' sentenceWorker axioms sentences
       where
         sentences = indexedModuleAxioms imod
 
     -- | Extract an axiom from one sentence and update the map of function
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
-    extractSentenceAxiom
+    sentenceWorker
         :: Map AxiomIdentifier [Equation Variable]
         -> (Attribute.Axiom Symbol Variable, Verified.SentenceAxiom)
         -> Map AxiomIdentifier [Equation Variable]
-    extractSentenceAxiom axioms sentence =
-        let
-            namedAxiom = axiomToIdAxiomPatternPair sentence
-        in
-            Foldable.foldl' insertAxiom axioms namedAxiom
+    sentenceWorker axioms sentence =
+        Foldable.foldl' insertAxiom axioms (identifyEquation sentence)
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
@@ -106,10 +103,10 @@ extractEqualityAxioms =
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
-axiomToIdAxiomPatternPair
+identifyEquation
     :: (Attribute.Axiom Symbol Variable, SentenceAxiom (TermLike Variable))
     -> Maybe (AxiomIdentifier, Equation Variable)
-axiomToIdAxiomPatternPair axiom = do
+identifyEquation axiom = do
     equation@Equation { left } <- hush $ Equation.fromSentenceAxiom axiom
     identifier <- AxiomIdentifier.matchAxiomIdentifier left
     pure (identifier, equation)

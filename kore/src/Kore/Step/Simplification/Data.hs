@@ -223,7 +223,7 @@ evalSimplifier verifiedModule simplifier = do
     initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do
         let equalityAxioms =
-                Axiom.Registry.extractEqualityAxioms verifiedModule'
+                Axiom.Registry.extractEquations verifiedModule'
                 & (fmap . map) (from @_ @(EqualityRule Variable))
         functionAxioms <- Rule.simplifyFunctionAxioms equalityAxioms
         let
