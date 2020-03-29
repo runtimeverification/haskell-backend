@@ -92,6 +92,8 @@ instance SOP.HasDatatypeInfo (ApplyEquationError variable)
 
 instance Debug variable => Debug (ApplyEquationError variable)
 
+instance (Debug variable, Diff variable) => Diff (ApplyEquationError variable)
+
 {- | @InstantiationError@ represents a reason to reject the instantiation of
 an 'Equation'.
  -}
@@ -111,6 +113,8 @@ instance SOP.Generic (InstantiationError variable)
 instance SOP.HasDatatypeInfo (InstantiationError variable)
 
 instance Debug variable => Debug (InstantiationError variable)
+
+instance (Debug variable, Diff variable) => Diff (InstantiationError variable)
 
 applyEquation
     :: forall simplifier variable
