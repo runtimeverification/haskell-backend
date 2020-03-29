@@ -10,6 +10,7 @@ Portability : portable
 -}
 module Kore.Step.Axiom.Matcher
     ( MatchingVariable
+    , MatchResult
     , matchIncremental
     ) where
 
