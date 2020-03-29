@@ -47,9 +47,6 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import Kore.Internal.Variable
-    ( Variable
-    )
 import Kore.Profiler.Data
     ( MonadProfiler (profile)
     )
@@ -57,14 +54,10 @@ import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
-import Kore.Step.EqualityPattern
-    ( EqualityRule
-    )
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
@@ -225,19 +218,16 @@ evalSimplifier verifiedModule simplifier = do
 
     initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do
-        let equalityAxioms =
-                Equation.extractEquations verifiedModule'
-                & (fmap . map) (from @_ @(EqualityRule Variable))
-        functionAxioms <- Rule.simplifyFunctionAxioms equalityAxioms
+        equations <-
+            Equation.simplifyExtractedEquations
+            $ Equation.extractEquations verifiedModule'
         let
             builtinEvaluators, userEvaluators, simplifierAxioms
                 :: BuiltinAndAxiomSimplifierMap
+            userEvaluators = mkEvaluatorRegistry equations
             builtinEvaluators =
                 Axiom.EvaluationStrategy.builtinEvaluation
                 <$> Builtin.koreEvaluators verifiedModule'
-            userEvaluators =
-                mkEvaluatorRegistry
-                $ (fmap . map) from functionAxioms
             simplifierAxioms =
                 Map.unionWith
                     Axiom.EvaluationStrategy.simplifierWithFallback
