@@ -61,7 +61,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
-    ( axiomPatternsToEvaluators
+    ( mkEvaluatorRegistry
     )
 import Kore.Step.Simplification.And
     ( termAnd
@@ -1180,7 +1180,7 @@ test_equalsTermsSimplification =
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
-            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+            simplifiers = mkEvaluatorRegistry $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)
                     ,   [
@@ -1275,7 +1275,7 @@ test_equalsTermsSimplification =
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
-            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+            simplifiers = mkEvaluatorRegistry $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)
                     ,   [

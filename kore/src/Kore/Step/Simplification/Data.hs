@@ -233,7 +233,7 @@ evalSimplifier verifiedModule simplifier = do
                 Axiom.EvaluationStrategy.builtinEvaluation
                 <$> Builtin.koreEvaluators verifiedModule'
             userEvaluators =
-                Axiom.Registry.axiomPatternsToEvaluators
+                Axiom.Registry.mkEvaluatorRegistry
                 $ (fmap . map) from functionAxioms
             simplifierAxioms =
                 Map.unionWith

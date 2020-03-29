@@ -394,7 +394,7 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
+    mkEvaluatorRegistry $ extractEqualityAxioms testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =

@@ -67,7 +67,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
 import Kore.Step.Axiom.Registry
-    ( axiomPatternsToEvaluators
+    ( mkEvaluatorRegistry
     )
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
@@ -214,7 +214,7 @@ test_simplificationIntegration =
             expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
-                (axiomPatternsToEvaluators
+                (mkEvaluatorRegistry
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
@@ -252,7 +252,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ from $ axiom
@@ -296,7 +296,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.fIntId
                             ,   [ from . EqualityRule $ equalityPattern
@@ -345,7 +345,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.functional10Id
                             ,   [ from . EqualityRule $ conditionalEqualityPattern
@@ -376,7 +376,7 @@ test_simplificationIntegration =
         assertErrorIO
             (assertSubstring "" "doesn't imply rule condition")
             (evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.fIntId
                             ,   [ from . EqualityRule $ equalityPattern
@@ -468,7 +468,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                (axiomPatternsToEvaluators $ Map.fromList
+                (mkEvaluatorRegistry $ Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cfId
                         ,   [ from . EqualityRule $ equalityPattern
                                 Mock.cf
@@ -499,7 +499,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ from $ axiom
@@ -533,7 +533,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ from $ axiom
@@ -566,7 +566,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ from $ axiom
@@ -599,7 +599,7 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ from $ axiom
