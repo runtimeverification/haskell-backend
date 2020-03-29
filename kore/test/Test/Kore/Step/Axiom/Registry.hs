@@ -398,7 +398,7 @@ testEvaluators =
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
-    processEqualityRules <$> extractEqualityAxioms testIndexedModule
+    partitionEquations <$> extractEqualityAxioms testIndexedModule
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule

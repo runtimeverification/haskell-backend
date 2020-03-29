@@ -10,7 +10,7 @@ Portability : portable
 module Kore.Step.Axiom.Registry
     ( extractEqualityAxioms
     , axiomPatternsToEvaluators
-    , processEqualityRules
+    , partitionEquations
     , PartitionedEquations (..)
     ) where
 
@@ -123,10 +123,10 @@ data PartitionedEquations =
 -- | Filters and partitions a list of 'EqualityRule's to
 -- simplification rules and function rules. The function rules
 -- are also sorted in order of priority.
-processEqualityRules
+partitionEquations
     :: [Equation Variable]
     -> PartitionedEquations
-processEqualityRules equations =
+partitionEquations equations =
     PartitionedEquations
         { functionRules
         , simplificationRules
@@ -173,7 +173,7 @@ axiomPatternsToEvaluators
     :: Map.Map AxiomIdentifier [Equation Variable]
     -> Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 axiomPatternsToEvaluators =
-    mapMaybe (equalitiesToEvaluators . processEqualityRules)
+    mapMaybe (equalitiesToEvaluators . partitionEquations)
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
