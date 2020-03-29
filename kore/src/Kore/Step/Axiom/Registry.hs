@@ -11,7 +11,7 @@ module Kore.Step.Axiom.Registry
     ( extractEqualityAxioms
     , axiomPatternsToEvaluators
     , processEqualityRules
-    , PartitionedEqualityRules (..)
+    , PartitionedEquations (..)
     ) where
 
 import Prelude.Kore
@@ -114,8 +114,8 @@ axiomToIdAxiomPatternPair axiom = do
     identifier <- AxiomIdentifier.matchAxiomIdentifier left
     pure (identifier, equation)
 
-data PartitionedEqualityRules =
-    PartitionedEqualityRules
+data PartitionedEquations =
+    PartitionedEquations
         { functionRules       :: ![Equation Variable]
         , simplificationRules :: ![Equation Variable]
         }
@@ -125,9 +125,9 @@ data PartitionedEqualityRules =
 -- are also sorted in order of priority.
 processEqualityRules
     :: [Equation Variable]
-    -> PartitionedEqualityRules
+    -> PartitionedEquations
 processEqualityRules equations =
-    PartitionedEqualityRules
+    PartitionedEquations
         { functionRules
         , simplificationRules
         }
@@ -144,10 +144,10 @@ processEqualityRules equations =
 -- | Converts a collection of processed 'EqualityRule's to one of
 -- 'BuiltinAndAxiomSimplifier's
 equalitiesToEvaluators
-    :: PartitionedEqualityRules
+    :: PartitionedEquations
     -> Maybe BuiltinAndAxiomSimplifier
 equalitiesToEvaluators
-    PartitionedEqualityRules { functionRules, simplificationRules }
+    PartitionedEquations { functionRules, simplificationRules }
   =
     case (simplificationEvaluator, definitionEvaluator) of
         (Nothing, Nothing) -> Nothing

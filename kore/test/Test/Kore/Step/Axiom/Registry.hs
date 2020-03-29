@@ -69,8 +69,8 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
-type PartitionedEqualityRulesMap =
-    Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEqualityRules
+type PartitionedEquationsMap =
+    Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEquations
 
 updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType
 updateAttributes attrs = updateAttrs
@@ -396,7 +396,7 @@ testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
     axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
 
-testProcessedAxiomPatterns :: PartitionedEqualityRulesMap
+testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
     processEqualityRules <$> extractEqualityAxioms testIndexedModule
 
@@ -472,7 +472,7 @@ test_functionRegistry =
         (let axiomId = AxiomIdentifier.Application (testId "f")
           in
            (case Map.lookup axiomId testProcessedAxiomPatterns of
-                Just PartitionedEqualityRules { functionRules } ->
+                Just PartitionedEquations { functionRules } ->
                     assertEqual ""
                         [1, 2, 3, defaultPriority, owisePriority]
                         (fmap Equation.equationPriority functionRules)
@@ -483,7 +483,7 @@ test_functionRegistry =
         (let axiomId = AxiomIdentifier.Application (testId "p")
           in
            (case Map.lookup axiomId testProcessedAxiomPatterns of
-                Just PartitionedEqualityRules { simplificationRules } ->
+                Just PartitionedEquations { simplificationRules } ->
                     assertEqual ""
                         [1, 2, 3]
                         (fmap Equation.equationPriority simplificationRules)
