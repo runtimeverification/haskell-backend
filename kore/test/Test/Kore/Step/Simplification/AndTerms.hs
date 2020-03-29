@@ -1189,21 +1189,21 @@ test_equalsTermsSimplification =
                                 (mkCeil sortVar Mock.cf)
                                 (mkOr
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.a
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.a
                                         )
                                     )
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.b
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.b
                                         )
@@ -1283,21 +1283,21 @@ test_equalsTermsSimplification =
                                 (mkCeil sortVar Mock.cf)
                                 (mkOr
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.a
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.a
                                         )
                                     )
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.b
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.b
                                         )
@@ -1316,21 +1316,21 @@ test_equalsTermsSimplification =
                                 (mkCeil sortVar Mock.cg)
                                 (mkOr
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.g (mkElemVar Mock.z))
                                             Mock.a
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.z)
                                             Mock.a
                                         )
                                     )
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.g (mkElemVar Mock.z))
                                             Mock.b
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.z)
                                             Mock.b
                                         )

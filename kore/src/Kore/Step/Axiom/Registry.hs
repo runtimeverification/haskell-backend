@@ -57,12 +57,6 @@ import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (EqualityRule)
-    , getPriorityOfRule
-    , isSimplificationRule
-    )
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier (..)
     )
@@ -122,8 +116,8 @@ axiomToIdAxiomPatternPair axiom = do
 
 data PartitionedEqualityRules =
     PartitionedEqualityRules
-        { functionRules       :: ![EqualityRule Variable]
-        , simplificationRules :: ![EqualityRule Variable]
+        { functionRules       :: ![Equation Variable]
+        , simplificationRules :: ![Equation Variable]
         }
 
 -- | Filters and partitions a list of 'EqualityRule's to
@@ -138,14 +132,13 @@ processEqualityRules equations =
         , simplificationRules
         }
   where
-    equalities =
+    equations' =
         equations
-        & map from
-        & filter (not . ignoreEqualityRule)
+        & filter (not . ignoreEquation)
     (simplificationRules, unProcessedFunctionRules) =
-        partition isSimplificationRule
-        . sortOn getPriorityOfRule
-        $ equalities
+        partition Equation.isSimplificationRule
+        . sortOn Equation.equationPriority
+        $ equations'
     functionRules = filter (not . ignoreDefinition) unProcessedFunctionRules
 
 -- | Converts a collection of processed 'EqualityRule's to one of
@@ -169,11 +162,12 @@ equalitiesToEvaluators
             else
                 Just . firstFullEvaluation
                 $ simplificationEvaluation
+                . from
                 <$> simplificationRules
     definitionEvaluator =
         if null functionRules
             then Nothing
-            else Just $ definitionEvaluation functionRules
+            else Just . definitionEvaluation $ from <$> functionRules
 
 axiomPatternsToEvaluators
     :: Map.Map AxiomIdentifier [Equation Variable]
@@ -188,8 +182,8 @@ evaluation or simplification, such as if it is an associativity or commutativity
 axiom.
 
  -}
-ignoreEqualityRule :: EqualityRule Variable -> Bool
-ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
+ignoreEquation :: Equation Variable -> Bool
+ignoreEquation Equation { attributes }
   | isAssoc = True
   | isComm = True
   -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
@@ -207,8 +201,8 @@ ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
 
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
-ignoreDefinition :: EqualityRule Variable -> Bool
-ignoreDefinition (EqualityRule EqualityPattern { left }) =
+ignoreDefinition :: Equation Variable -> Bool
+ignoreDefinition Equation { left } =
     assert isLeftFunctionLike False
   where
     isLeftFunctionLike =

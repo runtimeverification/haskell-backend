@@ -31,6 +31,7 @@ import Kore.Attribute.Simplification
     )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Equation as Equation
 import Kore.Error
     ( printError
     )
@@ -54,9 +55,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
 import Kore.Step.Axiom.Registry
-import Kore.Step.EqualityPattern
-    ( getPriorityOfRule
-    )
 import Kore.Step.Rule
     ( extractRewriteAxioms
     )
@@ -477,7 +475,7 @@ test_functionRegistry =
                 Just PartitionedEqualityRules { functionRules } ->
                     assertEqual ""
                         [1, 2, 3, defaultPriority, owisePriority]
-                        (fmap getPriorityOfRule functionRules)
+                        (fmap Equation.equationPriority functionRules)
                 _ -> assertFailure "Should find function rules for f"
             )
         )
@@ -488,7 +486,7 @@ test_functionRegistry =
                 Just PartitionedEqualityRules { simplificationRules } ->
                     assertEqual ""
                         [1, 2, 3]
-                        (fmap getPriorityOfRule simplificationRules)
+                        (fmap Equation.equationPriority simplificationRules)
                 _ -> assertFailure "Should find simplification rules for p"
             )
         )
