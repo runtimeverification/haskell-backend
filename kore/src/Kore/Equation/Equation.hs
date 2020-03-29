@@ -12,6 +12,7 @@ module Kore.Equation.Equation
     , checkInstantiation, InstantiationFailure (..)
     , isSimplificationRule
     , equationPriority
+    , substitute
     ) where
 
 import Prelude.Kore
@@ -288,3 +289,19 @@ isSimplificationRule Equation { attributes } =
 
 equationPriority :: Equation variable -> Integer
 equationPriority = Attribute.getPriorityOfAxiom . attributes
+
+substitute
+    :: InternalVariable variable
+    => Map (UnifiedVariable variable) (TermLike variable)
+    -> Equation variable
+    -> Equation variable
+substitute assignments equation =
+    Equation
+        { requires = Predicate.substitute assignments requires
+        , left = TermLike.substitute assignments left
+        , right = TermLike.substitute assignments right
+        , ensures = Predicate.substitute assignments ensures
+        , attributes
+        }
+  where
+    Equation { requires, left, right, ensures, attributes } = equation
