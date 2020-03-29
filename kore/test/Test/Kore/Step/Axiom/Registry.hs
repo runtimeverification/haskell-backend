@@ -32,6 +32,7 @@ import Kore.Attribute.Simplification
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Equation as Equation
+import Kore.Equation.Registry
 import Kore.Error
     ( printError
     )

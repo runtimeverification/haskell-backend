@@ -1,0 +1,160 @@
+{- |
+Copyright   : (c) Runtime Verification, 2018
+License     : NCSA
+
+-}
+
+module Kore.Equation.Registry
+    ( extractEquations
+    , partitionEquations
+    , PartitionedEquations (..)
+    ) where
+
+import Prelude.Kore
+
+import Control.Error
+    ( hush
+    )
+import qualified Data.Foldable as Foldable
+import Data.List
+    ( partition
+    , sortOn
+    )
+import Data.Map.Strict
+    ( Map
+    )
+import qualified Data.Map.Strict as Map
+
+import Kore.Attribute.Axiom
+    ( Assoc (Assoc)
+    , Comm (Comm)
+    , Idem (Idem)
+    , Unit (Unit)
+    )
+import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Overload
+import qualified Kore.Attribute.Pattern as Pattern
+import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
+import Kore.Equation.Equation
+    ( Equation (..)
+    )
+import qualified Kore.Equation.Equation as Equation
+import qualified Kore.Equation.Sentence as Equation
+import Kore.IndexedModule.IndexedModule
+import Kore.Internal.TermLike
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import Kore.Syntax.Sentence
+    ( SentenceAxiom (..)
+    )
+import qualified Kore.Verified as Verified
+
+{- | Create a mapping from symbol identifiers to their defining axioms.
+
+ -}
+extractEquations
+    :: VerifiedModule StepperAttributes
+    -> Map AxiomIdentifier [Equation Variable]
+extractEquations =
+    Foldable.foldl' moduleWorker Map.empty
+    . indexedModulesInScope
+  where
+    -- | Update the map of function axioms with all the axioms in one module.
+    moduleWorker
+        :: Map AxiomIdentifier [Equation Variable]
+        -> VerifiedModule StepperAttributes
+        -> Map AxiomIdentifier [Equation Variable]
+    moduleWorker axioms imod =
+        Foldable.foldl' sentenceWorker axioms sentences
+      where
+        sentences = indexedModuleAxioms imod
+
+    -- | Extract an axiom from one sentence and update the map of function
+    -- axioms with it. The map is returned unmodified in case the sentence is
+    -- not a function axiom.
+    sentenceWorker
+        :: Map AxiomIdentifier [Equation Variable]
+        -> (Attribute.Axiom Symbol Variable, Verified.SentenceAxiom)
+        -> Map AxiomIdentifier [Equation Variable]
+    sentenceWorker axioms sentence =
+        Foldable.foldl' insertAxiom axioms (identifyEquation sentence)
+
+    -- | Update the map of function axioms by inserting the axiom at the key.
+    insertAxiom
+        :: Map AxiomIdentifier [Equation Variable]
+        -> (AxiomIdentifier, Equation Variable)
+        -> Map AxiomIdentifier [Equation Variable]
+    insertAxiom axioms (name, patt) =
+        Map.alter (Just . (patt :) . fromMaybe []) name axioms
+
+identifyEquation
+    :: (Attribute.Axiom Symbol Variable, SentenceAxiom (TermLike Variable))
+    -> Maybe (AxiomIdentifier, Equation Variable)
+identifyEquation axiom = do
+    equation@Equation { left } <- hush $ Equation.fromSentenceAxiom axiom
+    identifier <- AxiomIdentifier.matchAxiomIdentifier left
+    pure (identifier, equation)
+
+data PartitionedEquations =
+    PartitionedEquations
+        { functionRules       :: ![Equation Variable]
+        , simplificationRules :: ![Equation Variable]
+        }
+
+-- | Filters and partitions a list of 'EqualityRule's to
+-- simplification rules and function rules. The function rules
+-- are also sorted in order of priority.
+partitionEquations
+    :: [Equation Variable]
+    -> PartitionedEquations
+partitionEquations equations =
+    PartitionedEquations
+        { functionRules
+        , simplificationRules
+        }
+  where
+    equations' =
+        equations
+        & filter (not . ignoreEquation)
+    (simplificationRules, unProcessedFunctionRules) =
+        partition Equation.isSimplificationRule
+        . sortOn Equation.equationPriority
+        $ equations'
+    functionRules = filter (not . ignoreDefinition) unProcessedFunctionRules
+
+{- | Should we ignore the 'EqualityRule' for evaluation or simplification?
+
+@ignoreEqualityRule@ returns 'True' if the 'EqualityRule' should not be used in
+evaluation or simplification, such as if it is an associativity or commutativity
+axiom.
+
+ -}
+ignoreEquation :: Equation Variable -> Bool
+ignoreEquation Equation { attributes }
+  | isAssoc = True
+  | isComm = True
+  -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
+  -- extraction of their axioms.
+  | isUnit = True
+  | isIdem = True
+  | Just _ <- getOverload = False
+  | otherwise = False
+  where
+    Assoc { isAssoc } = Attribute.assoc attributes
+    Comm { isComm } = Attribute.comm attributes
+    Unit { isUnit } = Attribute.unit attributes
+    Idem { isIdem } = Attribute.idem attributes
+    Overload { getOverload } = Attribute.overload attributes
+
+{- | Should we ignore the 'EqualityRule' for evaluating function definitions?
+ -}
+ignoreDefinition :: Equation Variable -> Bool
+ignoreDefinition Equation { left } =
+    assert isLeftFunctionLike False
+  where
+    isLeftFunctionLike =
+        (Pattern.isFunction . Pattern.function) (extractAttributes left)
