@@ -130,14 +130,18 @@ data PartitionedEqualityRules =
 -- simplification rules and function rules. The function rules
 -- are also sorted in order of priority.
 processEqualityRules
-    :: [EqualityRule Variable]
+    :: [Equation Variable]
     -> PartitionedEqualityRules
-processEqualityRules (filter (not . ignoreEqualityRule) -> equalities) =
+processEqualityRules equations =
     PartitionedEqualityRules
         { functionRules
         , simplificationRules
         }
   where
+    equalities =
+        equations
+        & map from
+        & filter (not . ignoreEqualityRule)
     (simplificationRules, unProcessedFunctionRules) =
         partition isSimplificationRule
         . sortOn getPriorityOfRule
@@ -172,7 +176,7 @@ equalitiesToEvaluators
             else Just $ definitionEvaluation functionRules
 
 axiomPatternsToEvaluators
-    :: Map.Map AxiomIdentifier [EqualityRule Variable]
+    :: Map.Map AxiomIdentifier [Equation Variable]
     -> Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 axiomPatternsToEvaluators =
     mapMaybe (equalitiesToEvaluators . processEqualityRules)

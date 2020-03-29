@@ -131,10 +131,7 @@ test_dont_ignore =
                 assertFailure "Should not ignore overloaded production axiom"
             Just _ -> return ()
   where
-    evaluators =
-        axiomPatternsToEvaluators
-        $ (fmap . map) from
-        $ extractEqualityAxioms indexedModule
+    evaluators = axiomPatternsToEvaluators $ extractEqualityAxioms indexedModule
     verifiedModules =
         assertRight
         $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
