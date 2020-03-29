@@ -28,7 +28,10 @@ import Data.List.NonEmpty
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Debug
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Equation.Equation
@@ -81,6 +84,13 @@ data ApplyEquationError variable
         !(MatchResult variable)
         !(NonEmpty (InstantiationError variable))
     | RequiresNotMet !(Predicate variable) !(Predicate variable)
+    deriving (GHC.Generic)
+
+instance SOP.Generic (ApplyEquationError variable)
+
+instance SOP.HasDatatypeInfo (ApplyEquationError variable)
+
+instance Debug variable => Debug (ApplyEquationError variable)
 
 {- | @InstantiationError@ represents a reason to reject the instantiation of
 an 'Equation'.
@@ -94,6 +104,13 @@ data InstantiationError variable
     -- term was required.
     | NotInstantiated (UnifiedVariable variable)
     -- ^ The variable was not instantiated.
+    deriving (GHC.Generic)
+
+instance SOP.Generic (InstantiationError variable)
+
+instance SOP.HasDatatypeInfo (InstantiationError variable)
+
+instance Debug variable => Debug (InstantiationError variable)
 
 applyEquation
     :: forall simplifier variable
