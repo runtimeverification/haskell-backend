@@ -39,6 +39,9 @@ import Data.Hashable
     , unhashed
     )
 import Data.Int
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -254,6 +257,8 @@ instance Debug a => Debug [a] where
         Pretty.group
         . encloseSep Pretty.lbracket Pretty.rbracket Pretty.comma
         $ map debug as
+
+instance Debug a => Debug (NonEmpty a)
 
 instance {-# OVERLAPS #-} Debug String where
     debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
@@ -528,6 +533,8 @@ instance Diff Bool where
     diffPrec = diffPrecEq
 
 instance (Debug a, Diff a) => Diff [a]
+
+instance (Debug a, Diff a) => Diff (NonEmpty a)
 
 instance {-# OVERLAPS #-} Diff String where
     diffPrec = diffPrecEq
