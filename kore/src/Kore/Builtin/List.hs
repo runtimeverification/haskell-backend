@@ -45,6 +45,7 @@ module Kore.Builtin.List
 
 import Prelude.Kore
 
+import Kore.Unparser
 import Control.Error
     ( MaybeT
     , fromMaybe
@@ -600,16 +601,17 @@ unifyEquals
                 unifyEqualsConcrete
                     builtin1
                     builtin2 { Domain.builtinListChild = prefix2 }
-            let listSuffix1 = asInternal tools builtinListSort suffix2
-                suffix2Frame2 = mkApplySymbol symbol [listSuffix1, frame2]
+            let listSuffix2 = asInternal tools builtinListSort suffix2
+                suffix2Frame2 = mkApplySymbol symbol [listSuffix2, frame2]
             suffixUnified <-
                 simplifyChild
                     frame1
                     suffix2Frame2
-            let result = TermLike.markSimplified (mkBuiltin internal1)
+            let result = TermLike.markSimplified initial
                     <$ prefixUnified <* suffixUnified
             return result
       | length1 == length2 = do
+            --traceM $ "Initial\n" <> unparseToString initial1
             prefixUnified <-
                 unifyEqualsConcrete
                     builtin1
@@ -617,12 +619,13 @@ unifyEquals
             suffixUnified <- simplifyChild
                     frame1
                     frame2
-            let result = TermLike.markSimplified (mkBuiltin internal1)
+            let result = TermLike.markSimplified initial
                     <$ prefixUnified <* suffixUnified
             return result
       | otherwise =
         unifyEqualsFramedRightRight symbol builtin2 frame2 builtin1 frame1
       where
+        initial = mkApplySymbol symbol [mkBuiltin internal1, frame1]
         internal1 = Domain.BuiltinList builtin1
         Domain.InternalList { builtinListSort } = builtin1
         Domain.InternalList { builtinListChild = list1 } = builtin1
