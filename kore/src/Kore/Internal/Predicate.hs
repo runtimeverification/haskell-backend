@@ -13,7 +13,7 @@ module Kore.Internal.Predicate
     , freshVariable
     , isFalse
     , depth
-    , makePredicate
+    , makePredicate, NotPredicate (..)
     , isPredicate
     , makeAndPredicate
     , makeMultipleAndPredicate
@@ -98,10 +98,6 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Debug
-import Kore.Error
-    ( Error
-    , koreFail
-    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -131,6 +127,10 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 import qualified SQL
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
@@ -181,6 +181,10 @@ type Predicate variable = GenericPredicate (TermLike variable)
 instance InternalVariable variable => SQL.Column (Predicate variable) where
     defineColumn _ = SQL.defineColumn (SQL.Proxy @(TermLike variable))
     toColumn (GenericPredicate termLike) = SQL.toColumn termLike
+
+instance From (Predicate variable) (TermLike variable) where
+    from = unwrapPredicate
+    {-# INLINE from #-}
 
 {- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
 sometimes occurs when, say, using Predicates as Traversable.
@@ -556,24 +560,41 @@ instance Semigroup HasChanged where
 instance Monoid HasChanged where
     mempty = NotChanged
 
+newtype NotPredicate variable
+    = NotPredicate (TermLikeF variable (Predicate variable))
+    deriving (GHC.Generic)
+
+instance SOP.Generic (NotPredicate variable)
+
+instance SOP.HasDatatypeInfo (NotPredicate variable)
+
+instance Debug variable => Debug (NotPredicate variable)
+
+instance InternalVariable variable => Pretty (NotPredicate variable) where
+    pretty (NotPredicate termLikeF) =
+        Pretty.vsep
+        [ "Expected a predicate, but found:"
+        , Pretty.indent 4 (unparse termLikeF)
+        ]
+
 makePredicate
-    :: forall variable e
+    :: forall variable
     .  InternalVariable variable
     => TermLike variable
-    -> Either (Error e) (Predicate variable)
+    -> Either (NotPredicate variable) (Predicate variable)
 makePredicate t = fst <$> makePredicateWorker t
   where
     makePredicateWorker
         :: TermLike variable
-        -> Either (Error e) (Predicate variable, HasChanged)
+        -> Either (NotPredicate variable) (Predicate variable, HasChanged)
     makePredicateWorker =
         Recursive.elgot makePredicateBottomUp makePredicateTopDown
 
     makePredicateBottomUp
         :: Base
             (TermLike variable)
-            (Either (Error e) (Predicate variable, HasChanged))
-        -> Either (Error e) (Predicate variable, HasChanged)
+            (Either (NotPredicate variable) (Predicate variable, HasChanged))
+        -> Either (NotPredicate variable) (Predicate variable, HasChanged)
     makePredicateBottomUp termE = do
         termWithChanged <- sequence termE
         let dropChanged
@@ -603,8 +624,7 @@ makePredicate t = fst <$> makePredicateWorker t
                 makeExistsPredicate (existsVariable p) (existsChild p)
             ForallF p -> return $
                 makeForallPredicate (forallVariable p) (forallChild p)
-            p -> koreFail
-                ("Cannot translate to predicate: " ++ show p)
+            p -> Left (NotPredicate p)
         return
             (keepSimplifiedAndUpdateChanged
                 childChanged
@@ -615,7 +635,7 @@ makePredicate t = fst <$> makePredicateWorker t
     makePredicateTopDown
         :: TermLike variable
         -> Either
-            (Either (Error e) (Predicate variable, HasChanged))
+            (Either (NotPredicate variable) (Predicate variable, HasChanged))
             (Base (TermLike variable) (TermLike variable))
     makePredicateTopDown (Recursive.project -> projected@(attrs :< pat)) =
         case pat of
