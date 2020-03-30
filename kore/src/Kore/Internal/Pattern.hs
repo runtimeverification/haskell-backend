@@ -202,7 +202,7 @@ bottomOf :: InternalVariable variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
-        , predicate = Predicate.makeFalsePredicate_
+        , predicate = Predicate.makeFalsePredicate resultSort
         , substitution = mempty
         }
 
