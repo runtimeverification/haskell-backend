@@ -348,8 +348,8 @@ promoteSubTermsToTop predicate =
                 [ "Replacing"
                 , (Pretty.indent 4 . Pretty.vsep) (unparse <$> HashMap.keys replacements)
                 , "in"
-                , (Pretty.indent 4) (unparse original)
-                , (Pretty.indent 4) (Pretty.pretty err)
+                , Pretty.indent 4 (unparse original)
+                , Pretty.indent 4 (Pretty.pretty err)
                 ]
             Right p -> p
 

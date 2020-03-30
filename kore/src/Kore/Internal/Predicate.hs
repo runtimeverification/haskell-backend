@@ -574,7 +574,7 @@ instance InternalVariable variable => Pretty (NotPredicate variable) where
     pretty (NotPredicate termLikeF) =
         Pretty.vsep
         [ "Expected a predicate, but found:"
-        , (Pretty.indent 4) (unparse termLikeF)
+        , Pretty.indent 4 (unparse termLikeF)
         ]
 
 makePredicate
