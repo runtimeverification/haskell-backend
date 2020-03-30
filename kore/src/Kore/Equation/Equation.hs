@@ -80,7 +80,8 @@ data Equation variable = Equation
 
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation
-    :: InternalVariable variable
+    :: HasCallStack
+    => InternalVariable variable
     => Sort
     -> TermLike variable
     -> TermLike variable
