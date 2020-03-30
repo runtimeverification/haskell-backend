@@ -14,6 +14,7 @@ module Kore.Internal.Condition
     , eraseConditionalTerm
     , top
     , bottom
+    , bottomOf
     , topCondition
     , bottomCondition
     , fromPattern
@@ -107,6 +108,14 @@ bottom =
     Conditional
         { term = ()
         , predicate = Predicate.makeFalsePredicate_
+        , substitution = mempty
+        }
+
+bottomOf :: InternalVariable variable => Sort -> Condition variable
+bottomOf sort =
+    Conditional
+        { term = ()
+        , predicate = Predicate.makeFalsePredicate sort
         , substitution = mempty
         }
 
