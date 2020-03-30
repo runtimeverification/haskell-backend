@@ -353,7 +353,9 @@ simplifyInternal term sideCondition = do
                         resultTerm
                     )
                 )
-          | isTop resultTerm && Right resultPredicate == termAsPredicate
+          | isTop resultTerm
+          , Right condition <- termAsPredicate
+          , resultPredicate == condition
           = return
                 $ OrPattern.fromPattern
                 $ Pattern.fromCondition

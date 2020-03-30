@@ -29,6 +29,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
+import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -392,24 +393,22 @@ makesPredicate
     (term, termSimplification)
     (predicate, predicateSimplification)
   = do
-    let eitherPredicate = makePredicate term
-    assertEqual "Predicate equality" (Right predicate) eitherPredicate
+    actual <- expectRight (makePredicate term)
+    assertEqual "Predicate equality" predicate actual
     assertEqual "Term simplification"
         (toBool termSimplification)
         (TermLike.isSimplified sideRepresentation term)
     assertEqual "Predicate simplification"
-        (Right (toBool predicateSimplification))
-        (Predicate.isSimplified sideRepresentation <$> eitherPredicate)
+        (toBool predicateSimplification)
+        (Predicate.isSimplified sideRepresentation actual)
   where
     toBool IsSimplified = True
     toBool NotSimplified = False
 
 makePredicateYieldsWrapPredicate :: String -> TermLike Variable -> IO ()
-makePredicateYieldsWrapPredicate msg p =
-    assertEqual msg
-        (Right (wrapPredicate p))
-        (makePredicate p)
-
+makePredicateYieldsWrapPredicate msg p = do
+    p' <- expectRight (makePredicate p)
+    assertEqual msg (wrapPredicate p) p'
 
 pr1 :: Predicate Variable
 pr1 =

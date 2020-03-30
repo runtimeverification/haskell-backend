@@ -64,11 +64,6 @@ import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
     )
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (..)
-    , equalityRuleToTerm
-    )
 import Kore.Step.RulePattern
     ( AllPathRule (..)
     , ImplicationRule (..)
@@ -91,9 +86,6 @@ import Kore.Step.Simplification.ExpandAlias
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( Id (..)
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
     )
 import Kore.Unparser
     ( unparse
@@ -122,7 +114,6 @@ from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
-    | FunctionAxiomPattern (EqualityRule variable)
     | OnePathClaimPattern (OnePathRule variable)
     | AllPathClaimPattern (AllPathRule variable)
     | ImplicationAxiomPattern (ImplicationRule variable)
@@ -312,54 +303,6 @@ termToAxiomPattern attributes pat =
                 , rhs = termToRHS rhs
                 , attributes
                 }
-        -- function axioms: general
-        TermLike.Implies_ _ requires
-            (TermLike.And_ _
-                (TermLike.Equals_ _ _ left right)
-                ensures
-            )
-          | isTop ensures || ensures == requires
-          ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { requires = Predicate.wrapPredicate requires
-                , left
-                , right
-                , ensures = Predicate.makeTruePredicate_
-                , attributes
-                }
-        -- function axioms: ensures is the same as requires
-        TermLike.Implies_ _ requires
-            (TermLike.And_ _
-                (TermLike.Equals_ _ _ left right)
-                ensures
-            )
-          ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { requires = Predicate.wrapPredicate requires
-                , left
-                , right
-                , ensures = Predicate.wrapPredicate ensures
-                , attributes
-                }
-
-        -- function axioms: trivial pre- and post-conditions
-        TermLike.Equals_ _ _ left right ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { requires = Predicate.makeTruePredicate_
-                , left
-                , right
-                , ensures = Predicate.makeTruePredicate_
-                , attributes
-                }
-        -- definedness axioms
-        left@(TermLike.Ceil_ _ resultSort _) ->
-            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { requires = Predicate.makeTruePredicate_
-                , left
-                , right = TermLike.mkTop resultSort
-                , ensures = Predicate.makeTruePredicate_
-                , attributes
-                }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
@@ -402,7 +345,6 @@ axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
     OnePathClaimPattern rule -> onePathRuleToTerm rule
     AllPathClaimPattern rule -> allPathRuleToTerm rule
-    FunctionAxiomPattern rule -> equalityRuleToTerm rule
     ImplicationAxiomPattern rule -> implicationRuleToTerm rule
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
