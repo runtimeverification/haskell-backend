@@ -170,6 +170,9 @@ class Debug a where
         -> Doc ann
     debugPrec = debugPrecGeneric
 
+    debugPrecBrief :: a -> Int -> Doc ann
+    debugPrecBrief = debugPrec
+
 debugPrecGeneric
     :: forall a ann
     .  (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
@@ -247,7 +250,7 @@ debugSOP
     => SOP I xss
     -> SOP (K (Int -> Doc ann)) xss
 debugSOP (SOP sop) =
-    SOP $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrec)) sop
+    SOP $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrecBrief)) sop
   where
     pDebug = Proxy :: Proxy Debug
     pAllDebug = Proxy :: Proxy (All Debug)
