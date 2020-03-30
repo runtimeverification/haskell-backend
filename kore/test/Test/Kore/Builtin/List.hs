@@ -27,42 +27,22 @@ import qualified Hedgehog.Range as Range
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
-import Data.List
-    ( sort
-    )
+import qualified Data.Map.Strict as Map
 import qualified Data.Reflection as Reflection
 import Data.Sequence
     ( Seq
     )
-import Data.Generics.Product
-    ( field
-    )
 import qualified Data.Sequence as Seq
-import qualified Data.Map.Strict as Map
-import GHC.Exts
-    ( fromList
-    )
 
-import qualified Kore.Attribute.Pattern as Attribute
-import Kore.Attribute.Pattern.Simplified
-import Kore.Attribute.Pattern.ConstructorLike
-    ( ConstructorLike (..)
-    , ConstructorLikeHead (..)
-    )
 import qualified Kore.Builtin.List as List
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeTruePredicate
     )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
-    )
-import SMT
-    ( SMT
     )
 
 import Test.Kore
@@ -74,12 +54,6 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
-
-import Kore.Unparser
-import Kore.Syntax.Variable as Variable
-import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
-import Test.Kore.With
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
@@ -323,8 +297,10 @@ test_concatHeadTailSymbolic =
                 , variableSort = listSort
                 }
             patSymbolicYs = mkElemVar elemVarYs
-            patElemX = elementList patSymbolicX
-            patElemY = elementList patSymbolicY
+            patElemX =
+                List.internalize testMetadataTools $ elementList patSymbolicX
+            patElemY =
+                List.internalize testMetadataTools $ elementList patSymbolicY
             patConcatX =
                 mkApplySymbol concatListSymbol [ patElemX, patSymbolicXs ]
             patConcatY =
@@ -340,28 +316,9 @@ test_concatHeadTailSymbolic =
                                 ]
                         }
         unified <- evaluateT patUnifiedXY
-        traceM $ "Expect\n" <> unparseToString expect
-        traceM $ "UnifiedResult\n" <> unparseToString unified
-        --traceM $ "UnifiedXY\n" <> unparseToString patUnifiedXY
-        --(patConcatX `unifiesWith` patConcatY) expect
         (===)
             expect
-            $ unified 
-            & Lens.over
-                (field @"term" . field @"getTermLike")
-                (fmap irrelevantPattern)
-    irrelevantPattern
-        (Attribute.Pattern sort fv _ _ _ _ simplified constructorLike)
-      =
-        Attribute.Pattern
-            sort
-            fv
-            (Attribute.Functional False)
-            (Attribute.Function False)
-            (Attribute.Defined False)
-            (Attribute.Created (Just $ fromList []))
-            NotSimplified
-            constructorLike
+            unified
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
@@ -457,46 +414,3 @@ asPattern =
 hprop_unparse :: Property
 hprop_unparse =
     hpropUnparse (asInternal . (<$>) Test.Int.asInternal <$> genSeqInteger)
-
--- use as (pat1 `unifiesWith` pat2) expect
-unifiesWith
-    :: HasCallStack
-    => TermLike Variable
-    -> TermLike Variable
-    -> Pattern Variable
-    -> PropertyT SMT ()
-unifiesWith pat1 pat2 expected =
-    unifiesWithMulti pat1 pat2 [expected]
-
--- use as (pat1 `unifiesWithMulti` pat2) expect
-unifiesWithMulti
-    :: HasCallStack
-    => TermLike Variable
-    -> TermLike Variable
-    -> [Pattern Variable]
-    -> PropertyT SMT ()
-unifiesWithMulti pat1 pat2 expectedResults = do
-    actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
-    compareElements (sort expectedResults) actualResults
-  where
-    compareElements [] actuals = [] === actuals
-    compareElements expecteds [] =  expecteds === []
-    compareElements (expected : expecteds) (actual : actuals) = do
-        compareElement expected actual
-        compareElements expecteds actuals
-    compareElement
-        Conditional
-            { term = expectedTerm
-            , predicate = expectedPredicate
-            , substitution = expectedSubstitution
-            }
-        Conditional
-            { term = actualTerm
-            , predicate = actualPredicate
-            , substitution = actualSubstitution
-            }
-      = do
-        Substitution.toMap expectedSubstitution
-            === Substitution.toMap actualSubstitution
-        expectedPredicate === actualPredicate
-        expectedTerm === actualTerm

@@ -45,7 +45,6 @@ module Kore.Builtin.List
 
 import Prelude.Kore
 
-import Kore.Unparser
 import Control.Error
     ( MaybeT
     , fromMaybe
