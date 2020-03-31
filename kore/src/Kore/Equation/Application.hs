@@ -200,13 +200,16 @@ checkRequires sideCondition predicate requires =
             >>= withAxioms . simplifyCondition
             -- Finally, try to refute the simplified 'condition' using the
             -- external solver:
-            >>= SMT.filterBranch
+            >>= SMT.filterBranch . andSideCondition
     -- Collect the simplified results. If they are \bottom, then \and(predicate,
     -- requires) is valid; otherwise, the required pre-conditions are not met
     -- and the rule will not be applied.
     & (OrCondition.gather >=> assertBottom)
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition
+
+    andSideCondition condition =
+        from @(SideCondition _) sideCondition <> condition
 
     assertBottom orCondition
       | isBottom orCondition = done
