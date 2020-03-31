@@ -33,6 +33,9 @@ import qualified GHC.Generics as GHC
 
 import Debug
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Equation.Equation
     ( Equation (..)
@@ -125,7 +128,11 @@ applyEquation
     -> Equation variable
     -> simplifier (ApplyEquationResult variable)
 applyEquation sideCondition termLike equation = runExceptT $ do
-    let Equation { left } = equation
+    let configFreeVariables =
+            freeVariables sideCondition <> freeVariables termLike
+        (_, equationRenamed) =
+            Equation.refreshVariables configFreeVariables equation
+    let Equation { left } = equationRenamed
     matchResult <- match left termLike & noteT notMatched
     (equation', predicate) <- applyMatchResult equation matchResult
     let Equation { requires } = equation'
