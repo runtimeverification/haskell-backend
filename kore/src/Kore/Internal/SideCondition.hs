@@ -134,6 +134,10 @@ instance
             , assumedTrue
             }
 
+instance From (SideCondition variable) (Condition variable) where
+    from = assumedTrue
+    {-# INLINE from #-}
+
 top :: InternalVariable variable => SideCondition variable
 top = fromCondition Condition.top
 

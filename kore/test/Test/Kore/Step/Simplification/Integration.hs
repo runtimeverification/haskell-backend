@@ -67,7 +67,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
 import Kore.Step.Axiom.Registry
-    ( axiomPatternsToEvaluators
+    ( mkEvaluatorRegistry
     )
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
@@ -214,11 +214,11 @@ test_simplificationIntegration =
             expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
-                (axiomPatternsToEvaluators
+                (mkEvaluatorRegistry
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ EqualityRule $ equalityPattern
+                            ,   [ from . EqualityRule $ equalityPattern
                                     (Mock.function20MapTest
                                         (Mock.concatMap
                                             (Mock.elementMap
@@ -252,10 +252,10 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ axiom
+                          , [ from $ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -296,17 +296,17 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ EqualityRule $ equalityPattern
+                            ,   [ from . EqualityRule $ equalityPattern
                                     (Mock.fInt (mkElemVar Mock.xInt))
                                     (mkElemVar Mock.xInt)
                                 ]
                             )
                         ,   (AxiomIdentifier.Ceil
                                 (AxiomIdentifier.Application Mock.tdivIntId)
-                            ,   [ EqualityRule $ simplificationRulePattern
+                            ,   [ from . EqualityRule $ simplificationRulePattern
                                     (mkCeil testSortVariable
                                         $ Mock.tdivInt
                                             (mkElemVar Mock.xInt)
@@ -345,14 +345,14 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.functional10Id
-                            ,   [ EqualityRule $ conditionalEqualityPattern
+                            ,   [ from . EqualityRule $ conditionalEqualityPattern
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeEqualsPredicate_ Mock.cf Mock.a)
                                     (mkElemVar Mock.x)
-                                , EqualityRule $ conditionalEqualityPattern
+                                , from . EqualityRule $ conditionalEqualityPattern
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeNotPredicate
                                         (makeEqualsPredicate_ Mock.cf Mock.a)
@@ -376,17 +376,17 @@ test_simplificationIntegration =
         assertErrorIO
             (assertSubstring "" "doesn't imply rule condition")
             (evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ EqualityRule $ equalityPattern
+                            ,   [ from . EqualityRule $ equalityPattern
                                     (Mock.fInt (mkElemVar Mock.xInt))
                                     (mkElemVar Mock.xInt)
                                 ]
                             )
                         ,   (AxiomIdentifier.Ceil
                                 (AxiomIdentifier.Application Mock.tdivIntId)
-                            ,   [ EqualityRule
+                            ,   [ from . EqualityRule
                                   $ conditionalSimplificationRulePattern
                                     (mkCeil testSortVariable
                                         $ Mock.tdivInt
@@ -468,9 +468,9 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                (axiomPatternsToEvaluators $ Map.fromList
+                (mkEvaluatorRegistry $ Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cfId
-                        ,   [ EqualityRule $ equalityPattern
+                        ,   [ from . EqualityRule $ equalityPattern
                                 Mock.cf
                                 (Mock.f (mkElemVar Mock.x))
                             ]
@@ -499,10 +499,10 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ axiom
+                          , [ from $ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -533,10 +533,10 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ axiom
+                          , [ from $ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -566,10 +566,10 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ axiom
+                          , [ from $ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -599,10 +599,10 @@ test_simplificationIntegration =
                 ]
         actual <-
             evaluateWithAxioms
-                ( axiomPatternsToEvaluators
+                ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ axiom
+                          , [ from $ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement

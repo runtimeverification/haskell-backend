@@ -97,7 +97,8 @@ instance SOP.Generic (Pattern variable)
 
 instance SOP.HasDatatypeInfo (Pattern variable)
 
-instance Debug variable => Debug (Pattern variable)
+instance Debug variable => Debug (Pattern variable) where
+    debugPrecBrief _ _ = "_"
 
 instance (Debug variable, Diff variable) => Diff (Pattern variable)
 
