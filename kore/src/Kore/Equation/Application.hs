@@ -181,11 +181,11 @@ applyMatchResult equation matchResult@(predicate, substitution) =
     Equation { attributes } = equation
     concretes =
         attributes
-        & Attribute.unConcrete . Attribute.concrete
+        & Attribute.concrete & Attribute.unConcrete
         & FreeVariables.getFreeVariables
     symbolics =
         attributes
-        & Attribute.unSymbolic . Attribute.symbolic
+        & Attribute.symbolic & Attribute.unSymbolic
         & FreeVariables.getFreeVariables
     checkConcrete var =
         case Map.lookup var substitution of
