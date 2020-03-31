@@ -146,6 +146,16 @@ applyEquation sideCondition termLike equation = runExceptT $ do
   where
     match term1 term2 = MaybeT $ matchIncremental term1 term2
 
+{- | Use a 'MatchResult' to instantiate an 'Equation'.
+
+The 'MatchResult' must cover all the free variables of the 'Equation'; this
+condition is not checked, but enforced by the matcher. The result is the
+'Equation' and any 'Predicate' assembled during matching, both instantiated by
+the 'MatchResult'.
+
+Throws 'InstantiationErrors' if there is a problem with the 'MatchResult'.
+
+ -}
 applyMatchResult
     :: forall monad variable
     .   Monad monad
@@ -193,13 +203,19 @@ applyMatchResult equation matchResult@(predicate, substitution) =
     notConcretes = mapMaybe checkConcrete (Set.toList concretes)
     notSymbolics = mapMaybe checkSymbolic (Set.toList symbolics)
 
+{- | Check that the requires from matching and the 'Equation' hold.
+
+Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
+'SideCondition'.
+
+ -}
 checkRequires
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
     => SideCondition (Target variable)
-    -> Predicate variable
-    -> Predicate variable
+    -> Predicate variable  -- ^ requires from matching
+    -> Predicate variable  -- ^ requires from 'Equation'
     -> ExceptT (ApplyEquationError variable) simplifier ()
 checkRequires sideCondition predicate requires =
     do
