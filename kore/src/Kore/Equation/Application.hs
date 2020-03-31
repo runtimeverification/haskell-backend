@@ -59,6 +59,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -74,6 +75,10 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.SMT.Evaluator as SMT
 import Kore.TopBottom
+import Kore.Variables.Target
+    ( Target
+    )
+import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -82,10 +87,10 @@ type ApplyEquationResult variable =
     Either (ApplyEquationError variable) (Pattern variable)
 
 data ApplyEquationError variable
-    = NotMatched !(TermLike variable) !(Equation variable)
+    = NotMatched !(TermLike (Target variable)) !(Equation (Target variable))
     | InstantiationErrors
-        !(MatchResult variable)
-        !(NonEmpty (InstantiationError variable))
+        !(MatchResult (Target variable))
+        !(NonEmpty (InstantiationError (Target variable)))
     | RequiresNotMet !(Predicate variable) !(Predicate variable)
     deriving (GHC.Generic)
 
@@ -123,32 +128,30 @@ applyEquation
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
-    => SideCondition variable
-    -> TermLike variable
+    => SideCondition (Target variable)
+    -> TermLike (Target variable)
     -> Equation variable
     -> simplifier (ApplyEquationResult variable)
 applyEquation sideCondition termLike equation = runExceptT $ do
-    let configFreeVariables =
-            freeVariables sideCondition <> freeVariables termLike
-        (_, equationRenamed) =
-            Equation.refreshVariables configFreeVariables equation
-    let Equation { left } = equationRenamed
+    let equationRenamed =
+            targetEquationVariables sideCondition termLike equation
+        notMatched = NotMatched termLike equationRenamed
+        Equation { left } = equationRenamed
     matchResult <- match left termLike & noteT notMatched
-    (equation', predicate) <- applyMatchResult equation matchResult
+    (equation', predicate) <- applyMatchResult equationRenamed matchResult
     let Equation { requires } = equation'
     checkRequires sideCondition predicate requires
     let Equation { right, ensures } = equation'
     return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
     match term1 term2 = MaybeT $ matchIncremental term1 term2
-    notMatched = NotMatched termLike equation
 
 applyMatchResult
     :: forall monad variable
     .   Monad monad
     =>  InternalVariable variable
-    =>  Equation variable
-    ->  MatchResult variable
+    =>  Equation (Target variable)
+    ->  MatchResult (Target variable)
     ->  ExceptT (ApplyEquationError variable) monad
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) =
@@ -158,8 +161,12 @@ applyMatchResult equation matchResult@(predicate, substitution) =
   where
     errors = notConcretes <> notSymbolics
 
-    predicate' = Predicate.substitute substitution predicate
-    equation' = Equation.substitute substitution equation
+    predicate' =
+        Predicate.substitute substitution predicate
+        & Predicate.mapVariables Target.unTargetElement Target.unTargetSet
+    equation' =
+        Equation.substitute substitution equation
+        & Equation.mapVariables Target.unTargetElement Target.unTargetSet
 
     Equation { attributes } = equation
     concretes =
@@ -190,7 +197,7 @@ checkRequires
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
-    => SideCondition variable
+    => SideCondition (Target variable)
     -> Predicate variable
     -> Predicate variable
     -> ExceptT (ApplyEquationError variable) simplifier ()
@@ -213,10 +220,17 @@ checkRequires sideCondition predicate requires =
     -- and the rule will not be applied.
     & (OrCondition.gather >=> assertBottom)
   where
-    simplifyCondition = Simplifier.simplifyCondition sideCondition
+    simplifyCondition = Simplifier.simplifyCondition sideCondition'
+
+    -- TODO (thomas.tuegel): Do not unwrap sideCondition.
+    sideCondition' =
+        SideCondition.mapVariables
+            Target.unTargetElement
+            Target.unTargetSet
+            sideCondition
 
     andSideCondition condition =
-        from @(SideCondition _) sideCondition <> condition
+        from @(SideCondition _) sideCondition' <> condition
 
     assertBottom orCondition
       | isBottom orCondition = done
@@ -228,3 +242,23 @@ checkRequires sideCondition predicate requires =
         fmap Condition.forgetSimplified
         . Simplifier.localSimplifierAxioms (const mempty)
     withAxioms = id
+
+{- | Make the 'Equation' variables distinct from the initial pattern.
+
+The variables are marked 'Target' and renamed to avoid any variables in the
+'SideCondition' or the 'TermLike'.
+
+ -}
+targetEquationVariables
+    :: forall variable
+    .  InternalVariable variable
+    => SideCondition (Target variable)
+    -> TermLike (Target variable)
+    -> Equation variable
+    -> Equation (Target variable)
+targetEquationVariables sideCondition initial =
+    snd
+    . Equation.refreshVariables avoiding
+    . Equation.mapVariables Target.mkElementTarget Target.mkSetTarget
+  where
+    avoiding = freeVariables sideCondition <> freeVariables initial

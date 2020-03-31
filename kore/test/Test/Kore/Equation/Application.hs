@@ -24,6 +24,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Variables.Target as Target
+import qualified Pretty
 
 import Test.Expect
 import Test.Kore
@@ -39,8 +42,28 @@ applyEquation
     -> Equation Variable
     -> IO (ApplyEquationResult Variable)
 applyEquation sideCondition termLike equation =
-    Equation.applyEquation sideCondition termLike equation
+    Equation.applyEquation sideCondition' termLike' equation
     & runSimplifier Mock.env
+  where
+    sideCondition' =
+        SideCondition.mapVariables
+            Target.mkElementNonTarget
+            Target.mkSetNonTarget
+            sideCondition
+
+    termLike' =
+        TermLike.mapVariables
+            Target.mkElementNonTarget
+            Target.mkSetNonTarget
+            termLike
+
+assertNotMatched :: ApplyEquationError Variable -> Assertion
+assertNotMatched (NotMatched _ _) = return ()
+assertNotMatched result =
+    (assertFailure . show . Pretty.vsep)
+        [ "Expected (NotMatched _ _), but found:"
+        , Pretty.indent 4 (debug result)
+        ]
 
 test_applyEquation :: [TestTree]
 test_applyEquation =
@@ -63,92 +86,82 @@ test_applyEquation =
             >>= expectRight >>= assertEqual "" expect
 
     , testCase "merge configuration patterns" $ do
-        let expect = NotMatched initial equationSigmaId
-            initial =
+        let initial =
                 Mock.sigma (mkElemVar Mock.x)
                 $ Mock.functionalConstr10 (mkElemVar Mock.y)
         applyEquation SideCondition.top initial equationSigmaId
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     , testCase "substitution with symbol matching" $ do
-        let expect = NotMatched initial equationSigmaId
-            fy = Mock.functionalConstr10 (mkElemVar Mock.y)
+        let fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
             initial = Mock.sigma fy fz
         applyEquation SideCondition.top initial equationSigmaId
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     , testCase "merge multiple variables" $ do
-        let expect = NotMatched initial equationSigmaXXYY
-            xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
+        let xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             yx = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.x)
             initial = Mock.sigma xy yx
         applyEquation SideCondition.top initial equationSigmaXXYY
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     , testCase "symbol clash" $ do
-        let expect = NotMatched initial equationSigmaId
-            fx = Mock.functionalConstr10 (mkElemVar Mock.x)
+        let fx = Mock.functionalConstr10 (mkElemVar Mock.x)
             gy = Mock.functionalConstr11 (mkElemVar Mock.y)
             initial = Mock.sigma fx gy
         applyEquation SideCondition.top initial equationSigmaId
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     , testCase "impossible substitution" $ do
-        let expect = NotMatched initial equationSigmaXXYY
-            xfy =
+        let xfy =
                 Mock.sigma
                     (mkElemVar Mock.x)
                     (Mock.functionalConstr10 (mkElemVar Mock.y))
             xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             initial = Mock.sigma xfy xy
         applyEquation SideCondition.top initial equationSigmaXXYY
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, h(b)) with substitution b=a
     , testCase "circular dependency error" $ do
-        let expect = NotMatched initial equationSigmaId
-            fx = Mock.functional10 (mkElemVar Mock.x)
+        let fx = Mock.functional10 (mkElemVar Mock.x)
             initial = Mock.sigma (mkElemVar Mock.x) fx
         applyEquation SideCondition.top initial equationSigmaId
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
-        let expect = NotMatched initial equationSigmaId
-            initial =
+        let initial =
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))
         applyEquation SideCondition.top initial equationSigmaId
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     -- sigma(x, x) -> x
     -- vs
     -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
     , testCase "unify all children" $ do
-        let expect = NotMatched initial equationSigmaId
-            xx = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x)
+        let xx = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x)
             yy = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y)
             yz = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z)
             initial = Mock.sigma xx (Mock.sigma yz yy)
         applyEquation SideCondition.top initial equationSigmaId
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), a)
     -- Expected: sigma(f(b), f(b)) and a=f(b)
     , testCase "normalize substitution" $ do
-        let
-            fb = Mock.functional10 (mkElemVar Mock.y)
-            expect = NotMatched initial equationSigmaXXY
+        let fb = Mock.functional10 (mkElemVar Mock.y)
             initial =
                 Mock.sigma (Mock.sigma (mkElemVar Mock.x) fb) (mkElemVar Mock.x)
         applyEquation SideCondition.top initial equationSigmaXXY
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
@@ -158,24 +171,22 @@ test_applyEquation =
         let
             fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
-            expect = NotMatched initial equationSigmaXXY
             initial = Mock.sigma (Mock.sigma fz fy) fz
         applyEquation SideCondition.top initial equationSigmaXXY
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     -- "sl1" => x
     -- vs
     -- "sl2"
     -- Expected: bottom
     , testCase "unmatched strings" $ do
-        let expect = NotMatched initial equation
-            initial = Mock.builtinString "Hello, world!"
+        let initial = Mock.builtinString "Hello, world!"
             equation =
                 mkEquation sortR
                     (Mock.builtinString "Good-bye, world!")
                     (mkElemVar Mock.xString)
         applyEquation SideCondition.top initial equation
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
 
     -- x => x ensures g(x)=f(x)
     -- vs
@@ -254,10 +265,9 @@ test_applyEquation =
             >>= expectLeft >>= assertEqual "" expect
 
     , testCase "rule a => \\bottom does not apply to c" $ do
-        let expect = NotMatched initial equationRequiresBottom
-            initial = Mock.c
+        let initial = Mock.c
         applyEquation SideCondition.top initial equationRequiresBottom
-            >>= expectLeft >>= assertEqual "" expect
+            >>= expectLeft >>= assertNotMatched
     ]
   where
     sortR = mkSortVariable (testId "R")
