@@ -47,7 +47,7 @@ test_goTranslatePredicate =
         `yields` exists 0 (var 0 `eq` var 1)
     , testCase "exists x. x = x where x not of a builtin sort" $
         translating (pexists x $ x `peq` x)
-        `yields` var 0
+        `yields` existst 0 (var 0 `eq` var 0)
     , testCase "n = n and (exists n. n = n)" $
         translating ((n `peq` n) `pand` pexists n (n `peq` n))
         `yields` ((var 0 `eq` var 0) `and` exists 1 (var 1 `eq` var 1))
@@ -132,7 +132,7 @@ test_goTranslatePredicate =
             )
         `yields`
             (     exists 0 (exists 1 $ fun 2 [var 0, var 1])
-            `and` exists 3 (fun 4 [var 3])
+            `and` exists 3 (existst 4 $ exists 5 $ fun 2 [var 5, var 3])
             )
     ]
   where
@@ -152,6 +152,7 @@ test_goTranslatePredicate =
     pexists _ _ = undefined
     exists i p = existsQ [List [var i, Atom "Int"]] p
     existsb i p = existsQ [List [var i, Atom "Bool"]] p
+    existst i p = existsQ [List [var i, Atom "|HB_testSort|"]] p
     fun i p = SMT.SimpleSMT.List (var i : p)
 
 translating :: HasCallStack => Predicate Variable -> IO (Maybe SExpr)

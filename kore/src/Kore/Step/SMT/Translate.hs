@@ -243,14 +243,18 @@ translatePredicate translateTerm predicate =
     translatePredicateExists
         :: Exists Sort variable p -> Translator m variable SExpr
     translatePredicateExists Exists { existsVariable, existsChild } =
-        case getHook of
+        existsBuiltinSort <|> existsConstructorSort
+      where
+        existsBuiltinSort = case getHook of
             Just builtinSort
               | builtinSort == Builtin.Bool.sort
               -> translateExists SMT.tBool existsVariable existsChild
               | builtinSort == Builtin.Int.sort
               -> translateExists SMT.tInt existsVariable existsChild
             _ -> empty
-      where
+        existsConstructorSort = do
+            smtSort <- hoistMaybe $translateSort varSort
+            translateExists smtSort existsVariable existsChild
         varSort = sortedVariableSort (getElementVariable existsVariable)
         tools :: SmtMetadataTools Attribute.Symbol
         tools = given
