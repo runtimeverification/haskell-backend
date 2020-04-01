@@ -35,7 +35,6 @@ import Kore.Internal.ApplicationSorts
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Step.EqualityPattern
 import Kore.Step.Rule
 import Kore.Step.RulePattern
 import Kore.Syntax.Definition hiding
@@ -135,15 +134,6 @@ axiomPatternsUnitTests =
                     . map fromSentenceAxiom . indexedModuleAxioms
                     $ extractIndexedModule "TEST" indexedDefinition
                     )
-        , testCase "\\ceil(I1:AInt <= I2:AInt)" $ do
-            let term = applyLeqAInt varI1 varI2
-                sortR = mkSortVariable (testId "R")
-            assertEqual ""
-                (Right $ FunctionAxiomPattern $ EqualityRule $ equalityPattern
-                    (mkCeil sortR term)
-                    (mkTop sortR)
-                )
-                (fromSentence . (,) def $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
             $ assertErrorIO
                 (assertSubstring "" "Unsupported pattern type in axiom")
@@ -278,30 +268,6 @@ test_patternToAxiomPatternAndBack =
                     )
             in
                 testCase "Reachability claim wAF" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
-            let initialPattern = mkImplies
-                    (Predicate.unwrapPredicate requiresP)
-                    (mkAnd (mkEquals_ leftP rightP) mkTop_)
-            in
-                testCase "Function axioms: general" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
-            let initialPattern = mkEquals_ leftP rightP
-            in
-                testCase "Function axioms: trivial pre- and post-conditions" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
-            let initialPattern = mkCeil (termLikeSort (mkElemVar Mock.x))
-                                    $ mkElemVar Mock.x
-            in
-                testCase "Definedness axioms" $
                     assertEqual ""
                         (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)

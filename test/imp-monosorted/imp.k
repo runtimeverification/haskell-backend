@@ -65,6 +65,7 @@ endmodule
 
 module IMP-STATE
   imports IMP-SYNTAX
+  imports K-EQUAL
 
   syntax Assignment
     ::= Id "|->" Int
@@ -97,6 +98,7 @@ endmodule
 
 module SYMBOLIC-INT
   imports IMP-SYNTAX
+  imports INT
   syntax AExp ::= "symInt"
   rule symInt => AInt ?I:Int
 endmodule

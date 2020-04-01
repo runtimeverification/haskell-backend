@@ -11,18 +11,23 @@ module Kore.Step.SMT.Evaluator
     , Evaluable (..)
     , filterBranch
     , filterMultiOr
-    , translateUninterpreted
+    , translateTerm
+    , goTranslatePredicate
     ) where
 
 import Prelude.Kore
 
 import Control.Error
     ( MaybeT
+    , hoistMaybe
     , runMaybeT
     )
+import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
+import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -30,6 +35,9 @@ import Branch
     ( BranchT
     )
 import qualified Control.Monad.Counter as Counter
+import Kore.Attribute.Pattern.FreeVariables
+    ( getFreeVariables
+    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -52,6 +60,7 @@ import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition
     ( debugEvaluateCondition
     )
@@ -60,20 +69,20 @@ import qualified Kore.Profiler.Profile as Profile
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.SMT.Translate
-    ( Translator
-    , evalTranslator
-    , translatePredicate
-    )
 import Kore.TopBottom
     ( TopBottom
     )
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import Log
 import SMT
     ( Result (..)
     , SExpr (..)
     )
 import qualified SMT
+import qualified SMT.SimpleSMT as SimpleSMT
 
 {- | Class for things that can be evaluated with an SMT solver,
 or which contain things that can be evaluated with an SMT solver.
@@ -165,7 +174,8 @@ decidePredicate korePredicate =
 goTranslatePredicate
     :: forall variable m.
         ( InternalVariable variable
-        , MonadSimplify m
+        , SMT.MonadSMT m
+        , MonadLog m
         )
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
@@ -173,30 +183,97 @@ goTranslatePredicate
 goTranslatePredicate tools predicate = evalTranslator translator
   where
     translator =
-        give tools $ translatePredicate translateUninterpreted predicate
+        give tools $ translatePredicate translateTerm predicate
 
-translateUninterpreted
+translateTerm
     :: InternalVariable variable
-    => p ~ TermLike variable
     => SMT.MonadSMT m
     => MonadLog m
     => SExpr  -- ^ type name
-    -> p  -- ^ uninterpreted pattern
-    -> Translator m p SExpr
-translateUninterpreted t pat =
-    lookupPattern <|> freeVariable
+    -> TranslateItem variable  -- ^ uninterpreted pattern
+    -> Translator m variable SExpr
+translateTerm smtType (QuantifiedVariable var) = do
+    n <- Counter.increment
+    let varName = "<" <> Text.pack (show n) <> ">"
+        smtVar = SimpleSMT.const varName
+    field @"quantifiedVars" Lens.%=
+        Map.insert var
+            SMTDependentAtom
+            { smtName = varName
+            , smtType
+            , boundVars = []
+            }
+    return smtVar
+translateTerm t (UninterpretedTerm (TermLike.ElemVar_ var)) =
+    lookupVariable var <|> declareVariable t var
+translateTerm t (UninterpretedTerm pat) = do
+    TranslatorState { quantifiedVars, terms } <- State.get
+    let freeVars = getFreeVariables $ TermLike.freeVariables pat
+        boundVarsMap =
+            Map.filterWithKey
+                (\k _ -> ElemVar k `Set.member` freeVars)
+                quantifiedVars
+        boundPat = TermLike.mkExistsN (Map.keys boundVarsMap) pat
+    lookupUninterpreted boundPat quantifiedVars terms
+        <|> declareUninterpreted boundPat boundVarsMap
   where
-    lookupPattern = do
-        result <- State.gets $ Map.lookup pat
-        maybe empty (return . fst) result
-    freeVariable = do
+    lookupUninterpreted boundPat quantifiedVars terms =
+        maybe empty (translateSMTDependentAtom quantifiedVars)
+        $ Map.lookup boundPat terms
+    declareUninterpreted boundPat boundVarsMap
+      = do
         n <- Counter.increment
-        var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
-        State.modify' (Map.insert pat (var, t))
-        logVariableAssignment n
-        return var
-    logVariableAssignment n =
-        logDebug
-        . Text.pack . show
-        . Pretty.nest 4 . Pretty.sep
-        $ [Pretty.pretty n, "|->", unparse pat]
+        logVariableAssignment n boundPat
+        let smtName = "<" <> Text.pack (show n) <> ">"
+            (boundVars, bindings) = unzip $ Map.assocs boundVarsMap
+            cached = SMTDependentAtom { smtName, smtType = t, boundVars }
+        _ <- SMT.declareFun
+            SMT.FunctionDeclaration
+                { name = smtName
+                , inputSorts = smtType <$> bindings
+                , resultSort = t
+                }
+        field @"terms" Lens.%= Map.insert boundPat cached
+        translateSMTDependentAtom boundVarsMap cached
+
+lookupVariable
+    :: InternalVariable variable
+    => Monad m
+    => TermLike.ElementVariable variable
+    -> Translator m variable SExpr
+lookupVariable var =
+    lookupQuantifiedVariable <|> lookupFreeVariable
+  where
+    lookupQuantifiedVariable = do
+        TranslatorState { quantifiedVars } <- State.get
+        hoistMaybe $ SMT.Atom . smtName <$> Map.lookup var quantifiedVars
+    lookupFreeVariable = do
+        TranslatorState { freeVars} <- State.get
+        hoistMaybe $ Map.lookup var freeVars
+
+declareVariable
+    :: InternalVariable variable
+    => SMT.MonadSMT m
+    => MonadLog m
+    => SExpr  -- ^ type name
+    -> TermLike.ElementVariable variable  -- ^ variable to be declared
+    -> Translator m variable SExpr
+declareVariable t variable = do
+    n <- Counter.increment
+    let varName = "<" <> Text.pack (show n) <> ">"
+    var <- SMT.declare varName t
+    field @"freeVars" Lens.%= Map.insert variable var
+    logVariableAssignment n (TermLike.mkElemVar variable)
+    return var
+
+logVariableAssignment
+    :: InternalVariable variable
+    => MonadLog m
+    => Counter.Natural
+    -> TermLike variable  -- ^ variable to be declared
+    -> Translator m variable ()
+logVariableAssignment n pat =
+    logDebug
+    . Text.pack . show
+    . Pretty.nest 4 . Pretty.sep
+    $ [Pretty.pretty n, "|->", unparse pat]

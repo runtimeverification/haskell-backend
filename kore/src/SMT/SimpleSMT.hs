@@ -149,6 +149,7 @@ module SMT.SimpleSMT
 
     -- Quantifiers
     , forallQ
+    , existsQ
     ) where
 
 import Prelude hiding
@@ -250,7 +251,7 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 
 --------------------------------------------------------------------------------
 
-type Logger = Log.LogAction IO Log.ActualEntry
+type Logger = Log.LogAction IO Log.SomeEntry
 
 -- | An interactive solver process.
 data Solver = Solver
@@ -297,9 +298,9 @@ logMessageWith
     -> Text
     -> IO ()
 logMessageWith severity Solver { logger } a =
-    Log.fromLogAction @Log.ActualEntry logger Colog.<& message
+    logger Colog.<& Log.toEntry message
   where
-    message = Log.SomeEntry $ Log.LogMessage a severity callStack
+    message = Log.LogMessage a severity callStack
 
 debug :: HasCallStack => Solver -> Text -> IO ()
 debug = logMessageWith Log.Debug

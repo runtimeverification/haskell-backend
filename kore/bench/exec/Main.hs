@@ -32,6 +32,7 @@ import Kore.Internal.TermLike
     )
 import Kore.Log
     ( emptyLogger
+    , runLoggerT
     )
 import Kore.Parser
     ( parseKoreDefinition
@@ -173,7 +174,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
         :: (VerifiedModule StepperAttributes, TermLike Variable)
         -> IO (TermLike Variable)
     execution (verifiedModule, purePattern) =
-        SMT.runSMT SMT.defaultConfig emptyLogger
+        flip runLoggerT emptyLogger
+        $ SMT.runSMT SMT.defaultConfig
         $ exec unlimited verifiedModule strategy purePattern
       where
         unlimited :: Limit Natural

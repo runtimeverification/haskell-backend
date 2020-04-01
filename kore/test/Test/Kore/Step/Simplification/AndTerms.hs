@@ -29,6 +29,10 @@ import Kore.Attribute.Simplification
     )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Equation
+    ( Equation (..)
+    , mkEquation
+    )
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -57,12 +61,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
-    ( axiomPatternsToEvaluators
-    )
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (EqualityRule)
-    , equalityPattern
+    ( mkEvaluatorRegistry
     )
 import Kore.Step.Simplification.And
     ( termAnd
@@ -1181,36 +1180,37 @@ test_equalsTermsSimplification =
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
-            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+            simplifiers = mkEvaluatorRegistry $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)
-                    ,   [ EqualityRule
-                            (equalityPattern
+                    ,   [
+                            (mkEquation
+                                sortVar
                                 (mkCeil sortVar Mock.cf)
                                 (mkOr
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.a
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.a
                                         )
                                     )
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.b
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.b
                                         )
                                     )
                                 )
                             )
-                            {attributes = def
+                            { attributes = def
                                 {Attribute.simplification = Simplification True}
                             }
                         ]
@@ -1275,29 +1275,29 @@ test_equalsTermsSimplification =
                     }
                 ]
             sortVar = SortVariableSort (SortVariable (testId "S"))
-            simplifiers = axiomPatternsToEvaluators $ Map.fromList
+            simplifiers = mkEvaluatorRegistry $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)
-                    ,   [ EqualityRule
-                            (equalityPattern
+                    ,   [
+                            (mkEquation sortVar
                                 (mkCeil sortVar Mock.cf)
                                 (mkOr
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.a
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.a
                                         )
                                     )
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.f (mkElemVar Mock.y))
                                             Mock.b
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.y)
                                             Mock.b
                                         )
@@ -1311,26 +1311,26 @@ test_equalsTermsSimplification =
                     )
                 ,   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cgId)
-                    ,   [ EqualityRule
-                            (equalityPattern
+                    ,   [
+                            (mkEquation sortVar
                                 (mkCeil sortVar Mock.cg)
                                 (mkOr
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.g (mkElemVar Mock.z))
                                             Mock.a
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.z)
                                             Mock.a
                                         )
                                     )
                                     (mkAnd
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (Mock.g (mkElemVar Mock.z))
                                             Mock.b
                                         )
-                                        (mkEquals_
+                                        (mkEquals sortVar
                                             (mkElemVar Mock.z)
                                             Mock.b
                                         )

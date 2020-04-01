@@ -5,15 +5,9 @@ License     : NCSA
 module Kore.Step.Simplification.Rule
     ( simplifyRulePattern
     , simplifyRewriteRule
-    , simplifyEqualityRule
-    , simplifyFunctionAxioms
     ) where
 
 import Prelude.Kore
-
-import Data.Map.Strict
-    ( Map
-    )
 
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -35,10 +29,6 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (..)
-    )
 import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -47,66 +37,6 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-
-{- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
-
-See also: 'simplifyRulePattern'
-
- -}
-simplifyFunctionAxioms
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Map identifier [EqualityRule variable]
-    -> simplifier (Map identifier [EqualityRule variable])
-simplifyFunctionAxioms =
-    (traverse . traverse) simplifyEqualityRule
-
-simplifyEqualityRule
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => EqualityRule variable
-    -> simplifier (EqualityRule variable)
-simplifyEqualityRule (EqualityRule rule) =
-    EqualityRule <$> simplifyEqualityPattern rule
-
-{- | Simplify an 'EqualityPattern' using only matching logic rules.
-
-The original rule is returned unless the simplification result matches certain
-narrowly-defined criteria.
-
- -}
-simplifyEqualityPattern
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => EqualityPattern variable
-    -> simplifier (EqualityPattern variable)
-simplifyEqualityPattern rule = do
-    let EqualityPattern { left } = rule
-    simplifiedLeft <- simplifyPattern left
-    case OrPattern.toPatterns simplifiedLeft of
-        [ Conditional { term, predicate, substitution } ]
-          | PredicateTrue <- predicate -> do
-            let subst = Substitution.toMap substitution
-                left' = TermLike.substitute subst term
-                requires' = TermLike.substitute subst <$> requires
-                  where
-                    EqualityPattern { requires = requires } = rule
-                rhs' = TermLike.substitute subst rhs
-                  where
-                    EqualityPattern { right = rhs } = rule
-                ensures' = TermLike.substitute subst <$> ensures
-                  where
-                    EqualityPattern { ensures = ensures } = rule
-                EqualityPattern { attributes } = rule
-            return EqualityPattern
-                { left = TermLike.forgetSimplified left'
-                , requires = Predicate.forgetSimplified requires'
-                , right = TermLike.forgetSimplified rhs'
-                , ensures = Predicate.forgetSimplified ensures'
-                , attributes = attributes
-                }
-        _ ->
-            -- Unable to simplify the given rule pattern, so we return the
-            -- original pattern in the hope that we can do something with it
-            -- later.
-            return rule
 
 {- | Simplify a 'Rule' using only matching logic rules.
 

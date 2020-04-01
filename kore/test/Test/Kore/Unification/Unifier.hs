@@ -59,15 +59,14 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import SMT
-    ( SMT
-    )
-import qualified SMT
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
+import Test.SMT
+    ( runNoSMT
+    )
 import Test.Tasty.HUnit.Ext
 
 var :: Text -> Sort -> ElementVariable Variable
@@ -204,7 +203,7 @@ andSimplifySuccess
 andSimplifySuccess term1 term2 results = do
     let expect = map unificationResult results
     Right subst' <-
-        runSMT
+        runNoSMT
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
@@ -232,7 +231,7 @@ andSimplifyFailure term1 term2 err = do
     let expect :: Either UnificationError (Pattern Variable)
         expect = Left err
     actual <-
-        runSMT
+        runNoSMT
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
@@ -250,7 +249,7 @@ andSimplifyException message term1 term2 exceptionMessage =
     where
         test = do
             assignment <-
-                runSMT $ runSimplifier testEnv
+                runNoSMT $ runSimplifier testEnv
                 $ Monad.Unify.runUnifierT
                 $ simplifyAnds (unificationProblem term1 term2 :| [])
             _ <- evaluate assignment
@@ -281,7 +280,7 @@ unificationProcedureSuccessWithSimplifiers
                 term2
             & Monad.Unify.runUnifierT
             & runSimplifier mockEnv
-            & runSMT
+            & runNoSMT
         let
             normalize
                 :: Condition Variable
@@ -800,7 +799,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm -> IO UnificationTerm
 simplifyPattern (UnificationTerm term) = do
-    Conditional { term = term' } <- runSMT $ runSimplifier testEnv simplifier
+    Conditional { term = term' } <- runNoSMT $ runSimplifier testEnv simplifier
     return $ UnificationTerm term'
   where
     simplifier = do
@@ -816,6 +815,3 @@ makeEqualsPredicate_
     -> TermLike Variable
     -> Predicate Variable
 makeEqualsPredicate_ = Predicate.makeEqualsPredicate_
-
-runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

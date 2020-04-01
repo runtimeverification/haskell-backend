@@ -16,6 +16,9 @@ import Test.Tasty.HUnit
 
 import qualified Control.Monad.Morph as Morph
 
+import Log
+    ( runLoggerT
+    )
 import SMT
     ( NoSMT
     , SMT
@@ -52,7 +55,7 @@ assertEqual'
 assertEqual' str expect = liftIO . assertEqual str expect
 
 runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig mempty
+runSMT = flip runLoggerT mempty . SMT.runSMT SMT.defaultConfig
 
 runNoSMT :: NoSMT a -> IO a
-runNoSMT = SMT.runNoSMT mempty
+runNoSMT = flip runLoggerT mempty . SMT.runNoSMT

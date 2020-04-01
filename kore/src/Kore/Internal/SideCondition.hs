@@ -9,6 +9,7 @@ License     : NCSA
 module Kore.Internal.SideCondition
     ( SideCondition  -- Constructor not exported on purpose
     , fromCondition
+    , fromPredicate
     , andCondition
     , assumeTrueCondition
     , assumeTruePredicate
@@ -134,6 +135,10 @@ instance
             , assumedTrue
             }
 
+instance From (SideCondition variable) (Condition variable) where
+    from = assumedTrue
+    {-# INLINE from #-}
+
 top :: InternalVariable variable => SideCondition variable
 top = fromCondition Condition.top
 
@@ -189,6 +194,10 @@ mapVariables mapElemVar mapSetVar condition@(SideCondition _ _) =
 fromCondition
     :: InternalVariable variable => Condition variable -> SideCondition variable
 fromCondition = from
+
+fromPredicate
+    :: InternalVariable variable => Predicate variable -> SideCondition variable
+fromPredicate = fromCondition . from
 
 toRepresentationCondition
     :: InternalVariable variable
