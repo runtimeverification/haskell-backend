@@ -74,7 +74,7 @@ declareSMTLemmas m = do
         -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
-        (lemma, VarContext { terms }) <-
+        (lemma, TranslatorState { terms }) <-
             runTranslator
             $ translatePredicate translateUninterpreted
             $ wrapPredicate $ sentenceAxiomPattern axiomDeclaration
@@ -85,7 +85,7 @@ declareSMTLemmas m = do
         [ SMT.Atom "forall"
         , SMT.List
             [ SMT.List [SMT.Atom smtName, smtType]
-            | SmtEncoding { smtName, smtType } <- Map.elems vars ]
+            | SMTDependentAtom { smtName, smtType } <- Map.elems vars ]
         , lemma
         ]
 
@@ -98,7 +98,7 @@ translateUninterpreted
     -> TranslateItem variable -- ^ uninterpreted pattern
     -> Translator m variable SExpr
 translateUninterpreted _ (QuantifiedVariable _) =
-    error "Lemma encodings don't support quantified variables (yet)"
+    empty
 translateUninterpreted t (UninterpretedTerm pat)
   | isVariable pat =
     lookupPattern <|> freeVariable
@@ -114,9 +114,7 @@ translateUninterpreted t (UninterpretedTerm pat)
     freeVariable = do
         n <- Counter.increment
         let var = "<" <> Text.pack (show n) <> ">"
-        State.modify'
-            ( Lens.over (field @"terms")
-            $ Map.insert pat
-                SmtEncoding { smtName = var, smtType = t, boundVars = [] }
-            )
+        field @"terms" Lens.%=
+            Map.insert pat
+                SMTDependentAtom { smtName = var, smtType = t, boundVars = [] }
         return $ SMT.Atom var

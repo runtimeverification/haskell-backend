@@ -12,12 +12,14 @@ module Kore.Step.SMT.Evaluator
     , filterBranch
     , filterMultiOr
     , translateTerm
+    , goTranslatePredicate
     ) where
 
 import Prelude.Kore
 
 import Control.Error
     ( MaybeT
+    , hoistMaybe
     , runMaybeT
     )
 import qualified Control.Lens as Lens
@@ -172,7 +174,8 @@ decidePredicate korePredicate =
 goTranslatePredicate
     :: forall variable m.
         ( InternalVariable variable
-        , MonadSimplify m
+        , SMT.MonadSMT m
+        , MonadLog m
         )
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
@@ -193,60 +196,60 @@ translateTerm smtType (QuantifiedVariable var) = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
         smtVar = SimpleSMT.const varName
-    State.modify'
-        (Lens.over (field @"quantifiedVars") $ Map.insert var
-            SmtEncoding
+    field @"quantifiedVars" Lens.%=
+        Map.insert var
+            SMTDependentAtom
             { smtName = varName
             , smtType
             , boundVars = []
             }
-        )
     return smtVar
 translateTerm t (UninterpretedTerm (TermLike.ElemVar_ var)) =
     lookupVariable var <|> declareVariable t var
 translateTerm t (UninterpretedTerm pat) = do
-    VarContext { quantifiedVars, terms } <- State.get
+    TranslatorState { quantifiedVars, terms } <- State.get
     let freeVars = getFreeVariables $ TermLike.freeVariables pat
         boundVarsMap =
             Map.filterWithKey
                 (\k _ -> ElemVar k `Set.member` freeVars)
                 quantifiedVars
-        boundVars = Map.keys boundVarsMap
-        boundPat = TermLike.mkExistsN boundVars pat
+        boundPat = TermLike.mkExistsN (Map.keys boundVarsMap) pat
     lookupUninterpreted boundPat quantifiedVars terms
-        <|> declareUninterpreted boundPat boundVars boundVarsMap
+        <|> declareUninterpreted boundPat boundVarsMap
   where
     lookupUninterpreted boundPat quantifiedVars terms =
-        maybe empty (translateSmtEncoding quantifiedVars)
+        maybe empty (translateSMTDependentAtom quantifiedVars)
         $ Map.lookup boundPat terms
-    declareUninterpreted boundPat boundVars boundVarsMap
+    declareUninterpreted boundPat boundVarsMap
       = do
         n <- Counter.increment
         logVariableAssignment n boundPat
         let smtName = "<" <> Text.pack (show n) <> ">"
-            cache = SmtEncoding { smtName, smtType = t, boundVars }
+            (boundVars, bindings) = unzip $ Map.assocs boundVarsMap
+            cached = SMTDependentAtom { smtName, smtType = t, boundVars }
         _ <- SMT.declareFun
             SMT.FunctionDeclaration
-            { name = smtName
-            , inputSorts =
-                smtType <$> mapMaybe (`Map.lookup` boundVarsMap) boundVars
-            , resultSort = t
-            }
-        State.modify'
-            ( Lens.over (field @"terms") $ Map.insert boundPat cache )
-        translateSmtEncoding boundVarsMap cache
+                { name = smtName
+                , inputSorts = smtType <$> bindings
+                , resultSort = t
+                }
+        field @"terms" Lens.%= Map.insert boundPat cached
+        translateSMTDependentAtom boundVarsMap cached
 
 lookupVariable
     :: InternalVariable variable
-    => SMT.MonadSMT m
+    => Monad m
     => TermLike.ElementVariable variable
     -> Translator m variable SExpr
-lookupVariable var = do
-    VarContext { freeVars, quantifiedVars } <- State.get
-    maybe empty return $
-        (SMT.Atom . smtName <$> Map.lookup var quantifiedVars)
-        <|>
-        Map.lookup var freeVars
+lookupVariable var =
+    lookupQuantifiedVariable <|> lookupFreeVariable
+  where
+    lookupQuantifiedVariable = do
+        TranslatorState { quantifiedVars } <- State.get
+        hoistMaybe $ SMT.Atom . smtName <$> Map.lookup var quantifiedVars
+    lookupFreeVariable = do
+        TranslatorState { freeVars} <- State.get
+        hoistMaybe $ Map.lookup var freeVars
 
 declareVariable
     :: InternalVariable variable
@@ -259,26 +262,9 @@ declareVariable t variable = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
     var <- SMT.declare varName t
-    State.modify' (Lens.over (field @"freeVars") $ Map.insert variable var)
+    field @"freeVars" Lens.%= Map.insert variable var
     logVariableAssignment n (TermLike.mkElemVar variable)
     return var
-
-translateSmtEncoding
-    :: InternalVariable variable
-    => SMT.MonadSMT m
-    => Map.Map (TermLike.ElementVariable variable) (SmtEncoding variable)
-    -> SmtEncoding variable
-    -> Translator m variable SExpr
-translateSmtEncoding
-    quantifiedVars
-    SmtEncoding { smtName = funName, boundVars }
-  =
-    maybe empty (return . SimpleSMT.fun funName) boundEncodings
-  where
-    boundEncodings =
-        traverse
-            (fmap (SMT.Atom . smtName) . (`Map.lookup` quantifiedVars))
-            boundVars
 
 logVariableAssignment
     :: InternalVariable variable

@@ -12,8 +12,9 @@ module Kore.Step.SMT.Translate
     ( translatePredicate
     , Translator
     , TranslateItem (..)
-    , VarContext (..)
-    , SmtEncoding (..)
+    , TranslatorState (..)
+    , SMTDependentAtom (..)
+    , translateSMTDependentAtom
     , evalTranslator
     , runTranslator
     ) where
@@ -48,6 +49,9 @@ import Data.Reflection
 import Data.Text
     ( Text
     )
+import Data.Traversable
+    ( for
+    )
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Hook
@@ -67,11 +71,12 @@ import SMT
     ( SExpr (..)
     )
 import qualified SMT
+import qualified SMT.SimpleSMT as SimpleSMT
 
 
 data TranslateItem variable
-    = QuantifiedVariable (ElementVariable variable)
-    | UninterpretedTerm (TermLike variable)
+    = QuantifiedVariable !(ElementVariable variable)
+    | UninterpretedTerm !(TermLike variable)
 
 -- ----------------------------------------------------------------
 -- Predicate translation
@@ -238,7 +243,7 @@ translatePredicate translateTerm predicate =
     translatePredicateExists
         :: Exists Sort variable p -> Translator m variable SExpr
     translatePredicateExists Exists { existsVariable, existsChild } =
-        case  getHook of
+        case getHook of
             Just builtinSort
               | builtinSort == Builtin.Bool.sort
               -> translateExists SMT.tBool existsVariable existsChild
@@ -259,10 +264,8 @@ translatePredicate translateTerm predicate =
         oldVar <- State.gets (Map.lookup var . quantifiedVars)
         smtVar <- translateTerm varSort (QuantifiedVariable var)
         smtPred <- translatePredicatePattern predTerm
-        State.modify'
-            ( Lens.over (field @"quantifiedVars")
-            $ maybe (Map.delete var) (Map.insert var) oldVar
-            )
+        field @"quantifiedVars" Lens.%=
+            maybe (Map.delete var) (Map.insert var) oldVar
         return $ SMT.existsQ [SMT.List [smtVar, varSort]] smtPred
 
     translatePattern :: Sort -> p -> Translator m variable SExpr
@@ -283,32 +286,63 @@ translatePredicate translateTerm predicate =
         Attribute.Sort { hook = Hook { getHook } } =
             sortAttributes tools sort
 
-data SmtEncoding variable = SmtEncoding
-    { smtName :: Text
-    , smtType :: SExpr
-    , boundVars :: [ElementVariable variable]
+{-| Represents the SMT encoding of an untranslatable pattern containing
+occurrences of existential variables.  Since the same pattern might appear
+under different instances of the same existential quantifiers, it is made
+dependent on the name of the variables, which must be instantiated with
+the current encodings corresponding to those variables when transformed to a
+proper 'SExpr'. See 'translateSMTDependentAtom'.
+-}
+data SMTDependentAtom variable = SMTDependentAtom
+    { smtName   :: !Text
+    , smtType   :: !SExpr
+    , boundVars :: ![ElementVariable variable]
     }
     deriving (Eq, GHC.Generic, Show)
+
+{-| Instantiates an 'SMTDependentAtom' with the current encodings for the
+variables it depends on.
+
+May fail (return 'empty') if any of the variables it depends on are not
+currently existentially quantified.
+-}
+translateSMTDependentAtom
+    :: InternalVariable variable
+    => SMT.MonadSMT m
+    => Map.Map (ElementVariable variable) (SMTDependentAtom variable)
+    -> SMTDependentAtom variable
+    -> Translator m variable SExpr
+translateSMTDependentAtom
+    quantifiedVars
+    SMTDependentAtom { smtName = funName, boundVars }
+  =
+    maybe empty (return . SimpleSMT.fun funName) boundEncodings
+  where
+    boundEncodings =
+        for boundVars
+            $ \name -> SMT.Atom . smtName <$> Map.lookup name quantifiedVars
 
 -- ----------------------------------------------------------------
 -- Translator
-data VarContext variable
-  = VarContext
-    { terms :: !(Map (TermLike variable) (SmtEncoding variable))
-    , freeVars :: !(Map (ElementVariable variable) SExpr)
-    , quantifiedVars :: !(Map (ElementVariable variable) (SmtEncoding variable))
-    }
+data TranslatorState variable
+    = TranslatorState
+        { terms :: !(Map (TermLike variable) (SMTDependentAtom variable))
+        , freeVars :: !(Map (ElementVariable variable) SExpr)
+        , quantifiedVars ::
+            !(Map (ElementVariable variable) (SMTDependentAtom variable))
+        }
     deriving (Eq, GHC.Generic, Show)
 
-instance Default (VarContext variable) where
-    def = VarContext def def def
+instance Default (TranslatorState variable) where
+    def = TranslatorState def def def
 
-type Translator m variable = MaybeT (StateT (VarContext variable) (CounterT m))
+type Translator m variable =
+    MaybeT (StateT (TranslatorState variable) (CounterT m))
 
 evalTranslator :: Monad m => Translator m p a -> MaybeT m a
 evalTranslator = Morph.hoist (evalCounterT . flip evalStateT def)
 
-runTranslator :: Monad m => Translator m p a -> MaybeT m (a, VarContext p)
+runTranslator :: Monad m => Translator m p a -> MaybeT m (a, TranslatorState p)
 runTranslator = evalTranslator . includeState
   where includeState comp = do
             comp' <- comp
