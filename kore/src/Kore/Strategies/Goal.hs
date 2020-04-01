@@ -575,7 +575,7 @@ data TransitionRuleTemplate monad goal =
 logTransitionRule
     :: forall m goal
     .  MonadSimplify m
-    => goal ~ (ReachabilityRule Variable)
+    => goal ~ ReachabilityRule Variable
     =>  (  Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)

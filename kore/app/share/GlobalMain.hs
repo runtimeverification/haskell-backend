@@ -415,14 +415,14 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 -- | Time a pure computation and print results.
 clockSomething :: String -> a -> Main a
 clockSomething description something =
-    clockSomethingIO description (evaluate something)
+    clockSomethingIO description (liftIO $ evaluate something)
 
 
 -- | Time an IO computation and print results.
-clockSomethingIO :: String -> IO a -> Main a
+clockSomethingIO :: String -> Main a -> Main a
 clockSomethingIO description something = do
     start  <- lift $ getTime Monotonic
-    x      <- lift   something
+    x      <- something
     end    <- lift $ getTime Monotonic
     logEntry $ logMessage end start
     return x
@@ -514,7 +514,7 @@ mainParse
     -> Main a
 mainParse parser fileName = do
     contents <-
-        clockSomethingIO "Reading the input file" (readFile fileName)
+        clockSomethingIO "Reading the input file" $ liftIO $ readFile fileName
     parseResult <-
         clockSomething "Parsing the file" (parser fileName contents)
     case parseResult of

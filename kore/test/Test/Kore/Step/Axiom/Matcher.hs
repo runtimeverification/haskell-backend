@@ -789,10 +789,20 @@ test_matching_Set =
         "[x:Int] does not match [0]"
         (mkSet [mkElemVar xInt] [])
         (mkSet [mkInt 0   ] [])
-    , doesn'tMatch
-        "[x:Int] s:Set does not match [0]"
+    , matches
+        "[x:Int] s:Set matches [0]"
+        (mkSet [mkElemVar xInt] [mkVar sSet])
+        (mkSet [mkInt 0] [])
+        [ (ElemVar xInt, mkInt 0)
+        , (sSet, mkSet [] [])
+        ]
+    , matches
+        "[x:Int] s:Set matches [0, 1]"
         (mkSet [mkElemVar xInt]         [mkVar sSet])
         (mkSet [mkInt 0   , mkInt 1   ] [          ])
+        [ (ElemVar xInt, mkInt 0)
+        , (sSet, mkSet [mkInt 1] [])
+        ]
     ]
 
 sSet :: UnifiedVariable.UnifiedVariable Variable
@@ -834,14 +844,6 @@ test_matching_Map =
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [          ])
         [(ElemVar mMap, mkMap [] [])]
-    , doesn'tMatch
-        "x:Int |-> y:Int  m does not match 0 |-> 1"
-        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
-        (mkMap [(mkInt 0   , mkInt 1   )] [    ])
-    , doesn'tMatch
-        "x:Int |-> y:Int  m:Map does not match 0 |-> 1  2 |-> 4"
-        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
-        (mkMap [(mkInt 0   , mkInt 1   )] [          ])
     , matches "(x:Int, [x:Int -> y:Int] m:Map) matches (0, [0 -> 1, 1 -> 2])"
         (mkPair (mkElemVar xInt) (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap]))
         (mkPair (mkInt 0   ) (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []))
@@ -941,6 +943,22 @@ test_matching_Map =
         )
         [ (ElemVar yInt, mkInt 2)
         , (ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0)] [mkElemVar nMap])
+        ]
+    , matches
+        "x:Int |-> y:Int  m matches 0 |-> 1"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
+        (mkMap [(mkInt 0, mkInt 1)] [])
+        [ (ElemVar xInt, mkInt 0)
+        , (ElemVar yInt, mkInt 1)
+        , (ElemVar mMap, mkMap [] [])
+        ]
+    , matches
+        "x:Int |-> y:Int  m:Map matches 0 |-> 1  2 |-> 3"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
+        (mkMap [(mkInt 0, mkInt 1), (mkInt 2, mkInt 3)] [])
+        [ (ElemVar xInt, mkInt 0)
+        , (ElemVar yInt, mkInt 1)
+        , (ElemVar mMap, mkMap [(mkInt 2, mkInt 3)] [])
         ]
     ]
 

@@ -8,7 +8,6 @@ import Control.Monad.Catch
     , handle
     , throwM
     )
-import qualified Control.Monad.Reader.Class as Reader
 import Control.Monad.Trans
     ( lift
     )
@@ -37,10 +36,6 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
     ( putStrLn
     , readFile
-    )
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    , vsep
     )
 import Data.Text.Prettyprint.Doc.Render.Text
     ( hPutDoc
@@ -78,9 +73,6 @@ import System.IO
 
 import qualified Data.Limit as Limit
 import Kore.Attribute.Symbol as Attribute
-import Kore.Error
-    ( printError
-    )
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
@@ -111,10 +103,9 @@ import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
     , LogMessage
-    , LoggerT (..)
     , WithLog
     , parseKoreLogOptions
-    , runLoggerT
+    , runKoreLog
     )
 import Kore.Log.ErrorException
     ( errorException
@@ -155,6 +146,11 @@ import Kore.Syntax.Definition
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
     ( unparse
+    )
+import Pretty
+    ( Doc
+    , Pretty (..)
+    , vsep
     )
 import SMT
     ( MonadSMT
@@ -408,7 +404,7 @@ mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
     exitCode <-
-        runLoggerT koreLogOptions
+        runKoreLog koreLogOptions
         $ handle handleSomeException
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
@@ -656,18 +652,17 @@ execute
     -> LoadedModule  -- ^ Main module
     -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
     -> Main r
-execute options mainModule worker = do
-    logger <- LoggerT Reader.ask
+execute options mainModule worker =
     clockSomethingIO "Executing"
         $ case smtSolver of
-            Z3   -> withZ3 logger
-            None -> withoutSMT logger
+            Z3   -> withZ3
+            None -> withoutSMT
   where
-    withZ3 logger =
-        SMT.runSMT config logger $ do
+    withZ3 =
+        SMT.runSMT config $ do
             give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
             worker
-    withoutSMT logger = SMT.runNoSMT logger worker
+    withoutSMT = SMT.runNoSMT worker
     KoreExecOptions { smtTimeOut, smtPrelude, smtSolver } = options
     config =
         SMT.defaultConfig
@@ -711,7 +706,7 @@ mainParseSearchPattern indexedModule patternFileName = do
             Conditional
                 { term
                 , predicate =
-                    either (error . printError) id
+                    either (error . show . pretty) id
                         (makePredicate predicateTerm)
                 , substitution = mempty
                 }

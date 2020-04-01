@@ -42,13 +42,15 @@ import Kore.Step.Simplification.Simplify
     , BuiltinAndAxiomSimplifier (..)
     )
 import qualified Kore.TopBottom as TopBottom
-import qualified SMT
 
 import Test.Kore.Builtin.Builtin hiding
     ( evaluate
     )
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
+import Test.SMT
+    ( runNoSMT
+    )
 import Test.Tasty.HUnit.Ext
 
 test_ecdsaRecover :: [TestTree]
@@ -173,7 +175,7 @@ evaluate builtin termLike = do
     attempt <-
         runBuiltinAndAxiomSimplifier evaluator termLike SideCondition.top
         & runSimplifier testEnv
-        & SMT.runNoSMT mempty
+        & runNoSMT
     attemptResults <- expectConstructor @"Applied" attempt
     let AttemptedAxiomResults { results, remainders } = attemptResults
     assertBool "Expected no remainders" $ TopBottom.isBottom remainders

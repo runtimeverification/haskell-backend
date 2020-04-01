@@ -36,6 +36,7 @@ import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Equation as Equation
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
@@ -50,12 +51,13 @@ import Kore.Profiler.Data
     ( MonadProfiler (profile)
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
-import qualified Kore.Step.Axiom.Registry as Axiom.Registry
+import Kore.Step.Axiom.Registry
+    ( mkEvaluatorRegistry
+    )
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
@@ -216,17 +218,16 @@ evalSimplifier verifiedModule simplifier = do
 
     initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do
-        let equalityAxioms =
-                Axiom.Registry.extractEqualityAxioms verifiedModule'
-        functionAxioms <- Rule.simplifyFunctionAxioms equalityAxioms
+        equations <-
+            Equation.simplifyExtractedEquations
+            $ Equation.extractEquations verifiedModule'
         let
             builtinEvaluators, userEvaluators, simplifierAxioms
                 :: BuiltinAndAxiomSimplifierMap
+            userEvaluators = mkEvaluatorRegistry equations
             builtinEvaluators =
                 Axiom.EvaluationStrategy.builtinEvaluation
                 <$> Builtin.koreEvaluators verifiedModule'
-            userEvaluators =
-                Axiom.Registry.axiomPatternsToEvaluators functionAxioms
             simplifierAxioms =
                 Map.unionWith
                     Axiom.EvaluationStrategy.simplifierWithFallback

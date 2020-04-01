@@ -9,6 +9,7 @@ module Kore.Step.Step
     ( UnifiedRule
     , Result
     , Results
+    , Renaming
     , UnifyingRule (..)
     , InstantiationFailure (..)
     , unifyRules

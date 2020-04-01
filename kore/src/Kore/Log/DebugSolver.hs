@@ -78,14 +78,14 @@ instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
 
 logDebugSolverSendWith
-    :: LogAction m ActualEntry
+    :: LogAction m SomeEntry
     -> SExpr
     -> m ()
 logDebugSolverSendWith logger sExpr =
     logWith logger $ DebugSolverSend sExpr
 
 logDebugSolverRecvWith
-    :: LogAction m ActualEntry
+    :: LogAction m SomeEntry
     -> Text
     -> m ()
 logDebugSolverRecvWith logger smtText =

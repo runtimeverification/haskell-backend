@@ -14,7 +14,7 @@ module Kore.Log
     , makeKoreLogger
     , Colog.logTextStderr
     , Colog.logTextHandle
-    , runLoggerT
+    , runKoreLog
     , module Log
     , module KoreLogOptions
     ) where
@@ -50,9 +50,6 @@ import Control.Monad.Cont
     ( ContT (..)
     , runContT
     )
-import Control.Monad.Reader
-    ( runReaderT
-    )
 import Data.Foldable
     ( toList
     )
@@ -66,8 +63,6 @@ import Data.String
 import Data.Text
     ( Text
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Time.Clock
     ( getCurrentTime
     )
@@ -80,6 +75,7 @@ import Data.Time.LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
     )
+import qualified Pretty
 
 import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugAxiomEvaluation
@@ -94,7 +90,7 @@ import qualified Kore.Log.DebugSolver as DebugSolver.DoNotUse
 import Kore.Log.KoreLogOptions as KoreLogOptions
 import Kore.Log.Registry
     ( lookupTextFromTypeWithError
-    , toSomeEntryType
+    , typeOfSomeEntry
     )
 import Kore.Log.SQLite
 import Log
@@ -190,8 +186,8 @@ filterEntry
     :: EntryTypes
     -> ActualEntry
     -> Bool
-filterEntry logEntries ActualEntry { actualEntry = SomeEntry entry } =
-    toSomeEntryType entry `elem` logEntries
+filterEntry logEntries ActualEntry { actualEntry } =
+    typeOfSomeEntry actualEntry `elem` logEntries
 
 {- | Select log entries with 'Severity' greater than or equal to the level.
  -}
@@ -203,13 +199,11 @@ filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
-runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
-runLoggerT options loggerT =
+runKoreLog :: KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLog options loggerT =
     withLogger options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
-        runLogger asyncLogAction
-  where
-    runLogger = runReaderT . getLoggerT $ loggerT
+        runLoggerT loggerT asyncLogAction
 
 withAsyncLogger
     :: LogAction IO a
@@ -233,7 +227,7 @@ withAsyncLogger logAction continue = do
 
 -- Creates a kore logger which:
 --     * adds timestamps
---     * formats messages: "[<severity>][<localTime>][<scope>]: <message>"
+--     * formats messages: "<exe-name>: [<timestamp>] <severity> (<entry-type>): <message>"
 makeKoreLogger
     :: forall m
     .  MonadIO m
@@ -247,30 +241,41 @@ makeKoreLogger exeName timestampSwitch logToText =
   where
     messageToText :: WithTimestamp -> Text
     messageToText (WithTimestamp entry localTime) =
-        Pretty.renderStrict
+        Pretty.renderText
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ formattedLog exeName' timestamp entry prettyContext
+        $ prettyActualEntry timestamp entry
       where
-        timestamp = case timestampSwitch of
-            TimestampsEnable -> Pretty.brackets (formattedTime localTime)
-            TimestampsDisable -> mempty
-        exeName' = Pretty.pretty exeName <> Pretty.colon
-        ActualEntry { entryContext } = entry
-        shortDocOfEntry (SomeEntry e) = shortDoc e
-        prettyContext = toList (mapMaybe shortDocOfEntry entryContext)
+        timestamp =
+            case timestampSwitch of
+                TimestampsDisable -> Nothing
+                TimestampsEnable ->
+                    Just $ Pretty.brackets (formattedTime localTime)
+    exeName' = Pretty.pretty exeName <> Pretty.colon
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
-    formattedLog exeName' timestamp entry prettyContext =
-        if null prettyContext
-            then
-                exeName'
-                Pretty.<+> timestamp
-                Pretty.<+> defaultLogPretty entry
-            else
-                Pretty.vsep
-                    [ exeName' Pretty.<+> timestamp
-                    , Pretty.indent 2 (Pretty.vsep prettyContext)
-                    , Pretty.indent 4 (defaultLogPretty entry)
-                    ]
+    prettyActualEntry timestamp ActualEntry { actualEntry, entryContext } =
+        (Pretty.vsep . concat)
+        [ [header]
+        , indent <$> context'
+        , indent <$> [longDoc actualEntry]
+        ]
+      where
+        header =
+            (Pretty.hsep . catMaybes)
+            [ Just exeName'
+            , timestamp
+            , Just severity'
+            , Just (Pretty.parens type')
+            ]
+            <> Pretty.colon
+        severity' = prettySeverity (entrySeverity actualEntry)
+        type' =
+            Pretty.pretty
+            $ lookupTextFromTypeWithError
+            $ typeOfSomeEntry actualEntry
+        context' =
+            mapMaybe (fmap (<> Pretty.colon) . shortDoc) entryContext
+            & toList
+    indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.
 withTimestamp :: MonadIO io => ActualEntry -> io WithTimestamp
@@ -312,11 +317,3 @@ swappableLogger mvar =
     acquire = liftIO $ takeMVar mvar
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
-
-defaultLogPretty :: ActualEntry -> Pretty.Doc ann
-defaultLogPretty ActualEntry { actualEntry = SomeEntry entry } =
-    header Pretty.<+> longDoc entry
-  where
-    severity = prettySeverity (entrySeverity entry)
-    type' = Pretty.pretty (lookupTextFromTypeWithError $ toSomeEntryType entry)
-    header = severity Pretty.<+> Pretty.parens type' <> Pretty.colon
