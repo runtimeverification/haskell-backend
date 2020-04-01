@@ -319,7 +319,7 @@ test_concatSymbolic =
                                 ]
                         }
         unified' <- evaluateT patUnifiedXY'
-        expect' /== unified'
+        expect' === unified'
 
 test_concatSymbolicDifferentLengths :: TestTree
 test_concatSymbolicDifferentLengths =
