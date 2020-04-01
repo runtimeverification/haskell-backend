@@ -293,9 +293,6 @@ test_concatSymbolic =
             patConcatY = concatList patElemY patSymbolicYs
             patUnifiedXY = mkAnd patConcatX patConcatY
 
-            patConcatX' = concatList patSymbolicXs patElemX
-            patConcatY' = concatList patSymbolicYs patElemY
-            patUnifiedXY' = mkAnd patConcatX' patConcatY'
             expect = Conditional
                         { term = patConcatY
                         , predicate = makeTruePredicate listSort
@@ -305,6 +302,13 @@ test_concatSymbolic =
                                 , (ElemVar elemVarXs, patSymbolicYs)
                                 ]
                         }
+        unified <- evaluateT patUnifiedXY
+        expect === unified
+
+        let patConcatX' = concatList patSymbolicXs patElemX
+            patConcatY' = concatList patSymbolicYs patElemY
+            patUnifiedXY' = mkAnd patConcatX' patConcatY'
+            
             expect' = Conditional
                         { term = patConcatY'
                         , predicate = makeTruePredicate listSort
@@ -314,10 +318,8 @@ test_concatSymbolic =
                                 , (ElemVar elemVarXs, patSymbolicYs)
                                 ]
                         }
-        unified <- evaluateT patUnifiedXY
         unified' <- evaluateT patUnifiedXY'
-        expect === unified
-        expect' === unified'
+        expect' /== unified'
 
 test_concatSymbolicDifferentLengths :: TestTree
 test_concatSymbolicDifferentLengths =
