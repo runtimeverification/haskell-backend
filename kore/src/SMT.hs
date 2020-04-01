@@ -45,6 +45,7 @@ module SMT
     , SimpleSMT.not
     , SimpleSMT.or
     , SimpleSMT.forallQ
+    , SimpleSMT.existsQ
     ) where
 
 import Prelude
