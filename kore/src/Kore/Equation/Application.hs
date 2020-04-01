@@ -69,10 +69,10 @@ import Kore.Step.Axiom.Matcher
     ( MatchResult
     , matchIncremental
     )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT
 import Kore.TopBottom
 import Kore.Variables.Target
