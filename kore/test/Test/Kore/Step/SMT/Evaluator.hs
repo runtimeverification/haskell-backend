@@ -187,7 +187,10 @@ test_andNegation =
     property = do
         let boolVariableGen = mkElemVar <$> elementVariableGen Builtin.boolSort
             boolPredicateGen =
-                predicateChildGen boolVariableGen Builtin.boolSort
+                predicateChildGen
+                    boolVariableGen
+                    (Just Builtin.boolSort)
+                    Builtin.boolSort
         predicate <- forAll (standaloneGen boolPredicateGen)
         actual <-
             evaluateSMT
