@@ -496,7 +496,7 @@ unifyEquals
     unifyEquals0 pat1 pat2 =
         case pat2 of
             dv@(Builtin_ (Domain.BuiltinList _)) -> unifyEquals0 dv pat1
-            _ -> trace "\n\nHere\n\n" empty
+            _ -> empty
 
     unifyEqualsConcrete
         :: Domain.InternalList (TermLike variable)
@@ -612,15 +612,15 @@ unifyEquals
             simplifyChild
                 frame1
                 suffix2Frame2
-        let result = TermLike.markSimplified initial
-                <$ prefixUnified <* suffixUnified
+        let result =
+                TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
         return result
       | length1 == length2 = do
         prefixUnified <-
             unifyEqualsConcrete builtin1 builtin2
         suffixUnified <- simplifyChild frame1 frame2
-        let result = TermLike.markSimplified initial
-                <$ prefixUnified <* suffixUnified
+        let result =
+                TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
         return result
       | otherwise =
         unifyEqualsFramedRightRight symbol builtin2 frame2 builtin1 frame1
