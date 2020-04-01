@@ -61,7 +61,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
-import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.List as List
@@ -223,7 +222,7 @@ test_removeKeyNotIn =
             key <- forAll genIntegerPattern
             map' <- forAll genMapPattern
             isInMap <- evaluateT $ lookupMap map' key
-            Monad.unless (Pattern.bottom == isInMap) discard
+            unless (Pattern.bottom == isInMap) discard
             let patRemove = removeMap map' key
                 predicate = mkEquals_ map' patRemove
             expect <- evaluateT map'
@@ -240,7 +239,7 @@ test_removeKeyIn =
             val <- forAll genIntegerPattern
             map' <- forAll genMapPattern
             isInMap <- evaluateT $ lookupMap map' key
-            Monad.unless (Pattern.bottom == isInMap) discard
+            unless (Pattern.bottom == isInMap) discard
             let patRemove = removeMap (updateMap map' key val) key
                 predicate = mkEquals_ patRemove map'
             expect <- evaluateT map'
@@ -281,7 +280,7 @@ test_removeAll =
         (do
             map' <- forAll genMapPattern
             set <- forAll Test.Set.genSetConcreteIntegerPattern
-            Monad.when (set == Set.empty) discard
+            when (set == Set.empty) discard
             let key = Set.elemAt 0 set
                 diffSet = Set.delete key set
                 patSet = Test.Set.asTermLike set
@@ -322,7 +321,7 @@ test_lookupConcatUniqueKeys =
         (do
             patKey1 <- forAll genIntegerPattern
             patKey2 <- forAll genIntegerPattern
-            Monad.when (patKey1 == patKey2) discard
+            when (patKey1 == patKey2) discard
             patVal1 <- forAll genIntegerPattern
             patVal2 <- forAll genIntegerPattern
             let patConcat = concatMap patMap1 patMap2
@@ -538,7 +537,7 @@ test_inclusion =
         (do
             patKey1 <- forAll genIntegerPattern
             patKey2 <- forAll genIntegerPattern
-            Monad.when (patKey1 == patKey2) discard
+            when (patKey1 == patKey2) discard
             patVal1 <- forAll genIntegerPattern
             patVal2 <- forAll genIntegerPattern
             let patMap1 = elementMap patKey1 patVal1
@@ -587,7 +586,7 @@ test_inclusion =
         (do
             patKey1 <- forAll genIntegerPattern
             patKey2 <- forAll genIntegerPattern
-            Monad.when (patKey1 == patKey2) discard
+            when (patKey1 == patKey2) discard
             patVal1 <- forAll genIntegerPattern
             patVal2 <- forAll genIntegerPattern
             let patMap1 = elementMap patKey1 patVal1
@@ -609,8 +608,8 @@ test_inclusion =
             patVal1' <- forAll genIntegerPattern
             patVal2 <- forAll genIntegerPattern
 
-            Monad.when (patKey1 == patKey2) discard
-            Monad.when (patVal1 == patVal1') discard
+            when (patKey1 == patKey2) discard
+            when (patVal1 == patVal1') discard
 
             let patMap1 = elementMap patKey1 patVal1
                 patMap2 = concatMap (elementMap patKey1 patVal1') (elementMap patKey2 patVal2)
@@ -805,7 +804,7 @@ test_unifySelectFromEmpty =
         valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
         mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
         let variables = [ keyVar, valueVar, mapVar ]
-        Monad.unless (distinctVariables variables) discard
+        unless (distinctVariables variables) discard
         let selectPat       = selectPattern keyVar valueVar mapVar id
             selectPatRev    = selectPattern keyVar valueVar mapVar reverse
             fnSelectPat     = selectFunctionPattern keyVar valueVar mapVar id
@@ -839,7 +838,7 @@ test_unifySelectFromSingleton =
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar   <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar, valueVar, mapVar]
-            Monad.unless (distinctVariables variables) discard
+            unless (distinctVariables variables) discard
             let selectPat      = selectPattern keyVar valueVar mapVar id
                 selectPatRev   = selectPattern keyVar valueVar mapVar reverse
                 singleton      = asInternal [(key, value)]
@@ -872,7 +871,7 @@ test_unifySelectSingletonFromSingleton =
             keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
             let variables = [keyVar, valueVar]
-            Monad.unless (distinctVariables variables) discard
+            unless (distinctVariables variables) discard
             let
                 emptyMapPat    = asTermLike Map.empty
                 selectPat      = addSelectElement keyVar valueVar emptyMapPat
@@ -902,7 +901,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
             keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
             let variables = [keyVar, valueVar]
-            Monad.unless (distinctVariables variables) discard
+            unless (distinctVariables variables) discard
             let selectPat = makeElementSelect keyVar valueVar
                 singleton = asInternal [(key, value)]
                 expect =
@@ -929,13 +928,13 @@ test_unifySelectFromTwoElementMap =
             value1 <- forAll genIntegerPattern
             key2 <- forAll genIntegerPattern
             value2 <- forAll genIntegerPattern
-            Monad.when (key1 == key2) discard
+            when (key1 == key2) discard
 
             keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar, valueVar, mapVar]
-            Monad.unless (distinctVariables variables) discard
+            unless (distinctVariables variables) discard
 
             let selectPat       = selectPattern keyVar valueVar mapVar id
                 selectPatRev    = selectPattern keyVar valueVar mapVar reverse
@@ -979,7 +978,7 @@ test_unifySelectTwoFromTwoElementMap =
             value1 <- forAll genIntegerPattern
             key2 <- forAll genIntegerPattern
             value2 <- forAll genIntegerPattern
-            Monad.when (key1 == key2) discard
+            when (key1 == key2) discard
 
             keyVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -987,7 +986,7 @@ test_unifySelectTwoFromTwoElementMap =
             valueVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar1, keyVar2, valueVar1, valueVar2, mapVar]
-            Monad.unless (distinctVariables variables) discard
+            unless (distinctVariables variables) discard
 
             let selectPat =
                     addSelectElement keyVar1 valueVar1
@@ -1037,7 +1036,7 @@ test_unifySameSymbolicKey =
             valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar1, valueVar1, mapVar]
-            Monad.unless (distinctVariables variables) discard
+            unless (distinctVariables variables) discard
 
             let selectPat =
                     addSelectElement keyVar1 valueVar1
@@ -1076,7 +1075,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
             mapVar1 <- forAll (standaloneGen $ elementVariableGen mapSort)
             mapVar2 <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar2, valueVar1, valueVar2, mapVar1, mapVar2]
-            Monad.unless (distinctVariables variables) discard
+            unless (distinctVariables variables) discard
 
             let (minMapVar, maxMapVar) =
                     if mapVar1 < mapVar2

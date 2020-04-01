@@ -22,7 +22,6 @@ import Prelude.Kore
 import Control.Error
     ( maybeT
     )
-import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
@@ -296,7 +295,7 @@ recoveryFunctionLikeResults initial results = do
                         phi_p
                         (Predicate.makeNotPredicate alpha_p)
 
-        Monad.when (res1 /= Just False) $ error $ show $ Pretty.vsep
+        when (res1 /= Just False) $ error $ show $ Pretty.vsep
             [ "Couldn't recover simplification coverage error: "
             , Pretty.indent 4 (Pretty.pretty err)
             , "Configuration condition "
@@ -305,7 +304,7 @@ recoveryFunctionLikeResults initial results = do
             , Pretty.indent 4 $ unparse alpha_p
             ]
         let alpha_t_sorted = fullyOverrideSort' (termLikeSort phi_t) alpha_t
-        Monad.when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
+        when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
             [ "Couldn't recover simplification coverage error: "
             , Pretty.indent 4 (Pretty.pretty err)
             , "Rule lhs "

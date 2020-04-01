@@ -16,9 +16,6 @@ import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
 import qualified Control.Monad as Monad
-    ( filterM
-    , when
-    )
 import Control.Monad.Reader
     ( ReaderT
     )
@@ -614,7 +611,7 @@ maybeStringLiteralGenerator Setup {maybeStringLiteralSort} =
                     }
                 , generator = \_childGenerator resultSort -> do
                     str <- stringGen
-                    Monad.when
+                    when
                         (stringSort /= resultSort)
                         (error "Sort mismatch.")
                     return (Just (mkStringLiteral str))
@@ -662,7 +659,7 @@ allBuiltinGenerators = do
                     case sort of
                         AnySort -> return ()
                         SpecificSort generatedSort ->
-                            Monad.when
+                            when
                                 (generatedSort /= resultSort)
                                 (error "Sort mismatch.")
                     builtin <- generator childGenerator
@@ -933,7 +930,7 @@ symbolGenerator
         }
   where
     applicationGenerator termGenerator sort = do
-        Monad.when (sort /= applicationSortsResult) (error "Sort mismatch.")
+        when (sort /= applicationSortsResult) (error "Sort mismatch.")
         let request =
                 if BuiltinMap.isSymbolElement symbol
                     || BuiltinSet.isSymbolElement symbol
@@ -979,7 +976,7 @@ aliasGenerator
         -> Sort
         -> Gen (Maybe (TermLike Variable))
     applicationGenerator termGenerator sort = do
-        Monad.when (sort /= applicationSortsResult) (error "Sort mismatch.")
+        when (sort /= applicationSortsResult) (error "Sort mismatch.")
         maybeTerms <- mapM termGenerator applicationSortsOperands
         return $ do
             terms <- sequenceA maybeTerms
@@ -1032,7 +1029,7 @@ elementVariableGenerators = do
             }
 
     variableGenerator variable _termGenerator sort = do
-        Monad.when (sort /= extractSort variable) (error "Sort mismatch.")
+        when (sort /= extractSort variable) (error "Sort mismatch.")
         return (Just (mkElemVar variable))
 
     extractSort :: ElementVariable Variable -> Sort
@@ -1057,7 +1054,7 @@ setVariableGenerators = do
             }
 
     variableGenerator variable _termGenerator sort = do
-        Monad.when (sort /= extractSort variable) (error "Sort mismatch.")
+        when (sort /= extractSort variable) (error "Sort mismatch.")
         return (Just (mkSetVar variable))
 
     extractSort (SetVariable Variable {variableSort}) = variableSort

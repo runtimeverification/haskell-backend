@@ -16,7 +16,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
-import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
@@ -88,7 +87,7 @@ instance ParseAttributes Smthook where
             arg <- getOneArgument args
             StringLiteral syntax <- getStringLiteral arg
             sExpr <- parseSExpr syntax
-            Monad.unless (isNothing getSmthook) failDuplicate'
+            unless (isNothing getSmthook) failDuplicate'
             return Smthook { getSmthook = Just sExpr }
       where
         withApplication' = withApplication smthookId

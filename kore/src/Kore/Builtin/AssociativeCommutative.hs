@@ -1238,14 +1238,12 @@ unifyEqualsElementLists
     -- The second structure does not include an opaque term so there is nothing
     -- to match whatever is left in remainder1. This should have been caught by
     -- the "length" check above so, most likely, this can be an assertion.
-    Monad.unless
-        (null remainder1)
+    unless (null remainder1)
         (remainderError firstElements secondElements remainder1)
     -- The first structure does not include an opaque term so there is nothing
     -- to match whatever is left in remainder2. This should have been caught by
     -- the "length" check above so, most likely, this can be an assertion.
-    Monad.unless
-        (null remainder2)
+    unless (null remainder2)
         (remainderError firstElements secondElements remainder2)
 
     return (result, [])
@@ -1290,8 +1288,7 @@ unifyEqualsElementLists
     -- The second structure does not include an opaque term so there is nothing
     -- to match whatever is left in remainder1. This should have been caught by
     -- the "length" check above so, most likely, this can be an assertion.
-    Monad.unless
-        (null remainder1)
+    unless (null remainder1)
         (remainderError firstElements secondElements remainder1)
 
     let remainder2Terms = map fromConcreteOrWithVariable remainder2
