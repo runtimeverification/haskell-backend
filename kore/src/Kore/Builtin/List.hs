@@ -445,17 +445,23 @@ unifyEquals
 
     unifyEquals0 (App_ symbol1 args1) (App_ symbol2 args2)
       | isSymbolConcat symbol1, isSymbolConcat symbol1 =
-        lift $ case args1 of
-            [ Builtin_ (Domain.BuiltinList builtin1), x1@(Var_ _) ] ->
-                case args2 of
-                    [ Builtin_ (Domain.BuiltinList builtin2), x2@(Var_ _) ] ->
-                        unifyEqualsFramedRightRight
-                            symbol2
-                            builtin1
-                            x1
-                            builtin2
-                            x2
-                    _ -> empty
+        lift $ case (args1, args2) of
+            (     [ Builtin_ (Domain.BuiltinList builtin1), x1@(Var_ _) ]
+                , [ Builtin_ (Domain.BuiltinList builtin2), x2@(Var_ _) ] ) ->
+                    unifyEqualsFramedRightRight
+                        symbol2
+                        builtin1
+                        x1
+                        builtin2
+                        x2
+            (     [ x1@(Var_ _), Builtin_ (Domain.BuiltinList builtin1)]
+                , [ x2@(Var_ _), Builtin_ (Domain.BuiltinList builtin2)] ) ->
+                    unifyEqualsFramedLeftLeft
+                        symbol2
+                        x1
+                        builtin1
+                        x2
+                        builtin2
             _ -> empty
 
     unifyEquals0 dv1@(Builtin_ (Domain.BuiltinList builtin1)) pat2 =
@@ -595,32 +601,27 @@ unifyEquals
         builtin2
         frame2
       | length1 < length2 = do
-            tools <- Simplifier.askMetadataTools
-            prefixUnified <-
-                unifyEqualsConcrete
-                    builtin1
-                    builtin2 { Domain.builtinListChild = prefix2 }
-            let listSuffix2 = asInternal tools builtinListSort suffix2
-                suffix2Frame2 = mkApplySymbol symbol [listSuffix2, frame2]
-            suffixUnified <-
-                simplifyChild
-                    frame1
-                    suffix2Frame2
-            let result = TermLike.markSimplified initial
-                    <$ prefixUnified <* suffixUnified
-            return result
+        tools <- Simplifier.askMetadataTools
+        prefixUnified <-
+            unifyEqualsConcrete
+                builtin1
+                builtin2 { Domain.builtinListChild = prefix2 }
+        let listSuffix2 = asInternal tools builtinListSort suffix2
+            suffix2Frame2 = mkApplySymbol symbol [listSuffix2, frame2]
+        suffixUnified <-
+            simplifyChild
+                frame1
+                suffix2Frame2
+        let result = TermLike.markSimplified initial
+                <$ prefixUnified <* suffixUnified
+        return result
       | length1 == length2 = do
-            --traceM $ "Initial\n" <> unparseToString initial1
-            prefixUnified <-
-                unifyEqualsConcrete
-                    builtin1
-                    builtin2
-            suffixUnified <- simplifyChild
-                    frame1
-                    frame2
-            let result = TermLike.markSimplified initial
-                    <$ prefixUnified <* suffixUnified
-            return result
+        prefixUnified <-
+            unifyEqualsConcrete builtin1 builtin2
+        suffixUnified <- simplifyChild frame1 frame2
+        let result = TermLike.markSimplified initial
+                <$ prefixUnified <* suffixUnified
+        return result
       | otherwise =
         unifyEqualsFramedRightRight symbol builtin2 frame2 builtin1 frame1
       where
@@ -632,6 +633,51 @@ unifyEquals
         length1 = Seq.length list1
         length2 = Seq.length list2
         (prefix2, suffix2) = Seq.splitAt length1 list2
+
+    unifyEqualsFramedLeftLeft
+        :: TermLike.Symbol
+        -> TermLike variable
+        -> Domain.InternalList (TermLike variable)
+        -> TermLike variable
+        -> Domain.InternalList (TermLike variable)
+        -> unifier (Pattern variable)
+    unifyEqualsFramedLeftLeft
+        symbol
+        frame1
+        builtin1
+        frame2
+        builtin2
+      | length1 < length2 = do
+        tools <- Simplifier.askMetadataTools
+        let listPrefix2 = asInternal tools builtinListSort prefix2
+            frame2Prefix2 = mkApplySymbol symbol [frame2, listPrefix2]
+        prefixUnified <- simplifyChild frame1 frame2Prefix2
+        suffixUnified <-
+            unifyEqualsConcrete
+                builtin1
+                builtin2 { Domain.builtinListChild = suffix2 }
+        let result =
+                TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
+        return result
+      | length1 == length2 = do
+        prefixUnified <- simplifyChild frame1 frame2
+        suffixUnified <-
+            unifyEqualsConcrete builtin1 builtin2
+        let result =
+                TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
+        return result
+      | otherwise =
+        unifyEqualsFramedLeftLeft symbol frame2 builtin2 frame1 builtin1
+      where
+        initial = mkApplySymbol symbol [frame1, mkBuiltin internal1]
+        internal1 = Domain.BuiltinList builtin1
+        Domain.InternalList { builtinListSort } = builtin1
+        Domain.InternalList { builtinListChild = list1 } = builtin1
+        Domain.InternalList { builtinListChild = list2 } = builtin2
+        length1 = Seq.length list1
+        length2 = Seq.length list2
+        (prefix2, suffix2) = Seq.splitAt (length2 - length1) list2
+
 
 {- Normalizes a list expression.
 
