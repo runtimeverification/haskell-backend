@@ -10,6 +10,7 @@ Portability : portable
 -}
 module Kore.Step.Axiom.Matcher
     ( MatchingVariable
+    , MatchResult
     , matchIncremental
     ) where
 
@@ -163,9 +164,9 @@ pair, it is deferred until we have more information.
 
  -}
 matchOne
-    :: (MatchingVariable variable, MonadSimplify unifier)
+    :: (MatchingVariable variable, MonadSimplify simplifier)
     => Pair (TermLike variable)
-    -> MatcherT variable unifier ()
+    -> MatcherT variable simplifier ()
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
@@ -187,15 +188,15 @@ deferred constraints, then matching fails.
 
  -}
 matchIncremental
-    :: forall variable unifier
-    .  (MatchingVariable variable, MonadSimplify unifier)
+    :: forall variable simplifier
+    .  (MatchingVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
-    -> unifier (Maybe (MatchResult variable))
+    -> simplifier (Maybe (MatchResult variable))
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable unifier (Maybe (MatchResult variable))
+    matcher :: MatcherT variable simplifier (Maybe (MatchResult variable))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -212,7 +213,7 @@ matchIncremental termLike1 termLike2 =
     free2 = (getFreeVariables . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable unifier (Maybe (MatchResult variable))
+    done :: MatcherT variable simplifier (Maybe (MatchResult variable))
     done = do
         MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
@@ -220,7 +221,7 @@ matchIncremental termLike1 termLike2 =
             then Just <$> assembleResult
             else return Nothing
 
-    assembleResult :: MatcherT variable unifier (MatchResult variable)
+    assembleResult :: MatcherT variable simplifier (MatchResult variable)
     assembleResult = do
         final <- Monad.State.get
         let MatcherState { predicate, substitution } = final
@@ -229,9 +230,9 @@ matchIncremental termLike1 termLike2 =
 
 matchEqualHeads
     :: Ord variable
-    => Monad unifier
+    => Monad simplifier
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 -- Terminal patterns
 matchEqualHeads (Pair (StringLiteral_ string1) (StringLiteral_ string2)) =
     Monad.guard (string1 == string2)
@@ -267,26 +268,26 @@ matchEqualHeads (Pair (Equals_ _ _ term11 term12) (Equals_ _ _ term21 term22)) =
 matchEqualHeads _ = empty
 
 matchExists
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) =
     matchBinder (Binder variable1 term1) (Binder variable2 term2)
 matchExists _ = empty
 
 matchForall
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchForall (Pair (Forall_ _ variable1 term1) (Forall_ _ variable2 term2)) =
     matchBinder (Binder variable1 term1) (Binder variable2 term2)
 matchForall _ = empty
 
 matchBinder
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => Binder (ElementVariable variable) (TermLike variable)
     -> Binder (ElementVariable variable) (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     Monad.guard (variableSort1 == variableSort2)
     -- Lift the bound variable to the top level.
@@ -308,9 +309,9 @@ matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     variableSort2 = elementVariableSort variable2
 
 matchVariable
-    :: (MatchingVariable variable, MonadSimplify unifier)
+    :: (MatchingVariable variable, MonadSimplify simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchVariable (Pair (Var_ variable1) (Var_ variable2))
   | variable1 == variable2 = return ()
 matchVariable (Pair (ElemVar_ variable1) term2) = do
@@ -324,18 +325,18 @@ matchVariable _ = empty
 
 matchApplication
     :: Ord variable
-    => Monad unifier
+    => Monad simplifier
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
     Monad.guard (symbol1 == symbol2)
     Foldable.traverse_ push (zipWith Pair children1 children2)
 matchApplication _ = empty
 
 matchBuiltinList
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchBuiltinList (Pair (BuiltinList_ list1) (BuiltinList_ list2)) = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     Monad.guard (null tail2)
@@ -345,10 +346,10 @@ matchBuiltinList (Pair (App_ symbol1 children1) (BuiltinList_ list2))
 matchBuiltinList _ = empty
 
 matchBuiltinListConcat
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => [TermLike variable]
     -> Builtin.InternalList (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 
 matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
@@ -363,9 +364,9 @@ matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
 matchBuiltinListConcat _ _ = empty
 
 matchBuiltinSet
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
     matchNormalizedAc pushSetElement pushSetValue wrapTermLike normalized1 normalized2
   where
@@ -380,9 +381,9 @@ matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
 matchBuiltinSet _ = empty
 
 matchBuiltinMap
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
     matchNormalizedAc pushMapElement pushMapValue wrapTermLike normalized1 normalized2
   where
@@ -401,18 +402,18 @@ matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
 matchBuiltinMap _ = empty
 
 matchInj
-    :: (MatchingVariable variable, MonadSimplify unifier)
+    :: (MatchingVariable variable, MonadSimplify simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
     InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
     unifyInj inj1 inj2 & either (const empty) (push . injChild)
 matchInj _ = empty
 
 matchOverload
-    :: (MatchingVariable variable, MonadSimplify unifier)
+    :: (MatchingVariable variable, MonadSimplify simplifier)
     => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 matchOverload termPair = Error.hushT (unifyOverloading termPair) >>= push
 
 -- * Implementation
@@ -441,7 +442,7 @@ data MatcherState variable =
         }
     deriving (GHC.Generic)
 
-type MatcherT variable unifier = StateT (MatcherState variable) unifier
+type MatcherT variable simplifier = StateT (MatcherState variable) simplifier
 
 {- | Pop the next constraint from the matching queue.
  -}
@@ -488,11 +489,11 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
 
  -}
 substitute
-    :: forall unifier variable
-    .  (MatchingVariable variable, MonadSimplify unifier)
+    :: forall simplifier variable
+    .  (MatchingVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> TermLike variable
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 substitute eVariable termLike = do
     -- Ensure that the variable does not occur free in the TermLike.
     occursCheck variable termLike
@@ -528,13 +529,13 @@ substitute eVariable termLike = do
 
     substitute2
         :: Constraint variable
-        -> MaybeT (MatcherT variable unifier) (Constraint variable)
+        -> MaybeT (MatcherT variable simplifier) (Constraint variable)
     substitute2 (Constraint pair) =
         Constraint <$> traverse substitute1 pair
 
     substitute1
         :: TermLike variable
-        -> MaybeT (MatcherT variable unifier) (TermLike variable)
+        -> MaybeT (MatcherT variable simplifier) (TermLike variable)
     substitute1 termLike' = do
         injSimplifier <- Simplifier.askInjSimplifier
         termLike'
@@ -553,11 +554,11 @@ the variable does not occur on the right-hand side of the substitution.
 
  -}
 setSubstitute
-    :: forall variable unifier
-    .  (MatchingVariable variable, MonadSimplify unifier)
+    :: forall variable simplifier
+    .  (MatchingVariable variable, MonadSimplify simplifier)
     => SetVariable variable
     -> TermLike variable
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 setSubstitute sVariable termLike = do
     -- Ensure that the variable does not occur free in the TermLike.
     occursCheck variable termLike
@@ -605,10 +606,10 @@ substituteTermLike
 substituteTermLike subst = Builtin.renormalize . TermLike.substitute subst
 
 occursCheck
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => UnifiedVariable variable
     -> TermLike variable
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 occursCheck variable termLike =
     (Monad.guard . not) (hasFreeVariable variable termLike)
 
@@ -631,9 +632,9 @@ do not attempt to match on them.
 
  -}
 targetCheck
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => UnifiedVariable variable
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 targetCheck variable = do
     MatcherState { targets } <- Monad.State.get
     Monad.guard (Set.member variable targets)
@@ -645,9 +646,9 @@ escape.
 
  -}
 escapeCheck
-    :: (MatchingVariable variable, Monad unifier)
+    :: (MatchingVariable variable, Monad simplifier)
     => TermLike variable
-    -> MaybeT (MatcherT variable unifier) ()
+    -> MaybeT (MatcherT variable simplifier) ()
 escapeCheck termLike = do
     let free = getFreeVariables (freeVariables termLike)
     MatcherState { bound } <- Monad.State.get
@@ -720,22 +721,29 @@ rightAlignLists internal1 internal2
     list12 = Seq.zipWith Pair list1 tail2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
-type Push variable unifier a = Pair a -> MatcherT variable unifier ()
+type Push variable simplifier a = Pair a -> MatcherT variable simplifier ()
+
+type Element normalized variable =
+    Builtin.Element normalized (TermLike variable)
+
+type Value normalized variable =
+    Builtin.Value normalized (TermLike variable)
+
+type NormalizedAc normalized variable =
+    Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
 
 matchNormalizedAc
-    :: forall normalized unifier variable
+    :: forall normalized simplifier variable
     .   ( Builtin.AcWrapper normalized
         , MatchingVariable variable
-        , Monad unifier
+        , Monad simplifier
         )
-    =>  Push variable unifier (Builtin.Element normalized (TermLike variable))
-    ->  Push variable unifier (Builtin.Value normalized (TermLike variable))
-    ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
-        -> TermLike variable
-        )
-    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
-    -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
-    -> MaybeT (MatcherT variable unifier) ()
+    =>  Push variable simplifier (Element normalized variable)
+    ->  Push variable simplifier (Value normalized variable)
+    ->  (NormalizedAc normalized variable -> TermLike variable)
+    ->  NormalizedAc normalized variable
+    ->  NormalizedAc normalized variable
+    ->  MaybeT (MatcherT variable simplifier) ()
 matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
     | [] <- excessAbstract1
     = do

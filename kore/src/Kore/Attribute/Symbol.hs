@@ -131,7 +131,8 @@ instance SOP.Generic Symbol
 
 instance SOP.HasDatatypeInfo Symbol
 
-instance Debug Symbol
+instance Debug Symbol where
+    debugPrecBrief _ _ = "_"
 
 instance Diff Symbol
 

@@ -31,6 +31,8 @@ import Kore.Attribute.Simplification
     )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Equation as Equation
+import Kore.Equation.Registry
 import Kore.Error
     ( printError
     )
@@ -54,9 +56,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
 import Kore.Step.Axiom.Registry
-import Kore.Step.EqualityPattern
-    ( getPriorityOfRule
-    )
 import Kore.Step.Rule
     ( extractRewriteAxioms
     )
@@ -71,8 +70,8 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
-type PartitionedEqualityRulesMap =
-    Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEqualityRules
+type PartitionedEquationsMap =
+    Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEquations
 
 updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType
 updateAttributes attrs = updateAttrs
@@ -396,11 +395,11 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    axiomPatternsToEvaluators $ extractEqualityAxioms testIndexedModule
+    mkEvaluatorRegistry $ extractEquations testIndexedModule
 
-testProcessedAxiomPatterns :: PartitionedEqualityRulesMap
+testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
-    processEqualityRules <$> extractEqualityAxioms testIndexedModule
+    partitionEquations <$> extractEquations testIndexedModule
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
@@ -474,10 +473,10 @@ test_functionRegistry =
         (let axiomId = AxiomIdentifier.Application (testId "f")
           in
            (case Map.lookup axiomId testProcessedAxiomPatterns of
-                Just PartitionedEqualityRules { functionRules } ->
+                Just PartitionedEquations { functionRules } ->
                     assertEqual ""
                         [1, 2, 3, defaultPriority, owisePriority]
-                        (fmap getPriorityOfRule functionRules)
+                        (fmap Equation.equationPriority functionRules)
                 _ -> assertFailure "Should find function rules for f"
             )
         )
@@ -485,10 +484,10 @@ test_functionRegistry =
         (let axiomId = AxiomIdentifier.Application (testId "p")
           in
            (case Map.lookup axiomId testProcessedAxiomPatterns of
-                Just PartitionedEqualityRules { simplificationRules } ->
+                Just PartitionedEquations { simplificationRules } ->
                     assertEqual ""
                         [1, 2, 3]
-                        (fmap getPriorityOfRule simplificationRules)
+                        (fmap Equation.equationPriority simplificationRules)
                 _ -> assertFailure "Should find simplification rules for p"
             )
         )
