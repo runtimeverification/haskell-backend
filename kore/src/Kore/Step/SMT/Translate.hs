@@ -253,7 +253,7 @@ translatePredicate translateTerm predicate =
               -> translateExists SMT.tInt existsVariable existsChild
             _ -> empty
         existsConstructorSort = do
-            smtSort <- hoistMaybe $translateSort varSort
+            smtSort <- hoistMaybe $ translateSort varSort
             translateExists smtSort existsVariable existsChild
         varSort = sortedVariableSort (getElementVariable existsVariable)
         tools :: SmtMetadataTools Attribute.Symbol
