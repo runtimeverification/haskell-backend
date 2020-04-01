@@ -308,7 +308,7 @@ test_concatSymbolic =
         let patConcatX' = concatList patSymbolicXs patElemX
             patConcatY' = concatList patSymbolicYs patElemY
             patUnifiedXY' = mkAnd patConcatX' patConcatY'
-            
+
             expect' = Conditional
                         { term = patConcatY'
                         , predicate = makeTruePredicate listSort
