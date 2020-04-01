@@ -36,9 +36,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Bifunctor
     ( bimap
     )
-import Data.Either
-    ( partitionEithers
-    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.HashMap.Strict
     ( HashMap

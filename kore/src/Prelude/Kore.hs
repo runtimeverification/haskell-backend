@@ -20,6 +20,7 @@ module Prelude.Kore
     -- * Either
     , either
     , isLeft, isRight
+    , partitionEithers
     -- * Filterable
     , Filterable (..)
     -- * Errors
@@ -69,6 +70,9 @@ import Control.Monad.IO.Class
     )
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
+    )
+import Data.Either
+    ( partitionEithers
     )
 import Data.Function
     ( on

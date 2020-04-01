@@ -41,7 +41,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT
-    , partitionEithers
     )
 import Control.Monad
     ( (>=>)

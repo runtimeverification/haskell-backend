@@ -64,7 +64,6 @@ import Test.Tasty
 import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import qualified Data.Either as Either
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map
@@ -1395,7 +1394,7 @@ asInternal elements =
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements
-        & Either.partitionEithers
+        & partitionEithers
 
 unsafeAsConcrete :: TermLike Variable -> TermLike Concrete
 unsafeAsConcrete term =
