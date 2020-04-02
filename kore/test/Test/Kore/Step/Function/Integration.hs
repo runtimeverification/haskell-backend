@@ -711,7 +711,10 @@ applies =
         assertBool "Expected no remainders"
         . isBottom
         . Lens.view (field @"remainders")
-notApplies = withApplied (assertBool "Expected NotApplicable" . isNotApplicable)
+notApplies =
+    withApplied $ \r ->
+        assertBool "Expected NotApplicable"
+        $ isNotApplicable r || isNotApplicableUntilConditionChanges r
 
 natSort :: Sort
 natSort =
