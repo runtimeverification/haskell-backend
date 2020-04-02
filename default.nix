@@ -2,24 +2,25 @@
 
 let
   sources = import ./nix/sources.nix;
-  haskell-nix = import sources."haskell.nix";
+  haskell-nix = import sources."haskell.nix" {};
   nixpkgs =
     let
-      options = haskell-nix // {
+      inherit (haskell-nix) nixpkgsArgs;
+      args = nixpkgsArgs // {
         overlays =
-          (haskell-nix.overlays or [])
+          (nixpkgsArgs.overlays or [])
           ++ [ (import ./nix/ghcide.nix { inherit sources; }) ]
           ++ [ (import ./nix/stylish-haskell.nix { inherit sources; }) ]
           ;
         config =
-          (haskell-nix.config or {})
+          (nixpkgsArgs.config or {})
           ;
       };
-    in import sources."nixpkgs" options;
+    in import haskell-nix.sources.nixpkgs-1909 args;
   pkgs = nixpkgs;
   project =
     pkgs.haskell-nix.stackProject {
-      src = pkgs.haskell-nix.haskellLib.cleanGit { src = ./.; };
+      src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
       modules = [
         {
           # package *
