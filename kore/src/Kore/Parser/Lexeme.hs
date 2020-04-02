@@ -310,7 +310,7 @@ genericIdRawParser isFirstChar isBodyChar idKeywordParsing = do
     let genericId = c : cs
         keywordsForbidden = idKeywordParsing == KeywordsForbidden
         isKeyword = HashSet.member (Char8.pack genericId) koreKeywordsSet
-    Monad.when (keywordsForbidden && isKeyword)
+    when (keywordsForbidden && isKeyword)
         $ fail
             (  "Identifiers should not be keywords: '"
             ++ genericId
@@ -560,9 +560,9 @@ escapeUnicodeParser
 escapeUnicodeParser n = do
     hs <- Monad.replicateM n hexDigitParser
     let i = Foldable.foldl' (\r h -> 0x10 * r + Char.digitToInt h) 0 hs
-    Monad.when (i > Char.ord (maxBound :: Char)) $ fail (unrepresentableCode hs)
+    when (i > Char.ord (maxBound :: Char)) $ fail (unrepresentableCode hs)
     let c = Char.chr i
-    Monad.when (isSurrogate c) $ fail (illegalSurrogate hs)
+    when (isSurrogate c) $ fail (illegalSurrogate hs)
     return c
 {-# INLINE escapeUnicodeParser #-}
 

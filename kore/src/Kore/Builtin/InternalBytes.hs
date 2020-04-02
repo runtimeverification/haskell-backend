@@ -31,7 +31,6 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
-import qualified Control.Monad as Monad
 import Data.ByteString
     ( ByteString
     )
@@ -167,8 +166,7 @@ dotBytesVerifier =
     Builtin.ApplicationVerifier worker
   where
     worker application = do
-        Monad.unless (null arguments)
-            (Kore.Error.koreFail "expected zero arguments")
+        unless (null arguments) (Kore.Error.koreFail "expected zero arguments")
         (return . InternalBytesF . Const)
             InternalBytes { bytesSort, bytesValue = Encoding.encode8Bit "" }
       where

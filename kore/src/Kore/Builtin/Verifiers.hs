@@ -417,7 +417,7 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
     let
         SentenceSymbol { sentenceSymbolResultSort = actualSort } = decl
         SentenceSymbol { sentenceSymbolSymbol = symbol } = decl
-    Monad.unless (actualSort == expectedSort)
+    unless (actualSort == expectedSort)
         $ Kore.Error.koreFailWithLocations
             [symbol]
             ("Symbol does not return sort '"

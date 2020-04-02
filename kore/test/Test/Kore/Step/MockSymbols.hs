@@ -28,7 +28,6 @@ import Prelude.Kore
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import qualified Data.Either as Either
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -1705,7 +1704,7 @@ framedMap elements opaque =
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements
-        & Either.partitionEithers
+        & partitionEithers
 
 builtinList
     :: InternalVariable variable
@@ -1749,7 +1748,7 @@ framedSet elements opaque =
         & maybe (Left (key, Domain.SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements
-        & Either.partitionEithers
+        & partitionEithers
 
 builtinInt
     :: InternalVariable variable

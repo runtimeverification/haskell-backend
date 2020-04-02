@@ -28,7 +28,6 @@ import Control.Concurrent.MVar
 import Control.Error.Util
     ( note
     )
-import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
     )
@@ -559,12 +558,12 @@ extractRules rules = foldr addExtractRule (Right [])
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
-    Monad.when (length claims > 1) . error
+    when (length claims > 1) . error
         $ "More than one claim is found in the module."
 
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
-    Monad.when (null claims) . error
+    when (null claims) . error
         $   "Unexpected empty set of claims.\n"
         ++  "Possible explanation: the frontend and the backend don't agree "
         ++  "on the representation of claims."

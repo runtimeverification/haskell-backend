@@ -15,9 +15,6 @@ import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
 import qualified Control.Lens.Combinators as Lens
-import Control.Monad
-    ( unless
-    )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text.Prettyprint.Doc as Pretty

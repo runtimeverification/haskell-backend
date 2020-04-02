@@ -20,7 +20,6 @@ import qualified Control.Lens as Lens
 import Control.Monad
     ( forever
     , void
-    , when
     )
 import Control.Monad.Catch
     ( MonadCatch
