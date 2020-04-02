@@ -1,5 +1,9 @@
 module Test.Kore.Equation.Application
     ( test_applyEquation
+    , concrete
+    , symbolic
+    , axiom
+    , axiom_
     ) where
 
 import Prelude.Kore

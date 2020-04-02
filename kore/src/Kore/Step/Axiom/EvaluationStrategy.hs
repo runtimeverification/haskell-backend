@@ -21,32 +21,29 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Data.Semigroup
+    ( Min (..)
+    , Option (..)
+    )
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Equation
+    ( Equation
+    )
+import qualified Kore.Equation as Equation
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.DebugSkipSimplification
-    ( debugSkipSimplification
-    )
 import Kore.Log.WarnBottomHook
     ( warnBottomHook
     )
-import Kore.Step.Axiom.Evaluate
-import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    )
-import qualified Kore.Step.EquationalStep as Step
-import Kore.Step.Result as Results
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -60,6 +57,7 @@ import Kore.TopBottom
 import Kore.Unparser
     ( unparse
     )
+import qualified Kore.Variables.Target as Target
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -76,47 +74,88 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [EqualityRule Variable]
+    :: [Equation Variable]
     -> BuiltinAndAxiomSimplifier
-definitionEvaluation rules =
+definitionEvaluation equations =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        results' <- evaluateAxioms rules condition term
-        let attempted = Results.toAttemptedAxiom results'
-        Step.assertFunctionLikeResults term results'
-        case attempted of
-            Applied AttemptedAxiomResults { results, remainders }
-              | length results == 1, null remainders ->
-                return attempted
-              | otherwise ->
-                return
-                $ NotApplicableUntilConditionChanges
-                $ SideCondition.toRepresentation condition
-            _ -> return NotApplicable
+        let equations' =
+                Equation.mapVariables
+                    (fmap $ from @Variable)
+                    (fmap $ from @Variable)
+                <$> equations
+            term' =
+                TermLike.mapVariables
+                    Target.mkElementNonTarget
+                    Target.mkSetNonTarget
+                    term
+            condition' =
+                SideCondition.mapVariables
+                    Target.mkElementNonTarget
+                    Target.mkSetNonTarget
+                    condition
+        results <- traverse (Equation.applyEquation condition' term') equations'
+        case partitionEithers results of
+            (_, applied : applieds) -> do
+                let simplify =
+                        OrPattern.simplifyConditionsWithSmt condition
+                        . OrPattern.fromPattern
+                    -- TODO (thomas.tuegel): Warn about ambiguous results.
+                    warnAmbiguity = return ()
+                unless (null applieds) warnAmbiguity
+                appliedResults <- simplify applied
+                (return . Applied) AttemptedAxiomResults
+                    { results = appliedResults
+                    , remainders = OrPattern.bottom
+                    }
+            (errors, []) ->
+                case minError of
+                    Just (Equation.RequiresNotMet _ _) ->
+                        (return . NotApplicableUntilConditionChanges)
+                            (SideCondition.toRepresentation condition)
+                    _ -> return NotApplicable
+              where
+                minError =
+                    (fmap getMin . getOption)
+                    (foldMap (Option . Just . Min) errors)
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
-    :: EqualityRule Variable
+    :: Equation Variable
     -> BuiltinAndAxiomSimplifier
-simplificationEvaluation rule =
+simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        results' <- evaluateAxioms [rule] condition term
-        let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
-            remainders' = Results.remainders results'
-        Step.recoveryFunctionLikeResults initial results'
-        let attemptedAxiom = Results.toAttemptedAxiom results'
-        when (hasRemainder attemptedAxiom)
-            $ debugSkipSimplification
-                term
-                condition
-                remainders'
-                rule
-        return attemptedAxiom
-  where
-    hasRemainder (AttemptedAxiom.Applied attemptedResults) =
-        not . OrPattern.isFalse . AttemptedAxiomResults.remainders
-        $ attemptedResults
-    hasRemainder _ =
-        False
+        let equation' =
+                Equation.mapVariables
+                    (fmap $ from @Variable)
+                    (fmap $ from @Variable)
+                    equation
+            term' =
+                TermLike.mapVariables
+                    Target.mkElementNonTarget
+                    Target.mkSetNonTarget
+                    term
+            condition' =
+                SideCondition.mapVariables
+                    Target.mkElementNonTarget
+                    Target.mkSetNonTarget
+                    condition
+        result <- Equation.applyEquation condition' term' equation'
+        case result of
+            Right applied -> do
+                let simplify =
+                        OrPattern.simplifyConditionsWithSmt condition
+                        . OrPattern.fromPattern
+                appliedResults <- simplify applied
+                (return . Applied) AttemptedAxiomResults
+                    { results = appliedResults
+                    , remainders = OrPattern.bottom
+                    }
+            Left err ->
+                case err of
+                    Equation.RequiresNotMet _ _ ->
+                        (return . NotApplicableUntilConditionChanges)
+                            (SideCondition.toRepresentation condition)
+                    _ -> return NotApplicable
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.

@@ -92,6 +92,7 @@ data ApplyEquationError variable
         !(MatchResult (Target variable))
         !(NonEmpty (InstantiationError (Target variable)))
     | RequiresNotMet !(Predicate variable) !(Predicate variable)
+    deriving (Eq, Ord)
     deriving (GHC.Generic)
 
 instance SOP.Generic (ApplyEquationError variable)
@@ -114,6 +115,7 @@ data InstantiationError variable
     -- term was required.
     | NotInstantiated (UnifiedVariable variable)
     -- ^ The variable was not instantiated.
+    deriving (Eq, Ord)
     deriving (GHC.Generic)
 
 instance SOP.Generic (InstantiationError variable)
