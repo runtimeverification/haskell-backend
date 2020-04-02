@@ -20,6 +20,7 @@ module Prelude.Kore
     -- * Either
     , either
     , isLeft, isRight
+    , partitionEithers
     -- * Filterable
     , Filterable (..)
     -- * Errors
@@ -40,6 +41,8 @@ module Prelude.Kore
     , MonadPlus (..)
     , MonadIO (..)
     , MonadTrans (..)
+    , unless
+    , when
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -63,12 +66,17 @@ import Control.Exception
 import Control.Monad
     ( Monad (..)
     , MonadPlus (..)
+    , unless
+    , when
     )
 import Control.Monad.IO.Class
     ( MonadIO (..)
     )
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
+    )
+import Data.Either
+    ( partitionEithers
     )
 import Data.Function
     ( on

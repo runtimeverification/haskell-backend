@@ -74,7 +74,6 @@ import Control.Lens
     , Iso'
     )
 import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
 import Control.Monad.Except
     ( MonadError
     )
@@ -207,7 +206,7 @@ parseBoolAttributeAux asBool ident =
     withApplication' $ \params args attr -> do
         getZeroParams params
         getZeroArguments args
-        Monad.when (Lens.view asBool attr) failDuplicate'
+        when (Lens.view asBool attr) failDuplicate'
         return (Lens.review asBool True)
   where
     withApplication' = withApplication ident
@@ -385,7 +384,7 @@ instance ParseAttributes Attribute.Smtlib where
             arg <- getOneArgument args
             StringLiteral syntax <- getStringLiteral arg
             sExpr <- parseSExpr syntax
-            Monad.unless (isNothing getSmtlib) failDuplicate'
+            unless (isNothing getSmtlib) failDuplicate'
             return Attribute.Smtlib { getSmtlib = Just sExpr }
       where
         withApplication' = withApplication Attribute.smtlibId

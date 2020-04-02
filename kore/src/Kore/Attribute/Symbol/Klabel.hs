@@ -11,7 +11,6 @@ module Kore.Attribute.Symbol.Klabel
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import Data.Text
     ( Text
     )
@@ -62,7 +61,7 @@ instance ParseAttributes Klabel where
             Parser.getZeroParams params
             arg <- Parser.getOneArgument args
             StringLiteral name <- Parser.getStringLiteral arg
-            Monad.unless (isNothing getKlabel) failDuplicate'
+            unless (isNothing getKlabel) failDuplicate'
             return Klabel { getKlabel = Just name }
         withApplication' = Parser.withApplication klabelId
         failDuplicate' = Parser.failDuplicate klabelId
