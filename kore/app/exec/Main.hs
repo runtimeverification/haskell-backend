@@ -371,14 +371,10 @@ parseKoreExecOptions =
             <> help "Execute up to DEPTH steps."
             )
     parseMainModuleName =
-        ModuleName <$> strOption info
-      where
-        info =
-            mconcat
-                [ metavar "MODULE"
-                , long "module"
-                , help "The name of the main module in the Kore definition."
-                ]
+        GlobalMain.parseModuleName
+            "MODULE"
+            "module"
+            "The name of the main module in the Kore definition."
     parseRtsStatistics =
         strOption (mconcat infos)
       where

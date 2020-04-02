@@ -1,1 +1,5 @@
-Error in module 'INT' -> hooked-symbol 'geInt' declaration (./test/resources//test-int-4.kore 16:19) -> In result sort: Sort 'Bool' is not hooked to builtin sort 'BOOL.Bool'
+Error:
+  module 'INT':
+  hooked-symbol 'geInt' declaration (./test/resources//test-int-4.kore 16:19):
+  In result sort:
+    Sort 'Bool' is not hooked to builtin sort 'BOOL.Bool'
