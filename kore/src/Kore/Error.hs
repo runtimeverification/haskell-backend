@@ -33,9 +33,6 @@ import Control.Monad
 import Control.Monad.Except
     ( MonadError (..)
     )
-import Data.List
-    ( intercalate
-    )
 import Data.Text
     ( Text
     )
@@ -44,6 +41,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import qualified Pretty
 
 {-|'Error' represents a Kore error with a stacktrace-like context.
 
@@ -68,7 +66,13 @@ instance Diff (Error a)
 {-|'printError' provides a one-line representation of a string. -}
 printError :: Error a -> String
 printError e@(Error _ _) =
-    "Error in " ++ intercalate " -> " (errorContext e) ++ ": " ++ errorError e
+    (show . Pretty.vsep)
+        [ "Error:"
+        , (Pretty.indent 2 . Pretty.vsep) (printContext <$> errorContext e)
+        , (Pretty.indent 4 . Pretty.pretty) (errorError e)
+        ]
+  where
+    printContext ctx = Pretty.pretty ctx <> Pretty.colon
 
 {-|'koreError' constructs an error object with an empty context. -}
 koreError :: String -> Error a
