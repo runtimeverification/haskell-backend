@@ -532,13 +532,15 @@ korePatternUnifiedGen = korePatternChildGen =<< sortGen
 predicateGen
     :: Gen (TermLike Variable)
     -> Hedgehog.Gen (Predicate Variable)
-predicateGen childGen = standaloneGen (predicateChildGen childGen =<< sortGen)
+predicateGen childGen =
+    standaloneGen (predicateChildGen childGen Nothing =<< sortGen)
 
 predicateChildGen
     :: Gen (TermLike Variable)
+    -> Maybe Sort
     -> Sort
     -> Gen (Predicate Variable)
-predicateChildGen childGen patternSort' =
+predicateChildGen childGen quantifierSort patternSort' =
     Gen.recursive
         Gen.choice
         -- non-recursive generators
@@ -559,22 +561,26 @@ predicateChildGen childGen patternSort' =
         , predicateChildGenOr
         ]
   where
+    go = predicateChildGen childGen quantifierSort
+    quantifierSortGen = case quantifierSort of
+        Nothing -> sortGen
+        Just qSort -> pure qSort
     predicateChildGenAnd =
         Predicate.makeAndPredicate
-            <$> predicateChildGen childGen patternSort'
-            <*> predicateChildGen childGen patternSort'
+            <$> go patternSort'
+            <*> go patternSort'
     predicateChildGenOr =
         Predicate.makeOrPredicate
-            <$> predicateChildGen childGen patternSort'
-            <*> predicateChildGen childGen patternSort'
+            <$> go patternSort'
+            <*> go patternSort'
     predicateChildGenIff =
         Predicate.makeIffPredicate
-            <$> predicateChildGen childGen patternSort'
-            <*> predicateChildGen childGen patternSort'
+            <$> go patternSort'
+            <*> go patternSort'
     predicateChildGenImplies =
         Predicate.makeImpliesPredicate
-            <$> predicateChildGen childGen patternSort'
-            <*> predicateChildGen childGen patternSort'
+            <$> go patternSort'
+            <*> go patternSort'
     predicateChildGenCeil = Predicate.makeCeilPredicate_ <$> childGen
     predicateChildGenFloor = Predicate.makeFloorPredicate_ <$> childGen
     predicateChildGenEquals =
@@ -583,22 +589,22 @@ predicateChildGen childGen patternSort' =
         Predicate.makeInPredicate_ <$> childGen <*> childGen
     predicateChildGenNot =
         Predicate.makeNotPredicate
-            <$> predicateChildGen childGen patternSort'
+            <$> go patternSort'
     predicateChildGenExists = do
-        varSort <- sortGen
+        varSort <- quantifierSortGen
         var <- elementVariableGen varSort
         child <-
             Reader.local
                 (addVariable (ElemVar var))
-                (predicateChildGen childGen patternSort')
+                (go patternSort')
         return (Predicate.makeExistsPredicate var child)
     predicateChildGenForall = do
-        varSort <- sortGen
+        varSort <- quantifierSortGen
         var <- elementVariableGen varSort
         child <-
             Reader.local
                 (addVariable (ElemVar var))
-                (predicateChildGen childGen patternSort')
+                (go patternSort')
         return (Predicate.makeForallPredicate var child)
 
 sentenceAliasGen
