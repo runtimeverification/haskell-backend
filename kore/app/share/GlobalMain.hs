@@ -16,6 +16,7 @@ module GlobalMain
     , clockSomethingIO
     , mainPatternVerify
     , parseDefinition
+    , parseModuleName
     , verifyDefinitionWithBase
     , mainParse
     , lookupMainModule
@@ -70,6 +71,7 @@ import Development.GitRev
 import GHC.Stack
     ( emptyCallStack
     )
+
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -104,6 +106,8 @@ import Options.Applicative.Help.Chunk
     ( Chunk (..)
     , vsepChunks
     )
+
+import qualified Options.Applicative as Options
 import qualified Options.Applicative.Help.Pretty as Pretty
 import System.Clock
     ( Clock (Monotonic)
@@ -128,6 +132,13 @@ import Kore.Log as Log
 import Kore.Parser
     ( ParsedPattern
     , parseKoreDefinition
+    )
+import Kore.Parser.Lexeme
+    ( moduleNameIdParser
+    )
+import Kore.Parser.ParserUtils
+    ( endOfInput
+    , parseOnly
     )
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
@@ -163,6 +174,21 @@ data KoreProveOptions =
         -- fails.
         }
 
+parseModuleName :: String -> String -> String -> Parser ModuleName
+parseModuleName metaName longName helpMsg =
+    option readModuleName
+        ( metavar metaName
+        <> long longName
+        <> help helpMsg
+        )
+
+readModuleName :: Options.ReadM ModuleName
+readModuleName = do
+    opt <- str
+    case parseOnly (moduleNameIdParser <* endOfInput) "<command-line>" opt of
+        Left err        -> readerError err
+        Right something -> pure something
+
 parseKoreProveOptions :: Parser KoreProveOptions
 parseKoreProveOptions =
     KoreProveOptions
@@ -172,13 +198,10 @@ parseKoreProveOptions =
         <> help "Kore source file representing spec to be proven.\
                 \Needs --spec-module."
         )
-    <*> (ModuleName
-        <$> strOption
-            (  metavar "SPEC_MODULE"
-            <> long "spec-module"
-            <> help "The name of the main module in the spec to be proven."
-            )
-        )
+    <*> parseModuleName
+            "SPEC_MODULE"
+            "spec-module"
+            "The name of the main module in the spec to be proven."
     <*> parseGraphSearch
     <*> switch
         ( long "bmc"

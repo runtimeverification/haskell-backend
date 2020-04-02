@@ -55,7 +55,7 @@ import Kore.Step.SMT.Encoder
     ( encodeName
     )
 import Kore.Step.SMT.Evaluator
-    ( translateUninterpreted
+    ( translateTerm
     )
 import qualified Kore.Step.SMT.Representation.All as Representation
     ( build
@@ -226,7 +226,7 @@ test_sortDeclaration =
             runMaybeT
             $ evalTranslator
                 ( give tools
-                $ translatePredicate translateUninterpreted predicate
+                $ translatePredicate translateTerm predicate
                 )
         maybe (error "Could not encode predicate") return expr
 
