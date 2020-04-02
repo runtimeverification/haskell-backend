@@ -17,6 +17,8 @@ builtin modules.
 module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions
+    , KEqual (..)
+    , termKEqualsFalse
       -- * keys
     , eqKey
     , neqKey
@@ -29,6 +31,7 @@ import Control.Error
     ( MaybeT
     , hoistMaybe
     )
+import qualified Control.Monad as Monad
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
@@ -42,6 +45,9 @@ import Data.Text
     ( Text
     )
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin
@@ -49,10 +55,25 @@ import Kore.Builtin.Builtin
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
+import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeNotPredicate
+    )
+import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
     ( SentenceSymbol (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
     )
 
 verifiers :: Builtin.Verifiers
@@ -186,3 +207,47 @@ neqKey = "KEQUAL.neq"
 
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
+
+{- | The @BOOL.and@ hooked symbol applied to @term@-type arguments.
+ -}
+data KEqual term =
+    KEqual
+        { symbol :: !Symbol
+        , operand1, operand2 :: !term
+        }
+
+{- | Match the @BOOL.and@ hooked symbol.
+ -}
+matchKEqual :: TermLike variable -> Maybe (KEqual (TermLike variable))
+matchKEqual (App_ symbol [operand1, operand2]) = do
+    hook2 <- (getHook . symbolHook) symbol
+    Monad.guard (hook2 == eqKey)
+    return KEqual { symbol, operand1, operand2 }
+matchKEqual _ = Nothing
+
+termKEqualsFalse
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termKEqualsFalse unifyChildren a b =
+    worker a b <|> worker b a
+  where
+    unifyChildren' term1 term2 =
+        Pattern.withoutTerm <$> unifyChildren term1 term2
+    worker termLike1 termLike2
+      | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
+      , isFunctionPattern termLike1
+      , Just value2 <- Bool.matchBool termLike2
+      , not value2
+      = lift $ do
+        condition <- unifyChildren' operand1 operand2
+        pure Conditional
+            { term = termLike2
+            , predicate = makeNotPredicate (Condition.toPredicate condition)
+            , substitution = mempty
+            }
+    worker _ _ = empty
