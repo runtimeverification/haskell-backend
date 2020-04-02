@@ -501,6 +501,11 @@ proveStepsF
 proveStepsF n = do
     node   <- Lens.use (field @"node")
     recursiveForcedStep n node
+    graph <- getInnerGraph
+    let targetNode = case (selectBranchingNode n graph node) of
+            Nothing -> node
+            Just other -> other
+    selectNode targetNode
 
 -- | Loads a script from a file.
 loadScript
@@ -1249,6 +1254,29 @@ recursiveForcedStep n node
         SingleResult sr -> (recursiveForcedStep $ n-1) sr
         BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
 
+selectBranchingNode
+    :: Natural
+    -> InnerGraph axiom
+    -> ReplNode
+    -> Maybe ReplNode
+selectBranchingNode n graph node
+    | nodeIsBottom               = Nothing
+    | n == 0                     = Just node
+    | null sucResults            = Just node
+    | otherwise = 
+        case interesting of
+            []  -> Nothing
+            [a] -> Just a
+            _   -> Just node
+    where 
+      gnode = unReplNode node
+      nodeIsBottom = (==) (getNodeState graph gnode) Nothing
+      sucResults = fmap (selectBranchingNode (n - 1) graph . ReplNode) 
+                        (Graph.suc graph gnode)
+      interesting = catMaybes sucResults
+      
+      
+    
 -- | Display a rule as a String.
 showRewriteRule
     :: ToRulePattern rule

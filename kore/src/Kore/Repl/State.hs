@@ -28,6 +28,7 @@ module Kore.Repl.State
     , appReplOut
     , replOut, replOutputToString
     , createNewDefinition
+    , getNodeState
     ) where
 
 import Prelude.Kore
