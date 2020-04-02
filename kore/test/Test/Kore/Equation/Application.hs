@@ -39,6 +39,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate
@@ -334,6 +335,18 @@ test_applyEquation =
         (SideCondition.fromPredicate $ positive z)
         (f z)
         (Pattern.fromTermLike a)
+    , testCase "X => X does not apply to X / X" $ do
+        let initial = tdivInt xInt xInt
+        applyEquation SideCondition.top initial equationId
+            >>= expectLeft >>= assertRequiresNotMet
+    , testCase "X => X does apply to X / X if \\ceil(X / X)" $ do
+        let initial = tdivInt xInt xInt
+            sideCondition =
+                makeCeilPredicate sortR initial
+                & SideCondition.fromPredicate
+            expect = Pattern.fromTermLike initial
+        applyEquation sideCondition initial equationId
+            >>= expectRight >>= assertEqual "" expect
     ]
 
 -- * Test data
@@ -371,8 +384,9 @@ sigma = Mock.functionalConstr20
 string :: Text -> TermLike Variable
 string = Mock.builtinString
 
-x, xString, y, z :: TermLike Variable
+x, xString, xInt, y, z :: TermLike Variable
 x = mkElemVar Mock.x
+xInt = mkElemVar Mock.xInt
 xString = mkElemVar Mock.xString
 y = mkElemVar Mock.y
 z = mkElemVar Mock.z
@@ -380,6 +394,9 @@ z = mkElemVar Mock.z
 a, b :: TermLike Variable
 a = Mock.a
 b = Mock.b
+
+tdivInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
+tdivInt = Mock.tdivInt
 
 positive :: TermLike Variable -> Predicate Variable
 positive u =
