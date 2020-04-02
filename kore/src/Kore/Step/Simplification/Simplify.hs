@@ -22,7 +22,7 @@ module Kore.Step.Simplification.Simplify
     , BuiltinAndAxiomSimplifierMap
     , lookupAxiomSimplifier
     , AttemptedAxiom (..)
-    , isApplicable, isNotApplicable
+    , isApplicable, isNotApplicable, isNotApplicableUntilConditionChanges
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
     , emptyAttemptedAxiom
@@ -519,13 +519,22 @@ instance
     (Diff variable, InternalVariable variable)
     => Diff (AttemptedAxiom variable)
 
-isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
-isApplicable (Applied _)                            = True
-isApplicable NotApplicable                          = False
-isApplicable (NotApplicableUntilConditionChanges _) = False
-isNotApplicable NotApplicable                          = True
-isNotApplicable (NotApplicableUntilConditionChanges _) = False
-isNotApplicable (Applied _)                            = False
+isApplicable
+    , isNotApplicable
+    , isNotApplicableUntilConditionChanges
+        :: AttemptedAxiom variable -> Bool
+isApplicable =
+    \case
+        Applied _ -> True
+        _         -> False
+isNotApplicable =
+    \case
+        NotApplicable -> True
+        _             -> False
+isNotApplicableUntilConditionChanges =
+    \case
+        NotApplicableUntilConditionChanges _ -> True
+        _                                    -> False
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
