@@ -13,7 +13,6 @@ module Kore.Attribute.SortInjection
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -64,7 +63,7 @@ instance ParseAttributes SortInjection where
         withApplication' $ \params args SortInjection { isSortInjection } -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
-            Monad.when isSortInjection failDuplicate'
+            when isSortInjection failDuplicate'
             return SortInjection { isSortInjection = True }
       where
         withApplication' = Parser.withApplication sortInjectionId

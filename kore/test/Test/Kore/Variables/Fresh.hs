@@ -17,9 +17,6 @@ import Test.Tasty
 import Test.Tasty.Hedgehog
 import Test.Tasty.HUnit
 
-import Control.Monad
-    ( unless
-    )
 import Data.Maybe
     ( fromJust
     )

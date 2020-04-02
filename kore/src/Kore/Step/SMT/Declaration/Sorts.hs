@@ -12,9 +12,6 @@ module Kore.Step.SMT.Declaration.Sorts
 
 import Prelude.Kore
 
-import Data.Either
-    ( partitionEithers
-    )
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Step.SMT.AST as AST

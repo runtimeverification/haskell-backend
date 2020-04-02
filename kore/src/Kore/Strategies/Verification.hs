@@ -22,9 +22,6 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
-import Control.Error
-    ( partitionEithers
-    )
 import qualified Control.Monad as Monad
     ( foldM_
     )

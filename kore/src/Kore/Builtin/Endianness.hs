@@ -17,7 +17,6 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
-import qualified Control.Monad as Monad
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.String
@@ -70,12 +69,10 @@ endiannessVerifier ctor =
   where
     worker application = do
         -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
-        Monad.unless (null arguments)
-            (koreFail "expected zero arguments")
+        unless (null arguments) (koreFail "expected zero arguments")
         let Attribute.Symbol.SymbolKywd { isSymbolKywd } =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
-        Monad.unless isSymbolKywd
-            (koreFail "expected symbol'Kywd'{}() attribute")
+        unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
         return (EndiannessF . Const $ ctor symbol)
       where
         arguments = applicationChildren application
