@@ -352,6 +352,10 @@ test_applyEquation =
             expect = Pattern.fromTermLike initial
         applyEquation sideCondition initial equationId
             >>= expectRight >>= assertEqual "" expect
+    , notInstantiated "does not introduce variables"
+        (axiom_ (f a) (g x))
+        SideCondition.top
+        (f a)
     ]
 
 -- * Test data

@@ -350,34 +350,6 @@ test_simplificationIntegration =
             $ mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x)
         assertEqual "" OrPattern.top actual
 
-    -- TODO (thomas.tuegel): Allow this?
-    -- , testCase "new variable quantification" $ do
-    --     let
-    --         expect = OrPattern.fromPatterns
-    --             [ Conditional
-    --                 { term = mkExists Mock.x (Mock.f (mkElemVar Mock.x))
-    --                 , predicate = makeTruePredicate Mock.testSort
-    --                 , substitution = mempty
-    --                 }
-    --             ]
-    --     actual <-
-    --         evaluateWithAxioms
-    --             (mkEvaluatorRegistry $ Map.fromList
-    --                 [   ( AxiomIdentifier.Application Mock.cfId
-    --                     ,   [ from . EqualityRule $ equalityPattern
-    --                             Mock.cf
-    --                             (Mock.f (mkElemVar Mock.x))
-    --                         ]
-    --                     )
-    --                 ]
-    --             )
-    --             Conditional
-    --                 { term = Mock.cf
-    --                 , predicate = makeTruePredicate_
-    --                 , substitution = mempty
-    --                 }
-    --     assertEqual "" expect actual
-
     , testCase "simplification with top predicate (exists variable capture)"
       $ do
         let requirement =

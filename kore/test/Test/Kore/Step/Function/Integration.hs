@@ -483,18 +483,9 @@ test_functionIntegration =
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
-                            (appliedMockEvaluator Conditional
-                                { term = Mock.b
-                                , predicate = makeTruePredicate_
-                                , substitution = mempty
-                                }
-                            )
+                            (appliedMockEvaluator (Pattern.fromTermLike Mock.b))
                             (definitionEvaluation
-                                [ axiom
-                                    (Mock.f (mkElemVar Mock.y))
-                                    Mock.a
-                                    makeTruePredicate_
-                                ]
+                                [axiom_ (Mock.f (mkElemVar Mock.y)) Mock.a]
                             )
                         )
                     ]
