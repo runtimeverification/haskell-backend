@@ -149,6 +149,7 @@ module SMT.SimpleSMT
 
     -- Quantifiers
     , forallQ
+    , existsQ
     ) where
 
 import Prelude hiding

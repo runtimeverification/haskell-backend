@@ -198,11 +198,10 @@ parseKoreProveOptions =
         <> help "Kore source file representing spec to be proven.\
                 \Needs --spec-module."
         )
-    <*> (parseModuleName
+    <*> parseModuleName
             "SPEC_MODULE"
             "spec-module"
             "The name of the main module in the spec to be proven."
-        )
     <*> parseGraphSearch
     <*> switch
         ( long "bmc"

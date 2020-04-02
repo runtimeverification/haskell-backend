@@ -106,8 +106,8 @@ parseKoreReplOptions =
             )
         <*> GlobalMain.parseModuleName
                 "MAIN_MODULE"
-                "Kore main module name."
                 "module"
+                "Kore main module name."
 
     parseSmtOptions :: Parser SmtOptions
     parseSmtOptions =
