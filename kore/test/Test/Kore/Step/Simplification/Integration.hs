@@ -14,14 +14,12 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Test.Tasty
 
-import Kore.Attribute.Simplification
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
-import Kore.Equation
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -273,65 +271,6 @@ test_simplificationIntegration =
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                             )
                     , predicate = requirement
-                    , substitution = mempty
-                    }
-        assertEqual "" expect actual
-    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the
-    -- identity function and `#ceil(x/y) => y != 0`
-    , testCase "function application introduces definedness condition" $ do
-        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
-            expect =
-                OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        Mock.tdivInt
-                            (mkElemVar Mock.xInt)
-                            (mkElemVar Mock.xInt)
-                    , predicate =
-                        makeNotPredicate
-                        $ makeEqualsPredicate Mock.intSort
-                            (mkElemVar Mock.xInt)
-                            (Mock.builtinInt 0)
-                    , substitution = mempty
-                    }
-                ]
-        actual <-
-            evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ mkEquation testSortVariable
-                                    (Mock.fInt (mkElemVar Mock.xInt))
-                                    (mkElemVar Mock.xInt)
-                                ]
-                            )
-                        ,   (AxiomIdentifier.Ceil
-                                (AxiomIdentifier.Application Mock.tdivIntId)
-                            ,   [ mkSimplificationEquation testSortVariable
-                                    (mkCeil testSortVariable
-                                        $ Mock.tdivInt
-                                            (mkElemVar Mock.xInt)
-                                            (mkElemVar Mock.yInt)
-                                    )
-                                    (mkCeil testSortVariable
-                                        . mkNot
-                                        $ mkEquals testSortVariable
-                                            (mkElemVar Mock.yInt)
-                                            (Mock.builtinInt 0)
-
-                                    )
-                                ]
-                            )
-                        ]
-                    )
-                )
-                Conditional
-                    { term =
-                        Mock.fInt
-                        $ Mock.tdivInt
-                            (mkElemVar Mock.xInt)
-                            (mkElemVar Mock.xInt)
-                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
@@ -990,18 +929,6 @@ test_simplificationIntegration =
         actual <- evaluate patt
         assertEqual "" expected actual
     ]
-
-
-mkSimplificationEquation
-    :: InternalVariable variable
-    => Sort
-    -> TermLike variable
-    -> TermLike variable
-    -> Equation variable
-mkSimplificationEquation sort left right =
-    mkEquation sort left right
-    & Lens.set (field @"attributes" . field @"simplification")
-        (Simplification True)
 
 conditionalEqualityPattern
     :: InternalVariable variable
