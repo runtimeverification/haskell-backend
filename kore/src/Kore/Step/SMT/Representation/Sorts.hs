@@ -323,11 +323,11 @@ buildConstructor
         , arguments = args
         }
   where
-    encodedName = AST.encodable symbolConstructor
+    encodedName = getId symbolConstructor
 buildConstructor _ = Nothing
 
 buildConstructorArgument
-    :: AST.Encodable
+    :: Text.Text
     -> Integer
     -> Sort
     -> Maybe AST.UnresolvedConstructorArgument
@@ -336,10 +336,7 @@ buildConstructorArgument
     index
     sort@(SortActualSort SortActual {sortActualSorts = []})
     = Just SMT.ConstructorArgument
-        { name =
-            AST.appendToEncoding
-                constructorName
-                ((Text.pack . show) index)
+        { name = AST.Encodable $ constructorName <> (Text.pack . show) index
         , argType = AST.SortReference sort
         }
 buildConstructorArgument _ _ _ = Nothing

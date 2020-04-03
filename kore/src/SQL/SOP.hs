@@ -41,7 +41,6 @@ module SQL.SOP
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import Data.Functor.Product
 import Data.Proxy
@@ -137,7 +136,7 @@ selectRows tableName infos values = do
         Query.add "SELECT (id) FROM"
         addTableName tableName
         Query.addSpace
-        Monad.unless (isNil infos) $ do
+        unless (isNil infos) $ do
             Query.add "WHERE"
             Query.addSpace
             addColumnNames infos

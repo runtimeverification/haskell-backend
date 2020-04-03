@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 module Kore.Step.SMT.AST
     ( Declarations (..)
-    , Encodable (AlreadyEncoded)
+    , Encodable (..)
     , IndirectSymbolDeclaration (..)
     , KoreSortDeclaration (..)
     , KoreSymbolDeclaration (..)
@@ -31,7 +31,6 @@ module Kore.Step.SMT.AST
     , UnresolvedSort
     , UnresolvedSortDeclaration
     , UnresolvedSymbol
-    , appendToEncoding
     , encodable
     , encode
     , mergePreferFirst
@@ -275,8 +274,8 @@ instance Diff SymbolReference
 
 {-| Data that should be encoded before being used with the SMT.
 
-Use @AlreadyEncoded@ and @encodable@ to create it, @encode@ to extract its data,
-and @appendToEncoding@ to modify it.
+Use @AlreadyEncoded@ and @encodable@ to create it,
+and @encode@ to extract its data
 -}
 data Encodable
     = AlreadyEncoded !SExpr
@@ -330,14 +329,6 @@ encodable Kore.Id {getId} = Encodable (Atom getId)
 encode :: Encodable -> SExpr
 encode (AlreadyEncoded e) = e
 encode (Encodable e) = AST.mapSExpr encodeName e
-
-appendToEncoding :: Encodable -> Text -> Encodable
-appendToEncoding (AlreadyEncoded e) t
-  | Atom t0 <- e     = AlreadyEncoded (Atom (t0 <> t))
-  | List list <- e   = AlreadyEncoded (List $ list <> [Atom t] )
-appendToEncoding (Encodable e) t
-  | Atom t0 <- e     = Encodable (Atom (t0 <>t))
-  | List list <- e   = Encodable (List $ list <> [Atom t] )
 
 mergePreferFirst
     :: Declarations sort symbol name

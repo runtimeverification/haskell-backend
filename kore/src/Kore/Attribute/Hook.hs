@@ -14,7 +14,6 @@ module Kore.Attribute.Hook
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import Data.Text
     ( Text
     )
@@ -26,7 +25,7 @@ import Kore.Debug
 import Kore.Error
 
 newtype Hook = Hook { getHook :: Maybe Text }
-  deriving (Eq, GHC.Generic, Ord, Read, Show)
+    deriving (Eq, GHC.Generic, Ord, Read, Show)
 
 instance Default Hook where
     def = emptyHook
@@ -57,7 +56,7 @@ instance ParseAttributes Hook where
             getZeroParams params
             arg <- getOneArgument args
             StringLiteral name <- getStringLiteral arg
-            Monad.unless (isNothing hook) failDuplicate'
+            unless (isNothing hook) failDuplicate'
             return Hook { getHook = Just name }
       where
         withApplication' = withApplication hookId
