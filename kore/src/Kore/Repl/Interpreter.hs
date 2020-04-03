@@ -510,9 +510,9 @@ proveStepsF n = do
     node   <- Lens.use (field @"node")
     recursiveForcedStep n node
     graph <- getInnerGraph
-    let targetNode = (getInterestingBranchingNode n graph node)
+    let targetNode = getInterestingBranchingNode n graph node
     case targetNode of
-        Nothing -> putStrLn' $ "Proof completed on all branches."
+        Nothing -> putStrLn' "Proof completed on all branches."
         Just someNode -> selectNode someNode
 
 -- | Loads a script from a file.
