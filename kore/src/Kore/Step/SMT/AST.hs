@@ -333,10 +333,10 @@ encode (Encodable e) = AST.mapSExpr encodeName e
 
 appendToEncoding :: Encodable -> Text -> Encodable
 appendToEncoding (AlreadyEncoded e) t
-  | Atom t0 <- e     = AlreadyEncoded (List [Atom t0, Atom t])
+  | Atom t0 <- e     = AlreadyEncoded (Atom (t0 <> t))
   | List list <- e   = AlreadyEncoded (List $ list <> [Atom t] )
 appendToEncoding (Encodable e) t
-  | Atom t0 <- e     = Encodable (List [Atom t0, Atom t])
+  | Atom t0 <- e     = Encodable (Atom (t0 <>t))
   | List list <- e   = Encodable (List $ list <> [Atom t] )
 
 mergePreferFirst
