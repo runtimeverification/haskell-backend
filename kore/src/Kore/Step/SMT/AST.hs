@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 module Kore.Step.SMT.AST
     ( Declarations (..)
-    , Encodable (AlreadyEncoded)
+    , Encodable (..)
     , IndirectSymbolDeclaration (..)
     , KoreSortDeclaration (..)
     , KoreSymbolDeclaration (..)
@@ -31,7 +31,6 @@ module Kore.Step.SMT.AST
     , UnresolvedSort
     , UnresolvedSortDeclaration
     , UnresolvedSymbol
-    , appendToEncoding
     , encodable
     , encode
     , mergePreferFirst
@@ -327,10 +326,6 @@ encodable Kore.Id {getId} = Encodable getId
 encode :: Encodable -> Text
 encode (AlreadyEncoded e) = e
 encode (Encodable e) = encodeName e
-
-appendToEncoding :: Encodable -> Text -> Encodable
-appendToEncoding (AlreadyEncoded e) t = AlreadyEncoded (e <> t)
-appendToEncoding (Encodable e) t = Encodable (e <> t)
 
 mergePreferFirst
     :: Declarations sort symbol name
