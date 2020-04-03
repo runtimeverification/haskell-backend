@@ -489,8 +489,16 @@ proveSteps n = do
         (done, res) ->
             putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
--- | Executes 'n' prove steps, distributing over branches. It will perform less
--- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+{- | Executes 'n' prove steps, distributing over branches. It will perform less
+than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+
+The proof is advanced to the first "interesting" branching node. Interesting
+branching nodes have at least two children with non-bottom leaves. If no such
+node exists, the proof is advanced n steps in the (only) available branch. If
+the proof is completed on all branches, a message is emitted, but the current 
+node stays the same.
+-}
+
 proveStepsF
     :: Claim claim
     => MonadSimplify m
@@ -502,10 +510,10 @@ proveStepsF n = do
     node   <- Lens.use (field @"node")
     recursiveForcedStep n node
     graph <- getInnerGraph
-    let targetNode = case (selectBranchingNode n graph node) of
-            Nothing -> node
-            Just other -> other
-    selectNode targetNode
+    let targetNode = (getInterestingBranchingNode n graph node)
+    case targetNode of
+        Nothing -> putStrLn' $ "Proof completed on all branches."
+        Just someNode -> selectNode someNode
 
 -- | Loads a script from a file.
 loadScript
@@ -1254,26 +1262,43 @@ recursiveForcedStep n node
         SingleResult sr -> (recursiveForcedStep $ n-1) sr
         BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
 
-selectBranchingNode
+{- | Returns the first interesting branching node encountered by
+exploring the proof graph for 'n' steps over all branches, starting
+from 'node'. Used to advance the current proof node in proveStepsF. 
+If no such node exists, it tries to return the only existing 
+non-bottom leaf. If no such leaf exists, it returns Nothing.
+
+We can compute the return value recursively.
+
+Apart from the base cases, we distinguish three main cases:
+- The current node has no children with interesting return values,
+so the proof is completed in its entire subtree, we return Nothing.
+- The current node has only one such child, we should return the 
+child's result.
+- The current node has at least two such children, so it itself is
+interestingly branching and we return it.
+-}
+
+getInterestingBranchingNode
     :: Natural
     -> InnerGraph axiom
     -> ReplNode
     -> Maybe ReplNode
-selectBranchingNode n graph node
+getInterestingBranchingNode n graph node
     | nodeIsBottom               = Nothing
     | n == 0                     = Just node
     | null sucResults            = Just node
     | otherwise = 
-        case interesting of
+        case interestingResults of
             []  -> Nothing
             [a] -> Just a
             _   -> Just node
     where 
       gnode = unReplNode node
       nodeIsBottom = (==) (getNodeState graph gnode) Nothing
-      sucResults = fmap (selectBranchingNode (n - 1) graph . ReplNode) 
+      sucResults = fmap (getInterestingBranchingNode (n - 1) graph . ReplNode) 
                         (Graph.suc graph gnode)
-      interesting = catMaybes sucResults
+      interestingResults = catMaybes sucResults
       
       
     
