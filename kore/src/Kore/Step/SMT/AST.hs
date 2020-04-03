@@ -271,8 +271,8 @@ instance Diff SymbolReference
 
 {-| Data that should be encoded before being used with the SMT.
 
-Use @AlreadyEncoded@ and @encodable@ to create it, @encode@ to extract its data,
-and @appendToEncoding@ to modify it.
+Use @AlreadyEncoded@ and @encodable@ to create it,
+and @encode@ to extract its data
 -}
 data Encodable
     = AlreadyEncoded !Text
