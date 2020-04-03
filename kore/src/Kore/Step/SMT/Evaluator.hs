@@ -229,7 +229,7 @@ translateTerm t (UninterpretedTerm pat) = do
             cached = SMTDependentAtom { smtName, smtType = t, boundVars }
         _ <- SMT.declareFun
             SMT.FunctionDeclaration
-                { name = smtName
+                { name = Atom smtName
                 , inputSorts = smtType <$> bindings
                 , resultSort = t
                 }

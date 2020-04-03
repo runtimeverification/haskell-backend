@@ -49,6 +49,9 @@ import Data.Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Smtlib.Smthook
+    ( SExpr (..)
+    )
 import Kore.Debug
 import qualified Kore.Sort as Kore
     ( Sort
@@ -276,8 +279,8 @@ Use @AlreadyEncoded@ and @encodable@ to create it, @encode@ to extract its data,
 and @appendToEncoding@ to modify it.
 -}
 data Encodable
-    = AlreadyEncoded !Text
-    | Encodable !Text
+    = AlreadyEncoded !SExpr
+    | Encodable !SExpr
     -- TODO (virgil): maybe use Id in Encodable to make it more obvious what
     -- happens.
     deriving (Eq, GHC.Generic, Ord, Show)
@@ -291,10 +294,10 @@ instance Debug Encodable
 instance Diff Encodable
 
 -- Type instantiations to be used by the SMT.
-type SmtDeclarations = Declarations AST.SExpr Text Text
-type SmtKoreSymbolDeclaration = KoreSymbolDeclaration AST.SExpr Text
-type SmtSort = Sort AST.SExpr Text Text
-type SmtSymbol = Symbol AST.SExpr Text
+type SmtDeclarations = Declarations AST.SExpr Text AST.SExpr
+type SmtKoreSymbolDeclaration = KoreSymbolDeclaration AST.SExpr AST.SExpr
+type SmtSort = Sort AST.SExpr Text AST.SExpr
+type SmtSymbol = Symbol AST.SExpr AST.SExpr
 
 -- Type instantiations with unresolved dependencies, produced directly from the
 -- input module.
@@ -322,15 +325,19 @@ type UnresolvedSymbol =
     Symbol SortReference Encodable
 
 encodable :: Kore.Id -> Encodable
-encodable Kore.Id {getId} = Encodable getId
+encodable Kore.Id {getId} = Encodable (Atom getId)
 
-encode :: Encodable -> Text
+encode :: Encodable -> SExpr
 encode (AlreadyEncoded e) = e
-encode (Encodable e) = encodeName e
+encode (Encodable e) = AST.mapSExpr encodeName e
 
 appendToEncoding :: Encodable -> Text -> Encodable
-appendToEncoding (AlreadyEncoded e) t = AlreadyEncoded (e <> t)
-appendToEncoding (Encodable e) t = Encodable (e <> t)
+appendToEncoding (AlreadyEncoded e) t
+  | Atom t0 <- e     = AlreadyEncoded (List [Atom t0, Atom t])
+  | List list <- e   = AlreadyEncoded (List $ list <> [Atom t] )
+appendToEncoding (Encodable e) t
+  | Atom t0 <- e     = Encodable (List [Atom t0, Atom t])
+  | List list <- e   = Encodable (List $ list <> [Atom t] )
 
 mergePreferFirst
     :: Declarations sort symbol name
