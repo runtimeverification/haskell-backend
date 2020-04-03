@@ -336,7 +336,9 @@ buildConstructorArgument
     index
     sort@(SortActualSort SortActual {sortActualSorts = []})
     = Just SMT.ConstructorArgument
-        { name = AST.Encodable $ constructorName <> (Text.pack . show) index
+        { name =
+            AST.Encodable $ SMT.Atom
+            $ constructorName <> (Text.pack . show) index
         , argType = AST.SortReference sort
         }
 buildConstructorArgument _ _ _ = Nothing

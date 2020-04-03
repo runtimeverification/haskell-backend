@@ -464,7 +464,7 @@ declareFun :: Solver -> SmtFunctionDeclaration -> IO SExpr
 declareFun proc FunctionDeclaration {name, inputSorts, resultSort} = do
     ackCommand proc
         $ fun "declare-fun" [ name, List inputSorts, resultSort ]
-    return $ List [name]
+    pure name
 
 declareSort :: Solver -> SmtSortDeclaration -> IO SExpr
 declareSort
@@ -473,7 +473,7 @@ declareSort
   = do
     ackCommand proc
         $ fun "declare-sort" [ name, (Atom . Text.pack . show) arity ]
-    pure $ List [name]
+    pure name
 
 -- | Declare a set of ADTs
 declareDatatypes
