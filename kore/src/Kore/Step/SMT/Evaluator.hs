@@ -12,7 +12,7 @@ module Kore.Step.SMT.Evaluator
     , filterBranch
     , filterMultiOr
     , translateTerm
-    , goTranslatePredicate
+    , translatePredicate
     ) where
 
 import Prelude.Kore
@@ -154,10 +154,10 @@ decidePredicate
     => Predicate variable
     -> simplifier (Maybe Bool)
 decidePredicate korePredicate =
-    SMT.withSolver $ runMaybeT $ do
+    SMT.withSolver $ runMaybeT $ evalTranslator $ do
         debugEvaluateCondition korePredicate
         tools <- Simplifier.askMetadataTools
-        smtPredicate <- goTranslatePredicate tools korePredicate
+        smtPredicate <- translatePredicate tools korePredicate
         result <-
             Profile.smtDecision smtPredicate
             $ SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
@@ -171,7 +171,7 @@ decidePredicate korePredicate =
                     ]
                 empty
 
-goTranslatePredicate
+translatePredicate
     :: forall variable m.
         ( InternalVariable variable
         , SMT.MonadSMT m
@@ -180,10 +180,10 @@ goTranslatePredicate
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
     -> MaybeT m SExpr
-goTranslatePredicate tools predicate = evalTranslator translator
+translatePredicate tools predicate = evalTranslator translator
   where
     translator =
-        give tools $ translatePredicate translateTerm predicate
+        give tools $ translatePredicateWith translateTerm predicate
 
 translateTerm
     :: InternalVariable variable

@@ -157,9 +157,8 @@ test_goTranslatePredicate =
 
 translating :: HasCallStack => Predicate Variable -> IO (Maybe SExpr)
 translating =
-    Test.SMT.runNoSMT
-    . runMaybeT
-    . Evaluator.goTranslatePredicate Mock.metadataTools
+    Test.SMT.runNoSMT . runMaybeT
+    . Evaluator.translatePredicate Mock.metadataTools
 
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()

@@ -62,7 +62,7 @@ import qualified Kore.Step.SMT.Representation.All as Representation
     )
 import Kore.Step.SMT.Translate
     ( evalTranslator
-    , translatePredicate
+    , translatePredicateWith
     )
 import Kore.Syntax.ElementVariable
     ( ElementVariable (..)
@@ -223,11 +223,8 @@ test_sortDeclaration =
         -> m SExpr
     encodePredicate tools predicate = do
         expr <-
-            runMaybeT
-            $ evalTranslator
-                ( give tools
-                $ translatePredicate translateTerm predicate
-                )
+            runMaybeT $ evalTranslator $ give tools
+            $ translatePredicateWith translateTerm predicate
         maybe (error "Could not encode predicate") return expr
 
     sSortId :: Id
