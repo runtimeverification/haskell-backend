@@ -227,7 +227,9 @@ q = vBool (testId "q")
 assertRefuted :: HasCallStack => Predicate Variable -> Assertion
 assertRefuted prop = do
     let expect = Just False
-    actual <- Test.runSimplifier testEnv $ SMT.Evaluator.decidePredicate prop
+    actual <-
+        SMT.Evaluator.decidePredicate Nothing prop
+        & Test.runSimplifier testEnv
     assertEqual "" expect actual
 
 true, false :: TermLike Variable

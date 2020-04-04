@@ -18,18 +18,19 @@ module Kore.Step.SMT.Evaluator
 import Prelude.Kore
 
 import Control.Error
-    ( MaybeT
-    , hoistMaybe
+    ( hoistMaybe
     , runMaybeT
     )
 import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
+import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Traversable as Traversable
 
 import Branch
     ( BranchT
@@ -56,6 +57,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -97,7 +101,7 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate predicate
+            _ -> decidePredicate Nothing predicate
 
 instance InternalVariable variable => Evaluable (Conditional variable term)
   where
@@ -151,23 +155,28 @@ decidePredicate
         ( InternalVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
+    => Maybe (SideCondition variable)
+    -> Predicate variable
     -> simplifier (Maybe Bool)
-decidePredicate korePredicate =
+decidePredicate sideCondition predicate =
     SMT.withSolver $ runMaybeT $ evalTranslator $ do
-        debugEvaluateCondition korePredicate
+        debugEvaluateCondition predicate
         tools <- Simplifier.askMetadataTools
-        smtPredicate <- translatePredicate tools korePredicate
-        result <-
-            Profile.smtDecision smtPredicate
-            $ SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
+        sideCondition' <-
+            Traversable.for sideCondition
+            $ translatePredicate tools . from @(SideCondition _)
+        predicate' <- translatePredicate tools predicate
+        result <- Profile.smtDecision predicate' $ SMT.withSolver $ do
+            Foldable.traverse_ SMT.assert sideCondition'
+            SMT.assert predicate'
+            SMT.check
         case result of
             Unsat   -> return False
             Sat     -> empty
             Unknown -> do
                 (logWarning . Text.pack . show . Pretty.vsep)
                     [ "Failed to decide predicate:"
-                    , Pretty.indent 4 (unparse korePredicate)
+                    , Pretty.indent 4 (unparse predicate)
                     ]
                 empty
 
@@ -179,11 +188,9 @@ translatePredicate
         )
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
-    -> MaybeT m SExpr
-translatePredicate tools predicate = evalTranslator translator
-  where
-    translator =
-        give tools $ translatePredicateWith translateTerm predicate
+    -> Translator m variable SExpr
+translatePredicate tools predicate =
+    give tools $ translatePredicateWith translateTerm predicate
 
 translateTerm
     :: InternalVariable variable
