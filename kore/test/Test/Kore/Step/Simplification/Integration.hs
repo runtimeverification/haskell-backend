@@ -30,7 +30,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeCeilPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate
@@ -242,15 +243,10 @@ test_simplificationIntegration =
                     (Mock.f (mkElemVar Mock.x))
                     (Mock.g Mock.b)
             expect =
-                OrPattern.fromPatterns
-                [ Conditional
-                    { term = Mock.functionalConstr11 $ Mock.g Mock.a
-                    , predicate = requirement
-                    , substitution = mempty
-                    }
-                ]
+                OrPattern.fromTermLike
+                $ Mock.functionalConstr11 $ Mock.g Mock.a
         actual <-
-            evaluateWithAxioms
+            evaluateConditionalWithAxioms
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
@@ -263,16 +259,12 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                Conditional
-                    { term =
-                        mkExists
-                            Mock.z
-                            (Mock.functionalConstr11
-                                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                            )
-                    , predicate = requirement
-                    , substitution = mempty
-                    }
+                (from @(Predicate _) @(SideCondition _) requirement)
+                (Pattern.fromTermLike
+                    $ mkExists Mock.z
+                    $ Mock.functionalConstr11
+                    $ Mock.functionalConstr10 (mkElemVar Mock.x)
+                )
         assertEqual "" expect actual
     , testCase "no function branching" $ do
         let expect =
@@ -1077,7 +1069,15 @@ evaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateWithAxioms axioms =
-    runSimplifier env . Pattern.simplify SideCondition.top
+    evaluateConditionalWithAxioms axioms SideCondition.top
+
+evaluateConditionalWithAxioms
+    :: BuiltinAndAxiomSimplifierMap
+    -> SideCondition Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
+evaluateConditionalWithAxioms axioms sideCondition =
+    runSimplifier env . Pattern.simplify sideCondition
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap

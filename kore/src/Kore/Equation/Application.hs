@@ -232,7 +232,8 @@ checkRequires sideCondition predicate requires =
             >>= withAxioms . simplifyCondition
             -- Finally, try to refute the simplified 'condition' using the
             -- external solver:
-            >>= SMT.filterBranch . andSideCondition
+            >>= SMT.filterBranch . withSideCondition
+            >>= return . snd
     -- Collect the simplified results. If they are \bottom, then \and(predicate,
     -- requires) is valid; otherwise, the required pre-conditions are not met
     -- and the rule will not be applied.
@@ -247,14 +248,14 @@ checkRequires sideCondition predicate requires =
             Target.unTargetSet
             sideCondition
 
-    andSideCondition condition =
-        from @(SideCondition _) sideCondition' <> condition
-
     assertBottom orCondition
       | isBottom orCondition = done
       | otherwise            = requiresNotMet
     done = return ()
     requiresNotMet = throwE (RequiresNotMet predicate requires)
+
+    -- Pair a configuration with sideCondition for evaluation by the solver.
+    withSideCondition = (,) sideCondition'
 
     withoutAxioms =
         fmap Condition.forgetSimplified
