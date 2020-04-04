@@ -106,11 +106,29 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
             Predicate.PredicateFalse -> return (Just False)
             _ -> decidePredicate Nothing predicate
 
+instance
+    InternalVariable variable
+    => Evaluable (SideCondition variable, Predicate variable)
+  where
+    evaluate (sideCondition, predicate) =
+        case predicate of
+            Predicate.PredicateTrue -> return (Just True)
+            Predicate.PredicateFalse -> return (Just False)
+            _ -> decidePredicate (Just sideCondition) predicate
+
 instance InternalVariable variable => Evaluable (Conditional variable term)
   where
     evaluate conditional =
         assert (Conditional.isNormalized conditional)
         $ evaluate (Conditional.predicate conditional)
+
+instance
+    InternalVariable variable
+    => Evaluable (SideCondition variable, Conditional variable term)
+  where
+    evaluate (sideCondition, conditional) =
+        assert (Conditional.isNormalized conditional)
+        $ evaluate (sideCondition, Conditional.predicate conditional)
 
 {- | Removes all branches refuted by an external SMT solver.
  -}
