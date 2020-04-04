@@ -166,19 +166,45 @@ applyMatchResult
     ->  MatchResult (Target variable)
     ->  ExceptT (ApplyEquationError variable) monad
             (Equation variable, Predicate variable)
-applyMatchResult equation matchResult@(predicate, substitution) =
+applyMatchResult equation matchResult@(predicate, substitution) = do
     case errors of
         x : xs -> throwE $ ApplyMatchErrors matchResult (x :| xs)
-        _      -> return (equation', predicate')
+        _      -> return ()
+    let predicate' =
+            Predicate.substitute substitution predicate
+            & Predicate.mapVariables Target.unTargetElement Target.unTargetSet
+        equation' =
+            Equation.substitute substitution equation
+            & Equation.mapVariables Target.unTargetElement Target.unTargetSet
+    return (equation', predicate')
   where
-    errors = notConcretes <> notSymbolics
+    equationVariables =
+        freeVariables equation
+        & FreeVariables.getFreeVariables
+        & Set.toList
 
-    predicate' =
-        Predicate.substitute substitution predicate
-        & Predicate.mapVariables Target.unTargetElement Target.unTargetSet
-    equation' =
-        Equation.substitute substitution equation
-        & Equation.mapVariables Target.unTargetElement Target.unTargetSet
+    errors = concatMap checkVariable equationVariables
+
+    checkVariable variable =
+        case Map.lookup variable substitution of
+            Nothing -> [NotInstantiated variable]
+            Just termLike ->
+                checkConcreteVariable variable termLike
+                <> checkSymbolicVariable variable termLike
+
+    checkConcreteVariable variable termLike
+      | Set.member variable concretes
+      , (not . TermLike.isConstructorLike) termLike
+      = [NotConcrete variable termLike]
+      | otherwise
+      = empty
+
+    checkSymbolicVariable variable termLike
+      | Set.member variable symbolics
+      , TermLike.isConstructorLike termLike
+      = [NotSymbolic variable termLike]
+      | otherwise
+      = empty
 
     Equation { attributes } = equation
     concretes =
@@ -189,21 +215,6 @@ applyMatchResult equation matchResult@(predicate, substitution) =
         attributes
         & Attribute.symbolic & Attribute.unSymbolic
         & FreeVariables.getFreeVariables
-    checkConcrete var =
-        case Map.lookup var substitution of
-            Nothing -> Just (NotInstantiated var)
-            Just termLike
-              | TermLike.isConstructorLike termLike -> Nothing
-              | otherwise -> Just (NotConcrete var termLike)
-    checkSymbolic var =
-        case Map.lookup var substitution of
-            Nothing -> Just (NotInstantiated var)
-            Just termLike
-              | TermLike.isConstructorLike termLike ->
-                Just (NotSymbolic var termLike)
-              | otherwise -> Nothing
-    notConcretes = mapMaybe checkConcrete (Set.toList concretes)
-    notSymbolics = mapMaybe checkSymbolic (Set.toList symbolics)
 
 {- | Check that the requires from matching and the 'Equation' hold.
 
