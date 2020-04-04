@@ -8,7 +8,7 @@ module Kore.Equation.Application
     ( applyEquation
     , ApplyEquationResult
     , ApplyEquationError (..)
-    , InstantiationError (..)
+    , ApplyMatchError (..)
     ) where
 
 import Prelude.Kore
@@ -88,9 +88,9 @@ type ApplyEquationResult variable =
 
 data ApplyEquationError variable
     = NotMatched !(TermLike (Target variable)) !(Equation (Target variable))
-    | InstantiationErrors
+    | ApplyMatchErrors
         !(MatchResult (Target variable))
-        !(NonEmpty (InstantiationError (Target variable)))
+        !(NonEmpty (ApplyMatchError (Target variable)))
     | RequiresNotMet !(Predicate variable) !(Predicate variable)
     deriving (Eq, Ord)
     deriving (GHC.Generic)
@@ -103,10 +103,10 @@ instance Debug variable => Debug (ApplyEquationError variable)
 
 instance (Debug variable, Diff variable) => Diff (ApplyEquationError variable)
 
-{- | @InstantiationError@ represents a reason to reject the instantiation of
-an 'Equation'.
+{- | @ApplyMatchError@ represents a reason the match could not be applied.
+
  -}
-data InstantiationError variable
+data ApplyMatchError variable
     = NotConcrete (UnifiedVariable variable) (TermLike variable)
     -- ^ The variable was instantiated with a symbolic term where a concrete
     -- term was required.
@@ -118,13 +118,13 @@ data InstantiationError variable
     deriving (Eq, Ord)
     deriving (GHC.Generic)
 
-instance SOP.Generic (InstantiationError variable)
+instance SOP.Generic (ApplyMatchError variable)
 
-instance SOP.HasDatatypeInfo (InstantiationError variable)
+instance SOP.HasDatatypeInfo (ApplyMatchError variable)
 
-instance Debug variable => Debug (InstantiationError variable)
+instance Debug variable => Debug (ApplyMatchError variable)
 
-instance (Debug variable, Diff variable) => Diff (InstantiationError variable)
+instance (Debug variable, Diff variable) => Diff (ApplyMatchError variable)
 
 applyEquation
     :: forall simplifier variable
@@ -155,7 +155,7 @@ condition is not checked, but enforced by the matcher. The result is the
 'Equation' and any 'Predicate' assembled during matching, both instantiated by
 the 'MatchResult'.
 
-Throws 'InstantiationErrors' if there is a problem with the 'MatchResult'.
+Throws 'ApplyMatchErrors' if there is a problem with the 'MatchResult'.
 
  -}
 applyMatchResult
@@ -168,7 +168,7 @@ applyMatchResult
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) =
     case errors of
-        x : xs -> throwE $ InstantiationErrors matchResult (x :| xs)
+        x : xs -> throwE $ ApplyMatchErrors matchResult (x :| xs)
         _      -> return (equation', predicate')
   where
     errors = notConcretes <> notSymbolics

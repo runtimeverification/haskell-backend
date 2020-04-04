@@ -94,9 +94,9 @@ assertNotMatched result =
         , Pretty.indent 4 (debug result)
         ]
 
-assertInstantiationErrors :: ApplyEquationError Variable -> Assertion
-assertInstantiationErrors (InstantiationErrors _ _) = return ()
-assertInstantiationErrors result =
+assertApplyMatchErrors :: ApplyEquationError Variable -> Assertion
+assertApplyMatchErrors (ApplyMatchErrors _ _) = return ()
+assertApplyMatchErrors result =
     (assertFailure . show . Pretty.vsep)
         [ "Expected (InstantiationErrors _ _), but found:"
         , Pretty.indent 4 (debug result)
@@ -484,7 +484,7 @@ notInstantiated
     -> TermLike Variable
     -> TestTree
 notInstantiated =
-    withApplyEquationResult (expectLeft >=> assertInstantiationErrors)
+    withApplyEquationResult (expectLeft >=> assertApplyMatchErrors)
 
 requiresNotMet
     :: TestName
