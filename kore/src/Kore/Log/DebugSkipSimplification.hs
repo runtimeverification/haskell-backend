@@ -17,6 +17,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
+import Kore.Equation as Equation
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -33,10 +34,6 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    )
-import qualified Kore.Step.EqualityPattern as EqualityPattern
 import Kore.Unparser
 import Log
 import Pretty
@@ -53,10 +50,10 @@ will skip the rule in that case.
  -}
 data DebugSkipSimplification =
     DebugSkipSimplification
-        { inputPattern :: TermLike Variable
-        , sideCondition :: SideCondition Variable
-        , remainders :: Remainders
-        , rule :: EqualityRule Variable
+        { inputPattern :: !(TermLike Variable)
+        , sideCondition :: !(SideCondition Variable)
+        , remainders :: !Remainders
+        , rule :: !(Equation Variable)
         }
     deriving Typeable
     deriving (GHC.Generic)
@@ -104,7 +101,7 @@ debugSkipSimplification
     => TermLike variable  -- ^ input pattern
     -> SideCondition variable  -- ^ input condition
     -> OrPattern variable  -- ^ remainders
-    -> EqualityRule Variable
+    -> Equation Variable
     -> logger ()
 debugSkipSimplification
     (TermLike.mapVariables (fmap toVariable) (fmap toVariable) -> inputPattern)
@@ -146,4 +143,4 @@ instance Pretty DebugSkipSimplification where
         DebugSkipSimplification { inputPattern, sideCondition } = entry
         DebugSkipSimplification { remainders, rule } = entry
         unparseOrPattern = Pretty.vsep . map unparse . OrPattern.toPatterns
-        location = Attribute.Axiom.sourceLocation . EqualityPattern.attributes . getEqualityRule $ rule
+        location = Attribute.Axiom.sourceLocation (Equation.attributes rule)

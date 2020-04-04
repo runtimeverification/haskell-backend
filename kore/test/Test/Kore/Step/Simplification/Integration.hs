@@ -20,6 +20,10 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Equation
+    ( Equation (..)
+    , mkEquation
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -59,6 +63,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Sort
+    ( predicateSort
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , simplifierWithFallback
@@ -68,11 +75,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     )
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
-    )
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (EqualityRule)
-    , equalityPattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -218,7 +220,8 @@ test_simplificationIntegration =
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ from . EqualityRule $ equalityPattern
+                            ,   [ mkEquation
+                                    predicateSort
                                     (Mock.function20MapTest
                                         (Mock.concatMap
                                             (Mock.elementMap
@@ -250,7 +253,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -280,11 +283,11 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.functional10Id
-                            ,   [ from . EqualityRule $ conditionalEqualityPattern
+                            ,   [ conditionalEqualityPattern
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeEqualsPredicate_ Mock.cf Mock.a)
                                     (mkElemVar Mock.x)
-                                , from . EqualityRule $ conditionalEqualityPattern
+                                , conditionalEqualityPattern
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeNotPredicate
                                         (makeEqualsPredicate_ Mock.cf Mock.a)
@@ -394,7 +397,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -428,7 +431,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -461,7 +464,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -494,7 +497,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -927,11 +930,9 @@ conditionalEqualityPattern
     => TermLike variable
     -> Predicate.Predicate variable
     -> TermLike variable
-    -> EqualityPattern variable
+    -> Equation variable
 conditionalEqualityPattern left requires right =
-    patt & Lens.set (field @"requires") requires
-  where
-    patt = equalityPattern left right
+    mkEquation predicateSort left right & Lens.set (field @"requires") requires
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -1133,9 +1134,9 @@ axiom
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate.Predicate Variable
-    -> EqualityRule Variable
+    -> Equation Variable
 axiom left right requires =
-    EqualityRule EqualityPattern
+    Equation
         { left
         , requires
         , right

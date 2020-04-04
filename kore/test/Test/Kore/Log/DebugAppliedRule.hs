@@ -11,14 +11,14 @@ import Data.Default
     ( def
     )
 
+import Kore.Equation
+    ( Equation (..)
+    )
 import Kore.Internal.Conditional
 import Kore.Internal.Predicate
 import Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Log.DebugAppliedRule
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    )
 import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -28,9 +28,9 @@ test_instance_Table_Equality :: TestTree
 test_instance_Table_Equality =
     testTable [equality1, equality2]
 
-equality1, equality2 :: EqualityPattern Variable
+equality1, equality2 :: Equation Variable
 equality1 =
-    EqualityPattern
+    Equation
         { requires = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.a)
         , left = Mock.f (mkElemVar Mock.x)
         , right = Mock.a
@@ -38,7 +38,7 @@ equality1 =
         , attributes = def
         }
 equality2 =
-    EqualityPattern
+    Equation
         { requires = makeEqualsPredicate_ (Mock.f Mock.b) (Mock.g Mock.b)
         , left = Mock.f (mkElemVar Mock.x)
         , right = Mock.b
@@ -55,7 +55,7 @@ test_instance_Table_DebugAppliedRule =
         , applied equality2 subst2
         ]
 
-applied :: EqualityPattern Variable -> Substitution Variable -> DebugAppliedRule
+applied :: Equation Variable -> Substitution Variable -> DebugAppliedRule
 applied equality substitution =
     DebugAppliedRule Conditional
         { term = equality

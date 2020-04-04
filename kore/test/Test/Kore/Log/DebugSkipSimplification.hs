@@ -6,6 +6,10 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Kore.Equation
+    ( Equation (..)
+    , mkEquation
+    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -16,10 +20,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.DebugSkipSimplification
-import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    , equalityPattern
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SQL
@@ -48,9 +48,12 @@ term1, term2 :: TermLike Variable
 term1 = Mock.f Mock.a
 term2 = Mock.f Mock.b
 
+sortR :: Sort
+sortR = mkSortVariable "R"
+
 predicate1, predicate2 :: Predicate Variable
-predicate1 = makeEqualsPredicate_ (Mock.g Mock.a) (Mock.h Mock.a)
-predicate2 = makeEqualsPredicate_ (Mock.g Mock.b) (Mock.h Mock.b)
+predicate1 = makeEqualsPredicate sortR (Mock.g Mock.a) (Mock.h Mock.a)
+predicate2 = makeEqualsPredicate sortR (Mock.g Mock.b) (Mock.h Mock.b)
 
 remainders1, remainders2 :: OrPattern Variable
 remainders1 =
@@ -62,6 +65,6 @@ remainders2 =
         (Pattern.fromTermLike Mock.b)
         (Condition.fromPredicate $ makeNotPredicate predicate2)
 
-rule1, rule2 :: EqualityRule Variable
-rule1 = EqualityRule $ equalityPattern term1 Mock.a
-rule2 = EqualityRule $ equalityPattern term2 Mock.b
+rule1, rule2 :: Equation Variable
+rule1 = mkEquation sortR term1 Mock.a
+rule2 = mkEquation sortR term2 Mock.b

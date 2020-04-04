@@ -31,6 +31,7 @@ import Options.Applicative
 import qualified Options.Applicative as Options
 import qualified Text.Megaparsec as Parsec
 
+import Kore.Equation as Equation
 import Kore.Internal.Conditional
     ( Conditional
     )
@@ -41,11 +42,6 @@ import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
-import Kore.Step.EqualityPattern
-    ( EqualityPattern
-    )
-import qualified Kore.Step.EqualityPattern as Equality
-import qualified Kore.Step.Step as Equality
 import Kore.Syntax.Id
     ( Id
     )
@@ -67,7 +63,7 @@ We will log the applied rule and its unification or matching condition.
 
  -}
 newtype DebugAppliedRule =
-    DebugAppliedRule { appliedRule :: Unified (EqualityPattern Variable) }
+    DebugAppliedRule { appliedRule :: Unified (Equation Variable) }
     deriving (Eq)
     deriving (GHC.Generic)
 
@@ -98,13 +94,13 @@ instance SQL.Table DebugAppliedRule
 debugAppliedRule
     :: MonadLog log
     => InternalVariable variable
-    => Conditional variable (EqualityPattern variable)
+    => Conditional variable (Equation variable)
     -> log ()
 debugAppliedRule =
     logEntry
     . DebugAppliedRule
     . Conditional.mapVariables
-        Equality.mapRuleVariables
+        Equation.mapVariables
         (fmap toVariable)
         (fmap toVariable)
 
@@ -151,13 +147,12 @@ filterDebugAppliedRule debugAppliedRuleOptions ActualEntry { actualEntry }
 
 isSelectedRule
     :: DebugAppliedRuleOptions
-    -> Unified (EqualityPattern Variable)
+    -> Unified (Equation Variable)
     -> Bool
 isSelectedRule debugAppliedRuleOptions =
     maybe False (`Set.member` debugAppliedRules) . appliedRuleId
   where
-    matchAppliedRuleId =
-        matchAxiomIdentifier . Equality.left . Conditional.term
+    matchAppliedRuleId = matchAxiomIdentifier . Equation.left . Conditional.term
     appliedRuleId appliedRule = do
         axiomId <- matchAppliedRuleId appliedRule
         case axiomId of
