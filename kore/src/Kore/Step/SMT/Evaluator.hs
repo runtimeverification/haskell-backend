@@ -68,6 +68,9 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition
     ( debugEvaluateCondition
     )
+import Kore.Log.WarnDecidePredicateUnknown
+    ( warnDecidePredicateUnknown
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( smtDecision
     )
@@ -151,10 +154,9 @@ filterMultiOr multiOr = do
 The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
-    :: forall variable simplifier.
-        ( InternalVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  InternalVariable variable
+    => MonadSimplify simplifier
     => Maybe (SideCondition variable)
     -> Predicate variable
     -> simplifier (Maybe Bool)
@@ -174,10 +176,7 @@ decidePredicate sideCondition predicate =
             Unsat   -> return False
             Sat     -> empty
             Unknown -> do
-                (logWarning . Text.pack . show . Pretty.vsep)
-                    [ "Failed to decide predicate:"
-                    , Pretty.indent 4 (unparse predicate)
-                    ]
+                warnDecidePredicateUnknown sideCondition predicate
                 empty
 
 translatePredicate
