@@ -142,6 +142,13 @@ instance
     from = from @(Condition variable) . from @(SideCondition variable)
     {-# INLINE from #-}
 
+instance
+    InternalVariable variable
+    => From (Predicate variable) (SideCondition variable)
+  where
+    from = from @(Condition variable) . from @(Predicate variable)
+    {-# INLINE from #-}
+
 top :: InternalVariable variable => SideCondition variable
 top = fromCondition Condition.top
 
