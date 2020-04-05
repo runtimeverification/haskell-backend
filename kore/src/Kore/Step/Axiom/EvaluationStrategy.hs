@@ -109,7 +109,7 @@ definitionEvaluation equations =
                     }
             (errors, []) ->
                 case minError of
-                    Just (Equation.RequiresNotMet _ _) ->
+                    Just (Equation.WhileCheckRequires _) ->
                         (return . NotApplicableUntilConditionChanges)
                             (SideCondition.toRepresentation condition)
                     _ -> return NotApplicable
@@ -152,7 +152,7 @@ simplificationEvaluation equation =
                     }
             Left err ->
                 case err of
-                    Equation.RequiresNotMet _ _ ->
+                    Equation.WhileCheckRequires _ ->
                         (return . NotApplicableUntilConditionChanges)
                             (SideCondition.toRepresentation condition)
                     _ -> return NotApplicable

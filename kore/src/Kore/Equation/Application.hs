@@ -8,7 +8,9 @@ module Kore.Equation.Application
     ( applyEquation
     , ApplyEquationResult
     , ApplyEquationError (..)
-    , ApplyMatchError (..)
+    , MatchError (..)
+    , ApplyMatchResultErrors (..), ApplyMatchResultError (..)
+    , CheckRequiresError (..)
     ) where
 
 import Prelude.Kore
@@ -86,12 +88,12 @@ import Kore.Variables.UnifiedVariable
 type ApplyEquationResult variable =
     Either (ApplyEquationError variable) (Pattern variable)
 
+{- | Errors that can occur during 'applyEquation'.
+ -}
 data ApplyEquationError variable
-    = NotMatched !(TermLike (Target variable)) !(Equation (Target variable))
-    | ApplyMatchErrors
-        !(MatchResult (Target variable))
-        !(NonEmpty (ApplyMatchError (Target variable)))
-    | RequiresNotMet !(Predicate variable) !(Predicate variable)
+    = WhileMatch !(MatchError (Target variable))
+    | WhileApplyMatchResult !(ApplyMatchResultErrors (Target variable))
+    | WhileCheckRequires !(CheckRequiresError variable)
     deriving (Eq, Ord)
     deriving (GHC.Generic)
 
@@ -103,28 +105,23 @@ instance Debug variable => Debug (ApplyEquationError variable)
 
 instance (Debug variable, Diff variable) => Diff (ApplyEquationError variable)
 
-{- | @ApplyMatchError@ represents a reason the match could not be applied.
-
+{- | Errors that can occur while matching the equation to the term.
  -}
-data ApplyMatchError variable
-    = NotConcrete (UnifiedVariable variable) (TermLike variable)
-    -- ^ The variable was instantiated with a symbolic term where a concrete
-    -- term was required.
-    | NotSymbolic (UnifiedVariable variable) (TermLike variable)
-    -- ^ The variable was instantiated with a concrete term where a symbolic
-    -- term was required.
-    | NotInstantiated (UnifiedVariable variable)
-    -- ^ The variable was not instantiated.
+data MatchError variable =
+    MatchError
+    { matchTerm :: !(TermLike variable)
+    , matchEquation :: !(Equation variable)
+    }
     deriving (Eq, Ord)
     deriving (GHC.Generic)
 
-instance SOP.Generic (ApplyMatchError variable)
+instance SOP.Generic (MatchError variable)
 
-instance SOP.HasDatatypeInfo (ApplyMatchError variable)
+instance SOP.HasDatatypeInfo (MatchError variable)
 
-instance Debug variable => Debug (ApplyMatchError variable)
+instance Debug variable => Debug (MatchError variable)
 
-instance (Debug variable, Diff variable) => Diff (ApplyMatchError variable)
+instance (Debug variable, Diff variable) => Diff (MatchError variable)
 
 applyEquation
     :: forall simplifier variable
@@ -137,7 +134,11 @@ applyEquation
 applyEquation sideCondition termLike equation = runExceptT $ do
     let equationRenamed =
             targetEquationVariables sideCondition termLike equation
-        notMatched = NotMatched termLike equationRenamed
+        notMatched =
+            WhileMatch MatchError
+            { matchTerm = termLike
+            , matchEquation = equationRenamed
+            }
         Equation { left } = equationRenamed
     matchResult <- match left termLike & noteT notMatched
     (equation', predicate) <- applyMatchResult equationRenamed matchResult
@@ -148,6 +149,54 @@ applyEquation sideCondition termLike equation = runExceptT $ do
   where
     match term1 term2 = MaybeT $ matchIncremental term1 term2
 
+{- | Errors that can occur during 'applyMatchResult'.
+
+There may be multiple independent reasons the match cannot be applied, so this
+type contains a 'NonEmpty' list of 'ApplyMatchError'.
+
+ -}
+data ApplyMatchResultErrors variable =
+    ApplyMatchResultErrors
+    { matchResult :: !(MatchResult variable)
+    , applyMatchErrors :: !(NonEmpty (ApplyMatchResultError variable))
+    }
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
+
+instance SOP.Generic (ApplyMatchResultErrors variable)
+
+instance SOP.HasDatatypeInfo (ApplyMatchResultErrors variable)
+
+instance Debug variable => Debug (ApplyMatchResultErrors variable)
+
+instance
+    (Debug variable, Diff variable)
+    => Diff (ApplyMatchResultErrors variable)
+
+{- | @ApplyMatchResultError@ represents a reason the match could not be applied.
+ -}
+data ApplyMatchResultError variable
+    = NotConcrete (UnifiedVariable variable) (TermLike variable)
+    -- ^ The variable was matched with a symbolic term where a concrete
+    -- term was required.
+    | NotSymbolic (UnifiedVariable variable) (TermLike variable)
+    -- ^ The variable was matched with a concrete term where a symbolic
+    -- term was required.
+    | NotMatched (UnifiedVariable variable)
+    -- ^ The variable was not matched.
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
+
+instance SOP.Generic (ApplyMatchResultError variable)
+
+instance SOP.HasDatatypeInfo (ApplyMatchResultError variable)
+
+instance Debug variable => Debug (ApplyMatchResultError variable)
+
+instance
+    (Debug variable, Diff variable)
+    => Diff (ApplyMatchResultError variable)
+
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 
 The 'MatchResult' must cover all the free variables of the 'Equation'; this
@@ -155,7 +204,7 @@ condition is not checked, but enforced by the matcher. The result is the
 'Equation' and any 'Predicate' assembled during matching, both instantiated by
 the 'MatchResult'.
 
-Throws 'ApplyMatchErrors' if there is a problem with the 'MatchResult'.
+Throws 'ApplyMatchResultErrors' if there is a problem with the 'MatchResult'.
 
  -}
 applyMatchResult
@@ -168,7 +217,12 @@ applyMatchResult
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) = do
     case errors of
-        x : xs -> throwE $ ApplyMatchErrors matchResult (x :| xs)
+        x : xs ->
+            (throwE . WhileApplyMatchResult)
+                ApplyMatchResultErrors
+                { matchResult
+                , applyMatchErrors = x :| xs
+                }
         _      -> return ()
     let predicate' =
             Predicate.substitute substitution predicate
@@ -187,7 +241,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     checkVariable variable =
         case Map.lookup variable substitution of
-            Nothing -> [NotInstantiated variable]
+            Nothing -> [NotMatched variable]
             Just termLike ->
                 checkConcreteVariable variable termLike
                 <> checkSymbolicVariable variable termLike
@@ -215,6 +269,24 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         attributes
         & Attribute.symbolic & Attribute.unSymbolic
         & FreeVariables.getFreeVariables
+
+{- | Errors that can occur during 'checkRequires'.
+ -}
+data CheckRequiresError variable =
+    CheckRequiresError
+    { matchPredicate :: !(Predicate variable)
+    , equationRequires :: !(Predicate variable)
+    }
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
+
+instance SOP.Generic (CheckRequiresError variable)
+
+instance SOP.HasDatatypeInfo (CheckRequiresError variable)
+
+instance Debug variable => Debug (CheckRequiresError variable)
+
+instance (Debug variable, Diff variable) => Diff (CheckRequiresError variable)
 
 {- | Check that the requires from matching and the 'Equation' hold.
 
@@ -263,7 +335,12 @@ checkRequires sideCondition predicate requires =
       | isBottom orCondition = done
       | otherwise            = requiresNotMet
     done = return ()
-    requiresNotMet = throwE (RequiresNotMet predicate requires)
+    requiresNotMet =
+        (throwE . WhileCheckRequires)
+            CheckRequiresError
+            { matchPredicate = predicate
+            , equationRequires = requires
+            }
 
     -- Pair a configuration with sideCondition for evaluation by the solver.
     withSideCondition = (,) sideCondition'

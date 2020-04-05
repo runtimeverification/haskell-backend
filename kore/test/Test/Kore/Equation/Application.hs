@@ -87,23 +87,23 @@ applyEquation sideCondition termLike equation =
             termLike
 
 assertNotMatched :: ApplyEquationError Variable -> Assertion
-assertNotMatched (NotMatched _ _) = return ()
+assertNotMatched (WhileMatch _) = return ()
 assertNotMatched result =
     (assertFailure . show . Pretty.vsep)
-        [ "Expected (NotMatched _ _), but found:"
+        [ "Expected (WhileMatch _), but found:"
         , Pretty.indent 4 (debug result)
         ]
 
-assertApplyMatchErrors :: ApplyEquationError Variable -> Assertion
-assertApplyMatchErrors (ApplyMatchErrors _ _) = return ()
-assertApplyMatchErrors result =
+assertApplyMatchResultErrors :: ApplyEquationError Variable -> Assertion
+assertApplyMatchResultErrors (WhileApplyMatchResult _) = return ()
+assertApplyMatchResultErrors result =
     (assertFailure . show . Pretty.vsep)
-        [ "Expected (InstantiationErrors _ _), but found:"
+        [ "Expected (WhileApplyMatch _), but found:"
         , Pretty.indent 4 (debug result)
         ]
 
 assertRequiresNotMet :: ApplyEquationError Variable -> Assertion
-assertRequiresNotMet (RequiresNotMet _ _) = return ()
+assertRequiresNotMet (WhileCheckRequires _) = return ()
 assertRequiresNotMet result =
     (assertFailure . show . Pretty.vsep)
         [ "Expected (RequiresNotMet _ _), but found:"
@@ -214,7 +214,11 @@ test_applyEquation =
                 makeEqualsPredicate sortR
                     (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
-            expect1 = RequiresNotMet makeTruePredicate_ requires1
+            expect1 =
+                WhileCheckRequires CheckRequiresError
+                { matchPredicate = makeTruePredicate_
+                , equationRequires = requires1
+                }
         applyEquation SideCondition.top initial equation
             >>= expectLeft >>= assertEqual "" expect1
         let requires2 =
@@ -246,9 +250,10 @@ test_applyEquation =
 
     , testCase "rule a => b requires \\bottom" $ do
         let expect =
-                RequiresNotMet
-                    makeTruePredicate_
-                    (makeFalsePredicate sortR)
+                WhileCheckRequires CheckRequiresError
+                    { matchPredicate = makeTruePredicate_
+                    , equationRequires = makeFalsePredicate sortR
+                    }
             initial = Mock.a
         applyEquation SideCondition.top initial equationRequiresBottom
             >>= expectLeft >>= assertEqual "" expect
@@ -484,7 +489,7 @@ notInstantiated
     -> TermLike Variable
     -> TestTree
 notInstantiated =
-    withApplyEquationResult (expectLeft >=> assertApplyMatchErrors)
+    withApplyEquationResult (expectLeft >=> assertApplyMatchResultErrors)
 
 requiresNotMet
     :: TestName
