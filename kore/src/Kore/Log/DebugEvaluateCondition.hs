@@ -19,8 +19,8 @@ import qualified GHC.Generics as GHC
 
 import Kore.Internal.Predicate
     ( Predicate
-    , freshVariable
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Log
@@ -47,4 +47,6 @@ debugEvaluateCondition
     => InternalVariable variable
     => Predicate variable -> log ()
 debugEvaluateCondition predicate =
-    logEntry $ DebugEvaluateCondition $ freshVariable predicate
+    logEntry
+    $ DebugEvaluateCondition
+    $ Predicate.externalizeFreshVariables predicate
