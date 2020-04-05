@@ -21,6 +21,7 @@ import Control.Error
     , noteT
     , runExceptT
     , throwE
+    , withExceptT
     )
 import Control.Monad
     ( (>=>)
@@ -97,6 +98,24 @@ data ApplyEquationError variable
     deriving (Eq, Ord)
     deriving (GHC.Generic)
 
+whileMatch
+    :: Functor monad
+    => ExceptT (MatchError (Target variable)) monad a
+    -> ExceptT (ApplyEquationError variable) monad a
+whileMatch = withExceptT WhileMatch
+
+whileApplyMatchResult
+    :: Functor monad
+    => ExceptT (ApplyMatchResultErrors (Target variable)) monad a
+    -> ExceptT (ApplyEquationError variable) monad a
+whileApplyMatchResult = withExceptT WhileApplyMatchResult
+
+whileCheckRequires
+    :: Functor monad
+    => ExceptT (CheckRequiresError variable) monad a
+    -> ExceptT (ApplyEquationError variable) monad a
+whileCheckRequires = withExceptT WhileCheckRequires
+
 instance SOP.Generic (ApplyEquationError variable)
 
 instance SOP.HasDatatypeInfo (ApplyEquationError variable)
@@ -132,22 +151,26 @@ applyEquation
     -> Equation variable
     -> simplifier (ApplyEquationResult variable)
 applyEquation sideCondition termLike equation = runExceptT $ do
-    let equationRenamed =
-            targetEquationVariables sideCondition termLike equation
-        notMatched =
-            WhileMatch MatchError
-            { matchTerm = termLike
-            , matchEquation = equationRenamed
-            }
+    let
         Equation { left } = equationRenamed
-    matchResult <- match left termLike & noteT notMatched
-    (equation', predicate) <- applyMatchResult equationRenamed matchResult
+    matchResult <- match left termLike & whileMatch
+    (equation', predicate) <-
+        applyMatchResult equationRenamed matchResult
+        & whileApplyMatchResult
     let Equation { requires } = equation'
-    checkRequires sideCondition predicate requires
+    checkRequires sideCondition predicate requires & whileCheckRequires
     let Equation { right, ensures } = equation'
     return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
-    match term1 term2 = MaybeT $ matchIncremental term1 term2
+    equationRenamed = targetEquationVariables sideCondition termLike equation
+    matchError =
+        MatchError
+        { matchTerm = termLike
+        , matchEquation = equationRenamed
+        }
+    match term1 term2 =
+        matchIncremental term1 term2
+        & MaybeT & noteT matchError
 
 {- | Errors that can occur during 'applyMatchResult'.
 
@@ -213,13 +236,12 @@ applyMatchResult
     =>  InternalVariable variable
     =>  Equation (Target variable)
     ->  MatchResult (Target variable)
-    ->  ExceptT (ApplyEquationError variable) monad
+    ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) = do
     case errors of
         x : xs ->
-            (throwE . WhileApplyMatchResult)
-                ApplyMatchResultErrors
+            throwE ApplyMatchResultErrors
                 { matchResult
                 , applyMatchErrors = x :| xs
                 }
@@ -301,7 +323,7 @@ checkRequires
     => SideCondition (Target variable)
     -> Predicate variable  -- ^ requires from matching
     -> Predicate variable  -- ^ requires from 'Equation'
-    -> ExceptT (ApplyEquationError variable) simplifier ()
+    -> ExceptT (CheckRequiresError variable) simplifier ()
 checkRequires sideCondition predicate requires =
     do
         let requires' = makeAndPredicate predicate requires
@@ -336,8 +358,7 @@ checkRequires sideCondition predicate requires =
       | otherwise            = requiresNotMet
     done = return ()
     requiresNotMet =
-        (throwE . WhileCheckRequires)
-            CheckRequiresError
+        throwE CheckRequiresError
             { matchPredicate = predicate
             , equationRequires = requires
             }
