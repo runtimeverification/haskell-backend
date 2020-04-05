@@ -13,9 +13,6 @@ module Kore.Log.DebugSkipSimplification
 
 import Prelude.Kore
 
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

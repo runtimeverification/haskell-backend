@@ -25,9 +25,6 @@ import Data.Int
 import Data.Proxy
     ( Proxy (..)
     )
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Database.SQLite.Simple as SQLite
 
 import SQL.Column

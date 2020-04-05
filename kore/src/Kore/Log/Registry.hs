@@ -33,15 +33,13 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Proxy
 import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
 import Data.Tuple
     ( swap
-    )
-import Data.Typeable
-    ( Proxy (..)
     )
 import qualified Text.Megaparsec as Parser
 import Type.Reflection
