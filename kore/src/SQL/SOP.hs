@@ -9,7 +9,13 @@ License     : NCSA
 {-# LANGUAGE PolyKinds #-}
 
 module SQL.SOP
-    ( TableName
+    (
+    -- * Columns
+      ColumnImpl(..)
+    , mkColumnImpl
+    , mkColumnImpls
+    -- * Tables
+    , TableName
     , tableNameTypeable
     -- * Low-level building blocks
     , createTable
@@ -69,6 +75,28 @@ import SQL.Query
 import qualified SQL.Query as Query
 import SQL.SQL as SQL
 
+{- | @ColumnImpl@ is a concrete implementation of the 'SQL.Column' typeclass.
+
+By separating the concrete implementation from the constraint, we can decouple
+this module from the class declaration.
+
+ -}
+data ColumnImpl a =
+    ColumnImpl
+    { defineColumnImpl :: forall proxy. proxy a -> SQL ColumnDef
+    , toColumnImpl :: a -> SQL SQLite.SQLData
+    }
+
+mkColumnImpl :: forall a. Column a => ColumnImpl a
+mkColumnImpl =
+    ColumnImpl
+    { defineColumnImpl = defineColumn
+    , toColumnImpl = toColumn
+    }
+
+mkColumnImpls :: forall xss . SOP.All2 Column xss => SOP.POP ColumnImpl xss
+mkColumnImpls = SOP.hcpure (Proxy @Column) mkColumnImpl
+
 newtype TableName = TableName { getTableName :: String }
 
 {- | The 'TableName' of a 'Typeable' type.
@@ -123,7 +151,7 @@ insertRow tableName infos values = do
  -}
 selectRows
     :: forall table fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
     -> NP (K String) fields  -- ^ column names
     -> NP (K SQLData) fields  -- ^ row data
@@ -182,11 +210,11 @@ addColumnConstraint :: Monad monad => ColumnConstraint -> AccumT Query monad ()
 addColumnConstraint = Query.addString . Column.getColumnConstraint
 
 defineColumns
-    :: SOP.All Column fields
-    => NP f fields
+    :: SOP.All SOP.Top fields
+    => NP ColumnImpl fields
     -> SQL (NP (K ColumnDef) fields)
 defineColumns =
-    SOP.hctraverse' (Proxy @Column) $ \proxy -> K <$> defineColumn proxy
+    SOP.htraverse' $ \proxy -> K <$> defineColumnImpl proxy Proxy
 
 {- | @createTableProduct@ implements 'createTable' for a product type.
 
@@ -195,12 +223,13 @@ A single table is created with columns for each constructor field.
  -}
 createTableProduct
     :: forall fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
+    -> NP ColumnImpl fields
     -> ConstructorInfo fields
     -> SQL ()
-createTableProduct tableName ctorInfo = do
-    defs <- defineColumns names
+createTableProduct tableName columnImpl ctorInfo = do
+    defs <- defineColumns columnImpl
     createTable tableName names defs
   where
     names = ctorFields ctorInfo
@@ -214,21 +243,31 @@ and tag columns are used as foreign keys into the constructor tables.
  -}
 createTableSum
     :: forall ctors
-    .  SOP.All2 Column ctors
+    .  SOP.All2 SOP.Top ctors
     => TableName
+    -> SOP.POP ColumnImpl ctors
     -> NP ConstructorInfo ctors
     -> SQL ()
-createTableSum tableName ctors = do
-    SOP.hctraverse_ proxyAllColumn (createConstructorTable tableName) ctors
+createTableSum tableName columnImpls ctors = do
+    SOP.hctraverse_
+        (Proxy @(SOP.All SOP.Top))
+        createTable'
+        (SOP.hzipWith Pair (SOP.unPOP columnImpls) ctors)
     createTable tableName names defs
   where
-    proxyAllColumn = Proxy @(SOP.All Column)
-
     names :: NP (K String) ctors
     names = columnNamesSum ctors
 
     defs :: NP (K ColumnDef) ctors
     defs = SOP.hmap (const $ K columnTag) names
+
+    createTable'
+        :: forall fields
+        .  SOP.All SOP.Top fields
+        => Product (NP ColumnImpl) ConstructorInfo fields
+        -> SQL ()
+    createTable' (Pair columnImpl info) =
+        createConstructorTable tableName columnImpl info
 
 {- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' type.
  -}
@@ -238,19 +277,22 @@ createTableGeneric
     => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => proxy table
     -> SQL ()
-createTableGeneric proxy = createTableGenericAux (tableNameTypeable proxy) proxy
+createTableGeneric proxy =
+    createTableGenericAux (tableNameTypeable proxy) mkColumnImpls proxy
 
 createTableGenericAux
     :: forall proxy table
     .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
     => TableName
+    -> SOP.POP ColumnImpl (SOP.Code table)
     -> proxy table
     -> SQL ()
-createTableGenericAux tableName proxy =
+createTableGenericAux tableName columnImpls proxy =
     case SOP.constructorInfo $ SOP.datatypeInfo proxy of
-        info :* Nil -> createTableProduct tableName info
-        infos       -> createTableSum     tableName infos
+        info :* Nil -> createTableProduct tableName columnImpl info
+          where
+            columnImpl :* Nil = SOP.unPOP columnImpls
+        infos       -> createTableSum     tableName columnImpls infos
 
 columnTag :: ColumnDef
 columnTag = Column.columnDef Column.typeInteger
@@ -266,12 +308,13 @@ columnNamesSum = SOP.hmap (K . tagColumnName)
 
 createConstructorTable
     :: forall fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
+    -> NP ColumnImpl fields
     -> ConstructorInfo fields
     -> SQL ()
-createConstructorTable typeTableName info = do
-    defs <- SQL.SOP.defineColumns names
+createConstructorTable typeTableName columnImpl info = do
+    defs <- SQL.SOP.defineColumns columnImpl
     createTable tableName (K tag :* names) (K columnTag :* defs)
   where
     tag = tagColumnName info
@@ -373,21 +416,32 @@ addColumnParams =
             Nil -> return ()
             _   -> Query.addComma >> worker infos
 
-toColumns :: SOP.All Column fields => NP I fields -> SQL (NP (K SQLData) fields)
-toColumns = SOP.hctraverse' (Proxy @Column) $ \(I field) -> K <$> toColumn field
+toColumns
+    :: SOP.All SOP.Top fields
+    => NP ColumnImpl fields
+    -> NP I fields
+    -> SQL (NP (K SQLData) fields)
+toColumns columnImpls fields =
+    SOP.hzipWith
+        (\ColumnImpl { toColumnImpl } (I field) -> K $ toColumnImpl field)
+        columnImpls
+        fields
+    & SOP.hsequenceK
 
 insertRowSum
     :: forall table fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
-    -> Product ConstructorInfo (NP I) fields
-    -> SQL (K (Key table) fields)
-insertRowSum typeTableName (Pair info fields) = do
+    -> NP ColumnImpl fields
+    -> ConstructorInfo fields
+    -> NP I fields
+    -> K (SQL (Key table)) fields
+insertRowSum typeTableName columnImpls info fields = K $ do
     key <- insertIndexRow
     let names = K "id" :* K tagName :* ctorFields info
         rowid = SQLInteger (getKey key)
-    values <- toColumns fields
-    K <$> insertRow tableName names (K rowid :* K tag :* values)
+    values <- toColumns columnImpls fields
+    insertRow tableName names (K rowid :* K tag :* values)
   where
     tableName = ctorTableName typeTableName info
     tagName = tagColumnName info
@@ -402,13 +456,15 @@ insertRowSum typeTableName (Pair info fields) = do
  -}
 insertRowProduct
     :: forall table fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
-    -> Product ConstructorInfo (NP I) fields
-    -> SQL (K (Key table) fields)
-insertRowProduct tableName (Pair info fields) = do
-    values <- toColumns fields
-    K <$> insertRow tableName (ctorFields info) values
+    -> NP ColumnImpl fields
+    -> ConstructorInfo fields
+    -> NP I fields
+    -> K (SQL (Key table)) fields
+insertRowProduct tableName columnImpl info fields = K $ do
+    values <- toColumns columnImpl fields
+    insertRow tableName (ctorFields info) values
 
 {- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
  -}
@@ -418,29 +474,34 @@ insertRowGeneric
     => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => table
     -> SQL (Key table)
-insertRowGeneric = insertRowGenericAux (tableNameTypeable (Proxy @table))
+insertRowGeneric =
+    insertRowGenericAux (tableNameTypeable proxy) mkColumnImpls
+  where
+   proxy = Proxy @table
 
 insertRowGenericAux
     :: forall table
     .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
     => TableName
+    -> SOP.POP ColumnImpl (SOP.Code table)
     -> table
     -> SQL (Key table)
-insertRowGenericAux tableName table =
-    SOP.hcollapse <$> SOP.hctraverse' proxyAllColumn insertRow' pairs
+insertRowGenericAux tableName columnImpls table =
+    SOP.hczipWith3 proxyAllTop insertRow' (SOP.unPOP columnImpls) ctors values
+    & SOP.hcollapse
   where
     proxy = Proxy @table
-    proxyAllColumn = Proxy @(SOP.All Column)
+    proxyAllTop = Proxy @(SOP.All SOP.Top)
     values = SOP.unSOP $ SOP.from table
     ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
-    pairs = SOP.hzipWith Pair ctors values
 
     insertRow'
         :: forall fields
-        .  SOP.All Column fields
-        => Product ConstructorInfo (NP I) fields
-        -> SQL (K (Key table) fields)
+        .  SOP.All SOP.Top fields
+        => NP ColumnImpl fields
+        -> ConstructorInfo fields
+        -> NP I fields
+        -> K (SQL (Key table)) fields
     insertRow' =
         case ctors of
             _ :* Nil -> insertRowProduct tableName
@@ -466,14 +527,16 @@ isNil _   = False
 
 selectRowsSum
     :: forall table fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
-    -> Product ConstructorInfo (NP I) fields
-    -> SQL (K [Key table] fields)
-selectRowsSum typeTableName (Pair info fields) = do
+    -> NP ColumnImpl fields
+    -> ConstructorInfo fields
+    -> NP I fields
+    -> K (SQL [Key table]) fields
+selectRowsSum typeTableName columnImpl info fields = K $ do
     let names = ctorFields info
-    values <- toColumns fields
-    K <$> selectRows tableName names values
+    values <- toColumns columnImpl fields
+    selectRows tableName names values
   where
     tableName = ctorTableName typeTableName info
 
@@ -481,13 +544,15 @@ selectRowsSum typeTableName (Pair info fields) = do
  -}
 selectRowsProduct
     :: forall table fields
-    .  SOP.All Column fields
+    .  SOP.All SOP.Top fields
     => TableName
-    -> Product ConstructorInfo (NP I) fields
-    -> SQL (K [Key table] fields)
-selectRowsProduct tableName (Pair info fields) = do
-    values <- toColumns fields
-    K <$> selectRows tableName (ctorFields info) values
+    -> NP ColumnImpl fields
+    -> ConstructorInfo fields
+    -> NP I fields
+    -> K (SQL [Key table]) fields
+selectRowsProduct tableName columnImpl info fields = K $ do
+    values <- toColumns columnImpl fields
+    selectRows tableName (ctorFields info) values
 
 {- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
  -}
@@ -497,32 +562,42 @@ selectRowGeneric
     => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => table
     -> SQL (Maybe (Key table))
-selectRowGeneric = selectRowGenericAux (tableNameTypeable (Proxy @table))
+selectRowGeneric =
+    selectRowGenericAux (tableNameTypeable proxy) mkColumnImpls
+  where
+    proxy = Proxy @table
 
 selectRowGenericAux
     :: forall table
     .  SOP.HasDatatypeInfo table
-    => SOP.All2 Column (SOP.Code table)
     => TableName
+    -> SOP.POP ColumnImpl (SOP.Code table)
     -> table
     -> SQL (Maybe (Key table))
-selectRowGenericAux tableName table = do
-    keys <- SOP.hcollapse <$> SOP.hctraverse' proxyAllColumn selectRows' pairs
+selectRowGenericAux tableName columnImpls table = do
+    keys <-
+        SOP.hczipWith3 proxyAllTop
+            selectRows'
+            (SOP.unPOP columnImpls)
+            ctors
+            values
+        & SOP.hcollapse
     return $ case keys of
         []      -> Nothing
         key : _ -> Just key
   where
     proxy = Proxy @table
-    proxyAllColumn = Proxy @(SOP.All Column)
+    proxyAllTop = Proxy @(SOP.All SOP.Top)
     ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
     values = SOP.unSOP $ SOP.from table
-    pairs = SOP.hzipWith Pair ctors values
 
     selectRows'
         :: forall fields
-        .  SOP.All Column fields
-        => Product ConstructorInfo (NP I) fields
-        -> SQL (K [Key table] fields)
+        .  SOP.All SOP.Top fields
+        => NP ColumnImpl fields
+        -> ConstructorInfo fields
+        -> NP I fields
+        -> K (SQL [Key table]) fields
     selectRows' =
         case ctors of
             _ :* Nil -> selectRowsProduct tableName

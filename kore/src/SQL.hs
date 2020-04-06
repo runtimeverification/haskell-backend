@@ -54,7 +54,7 @@ createTableIso
     -> proxy outer
     -> SQL ()
 createTableIso _ proxy =
-    createTableGenericAux tableName proxy'
+    createTableGenericAux tableName SOP.mkColumnImpls proxy'
   where
     proxy' = Proxy @inner
     tableName = SOP.tableNameTypeable proxy
@@ -70,7 +70,7 @@ insertRowIso
     -> outer
     -> SQL (Key outer)
 insertRowIso iso outer =
-    fromInnerKey <$> insertRowGenericAux tableName inner
+    fromInnerKey <$> insertRowGenericAux tableName SOP.mkColumnImpls inner
   where
     tableName = SOP.tableNameTypeable (Proxy @outer)
     inner = Lens.view iso outer
@@ -88,7 +88,7 @@ selectRowIso
     -> outer
     -> SQL (Maybe (Key outer))
 selectRowIso iso outer =
-    fromInnerKeys <$> selectRowGenericAux tableName inner
+    fromInnerKeys <$> selectRowGenericAux tableName SOP.mkColumnImpls inner
   where
     tableName = SOP.tableNameTypeable (Proxy @outer)
     inner = Lens.view iso outer
