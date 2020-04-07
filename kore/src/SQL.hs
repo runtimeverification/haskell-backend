@@ -44,6 +44,9 @@ import Data.Generics.Wrapped
 import Data.Int
     ( Int64
     )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import Data.Proxy
     ( Proxy (..)
     )
@@ -92,6 +95,20 @@ instance Column (Key a) where
 instance Column Text where
     defineColumn _ _ = return (columnNotNull $ columnDef typeText)
     toColumn = return . SQLite.SQLText
+
+instance (Column a, Typeable a) => Column [a] where
+    defineColumn = defineForeignKeyColumn
+    {-# INLINE defineColumn #-}
+
+    toColumn = toForeignKeyColumn
+    {-# INLINE toColumn #-}
+
+instance (Column a, Typeable a) => Column (NonEmpty a) where
+    defineColumn = defineForeignKeyColumn
+    {-# INLINE defineColumn #-}
+
+    toColumn = toForeignKeyColumn
+    {-# INLINE toColumn #-}
 
 defineTextColumn :: TableName -> proxy a -> SQL ColumnDef
 defineTextColumn tableName _ = defineColumn tableName (Proxy @Text)
@@ -198,6 +215,10 @@ instance Table ()
 instance (Column a, Typeable a) => Table (Maybe a)
 
 instance (Column a, Typeable a, Column b, Typeable b) => Table (Either a b)
+
+instance (Column a, Typeable a) => Table [a]
+
+instance (Column a, Typeable a) => Table (NonEmpty a)
 
 {- | @(insertUniqueRow a)@ inserts @a@ into the table if not present.
 
