@@ -11,9 +11,9 @@ License     : NCSA
 module SQL.SOP
     (
     -- * Columns
-      ColumnImpl(..)
+      ColumnImpl (..)
     -- * Tables
-    , TableName
+    , TableName (..)
     , tableNameTypeable
     -- * Low-level building blocks
     , createTable
@@ -81,11 +81,12 @@ this module from the class declaration.
  -}
 data ColumnImpl a =
     ColumnImpl
-    { defineColumnImpl :: forall proxy. proxy a -> SQL ColumnDef
+    { defineColumnImpl :: forall proxy. TableName -> proxy a -> SQL ColumnDef
     , toColumnImpl :: a -> SQL SQLite.SQLData
     }
 
 newtype TableName = TableName { getTableName :: String }
+    deriving (Eq, Ord)
 
 {- | The 'TableName' of a 'Typeable' type.
  -}
@@ -199,10 +200,12 @@ addColumnConstraint = Query.addString . Column.getColumnConstraint
 
 defineColumns
     :: SOP.All SOP.Top fields
-    => NP ColumnImpl fields
+    => TableName
+    -> NP ColumnImpl fields
     -> SQL (NP (K ColumnDef) fields)
-defineColumns =
-    SOP.htraverse' $ \proxy -> K <$> defineColumnImpl proxy Proxy
+defineColumns tableName =
+    SOP.htraverse' $ \ColumnImpl { defineColumnImpl } ->
+        K <$> defineColumnImpl tableName Proxy
 
 {- | @createTableProduct@ implements 'createTable' for a product type.
 
@@ -217,7 +220,7 @@ createTableProduct
     -> ConstructorInfo fields
     -> SQL ()
 createTableProduct tableName columnImpl ctorInfo = do
-    defs <- defineColumns columnImpl
+    defs <- defineColumns tableName columnImpl
     createTable tableName names defs
   where
     names = ctorFields ctorInfo
@@ -291,7 +294,7 @@ createConstructorTable
     -> ConstructorInfo fields
     -> SQL ()
 createConstructorTable typeTableName columnImpl info = do
-    defs <- SQL.SOP.defineColumns columnImpl
+    defs <- defineColumns typeTableName columnImpl
     createTable tableName (K tag :* names) (K columnTag :* defs)
   where
     tag = tagColumnName info

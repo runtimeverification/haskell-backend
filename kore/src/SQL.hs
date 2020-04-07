@@ -15,6 +15,7 @@ module SQL
     -- * Table
     , defineForeignKeyColumn
     , toForeignKeyColumn
+    , TableName (..)
     , Table (..)
     , insertUniqueRow
     -- * Generic table types
@@ -56,6 +57,7 @@ import SQL.ColumnDef
 import SQL.Key
 import SQL.SOP
     ( ColumnImpl (..)
+    , TableName (..)
     )
 import qualified SQL.SOP as SOP
 import SQL.SQL
@@ -63,25 +65,36 @@ import SQL.SQL
 -- * Column
 
 class Column a where
-    defineColumn :: proxy a -> SQL ColumnDef
+    {- | Return a 'ColumnDef' suitable for defining the column in a table.
+
+    If the column is a foreign key reference, the referenced table will be
+    defined if it does not exist. The 'TableName' will be used to detect
+    possible cycles when defining tables for recursive datatypes. The
+    'TableName' should be the name of the table for the type; for sum types, it
+    should be the name of the type table, not the name of a constructor table,
+    because the constructor tables are only referenced by the type table and all
+    foreign keys are references to the type table.
+
+     -}
+    defineColumn :: TableName -> proxy a -> SQL ColumnDef
     toColumn :: a -> SQL SQLite.SQLData
     -- TODO (thomas.tuegel): Implement this!
     -- fromColumn :: SQLite.Connection -> SQLite.SQLData -> IO a
 
 instance Column Int64 where
-    defineColumn _ = return (columnNotNull $ columnDef typeInteger)
+    defineColumn _ _ = return (columnNotNull $ columnDef typeInteger)
     toColumn = return . SQLite.SQLInteger
 
 instance Column (Key a) where
-    defineColumn _ = defineColumn (Proxy @Int64)
+    defineColumn tableName _ = defineColumn tableName (Proxy @Int64)
     toColumn = toColumn . getKey
 
 instance Column Text where
-    defineColumn _ = return (columnNotNull $ columnDef typeText)
+    defineColumn _ _ = return (columnNotNull $ columnDef typeText)
     toColumn = return . SQLite.SQLText
 
-defineTextColumn :: proxy a -> SQL ColumnDef
-defineTextColumn _ = defineColumn (Proxy @Text)
+defineTextColumn :: TableName -> proxy a -> SQL ColumnDef
+defineTextColumn tableName _ = defineColumn tableName (Proxy @Text)
 
 {- | Reify a 'Column' constraint into a concrete implementation 'ColumnImpl'.
  -}
@@ -97,10 +110,10 @@ mkColumnImpl =
 The referenced table will be created if it does not exist.
 
  -}
-defineForeignKeyColumn :: Table a => proxy a -> SQL ColumnDef
-defineForeignKeyColumn proxy = do
-    createTable proxy
-    defineColumn (Proxy @Int64)
+defineForeignKeyColumn :: Table a => TableName -> proxy a -> SQL ColumnDef
+defineForeignKeyColumn tableName proxy = do
+    unless (tableName == tableNameOf proxy) (createTable proxy)
+    defineColumn tableName (Proxy @Int64)
 
 {- | Implement 'toColumn' for a foreign key reference.
 
@@ -144,6 +157,10 @@ instance 'Column' DataType where
 
  -}
 class Typeable a => Table a where
+    tableNameOf :: proxy a -> TableName
+    default tableNameOf :: proxy a -> TableName
+    tableNameOf = SOP.tableNameTypeable
+
     -- | Create the table for @a@ if it does not exist.
     createTable :: proxy a -> SQL ()
     default createTable
@@ -196,23 +213,23 @@ insertUniqueRow a = Monad.maybeM (insertRow a) return (selectRow a)
  -}
 createTableGeneric
     :: forall proxy table
-    .  Typeable table
+    .  Table table
     => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => proxy table
     -> SQL ()
 createTableGeneric proxy =
-    SOP.createTableGenericAux (SOP.tableNameTypeable proxy) mkColumnImpls proxy
+    SOP.createTableGenericAux (tableNameOf proxy) mkColumnImpls proxy
 
 {- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
  -}
 insertRowGeneric
     :: forall table
-    .  Typeable table
+    .  Table table
     => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => table
     -> SQL (Key table)
 insertRowGeneric =
-    SOP.insertRowGenericAux (SOP.tableNameTypeable proxy) mkColumnImpls
+    SOP.insertRowGenericAux (tableNameOf proxy) mkColumnImpls
   where
    proxy = Proxy @table
 
@@ -220,12 +237,12 @@ insertRowGeneric =
  -}
 selectRowGeneric
     :: forall table
-    .  Typeable table
+    .  Table table
     => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
     => table
     -> SQL (Maybe (Key table))
 selectRowGeneric =
-    SOP.selectRowGenericAux (SOP.tableNameTypeable proxy) mkColumnImpls
+    SOP.selectRowGenericAux (tableNameOf proxy) mkColumnImpls
   where
     proxy = Proxy @table
 
@@ -239,7 +256,7 @@ type. Note, however, that the @inner@ type need not have a 'Table' instance!
  -}
 createTableIso
     :: forall proxy outer inner
-    .  Typeable outer
+    .  Table outer
     => (SOP.HasDatatypeInfo inner, SOP.All2 Column (SOP.Code inner))
     => Lens.Iso' outer inner
     -> proxy outer
@@ -248,14 +265,14 @@ createTableIso _ proxy =
     SOP.createTableGenericAux tableName mkColumnImpls proxy'
   where
     proxy' = Proxy @inner
-    tableName = SOP.tableNameTypeable proxy
+    tableName = tableNameOf proxy
 
 {- | @(insertRowIso iso)@ implements 'insertRow' for a table created with
 'createTableIso'.
  -}
 insertRowIso
     :: forall outer inner
-    .  Typeable outer
+    .  Table outer
     => (SOP.HasDatatypeInfo inner, SOP.All2 Column (SOP.Code inner))
     => Lens.Iso' outer inner
     -> outer
@@ -263,7 +280,7 @@ insertRowIso
 insertRowIso iso outer =
     fromInnerKey <$> SOP.insertRowGenericAux tableName mkColumnImpls inner
   where
-    tableName = SOP.tableNameTypeable (Proxy @outer)
+    tableName = tableNameOf (Proxy @outer)
     inner = Lens.view iso outer
     fromInnerKey :: Key inner -> Key outer
     fromInnerKey = fmap (Lens.review iso)
@@ -273,7 +290,7 @@ insertRowIso iso outer =
  -}
 selectRowIso
     :: forall outer inner
-    .  Typeable outer
+    .  Table outer
     => (SOP.HasDatatypeInfo inner, SOP.All2 Column (SOP.Code inner))
     => Lens.Iso' outer inner
     -> outer
@@ -281,7 +298,7 @@ selectRowIso
 selectRowIso iso outer =
     fromInnerKeys <$> SOP.selectRowGenericAux tableName mkColumnImpls inner
   where
-    tableName = SOP.tableNameTypeable (Proxy @outer)
+    tableName = tableNameOf (Proxy @outer)
     inner = Lens.view iso outer
     fromInnerKeys :: Maybe (Key inner) -> Maybe (Key outer)
     fromInnerKeys = (fmap . fmap) (Lens.review iso)
@@ -298,7 +315,7 @@ See also: 'createTableIso' is a more general version of this function.
  -}
 createTableUnwrapped
     :: forall proxy outer inner
-    .  Typeable outer
+    .  Table outer
     => SOP.HasDatatypeInfo inner
     => SOP.All2 Column (SOP.Code inner)
     => Wrapped outer outer inner inner
@@ -310,7 +327,7 @@ createTableUnwrapped = createTableIso _Unwrapped
  -}
 insertRowUnwrapped
     :: forall outer inner
-    .  Typeable outer
+    .  Table outer
     => SOP.HasDatatypeInfo inner
     => SOP.All2 Column (SOP.Code inner)
     => Wrapped outer outer inner inner
@@ -322,7 +339,7 @@ insertRowUnwrapped = insertRowIso _Unwrapped
  -}
 selectRowUnwrapped
     :: forall outer inner
-    .  Typeable outer
+    .  Table outer
     => SOP.HasDatatypeInfo inner
     => SOP.All2 Column (SOP.Code inner)
     => Wrapped outer outer inner inner
