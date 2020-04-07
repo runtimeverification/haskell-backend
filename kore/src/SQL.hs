@@ -6,8 +6,19 @@ License     : NCSA
 
 module SQL
     (
+    -- * Column
+      Column (..)
+    , defineTextColumn
+    , mkColumnImpl
+    , mkColumnImpls
+    , module SQL.ColumnDef
+    -- * Table
+    , defineForeignKeyColumn
+    , toForeignKeyColumn
+    , Table (..)
+    , insertUniqueRow
     -- * Generic table types
-      createTableGeneric
+    , createTableGeneric
     , insertRowGeneric
     , selectRowGeneric
     -- * Table isomorphisms
@@ -19,24 +30,204 @@ module SQL
     , insertRowUnwrapped
     , selectRowUnwrapped
     -- * Re-exports
-    , module SQL.Column
+    , Proxy (..)
+    , module SQL.Key
     , module SQL.SQL
-    , module SQL.Table
     ) where
 
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
+import qualified Control.Monad.Extra as Monad
 import Data.Generics.Wrapped
+import Data.Int
+    ( Int64
+    )
 import Data.Proxy
     ( Proxy (..)
     )
+import Data.Text
+    ( Text
+    )
+import qualified Database.SQLite.Simple as SQLite
 import qualified Generics.SOP as SOP
 
-import SQL.Column
-import SQL.SOP as SOP
+import SQL.ColumnDef
+import SQL.Key
+import SQL.SOP
+    ( ColumnImpl (..)
+    )
+import qualified SQL.SOP as SOP
 import SQL.SQL
-import SQL.Table
+
+-- * Column
+
+class Column a where
+    defineColumn :: proxy a -> SQL ColumnDef
+    toColumn :: a -> SQL SQLite.SQLData
+    -- TODO (thomas.tuegel): Implement this!
+    -- fromColumn :: SQLite.Connection -> SQLite.SQLData -> IO a
+
+instance Column Int64 where
+    defineColumn _ = return (columnNotNull $ columnDef typeInteger)
+    toColumn = return . SQLite.SQLInteger
+
+instance Column (Key a) where
+    defineColumn _ = defineColumn (Proxy @Int64)
+    toColumn = toColumn . getKey
+
+instance Column Text where
+    defineColumn _ = return (columnNotNull $ columnDef typeText)
+    toColumn = return . SQLite.SQLText
+
+defineTextColumn :: proxy a -> SQL ColumnDef
+defineTextColumn _ = defineColumn (Proxy @Text)
+
+{- | Reify a 'Column' constraint into a concrete implementation 'ColumnImpl'.
+ -}
+mkColumnImpl :: forall a. Column a => ColumnImpl a
+mkColumnImpl =
+    ColumnImpl
+    { defineColumnImpl = defineColumn
+    , toColumnImpl = toColumn
+    }
+
+{- | Implement 'defineColumn' for a foreign key reference.
+
+The referenced table will be created if it does not exist.
+
+ -}
+defineForeignKeyColumn :: Table a => proxy a -> SQL ColumnDef
+defineForeignKeyColumn proxy = do
+    createTable proxy
+    defineColumn (Proxy @Int64)
+
+{- | Implement 'toColumn' for a foreign key reference.
+
+Inserts the given data into the table and returns a key to the inserted row.
+
+ -}
+toForeignKeyColumn :: Table table => table -> SQL SQLite.SQLData
+toForeignKeyColumn a = insertUniqueRow a >>= toColumn
+
+{- | Reify all 'Column' constraints of a datatype.
+
+See also: 'mkColumnImpl'
+
+ -}
+mkColumnImpls :: forall xss . SOP.All2 Column xss => SOP.POP ColumnImpl xss
+mkColumnImpls = SOP.hcpure (Proxy @Column) mkColumnImpl
+
+-- * Table
+
+{- | A 'Table' corresponds to a table in SQL.
+
+To derive an instance for your type,
+
+@
+-- Note: All fields must have a 'Column' instance.
+data DataType = ...
+    deriving ('GHC.Generics.Generic', 'Data.Typeable.Typeable')
+
+instance 'Generics.SOP.Generic' DataType
+
+instance 'Generics.SOP.HasDatatypeInfo' DataType
+
+instance Table DataType
+
+-- Recommended: Add a foreign key 'Column' instance if other tables
+-- might refer to DataType.
+instance 'Column' DataType where
+    defineColumn = 'defineForeignKeyColumn'
+    toColumn = 'toForeignKeyColumn'
+@
+
+ -}
+class Typeable a => Table a where
+    -- | Create the table for @a@ if it does not exist.
+    createTable :: proxy a -> SQL ()
+    default createTable
+        :: SOP.HasDatatypeInfo a
+        => SOP.All2 Column (SOP.Code a)
+        => proxy a
+        -> SQL ()
+    createTable = createTableGeneric
+
+    {- | Insert the @a@ as a new row in the table.
+
+    Returns the 'Key' of the inserted row.
+
+     -}
+    insertRow :: a -> SQL (Key a)
+    default insertRow
+        :: SOP.HasDatatypeInfo a
+        => SOP.All2 Column (SOP.Code a)
+        => a
+        -> SQL (Key a)
+    insertRow = insertRowGeneric
+
+    {- | Find the 'Key' for an @a@, if it is in the table.
+     -}
+    selectRow :: a -> SQL (Maybe (Key a))
+    default selectRow
+        :: SOP.HasDatatypeInfo a
+        => SOP.All2 Column (SOP.Code a)
+        => a
+        -> SQL (Maybe (Key a))
+    selectRow = selectRowGeneric
+
+instance Table ()
+
+instance (Column a, Typeable a) => Table (Maybe a)
+
+instance (Column a, Typeable a, Column b, Typeable b) => Table (Either a b)
+
+{- | @(insertUniqueRow a)@ inserts @a@ into the table if not present.
+
+Returns the 'Key' of the row corresponding to @a@.
+
+ -}
+insertUniqueRow :: Table a => a -> SQL (Key a)
+insertUniqueRow a = Monad.maybeM (insertRow a) return (selectRow a)
+
+-- * Generic table types
+
+{- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' type.
+ -}
+createTableGeneric
+    :: forall proxy table
+    .  Typeable table
+    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
+    => proxy table
+    -> SQL ()
+createTableGeneric proxy =
+    SOP.createTableGenericAux (SOP.tableNameTypeable proxy) mkColumnImpls proxy
+
+{- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
+ -}
+insertRowGeneric
+    :: forall table
+    .  Typeable table
+    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
+    => table
+    -> SQL (Key table)
+insertRowGeneric =
+    SOP.insertRowGenericAux (SOP.tableNameTypeable proxy) mkColumnImpls
+  where
+   proxy = Proxy @table
+
+{- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
+ -}
+selectRowGeneric
+    :: forall table
+    .  Typeable table
+    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
+    => table
+    -> SQL (Maybe (Key table))
+selectRowGeneric =
+    SOP.selectRowGenericAux (SOP.tableNameTypeable proxy) mkColumnImpls
+  where
+    proxy = Proxy @table
 
 {- | @(createTableIso iso)@ implements 'createTable'.
 
@@ -54,7 +245,7 @@ createTableIso
     -> proxy outer
     -> SQL ()
 createTableIso _ proxy =
-    createTableGenericAux tableName SOP.mkColumnImpls proxy'
+    SOP.createTableGenericAux tableName mkColumnImpls proxy'
   where
     proxy' = Proxy @inner
     tableName = SOP.tableNameTypeable proxy
@@ -70,7 +261,7 @@ insertRowIso
     -> outer
     -> SQL (Key outer)
 insertRowIso iso outer =
-    fromInnerKey <$> insertRowGenericAux tableName SOP.mkColumnImpls inner
+    fromInnerKey <$> SOP.insertRowGenericAux tableName mkColumnImpls inner
   where
     tableName = SOP.tableNameTypeable (Proxy @outer)
     inner = Lens.view iso outer
@@ -88,7 +279,7 @@ selectRowIso
     -> outer
     -> SQL (Maybe (Key outer))
 selectRowIso iso outer =
-    fromInnerKeys <$> selectRowGenericAux tableName SOP.mkColumnImpls inner
+    fromInnerKeys <$> SOP.selectRowGenericAux tableName mkColumnImpls inner
   where
     tableName = SOP.tableNameTypeable (Proxy @outer)
     inner = Lens.view iso outer

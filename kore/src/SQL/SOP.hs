@@ -12,8 +12,6 @@ module SQL.SOP
     (
     -- * Columns
       ColumnImpl(..)
-    , mkColumnImpl
-    , mkColumnImpls
     -- * Tables
     , TableName
     , tableNameTypeable
@@ -30,9 +28,9 @@ module SQL.SOP
     , insertRowProduct
     , selectRowsProduct
     -- * Generic implementations
-    , createTableGeneric, createTableGenericAux
-    , insertRowGeneric, insertRowGenericAux
-    , selectRowGeneric, selectRowGenericAux
+    , createTableGenericAux
+    , insertRowGenericAux
+    , selectRowGenericAux
     -- * Helpers
     , defineColumns
     , productFields
@@ -66,7 +64,7 @@ import Type.Reflection
     ( someTypeRep
     )
 
-import SQL.Column as Column
+import SQL.ColumnDef as Column
 import SQL.Key as Key
 import SQL.Query
     ( AccumT
@@ -86,16 +84,6 @@ data ColumnImpl a =
     { defineColumnImpl :: forall proxy. proxy a -> SQL ColumnDef
     , toColumnImpl :: a -> SQL SQLite.SQLData
     }
-
-mkColumnImpl :: forall a. Column a => ColumnImpl a
-mkColumnImpl =
-    ColumnImpl
-    { defineColumnImpl = defineColumn
-    , toColumnImpl = toColumn
-    }
-
-mkColumnImpls :: forall xss . SOP.All2 Column xss => SOP.POP ColumnImpl xss
-mkColumnImpls = SOP.hcpure (Proxy @Column) mkColumnImpl
 
 newtype TableName = TableName { getTableName :: String }
 
@@ -268,17 +256,6 @@ createTableSum tableName columnImpls ctors = do
         -> SQL ()
     createTable' (Pair columnImpl info) =
         createConstructorTable tableName columnImpl info
-
-{- | @createTableGeneric@ implements 'createTable' for a 'SOP.Generic' type.
- -}
-createTableGeneric
-    :: forall proxy table
-    .  Typeable table
-    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
-    => proxy table
-    -> SQL ()
-createTableGeneric proxy =
-    createTableGenericAux (tableNameTypeable proxy) mkColumnImpls proxy
 
 createTableGenericAux
     :: forall proxy table
@@ -466,19 +443,6 @@ insertRowProduct tableName columnImpl info fields = K $ do
     values <- toColumns columnImpl fields
     insertRow tableName (ctorFields info) values
 
-{- | @insertRowGeneric@ implements 'insertRow' for a 'SOP.Generic' record type.
- -}
-insertRowGeneric
-    :: forall table
-    .  Typeable table
-    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
-    => table
-    -> SQL (Key table)
-insertRowGeneric =
-    insertRowGenericAux (tableNameTypeable proxy) mkColumnImpls
-  where
-   proxy = Proxy @table
-
 insertRowGenericAux
     :: forall table
     .  SOP.HasDatatypeInfo table
@@ -553,19 +517,6 @@ selectRowsProduct
 selectRowsProduct tableName columnImpl info fields = K $ do
     values <- toColumns columnImpl fields
     selectRows tableName (ctorFields info) values
-
-{- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
- -}
-selectRowGeneric
-    :: forall table
-    .  Typeable table
-    => (SOP.HasDatatypeInfo table, SOP.All2 Column (SOP.Code table))
-    => table
-    -> SQL (Maybe (Key table))
-selectRowGeneric =
-    selectRowGenericAux (tableNameTypeable proxy) mkColumnImpls
-  where
-    proxy = Proxy @table
 
 selectRowGenericAux
     :: forall table
