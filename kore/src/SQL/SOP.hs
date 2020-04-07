@@ -378,7 +378,8 @@ addColumnNames =
             _   -> Query.addComma >> worker infos
 
 addColumnName :: Monad m => K String field -> AccumT Query m ()
-addColumnName (K fieldName) = Query.addString fieldName
+addColumnName (K fieldName) =
+    Query.withDoubleQuotes . Query.addString $ fieldName
 
 addColumnParams
     :: forall f fields m
