@@ -2,9 +2,16 @@ module Test.Kore.Log.DebugEvaluateCondition
     ( test_instance_Table_DebugEvaluateCondition
     ) where
 
-import Prelude.Kore ()
+import Prelude.Kore
 
 import Test.Tasty
+
+import Data.List
+    ( inits
+    )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
@@ -15,10 +22,11 @@ import Test.SQL
 
 test_instance_Table_DebugEvaluateCondition :: TestTree
 test_instance_Table_DebugEvaluateCondition =
-    testTable @DebugEvaluateCondition
-        [ DebugEvaluateCondition predicate1
-        , DebugEvaluateCondition predicate2
-        ]
+    testTable @DebugEvaluateCondition $ do
+        let predicates = [predicate1, predicate2]
+        predicate <- predicates
+        sideConditions <- inits predicates
+        [DebugEvaluateCondition (predicate :| sideConditions)]
 
 predicate1, predicate2 :: Predicate Variable
 predicate1 = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)

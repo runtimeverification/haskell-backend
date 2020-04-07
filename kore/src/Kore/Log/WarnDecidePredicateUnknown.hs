@@ -11,14 +11,14 @@ module Kore.Log.WarnDecidePredicateUnknown
 
 import Prelude.Kore
 
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
+
 import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Variable
 import Kore.Unparser
 import Log
@@ -29,17 +29,16 @@ import qualified Pretty
 
 data WarnDecidePredicateUnknown =
     WarnDecidePredicateUnknown
-        { sideCondition :: !(Maybe (SideCondition Variable))
-        , predicate :: !(Predicate Variable)
+        { predicates :: !(NonEmpty (Predicate Variable))
         }
 
 instance Pretty WarnDecidePredicateUnknown where
-    pretty WarnDecidePredicateUnknown { sideCondition, predicate } =
-        Pretty.vsep
-        [ "Failed to decide predicate:"
-        , Pretty.indent 4 (unparse predicate)
-        , "under side condition:"
-        , Pretty.indent 4 $ unparse $ fromMaybe SideCondition.top sideCondition
+    pretty (WarnDecidePredicateUnknown (predicate :| sideConditions)) =
+        (Pretty.vsep . concat)
+        [ ["Failed to decide predicate:", Pretty.indent 4 (unparse predicate)]
+        , do
+            sideCondition <- sideConditions
+            ["with side condition:", Pretty.indent 4 (unparse sideCondition)]
         ]
 
 instance Entry WarnDecidePredicateUnknown where
@@ -48,20 +47,13 @@ instance Entry WarnDecidePredicateUnknown where
 warnDecidePredicateUnknown
     :: MonadLog log
     => InternalVariable variable
-    => Maybe (SideCondition variable)
-    -> Predicate variable
+    => NonEmpty (Predicate variable)
     -> log ()
-warnDecidePredicateUnknown sideCondition' predicate' =
-    logEntry WarnDecidePredicateUnknown
-        { sideCondition
-        , predicate
-        }
+warnDecidePredicateUnknown predicates' =
+    logEntry WarnDecidePredicateUnknown { predicates }
   where
-    predicate =
+    predicates =
         Predicate.mapVariables
             (fmap toVariable)
             (fmap toVariable)
-            predicate'
-    sideCondition =
-        flip fmap sideCondition'
-        $ SideCondition.mapVariables (fmap toVariable) (fmap toVariable)
+        <$> predicates'

@@ -25,12 +25,14 @@ import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Traversable as Traversable
 
 import Branch
     ( BranchT
@@ -104,7 +106,7 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate Nothing predicate
+            _ -> decidePredicate (predicate :| [])
 
 instance
     InternalVariable variable
@@ -114,7 +116,9 @@ instance
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate (Just sideCondition) predicate
+            _ ->
+                decidePredicate
+                $ predicate :| [from @_ @(Predicate _) sideCondition]
 
 instance InternalVariable variable => Evaluable (Conditional variable term)
   where
@@ -175,26 +179,21 @@ decidePredicate
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
-    => Maybe (SideCondition variable)
-    -> Predicate variable
+    => NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
-decidePredicate sideCondition predicate =
+decidePredicate predicates =
     SMT.withSolver $ runMaybeT $ evalTranslator $ do
-        debugEvaluateCondition predicate
+        debugEvaluateCondition predicates
         tools <- Simplifier.askMetadataTools
-        sideCondition' <-
-            Traversable.for sideCondition
-            $ translatePredicate tools . from @(SideCondition _)
-        predicate' <- translatePredicate tools predicate
-        result <- Profile.smtDecision predicate' $ SMT.withSolver $ do
-            Foldable.traverse_ SMT.assert sideCondition'
-            SMT.assert predicate'
+        predicates' <- traverse (translatePredicate tools) predicates
+        result <- Profile.smtDecision predicates' $ SMT.withSolver $ do
+            Foldable.traverse_ SMT.assert predicates'
             SMT.check
         case result of
             Unsat   -> return False
             Sat     -> empty
             Unknown -> do
-                warnDecidePredicateUnknown sideCondition predicate
+                warnDecidePredicateUnknown predicates
                 empty
 
 translatePredicate
