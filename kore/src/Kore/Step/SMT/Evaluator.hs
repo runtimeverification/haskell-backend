@@ -68,7 +68,8 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition
-    ( whileDebugEvaluateCondition
+    ( debugEvaluateConditionResult
+    , whileDebugEvaluateCondition
     )
 import Kore.Log.WarnDecidePredicateUnknown
     ( warnDecidePredicateUnknown
@@ -189,9 +190,10 @@ decidePredicate predicates =
         result <- Profile.smtDecision predicates' $ SMT.withSolver $ do
             Foldable.traverse_ SMT.assert predicates'
             SMT.check
+        debugEvaluateConditionResult result
         case result of
-            Unsat   -> return False
-            Sat     -> empty
+            Unsat -> return False
+            Sat -> empty
             Unknown -> do
                 warnDecidePredicateUnknown predicates
                 empty

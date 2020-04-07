@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition (..)
     , whileDebugEvaluateCondition
+    , debugEvaluateConditionResult
     ) where
 
 import Prelude.Kore
@@ -28,10 +29,14 @@ import Pretty
     ( Pretty (..)
     )
 import qualified Pretty
+import SMT.SimpleSMT
+    ( Result (..)
+    )
 import qualified SQL
 
-newtype DebugEvaluateCondition =
-    DebugEvaluateCondition { getPredicates :: NonEmpty (Predicate Variable) }
+data DebugEvaluateCondition
+    = DebugEvaluateCondition !(NonEmpty (Predicate Variable))
+    | DebugEvaluateConditionResult !Result
     deriving (GHC.Generic)
 
 instance SOP.Generic DebugEvaluateCondition
@@ -39,13 +44,21 @@ instance SOP.Generic DebugEvaluateCondition
 instance SOP.HasDatatypeInfo DebugEvaluateCondition
 
 instance Pretty DebugEvaluateCondition where
-    pretty (DebugEvaluateCondition (predicate :| sideConditions)) =
+    pretty (DebugEvaluateCondition predicates) =
         (Pretty.vsep . concat)
         [ [ "evaluating predicate:" , Pretty.indent 4 (unparse predicate) ]
         , do
             sideCondition <- sideConditions
             [ "with side condition:", Pretty.indent 4 (unparse sideCondition) ]
         ]
+      where
+       predicate :| sideConditions = predicates
+
+    pretty (DebugEvaluateConditionResult result) =
+        case result of
+            Unsat -> "solver returned unsatisfiable"
+            Sat -> "solver returned satisfiable"
+            Unknown -> "solver returned unknown"
 
 instance Entry DebugEvaluateCondition where
     entrySeverity _ = Debug
@@ -61,3 +74,6 @@ whileDebugEvaluateCondition
     -> log a
 whileDebugEvaluateCondition =
     logWhile . DebugEvaluateCondition . fmap Predicate.externalizeFreshVariables
+
+debugEvaluateConditionResult :: MonadLog log => Result -> log ()
+debugEvaluateConditionResult = logEntry . DebugEvaluateConditionResult
