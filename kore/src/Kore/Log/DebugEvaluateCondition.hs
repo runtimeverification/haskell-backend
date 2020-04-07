@@ -6,7 +6,7 @@ License     : NCSA
 
 module Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition (..)
-    , debugEvaluateCondition
+    , whileDebugEvaluateCondition
     ) where
 
 import Prelude.Kore
@@ -49,13 +49,15 @@ instance Pretty DebugEvaluateCondition where
 
 instance Entry DebugEvaluateCondition where
     entrySeverity _ = Debug
+    shortDoc _ = Just "while evaluating predicate"
 
 instance SQL.Table DebugEvaluateCondition
 
-debugEvaluateCondition
+whileDebugEvaluateCondition
     :: MonadLog log
     => InternalVariable variable
     => NonEmpty (Predicate variable)
-    -> log ()
-debugEvaluateCondition =
-    logEntry . DebugEvaluateCondition . fmap Predicate.externalizeFreshVariables
+    -> log a
+    -> log a
+whileDebugEvaluateCondition =
+    logWhile . DebugEvaluateCondition . fmap Predicate.externalizeFreshVariables

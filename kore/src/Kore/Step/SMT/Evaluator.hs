@@ -68,7 +68,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition
-    ( debugEvaluateCondition
+    ( whileDebugEvaluateCondition
     )
 import Kore.Log.WarnDecidePredicateUnknown
     ( warnDecidePredicateUnknown
@@ -182,8 +182,8 @@ decidePredicate
     => NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
 decidePredicate predicates =
-    SMT.withSolver $ runMaybeT $ evalTranslator $ do
-        debugEvaluateCondition predicates
+    whileDebugEvaluateCondition predicates
+    $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         predicates' <- traverse (translatePredicate tools) predicates
         result <- Profile.smtDecision predicates' $ SMT.withSolver $ do
