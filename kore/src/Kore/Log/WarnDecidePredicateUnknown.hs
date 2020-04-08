@@ -27,19 +27,21 @@ import Pretty
     )
 import qualified Pretty
 
-data WarnDecidePredicateUnknown =
+newtype WarnDecidePredicateUnknown =
     WarnDecidePredicateUnknown
-        { predicates :: !(NonEmpty (Predicate Variable))
+        { predicates :: NonEmpty (Predicate Variable)
         }
 
 instance Pretty WarnDecidePredicateUnknown where
-    pretty (WarnDecidePredicateUnknown (predicate :| sideConditions)) =
+    pretty WarnDecidePredicateUnknown { predicates } =
         (Pretty.vsep . concat)
         [ ["Failed to decide predicate:", Pretty.indent 4 (unparse predicate)]
         , do
             sideCondition <- sideConditions
             ["with side condition:", Pretty.indent 4 (unparse sideCondition)]
         ]
+      where
+       predicate :| sideConditions = predicates
 
 instance Entry WarnDecidePredicateUnknown where
     entrySeverity _ = Warning
