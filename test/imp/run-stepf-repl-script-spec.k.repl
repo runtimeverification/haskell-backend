@@ -1,0 +1,5 @@
+stepf 11
+config > shouldBeAt10.out
+stepf 4
+config > shouldBeAt18.out
+stepf 1000 > finished.out

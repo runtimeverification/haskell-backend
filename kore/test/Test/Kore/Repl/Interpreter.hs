@@ -103,6 +103,8 @@ test_replInterpreter =
     , help                        `tests` "Showing the help message"
     , step5                       `tests` "Performing 5 steps"
     , step100                     `tests` "Stepping over proof completion"
+    , stepf5noBranching           `tests` "Performing 5 foced steps in non-branching proof"
+    , stepf100noBranching         `tests` "Stepping over proof completion"
     , makeSimpleAlias             `tests` "Creating an alias with no arguments"
     , trySimpleAlias              `tests` "Executing an existing alias with no arguments"
     , makeAlias                   `tests` "Creating an alias with arguments"
@@ -176,6 +178,32 @@ step100 =
         output     `equalsOutput`   expectedOutput
         continue   `equals`         Continue
         state      `hasCurrentNode` ReplNode 10
+
+stepf5noBranching :: IO ()
+stepf5noBranching =
+    let
+        axioms = [ add1 ]
+        claim  = zeroToTen
+        command = ProveStepsF 5
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        output     `equalsOutput`   mempty
+        continue   `equals`         Continue
+        state      `hasCurrentNode` ReplNode 5
+
+stepf100noBranching :: IO ()
+stepf100noBranching =
+    let
+        axioms = [ add1 ]
+        claim  = zeroToTen
+        command = ProveStepsF 100
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        let expectedOutput =
+                makeAuxReplOutput $ "Proof completed on all branches." 
+        output     `equalsOutput`   expectedOutput
+        continue   `equals`         Continue
+        state      `hasCurrentNode` ReplNode 0
 
 makeSimpleAlias :: IO ()
 makeSimpleAlias =
