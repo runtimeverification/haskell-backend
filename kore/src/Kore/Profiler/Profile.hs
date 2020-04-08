@@ -23,6 +23,9 @@ import Prelude.Kore
 import Control.Monad
     ( when
     )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
@@ -223,10 +226,10 @@ isSelected identifierFilter = (== identifierFilter) . oneLiner
 
 smtDecision
     :: MonadProfiler profiler
-    => SExpr
+    => NonEmpty SExpr
     -> profiler result
     -> profiler result
-smtDecision sexpr action = do
+smtDecision (sexpr :| _) action = do
     Configuration {logSmt} <- profileConfiguration
     if logSmt
         then profile ["SMT", show $ length $ show sexpr] action
