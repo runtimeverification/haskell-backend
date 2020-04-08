@@ -200,7 +200,7 @@ stepf100noBranching =
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
         let expectedOutput =
-                makeAuxReplOutput $ "Proof completed on all branches." 
+                makeAuxReplOutput $ "Proof completed on all branches."
         output     `equalsOutput`   expectedOutput
         continue   `equals`         Continue
         state      `hasCurrentNode` ReplNode 0

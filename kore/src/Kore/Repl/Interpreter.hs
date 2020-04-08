@@ -491,12 +491,6 @@ proveSteps n = do
 
 {- | Executes 'n' prove steps, distributing over branches. It will perform less
 than 'n' steps if the proof is stuck or completed in less than 'n' steps.
-
-The proof is advanced to the first "interesting" branching node. Interesting
-branching nodes have at least two children with non-bottom leaves. If no such
-node exists, the proof is advanced n steps in the (only) available branch. If
-the proof is completed on all branches, a message is emitted, but the current
-node stays the same.
 -}
 
 proveStepsF
@@ -1264,19 +1258,8 @@ recursiveForcedStep n node
 
 {- | Returns the first interesting branching node encountered by
 exploring the proof graph for 'n' steps over all branches, starting
-from 'node'. Used to advance the current proof node in proveStepsF.
-If no such node exists, it tries to return the only existing
+from 'node'. If no such node exists, it tries to return the only existing
 non-bottom leaf. If no such leaf exists, it returns Nothing.
-
-We can compute the return value recursively.
-
-Apart from the base cases, we distinguish three main cases:
-- The current node has no children with interesting return values,
-so the proof is completed in its entire subtree, we return Nothing.
-- The current node has only one such child, we should return the
-child's result.
-- The current node has at least two such children, so it itself is
-interestingly branching and we return it.
 -}
 
 getInterestingBranchingNode
