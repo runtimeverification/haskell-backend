@@ -43,6 +43,8 @@ module Prelude.Kore
     , MonadTrans (..)
     , unless
     , when
+    -- * Typeable
+    , Typeable
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -89,6 +91,9 @@ import Data.Maybe
     ( fromMaybe
     , isJust
     , isNothing
+    )
+import Data.Typeable
+    ( Typeable
     )
 import Data.Witherable
     ( Filterable (..)

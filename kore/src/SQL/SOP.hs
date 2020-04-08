@@ -46,9 +46,6 @@ import Data.Functor.Product
 import Data.Proxy
     ( Proxy (..)
     )
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Database.SQLite.Simple as SQLite
 import Generics.SOP
     ( ConstructorInfo

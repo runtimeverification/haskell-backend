@@ -24,7 +24,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import Data.Typeable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

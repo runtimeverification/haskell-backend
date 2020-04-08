@@ -66,8 +66,7 @@ import Data.Text.Prettyprint.Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
-    ( Typeable
-    , typeOf
+    ( typeOf
     )
 import Data.Void
     ( Void

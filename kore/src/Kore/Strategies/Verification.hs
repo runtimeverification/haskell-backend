@@ -39,9 +39,6 @@ import qualified Data.Stream.Infinite as Stream
 import Data.Text
     ( Text
     )
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Numeric.Natural
