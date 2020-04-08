@@ -51,6 +51,7 @@ import System.Clock
     , toNanoSecs
     )
 
+import Control.Monad.Counter
 import ListT
     ( ListT (..)
     )
@@ -274,3 +275,5 @@ instance (MonadProfiler m, Monoid w) => MonadProfiler (AccumT w m)
   where
     profile a action = AccumT (profile a . runAccumT action)
     {-# INLINE profile #-}
+
+instance MonadProfiler m => MonadProfiler (CounterT m)
