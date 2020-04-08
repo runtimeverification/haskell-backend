@@ -179,7 +179,8 @@ instance
 type Predicate variable = GenericPredicate (TermLike variable)
 
 instance InternalVariable variable => SQL.Column (Predicate variable) where
-    defineColumn _ = SQL.defineColumn (SQL.Proxy @(TermLike variable))
+    defineColumn tableName _ =
+        SQL.defineColumn tableName (SQL.Proxy @(TermLike variable))
     toColumn (GenericPredicate termLike) = SQL.toColumn termLike
 
 instance From (Predicate variable) (TermLike variable) where
