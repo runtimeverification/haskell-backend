@@ -65,6 +65,7 @@ endmodule
 
 module IMP-STATE
   imports IMP-SYNTAX
+  imports K-EQUAL
 
   syntax Assignment
     ::= Id "|->" Int
@@ -103,6 +104,8 @@ endmodule
 
 module IMP
   imports IMP-SYNTAX
+  imports INT
+  imports BOOL
   imports IMP-STRICT
   imports IMP-STATE
 
