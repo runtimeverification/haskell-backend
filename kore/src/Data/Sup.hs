@@ -22,9 +22,6 @@ import Data.Data
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

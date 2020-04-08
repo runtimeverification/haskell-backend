@@ -17,7 +17,6 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -105,7 +104,7 @@ simplificationEvaluation rule =
             remainders' = Results.remainders results'
         Step.recoveryFunctionLikeResults initial results'
         let attemptedAxiom = Results.toAttemptedAxiom results'
-        Monad.when (hasRemainder attemptedAxiom)
+        when (hasRemainder attemptedAxiom)
             $ debugSkipSimplification
                 term
                 condition

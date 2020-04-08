@@ -11,7 +11,6 @@ module Kore.Attribute.Priority
 
 import Prelude.Kore
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -74,7 +73,7 @@ instance ParseAttributes Priority where
             arg <- Parser.getOneArgument args
             stringLiteral <- Parser.getStringLiteral arg
             integer <- Parser.parseInteger stringLiteral
-            Monad.unless (isNothing priority) failDuplicate'
+            unless (isNothing priority) failDuplicate'
             return Priority { getPriority = Just integer }
       where
         withApplication' = Parser.withApplication priorityId

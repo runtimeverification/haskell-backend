@@ -108,7 +108,7 @@ parseFreeVariables freeVariables params args concreteVars = do
         nubVars = mapMaybe Safe.headMay groupedVars
         duplicateVars =
             mapMaybe (Safe.headMay Monad.<=< Safe.tailMay) groupedVars
-    Monad.unless (null duplicateVars)
+    unless (null duplicateVars)
         $ Kore.Error.koreFail
             ("duplicate concrete/symbolic variable annotations for "
             ++ show duplicateVars)
@@ -116,7 +116,7 @@ parseFreeVariables freeVariables params args concreteVars = do
   where
     checkFree :: UnifiedVariable Variable -> Parser ()
     checkFree variable =
-        Monad.unless (isFreeVariable variable freeVariables)
+        unless (isFreeVariable variable freeVariables)
         $ Kore.Error.koreFail
             ("expected free variable, found " ++ show variable)
 

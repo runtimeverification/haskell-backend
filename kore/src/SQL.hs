@@ -31,9 +31,6 @@ import Data.Generics.Wrapped
 import Data.Proxy
     ( Proxy (..)
     )
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Generics.SOP as SOP
 
 import SQL.Column

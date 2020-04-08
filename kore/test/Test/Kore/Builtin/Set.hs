@@ -69,7 +69,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
-import qualified Control.Monad as Monad
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -325,7 +324,7 @@ test_concatAssociates =
             set1 <- forAll genSetInteger
             set2 <- forAll genSetInteger
             set3 <- forAll genSetInteger
-            Monad.unless (setIntersectionsAreEmpty [set1, set2, set3]) discard
+            unless (setIntersectionsAreEmpty [set1, set2, set3]) discard
 
             let patSet1 = intSetToSetPattern set1
                 patSet2 = intSetToSetPattern set2
@@ -359,8 +358,8 @@ test_concatNormalizes =
             let elemVars = [elemVar1, elemVar2]
                 allVars = setVar : elemVars
 
-            Monad.unless (distinctVars allVars) discard
-            Monad.when (int1 == int2) discard
+            unless (distinctVars allVars) discard
+            when (int1 == int2) discard
 
             let intPat1 = Test.Int.asInternal int1
                 intPat2 = Test.Int.asInternal int2
@@ -547,7 +546,7 @@ test_unifyConcreteDistinct =
         (do
             set1 <- forAll genSetConcreteIntegerPattern
             patElem <- forAll genConcreteIntegerPattern
-            Monad.when (Set.member patElem set1) discard
+            when (Set.member patElem set1) discard
             let set2 = Set.insert patElem set1
                 patSet1 = asTermLike set1
                 patSet2 = asTermLike set2
@@ -637,7 +636,7 @@ test_unifySelectFromEmpty =
     testPropertyWithSolver "unify an empty set with a selection pattern" $ do
         elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
         setVar <- forAll (standaloneGen $ elementVariableGen setSort)
-        Monad.when
+        when
             ( variableName (getElementVariable elementVar)
             == variableName (getElementVariable setVar)
             )
@@ -673,7 +672,7 @@ test_unifySelectFromSingleton =
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
-            Monad.when
+            when
                 ( variableName (getElementVariable elementVar)
                 == variableName (getElementVariable setVar)
                 )
@@ -730,11 +729,11 @@ test_unifySelectFromTwoElementSet =
         (do
             concreteElem1 <- forAll genConcreteIntegerPattern
             concreteElem2 <- forAll genConcreteIntegerPattern
-            Monad.when (concreteElem1 == concreteElem2) discard
+            when (concreteElem1 == concreteElem2) discard
 
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
-            Monad.when
+            when
                 ( variableName (getElementVariable elementVar)
                 == variableName (getElementVariable setVar)
                 )
@@ -788,13 +787,13 @@ test_unifySelectTwoFromTwoElementSet =
         (do
             concreteElem1 <- forAll genConcreteIntegerPattern
             concreteElem2 <- forAll genConcreteIntegerPattern
-            Monad.when (concreteElem1 == concreteElem2) discard
+            when (concreteElem1 == concreteElem2) discard
 
             elementVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elementVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             let allVars = [elementVar1, elementVar2, setVar]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let
                 selectPat =
@@ -834,7 +833,7 @@ test_unifyConcatElemVarVsElemSet =
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2]
                 allVars = setVar : elemVars
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2] = List.sort elemVars
 
@@ -881,7 +880,7 @@ test_unifyConcatElemVarVsElemElem =
             elemVar3 <- forAll (standaloneGen $ elementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2, elemVar3]
                 allVars = setVar : elemVars
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2, elementVar3] = List.sort elemVars
 
@@ -926,7 +925,7 @@ test_unifyConcatElemElemVsElemConcrete =
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar3 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2, elementVar3] = List.sort allVars
 
@@ -970,7 +969,7 @@ test_unifyConcatElemElemVsElemElem =
             elemVar3 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar4 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3, elemVar4]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2, elementVar3, elementVar4] =
                     List.sort allVars
@@ -1013,7 +1012,7 @@ test_unifyConcatElemConcatVsElemConcrete =
             elemVar3 <- forAll (standaloneGen $ elementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2, elemVar3]
                 allVars = setVar : elemVars
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2, elementVar3] = List.sort elemVars
 
@@ -1021,7 +1020,7 @@ test_unifyConcatElemConcatVsElemConcrete =
             concreteElem2 <- forAll genConcreteIntegerPattern
             concreteElem3 <- forAll genConcreteIntegerPattern
             let allConcrete = [concreteElem1, concreteElem2, concreteElem3]
-            Monad.unless (allConcrete == List.nub allConcrete) discard
+            unless (allConcrete == List.nub allConcrete) discard
 
             let set1 = asTermLike (Set.fromList [concreteElem1])
                 set2 = asTermLike (Set.fromList [concreteElem2, concreteElem3])
@@ -1066,7 +1065,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2] = List.sort allVars
 
@@ -1101,13 +1100,13 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2] = List.sort allVars
 
             concreteElem1 <- forAll genConcreteIntegerPattern
             concreteElem2 <- forAll genConcreteIntegerPattern
-            Monad.when (concreteElem1 == concreteElem2) discard
+            when (concreteElem1 == concreteElem2) discard
             let set1 = asTermLike (Set.fromList [concreteElem1])
                 set2 = asTermLike (Set.fromList [concreteElem2])
                 elemStepPattern1 = fromConcrete concreteElem1
@@ -1141,7 +1140,7 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2] = List.sort allVars
 
@@ -1149,7 +1148,7 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
             concreteElem2 <- forAll genConcreteIntegerPattern
             concreteElem3 <- forAll genConcreteIntegerPattern
             let allElems = [concreteElem1, concreteElem2, concreteElem3]
-            Monad.when (allElems /= List.nub allElems) discard
+            when (allElems /= List.nub allElems) discard
 
             let set1 = asTermLike (Set.fromList [concreteElem1, concreteElem2])
                 set2 = asTermLike (Set.fromList [concreteElem1, concreteElem3])
@@ -1187,7 +1186,7 @@ test_unifyConcatElemConcreteVsElemConcrete4 =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2] = List.sort allVars
 
@@ -1197,7 +1196,7 @@ test_unifyConcatElemConcreteVsElemConcrete4 =
             concreteElem4 <- forAll genConcreteIntegerPattern
             let allElems =
                     [concreteElem1, concreteElem2, concreteElem3, concreteElem4]
-            Monad.when (allElems /= List.nub allElems) discard
+            when (allElems /= List.nub allElems) discard
 
             let set1 = asTermLike (Set.fromList [concreteElem1, concreteElem2])
                 set2 = asTermLike (Set.fromList [concreteElem3, concreteElem4])
@@ -1218,14 +1217,14 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
 
             let [elementVar1, elementVar2] = List.sort allVars
 
             concreteElem1 <- forAll genConcreteIntegerPattern
             concreteElem2 <- forAll genConcreteIntegerPattern
             let allElems = [concreteElem1, concreteElem2]
-            Monad.when (allElems /= List.nub allElems) discard
+            when (allElems /= List.nub allElems) discard
 
             let set = asTermLike (Set.fromList [concreteElem1, concreteElem2])
                 selectPat = addSelectElement elementVar1 set
@@ -1260,7 +1259,7 @@ test_unifyConcatElemVsElem =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort allVars
 
             let selectPat = makeElementVariable elementVar1
@@ -1290,7 +1289,7 @@ test_unifyConcatElemVsElemConcrete1 =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort allVars
 
             let set = asTermLike (Set.fromList [])
@@ -1321,7 +1320,7 @@ test_unifyConcatElemVsElemConcrete2 =
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort allVars
 
             concreteElem <- forAll genConcreteIntegerPattern
@@ -1345,7 +1344,7 @@ test_unifyConcatElemVsElemElem =
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar3 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2, elementVar3] = List.sort allVars
 
             let selectPat =
@@ -1369,7 +1368,7 @@ test_unifyConcatElemVsElemConcat =
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar3 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2, elementVar3] = List.sort allVars
 
             concreteElem <- forAll genConcreteIntegerPattern
@@ -1397,7 +1396,7 @@ test_unifyConcatElemVsElemVar =
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2]
                 allVars = setVar : elemVars
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort elemVars
 
             let patSet = makeElementVariable elementVar1
@@ -1433,7 +1432,7 @@ test_unifyConcatElemElemVsElemConcat =
             elemVar3 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar4 <- forAll (standaloneGen $ elementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3, elemVar4]
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2, elementVar3, elementVar4] =
                     List.sort allVars
 
@@ -1468,7 +1467,7 @@ test_unifyConcatElemElemVsElemConcatSet =
             elemVar4 <- forAll (standaloneGen $ elementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2, elemVar3, elemVar4]
             let allVars = setVar : elemVars
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2, elementVar3, elementVar4] =
                     List.sort elemVars
 
@@ -1510,7 +1509,7 @@ test_unifyFnSelectFromSingleton =
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
-            Monad.when
+            when
                 ( variableName (getElementVariable elementVar)
                 == variableName (getElementVariable setVar)
                 )
@@ -1569,7 +1568,7 @@ test_unifyMultipleIdenticalOpaqueSets =
             let elemVars = [elemVar1, elemVar2]
                 setVars = [sVar1, sVar2, sVar3]
             let allVars = setVars ++ elemVars
-            Monad.unless (distinctVars allVars) discard
+            unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort elemVars
                 [setVar1, setVar2, setVar3] = List.sort setVars
 
