@@ -207,12 +207,14 @@ instance From symbol SymbolOrAlias => From (Axiom symbol Variable) Attributes wh
 
 instance SQL.Column (Axiom SymbolOrAlias Variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
-    defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
+    defineColumn tableName _ =
+        SQL.defineColumn tableName (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
 instance SQL.Column (Axiom Symbol Variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
-    defineColumn _ = SQL.defineColumn (Proxy @AttributePattern)
+    defineColumn tableName _ =
+        SQL.defineColumn tableName (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
 axiomSymbolToSymbolOrAlias
