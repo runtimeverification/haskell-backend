@@ -208,7 +208,7 @@ neqKey = "KEQUAL.neq"
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
 
-{- | The @BOOL.and@ hooked symbol applied to @term@-type arguments.
+{- | The @KEQUAL.eq@ hooked symbol applied to @term@-type arguments.
  -}
 data KEqual term =
     KEqual
@@ -216,7 +216,7 @@ data KEqual term =
         , operand1, operand2 :: !term
         }
 
-{- | Match the @BOOL.and@ hooked symbol.
+{- | Match the @KEQUAL.eq@ hooked symbol.
  -}
 matchKEqual :: TermLike variable -> Maybe (KEqual (TermLike variable))
 matchKEqual (App_ symbol [operand1, operand2]) = do
