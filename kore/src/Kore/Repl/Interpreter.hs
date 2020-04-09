@@ -1256,34 +1256,6 @@ recursiveForcedStep n node
         SingleResult sr -> (recursiveForcedStep $ n-1) sr
         BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
 
-{- | Returns the first interesting branching node encountered by
-exploring the proof graph for 'n' steps over all branches, starting
-from 'node'. If no such node exists, it tries to return the only existing
-non-bottom leaf. If no such leaf exists, it returns Nothing.
--}
-
-getInterestingBranchingNode
-    :: Natural
-    -> InnerGraph axiom
-    -> ReplNode
-    -> Maybe ReplNode
-getInterestingBranchingNode n graph node
-    | nodeIsBottom               = Nothing
-    | n == 0                     = Just node
-    | null sucResults            = Just node
-    | otherwise =
-        case interestingResults of
-            []  -> Nothing
-            [a] -> Just a
-            _   -> Just node
-    where
-      gnode = unReplNode node
-      nodeIsBottom = (==) (getNodeState graph gnode) Nothing
-      sucResults = fmap (getInterestingBranchingNode (n - 1) graph . ReplNode)
-                        (Graph.suc graph gnode)
-      interestingResults = catMaybes sucResults
-
-
 
 -- | Display a rule as a String.
 showRewriteRule

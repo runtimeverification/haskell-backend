@@ -16,6 +16,7 @@ module Kore.Repl.State
     , switchToProof
     , getTargetNode, getInnerGraph, getExecutionGraph
     , smoothOutGraph
+    , getInterestingBranchingNode
     , getConfigAt, getRuleFor, getLabels, setLabels
     , runStepper, runStepper'
     , runUnifier
@@ -89,6 +90,7 @@ import Data.Text
 import GHC.Exts
     ( toList
     )
+import Numeric.Natural
 import System.IO
     ( Handle
     , IOMode (AppendMode)
@@ -394,6 +396,34 @@ smoothOutGraph graph = do
     isTerminalNode :: Gr node edge -> Graph.Node -> Bool
     isTerminalNode graph' node =
         Graph.indeg graph' node == 0 || Graph.outdeg graph' node == 0
+
+{- | Returns the first interesting branching node encountered by
+exploring the proof graph for 'n' steps over all branches, starting
+from 'node'. If no such node exists, it tries to return the only existing
+non-bottom leaf. If no such leaf exists, it returns Nothing.
+-}
+getInterestingBranchingNode
+    :: Natural
+    -> InnerGraph axiom
+    -> ReplNode
+    -> Maybe ReplNode
+getInterestingBranchingNode n graph node
+    | nodeIsBottom               = Nothing
+    | n == 0                     = Just node
+    | null sucResults            = Just node
+    | otherwise =
+        case interestingResults of
+            []  -> Nothing
+            [a] -> Just a
+            _   -> Just node
+    where
+      gnode = unReplNode node
+      nodeIsBottom = (==) (getNodeState graph gnode) Nothing
+      sucResults =
+            fmap
+                (getInterestingBranchingNode (n - 1) graph . ReplNode)
+                (Graph.suc graph gnode)
+      interestingResults = catMaybes sucResults
 
 -- | Get the node labels for the current claim.
 getLabels

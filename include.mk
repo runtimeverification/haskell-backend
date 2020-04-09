@@ -24,6 +24,7 @@ KOMPILE = $(K_RELEASE_BIN)/kompile
 KRUN = $(K_RELEASE_BIN)/krun
 export KRUN
 KPROVE = $(K_RELEASE_BIN)/kprove
+export KPROVE
 KBMC = $(K_RELEASE_BIN)/kbmc
 
 KOMPILE_OPTS = --backend haskell
