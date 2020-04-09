@@ -31,7 +31,7 @@ KRUN_OPTS = --haskell-backend-command $(KORE_EXEC)
 export KRUN_OPTS
 KPROVE_OPTS = --haskell-backend-command $(KORE_EXEC)
 export KPROVE_OPTS
-KPROVE_REPL_OPTS = --haskell-backend-command $(KORE_REPL)
+KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) $(KORE_REPL_OPTS)"
 export KPROVE_REPL_OPTS
 
 HS_TOP = $(TOP)/kore
@@ -48,7 +48,9 @@ export KORE_EXEC
 export KORE_EXEC_OPTS
 
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
+KORE_REPL_OPTS =
 export KORE_REPL
+export KORE_REPL_OPTS
 
 $(KORE_EXEC):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
