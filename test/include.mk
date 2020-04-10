@@ -108,6 +108,10 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %-spec.k.repl: $(TEST_DIR)/%-spec.k $(KORE_REPL) $(TEST_DEPS)
 	$(KPROVE) $(KPROVE_REPL_OPTS) $<
 
+%-spec.k.run-repl-script: $(TEST_DIR)/%-spec.k $(KORE_REPL) $(TEST_DEPS)
+	$(KPROVE) $(KPROVE_REPL_OPTS) $<
+%-spec.k.run-repl-script: KORE_REPL_OPTS= -r --repl-script $@
+
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 %-repl-script-spec.k.out: %-repl-script-spec.k.repl
