@@ -25,6 +25,9 @@ module Kore.Builtin.KEqual
     , iteKey
     ) where
 
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import Control.Error
@@ -163,8 +166,15 @@ evalKEq true (valid :< app) =
         -> TermLike variable
         -> MaybeT simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2 = do
+        -- traceM
+        --     $ "\n\nEvalEq: " <> show true <> "\n\n"
+        --     <> "\n\nTermLike1:\n\n"
+        --     <> unparseToString termLike1
+        --     <> "\n\nTermLike2:\n\n"
+        --     <> unparseToString termLike2
         asConcrete1 <- hoistMaybe $ Builtin.toKey termLike1
         asConcrete2 <- hoistMaybe $ Builtin.toKey termLike2
+        -- traceM "\n\nSHOULD GET HERE\n\n"
         Builtin.appliedFunction
             $ Bool.asPattern sort
             $ comparison asConcrete1 asConcrete2
@@ -238,13 +248,28 @@ termKEqualsFalse unifyChildren a b =
   where
     unifyChildren' term1 term2 =
         Pattern.withoutTerm <$> unifyChildren term1 term2
+    atLeastOneSymbolic term1 term2 =
+        case (Builtin.toKey term1, Builtin.toKey term2) of
+           (Nothing, _) -> True
+           (_, Nothing) -> True
+           _ -> False
     worker termLike1 termLike2
       | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
       , isFunctionPattern termLike1
       , Just value2 <- Bool.matchBool termLike2
       , not value2
+      , atLeastOneSymbolic operand1 operand2
       = lift $ do
+        -- traceM
+        --     $ "\n\nKEqualsFalse simplification:\n\n"
+        --     <> "\n\nTermLike1:\n\n"
+        --     <> unparseToString termLike1
+        --     <> "\n\nTermLike2:\n\n"
+        --     <> unparseToString termLike2
         condition <- unifyChildren' operand1 operand2
+        -- traceM
+        --     $ "\n\nKEqualsFalse unification condition:\n\n"
+        --     <> unparseToString condition
         pure Conditional
             { term = termLike2
             , predicate = makeNotPredicate (Condition.toPredicate condition)
