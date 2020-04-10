@@ -28,6 +28,7 @@ let
           profilingDetail = "none";
           # package kore
           packages.kore = {
+            enableLibraryProfiling = profiling;
             enableExecutableProfiling = profiling;
             profilingDetail = "toplevel-functions";
           };

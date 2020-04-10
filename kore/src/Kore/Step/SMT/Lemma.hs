@@ -76,7 +76,7 @@ declareSMTLemmas m = do
         guard (isSmtLemma $ Attribute.smtLemma atts)
         (lemma, TranslatorState { terms }) <-
             runTranslator
-            $ translatePredicate translateUninterpreted
+            $ translatePredicateWith translateUninterpreted
             $ wrapPredicate $ sentenceAxiomPattern axiomDeclaration
         SMT.assert (addQuantifiers terms lemma)
 

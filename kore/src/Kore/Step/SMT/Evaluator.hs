@@ -12,19 +12,22 @@ module Kore.Step.SMT.Evaluator
     , filterBranch
     , filterMultiOr
     , translateTerm
-    , goTranslatePredicate
+    , translatePredicate
     ) where
 
 import Prelude.Kore
 
 import Control.Error
-    ( MaybeT
-    , hoistMaybe
+    ( hoistMaybe
     , runMaybeT
     )
 import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
+import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Set as Set
@@ -56,13 +59,20 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition
-    ( debugEvaluateCondition
+    ( debugEvaluateConditionResult
+    , whileDebugEvaluateCondition
+    )
+import Kore.Log.WarnDecidePredicateUnknown
+    ( warnDecidePredicateUnknown
     )
 import qualified Kore.Profiler.Profile as Profile
     ( smtDecision
@@ -97,13 +107,33 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate predicate
+            _ -> decidePredicate (predicate :| [])
+
+instance
+    InternalVariable variable
+    => Evaluable (SideCondition variable, Predicate variable)
+  where
+    evaluate (sideCondition, predicate) =
+        case predicate of
+            Predicate.PredicateTrue -> return (Just True)
+            Predicate.PredicateFalse -> return (Just False)
+            _ ->
+                decidePredicate
+                $ predicate :| [from @_ @(Predicate _) sideCondition]
 
 instance InternalVariable variable => Evaluable (Conditional variable term)
   where
     evaluate conditional =
         assert (Conditional.isNormalized conditional)
         $ evaluate (Conditional.predicate conditional)
+
+instance
+    InternalVariable variable
+    => Evaluable (SideCondition variable, Conditional variable term)
+  where
+    evaluate (sideCondition, conditional) =
+        assert (Conditional.isNormalized conditional)
+        $ evaluate (sideCondition, Conditional.predicate conditional)
 
 {- | Removes all branches refuted by an external SMT solver.
  -}
@@ -147,31 +177,28 @@ filterMultiOr multiOr = do
 The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
-    :: forall variable simplifier.
-        ( InternalVariable variable
-        , MonadSimplify simplifier
-        )
-    => Predicate variable
+    :: forall variable simplifier
+    .  InternalVariable variable
+    => MonadSimplify simplifier
+    => NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
-decidePredicate korePredicate =
-    SMT.withSolver $ runMaybeT $ do
-        debugEvaluateCondition korePredicate
+decidePredicate predicates =
+    whileDebugEvaluateCondition predicates
+    $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
         tools <- Simplifier.askMetadataTools
-        smtPredicate <- goTranslatePredicate tools korePredicate
-        result <-
-            Profile.smtDecision smtPredicate
-            $ SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
+        predicates' <- traverse (translatePredicate tools) predicates
+        result <- Profile.smtDecision predicates' $ SMT.withSolver $ do
+            Foldable.traverse_ SMT.assert predicates'
+            SMT.check
+        debugEvaluateConditionResult result
         case result of
-            Unsat   -> return False
-            Sat     -> empty
+            Unsat -> return False
+            Sat -> empty
             Unknown -> do
-                (logWarning . Text.pack . show . Pretty.vsep)
-                    [ "Failed to decide predicate:"
-                    , Pretty.indent 4 (unparse korePredicate)
-                    ]
+                warnDecidePredicateUnknown predicates
                 empty
 
-goTranslatePredicate
+translatePredicate
     :: forall variable m.
         ( InternalVariable variable
         , SMT.MonadSMT m
@@ -179,11 +206,9 @@ goTranslatePredicate
         )
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
-    -> MaybeT m SExpr
-goTranslatePredicate tools predicate = evalTranslator translator
-  where
-    translator =
-        give tools $ translatePredicate translateTerm predicate
+    -> Translator m variable SExpr
+translatePredicate tools predicate =
+    give tools $ translatePredicateWith translateTerm predicate
 
 translateTerm
     :: InternalVariable variable
