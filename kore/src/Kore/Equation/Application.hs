@@ -7,11 +7,15 @@ License     : NCSA
 module Kore.Equation.Application
     ( applyEquation
     , ApplyEquationResult
-    , DebugApplyEquation (..)
+    -- * Errors
     , ApplyEquationError (..)
     , MatchError (..)
     , ApplyMatchResultErrors (..), ApplyMatchResultError (..)
     , CheckRequiresError (..)
+    -- * Logging
+    , DebugApplyEquation (..)
+    , debugEquationApplied
+    , debugApplyEquationResult
     ) where
 
 import Prelude.Kore
@@ -110,19 +114,217 @@ import Pretty
     )
 import qualified Pretty
 
+{- | The outcome of an attempt to apply an 'Equation'.
+
+@ApplyEquationResult@ is 'Right' if the equation is applicable, and 'Left'
+otherwise. If the equation is not applicable, the 'ApplyEquationError' will
+indicate the reason.
+
+ -}
 type ApplyEquationResult variable =
     Either (ApplyEquationError variable) (Pattern variable)
 
-mapApplyEquationResultVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
-    -> ApplyEquationResult variable1
-    -> ApplyEquationResult variable2
-mapApplyEquationResultVariables mapElemVar mapSetVar =
-    Bifunctor.bimap
-        (mapApplyEquationErrorVariables mapElemVar mapSetVar)
-        (Pattern.mapVariables mapElemVar mapSetVar)
+{- | Attempt to apply an 'Equation' to the 'TermLike'.
+
+The 'SideCondition' is used to evaluate the 'requires' clause of the 'Equation'.
+
+The caller should use 'debugEquationApplied' to log when the result of an
+equation is actually used; @applyEquation@ will only log when an equation is
+applicable.
+
+ -}
+applyEquation
+    :: forall simplifier variable
+    .  MonadSimplify simplifier
+    => InternalVariable variable
+    => SideCondition (Target variable)
+    -> TermLike (Target variable)
+    -> Equation variable
+    -> simplifier (ApplyEquationResult variable)
+applyEquation sideCondition termLike equation =
+    whileDebugApplyEquation' $ runExceptT $ do
+        let Equation { left } = equationRenamed
+        matchResult <- match left termLike & whileMatch
+        (equation', predicate) <-
+            applyMatchResult equationRenamed matchResult
+            & whileApplyMatchResult
+        let Equation { requires } = equation'
+        checkRequires sideCondition predicate requires & whileCheckRequires
+        let Equation { right, ensures } = equation'
+        return $ Pattern.withCondition right $ from @(Predicate _) ensures
+  where
+    equationRenamed = targetEquationVariables sideCondition termLike equation
+    matchError =
+        MatchError
+        { matchTerm = termLike
+        , matchEquation = equationRenamed
+        }
+    match term1 term2 =
+        matchIncremental term1 term2
+        & MaybeT & noteT matchError
+
+    whileDebugApplyEquation'
+        :: simplifier (ApplyEquationResult variable)
+        -> simplifier (ApplyEquationResult variable)
+    whileDebugApplyEquation' action = do
+        result <- whileDebugApplyEquation termLike equationRenamed action
+        debugApplyEquationResult result
+        return result
+
+{- | Use a 'MatchResult' to instantiate an 'Equation'.
+
+The 'MatchResult' must cover all the free variables of the 'Equation'; this
+condition is not checked, but enforced by the matcher. The result is the
+'Equation' and any 'Predicate' assembled during matching, both instantiated by
+the 'MatchResult'.
+
+Throws 'ApplyMatchResultErrors' if there is a problem with the 'MatchResult'.
+
+ -}
+applyMatchResult
+    :: forall monad variable
+    .   Monad monad
+    =>  InternalVariable variable
+    =>  Equation (Target variable)
+    ->  MatchResult (Target variable)
+    ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
+            (Equation variable, Predicate variable)
+applyMatchResult equation matchResult@(predicate, substitution) = do
+    case errors of
+        x : xs ->
+            throwE ApplyMatchResultErrors
+                { matchResult
+                , applyMatchErrors = x :| xs
+                }
+        _      -> return ()
+    let predicate' =
+            Predicate.substitute substitution predicate
+            & Predicate.mapVariables Target.unTargetElement Target.unTargetSet
+        equation' =
+            Equation.substitute substitution equation
+            & Equation.mapVariables Target.unTargetElement Target.unTargetSet
+    return (equation', predicate')
+  where
+    equationVariables =
+        freeVariables equation
+        & FreeVariables.getFreeVariables
+        & Set.toList
+
+    errors = concatMap checkVariable equationVariables
+
+    checkVariable variable =
+        case Map.lookup variable substitution of
+            Nothing -> [NotMatched variable]
+            Just termLike ->
+                checkConcreteVariable variable termLike
+                <> checkSymbolicVariable variable termLike
+
+    checkConcreteVariable variable termLike
+      | Set.member variable concretes
+      , (not . TermLike.isConstructorLike) termLike
+      = [NotConcrete variable termLike]
+      | otherwise
+      = empty
+
+    checkSymbolicVariable variable termLike
+      | Set.member variable symbolics
+      , TermLike.isConstructorLike termLike
+      = [NotSymbolic variable termLike]
+      | otherwise
+      = empty
+
+    Equation { attributes } = equation
+    concretes =
+        attributes
+        & Attribute.concrete & Attribute.unConcrete
+        & FreeVariables.getFreeVariables
+    symbolics =
+        attributes
+        & Attribute.symbolic & Attribute.unSymbolic
+        & FreeVariables.getFreeVariables
+
+{- | Check that the requires from matching and the 'Equation' hold.
+
+Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
+'SideCondition'.
+
+ -}
+checkRequires
+    :: forall simplifier variable
+    .  MonadSimplify simplifier
+    => InternalVariable variable
+    => SideCondition (Target variable)
+    -> Predicate variable  -- ^ requires from matching
+    -> Predicate variable  -- ^ requires from 'Equation'
+    -> ExceptT (CheckRequiresError variable) simplifier ()
+checkRequires sideCondition predicate requires =
+    do
+        let requires' = makeAndPredicate predicate requires
+            -- The condition to refute:
+            condition :: Condition variable
+            condition = from @(Predicate _) (makeNotPredicate requires')
+        return condition
+            -- First try to refute 'condition' without user-defined axioms:
+            >>= withoutAxioms . simplifyCondition
+            -- Next try to refute 'condition' including user-defined axioms:
+            >>= withAxioms . simplifyCondition
+            -- Finally, try to refute the simplified 'condition' using the
+            -- external solver:
+            >>= SMT.filterBranch . withSideCondition
+            >>= return . snd
+    -- Collect the simplified results. If they are \bottom, then \and(predicate,
+    -- requires) is valid; otherwise, the required pre-conditions are not met
+    -- and the rule will not be applied.
+    & (OrCondition.gather >=> assertBottom)
+  where
+    simplifyCondition = Simplifier.simplifyCondition sideCondition'
+
+    -- TODO (thomas.tuegel): Do not unwrap sideCondition.
+    sideCondition' =
+        SideCondition.mapVariables
+            Target.unTargetElement
+            Target.unTargetSet
+            sideCondition
+
+    assertBottom orCondition
+      | isBottom orCondition = done
+      | otherwise            = requiresNotMet
+    done = return ()
+    requiresNotMet =
+        throwE CheckRequiresError
+            { matchPredicate = predicate
+            , equationRequires = requires
+            }
+
+    -- Pair a configuration with sideCondition for evaluation by the solver.
+    withSideCondition = (,) sideCondition'
+
+    withoutAxioms =
+        fmap Condition.forgetSimplified
+        . Simplifier.localSimplifierAxioms (const mempty)
+    withAxioms = id
+
+{- | Make the 'Equation' variables distinct from the initial pattern.
+
+The variables are marked 'Target' and renamed to avoid any variables in the
+'SideCondition' or the 'TermLike'.
+
+ -}
+targetEquationVariables
+    :: forall variable
+    .  InternalVariable variable
+    => SideCondition (Target variable)
+    -> TermLike (Target variable)
+    -> Equation variable
+    -> Equation (Target variable)
+targetEquationVariables sideCondition initial =
+    snd
+    . Equation.refreshVariables avoiding
+    . Equation.mapVariables Target.mkElementTarget Target.mkSetTarget
+  where
+    avoiding = freeVariables sideCondition <> freeVariables initial
+
+-- * Errors
 
 {- | Errors that can occur during 'applyEquation'.
  -}
@@ -200,63 +402,6 @@ instance InternalVariable variable => Pretty (ApplyEquationError variable) where
     pretty (WhileCheckRequires checkRequiresError) =
         pretty checkRequiresError
 
--- | TODO
-data DebugApplyEquation
-    = DebugApplyEquation (TermLike Variable) (Equation Variable)
-    | DebugApplyEquationResult (ApplyEquationResult Variable)
-    deriving (GHC.Generic)
-
-instance Pretty DebugApplyEquation where
-    pretty (DebugApplyEquation termLike equation) =
-        Pretty.vsep
-        [ "applying equation:"
-        , Pretty.indent 4 (pretty equation)
-        , "to term:"
-        , Pretty.indent 4 (unparse termLike)
-        ]
-    pretty (DebugApplyEquationResult (Left applyEquationError)) =
-        Pretty.vsep
-        [ "equation is not applicable:"
-        , pretty applyEquationError
-        ]
-    pretty (DebugApplyEquationResult (Right result)) =
-        Pretty.vsep
-        [ "equation is applicable with result:"
-        , Pretty.indent 4 (unparse result)
-        ]
-
-instance Entry DebugApplyEquation where
-    entrySeverity _ = Debug
-    shortDoc _ = Just "while applying equation"
-
-debugApplyEquationResult
-    :: MonadLog log
-    => InternalVariable variable
-    => ApplyEquationResult variable
-    -> log ()
-debugApplyEquationResult =
-    logEntry
-    . DebugApplyEquationResult
-    . mapApplyEquationResultVariables toElementVariable toSetVariable
-  where
-    toElementVariable = fmap toVariable
-    toSetVariable = fmap toVariable
-
-whileDebugApplyEquation
-    :: MonadLog log
-    => InternalVariable variable
-    => TermLike variable
-    -> Equation variable
-    -> log a
-    -> log a
-whileDebugApplyEquation termLike equation =
-    logWhile (DebugApplyEquation termLike' equation')
-  where
-    toElementVariable = fmap toVariable
-    toSetVariable = fmap toVariable
-    termLike' = TermLike.mapVariables toElementVariable toSetVariable termLike
-    equation' = Equation.mapVariables toElementVariable toSetVariable equation
-
 {- | Errors that can occur while matching the equation to the term.
  -}
 data MatchError variable =
@@ -297,44 +442,6 @@ mapMatchErrorVariables mapElemVar mapSetVar =
         , matchEquation =
             Equation.mapVariables mapElemVar mapSetVar matchEquation
         }
-
-applyEquation
-    :: forall simplifier variable
-    .  MonadSimplify simplifier
-    => InternalVariable variable
-    => SideCondition (Target variable)
-    -> TermLike (Target variable)
-    -> Equation variable
-    -> simplifier (ApplyEquationResult variable)
-applyEquation sideCondition termLike equation =
-    whileDebugApplyEquation' $ runExceptT $ do
-        let Equation { left } = equationRenamed
-        matchResult <- match left termLike & whileMatch
-        (equation', predicate) <-
-            applyMatchResult equationRenamed matchResult
-            & whileApplyMatchResult
-        let Equation { requires } = equation'
-        checkRequires sideCondition predicate requires & whileCheckRequires
-        let Equation { right, ensures } = equation'
-        return $ Pattern.withCondition right $ from @(Predicate _) ensures
-  where
-    equationRenamed = targetEquationVariables sideCondition termLike equation
-    matchError =
-        MatchError
-        { matchTerm = termLike
-        , matchEquation = equationRenamed
-        }
-    match term1 term2 =
-        matchIncremental term1 term2
-        & MaybeT & noteT matchError
-
-    whileDebugApplyEquation'
-        :: simplifier (ApplyEquationResult variable)
-        -> simplifier (ApplyEquationResult variable)
-    whileDebugApplyEquation' action = do
-        result <- whileDebugApplyEquation termLike equationRenamed action
-        debugApplyEquationResult result
-        return result
 
 {- | Errors that can occur during 'applyMatchResult'.
 
@@ -468,79 +575,6 @@ mapApplyMatchResultErrorVariables mapElemVar mapSetVar applyMatchResultError =
     mapUnifiedVariable' = mapUnifiedVariable mapElemVar mapSetVar
     mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
 
-
-{- | Use a 'MatchResult' to instantiate an 'Equation'.
-
-The 'MatchResult' must cover all the free variables of the 'Equation'; this
-condition is not checked, but enforced by the matcher. The result is the
-'Equation' and any 'Predicate' assembled during matching, both instantiated by
-the 'MatchResult'.
-
-Throws 'ApplyMatchResultErrors' if there is a problem with the 'MatchResult'.
-
- -}
-applyMatchResult
-    :: forall monad variable
-    .   Monad monad
-    =>  InternalVariable variable
-    =>  Equation (Target variable)
-    ->  MatchResult (Target variable)
-    ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
-            (Equation variable, Predicate variable)
-applyMatchResult equation matchResult@(predicate, substitution) = do
-    case errors of
-        x : xs ->
-            throwE ApplyMatchResultErrors
-                { matchResult
-                , applyMatchErrors = x :| xs
-                }
-        _      -> return ()
-    let predicate' =
-            Predicate.substitute substitution predicate
-            & Predicate.mapVariables Target.unTargetElement Target.unTargetSet
-        equation' =
-            Equation.substitute substitution equation
-            & Equation.mapVariables Target.unTargetElement Target.unTargetSet
-    return (equation', predicate')
-  where
-    equationVariables =
-        freeVariables equation
-        & FreeVariables.getFreeVariables
-        & Set.toList
-
-    errors = concatMap checkVariable equationVariables
-
-    checkVariable variable =
-        case Map.lookup variable substitution of
-            Nothing -> [NotMatched variable]
-            Just termLike ->
-                checkConcreteVariable variable termLike
-                <> checkSymbolicVariable variable termLike
-
-    checkConcreteVariable variable termLike
-      | Set.member variable concretes
-      , (not . TermLike.isConstructorLike) termLike
-      = [NotConcrete variable termLike]
-      | otherwise
-      = empty
-
-    checkSymbolicVariable variable termLike
-      | Set.member variable symbolics
-      , TermLike.isConstructorLike termLike
-      = [NotSymbolic variable termLike]
-      | otherwise
-      = empty
-
-    Equation { attributes } = equation
-    concretes =
-        attributes
-        & Attribute.concrete & Attribute.unConcrete
-        & FreeVariables.getFreeVariables
-    symbolics =
-        attributes
-        & Attribute.symbolic & Attribute.unSymbolic
-        & FreeVariables.getFreeVariables
-
 {- | Errors that can occur during 'checkRequires'.
  -}
 data CheckRequiresError variable =
@@ -583,83 +617,110 @@ mapCheckRequiresErrorVariables mapElemVar mapSetVar checkRequiresError =
     mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
     CheckRequiresError { matchPredicate, equationRequires } = checkRequiresError
 
-{- | Check that the requires from matching and the 'Equation' hold.
+-- * Logging
 
-Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
-'SideCondition'.
+{- | Log entries for all phases of equation application.
+ -}
+data DebugApplyEquation
+    = DebugApplyEquation (TermLike Variable) (Equation Variable)
+    -- ^ Covers the entire scope of 'applyEquation'.
+    | DebugApplyEquationResult (ApplyEquationResult Variable)
+    -- ^ Entered into the log when an equation is applicable.
+    | DebugEquationApplied (Equation Variable) (Pattern Variable)
+    -- ^ Entered into the log when an equation's result is actually used.
+    deriving (GHC.Generic)
+
+instance Pretty DebugApplyEquation where
+    pretty (DebugApplyEquation termLike equation) =
+        Pretty.vsep
+        [ "applying equation:"
+        , Pretty.indent 4 (pretty equation)
+        , "to term:"
+        , Pretty.indent 4 (unparse termLike)
+        ]
+    pretty (DebugApplyEquationResult (Left applyEquationError)) =
+        Pretty.vsep
+        [ "equation is not applicable:"
+        , pretty applyEquationError
+        ]
+    pretty (DebugApplyEquationResult (Right result)) =
+        Pretty.vsep
+        [ "equation is applicable with result:"
+        , Pretty.indent 4 (unparse result)
+        ]
+    pretty (DebugEquationApplied equation result) =
+        Pretty.vsep
+        [ "applied equation:"
+        , Pretty.indent 4 (pretty equation)
+        , "with result:"
+        , Pretty.indent 4 (unparse result)
+        ]
+
+instance Entry DebugApplyEquation where
+    entrySeverity _ = Debug
+    shortDoc _ = Just "while applying equation"
+
+{- | Log the result of attempting to apply an 'Equation'.
 
  -}
-checkRequires
-    :: forall simplifier variable
-    .  MonadSimplify simplifier
+debugApplyEquationResult
+    :: MonadLog log
     => InternalVariable variable
-    => SideCondition (Target variable)
-    -> Predicate variable  -- ^ requires from matching
-    -> Predicate variable  -- ^ requires from 'Equation'
-    -> ExceptT (CheckRequiresError variable) simplifier ()
-checkRequires sideCondition predicate requires =
-    do
-        let requires' = makeAndPredicate predicate requires
-            -- The condition to refute:
-            condition :: Condition variable
-            condition = from @(Predicate _) (makeNotPredicate requires')
-        return condition
-            -- First try to refute 'condition' without user-defined axioms:
-            >>= withoutAxioms . simplifyCondition
-            -- Next try to refute 'condition' including user-defined axioms:
-            >>= withAxioms . simplifyCondition
-            -- Finally, try to refute the simplified 'condition' using the
-            -- external solver:
-            >>= SMT.filterBranch . withSideCondition
-            >>= return . snd
-    -- Collect the simplified results. If they are \bottom, then \and(predicate,
-    -- requires) is valid; otherwise, the required pre-conditions are not met
-    -- and the rule will not be applied.
-    & (OrCondition.gather >=> assertBottom)
+    => ApplyEquationResult variable
+    -> log ()
+debugApplyEquationResult =
+    logEntry
+    . DebugApplyEquationResult
+    . mapApplyEquationResultVariables toElementVariable toSetVariable
   where
-    simplifyCondition = Simplifier.simplifyCondition sideCondition'
+    toElementVariable = fmap toVariable
+    toSetVariable = fmap toVariable
 
-    -- TODO (thomas.tuegel): Do not unwrap sideCondition.
-    sideCondition' =
-        SideCondition.mapVariables
-            Target.unTargetElement
-            Target.unTargetSet
-            sideCondition
+{- | Log when an 'Equation' is actually applied.
 
-    assertBottom orCondition
-      | isBottom orCondition = done
-      | otherwise            = requiresNotMet
-    done = return ()
-    requiresNotMet =
-        throwE CheckRequiresError
-            { matchPredicate = predicate
-            , equationRequires = requires
-            }
-
-    -- Pair a configuration with sideCondition for evaluation by the solver.
-    withSideCondition = (,) sideCondition'
-
-    withoutAxioms =
-        fmap Condition.forgetSimplified
-        . Simplifier.localSimplifierAxioms (const mempty)
-    withAxioms = id
-
-{- | Make the 'Equation' variables distinct from the initial pattern.
-
-The variables are marked 'Target' and renamed to avoid any variables in the
-'SideCondition' or the 'TermLike'.
+@debugEquationApplied@ is different from 'debugApplyEquationResult', which only
+indicates if an equation is applicable, that is: if it could apply. If multiple
+equations are applicable in the same place, the caller will determine which is
+actually applied. Therefore, the /caller/ should use this log entry after
+'applyEquation'.
 
  -}
-targetEquationVariables
-    :: forall variable
-    .  InternalVariable variable
-    => SideCondition (Target variable)
-    -> TermLike (Target variable)
-    -> Equation variable
-    -> Equation (Target variable)
-targetEquationVariables sideCondition initial =
-    snd
-    . Equation.refreshVariables avoiding
-    . Equation.mapVariables Target.mkElementTarget Target.mkSetTarget
+debugEquationApplied
+    :: MonadLog log
+    => InternalVariable variable
+    => Equation variable
+    -> Pattern variable
+    -> log ()
+debugEquationApplied equation result =
+    logEntry $ DebugEquationApplied equation' result'
   where
-    avoiding = freeVariables sideCondition <> freeVariables initial
+    toElementVariable = fmap toVariable
+    toSetVariable = fmap toVariable
+    equation' = Equation.mapVariables toElementVariable toSetVariable equation
+    result' = Pattern.mapVariables toElementVariable toSetVariable result
+
+mapApplyEquationResultVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> ApplyEquationResult variable1
+    -> ApplyEquationResult variable2
+mapApplyEquationResultVariables mapElemVar mapSetVar =
+    Bifunctor.bimap
+        (mapApplyEquationErrorVariables mapElemVar mapSetVar)
+        (Pattern.mapVariables mapElemVar mapSetVar)
+
+whileDebugApplyEquation
+    :: MonadLog log
+    => InternalVariable variable
+    => TermLike variable
+    -> Equation variable
+    -> log a
+    -> log a
+whileDebugApplyEquation termLike equation =
+    logWhile (DebugApplyEquation termLike' equation')
+  where
+    toElementVariable = fmap toVariable
+    toSetVariable = fmap toVariable
+    termLike' = TermLike.mapVariables toElementVariable toSetVariable termLike
+    equation' = Equation.mapVariables toElementVariable toSetVariable equation
