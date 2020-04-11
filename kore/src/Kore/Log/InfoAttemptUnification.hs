@@ -31,7 +31,7 @@ import Pretty
 import qualified Pretty
 
 data InfoAttemptUnification =
-    InfoAttemptUnification { term1, term2 :: !(TermLike Variable) }
+    InfoAttemptUnification { term1, term2 :: TermLike Variable }
     deriving (GHC.Generic)
 
 instance SOP.Generic InfoAttemptUnification
@@ -40,6 +40,7 @@ instance SOP.HasDatatypeInfo InfoAttemptUnification
 
 instance Entry InfoAttemptUnification where
     entrySeverity _ = Info
+    shortDoc _ = Just "while attempting unification"
 
 instance Pretty InfoAttemptUnification where
     pretty InfoAttemptUnification { term1, term2 } =
