@@ -12,16 +12,6 @@ module Kore.Log.Registry
     , textToType
     , getEntryTypesAsText
     , typeOfSomeEntry
-    -- entry types
-    , debugAppliedRuleType
-    , debugAxiomEvaluationType
-    , debugSolverSendType
-    , debugSolverRecvType
-    , warnBottomHookType
-    , warnFunctionWithoutEvaluatorsType
-    , debugSkipSimplificationType
-    , infoAttemptUnificationType
-    , errorRewritesInstantiationType
     ) where
 
 import Prelude.Kore
@@ -114,25 +104,25 @@ data Registry =
 registry :: Registry
 registry =
     let textToType =
-            Map.fromList
-                [ register debugAppliedRuleType
-                , register debugAxiomEvaluationType
-                , register debugSolverSendType
-                , register debugSolverRecvType
-                , register debugProofStateType
-                , register debugAppliedRewriteRulesType
-                , register warnBottomHookType
-                , register warnDecidePredicateUnknownType
-                , register warnFunctionWithoutEvaluatorsType
-                , register debugSkipSimplificationType
-                , register logDebugEvaluateConditionType
-                , register criticalExecutionErrorType
-                , register logMessageType
-                , register infoAttemptUnificationType
-                , register infoReachabilityType
-                , register errorRewritesInstantiationType
-                , register debugApplyEquationType
-                , register debugEquationAppliedType
+            (Map.fromList . map register)
+                [ debugAppliedRuleType
+                , debugAxiomEvaluationType
+                , debugSolverSendType
+                , debugSolverRecvType
+                , debugProofStateType
+                , debugAppliedRewriteRulesType
+                , warnBottomHookType
+                , warnDecidePredicateUnknownType
+                , warnFunctionWithoutEvaluatorsType
+                , debugSkipSimplificationType
+                , logDebugEvaluateConditionType
+                , criticalExecutionErrorType
+                , logMessageType
+                , infoAttemptUnificationType
+                , infoReachabilityType
+                , errorRewritesInstantiationType
+                , debugApplyEquationType
+                , debugEquationAppliedType
                 ]
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
