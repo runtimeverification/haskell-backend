@@ -154,6 +154,7 @@ simplificationEvaluation equation =
                 let simplify =
                         OrPattern.simplifyConditionsWithSmt condition
                         . OrPattern.fromPattern
+                Equation.debugEquationApplied equation' applied
                 appliedResults <- simplify applied
                 (return . Applied) AttemptedAxiomResults
                     { results = appliedResults
