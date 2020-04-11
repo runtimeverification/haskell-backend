@@ -103,27 +103,7 @@ data Registry =
 -- When adding a new entry type you should register it here.
 registry :: Registry
 registry =
-    let textToType =
-            (Map.fromList . map register)
-                [ debugAppliedRuleType
-                , debugAxiomEvaluationType
-                , debugSolverSendType
-                , debugSolverRecvType
-                , debugProofStateType
-                , debugAppliedRewriteRulesType
-                , warnBottomHookType
-                , warnDecidePredicateUnknownType
-                , warnFunctionWithoutEvaluatorsType
-                , debugSkipSimplificationType
-                , logDebugEvaluateConditionType
-                , criticalExecutionErrorType
-                , logMessageType
-                , infoAttemptUnificationType
-                , infoReachabilityType
-                , errorRewritesInstantiationType
-                , debugApplyEquationType
-                , debugEquationAppliedType
-                ]
+    let textToType = (Map.fromList . map register) entryTypeReps
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
           then Registry { textToType, typeToText }
@@ -137,6 +117,28 @@ registry =
     register type' =
         (asText type', type')
 
+entryTypeReps :: [SomeTypeRep]
+entryTypeReps =
+    [ someTypeRep $ Proxy @DebugAppliedRule
+    , someTypeRep $ Proxy @DebugAxiomEvaluation
+    , someTypeRep $ Proxy @DebugSolverSend
+    , someTypeRep $ Proxy @DebugSolverRecv
+    , someTypeRep $ Proxy @DebugProofState
+    , someTypeRep $ Proxy @DebugAppliedRewriteRules
+    , someTypeRep $ Proxy @WarnBottomHook
+    , someTypeRep $ Proxy @WarnDecidePredicateUnknown
+    , someTypeRep $ Proxy @WarnFunctionWithoutEvaluators
+    , someTypeRep $ Proxy @DebugSkipSimplification
+    , someTypeRep $ Proxy @DebugEvaluateCondition
+    , someTypeRep $ Proxy @ErrorException
+    , someTypeRep $ Proxy @LogMessage
+    , someTypeRep $ Proxy @InfoAttemptUnification
+    , someTypeRep $ Proxy @InfoReachability
+    , someTypeRep $ Proxy @ErrorRewritesInstantiation
+    , someTypeRep $ Proxy @DebugApplyEquation
+    , someTypeRep $ Proxy @DebugEquationApplied
+    ]
+
 asText :: SomeTypeRep -> Text
 asText = Text.pack . show
 
@@ -147,63 +149,6 @@ makeInverse map' =
     Map.fromList
     $ swap
     <$> Map.toList map'
-
-debugAppliedRuleType
-  , debugAxiomEvaluationType
-  , debugSolverSendType
-  , debugSolverRecvType
-  , debugProofStateType
-  , debugAppliedRewriteRulesType
-  , warnBottomHookType
-  , warnDecidePredicateUnknownType
-  , warnFunctionWithoutEvaluatorsType
-  , debugSkipSimplificationType
-  , logDebugEvaluateConditionType
-  , criticalExecutionErrorType
-  , logMessageType
-  , infoAttemptUnificationType
-  , infoReachabilityType
-  , errorRewritesInstantiationType
-  , debugApplyEquationType
-  , debugEquationAppliedType
-  :: SomeTypeRep
-
-debugAppliedRuleType =
-    someTypeRep (Proxy @DebugAppliedRule)
-debugAxiomEvaluationType =
-    someTypeRep (Proxy @DebugAxiomEvaluation)
-debugSolverSendType =
-    someTypeRep (Proxy @DebugSolverSend)
-debugSolverRecvType =
-    someTypeRep (Proxy @DebugSolverRecv)
-debugProofStateType =
-    someTypeRep (Proxy @DebugProofState)
-debugAppliedRewriteRulesType =
-    someTypeRep (Proxy @DebugAppliedRewriteRules)
-warnBottomHookType =
-    someTypeRep (Proxy @WarnBottomHook)
-warnDecidePredicateUnknownType =
-    someTypeRep (Proxy @WarnDecidePredicateUnknown)
-warnFunctionWithoutEvaluatorsType =
-    someTypeRep (Proxy @WarnFunctionWithoutEvaluators)
-debugSkipSimplificationType =
-    someTypeRep (Proxy @DebugSkipSimplification)
-logDebugEvaluateConditionType =
-    someTypeRep (Proxy @DebugEvaluateCondition)
-criticalExecutionErrorType =
-    someTypeRep (Proxy @ErrorException)
-logMessageType =
-    someTypeRep (Proxy @LogMessage)
-infoAttemptUnificationType =
-    someTypeRep (Proxy @InfoAttemptUnification)
-infoReachabilityType =
-    someTypeRep (Proxy @InfoReachability)
-errorRewritesInstantiationType =
-    someTypeRep (Proxy @ErrorRewritesInstantiation)
-debugApplyEquationType =
-    someTypeRep (Proxy @DebugApplyEquation)
-debugEquationAppliedType =
-    someTypeRep (Proxy @DebugEquationApplied)
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =
