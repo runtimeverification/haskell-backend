@@ -17,14 +17,15 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import Prelude.Kore
 
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
-import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
-
 import Data.Semigroup
     ( Min (..)
     , Option (..)
     )
+import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
+
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation
     ( Equation
@@ -93,7 +94,14 @@ definitionEvaluation equations =
                     Target.mkElementNonTarget
                     Target.mkSetNonTarget
                     condition
-        results <- traverse (Equation.applyEquation condition' term') equations'
+        let -- Attempt an equation, pairing it with its result, if applicable.
+            applyEquation equation = do
+                result <- Equation.applyEquation condition' term' equation
+                let debug = \applied -> do
+                        Equation.debugEquationApplied equation applied
+                        return applied
+                pure $ Bifunctor.second debug result
+        results <- traverse applyEquation equations'
         case partitionEithers results of
             (_, applied : applieds) -> do
                 let simplify =
@@ -101,8 +109,9 @@ definitionEvaluation equations =
                         . OrPattern.fromPattern
                     -- TODO (thomas.tuegel): Warn about ambiguous results.
                     warnAmbiguity = return ()
+                result <- applied
                 unless (null applieds) warnAmbiguity
-                appliedResults <- simplify applied
+                appliedResults <- simplify result
                 (return . Applied) AttemptedAxiomResults
                     { results = appliedResults
                     , remainders = OrPattern.bottom
