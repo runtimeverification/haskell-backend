@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Equation.Application
     ( applyEquation
     , ApplyEquationResult
+    , DebugApplyEquation (..)
     , ApplyEquationError (..)
     , MatchError (..)
     , ApplyMatchResultErrors (..), ApplyMatchResultError (..)
@@ -26,6 +27,8 @@ import Control.Error
 import Control.Monad
     ( (>=>)
     )
+import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Foldable as Foldable
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
@@ -64,7 +67,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-    ( InternalVariable
+    ( ElementVariable (..)
+    , InternalVariable
+    , SetVariable (..)
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -77,17 +82,47 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT
+import Kore.Syntax.Variable
+    ( Variable
+    , toVariable
+    )
 import Kore.TopBottom
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
+    , mapUnifiedVariable
     )
+import Log
+    ( Entry (..)
+    , MonadLog
+    , Severity (..)
+    , logEntry
+    , logWhile
+    )
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 type ApplyEquationResult variable =
     Either (ApplyEquationError variable) (Pattern variable)
+
+mapApplyEquationResultVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> ApplyEquationResult variable1
+    -> ApplyEquationResult variable2
+mapApplyEquationResultVariables mapElemVar mapSetVar =
+    Bifunctor.bimap
+        (mapApplyEquationErrorVariables mapElemVar mapSetVar)
+        (Pattern.mapVariables mapElemVar mapSetVar)
 
 {- | Errors that can occur during 'applyEquation'.
  -}
@@ -97,6 +132,39 @@ data ApplyEquationError variable
     | WhileCheckRequires !(CheckRequiresError variable)
     deriving (Eq, Ord)
     deriving (GHC.Generic)
+
+mapApplyEquationErrorVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> ApplyEquationError variable1
+    -> ApplyEquationError variable2
+mapApplyEquationErrorVariables mapElemVar mapSetVar =
+    \case
+        WhileMatch matchError ->
+            WhileMatch
+            $ mapMatchErrorVariables
+                mapElemTargetVar mapSetTargetVar
+                matchError
+        WhileApplyMatchResult applyMatchResultErrors ->
+            WhileApplyMatchResult
+            $ mapApplyMatchResultErrorsVariables
+                mapElemTargetVar mapSetTargetVar
+                applyMatchResultErrors
+        WhileCheckRequires checkRequiresError ->
+            WhileCheckRequires
+            $ mapCheckRequiresErrorVariables
+                mapElemVar mapSetVar
+                checkRequiresError
+  where
+    mapElemTargetVar =
+        ElementVariable
+        . fmap (getElementVariable . mapElemVar . ElementVariable)
+        . getElementVariable
+    mapSetTargetVar =
+        SetVariable
+        . fmap (getSetVariable . mapSetVar . SetVariable)
+        . getSetVariable
 
 whileMatch
     :: Functor monad
@@ -124,6 +192,71 @@ instance Debug variable => Debug (ApplyEquationError variable)
 
 instance (Debug variable, Diff variable) => Diff (ApplyEquationError variable)
 
+instance InternalVariable variable => Pretty (ApplyEquationError variable) where
+    pretty (WhileMatch matchError) =
+        pretty matchError
+    pretty (WhileApplyMatchResult applyMatchResultErrors) =
+        pretty applyMatchResultErrors
+    pretty (WhileCheckRequires checkRequiresError) =
+        pretty checkRequiresError
+
+-- | TODO
+data DebugApplyEquation
+    = DebugApplyEquation (TermLike Variable) (Equation Variable)
+    | DebugApplyEquationResult (ApplyEquationResult Variable)
+    deriving (GHC.Generic)
+
+instance Pretty DebugApplyEquation where
+    pretty (DebugApplyEquation termLike equation) =
+        Pretty.vsep
+        [ "applying equation:"
+        , Pretty.indent 4 (pretty equation)
+        , "to term:"
+        , Pretty.indent 4 (unparse termLike)
+        ]
+    pretty (DebugApplyEquationResult (Left applyEquationError)) =
+        Pretty.vsep
+        [ "equation is not applicable:"
+        , pretty applyEquationError
+        ]
+    pretty (DebugApplyEquationResult (Right result)) =
+        Pretty.vsep
+        [ "equation is applicable with result:"
+        , Pretty.indent 4 (unparse result)
+        ]
+
+instance Entry DebugApplyEquation where
+    entrySeverity _ = Debug
+    shortDoc _ = Just "while applying equation"
+
+debugApplyEquationResult
+    :: MonadLog log
+    => InternalVariable variable
+    => ApplyEquationResult variable
+    -> log ()
+debugApplyEquationResult =
+    logEntry
+    . DebugApplyEquationResult
+    . mapApplyEquationResultVariables toElementVariable toSetVariable
+  where
+    toElementVariable = fmap toVariable
+    toSetVariable = fmap toVariable
+
+whileDebugApplyEquation
+    :: MonadLog log
+    => InternalVariable variable
+    => TermLike variable
+    -> Equation variable
+    -> log a
+    -> log a
+whileDebugApplyEquation termLike equation =
+    logWhile (DebugApplyEquation termLike' equation')
+  where
+    toElementVariable = fmap toVariable
+    toSetVariable = fmap toVariable
+    termLike' = TermLike.mapVariables toElementVariable toSetVariable termLike
+    equation' = Equation.mapVariables toElementVariable toSetVariable equation
+
 {- | Errors that can occur while matching the equation to the term.
  -}
 data MatchError variable =
@@ -142,6 +275,29 @@ instance Debug variable => Debug (MatchError variable)
 
 instance (Debug variable, Diff variable) => Diff (MatchError variable)
 
+instance InternalVariable variable => Pretty (MatchError variable) where
+    pretty MatchError { matchTerm, matchEquation } =
+        Pretty.vsep
+        [ "could not match term:"
+        , Pretty.indent 4 (unparse matchTerm)
+        , "with equation:"
+        , Pretty.indent 4 (pretty matchEquation)
+        ]
+
+mapMatchErrorVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> MatchError variable1
+    -> MatchError variable2
+mapMatchErrorVariables mapElemVar mapSetVar =
+    \MatchError { matchTerm, matchEquation } ->
+        MatchError
+        { matchTerm = TermLike.mapVariables mapElemVar mapSetVar matchTerm
+        , matchEquation =
+            Equation.mapVariables mapElemVar mapSetVar matchEquation
+        }
+
 applyEquation
     :: forall simplifier variable
     .  MonadSimplify simplifier
@@ -150,17 +306,17 @@ applyEquation
     -> TermLike (Target variable)
     -> Equation variable
     -> simplifier (ApplyEquationResult variable)
-applyEquation sideCondition termLike equation = runExceptT $ do
-    let
-        Equation { left } = equationRenamed
-    matchResult <- match left termLike & whileMatch
-    (equation', predicate) <-
-        applyMatchResult equationRenamed matchResult
-        & whileApplyMatchResult
-    let Equation { requires } = equation'
-    checkRequires sideCondition predicate requires & whileCheckRequires
-    let Equation { right, ensures } = equation'
-    return $ Pattern.withCondition right $ from @(Predicate _) ensures
+applyEquation sideCondition termLike equation =
+    whileDebugApplyEquation' $ runExceptT $ do
+        let Equation { left } = equationRenamed
+        matchResult <- match left termLike & whileMatch
+        (equation', predicate) <-
+            applyMatchResult equationRenamed matchResult
+            & whileApplyMatchResult
+        let Equation { requires } = equation'
+        checkRequires sideCondition predicate requires & whileCheckRequires
+        let Equation { right, ensures } = equation'
+        return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
     equationRenamed = targetEquationVariables sideCondition termLike equation
     matchError =
@@ -171,6 +327,14 @@ applyEquation sideCondition termLike equation = runExceptT $ do
     match term1 term2 =
         matchIncremental term1 term2
         & MaybeT & noteT matchError
+
+    whileDebugApplyEquation'
+        :: simplifier (ApplyEquationResult variable)
+        -> simplifier (ApplyEquationResult variable)
+    whileDebugApplyEquation' action = do
+        result <- whileDebugApplyEquation termLike equationRenamed action
+        debugApplyEquationResult result
+        return result
 
 {- | Errors that can occur during 'applyMatchResult'.
 
@@ -196,6 +360,50 @@ instance
     (Debug variable, Diff variable)
     => Diff (ApplyMatchResultErrors variable)
 
+instance
+    InternalVariable variable
+    => Pretty (ApplyMatchResultErrors variable)
+  where
+    pretty ApplyMatchResultErrors { applyMatchErrors } =
+        Pretty.vsep
+        [ "could not apply match result due to errors:"
+        , (Pretty.indent 4 . Pretty.vsep)
+            (pretty <$> Foldable.toList applyMatchErrors)
+        ]
+
+mapApplyMatchResultErrorsVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> ApplyMatchResultErrors variable1
+    -> ApplyMatchResultErrors variable2
+mapApplyMatchResultErrorsVariables mapElemVar mapSetVar applyMatchResultErrors =
+    ApplyMatchResultErrors
+    { matchResult = mapMatchResultVariables mapElemVar mapSetVar matchResult
+    , applyMatchErrors =
+        fmap
+            (mapApplyMatchResultErrorVariables mapElemVar mapSetVar)
+            applyMatchErrors
+    }
+  where
+    ApplyMatchResultErrors { matchResult, applyMatchErrors } =
+        applyMatchResultErrors
+
+mapMatchResultVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> MatchResult variable1
+    -> MatchResult variable2
+mapMatchResultVariables mapElemVar mapSetVar (predicate, substitution) =
+    ( Predicate.mapVariables mapElemVar mapSetVar predicate
+    , mapSubstitutionVariables substitution
+    )
+  where
+    mapSubstitutionVariables =
+       Map.mapKeys (mapUnifiedVariable mapElemVar mapSetVar)
+       . Map.map (TermLike.mapVariables mapElemVar mapSetVar)
+
 {- | @ApplyMatchResultError@ represents a reason the match could not be applied.
  -}
 data ApplyMatchResultError variable
@@ -219,6 +427,47 @@ instance Debug variable => Debug (ApplyMatchResultError variable)
 instance
     (Debug variable, Diff variable)
     => Diff (ApplyMatchResultError variable)
+
+instance
+    InternalVariable variable
+    => Pretty (ApplyMatchResultError variable)
+  where
+    pretty (NotConcrete variable _) =
+        Pretty.hsep
+        [ "variable"
+        , unparse variable
+        , "did not match a concrete term"
+        ]
+    pretty (NotSymbolic variable _) =
+        Pretty.hsep
+        [ "variable"
+        , unparse variable
+        , "did not match a symbolic term"
+        ]
+    pretty (NotMatched variable) =
+        Pretty.hsep ["variable", unparse variable, "was not matched"]
+
+mapApplyMatchResultErrorVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> ApplyMatchResultError variable1
+    -> ApplyMatchResultError variable2
+mapApplyMatchResultErrorVariables mapElemVar mapSetVar applyMatchResultError =
+    case applyMatchResultError of
+        NotConcrete variable termLike ->
+            NotConcrete
+                (mapUnifiedVariable' variable)
+                (mapTermLikeVariables termLike)
+        NotSymbolic variable termLike ->
+            NotSymbolic
+                (mapUnifiedVariable' variable)
+                (mapTermLikeVariables termLike)
+        NotMatched variable -> NotMatched (mapUnifiedVariable' variable)
+  where
+    mapUnifiedVariable' = mapUnifiedVariable mapElemVar mapSetVar
+    mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
+
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 
@@ -309,6 +558,30 @@ instance SOP.HasDatatypeInfo (CheckRequiresError variable)
 instance Debug variable => Debug (CheckRequiresError variable)
 
 instance (Debug variable, Diff variable) => Diff (CheckRequiresError variable)
+
+instance InternalVariable variable => Pretty (CheckRequiresError variable) where
+    pretty CheckRequiresError { matchPredicate, equationRequires } =
+        Pretty.vsep
+        [ "could not infer the equation requirement:"
+        , Pretty.indent 4 (unparse equationRequires)
+        , "and the matching requirement:"
+        , Pretty.indent 4 (unparse matchPredicate)
+        ]
+
+mapCheckRequiresErrorVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => (ElementVariable variable1 -> ElementVariable variable2)
+    -> (SetVariable     variable1 -> SetVariable     variable2)
+    -> CheckRequiresError variable1
+    -> CheckRequiresError variable2
+mapCheckRequiresErrorVariables mapElemVar mapSetVar checkRequiresError =
+    CheckRequiresError
+    { matchPredicate = mapPredicateVariables matchPredicate
+    , equationRequires = mapPredicateVariables equationRequires
+    }
+  where
+    mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
+    CheckRequiresError { matchPredicate, equationRequires } = checkRequiresError
 
 {- | Check that the requires from matching and the 'Equation' hold.
 
