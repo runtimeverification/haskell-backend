@@ -50,6 +50,7 @@ import Type.Reflection
 
 import Kore.Equation.Application
     ( DebugApplyEquation
+    , DebugEquationApplied
     )
 import Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules
@@ -131,6 +132,7 @@ registry =
                 , register infoReachabilityType
                 , register errorRewritesInstantiationType
                 , register debugApplyEquationType
+                , register debugEquationAppliedType
                 ]
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
@@ -173,6 +175,7 @@ debugAppliedRuleType
   , infoReachabilityType
   , errorRewritesInstantiationType
   , debugApplyEquationType
+  , debugEquationAppliedType
   :: SomeTypeRep
 
 debugAppliedRuleType =
@@ -209,6 +212,8 @@ errorRewritesInstantiationType =
     someTypeRep (Proxy :: Proxy ErrorRewritesInstantiation)
 debugApplyEquationType =
     someTypeRep (Proxy :: Proxy DebugApplyEquation)
+debugEquationAppliedType =
+    someTypeRep (Proxy @DebugEquationApplied)
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =

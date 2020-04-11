@@ -14,8 +14,8 @@ module Kore.Equation.Application
     , CheckRequiresError (..)
     -- * Logging
     , DebugApplyEquation (..)
+    , DebugEquationApplied (..)
     , debugEquationApplied
-    , debugApplyEquationResult
     ) where
 
 import Prelude.Kore
@@ -626,8 +626,6 @@ data DebugApplyEquation
     -- ^ Covers the entire scope of 'applyEquation'.
     | DebugApplyEquationResult (ApplyEquationResult Variable)
     -- ^ Entered into the log when an equation is applicable.
-    | DebugEquationApplied (Equation Variable) (Pattern Variable)
-    -- ^ Entered into the log when an equation's result is actually used.
     deriving (GHC.Generic)
 
 instance Pretty DebugApplyEquation where
@@ -646,13 +644,6 @@ instance Pretty DebugApplyEquation where
     pretty (DebugApplyEquationResult (Right result)) =
         Pretty.vsep
         [ "equation is applicable with result:"
-        , Pretty.indent 4 (unparse result)
-        ]
-    pretty (DebugEquationApplied equation result) =
-        Pretty.vsep
-        [ "applied equation:"
-        , Pretty.indent 4 (pretty equation)
-        , "with result:"
         , Pretty.indent 4 (unparse result)
         ]
 
@@ -675,29 +666,6 @@ debugApplyEquationResult =
   where
     toElementVariable = fmap toVariable
     toSetVariable = fmap toVariable
-
-{- | Log when an 'Equation' is actually applied.
-
-@debugEquationApplied@ is different from 'debugApplyEquationResult', which only
-indicates if an equation is applicable, that is: if it could apply. If multiple
-equations are applicable in the same place, the caller will determine which is
-actually applied. Therefore, the /caller/ should use this log entry after
-'applyEquation'.
-
- -}
-debugEquationApplied
-    :: MonadLog log
-    => InternalVariable variable
-    => Equation variable
-    -> Pattern variable
-    -> log ()
-debugEquationApplied equation result =
-    logEntry $ DebugEquationApplied equation' result'
-  where
-    toElementVariable = fmap toVariable
-    toSetVariable = fmap toVariable
-    equation' = Equation.mapVariables toElementVariable toSetVariable equation
-    result' = Pattern.mapVariables toElementVariable toSetVariable result
 
 mapApplyEquationResultVariables
     :: (InternalVariable variable1, InternalVariable variable2)
@@ -724,3 +692,45 @@ whileDebugApplyEquation termLike equation =
     toSetVariable = fmap toVariable
     termLike' = TermLike.mapVariables toElementVariable toSetVariable termLike
     equation' = Equation.mapVariables toElementVariable toSetVariable equation
+
+{- | Log when an 'Equation' is actually applied.
+ -}
+data DebugEquationApplied
+    = DebugEquationApplied (Equation Variable) (Pattern Variable)
+    -- ^ Entered into the log when an equation's result is actually used.
+    deriving (GHC.Generic)
+
+instance Pretty DebugEquationApplied where
+    pretty (DebugEquationApplied equation result) =
+        Pretty.vsep
+        [ "applied equation:"
+        , Pretty.indent 4 (pretty equation)
+        , "with result:"
+        , Pretty.indent 4 (unparse result)
+        ]
+
+instance Entry DebugEquationApplied where
+    entrySeverity _ = Debug
+
+{- | Log when an 'Equation' is actually applied.
+
+@debugEquationApplied@ is different from 'debugApplyEquationResult', which only
+indicates if an equation is applicable, that is: if it could apply. If multiple
+equations are applicable in the same place, the caller will determine which is
+actually applied. Therefore, the /caller/ should use this log entry after
+'applyEquation'.
+
+ -}
+debugEquationApplied
+    :: MonadLog log
+    => InternalVariable variable
+    => Equation variable
+    -> Pattern variable
+    -> log ()
+debugEquationApplied equation result =
+    logEntry $ DebugEquationApplied equation' result'
+  where
+    toElementVariable = fmap toVariable
+    toSetVariable = fmap toVariable
+    equation' = Equation.mapVariables toElementVariable toSetVariable equation
+    result' = Pattern.mapVariables toElementVariable toSetVariable result
