@@ -179,39 +179,39 @@ debugAppliedRuleType
   :: SomeTypeRep
 
 debugAppliedRuleType =
-    someTypeRep (Proxy :: Proxy DebugAppliedRule)
+    someTypeRep (Proxy @DebugAppliedRule)
 debugAxiomEvaluationType =
-    someTypeRep (Proxy :: Proxy DebugAxiomEvaluation)
+    someTypeRep (Proxy @DebugAxiomEvaluation)
 debugSolverSendType =
-    someTypeRep (Proxy :: Proxy DebugSolverSend)
+    someTypeRep (Proxy @DebugSolverSend)
 debugSolverRecvType =
-    someTypeRep (Proxy :: Proxy DebugSolverRecv)
+    someTypeRep (Proxy @DebugSolverRecv)
 debugProofStateType =
-    someTypeRep (Proxy :: Proxy DebugProofState)
+    someTypeRep (Proxy @DebugProofState)
 debugAppliedRewriteRulesType =
-    someTypeRep (Proxy :: Proxy DebugAppliedRewriteRules)
+    someTypeRep (Proxy @DebugAppliedRewriteRules)
 warnBottomHookType =
-    someTypeRep (Proxy :: Proxy WarnBottomHook)
+    someTypeRep (Proxy @WarnBottomHook)
 warnDecidePredicateUnknownType =
-    someTypeRep (Proxy :: Proxy WarnDecidePredicateUnknown)
+    someTypeRep (Proxy @WarnDecidePredicateUnknown)
 warnFunctionWithoutEvaluatorsType =
-    someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
+    someTypeRep (Proxy @WarnFunctionWithoutEvaluators)
 debugSkipSimplificationType =
-    someTypeRep (Proxy :: Proxy DebugSkipSimplification)
+    someTypeRep (Proxy @DebugSkipSimplification)
 logDebugEvaluateConditionType =
-    someTypeRep (Proxy :: Proxy DebugEvaluateCondition)
+    someTypeRep (Proxy @DebugEvaluateCondition)
 criticalExecutionErrorType =
-    someTypeRep (Proxy :: Proxy ErrorException)
+    someTypeRep (Proxy @ErrorException)
 logMessageType =
-    someTypeRep (Proxy :: Proxy LogMessage)
+    someTypeRep (Proxy @LogMessage)
 infoAttemptUnificationType =
-    someTypeRep (Proxy :: Proxy InfoAttemptUnification)
+    someTypeRep (Proxy @InfoAttemptUnification)
 infoReachabilityType =
-    someTypeRep (Proxy :: Proxy InfoReachability)
+    someTypeRep (Proxy @InfoReachability)
 errorRewritesInstantiationType =
-    someTypeRep (Proxy :: Proxy ErrorRewritesInstantiation)
+    someTypeRep (Proxy @ErrorRewritesInstantiation)
 debugApplyEquationType =
-    someTypeRep (Proxy :: Proxy DebugApplyEquation)
+    someTypeRep (Proxy @DebugApplyEquation)
 debugEquationAppliedType =
     someTypeRep (Proxy @DebugEquationApplied)
 
