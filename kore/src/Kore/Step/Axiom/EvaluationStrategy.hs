@@ -44,7 +44,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.WarnBottomHook
     ( warnBottomHook
     )
-import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -95,25 +94,16 @@ definitionEvaluation equations =
                     Target.mkSetNonTarget
                     condition
         let -- Attempt an equation, pairing it with its result, if applicable.
-            attemptEquation equation = do
-                result <- Equation.attemptEquation condition' term' equation
-                let debug = \applied -> do
-                        Equation.debugEquationApplied equation applied
-                        return applied
-                pure $ Bifunctor.second debug result
-        results <- traverse attemptEquation equations'
-        case partitionEithers results of
-            (_, applied : applieds) -> do
-                let simplify =
-                        OrPattern.simplifyConditionsWithSmt condition
-                        . OrPattern.fromPattern
-                    -- TODO (thomas.tuegel): Warn about ambiguous results.
-                    warnAmbiguity = return ()
-                result <- applied
-                unless (null applieds) warnAmbiguity
-                appliedResults <- simplify result
+            attemptEquation equation =
+                Equation.attemptEquation condition' term' equation
+                >>= return . Bifunctor.second apply
+              where
+                apply = Equation.applyEquationResult condition equation
+        fmap partitionEithers (traverse attemptEquation equations') >>= \case
+            (_, applied : _) -> do
+                results <- applied
                 (return . Applied) AttemptedAxiomResults
-                    { results = appliedResults
+                    { results
                     , remainders = OrPattern.bottom
                     }
             (errors, []) ->
@@ -149,15 +139,12 @@ simplificationEvaluation equation =
                     Target.mkSetNonTarget
                     condition
         result <- Equation.attemptEquation condition' term' equation'
+        let apply = Equation.applyEquationResult condition equation'
         case result of
             Right applied -> do
-                let simplify =
-                        OrPattern.simplifyConditionsWithSmt condition
-                        . OrPattern.fromPattern
-                Equation.debugEquationApplied equation' applied
-                appliedResults <- simplify applied
+                results <- apply applied
                 (return . Applied) AttemptedAxiomResults
-                    { results = appliedResults
+                    { results
                     , remainders = OrPattern.bottom
                     }
             Left err ->

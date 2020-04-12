@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Equation.Application
     ( attemptEquation
     , AttemptEquationResult
+    , applyEquationResult
     -- * Errors
     , AttemptEquationError (..)
     , MatchError (..)
@@ -56,6 +57,10 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -81,6 +86,7 @@ import Kore.Step.Axiom.Matcher
     ( MatchResult
     , matchIncremental
     )
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -170,6 +176,21 @@ attemptEquation sideCondition termLike equation =
         result <- whileDebugAttemptEquation termLike equationRenamed action
         debugAttemptEquationResult result
         return result
+
+applyEquationResult
+    :: forall simplifier variable
+    .  MonadSimplify simplifier
+    => InternalVariable variable
+    => SideCondition variable
+    -> Equation variable
+    -> Pattern variable
+    -> simplifier (OrPattern variable)
+applyEquationResult sideCondition equation result = do
+    let results = OrPattern.fromPattern result
+    let simplify = OrPattern.simplifyConditionsWithSmt sideCondition
+    debugEquationApplied equation result
+    simplify results
+
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 
