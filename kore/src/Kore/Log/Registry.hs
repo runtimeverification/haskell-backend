@@ -39,8 +39,8 @@ import Type.Reflection
     )
 
 import Kore.Equation.Application
-    ( DebugAttemptEquation
-    , DebugEquationApplied
+    ( DebugApplyEquationResult
+    , DebugAttemptEquation
     )
 import Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules
@@ -136,7 +136,7 @@ entryTypeReps =
     , someTypeRep $ Proxy @InfoReachability
     , someTypeRep $ Proxy @ErrorRewritesInstantiation
     , someTypeRep $ Proxy @DebugAttemptEquation
-    , someTypeRep $ Proxy @DebugEquationApplied
+    , someTypeRep $ Proxy @DebugApplyEquationResult
     ]
 
 asText :: SomeTypeRep -> Text
