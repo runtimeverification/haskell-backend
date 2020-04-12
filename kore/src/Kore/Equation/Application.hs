@@ -86,7 +86,6 @@ import Kore.Step.Axiom.Matcher
     ( MatchResult
     , matchIncremental
     )
-import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -185,9 +184,9 @@ applyEquationResult
     -> Equation variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-applyEquationResult sideCondition equation result = do
+applyEquationResult _ equation result = do
     let results = OrPattern.fromPattern result
-    let simplify = OrPattern.simplifyConditionsWithSmt sideCondition
+    let simplify = return
     debugEquationApplied equation result
     simplify results
 
