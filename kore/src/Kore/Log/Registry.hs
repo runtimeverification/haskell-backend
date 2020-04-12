@@ -39,7 +39,7 @@ import Type.Reflection
     )
 
 import Kore.Equation.Application
-    ( DebugApplyEquation
+    ( DebugAttemptEquation
     , DebugEquationApplied
     )
 import Kore.Log.DebugAppliedRewriteRules
@@ -135,7 +135,7 @@ entryTypeReps =
     , someTypeRep $ Proxy @InfoAttemptUnification
     , someTypeRep $ Proxy @InfoReachability
     , someTypeRep $ Proxy @ErrorRewritesInstantiation
-    , someTypeRep $ Proxy @DebugApplyEquation
+    , someTypeRep $ Proxy @DebugAttemptEquation
     , someTypeRep $ Proxy @DebugEquationApplied
     ]
 

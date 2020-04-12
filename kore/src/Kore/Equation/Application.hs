@@ -5,15 +5,15 @@ License     : NCSA
 -}
 
 module Kore.Equation.Application
-    ( applyEquation
-    , ApplyEquationResult
+    ( attemptEquation
+    , AttemptEquationResult
     -- * Errors
-    , ApplyEquationError (..)
+    , AttemptEquationError (..)
     , MatchError (..)
     , ApplyMatchResultErrors (..), ApplyMatchResultError (..)
     , CheckRequiresError (..)
     -- * Logging
-    , DebugApplyEquation (..)
+    , DebugAttemptEquation (..)
     , DebugEquationApplied (..)
     , debugEquationApplied
     ) where
@@ -116,33 +116,33 @@ import qualified Pretty
 
 {- | The outcome of an attempt to apply an 'Equation'.
 
-@ApplyEquationResult@ is 'Right' if the equation is applicable, and 'Left'
-otherwise. If the equation is not applicable, the 'ApplyEquationError' will
+@AttemptEquationResult@ is 'Right' if the equation is applicable, and 'Left'
+otherwise. If the equation is not applicable, the 'AttemptEquationError' will
 indicate the reason.
 
  -}
-type ApplyEquationResult variable =
-    Either (ApplyEquationError variable) (Pattern variable)
+type AttemptEquationResult variable =
+    Either (AttemptEquationError variable) (Pattern variable)
 
 {- | Attempt to apply an 'Equation' to the 'TermLike'.
 
 The 'SideCondition' is used to evaluate the 'requires' clause of the 'Equation'.
 
 The caller should use 'debugEquationApplied' to log when the result of an
-equation is actually used; @applyEquation@ will only log when an equation is
+equation is actually used; @attemptEquation@ will only log when an equation is
 applicable.
 
  -}
-applyEquation
+attemptEquation
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
     => SideCondition (Target variable)
     -> TermLike (Target variable)
     -> Equation variable
-    -> simplifier (ApplyEquationResult variable)
-applyEquation sideCondition termLike equation =
-    whileDebugApplyEquation' $ runExceptT $ do
+    -> simplifier (AttemptEquationResult variable)
+attemptEquation sideCondition termLike equation =
+    whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left } = equationRenamed
         matchResult <- match left termLike & whileMatch
         (equation', predicate) <-
@@ -163,12 +163,12 @@ applyEquation sideCondition termLike equation =
         matchIncremental term1 term2
         & MaybeT & noteT matchError
 
-    whileDebugApplyEquation'
-        :: simplifier (ApplyEquationResult variable)
-        -> simplifier (ApplyEquationResult variable)
-    whileDebugApplyEquation' action = do
-        result <- whileDebugApplyEquation termLike equationRenamed action
-        debugApplyEquationResult result
+    whileDebugAttemptEquation'
+        :: simplifier (AttemptEquationResult variable)
+        -> simplifier (AttemptEquationResult variable)
+    whileDebugAttemptEquation' action = do
+        result <- whileDebugAttemptEquation termLike equationRenamed action
+        debugAttemptEquationResult result
         return result
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
@@ -326,22 +326,22 @@ targetEquationVariables sideCondition initial =
 
 -- * Errors
 
-{- | Errors that can occur during 'applyEquation'.
+{- | Errors that can occur during 'attemptEquation'.
  -}
-data ApplyEquationError variable
+data AttemptEquationError variable
     = WhileMatch !(MatchError (Target variable))
     | WhileApplyMatchResult !(ApplyMatchResultErrors (Target variable))
     | WhileCheckRequires !(CheckRequiresError variable)
     deriving (Eq, Ord)
     deriving (GHC.Generic)
 
-mapApplyEquationErrorVariables
+mapAttemptEquationErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable     variable1 -> SetVariable     variable2)
-    -> ApplyEquationError variable1
-    -> ApplyEquationError variable2
-mapApplyEquationErrorVariables mapElemVar mapSetVar =
+    -> AttemptEquationError variable1
+    -> AttemptEquationError variable2
+mapAttemptEquationErrorVariables mapElemVar mapSetVar =
     \case
         WhileMatch matchError ->
             WhileMatch
@@ -371,30 +371,33 @@ mapApplyEquationErrorVariables mapElemVar mapSetVar =
 whileMatch
     :: Functor monad
     => ExceptT (MatchError (Target variable)) monad a
-    -> ExceptT (ApplyEquationError variable) monad a
+    -> ExceptT (AttemptEquationError variable) monad a
 whileMatch = withExceptT WhileMatch
 
 whileApplyMatchResult
     :: Functor monad
     => ExceptT (ApplyMatchResultErrors (Target variable)) monad a
-    -> ExceptT (ApplyEquationError variable) monad a
+    -> ExceptT (AttemptEquationError variable) monad a
 whileApplyMatchResult = withExceptT WhileApplyMatchResult
 
 whileCheckRequires
     :: Functor monad
     => ExceptT (CheckRequiresError variable) monad a
-    -> ExceptT (ApplyEquationError variable) monad a
+    -> ExceptT (AttemptEquationError variable) monad a
 whileCheckRequires = withExceptT WhileCheckRequires
 
-instance SOP.Generic (ApplyEquationError variable)
+instance SOP.Generic (AttemptEquationError variable)
 
-instance SOP.HasDatatypeInfo (ApplyEquationError variable)
+instance SOP.HasDatatypeInfo (AttemptEquationError variable)
 
-instance Debug variable => Debug (ApplyEquationError variable)
+instance Debug variable => Debug (AttemptEquationError variable)
 
-instance (Debug variable, Diff variable) => Diff (ApplyEquationError variable)
+instance (Debug variable, Diff variable) => Diff (AttemptEquationError variable)
 
-instance InternalVariable variable => Pretty (ApplyEquationError variable) where
+instance
+    InternalVariable variable
+    => Pretty (AttemptEquationError variable)
+  where
     pretty (WhileMatch matchError) =
         pretty matchError
     pretty (WhileApplyMatchResult applyMatchResultErrors) =
@@ -621,72 +624,72 @@ mapCheckRequiresErrorVariables mapElemVar mapSetVar checkRequiresError =
 
 {- | Log entries for all phases of equation application.
  -}
-data DebugApplyEquation
-    = DebugApplyEquation (TermLike Variable) (Equation Variable)
-    -- ^ Covers the entire scope of 'applyEquation'.
-    | DebugApplyEquationResult (ApplyEquationResult Variable)
+data DebugAttemptEquation
+    = DebugAttemptEquation (TermLike Variable) (Equation Variable)
+    -- ^ Covers the entire scope of 'attemptEquation'.
+    | DebugAttemptEquationResult (AttemptEquationResult Variable)
     -- ^ Entered into the log when an equation is applicable.
     deriving (GHC.Generic)
 
-instance Pretty DebugApplyEquation where
-    pretty (DebugApplyEquation termLike equation) =
+instance Pretty DebugAttemptEquation where
+    pretty (DebugAttemptEquation termLike equation) =
         Pretty.vsep
         [ "applying equation:"
         , Pretty.indent 4 (pretty equation)
         , "to term:"
         , Pretty.indent 4 (unparse termLike)
         ]
-    pretty (DebugApplyEquationResult (Left applyEquationError)) =
+    pretty (DebugAttemptEquationResult (Left attemptEquationError)) =
         Pretty.vsep
         [ "equation is not applicable:"
-        , pretty applyEquationError
+        , pretty attemptEquationError
         ]
-    pretty (DebugApplyEquationResult (Right result)) =
+    pretty (DebugAttemptEquationResult (Right result)) =
         Pretty.vsep
         [ "equation is applicable with result:"
         , Pretty.indent 4 (unparse result)
         ]
 
-instance Entry DebugApplyEquation where
+instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
     shortDoc _ = Just "while applying equation"
 
 {- | Log the result of attempting to apply an 'Equation'.
 
  -}
-debugApplyEquationResult
+debugAttemptEquationResult
     :: MonadLog log
     => InternalVariable variable
-    => ApplyEquationResult variable
+    => AttemptEquationResult variable
     -> log ()
-debugApplyEquationResult =
+debugAttemptEquationResult =
     logEntry
-    . DebugApplyEquationResult
-    . mapApplyEquationResultVariables toElementVariable toSetVariable
+    . DebugAttemptEquationResult
+    . mapAttemptEquationResultVariables toElementVariable toSetVariable
   where
     toElementVariable = fmap toVariable
     toSetVariable = fmap toVariable
 
-mapApplyEquationResultVariables
+mapAttemptEquationResultVariables
     :: (InternalVariable variable1, InternalVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable     variable1 -> SetVariable     variable2)
-    -> ApplyEquationResult variable1
-    -> ApplyEquationResult variable2
-mapApplyEquationResultVariables mapElemVar mapSetVar =
+    -> AttemptEquationResult variable1
+    -> AttemptEquationResult variable2
+mapAttemptEquationResultVariables mapElemVar mapSetVar =
     Bifunctor.bimap
-        (mapApplyEquationErrorVariables mapElemVar mapSetVar)
+        (mapAttemptEquationErrorVariables mapElemVar mapSetVar)
         (Pattern.mapVariables mapElemVar mapSetVar)
 
-whileDebugApplyEquation
+whileDebugAttemptEquation
     :: MonadLog log
     => InternalVariable variable
     => TermLike variable
     -> Equation variable
     -> log a
     -> log a
-whileDebugApplyEquation termLike equation =
-    logWhile (DebugApplyEquation termLike' equation')
+whileDebugAttemptEquation termLike equation =
+    logWhile (DebugAttemptEquation termLike' equation')
   where
     toElementVariable = fmap toVariable
     toSetVariable = fmap toVariable
@@ -714,11 +717,11 @@ instance Entry DebugEquationApplied where
 
 {- | Log when an 'Equation' is actually applied.
 
-@debugEquationApplied@ is different from 'debugApplyEquationResult', which only
-indicates if an equation is applicable, that is: if it could apply. If multiple
-equations are applicable in the same place, the caller will determine which is
-actually applied. Therefore, the /caller/ should use this log entry after
-'applyEquation'.
+@debugEquationApplied@ is different from 'debugAttemptEquationResult', which
+only indicates if an equation is applicable, that is: if it could apply. If
+multiple equations are applicable in the same place, the caller will determine
+which is actually applied. Therefore, the /caller/ should use this log entry
+after 'attemptEquation'.
 
  -}
 debugEquationApplied

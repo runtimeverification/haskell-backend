@@ -1,5 +1,5 @@
 module Test.Kore.Equation.Application
-    ( test_applyEquation
+    ( test_attemptEquation
     , concrete
     , symbolic
     , axiom
@@ -28,7 +28,7 @@ import Kore.Attribute.Axiom.Symbolic
     ( Symbolic (..)
     )
 import Kore.Equation.Application hiding
-    ( applyEquation
+    ( attemptEquation
     )
 import qualified Kore.Equation.Application as Equation
 import Kore.Equation.Equation
@@ -65,13 +65,13 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-applyEquation
+attemptEquation
     :: SideCondition Variable
     -> TermLike Variable
     -> Equation Variable
-    -> IO (ApplyEquationResult Variable)
-applyEquation sideCondition termLike equation =
-    Equation.applyEquation sideCondition' termLike' equation
+    -> IO (AttemptEquationResult Variable)
+attemptEquation sideCondition termLike equation =
+    Equation.attemptEquation sideCondition' termLike' equation
     & runSimplifier Mock.env
   where
     sideCondition' =
@@ -86,7 +86,7 @@ applyEquation sideCondition termLike equation =
             Target.mkSetNonTarget
             termLike
 
-assertNotMatched :: ApplyEquationError Variable -> Assertion
+assertNotMatched :: AttemptEquationError Variable -> Assertion
 assertNotMatched (WhileMatch _) = return ()
 assertNotMatched result =
     (assertFailure . show . Pretty.vsep)
@@ -94,7 +94,7 @@ assertNotMatched result =
         , Pretty.indent 4 (debug result)
         ]
 
-assertApplyMatchResultErrors :: ApplyEquationError Variable -> Assertion
+assertApplyMatchResultErrors :: AttemptEquationError Variable -> Assertion
 assertApplyMatchResultErrors (WhileApplyMatchResult _) = return ()
 assertApplyMatchResultErrors result =
     (assertFailure . show . Pretty.vsep)
@@ -102,7 +102,7 @@ assertApplyMatchResultErrors result =
         , Pretty.indent 4 (debug result)
         ]
 
-assertRequiresNotMet :: ApplyEquationError Variable -> Assertion
+assertRequiresNotMet :: AttemptEquationError Variable -> Assertion
 assertRequiresNotMet (WhileCheckRequires _) = return ()
 assertRequiresNotMet result =
     (assertFailure . show . Pretty.vsep)
@@ -110,8 +110,8 @@ assertRequiresNotMet result =
         , Pretty.indent 4 (debug result)
         ]
 
-test_applyEquation :: [TestTree]
-test_applyEquation =
+test_attemptEquation :: [TestTree]
+test_attemptEquation =
     [ applies "applies identity axiom"
         (axiom_ x x)
         SideCondition.top
@@ -199,7 +199,7 @@ test_applyEquation =
                     (Mock.functional10 (mkElemVar Mock.y))
             initial = mkElemVar Mock.y
             equation = equationId { ensures }
-        applyEquation SideCondition.top initial equation
+        attemptEquation SideCondition.top initial equation
             >>= expectRight >>= assertEqual "" expect
 
     , testCase "equation requirement" $ do
@@ -219,7 +219,7 @@ test_applyEquation =
                 { matchPredicate = makeTruePredicate_
                 , equationRequires = requires1
                 }
-        applyEquation SideCondition.top initial equation
+        attemptEquation SideCondition.top initial equation
             >>= expectLeft >>= assertEqual "" expect1
         let requires2 =
                 makeEqualsPredicate sortR
@@ -229,7 +229,7 @@ test_applyEquation =
                 SideCondition.fromCondition . Condition.fromPredicate
                 $ requires2
             expect2 = Pattern.fromTermLike initial
-        applyEquation sideCondition2 initial equation
+        attemptEquation sideCondition2 initial equation
             >>= expectRight >>= assertEqual "" expect2
 
     , testCase "rule a => \\bottom" $ do
@@ -237,7 +237,7 @@ test_applyEquation =
                 Pattern.withCondition (mkBottom Mock.testSort)
                 $ Condition.topOf Mock.testSort
             initial = Mock.a
-        applyEquation SideCondition.top initial equationBottom
+        attemptEquation SideCondition.top initial equationBottom
             >>= expectRight >>= assertEqual "" expect
 
     , testCase "rule a => b ensures \\bottom" $ do
@@ -245,7 +245,7 @@ test_applyEquation =
                 Pattern.withCondition Mock.b
                 $ Condition.bottomOf Mock.testSort
             initial = Mock.a
-        applyEquation SideCondition.top initial equationEnsuresBottom
+        attemptEquation SideCondition.top initial equationEnsuresBottom
             >>= expectRight >>= assertEqual "" expect
 
     , testCase "rule a => b requires \\bottom" $ do
@@ -255,12 +255,12 @@ test_applyEquation =
                     , equationRequires = makeFalsePredicate sortR
                     }
             initial = Mock.a
-        applyEquation SideCondition.top initial equationRequiresBottom
+        attemptEquation SideCondition.top initial equationRequiresBottom
             >>= expectLeft >>= assertEqual "" expect
 
     , testCase "rule a => \\bottom does not apply to c" $ do
         let initial = Mock.c
-        applyEquation SideCondition.top initial equationRequiresBottom
+        attemptEquation SideCondition.top initial equationRequiresBottom
             >>= expectLeft >>= assertNotMatched
     , applies "F(x) => G(x) applies to F(x)"
         (axiom_ (f x) (g x))
@@ -342,7 +342,7 @@ test_applyEquation =
         (Pattern.fromTermLike a)
     , testCase "X => X does not apply to X / X" $ do
         let initial = tdivInt xInt xInt
-        applyEquation SideCondition.top initial equationId
+        attemptEquation SideCondition.top initial equationId
             >>= expectLeft >>= assertRequiresNotMet
     , testCase "X => X does apply to X / X if \\ceil(X / X)" $ do
         let initial = tdivInt xInt xInt
@@ -350,7 +350,7 @@ test_applyEquation =
                 makeCeilPredicate_ initial
                 & SideCondition.fromPredicate
             expect = Pattern.fromTermLike initial
-        applyEquation sideCondition initial equationId
+        attemptEquation sideCondition initial equationId
             >>= expectRight >>= assertEqual "" expect
     , notInstantiated "does not introduce variables"
         (axiom_ (f a) (g x))
@@ -453,15 +453,15 @@ symbolic vars =
 
 -- * Test cases
 
-withApplyEquationResult
-    :: (ApplyEquationResult Variable -> Assertion)
+withAttemptEquationResult
+    :: (AttemptEquationResult Variable -> Assertion)
     -> TestName
     -> Equation Variable
     -> SideCondition Variable
     -> TermLike Variable
     -> TestTree
-withApplyEquationResult check testName equation sideCondition initial =
-    testCase testName (applyEquation sideCondition initial equation >>= check)
+withAttemptEquationResult check testName equation sideCondition initial =
+    testCase testName (attemptEquation sideCondition initial equation >>= check)
 
 applies
     :: TestName
@@ -471,7 +471,7 @@ applies
     -> Pattern Variable
     -> TestTree
 applies testName equation sideCondition initial expect =
-    withApplyEquationResult
+    withAttemptEquationResult
         (expectRight >=> assertEqual "" expect)
         testName
         equation
@@ -484,7 +484,7 @@ notMatched
     -> SideCondition Variable
     -> TermLike Variable
     -> TestTree
-notMatched = withApplyEquationResult (expectLeft >=> assertNotMatched)
+notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 
 notInstantiated
     :: TestName
@@ -493,7 +493,7 @@ notInstantiated
     -> TermLike Variable
     -> TestTree
 notInstantiated =
-    withApplyEquationResult (expectLeft >=> assertApplyMatchResultErrors)
+    withAttemptEquationResult (expectLeft >=> assertApplyMatchResultErrors)
 
 requiresNotMet
     :: TestName
@@ -502,4 +502,4 @@ requiresNotMet
     -> TermLike Variable
     -> TestTree
 requiresNotMet =
-    withApplyEquationResult (expectLeft >=> assertRequiresNotMet)
+    withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)

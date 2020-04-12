@@ -95,13 +95,13 @@ definitionEvaluation equations =
                     Target.mkSetNonTarget
                     condition
         let -- Attempt an equation, pairing it with its result, if applicable.
-            applyEquation equation = do
-                result <- Equation.applyEquation condition' term' equation
+            attemptEquation equation = do
+                result <- Equation.attemptEquation condition' term' equation
                 let debug = \applied -> do
                         Equation.debugEquationApplied equation applied
                         return applied
                 pure $ Bifunctor.second debug result
-        results <- traverse applyEquation equations'
+        results <- traverse attemptEquation equations'
         case partitionEithers results of
             (_, applied : applieds) -> do
                 let simplify =
@@ -148,7 +148,7 @@ simplificationEvaluation equation =
                     Target.mkElementNonTarget
                     Target.mkSetNonTarget
                     condition
-        result <- Equation.applyEquation condition' term' equation'
+        result <- Equation.attemptEquation condition' term' equation'
         case result of
             Right applied -> do
                 let simplify =
