@@ -77,7 +77,6 @@ import Data.Time.LocalTime
     )
 import qualified Pretty
 
-import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
     , solverTranscriptLogger
@@ -165,7 +164,6 @@ koreLogFilters koreLogOptions baseLogger =
         (\entry ->
             filterEntry logEntries entry
             || filterSeverity logLevel entry
-            || filterDebugAppliedRule debugAppliedRuleOptions entry
             || selectDebugApplyEquation debugApplyEquationOptions entry
             || selectDebugAttemptEquation debugAttemptEquationOptions entry
             || selectDebugEquation debugEquationOptions entry
@@ -173,7 +171,6 @@ koreLogFilters koreLogOptions baseLogger =
     baseLogger
   where
     KoreLogOptions { logLevel, logEntries } = koreLogOptions
-    KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
     KoreLogOptions { debugApplyEquationOptions } = koreLogOptions
     KoreLogOptions { debugAttemptEquationOptions } = koreLogOptions
     KoreLogOptions { debugEquationOptions } = koreLogOptions

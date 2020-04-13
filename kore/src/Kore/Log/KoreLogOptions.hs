@@ -56,7 +56,6 @@ import Kore.Equation
     , DebugAttemptEquation (..)
     )
 import qualified Kore.Equation as Equation
-import Kore.Log.DebugAppliedRule
 import Kore.Log.DebugSolver
     ( DebugSolverOptions
     , parseDebugSolverOptions
@@ -82,7 +81,6 @@ data KoreLogOptions = KoreLogOptions
     -- ^ enable or disable timestamps
     , logEntries :: !EntryTypes
     -- ^ extra entries to show, ignoring 'logLevel'
-    , debugAppliedRuleOptions :: !DebugAppliedRuleOptions
     , debugSolverOptions :: !DebugSolverOptions
     , exeName :: !ExeName
     , logSQLiteOptions :: !LogSQLiteOptions
@@ -100,7 +98,6 @@ instance Default KoreLogOptions where
             , logLevel = Warning
             , timestampsSwitch = def @TimestampsSwitch
             , logEntries = mempty
-            , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
             , debugSolverOptions = def @DebugSolverOptions
             , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
@@ -165,7 +162,6 @@ parseKoreLogOptions exeName =
     <*> (parseSeverity <|> pure Warning)
     <*> (parseTimestampsSwitch <|> pure TimestampsEnable)
     <*> (mconcat <$> many parseEntryTypes)
-    <*> parseDebugAppliedRuleOptions
     <*> parseDebugSolverOptions
     <*> pure exeName
     <*> parseLogSQLiteOptions

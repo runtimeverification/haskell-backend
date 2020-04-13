@@ -21,11 +21,9 @@ import Type.Reflection
 
 import Kore.Equation.Application
     ( DebugApplyEquation
+    , DebugAttemptEquation
     )
 import qualified Kore.Log as Log
-import Kore.Log.DebugAppliedRule
-    ( DebugAppliedRule
-    )
 import Kore.Repl.Data
 import Kore.Repl.Parser
 
@@ -462,36 +460,36 @@ logTests =
             { Log.logLevel = Log.Warning
             , Log.logType = Log.LogStdErr
             }
-    , "log [DebugAppliedRule] stderr"
+    , "log [DebugAttemptEquation] stderr"
         `parsesTo_` Log def
             { Log.logLevel = Log.Warning
             , Log.logType = Log.LogStdErr
-            , Log.logEntries = Set.singleton debugAppliedRuleType
+            , Log.logEntries = Set.singleton debugAttemptEquationType
             }
-    , "log error [DebugAppliedRule] stderr"
+    , "log error [DebugAttemptEquation] stderr"
         `parsesTo_` Log def
             { Log.logLevel = Log.Error
             , Log.logType = Log.LogStdErr
-            , Log.logEntries = Set.singleton debugAppliedRuleType
+            , Log.logEntries = Set.singleton debugAttemptEquationType
             }
-    , "log info [ DebugAppliedRule,  DebugApplyEquation ] file \"f s\""
+    , "log info [ DebugAttemptEquation,  DebugApplyEquation ] file \"f s\""
         `parsesTo_` Log def
             { Log.logLevel = Log.Info
             , Log.logType = Log.LogFileText "f s"
             , Log.logEntries =
                 Set.fromList
-                    [debugAppliedRuleType, debugApplyEquationType]
+                    [debugAttemptEquationType, debugApplyEquationType]
             }
-    , "log info [ DebugAppliedRule   DebugApplyEquation ] file \"f s\""
+    , "log info [ DebugAttemptEquation   DebugApplyEquation ] file \"f s\""
         `parsesTo_` Log def
             { Log.logLevel = Log.Info
             , Log.logType = Log.LogFileText "f s"
             , Log.logEntries =
                 Set.fromList
-                    [debugAppliedRuleType, debugApplyEquationType]
+                    [debugAttemptEquationType, debugApplyEquationType]
             }
     ]
 
-debugAppliedRuleType, debugApplyEquationType :: SomeTypeRep
-debugAppliedRuleType = someTypeRep (Proxy @DebugAppliedRule)
+debugAttemptEquationType, debugApplyEquationType :: SomeTypeRep
+debugAttemptEquationType = someTypeRep (Proxy @DebugAttemptEquation)
 debugApplyEquationType = someTypeRep (Proxy @DebugApplyEquation)

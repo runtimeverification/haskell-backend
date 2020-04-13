@@ -29,9 +29,6 @@ import qualified Database.SQLite.Simple as SQLite
 import qualified Options.Applicative as Options
 import qualified System.Directory as Directory
 
-import Kore.Log.DebugAppliedRule
-    ( DebugAppliedRule
-    )
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
     )
@@ -125,8 +122,7 @@ foldMapEntries
     -> r
 foldMapEntries mapEntry =
     mconcat
-        [ mapEntry (Proxy @DebugAppliedRule)
-        , mapEntry (Proxy @DebugEvaluateCondition)
+        [ mapEntry (Proxy @DebugEvaluateCondition)
         , mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
         , mapEntry (Proxy @DebugSkipSimplification)
