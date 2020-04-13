@@ -27,9 +27,6 @@ module Kore.Builtin.Bool
     , orElseKey
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Control.Error
@@ -58,6 +55,7 @@ import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -194,13 +192,8 @@ termAndEquals
 termAndEquals unifyChildren a b =
     worker a b <|> worker b a
   where
-    unifyChildren' term1 term2 = do
-        -- traceM "\n\nBEFORE UNIFYCHILDREN\n\n"
-        x <- unifyChildren term1 term2
-        -- traceM
-        --     $ "\n\nUnifyChildren result:\n\n"
-        --     <> unparseToString x
-        return $ Pattern.withoutTerm x
+    unifyChildren' term1 term2 =
+        Pattern.withoutTerm <$> unifyChildren term1 term2
     worker termLike1 termLike2
       | Just value1 <- matchBool termLike1
       , Just value2 <- matchBool termLike2
@@ -225,24 +218,11 @@ termAndEquals unifyChildren a b =
       , Just value2 <- matchBool termLike2
       , value2
       = lift $ do
-        -- traceM
-        --     $ "\n\nNotBool simplification:\n\n"
-        --     <> "\n\nTermLike1:\n\n"
-        --     <> unparseToString termLike1
-        --     <> "\n\nTermLike2:\n\n"
-        --     <> unparseToString termLike2
-        condition <- unifyChildren' (asInternal (termLikeSort termLike2) False) operand
-        -- let x =
-        --         Pattern.Conditional
-        --             { term = mkTop (termLikeSort termLike2)
-        --             , predicate =
-        --                 makeEqualsPredicate_
-        --                     (asInternal (termLikeSort termLike2) False)
-        --                     operand
-        --             , substitution = mempty
-        --             }
+        let falseTerm = asInternal (termLikeSort termLike2) False
+        condition <-
+            unifyChildren' falseTerm operand
+            <|> return (Condition.fromPredicate $ makeEqualsPredicate_ falseTerm operand)
         pure (Pattern.withCondition termLike2 condition)
-        -- pure x
 
     worker _ _ = empty
 

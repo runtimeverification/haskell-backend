@@ -25,9 +25,6 @@ module Kore.Builtin.KEqual
     , iteKey
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Control.Error
@@ -67,7 +64,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeNotPredicate
+    ( makeEqualsPredicate_
+    , makeNotPredicate
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -247,7 +245,12 @@ termKEqualsFalse unifyChildren a b =
     worker a b <|> worker b a
   where
     unifyChildren' term1 term2 =
-        Pattern.withoutTerm <$> unifyChildren term1 term2
+        unificationPredicate term1 term2
+        <|> return (makeEqualsPredicate_ term1 term2)
+    unificationPredicate term1 term2 =
+        Condition.toPredicate
+        . Pattern.withoutTerm
+        <$> unifyChildren term1 term2
     atLeastOneSymbolic term1 term2 =
         case (Builtin.toKey term1, Builtin.toKey term2) of
            (Nothing, _) -> True
@@ -260,19 +263,10 @@ termKEqualsFalse unifyChildren a b =
       , not value2
       , atLeastOneSymbolic operand1 operand2
       = lift $ do
-        -- traceM
-        --     $ "\n\nKEqualsFalse simplification:\n\n"
-        --     <> "\n\nTermLike1:\n\n"
-        --     <> unparseToString termLike1
-        --     <> "\n\nTermLike2:\n\n"
-        --     <> unparseToString termLike2
         condition <- unifyChildren' operand1 operand2
-        -- traceM
-        --     $ "\n\nKEqualsFalse unification condition:\n\n"
-        --     <> unparseToString condition
         pure Conditional
             { term = termLike2
-            , predicate = makeNotPredicate (Condition.toPredicate condition)
+            , predicate = makeNotPredicate condition
             , substitution = mempty
             }
     worker _ _ = empty
