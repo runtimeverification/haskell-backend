@@ -7,7 +7,7 @@ License     : NCSA
 module Kore.Equation.Application
     ( attemptEquation
     , AttemptEquationResult
-    , applyEquationResult
+    , applyEquation
     -- * Errors
     , AttemptEquationError (..)
     , MatchError (..)
@@ -15,8 +15,8 @@ module Kore.Equation.Application
     , CheckRequiresError (..)
     -- * Logging
     , DebugAttemptEquation (..)
-    , DebugApplyEquationResult (..)
-    , debugApplyEquationResult
+    , DebugApplyEquation (..)
+    , debugApplyEquation
     ) where
 
 import Prelude.Kore
@@ -133,7 +133,7 @@ type AttemptEquationResult variable =
 
 The 'SideCondition' is used to evaluate the 'requires' clause of the 'Equation'.
 
-The caller should use 'debugApplyEquationResult' to log when the result of an
+The caller should use 'debugApplyEquation' to log when the result of an
 equation is actually used; @attemptEquation@ will only log when an equation is
 applicable.
 
@@ -176,7 +176,7 @@ attemptEquation sideCondition termLike equation =
         debugAttemptEquationResult result
         return result
 
-applyEquationResult
+applyEquation
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
@@ -184,10 +184,10 @@ applyEquationResult
     -> Equation variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-applyEquationResult _ equation result = do
+applyEquation _ equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
-    debugApplyEquationResult equation result
+    debugApplyEquation equation result
     simplify results
 
 
@@ -718,13 +718,13 @@ whileDebugAttemptEquation termLike equation =
 
 {- | Log when an 'Equation' is actually applied.
  -}
-data DebugApplyEquationResult
-    = DebugApplyEquationResult (Equation Variable) (Pattern Variable)
+data DebugApplyEquation
+    = DebugApplyEquation (Equation Variable) (Pattern Variable)
     -- ^ Entered into the log when an equation's result is actually used.
     deriving (GHC.Generic)
 
-instance Pretty DebugApplyEquationResult where
-    pretty (DebugApplyEquationResult equation result) =
+instance Pretty DebugApplyEquation where
+    pretty (DebugApplyEquation equation result) =
         Pretty.vsep
         [ "applied equation:"
         , Pretty.indent 4 (pretty equation)
@@ -732,26 +732,26 @@ instance Pretty DebugApplyEquationResult where
         , Pretty.indent 4 (unparse result)
         ]
 
-instance Entry DebugApplyEquationResult where
+instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
 
 {- | Log when an 'Equation' is actually applied.
 
-@debugApplyEquationResult@ is different from 'debugAttemptEquationResult', which
+@debugApplyEquation@ is different from 'debugAttemptEquationResult', which
 only indicates if an equation is applicable, that is: if it could apply. If
 multiple equations are applicable in the same place, the caller will determine
 which is actually applied. Therefore, the /caller/ should use this log entry
 after 'attemptEquation'.
 
  -}
-debugApplyEquationResult
+debugApplyEquation
     :: MonadLog log
     => InternalVariable variable
     => Equation variable
     -> Pattern variable
     -> log ()
-debugApplyEquationResult equation result =
-    logEntry $ DebugApplyEquationResult equation' result'
+debugApplyEquation equation result =
+    logEntry $ DebugApplyEquation equation' result'
   where
     toElementVariable = fmap toVariable
     toSetVariable = fmap toVariable

@@ -98,7 +98,7 @@ definitionEvaluation equations =
                 Equation.attemptEquation condition' term' equation
                 >>= return . Bifunctor.second apply
               where
-                apply = Equation.applyEquationResult condition equation
+                apply = Equation.applyEquation condition equation
         fmap partitionEithers (traverse attemptEquation equations') >>= \case
             (_, applied : _) -> do
                 results <- applied
@@ -139,7 +139,7 @@ simplificationEvaluation equation =
                     Target.mkSetNonTarget
                     condition
         result <- Equation.attemptEquation condition' term' equation'
-        let apply = Equation.applyEquationResult condition equation'
+        let apply = Equation.applyEquation condition equation'
         case result of
             Right applied -> do
                 results <- apply applied
