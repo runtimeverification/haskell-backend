@@ -33,15 +33,13 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Proxy
 import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
 import Data.Tuple
     ( swap
-    )
-import Data.Typeable
-    ( Proxy (..)
     )
 import qualified Text.Megaparsec as Parser
 import Type.Reflection
@@ -87,6 +85,9 @@ import Kore.Log.InfoReachability
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
+import Kore.Log.WarnDecidePredicateUnknown
+    ( WarnDecidePredicateUnknown
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
@@ -117,6 +118,7 @@ registry =
                 , register debugProofStateType
                 , register debugAppliedRewriteRulesType
                 , register warnBottomHookType
+                , register warnDecidePredicateUnknownType
                 , register warnFunctionWithoutEvaluatorsType
                 , register debugSkipSimplificationType
                 , register logDebugEvaluateConditionType
@@ -157,6 +159,7 @@ debugAppliedRuleType
   , debugProofStateType
   , debugAppliedRewriteRulesType
   , warnBottomHookType
+  , warnDecidePredicateUnknownType
   , warnFunctionWithoutEvaluatorsType
   , debugSkipSimplificationType
   , logDebugEvaluateConditionType
@@ -181,6 +184,8 @@ debugAppliedRewriteRulesType =
     someTypeRep (Proxy :: Proxy DebugAppliedRewriteRules)
 warnBottomHookType =
     someTypeRep (Proxy :: Proxy WarnBottomHook)
+warnDecidePredicateUnknownType =
+    someTypeRep (Proxy :: Proxy WarnDecidePredicateUnknown)
 warnFunctionWithoutEvaluatorsType =
     someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
 debugSkipSimplificationType =

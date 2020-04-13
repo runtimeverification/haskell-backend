@@ -27,9 +27,7 @@ import Prelude.Kore
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
-    , when
     )
-import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import Control.Monad.State.Strict
     ( StateT
@@ -286,7 +284,7 @@ verifySymbolSentence sentence =
                 Attribute.Symbol.isConstructor
                 . Attribute.Symbol.constructor
                 $ attrs
-        Monad.when isConstructor (verifyConstructor verified)
+        when isConstructor (verifyConstructor verified)
         State.modify' $ addSymbol verified attrs
         return verified
   where

@@ -57,9 +57,6 @@ import Data.Stream.Infinite
     )
 import qualified Data.Stream.Infinite as Stream
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Typeable
-    ( Typeable
-    )
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
@@ -575,7 +572,7 @@ data TransitionRuleTemplate monad goal =
 logTransitionRule
     :: forall m goal
     .  MonadSimplify m
-    => goal ~ (ReachabilityRule Variable)
+    => goal ~ ReachabilityRule Variable
     =>  (  Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)

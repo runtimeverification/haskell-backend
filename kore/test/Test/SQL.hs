@@ -3,6 +3,8 @@ module Test.SQL
     , test_Unit
     , test_Either
     , test_Maybe
+    , test_List
+    , test_NonEmpty
     ) where
 
 import Prelude.Kore
@@ -11,6 +13,9 @@ import Test.Tasty
 
 import Data.Int
     ( Int64
+    )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
     )
 
 import SQL
@@ -50,4 +55,23 @@ test_Maybe =
         , Just 1
         , Just 2
         , Nothing
+        ]
+
+test_List :: TestTree
+test_List =
+    testTable @[Int64]
+        [ []
+        , [0]
+        , [0, 1]
+        , [0, 1, 2]
+        , [1, 2, 4, 8]
+        ]
+
+test_NonEmpty :: TestTree
+test_NonEmpty =
+    testTable @(NonEmpty Int64)
+        [ 0 :| []
+        , 0 :| [1]
+        , 0 :| [1, 2]
+        , 1 :| [2, 4, 8]
         ]

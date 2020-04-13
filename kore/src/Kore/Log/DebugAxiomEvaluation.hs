@@ -39,7 +39,6 @@ import Data.Text
 import qualified Data.Text as Text
     ( pack
     )
-import Data.Typeable
 import Options.Applicative
     ( Parser
     )

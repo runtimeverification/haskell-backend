@@ -55,6 +55,10 @@
 # - ignore: {name: Use let}
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
 
+# This warning should apply to Control.Exception.evaluate, but is mistakenly
+# applied to Kore.Step.SMT.Evaluator.evaluate.
+- ignore: {name: "Redundant evaluate"}
+
 # Corporate style
 - ignore: {name: "Use tuple-section"}
 - ignore: {name: "Use record patterns"}

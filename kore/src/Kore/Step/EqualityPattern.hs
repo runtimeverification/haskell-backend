@@ -34,6 +34,10 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
+import Kore.Equation
+    ( Equation
+    )
+import qualified Kore.Equation as Equation
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -119,6 +123,20 @@ instance SQL.Column (EqualityPattern Variable)
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
+instance From (Equation variable) (EqualityPattern variable) where
+    from equation@(Equation.Equation _ _ _ _ _) =
+        EqualityPattern { requires, left, right, ensures, attributes }
+      where
+        Equation.Equation { requires, left, right, ensures, attributes } =
+            equation
+
+instance From (EqualityPattern variable) (Equation variable) where
+    from equation@(EqualityPattern _ _ _ _ _) =
+        Equation.Equation { requires, left, right, ensures, attributes }
+      where
+        EqualityPattern { requires, left, right, ensures, attributes } =
+            equation
+
 -- | Creates a basic, unconstrained, Equality pattern
 equalityPattern
     :: InternalVariable variable
@@ -166,6 +184,18 @@ instance
 instance InternalVariable variable => SQL.Column (EqualityRule variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+
+instance From (EqualityRule variable) (EqualityPattern variable) where
+    from = getEqualityRule
+
+instance From (EqualityPattern variable) (EqualityRule variable)  where
+    from = EqualityRule
+
+instance From (Equation variable) (EqualityRule variable) where
+    from = from @(EqualityPattern variable) . from @(Equation variable)
+
+instance From (EqualityRule variable) (Equation variable) where
+    from = from @(EqualityPattern variable) . from @(EqualityRule variable)
 
 {-| Reverses an 'EqualityRule' back into its 'Pattern' representation.
   Should be the inverse of 'Rule.termToAxiomPattern'.

@@ -17,10 +17,12 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( runMaybeT
     )
+import qualified Control.Lens as Lens
 import qualified Control.Monad.Counter as Counter
 import Control.Monad.Except
 import qualified Control.Monad.State as State
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Text as Text
@@ -72,41 +74,47 @@ declareSMTLemmas m = do
         -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
-        (lemma, vars) <-
+        (lemma, TranslatorState { terms }) <-
             runTranslator
-            $ translatePredicate translateUninterpreted
+            $ translatePredicateWith translateUninterpreted
             $ wrapPredicate $ sentenceAxiomPattern axiomDeclaration
-        SMT.assert (addQuantifiers vars lemma)
+        SMT.assert (addQuantifiers terms lemma)
 
     addQuantifiers vars lemma | null vars = lemma
     addQuantifiers vars lemma = SMT.List
         [ SMT.Atom "forall"
         , SMT.List
-            [ SMT.List [sexpr, t] | (sexpr, t) <- Map.elems vars ]
+            [ SMT.List [SMT.Atom smtName, smtType]
+            | SMTDependentAtom { smtName, smtType } <- Map.elems vars ]
         , lemma
         ]
 
 translateUninterpreted
-    :: ( Ord p
-       , p ~ TermLike variable
+    :: forall m variable
+     . ( Ord variable
        , Monad m
        )
     => SExpr  -- ^ type name
-    -> p  -- ^ uninterpreted pattern
-    -> Translator m p SExpr
-translateUninterpreted t pat | isVariable pat =
+    -> TranslateItem variable -- ^ uninterpreted pattern
+    -> Translator m variable SExpr
+translateUninterpreted _ (QuantifiedVariable _) =
+    empty
+translateUninterpreted t (UninterpretedTerm pat)
+  | isVariable pat =
     lookupPattern <|> freeVariable
+  | otherwise = empty
   where
     isVariable p =
         case Cofree.tailF $ Recursive.project p of
             VariableF _ -> True
             _ -> False
     lookupPattern = do
-        result <- State.gets $ Map.lookup pat
-        maybe empty (return . fst) result
+        result <- State.gets $ Map.lookup pat . terms
+        maybe empty (return . SMT.Atom . smtName) result
     freeVariable = do
         n <- Counter.increment
-        let var = SMT.Atom ("<" <> Text.pack (show n) <> ">")
-        State.modify' (Map.insert pat (var, t))
-        return var
-translateUninterpreted _ _ = empty
+        let var = "<" <> Text.pack (show n) <> ">"
+        field @"terms" Lens.%=
+            Map.insert pat
+                SMTDependentAtom { smtName = var, smtType = t, boundVars = [] }
+        return $ SMT.Atom var

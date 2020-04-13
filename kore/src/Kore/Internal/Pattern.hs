@@ -202,7 +202,7 @@ bottomOf :: InternalVariable variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
-        , predicate = Predicate.makeFalsePredicate_
+        , predicate = Predicate.makeFalsePredicate resultSort
         , substitution = mempty
         }
 
@@ -240,7 +240,7 @@ fromTermLike
     => TermLike variable
     -> Pattern variable
 fromTermLike term
-  | isBottom term = bottom
+  | isBottom term = bottomOf (termLikeSort term)
   | otherwise =
     Conditional
         { term
@@ -261,8 +261,8 @@ withCondition
         , predicate
         , substitution
         }
-  = syncSort
-    Conditional { term, predicate, substitution }
+  =
+    syncSort Conditional { term, predicate, substitution }
 
 withConditionUnsorted
     :: TermLike variable

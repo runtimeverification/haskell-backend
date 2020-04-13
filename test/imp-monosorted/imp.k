@@ -98,6 +98,7 @@ endmodule
 
 module SYMBOLIC-INT
   imports IMP-SYNTAX
+  imports INT
   syntax AExp ::= "symInt"
   rule symInt => AInt ?I:Int
 endmodule

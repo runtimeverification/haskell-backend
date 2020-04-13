@@ -15,9 +15,6 @@ import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
 import qualified Control.Lens.Combinators as Lens
-import Control.Monad
-    ( unless
-    )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -353,7 +350,9 @@ simplifyInternal term sideCondition = do
                         resultTerm
                     )
                 )
-          | isTop resultTerm && Right resultPredicate == termAsPredicate
+          | isTop resultTerm
+          , Right condition <- termAsPredicate
+          , resultPredicate == condition
           = return
                 $ OrPattern.fromPattern
                 $ Pattern.fromCondition

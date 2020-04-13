@@ -39,6 +39,9 @@ import Data.Hashable
     , unhashed
     )
 import Data.Int
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -63,8 +66,7 @@ import Data.Text.Prettyprint.Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
-    ( Typeable
-    , typeOf
+    ( typeOf
     )
 import Data.Void
     ( Void
@@ -167,6 +169,9 @@ class Debug a where
         -> Doc ann
     debugPrec = debugPrecGeneric
 
+    debugPrecBrief :: a -> Int -> Doc ann
+    debugPrecBrief = debugPrec
+
 debugPrecGeneric
     :: forall a ann
     .  (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
@@ -244,7 +249,7 @@ debugSOP
     => SOP I xss
     -> SOP (K (Int -> Doc ann)) xss
 debugSOP (SOP sop) =
-    SOP $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrec)) sop
+    SOP $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrecBrief)) sop
   where
     pDebug = Proxy :: Proxy Debug
     pAllDebug = Proxy :: Proxy (All Debug)
@@ -254,6 +259,8 @@ instance Debug a => Debug [a] where
         Pretty.group
         . encloseSep Pretty.lbracket Pretty.rbracket Pretty.comma
         $ map debug as
+
+instance Debug a => Debug (NonEmpty a)
 
 instance {-# OVERLAPS #-} Debug String where
     debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
@@ -528,6 +535,8 @@ instance Diff Bool where
     diffPrec = diffPrecEq
 
 instance (Debug a, Diff a) => Diff [a]
+
+instance (Debug a, Diff a) => Diff (NonEmpty a)
 
 instance {-# OVERLAPS #-} Diff String where
     diffPrec = diffPrecEq

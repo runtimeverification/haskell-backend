@@ -37,10 +37,6 @@ import qualified Data.Text.IO as Text
     ( putStrLn
     , readFile
     )
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    , vsep
-    )
 import Data.Text.Prettyprint.Doc.Render.Text
     ( hPutDoc
     , putDoc
@@ -77,9 +73,6 @@ import System.IO
 
 import qualified Data.Limit as Limit
 import Kore.Attribute.Symbol as Attribute
-import Kore.Error
-    ( printError
-    )
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
@@ -153,6 +146,11 @@ import Kore.Syntax.Definition
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
     ( unparse
+    )
+import Pretty
+    ( Doc
+    , Pretty (..)
+    , vsep
     )
 import SMT
     ( MonadSMT
@@ -373,14 +371,10 @@ parseKoreExecOptions =
             <> help "Execute up to DEPTH steps."
             )
     parseMainModuleName =
-        ModuleName <$> strOption info
-      where
-        info =
-            mconcat
-                [ metavar "MODULE"
-                , long "module"
-                , help "The name of the main module in the Kore definition."
-                ]
+        GlobalMain.parseModuleName
+            "MODULE"
+            "module"
+            "The name of the main module in the Kore definition."
     parseRtsStatistics =
         strOption (mconcat infos)
       where
@@ -712,7 +706,7 @@ mainParseSearchPattern indexedModule patternFileName = do
             Conditional
                 { term
                 , predicate =
-                    either (error . printError) id
+                    either (error . show . pretty) id
                         (makePredicate predicateTerm)
                 , substitution = mempty
                 }

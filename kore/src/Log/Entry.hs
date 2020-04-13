@@ -37,9 +37,6 @@ import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Data.Typeable
     ( cast
     )

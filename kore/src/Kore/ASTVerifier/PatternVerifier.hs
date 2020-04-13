@@ -494,7 +494,7 @@ verifyDomainValue domain = do
     let freeVariables' :: FreeVariables Variable =
             foldMap freeVariables
                 (Internal.extractAttributes <$> verified)
-    Monad.unless (nullFreeVariables freeVariables')
+    unless (nullFreeVariables freeVariables')
         (koreFail "Domain value must not contain free variables.")
     return verified
 

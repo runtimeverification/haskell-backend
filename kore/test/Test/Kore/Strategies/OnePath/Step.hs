@@ -21,7 +21,6 @@ import Data.List
 import Data.Reflection
     ( give
     )
-import Data.Typeable
 import Numeric.Natural
     ( Natural
     )

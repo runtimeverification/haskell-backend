@@ -37,9 +37,6 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
-import Data.Typeable
-    ( Typeable
-    )
 
 import Kore.Profiler.Data
     ( MonadProfiler

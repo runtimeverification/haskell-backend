@@ -22,9 +22,6 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
-import Control.Error
-    ( partitionEithers
-    )
 import qualified Control.Monad as Monad
     ( foldM_
     )
@@ -41,9 +38,6 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
 import Data.Text
     ( Text
-    )
-import Data.Typeable
-    ( Typeable
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

@@ -20,9 +20,6 @@ import Control.Exception
     , throw
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

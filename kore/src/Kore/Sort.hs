@@ -53,9 +53,6 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.These
-import Data.Typeable
-    ( Typeable
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

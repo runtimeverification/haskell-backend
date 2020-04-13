@@ -36,9 +36,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Bifunctor
     ( bimap
     )
-import Data.Either
-    ( partitionEithers
-    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.HashMap.Strict
     ( HashMap
@@ -65,9 +62,6 @@ import qualified Branch as BranchT
 import Changed
 import Kore.Attribute.Synthetic
     ( synthesize
-    )
-import Kore.Error
-    ( printError
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -129,11 +123,12 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import Kore.Unparser
-    ( unparseToString
+    ( unparse
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar, SetVar)
     )
+import qualified Pretty
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.
 
@@ -345,13 +340,13 @@ promoteSubTermsToTop predicate =
         case makePredicate result of
             -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
             -- should make it impossible to have an error here.
-            Left err -> error $ unlines
+            Left err ->
+                (error . show . Pretty.vsep)
                 [ "Replacing"
-                , unlines $ map unparseToString $ HashMap.keys replacements
+                , (Pretty.indent 4 . Pretty.vsep) (unparse <$> HashMap.keys replacements)
                 , "in"
-                , unparseToString original
-                , "did not produce a predicate!"
-                , printError err
+                , Pretty.indent 4 (unparse original)
+                , Pretty.indent 4 (Pretty.pretty err)
                 ]
             Right p -> p
 

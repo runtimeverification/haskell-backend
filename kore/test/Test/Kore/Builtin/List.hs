@@ -6,6 +6,8 @@ module Test.Kore.Builtin.List
     , test_concatUnit
     , test_concatUnitSymbolic
     , test_concatAssociates
+    , test_concatSymbolic
+    , test_concatSymbolicDifferentLengths
     , test_simplify
     , test_isBuiltin
     , test_inUnit
@@ -28,15 +30,25 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
+import qualified Data.Map.Strict as Map
 import qualified Data.Reflection as Reflection
 import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Builtin.List as List
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeTruePredicate
+    )
 import Kore.Internal.TermLike
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import Test.Kore
     ( testId
@@ -257,6 +269,108 @@ test_concatAssociates =
         evalConcat1_23 <- evaluateT patConcat1_23
         (===) evalConcat12_3 evalConcat1_23
         (===) Pattern.top =<< evaluateT predicate
+
+test_concatSymbolic :: TestTree
+test_concatSymbolic =
+    testPropertyWithSolver
+        "concat{}(element{}(x), xs) === concat{}(element{}(y), ys))\n\
+        \concat{}(xs, element{}(x)) === concat{}(ys, element{}(y))"
+        prop
+  where
+    prop = do
+        let elemVarX = "x" `ofSort` intSort
+            patSymbolicX = mkElemVar elemVarX
+            patSymbolicY = mkElemVar $ "y" `ofSort` intSort
+            elemVarXs = "xs" `ofSort` listSort
+            patSymbolicXs = mkElemVar elemVarXs
+            patSymbolicYs = mkElemVar $ "ys" `ofSort` listSort
+            patElemX =
+                List.internalize testMetadataTools $ elementList patSymbolicX
+            patElemY =
+                List.internalize testMetadataTools $ elementList patSymbolicY
+
+            patConcatX = concatList patElemX patSymbolicXs
+            patConcatY = concatList patElemY patSymbolicYs
+            patUnifiedXY = mkAnd patConcatX patConcatY
+
+            expect = Conditional
+                        { term = patConcatY
+                        , predicate = makeTruePredicate listSort
+                        , substitution =
+                            from $ Map.fromList
+                                [ (ElemVar elemVarX, patSymbolicY)
+                                , (ElemVar elemVarXs, patSymbolicYs)
+                                ]
+                        }
+        unified <- evaluateT patUnifiedXY
+        expect === unified
+
+        let patConcatX' = concatList patSymbolicXs patElemX
+            patConcatY' = concatList patSymbolicYs patElemY
+            patUnifiedXY' = mkAnd patConcatX' patConcatY'
+
+            expect' = Conditional
+                        { term = patConcatY'
+                        , predicate = makeTruePredicate listSort
+                        , substitution =
+                            from $ Map.fromList
+                                [ (ElemVar elemVarX, patSymbolicY)
+                                , (ElemVar elemVarXs, patSymbolicYs)
+                                ]
+                        }
+        unified' <- evaluateT patUnifiedXY'
+        expect' === unified'
+
+test_concatSymbolicDifferentLengths :: TestTree
+test_concatSymbolicDifferentLengths =
+    testPropertyWithSolver
+        "concat{}(concat{}(element{}(x1), element{}(x2)), xs)\
+            \ === concat{}(element{}(y), ys))"
+        prop
+  where
+    prop = do
+        let elemVarX1 = "x1" `ofSort` intSort
+            patSymbolicX1 = mkElemVar elemVarX1
+            patSymbolicX2 = mkElemVar $ "x2" `ofSort` intSort
+            patSymbolicY = mkElemVar $ "y" `ofSort` intSort
+            patSymbolicXs = mkElemVar $ "xs" `ofSort` listSort
+            elemVarYs = "ys" `ofSort` listSort
+            patSymbolicYs = mkElemVar elemVarYs
+            patElemX1 =
+                List.internalize testMetadataTools $ elementList patSymbolicX1
+            patElemX2 =
+                List.internalize testMetadataTools $ elementList patSymbolicX2
+            patElemY =
+                List.internalize testMetadataTools $ elementList patSymbolicY
+            patConcatX =
+                patElemX1 `concatList` patElemX2 `concatList` patSymbolicXs
+            patConcatY = patElemY `concatList` patSymbolicYs
+            patUnifiedXY = mkAnd patConcatX patConcatY
+            expect =
+                Conditional
+                    { term =
+                        patElemY `concatList`
+                        (patElemX2 `concatList` patSymbolicXs)
+                    , predicate = makeTruePredicate listSort
+                    , substitution =
+                        from $ Map.fromList
+                            [ (ElemVar elemVarX1, patSymbolicY)
+                            ,   ( ElemVar elemVarYs
+                                , patElemX2 `concatList` patSymbolicXs
+                                )
+                            ]
+                    }
+        unified <- evaluateT patUnifiedXY
+        expect === unified
+
+ofSort :: Text -> Sort -> ElementVariable Variable
+ofSort name sort =
+    ElementVariable
+        Variable
+            { variableName = testId name
+            , variableCounter = mempty
+            , variableSort = sort
+            }
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
