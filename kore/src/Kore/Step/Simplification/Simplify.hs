@@ -62,6 +62,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Branch
+import Control.Monad.Counter
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
@@ -226,6 +227,8 @@ instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     {-# INLINE localSimplifierAxioms #-}
 
 deriving instance MonadSimplify m => MonadSimplify (BranchT m)
+
+instance MonadSimplify m => MonadSimplify (CounterT m)
 
 instance MonadSimplify m => MonadSimplify (ExceptT e m)
 

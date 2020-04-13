@@ -284,7 +284,6 @@ newSolver exe opts logger = do
             debug (Solver solverHandle logger) errs
 
     setOption solver ":print-success" "true"
-    setOption solver ":produce-models" "true"
     Monad.when featureProduceAssertions
         $ setOption solver ":produce-assertions" "true"
 
@@ -642,10 +641,7 @@ check solver = do
                 asserts <- command solver (List [Atom "get-assertions"])
                 warn solver (buildText asserts)
             return Unknown
-        Atom "sat"     -> do
-            model <- command solver (List [Atom "get-model"])
-            debug solver (buildText model)
-            return Sat
+        Atom "sat"     -> return Sat
         _ -> fail $ unlines
             [ "Unexpected result from the SMT solver:"
             , "  Expected: unsat, unknown, or sat"

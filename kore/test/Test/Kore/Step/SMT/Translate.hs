@@ -26,6 +26,9 @@ import Kore.Internal.Variable
     ( Variable
     )
 import qualified Kore.Step.SMT.Evaluator as Evaluator
+import Kore.Step.SMT.Translate
+    ( evalTranslator
+    )
 import SMT
 import qualified SMT.SimpleSMT
 
@@ -157,9 +160,8 @@ test_goTranslatePredicate =
 
 translating :: HasCallStack => Predicate Variable -> IO (Maybe SExpr)
 translating =
-    Test.SMT.runNoSMT
-    . runMaybeT
-    . Evaluator.goTranslatePredicate Mock.metadataTools
+    Test.SMT.runNoSMT . runMaybeT . evalTranslator
+    . Evaluator.translatePredicate Mock.metadataTools
 
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()

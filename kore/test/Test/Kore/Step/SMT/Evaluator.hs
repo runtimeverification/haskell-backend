@@ -15,6 +15,10 @@ import Hedgehog hiding
     )
 import Test.Tasty
 
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
+
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -227,7 +231,9 @@ q = vBool (testId "q")
 assertRefuted :: HasCallStack => Predicate Variable -> Assertion
 assertRefuted prop = do
     let expect = Just False
-    actual <- Test.runSimplifier testEnv $ SMT.Evaluator.decidePredicate prop
+    actual <-
+        SMT.Evaluator.decidePredicate (prop :| [])
+        & Test.runSimplifier testEnv
     assertEqual "" expect actual
 
 true, false :: TermLike Variable

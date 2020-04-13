@@ -10,7 +10,7 @@ module Kore.Internal.Predicate
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
-    , freshVariable
+    , externalizeFreshVariables
     , isFalse
     , depth
     , makePredicate, NotPredicate (..)
@@ -103,6 +103,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike hiding
     ( depth
+    , externalizeFreshVariables
     , hasFreeVariable
     , isSimplified
     , mapVariables
@@ -179,7 +180,8 @@ instance
 type Predicate variable = GenericPredicate (TermLike variable)
 
 instance InternalVariable variable => SQL.Column (Predicate variable) where
-    defineColumn _ = SQL.defineColumn (SQL.Proxy @(TermLike variable))
+    defineColumn tableName _ =
+        SQL.defineColumn tableName (SQL.Proxy @(TermLike variable))
     toColumn (GenericPredicate termLike) = SQL.toColumn termLike
 
 instance From (Predicate variable) (TermLike variable) where
@@ -828,15 +830,18 @@ substitute
 substitute subst (GenericPredicate termLike) =
     GenericPredicate (TermLike.substitute subst termLike)
 
-{- | Externalize the variables
+{- | Transform arbitrary 'InternalVariable's into external 'Variable's.
+
+@externalizeFreshVariables@ ensures that bound variables are renamed to avoid
+capturing the resulting 'Variable's.
 
 -}
-freshVariable
+externalizeFreshVariables
     :: InternalVariable variable
     => Predicate variable
     -> Predicate Variable
-freshVariable predicate =
-    externalizeFreshVariables
+externalizeFreshVariables predicate =
+    TermLike.externalizeFreshVariables
     . TermLike.mapVariables (fmap toVariable) (fmap toVariable)
     <$> predicate
 

@@ -230,7 +230,8 @@ instance InternalVariable variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
 instance InternalVariable variable => SQL.Column (Substitution variable) where
-    defineColumn _ = SQL.defineColumn (SQL.Proxy @(Predicate variable))
+    defineColumn tableName _ =
+        SQL.defineColumn tableName (SQL.Proxy @(Predicate variable))
     toColumn = SQL.toColumn . toPredicate
 
 instance

@@ -85,6 +85,9 @@ import Kore.Log.InfoReachability
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
+import Kore.Log.WarnDecidePredicateUnknown
+    ( WarnDecidePredicateUnknown
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
@@ -115,6 +118,7 @@ registry =
                 , register debugProofStateType
                 , register debugAppliedRewriteRulesType
                 , register warnBottomHookType
+                , register warnDecidePredicateUnknownType
                 , register warnFunctionWithoutEvaluatorsType
                 , register debugSkipSimplificationType
                 , register logDebugEvaluateConditionType
@@ -155,6 +159,7 @@ debugAppliedRuleType
   , debugProofStateType
   , debugAppliedRewriteRulesType
   , warnBottomHookType
+  , warnDecidePredicateUnknownType
   , warnFunctionWithoutEvaluatorsType
   , debugSkipSimplificationType
   , logDebugEvaluateConditionType
@@ -179,6 +184,8 @@ debugAppliedRewriteRulesType =
     someTypeRep (Proxy :: Proxy DebugAppliedRewriteRules)
 warnBottomHookType =
     someTypeRep (Proxy :: Proxy WarnBottomHook)
+warnDecidePredicateUnknownType =
+    someTypeRep (Proxy :: Proxy WarnDecidePredicateUnknown)
 warnFunctionWithoutEvaluatorsType =
     someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
 debugSkipSimplificationType =

@@ -9,7 +9,7 @@ Portability : portable
 -}
 
 module Kore.Step.SMT.Translate
-    ( translatePredicate
+    ( translatePredicateWith
     , Translator
     , TranslateItem (..)
     , TranslatorState (..)
@@ -90,7 +90,7 @@ not builtins or predicates. All other patterns are not translated and prevent
 the predicate from being sent to SMT.
 
  -}
-translatePredicate
+translatePredicateWith
     :: forall p variable m .
         ( Given (SmtMetadataTools Attribute.Symbol)
         , p ~ TermLike variable
@@ -100,7 +100,7 @@ translatePredicate
     => (SExpr -> TranslateItem variable -> Translator m variable SExpr)
     -> Predicate variable
     -> Translator m variable SExpr
-translatePredicate translateTerm predicate =
+translatePredicateWith translateTerm predicate =
     translatePredicatePattern $ unwrapPredicate predicate
   where
     translateUninterpreted t pat = translateTerm t (UninterpretedTerm pat)

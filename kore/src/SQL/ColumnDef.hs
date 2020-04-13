@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module SQL.Column
+module SQL.ColumnDef
     ( TypeName
     , getTypeName
     , typeInteger
@@ -14,31 +14,19 @@ module SQL.Column
     , notNull
     , primaryKey
     , ColumnDef (..)
-    , Column (..)
     , columnDef
     , columnNotNull
-    , defineTextColumn
     ) where
 
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
 import Data.Generics.Product.Fields
-import Data.Int
-    ( Int64
-    )
-import Data.Proxy
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import Data.Text
-    ( Text
-    )
-import qualified Database.SQLite.Simple as SQLite
 import qualified GHC.Generics as GHC
-
-import SQL.SQL
 
 newtype TypeName = TypeName { getTypeName :: String }
     deriving (Eq, Ord, Read, Show)
@@ -70,20 +58,3 @@ columnDef columnType = ColumnDef { columnType, columnConstraints = mempty }
 
 columnNotNull :: ColumnDef -> ColumnDef
 columnNotNull = Lens.over (field @"columnConstraints") (<> notNull)
-
-class Column a where
-    defineColumn :: proxy a -> SQL ColumnDef
-    toColumn :: a -> SQL SQLite.SQLData
-    -- TODO (thomas.tuegel): Implement this!
-    -- fromColumn :: SQLite.Connection -> SQLite.SQLData -> IO a
-
-instance Column Int64 where
-    defineColumn _ = return (columnNotNull $ columnDef typeInteger)
-    toColumn = return . SQLite.SQLInteger
-
-instance Column Text where
-    defineColumn _ = return (columnNotNull $ columnDef typeText)
-    toColumn = return . SQLite.SQLText
-
-defineTextColumn :: proxy a -> SQL ColumnDef
-defineTextColumn _ = defineColumn (Proxy @Text)
