@@ -60,20 +60,20 @@ import Log
 {- | Command line options for logging.
  -}
 data KoreLogOptions = KoreLogOptions
-    { logType   :: KoreLogType
+    { logType   :: !KoreLogType
     -- ^ desired output method, see 'KoreLogType'
-    , logLevel  :: Severity
+    , logLevel  :: !Severity
     -- ^ minimal log level, passed via "--log-level"
-    , timestampsSwitch :: TimestampsSwitch
+    , timestampsSwitch :: !TimestampsSwitch
     -- ^ enable or disable timestamps
-    , logEntries :: EntryTypes
+    , logEntries :: !EntryTypes
     -- ^ extra entries to show, ignoring 'logLevel'
-    , debugAppliedRuleOptions :: DebugAppliedRuleOptions
-    , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
-    , debugSolverOptions :: DebugSolverOptions
-    , exeName :: ExeName
-    , logSQLiteOptions :: LogSQLiteOptions
-    , warningSwitch :: WarningSwitch
+    , debugAppliedRuleOptions :: !DebugAppliedRuleOptions
+    , debugAxiomEvaluationOptions :: !DebugAxiomEvaluationOptions
+    , debugSolverOptions :: !DebugSolverOptions
+    , exeName :: !ExeName
+    , logSQLiteOptions :: !LogSQLiteOptions
+    , warningSwitch :: !WarningSwitch
     }
     deriving (Eq, Show)
 
