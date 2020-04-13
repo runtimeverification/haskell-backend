@@ -14,9 +14,6 @@ module Kore.Step.Simplification.Equals
     , termEquals
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Control.Error
@@ -433,11 +430,6 @@ termEqualsAnd p1 p2 =
         -> TermLike variable
         -> unifier (Pattern variable)
     termEqualsAndWorker first second =
-        -- trace
-        --     ( "\n\nTERMANDEQUALSWORKER\n\n"
-        --     <> "\n\nFirst:\n\n" <> unparseToString first
-        --     <> "\n\nSecond:\n\n" <> unparseToString second
-        --     ) $
         either ignoreErrors scatterResults
         =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
       where
