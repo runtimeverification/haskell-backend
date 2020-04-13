@@ -19,12 +19,12 @@ import Type.Reflection
     , someTypeRep
     )
 
+import Kore.Equation.Application
+    ( DebugApplyEquation
+    )
 import qualified Kore.Log as Log
 import Kore.Log.DebugAppliedRule
     ( DebugAppliedRule
-    )
-import Kore.Log.DebugAxiomEvaluation
-    ( DebugAxiomEvaluation
     )
 import Kore.Repl.Data
 import Kore.Repl.Parser
@@ -474,24 +474,24 @@ logTests =
             , Log.logType = Log.LogStdErr
             , Log.logEntries = Set.singleton debugAppliedRuleType
             }
-    , "log info [ DebugAppliedRule,  DebugAxiomEvaluation ] file \"f s\""
+    , "log info [ DebugAppliedRule,  DebugApplyEquation ] file \"f s\""
         `parsesTo_` Log def
             { Log.logLevel = Log.Info
             , Log.logType = Log.LogFileText "f s"
             , Log.logEntries =
                 Set.fromList
-                    [debugAppliedRuleType, debugAxiomEvaluationType]
+                    [debugAppliedRuleType, debugApplyEquationType]
             }
-    , "log info [ DebugAppliedRule   DebugAxiomEvaluation ] file \"f s\""
+    , "log info [ DebugAppliedRule   DebugApplyEquation ] file \"f s\""
         `parsesTo_` Log def
             { Log.logLevel = Log.Info
             , Log.logType = Log.LogFileText "f s"
             , Log.logEntries =
                 Set.fromList
-                    [debugAppliedRuleType, debugAxiomEvaluationType]
+                    [debugAppliedRuleType, debugApplyEquationType]
             }
     ]
 
-debugAppliedRuleType, debugAxiomEvaluationType :: SomeTypeRep
+debugAppliedRuleType, debugApplyEquationType :: SomeTypeRep
 debugAppliedRuleType = someTypeRep (Proxy @DebugAppliedRule)
-debugAxiomEvaluationType = someTypeRep (Proxy @DebugAxiomEvaluation)
+debugApplyEquationType = someTypeRep (Proxy @DebugApplyEquation)

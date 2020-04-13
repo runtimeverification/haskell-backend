@@ -48,9 +48,6 @@ import Kore.Log.DebugAppliedRewriteRules
 import Kore.Log.DebugAppliedRule
     ( DebugAppliedRule
     )
-import Kore.Log.DebugAxiomEvaluation
-    ( DebugAxiomEvaluation
-    )
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
     )
@@ -120,7 +117,6 @@ registry =
 entryTypeReps :: [SomeTypeRep]
 entryTypeReps =
     [ someTypeRep $ Proxy @DebugAppliedRule
-    , someTypeRep $ Proxy @DebugAxiomEvaluation
     , someTypeRep $ Proxy @DebugSolverSend
     , someTypeRep $ Proxy @DebugSolverRecv
     , someTypeRep $ Proxy @DebugProofState
