@@ -11,7 +11,6 @@ export TOP  # so that sub-makes do not invoke git again
 UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
-KORE_DIR = $(BUILD_DIR)/kore
 K_RELEASE_TAR = $(BUILD_DIR)/k-nightly.tar.gz
 K_RELEASE_TAR_URL = $(shell cat deps/k_release)/k-nightly.tar.gz
 K_RELEASE_DEFAULT = $(BUILD_DIR)/k
@@ -43,18 +42,18 @@ STACK = stack
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
-KORE_EXEC = $(KORE_DIR)/bin/kore-exec
+KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
 KORE_EXEC_OPTS =
 export KORE_EXEC
 export KORE_EXEC_OPTS
 
-KORE_REPL = $(KORE_DIR)/bin/kore-repl
+KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
 export KORE_REPL
 
-$(BUILD_DIR)/kore/bin/kore-exec:
+$(KORE_EXEC):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
 
-$(BUILD_DIR)/kore/bin/kore-repl:
+$(KORE_REPL):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-repl
 
 $(K_RELEASE_DEFAULT)/lib/java/kernel-1.0-SNAPSHOT.jar:
