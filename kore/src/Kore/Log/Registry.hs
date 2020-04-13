@@ -51,9 +51,6 @@ import Kore.Log.DebugEvaluateCondition
 import Kore.Log.DebugProofState
     ( DebugProofState
     )
-import Kore.Log.DebugSkipSimplification
-    ( DebugSkipSimplification
-    )
 import Kore.Log.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
@@ -120,7 +117,6 @@ entryTypeReps =
     , someTypeRep $ Proxy @WarnBottomHook
     , someTypeRep $ Proxy @WarnDecidePredicateUnknown
     , someTypeRep $ Proxy @WarnFunctionWithoutEvaluators
-    , someTypeRep $ Proxy @DebugSkipSimplification
     , someTypeRep $ Proxy @DebugEvaluateCondition
     , someTypeRep $ Proxy @ErrorException
     , someTypeRep $ Proxy @LogMessage

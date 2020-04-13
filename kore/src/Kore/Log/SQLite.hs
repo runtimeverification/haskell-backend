@@ -32,9 +32,6 @@ import qualified System.Directory as Directory
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
     )
-import Kore.Log.DebugSkipSimplification
-    ( DebugSkipSimplification
-    )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
@@ -125,7 +122,6 @@ foldMapEntries mapEntry =
         [ mapEntry (Proxy @DebugEvaluateCondition)
         , mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
-        , mapEntry (Proxy @DebugSkipSimplification)
         ]
 
 -- | Declare the SQL tables for all known 'SQL.Table' 'Entry' types.
