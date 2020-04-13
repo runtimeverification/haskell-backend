@@ -16,6 +16,8 @@ module Kore.Log.KoreLogOptions
     , selectDebugApplyEquation
     , DebugAttemptEquationOptions (..)
     , selectDebugAttemptEquation
+    , DebugEquationOptions (..)
+    , selectDebugEquation
     ) where
 
 import Prelude.Kore
@@ -92,6 +94,7 @@ data KoreLogOptions = KoreLogOptions
     , warningSwitch :: !WarningSwitch
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
+    , debugEquationOptions :: !DebugEquationOptions
     }
     deriving (Eq, Show)
 
@@ -110,6 +113,7 @@ instance Default KoreLogOptions where
             , warningSwitch = def @WarningSwitch
             , debugApplyEquationOptions = def @DebugApplyEquationOptions
             , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
+            , debugEquationOptions = def @DebugEquationOptions
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -175,6 +179,7 @@ parseKoreLogOptions exeName =
     <*> parseWarningSwitch
     <*> parseDebugApplyEquationOptions
     <*> parseDebugAttemptEquationOptions
+    <*> parseDebugEquationOptions
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -330,3 +335,42 @@ selectDebugAttemptEquation options ActualEntry { actualEntry }
             DebugAttemptEquation equation _ -> pure equation
             DebugAttemptEquationResult equation _ -> pure equation
     DebugAttemptEquationOptions { selected } = options
+
+newtype DebugEquationOptions =
+    DebugEquationOptions { selected :: HashSet Text }
+    deriving (Eq, Show)
+    deriving (Semigroup, Monoid)
+
+instance Default DebugEquationOptions where
+    def = DebugEquationOptions HashSet.empty
+
+parseDebugEquationOptions :: Parser DebugEquationOptions
+parseDebugEquationOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugEquationOptions . HashSet.singleton . Text.pack)
+        $ Options.strOption
+        $ mconcat
+            [ Options.metavar "EQUATION_IDENTIFIER"
+            , Options.long "debug-equation"
+            , Options.help
+                "Log every attempt to apply or successful application of \
+                \an equation that matches EQUATION_IDENTIFIER, \
+                \which may be the name of a symbol or a rule. \
+                \The name of a symbol may be a Kore identifier or a K label, \
+                \which will match any equation where the named symbol \
+                \occurs on the left-hand side. \
+                \The name of a rule is given with the K module name \
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+            ]
+
+selectDebugEquation
+    :: DebugEquationOptions
+    -> ActualEntry
+    -> Bool
+selectDebugEquation DebugEquationOptions { selected } =
+    (fmap or . sequence)
+    [ selectDebugApplyEquation DebugApplyEquationOptions { selected }
+    , selectDebugAttemptEquation DebugAttemptEquationOptions { selected }
+    ]
