@@ -444,13 +444,7 @@ instance Debug variable => Debug (MatchError variable)
 instance (Debug variable, Diff variable) => Diff (MatchError variable)
 
 instance InternalVariable variable => Pretty (MatchError variable) where
-    pretty MatchError { matchTerm, matchEquation } =
-        Pretty.vsep
-        [ "could not match term:"
-        , Pretty.indent 4 (unparse matchTerm)
-        , "with equation:"
-        , Pretty.indent 4 (pretty matchEquation)
-        ]
+    pretty _ = "equation did not match term"
 
 mapMatchErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
@@ -496,7 +490,7 @@ instance
   where
     pretty ApplyMatchResultErrors { applyMatchErrors } =
         Pretty.vsep
-        [ "could not apply match result due to errors:"
+        [ "could not apply match result:"
         , (Pretty.indent 4 . Pretty.vsep)
             (pretty <$> Foldable.toList applyMatchErrors)
         ]
@@ -656,21 +650,22 @@ data DebugAttemptEquation
 instance Pretty DebugAttemptEquation where
     pretty (DebugAttemptEquation equation termLike) =
         Pretty.vsep
-        [ "applying equation:"
-        , Pretty.indent 4 (pretty equation)
-        , "to term:"
+        [ Pretty.hsep
+            [ "applying equation at"
+            , pretty srcLoc
+            , "to term:"
+            ]
         , Pretty.indent 4 (unparse termLike)
         ]
+      where
+        srcLoc = Attribute.sourceLocation $ attributes equation
     pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
         Pretty.vsep
         [ "equation is not applicable:"
         , pretty attemptEquationError
         ]
-    pretty (DebugAttemptEquationResult _ (Right result)) =
-        Pretty.vsep
-        [ "equation is applicable with result:"
-        , Pretty.indent 4 (unparse result)
-        ]
+    pretty (DebugAttemptEquationResult _ (Right _)) =
+        "equation is applicable"
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
@@ -733,11 +728,15 @@ data DebugApplyEquation
 instance Pretty DebugApplyEquation where
     pretty (DebugApplyEquation equation result) =
         Pretty.vsep
-        [ "applied equation:"
-        , Pretty.indent 4 (pretty equation)
-        , "with result:"
+        [ Pretty.hsep
+            [ "applied equation at"
+            , pretty srcLoc
+            , "with result:"
+            ]
         , Pretty.indent 4 (unparse result)
         ]
+      where
+        srcLoc = Attribute.sourceLocation $ attributes equation
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
