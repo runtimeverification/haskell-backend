@@ -14,9 +14,6 @@ module Test.Kore.Step.Simplification
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
-    ( CofreeF ((:<))
-    )
 import qualified Data.Functor.Foldable as Recursive
 
 import Branch

@@ -15,9 +15,6 @@ module Kore.Attribute.Synthetic
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
-    ( CofreeF (..)
-    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Data.Functor.Const
 import Data.Functor.Foldable

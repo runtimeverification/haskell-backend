@@ -37,7 +37,6 @@ module Kore.Step.Simplification.Simplify
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
 import Control.DeepSeq
 import qualified Control.Monad as Monad
 import Control.Monad.Morph
