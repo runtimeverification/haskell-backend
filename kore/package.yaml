@@ -10,7 +10,7 @@ category:            Language
 
 extra-source-files:
   - README.md
-  - ChangeLog.md
+  - CHANGELOG.md
   - test/resources/*.kore
   - test/resources/*.kore.golden
 
