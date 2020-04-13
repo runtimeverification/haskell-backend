@@ -173,7 +173,7 @@ attemptEquation sideCondition termLike equation =
         -> simplifier (AttemptEquationResult variable)
     whileDebugAttemptEquation' action = do
         result <- whileDebugAttemptEquation termLike equationRenamed action
-        debugAttemptEquationResult result
+        debugAttemptEquationResult equation result
         return result
 
 applyEquation
@@ -645,26 +645,28 @@ mapCheckRequiresErrorVariables mapElemVar mapSetVar checkRequiresError =
 {- | Log entries for all phases of equation application.
  -}
 data DebugAttemptEquation
-    = DebugAttemptEquation (TermLike Variable) (Equation Variable)
+    = DebugAttemptEquation (Equation Variable) (TermLike Variable)
     -- ^ Covers the entire scope of 'attemptEquation'.
-    | DebugAttemptEquationResult (AttemptEquationResult Variable)
+    | DebugAttemptEquationResult
+        (Equation Variable)
+        (AttemptEquationResult Variable)
     -- ^ Entered into the log when an equation is applicable.
     deriving (GHC.Generic)
 
 instance Pretty DebugAttemptEquation where
-    pretty (DebugAttemptEquation termLike equation) =
+    pretty (DebugAttemptEquation equation termLike) =
         Pretty.vsep
         [ "applying equation:"
         , Pretty.indent 4 (pretty equation)
         , "to term:"
         , Pretty.indent 4 (unparse termLike)
         ]
-    pretty (DebugAttemptEquationResult (Left attemptEquationError)) =
+    pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
         Pretty.vsep
         [ "equation is not applicable:"
         , pretty attemptEquationError
         ]
-    pretty (DebugAttemptEquationResult (Right result)) =
+    pretty (DebugAttemptEquationResult _ (Right result)) =
         Pretty.vsep
         [ "equation is applicable with result:"
         , Pretty.indent 4 (unparse result)
@@ -680,12 +682,17 @@ instance Entry DebugAttemptEquation where
 debugAttemptEquationResult
     :: MonadLog log
     => InternalVariable variable
-    => AttemptEquationResult variable
+    => Equation variable
+    -> AttemptEquationResult variable
     -> log ()
-debugAttemptEquationResult =
-    logEntry
-    . DebugAttemptEquationResult
-    . mapAttemptEquationResultVariables toElementVariable toSetVariable
+debugAttemptEquationResult equation result =
+    logEntry $ DebugAttemptEquationResult
+        (Equation.mapVariables toElementVariable toSetVariable equation)
+        (mapAttemptEquationResultVariables
+            toElementVariable
+            toSetVariable
+            result
+        )
   where
     toElementVariable = fmap toVariable
     toSetVariable = fmap toVariable
@@ -709,7 +716,7 @@ whileDebugAttemptEquation
     -> log a
     -> log a
 whileDebugAttemptEquation termLike equation =
-    logWhile (DebugAttemptEquation termLike' equation')
+    logWhile (DebugAttemptEquation equation' termLike')
   where
     toElementVariable = fmap toVariable
     toSetVariable = fmap toVariable

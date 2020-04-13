@@ -14,6 +14,8 @@ module Kore.Log.KoreLogOptions
     , parseKoreLogOptions
     , DebugApplyEquationOptions (..)
     , selectDebugApplyEquation
+    , DebugAttemptEquationOptions (..)
+    , selectDebugAttemptEquation
     ) where
 
 import Prelude.Kore
@@ -49,6 +51,7 @@ import Type.Reflection
 
 import Kore.Equation
     ( DebugApplyEquation (..)
+    , DebugAttemptEquation (..)
     )
 import qualified Kore.Equation as Equation
 import Kore.Log.DebugAppliedRule
@@ -88,6 +91,7 @@ data KoreLogOptions = KoreLogOptions
     , logSQLiteOptions :: !LogSQLiteOptions
     , warningSwitch :: !WarningSwitch
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
+    , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     }
     deriving (Eq, Show)
 
@@ -105,6 +109,7 @@ instance Default KoreLogOptions where
             , logSQLiteOptions = def @LogSQLiteOptions
             , warningSwitch = def @WarningSwitch
             , debugApplyEquationOptions = def @DebugApplyEquationOptions
+            , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -169,6 +174,7 @@ parseKoreLogOptions exeName =
     <*> parseLogSQLiteOptions
     <*> parseWarningSwitch
     <*> parseDebugApplyEquationOptions
+    <*> parseDebugAttemptEquationOptions
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -279,3 +285,48 @@ selectDebugApplyEquation options ActualEntry { actualEntry }
   | otherwise = False
   where
     DebugApplyEquationOptions { selected } = options
+
+newtype DebugAttemptEquationOptions =
+    DebugAttemptEquationOptions { selected :: HashSet Text }
+    deriving (Eq, Show)
+    deriving (Semigroup, Monoid)
+
+instance Default DebugAttemptEquationOptions where
+    def = DebugAttemptEquationOptions HashSet.empty
+
+parseDebugAttemptEquationOptions :: Parser DebugAttemptEquationOptions
+parseDebugAttemptEquationOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugAttemptEquationOptions . HashSet.singleton . Text.pack)
+        $ Options.strOption
+        $ mconcat
+            [ Options.metavar "EQUATION_IDENTIFIER"
+            , Options.long "debug-attempt-equation"
+            , Options.help
+                "Log every attempt to apply an equation \
+                \that matches EQUATION_IDENTIFIER, \
+                \which may be the name of a symbol or a rule. \
+                \The name of a symbol may be a Kore identifier or a K label, \
+                \which will match any equation where the named symbol \
+                \occurs on the left-hand side. \
+                \The name of a rule is given with the K module name \
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+            ]
+
+selectDebugAttemptEquation
+    :: DebugAttemptEquationOptions
+    -> ActualEntry
+    -> Bool
+selectDebugAttemptEquation options ActualEntry { actualEntry }
+  | Just equation <- getEquation =
+    any (flip HashSet.member selected) (Equation.identifiers equation)
+  | otherwise = False
+  where
+    getEquation = do
+        debugAttemptEquation <- fromEntry actualEntry
+        case debugAttemptEquation of
+            DebugAttemptEquation equation _ -> pure equation
+            DebugAttemptEquationResult equation _ -> pure equation
+    DebugAttemptEquationOptions { selected } = options

@@ -174,6 +174,7 @@ koreLogFilters koreLogOptions baseLogger =
             || filterDebugAppliedRule debugAppliedRuleOptions entry
             || filterDebugAxiomEvaluation debugAxiomEvaluationOptions entry
             || selectDebugApplyEquation debugApplyEquationOptions entry
+            || selectDebugAttemptEquation debugAttemptEquationOptions entry
         )
     baseLogger
   where
@@ -181,6 +182,7 @@ koreLogFilters koreLogOptions baseLogger =
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
     KoreLogOptions { debugApplyEquationOptions } = koreLogOptions
+    KoreLogOptions { debugAttemptEquationOptions } = koreLogOptions
 
 {- | Select the log entry types present in the active set.
  -}
