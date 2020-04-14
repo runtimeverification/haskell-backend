@@ -14,6 +14,7 @@ module Kore.Builtin.Bool
     , extractBoolDomainValue
     , parse
     , termAndEquals
+    , termNotBool
     , matchBool
       -- * Keys
     , orKey
@@ -180,7 +181,6 @@ builtinFunctions =
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
 
--- TODO: rename to builtinSimplification OR add new function with case
 termAndEquals
     :: forall variable unifier
     .  InternalVariable variable
@@ -213,17 +213,34 @@ termAndEquals unifyChildren a b =
         unification2 <- unifyChildren' termLike1 operand2
         let conditions = unification1 <> unification2
         pure (Pattern.withCondition termLike1 conditions)
+    worker _ _ = empty
+
+termNotBool
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termNotBool unifyChildren a b =
+    worker a b <|> worker b a
+  where
+    unifyChildren' boolTerm term =
+        Pattern.withoutTerm <$> unifyChildren (falseTerm term) term
+        <|> return (equalsCondition boolTerm term)
+    equalsCondition boolTerm term =
+        Condition.fromPredicate
+        $ makeEqualsPredicate_ (falseTerm boolTerm) term
+    falseTerm term = asInternal (termLikeSort term) False
+    worker termLike1 trueTerm
       | Just BoolNot { operand } <- matchBoolNot termLike1
       , isFunctionPattern termLike1
-      , Just value2 <- matchBool termLike2
+      , Just value2 <- matchBool trueTerm
       , value2
       = lift $ do
-        let falseTerm = asInternal (termLikeSort termLike2) False
-        condition <-
-            unifyChildren' falseTerm operand
-            <|> return (Condition.fromPredicate $ makeEqualsPredicate_ falseTerm operand)
-        pure (Pattern.withCondition termLike2 condition)
-
+        condition <- unifyChildren' trueTerm operand
+        pure (Pattern.withCondition trueTerm condition)
     worker _ _ = empty
 
 {- | Match a @BOOL.Bool@ builtin value.

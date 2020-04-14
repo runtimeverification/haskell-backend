@@ -43,8 +43,6 @@ endmodule
 
 module IMP
   imports IMP-SYNTAX
-  imports INT
-  imports BOOL
   imports IMP-STATE
   imports SYMBOLIC-INT
 

@@ -164,15 +164,8 @@ evalKEq true (valid :< app) =
         -> TermLike variable
         -> MaybeT simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2 = do
-        -- traceM
-        --     $ "\n\nEvalEq: " <> show true <> "\n\n"
-        --     <> "\n\nTermLike1:\n\n"
-        --     <> unparseToString termLike1
-        --     <> "\n\nTermLike2:\n\n"
-        --     <> unparseToString termLike2
         asConcrete1 <- hoistMaybe $ Builtin.toKey termLike1
         asConcrete2 <- hoistMaybe $ Builtin.toKey termLike2
-        -- traceM "\n\nSHOULD GET HERE\n\n"
         Builtin.appliedFunction
             $ Bool.asPattern sort
             $ comparison asConcrete1 asConcrete2
