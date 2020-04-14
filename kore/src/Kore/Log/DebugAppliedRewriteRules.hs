@@ -54,10 +54,8 @@ import Log
 
 data DebugAppliedRewriteRules =
     DebugAppliedRewriteRules
-        { configuration
-            :: !(Pattern Variable)
-        , appliedRewriteRules
-            :: ![UnifiedRule Variable (RewriteRule Variable)]
+        { configuration :: Pattern Variable
+        , appliedRewriteRules :: [UnifiedRule Variable (RewriteRule Variable)]
         }
 
 instance Pretty DebugAppliedRewriteRules where

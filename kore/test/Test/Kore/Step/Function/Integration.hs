@@ -39,6 +39,7 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
     ( builtinFunctions
     )
+import Kore.Equation
 import qualified Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools
@@ -53,8 +54,7 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
+    ( makeAndPredicate
     , makeCeilPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate
@@ -82,13 +82,6 @@ import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    )
-import Kore.Step.EqualityPattern as EqualityPattern
-    ( EqualityPattern (..)
-    , equalityPattern
-    )
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.InjSimplifier
@@ -114,6 +107,10 @@ import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
+import Test.Kore.Equation.Application
+    ( axiom
+    , axiom_
+    )
 import Test.Kore.Step.Axiom.Matcher
     ( doesn'tMatch
     , matches
@@ -486,18 +483,9 @@ test_functionIntegration =
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
-                            (appliedMockEvaluator Conditional
-                                { term = Mock.b
-                                , predicate = makeTruePredicate_
-                                , substitution = mempty
-                                }
-                            )
+                            (appliedMockEvaluator (Pattern.fromTermLike Mock.b))
                             (definitionEvaluation
-                                [ axiom
-                                    (Mock.f (mkElemVar Mock.y))
-                                    Mock.a
-                                    makeTruePredicate_
-                                ]
+                                [axiom_ (Mock.f (mkElemVar Mock.y)) Mock.a]
                             )
                         )
                     ]
@@ -688,7 +676,7 @@ evaluateWith simplifier patt =
 withApplied
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> [EqualityRule Variable]
+    -> [Equation Variable]
     -> TermLike Variable
     -> TestTree
 withApplied check comment rules term =
@@ -698,7 +686,7 @@ withApplied check comment rules term =
 
 applies, notApplies
     :: TestName
-    -> [EqualityRule Variable]
+    -> [Equation Variable]
     -> TermLike Variable
     -> TestTree
 applies =
@@ -714,7 +702,10 @@ applies =
         assertBool "Expected no remainders"
         . isBottom
         . Lens.view (field @"remainders")
-notApplies = withApplied (assertBool "Expected NotApplicable" . isNotApplicable)
+notApplies =
+    withApplied $ \r ->
+        assertBool "Expected NotApplicable"
+        $ isNotApplicable r || isNotApplicableUntilConditionChanges r
 
 natSort :: Sort
 natSort =
@@ -764,7 +755,7 @@ times n1 n2 = mkApplySymbol timesSymbol [n1, n2]
 
 functionEvaluator
     :: Symbol
-    -> [EqualityRule Variable]  -- ^ Function definition rules
+    -> [Equation Variable]  -- ^ Function definition rules
     -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 functionEvaluator symb rules =
     (AxiomIdentifier.Application ident, definitionEvaluation rules)
@@ -773,7 +764,7 @@ functionEvaluator symb rules =
 
 functionSimplifier
     :: Symbol
-    -> [EqualityRule Variable]  -- ^ Function simplification rule
+    -> [Equation Variable]  -- ^ Function simplification rule
     -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 functionSimplifier symb rules =
     ( AxiomIdentifier.Application ident
@@ -782,12 +773,12 @@ functionSimplifier symb rules =
   where
     ident = symbolConstructor symb
 
-plusZeroRule, plusSuccRule :: EqualityRule Variable
+plusZeroRule, plusSuccRule :: Equation Variable
 plusZeroRule = axiom_ (plus zero varN) varN
 plusSuccRule = axiom_ (plus (succ varM) varN) (succ (plus varM varN))
 
 
-plusRules :: [EqualityRule Variable]
+plusRules :: [Equation Variable]
 plusRules = [plusZeroRule, plusSuccRule]
 
 plusEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -826,35 +817,34 @@ natSimplifiers =
         , factorialEvaluator
         ]
 
--- | Add an unsatisfiable requirement to the 'EqualityRule'.
-requiresBottom :: EqualityRule Variable -> EqualityRule Variable
-requiresBottom (EqualityRule rule) =
-    EqualityRule rule { requires = makeEqualsPredicate_ zero one }
+-- | Add an unsatisfiable requirement to the 'Equation'.
+requiresBottom :: Equation Variable -> Equation Variable
+requiresBottom equation = equation { requires = makeEqualsPredicate_ zero one }
 
-{- | Add an unsatisfiable @\\equals@ requirement to the 'EqualityRule'.
+{- | Add an unsatisfiable @\\equals@ requirement to the 'Equation'.
 
 In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
 requirement which results in a fatal error when evaluated.
 
  -}
-requiresFatalEquals :: EqualityRule Variable -> EqualityRule Variable
-requiresFatalEquals (EqualityRule rule) =
-    EqualityRule rule
+requiresFatalEquals :: Equation Variable -> Equation Variable
+requiresFatalEquals equation =
+    equation
         { requires =
             makeAndPredicate
                 (makeEqualsPredicate_ (fatal zero) one)
                 (makeEqualsPredicate_ zero         one)
         }
 
-{- | Add an unsatisfiable @\\in@ requirement to the 'EqualityRule'.
+{- | Add an unsatisfiable @\\in@ requirement to the 'Equation'.
 
 In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
 requirement which results in a fatal error when evaluated.
 
  -}
-requiresFatalIn :: EqualityRule Variable -> EqualityRule Variable
-requiresFatalIn (EqualityRule rule) =
-    EqualityRule rule
+requiresFatalIn :: Equation Variable -> Equation Variable
+requiresFatalIn equation =
+    equation
         { requires =
             makeAndPredicate
                 (makeEqualsPredicate_ (fatal zero) one)
@@ -863,7 +853,7 @@ requiresFatalIn (EqualityRule rule) =
 
 {- | Test short-circuiting evaluation of function requirements.
 
-We want to check that functions are not evaluated in an 'EqualityRule'
+We want to check that functions are not evaluated in an 'Equation'
 requirement if the pre-condition is known to be unsatisfiable without function
 evaluation. We check this by including a 'requires' clause with one
 unsatisfiable condition and one "fatal" condition (a condition producing a fatal
@@ -1009,14 +999,14 @@ concatList = Builtin.concatList
 consList :: TermLike Variable -> TermLike Variable -> TermLike Variable
 consList x xs = concatList (mkList [x]) xs
 
-lengthListUnitRule, lengthListConsRule :: EqualityRule Variable
+lengthListUnitRule, lengthListConsRule :: Equation Variable
 lengthListUnitRule = axiom_ (lengthList unitList) (mkInt 0)
 lengthListConsRule =
     axiom_
         (lengthList (consList varX varL))
         (addInt (mkInt 1) (lengthList varL))
 
-lengthListRules :: [EqualityRule Variable]
+lengthListRules :: [Equation Variable]
 lengthListRules = [ lengthListUnitRule , lengthListConsRule ]
 
 lengthListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1029,14 +1019,14 @@ removeListSymbol =
 removeList :: TermLike Variable -> TermLike Variable -> TermLike Variable
 removeList l m = mkApplySymbol removeListSymbol [l, m]
 
-removeListUnitRule, removeListConsRule :: EqualityRule Variable
+removeListUnitRule, removeListConsRule :: Equation Variable
 removeListUnitRule = axiom_ (removeList unitList mMapTerm) mMapTerm
 removeListConsRule =
     axiom_
         (removeList (consList varX varL) mMapTerm)
         (removeMap mMapTerm varX)
 
-removeListRules :: [EqualityRule Variable]
+removeListRules :: [Equation Variable]
 removeListRules = [removeListUnitRule, removeListConsRule]
 
 removeListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1133,7 +1123,7 @@ updateList
     -> TermLike Variable
 updateList = Builtin.updateList
 
-updateListSimplifier :: EqualityRule Variable
+updateListSimplifier :: Equation Variable
 updateListSimplifier =
     axiom
         (updateList (updateList varL u v) x y)
@@ -1162,10 +1152,10 @@ lookupMapSymbol = Builtin.lookupMapSymbol
 lookupMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
 lookupMap = Builtin.lookupMap
 
-lookupMapRule :: EqualityRule Variable
+lookupMapRule :: Equation Variable
 lookupMapRule = axiom_ (lookupMap (mkMap [(varX, varY)] [mMapTerm]) varX) varY
 
-lookupMapRules :: [EqualityRule Variable]
+lookupMapRules :: [Equation Variable]
 lookupMapRules = [lookupMapRule]
 
 lookupMapEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1224,7 +1214,7 @@ updateMap
     -> TermLike Variable
 updateMap = Builtin.updateMap
 
-updateMapSimplifier :: EqualityRule Variable
+updateMapSimplifier :: Equation Variable
 updateMapSimplifier =
     axiom
         (updateMap (updateMap mMapTerm u v) x y)
@@ -1234,7 +1224,7 @@ updateMapSimplifier =
     [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
     injK = Builtin.inj Builtin.kSort
 
-dummyIntSimplifier :: EqualityRule Variable
+dummyIntSimplifier :: Equation Variable
 dummyIntSimplifier =
     axiom_ (Builtin.dummyInt (mkElemVar xInt)) (mkElemVar xInt)
 
@@ -1271,13 +1261,13 @@ test_Ceil =
         (mkCeil_ $ Builtin.dummyInt $ mkElemVar yInt)
     ]
 
-ceilDummyRule :: EqualityRule Variable
+ceilDummyRule :: Equation Variable
 ceilDummyRule =
     axiom_
         (mkCeil_ $ Builtin.dummyInt $ mkElemVar xInt)
         (mkEquals_ (Builtin.eqInt (mkElemVar xInt) (mkInt 0)) (mkBool False))
 
-ceilDummySetRule :: EqualityRule Variable
+ceilDummySetRule :: Equation Variable
 ceilDummySetRule =
     axiom_
         (mkCeil_ $ Builtin.dummyInt $ mkSetVar xsInt)
@@ -1287,7 +1277,7 @@ ceilDummySetRule =
 withSimplified
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> EqualityRule Variable
+    -> Equation Variable
     -> TermLike Variable
     -> TestTree
 withSimplified check comment rule term =
@@ -1297,7 +1287,7 @@ withSimplified check comment rule term =
 
 simplifies, notSimplifies
     :: TestName
-    -> EqualityRule Variable
+    -> Equation Variable
     -> TermLike Variable
     -> TestTree
 simplifies =
@@ -1322,20 +1312,6 @@ axiomEvaluator
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate_)
-
-axiom
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
-    -> EqualityRule Variable
-axiom left right requires =
-    EqualityRule (EqualityPattern.equalityPattern left right) { requires }
-
-axiom_
-    :: TermLike Variable
-    -> TermLike Variable
-    -> EqualityRule Variable
-axiom_ left right = axiom left right makeTruePredicate_
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier
