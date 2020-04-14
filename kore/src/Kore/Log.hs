@@ -173,12 +173,18 @@ koreLogFilters koreLogOptions baseLogger =
             || filterSeverity logLevel entry
             || filterDebugAppliedRule debugAppliedRuleOptions entry
             || filterDebugAxiomEvaluation debugAxiomEvaluationOptions entry
+            || selectDebugApplyEquation debugApplyEquationOptions entry
+            || selectDebugAttemptEquation debugAttemptEquationOptions entry
+            || selectDebugEquation debugEquationOptions entry
         )
     baseLogger
   where
     KoreLogOptions { logLevel, logEntries } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
     KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
+    KoreLogOptions { debugApplyEquationOptions } = koreLogOptions
+    KoreLogOptions { debugAttemptEquationOptions } = koreLogOptions
+    KoreLogOptions { debugEquationOptions } = koreLogOptions
 
 {- | Select the log entry types present in the active set.
  -}
