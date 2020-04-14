@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Applying equation-based rules (primarily function rules and simplification rules) is more efficient.
+- Equations may not have free variables occurring only on the right-hand side.
 
 ### Removed
 
