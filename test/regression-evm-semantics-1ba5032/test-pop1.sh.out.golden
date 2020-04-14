@@ -27,6 +27,10 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     /* Fl Fn D Sfa Cl */
                     Lbl'Stop'StatusCode'Unds'NETWORK'Unds'StatusCode{}()
                 ),
+                /* Fl Fn D Sfa Cl */
+                Lbl'-LT-'endPC'-GT-'{}(
+                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                ),
                 /* Fl Fn D Sfa */
                 Lbl'-LT-'callStack'-GT-'{}(
                     /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
@@ -74,7 +78,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'localMem'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ \dv{SortBytes{}}("")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'pc'-GT-'{}(
@@ -204,6 +208,10 @@ Lbl'-LT-'generatedTop'-GT-'{}(
             ),
             /* Fl Fn D Sfa */
             Lbl'-LT-'network'-GT-'{}(
+                /* Fl Fn D Sfa Cl */
+                Lbl'-LT-'chainID'-GT-'{}(
+                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("1")
+                ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'activeAccounts'-GT-'{}(
                     /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
