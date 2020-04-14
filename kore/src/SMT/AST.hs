@@ -255,10 +255,12 @@ sendSExpr h = sendSExprWorker
 type Parser = Parsec Void Text
 
 parseSExprSpace :: Parser ()
-parseSExprSpace =
-    Lexer.space Parser.space1 skipLineComment empty
-  where
-    skipLineComment = Lexer.skipLineComment ";"
+parseSExprSpace = Lexer.space Parser.space1 skipLineComment empty
+{-# INLINE parseSExprSpace #-}
+
+skipLineComment :: Parser ()
+skipLineComment = Lexer.skipLineComment ";"
+{-# INLINE skipLineComment #-}
 
 -- | Basic S-expression parser.
 parseSExpr :: Parser SExpr
@@ -287,8 +289,7 @@ parseSExpr = parseAtom <|> parseList
     lexeme = Lexer.lexeme parseSExprSpace
 
 parseSExprFile :: Parser [SExpr]
-parseSExprFile =
-    parseSExprSpace *> Parser.some parseSExpr
+parseSExprFile = parseSExprSpace *> Parser.some parseSExpr
 
 -- | Parse one S-expression.
 readSExpr :: MonadFail m => Text -> m SExpr

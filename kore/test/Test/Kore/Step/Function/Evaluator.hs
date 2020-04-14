@@ -11,6 +11,7 @@ import qualified Data.Map.Strict as Map
 import Kore.Attribute.Synthetic
     ( synthesize
     )
+import qualified Kore.Equation as Equation
 import Kore.Internal.Condition
     ( Condition
     )
@@ -31,13 +32,15 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as Kore
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
-import qualified Kore.Step.EqualityPattern as EqualityPattern
 import qualified Kore.Step.Function.Evaluator as Kore
 import qualified Kore.Step.Simplification.Simplify as Kore
 import Kore.Syntax.Application
     ( Application (..)
     )
 
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 
@@ -96,9 +99,9 @@ mkApplySymbol = synthesize . TermLike.ApplySymbolF
 fEvaluator :: Kore.BuiltinAndAxiomSimplifier
 fEvaluator =
     Kore.simplificationEvaluation
-    $ EqualityPattern.EqualityRule
-    $ EqualityPattern.equalityPattern left right
+    $ Equation.mkEquation sortR left right
   where
+    sortR = TermLike.mkSortVariable (testId "R")
     left = mkApplySymbol (f x)
     right = x
     x = TermLike.mkElemVar Mock.x

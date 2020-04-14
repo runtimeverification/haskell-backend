@@ -25,6 +25,8 @@ module Kore.Internal.TermLike.TermLike
 import Prelude.Kore
 
 import Control.Comonad.Trans.Cofree
+    ( CofreeT (..)
+    )
 import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
     ( NFData (..)

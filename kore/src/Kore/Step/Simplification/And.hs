@@ -18,9 +18,6 @@ module Kore.Step.Simplification.And
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
-    ( CofreeF ((:<))
-    )
 import Control.Error
     ( fromMaybe
     , runMaybeT

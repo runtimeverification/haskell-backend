@@ -4,19 +4,27 @@ module Test.Kore.Repl.Parser
 
 import Prelude.Kore
 
-import Data.Default
-import qualified Data.GraphViz as Graph
-import qualified Data.Set as Set
-import Numeric.Natural
 import Test.Tasty
     ( TestTree
     , testGroup
     )
 
+import Data.Default
+import qualified Data.GraphViz as Graph
+import Data.Proxy
+import qualified Data.Set as Set
+import Numeric.Natural
+import Type.Reflection
+    ( SomeTypeRep
+    , someTypeRep
+    )
+
 import qualified Kore.Log as Log
-import Kore.Log.Registry
-    ( debugAppliedRuleType
-    , debugAxiomEvaluationType
+import Kore.Log.DebugAppliedRule
+    ( DebugAppliedRule
+    )
+import Kore.Log.DebugAxiomEvaluation
+    ( DebugAxiomEvaluation
     )
 import Kore.Repl.Data
 import Kore.Repl.Parser
@@ -483,3 +491,7 @@ logTests =
                     [debugAppliedRuleType, debugAxiomEvaluationType]
             }
     ]
+
+debugAppliedRuleType, debugAxiomEvaluationType :: SomeTypeRep
+debugAppliedRuleType = someTypeRep (Proxy @DebugAppliedRule)
+debugAxiomEvaluationType = someTypeRep (Proxy @DebugAxiomEvaluation)
