@@ -24,9 +24,7 @@ import Prelude.Kore
 
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
-    ( Cofree
-    , CofreeF (..)
-    , ComonadCofree (..)
+    ( ComonadCofree (..)
     )
 import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq

@@ -49,9 +49,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -241,12 +238,9 @@ maybeEvaluatePattern
     BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
     lift . tracing $ do
         merged <- bracketAxiomEvaluationLog $ do
-            let sideConditions =
-                    sideCondition
-                    `SideCondition.andCondition` childrenCondition
             result <-
                 Profile.axiomEvaluation identifier
-                $ evaluator termLike sideConditions
+                $ evaluator termLike sideCondition
             flattened <- case result of
                 AttemptedAxiom.NotApplicable -> do
                     DebugAxiomEvaluation.notEvaluated
