@@ -264,17 +264,23 @@ makeKoreLogger exeName timestampSwitch logToText =
             [ Just exeName'
             , timestamp
             , Just severity'
-            , Just (Pretty.parens type')
+            , Just (Pretty.parens $ type' actualEntry)
             ]
             <> Pretty.colon
         severity' = prettySeverity (entrySeverity actualEntry)
-        type' =
+        type' entry =
             Pretty.pretty
             $ lookupTextFromTypeWithError
-            $ typeOfSomeEntry actualEntry
+            $ typeOfSomeEntry entry
         context' =
-            mapMaybe (fmap (<> Pretty.colon) . shortDoc) entryContext
-            & toList
+            mapMaybe
+                addTypeToDoc
+                entryContext
+                & toList
+        addTypeToDoc se =
+            fmap (<> Pretty.space <> Pretty.parens (type' se) <> Pretty.colon)
+            . shortDoc
+            $ se
     indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.
