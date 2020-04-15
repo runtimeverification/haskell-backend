@@ -283,9 +283,12 @@ makeKoreLogger exeName timestampSwitch logToText =
                 addTypeToDoc
                 entryContext
                 & toList
-        addTypeToDoc =
-            fmap (\doc -> Pretty.hsep [Pretty.parens (type' se), doc <> Pretty.colon])
+        addTypeToDoc se =
+            fmap (\doc ->
+                Pretty.hsep [Pretty.parens (type' se), doc <> Pretty.colon]
+                )
             . shortDoc
+            $ se
     indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.
