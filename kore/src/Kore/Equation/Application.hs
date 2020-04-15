@@ -48,6 +48,7 @@ import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Source as Attribute
 import Kore.Equation.Equation
     ( Equation (..)
     )
@@ -648,8 +649,16 @@ data DebugAttemptEquation
     deriving (GHC.Generic)
 
 instance Pretty DebugAttemptEquation where
-    pretty (DebugAttemptEquation equation termLike) =
-        Pretty.vsep
+    pretty (DebugAttemptEquation equation termLike)
+      | isEmpty srcLoc
+      = Pretty.vsep
+        [ "applying generated equation"
+        , Pretty.indent 4 (pretty equation)
+        , "to term:"
+        , Pretty.indent 4 (unparse termLike)
+        ]
+      | otherwise
+      =  Pretty.vsep
         [ Pretty.hsep
             [ "applying equation at"
             , pretty srcLoc
@@ -659,6 +668,8 @@ instance Pretty DebugAttemptEquation where
         ]
       where
         srcLoc = Attribute.sourceLocation $ attributes equation
+        isEmpty Attribute.SourceLocation { source = Attribute.Source file } =
+            isNothing file
     pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
         Pretty.vsep
         [ "equation is not applicable:"
@@ -726,8 +737,16 @@ data DebugApplyEquation
     deriving (GHC.Generic)
 
 instance Pretty DebugApplyEquation where
-    pretty (DebugApplyEquation equation result) =
-        Pretty.vsep
+    pretty (DebugApplyEquation equation result)
+      | isEmpty srcLoc
+      = Pretty.vsep
+        [ "applied generated equation"
+        , Pretty.indent 4 (pretty equation)
+        , "to term:"
+        , Pretty.indent 4 (unparse result)
+        ]
+      | otherwise
+      = Pretty.vsep
         [ Pretty.hsep
             [ "applied equation at"
             , pretty srcLoc
@@ -737,6 +756,8 @@ instance Pretty DebugApplyEquation where
         ]
       where
         srcLoc = Attribute.sourceLocation $ attributes equation
+        isEmpty Attribute.SourceLocation { source = Attribute.Source file } =
+            isNothing file
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug

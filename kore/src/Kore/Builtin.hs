@@ -209,8 +209,10 @@ internalize tools =
 renormalize
     :: InternalVariable variable
     => TermLike variable -> TermLike variable
-renormalize termLike =
-    case termLike of
+renormalize =
+    Recursive.fold (renormalize1 . Recursive.embed)
+  where
+    renormalize1 termLike = case termLike of
         BuiltinMap_ internalMap ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
             & maybe bottom' mkBuiltinMap
@@ -218,5 +220,5 @@ renormalize termLike =
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
             & maybe bottom' mkBuiltinSet
         _ -> termLike
-  where
-    bottom' = mkBottom (termLikeSort termLike)
+      where
+        bottom' = mkBottom (termLikeSort termLike)
