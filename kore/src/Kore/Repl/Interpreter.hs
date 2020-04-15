@@ -1253,7 +1253,6 @@ recursiveForcedStep n node
         SingleResult sr -> (recursiveForcedStep $ n-1) sr
         BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
 
-
 -- | Display a rule as a String.
 showRewriteRule
     :: ToRulePattern rule
