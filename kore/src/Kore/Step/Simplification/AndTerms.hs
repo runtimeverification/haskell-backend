@@ -220,6 +220,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
     , (BothT,   \_ _ s -> Builtin.Bool.termAndEquals s, "Builtin.Bool.termAndEquals")
     , (BothT,   \_ _ s -> Builtin.Bool.termNotBool s, "Builtin.Bool.termNotBool")
+    , (BothT,   \_ _ s -> Builtin.KEqual.termKEqualsTrue s, "Builtin.KEqual.termKEqualsTrue")
     , (BothT,   \_ _ s -> Builtin.KEqual.termKEqualsFalse s, "Builtin.KEqual.termKEqualsFalse")
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
