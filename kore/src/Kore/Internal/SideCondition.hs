@@ -18,6 +18,7 @@ module Kore.Internal.SideCondition
     , topTODO
     , toPredicate
     , toRepresentation
+    , isNormalized
     ) where
 
 import Prelude.Kore
@@ -36,12 +37,7 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-    ( andCondition
-    , fromPredicate
-    , mapVariables
-    , toPredicate
-    , top
-    )
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -146,6 +142,13 @@ instance
     from = from @(Condition variable) . from @(SideCondition variable)
     {-# INLINE from #-}
 
+instance
+    InternalVariable variable
+    => From (Predicate variable) (SideCondition variable)
+  where
+    from = from @(Condition variable) . from @(Predicate variable)
+    {-# INLINE from #-}
+
 top :: InternalVariable variable => SideCondition variable
 top = fromCondition Condition.top
 
@@ -213,3 +216,6 @@ toRepresentationCondition
 toRepresentationCondition condition =
     from @(Condition Variable)
     $ Condition.mapVariables (fmap toVariable) (fmap toVariable) condition
+
+isNormalized :: forall variable. Ord variable => SideCondition variable -> Bool
+isNormalized = Conditional.isNormalized . from @_ @(Condition variable)

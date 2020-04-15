@@ -12,16 +12,6 @@ module Kore.Log.Registry
     , textToType
     , getEntryTypesAsText
     , typeOfSomeEntry
-    -- entry types
-    , debugAppliedRuleType
-    , debugAxiomEvaluationType
-    , debugSolverSendType
-    , debugSolverRecvType
-    , warnBottomHookType
-    , warnFunctionWithoutEvaluatorsType
-    , debugSkipSimplificationType
-    , infoAttemptUnificationType
-    , errorRewritesInstantiationType
     ) where
 
 import Prelude.Kore
@@ -48,6 +38,10 @@ import Type.Reflection
     , typeOf
     )
 
+import Kore.Equation.Application
+    ( DebugApplyEquation
+    , DebugAttemptEquation
+    )
 import Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules
     )
@@ -109,25 +103,7 @@ data Registry =
 -- When adding a new entry type you should register it here.
 registry :: Registry
 registry =
-    let textToType =
-            Map.fromList
-                [ register debugAppliedRuleType
-                , register debugAxiomEvaluationType
-                , register debugSolverSendType
-                , register debugSolverRecvType
-                , register debugProofStateType
-                , register debugAppliedRewriteRulesType
-                , register warnBottomHookType
-                , register warnDecidePredicateUnknownType
-                , register warnFunctionWithoutEvaluatorsType
-                , register debugSkipSimplificationType
-                , register logDebugEvaluateConditionType
-                , register criticalExecutionErrorType
-                , register logMessageType
-                , register infoAttemptUnificationType
-                , register infoReachabilityType
-                , register errorRewritesInstantiationType
-                ]
+    let textToType = (Map.fromList . map register) entryTypeReps
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
           then Registry { textToType, typeToText }
@@ -141,6 +117,28 @@ registry =
     register type' =
         (asText type', type')
 
+entryTypeReps :: [SomeTypeRep]
+entryTypeReps =
+    [ someTypeRep $ Proxy @DebugAppliedRule
+    , someTypeRep $ Proxy @DebugAxiomEvaluation
+    , someTypeRep $ Proxy @DebugSolverSend
+    , someTypeRep $ Proxy @DebugSolverRecv
+    , someTypeRep $ Proxy @DebugProofState
+    , someTypeRep $ Proxy @DebugAppliedRewriteRules
+    , someTypeRep $ Proxy @WarnBottomHook
+    , someTypeRep $ Proxy @WarnDecidePredicateUnknown
+    , someTypeRep $ Proxy @WarnFunctionWithoutEvaluators
+    , someTypeRep $ Proxy @DebugSkipSimplification
+    , someTypeRep $ Proxy @DebugEvaluateCondition
+    , someTypeRep $ Proxy @ErrorException
+    , someTypeRep $ Proxy @LogMessage
+    , someTypeRep $ Proxy @InfoAttemptUnification
+    , someTypeRep $ Proxy @InfoReachability
+    , someTypeRep $ Proxy @ErrorRewritesInstantiation
+    , someTypeRep $ Proxy @DebugAttemptEquation
+    , someTypeRep $ Proxy @DebugApplyEquation
+    ]
+
 asText :: SomeTypeRep -> Text
 asText = Text.pack . show
 
@@ -151,57 +149,6 @@ makeInverse map' =
     Map.fromList
     $ swap
     <$> Map.toList map'
-
-debugAppliedRuleType
-  , debugAxiomEvaluationType
-  , debugSolverSendType
-  , debugSolverRecvType
-  , debugProofStateType
-  , debugAppliedRewriteRulesType
-  , warnBottomHookType
-  , warnDecidePredicateUnknownType
-  , warnFunctionWithoutEvaluatorsType
-  , debugSkipSimplificationType
-  , logDebugEvaluateConditionType
-  , criticalExecutionErrorType
-  , logMessageType
-  , infoAttemptUnificationType
-  , infoReachabilityType
-  , errorRewritesInstantiationType
-  :: SomeTypeRep
-
-debugAppliedRuleType =
-    someTypeRep (Proxy :: Proxy DebugAppliedRule)
-debugAxiomEvaluationType =
-    someTypeRep (Proxy :: Proxy DebugAxiomEvaluation)
-debugSolverSendType =
-    someTypeRep (Proxy :: Proxy DebugSolverSend)
-debugSolverRecvType =
-    someTypeRep (Proxy :: Proxy DebugSolverRecv)
-debugProofStateType =
-    someTypeRep (Proxy :: Proxy DebugProofState)
-debugAppliedRewriteRulesType =
-    someTypeRep (Proxy :: Proxy DebugAppliedRewriteRules)
-warnBottomHookType =
-    someTypeRep (Proxy :: Proxy WarnBottomHook)
-warnDecidePredicateUnknownType =
-    someTypeRep (Proxy :: Proxy WarnDecidePredicateUnknown)
-warnFunctionWithoutEvaluatorsType =
-    someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
-debugSkipSimplificationType =
-    someTypeRep (Proxy :: Proxy DebugSkipSimplification)
-logDebugEvaluateConditionType =
-    someTypeRep (Proxy :: Proxy DebugEvaluateCondition)
-criticalExecutionErrorType =
-    someTypeRep (Proxy :: Proxy ErrorException)
-logMessageType =
-    someTypeRep (Proxy :: Proxy LogMessage)
-infoAttemptUnificationType =
-    someTypeRep (Proxy :: Proxy InfoAttemptUnification)
-infoReachabilityType =
-    someTypeRep (Proxy :: Proxy InfoReachability)
-errorRewritesInstantiationType =
-    someTypeRep (Proxy :: Proxy ErrorRewritesInstantiation)
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =

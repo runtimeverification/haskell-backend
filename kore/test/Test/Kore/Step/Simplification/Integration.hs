@@ -14,13 +14,16 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Test.Tasty
 
-import Kore.Attribute.Simplification
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Equation
+    ( Equation (..)
+    , mkEquation
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -31,7 +34,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeCeilPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate
@@ -59,6 +63,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Sort
+    ( predicateSort
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , simplifierWithFallback
@@ -68,11 +75,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     )
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
-    )
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (EqualityRule)
-    , equalityPattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -218,7 +220,8 @@ test_simplificationIntegration =
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ from . EqualityRule $ equalityPattern
+                            ,   [ mkEquation
+                                    predicateSort
                                     (Mock.function20MapTest
                                         (Mock.concatMap
                                             (Mock.elementMap
@@ -243,19 +246,14 @@ test_simplificationIntegration =
                     (Mock.f (mkElemVar Mock.x))
                     (Mock.g Mock.b)
             expect =
-                OrPattern.fromPatterns
-                [ Conditional
-                    { term = Mock.functionalConstr11 $ Mock.g Mock.a
-                    , predicate = requirement
-                    , substitution = mempty
-                    }
-                ]
+                OrPattern.fromTermLike
+                $ Mock.functionalConstr11 $ Mock.g Mock.a
         actual <-
-            evaluateWithAxioms
+            evaluateConditionalWithAxioms
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -264,75 +262,12 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                Conditional
-                    { term =
-                        mkExists
-                            Mock.z
-                            (Mock.functionalConstr11
-                                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                            )
-                    , predicate = requirement
-                    , substitution = mempty
-                    }
-        assertEqual "" expect actual
-    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the
-    -- identity function and `#ceil(x/y) => y != 0`
-    , testCase "function application introduces definedness condition" $ do
-        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
-            expect =
-                OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        Mock.tdivInt
-                            (mkElemVar Mock.xInt)
-                            (mkElemVar Mock.xInt)
-                    , predicate =
-                        makeNotPredicate
-                        $ makeEqualsPredicate Mock.intSort
-                            (mkElemVar Mock.xInt)
-                            (Mock.builtinInt 0)
-                    , substitution = mempty
-                    }
-                ]
-        actual <-
-            evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ from . EqualityRule $ equalityPattern
-                                    (Mock.fInt (mkElemVar Mock.xInt))
-                                    (mkElemVar Mock.xInt)
-                                ]
-                            )
-                        ,   (AxiomIdentifier.Ceil
-                                (AxiomIdentifier.Application Mock.tdivIntId)
-                            ,   [ from . EqualityRule $ simplificationRulePattern
-                                    (mkCeil testSortVariable
-                                        $ Mock.tdivInt
-                                            (mkElemVar Mock.xInt)
-                                            (mkElemVar Mock.yInt)
-                                    )
-                                    (mkCeil testSortVariable
-                                        . mkNot
-                                        $ mkEquals testSortVariable
-                                            (mkElemVar Mock.yInt)
-                                            (Mock.builtinInt 0)
-
-                                    )
-                                ]
-                            )
-                        ]
-                    )
+                (from @(Predicate _) @(SideCondition _) requirement)
+                (Pattern.fromTermLike
+                    $ mkExists Mock.z
+                    $ Mock.functionalConstr11
+                    $ Mock.functionalConstr10 (mkElemVar Mock.x)
                 )
-                Conditional
-                    { term =
-                        Mock.fInt
-                        $ Mock.tdivInt
-                            (mkElemVar Mock.xInt)
-                            (mkElemVar Mock.xInt)
-                    , predicate = makeTruePredicate_
-                    , substitution = mempty
-                    }
         assertEqual "" expect actual
     , testCase "no function branching" $ do
         let expect =
@@ -348,11 +283,11 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.functional10Id
-                            ,   [ from . EqualityRule $ conditionalEqualityPattern
+                            ,   [ conditionalEqualityPattern
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeEqualsPredicate_ Mock.cf Mock.a)
                                     (mkElemVar Mock.x)
-                                , from . EqualityRule $ conditionalEqualityPattern
+                                , conditionalEqualityPattern
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeNotPredicate
                                         (makeEqualsPredicate_ Mock.cf Mock.a)
@@ -369,50 +304,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-    -- Checks that `f(x/x)` fails to simplify to x/x
-    -- because x != 0 is not implied by the configuration
-    , testCase "non function-like simplification with remainder" $ do
-        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
-        assertErrorIO
-            (assertSubstring "" "doesn't imply rule condition")
-            (evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ from . EqualityRule $ equalityPattern
-                                    (Mock.fInt (mkElemVar Mock.xInt))
-                                    (mkElemVar Mock.xInt)
-                                ]
-                            )
-                        ,   (AxiomIdentifier.Ceil
-                                (AxiomIdentifier.Application Mock.tdivIntId)
-                            ,   [ from . EqualityRule
-                                  $ conditionalSimplificationRulePattern
-                                    (mkCeil testSortVariable
-                                        $ Mock.tdivInt
-                                            (mkElemVar Mock.xInt)
-                                            (mkElemVar Mock.xInt)
-                                    )
-                                    (makeNotPredicate $ makeEqualsPredicate_
-                                        (mkElemVar Mock.xInt)
-                                        (Mock.builtinInt 0)
-                                    )
-                                    (mkTop testSortVariable)
-                                ]
-                            )
-                        ]
-                    )
-                )
-                Conditional
-                    { term =
-                        Mock.fInt
-                        $ Mock.tdivInt
-                            (mkElemVar Mock.xInt)
-                            (mkElemVar Mock.xInt)
-                    , predicate = makeTruePredicate_
-                    , substitution = mempty
-                    }
-            )
+
     , testCase "exists variable equality" $ do
         let
             expect = OrPattern.top
@@ -457,32 +349,7 @@ test_simplificationIntegration =
             $ mkExists Mock.x
             $ mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x)
         assertEqual "" OrPattern.top actual
-    , testCase "new variable quantification" $ do
-        let
-            expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkExists Mock.x (Mock.f (mkElemVar Mock.x))
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
-                ]
-        actual <-
-            evaluateWithAxioms
-                (mkEvaluatorRegistry $ Map.fromList
-                    [   ( AxiomIdentifier.Application Mock.cfId
-                        ,   [ from . EqualityRule $ equalityPattern
-                                Mock.cf
-                                (Mock.f (mkElemVar Mock.x))
-                            ]
-                        )
-                    ]
-                )
-                Conditional
-                    { term = Mock.cf
-                    , predicate = makeTruePredicate_
-                    , substitution = mempty
-                    }
-        assertEqual "" expect actual
+
     , testCase "simplification with top predicate (exists variable capture)"
       $ do
         let requirement =
@@ -502,7 +369,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -536,7 +403,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -569,7 +436,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -602,7 +469,7 @@ test_simplificationIntegration =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ from $ axiom
+                          , [ axiom
                                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                                 requirement
@@ -1030,39 +897,14 @@ test_simplificationIntegration =
         assertEqual "" expected actual
     ]
 
-
-simplificationRulePattern
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> EqualityPattern variable
-simplificationRulePattern left right =
-    patt & Lens.set (field @"attributes" . field @"simplification")
-        (Simplification True)
-  where
-    patt = equalityPattern left right
-
-conditionalSimplificationRulePattern
-    :: InternalVariable variable
-    => TermLike variable
-    -> Predicate.Predicate variable
-    -> TermLike variable
-    -> EqualityPattern variable
-conditionalSimplificationRulePattern left requires right =
-    patt & Lens.set (field @"requires") requires
-  where
-    patt = simplificationRulePattern left right
-
 conditionalEqualityPattern
     :: InternalVariable variable
     => TermLike variable
     -> Predicate.Predicate variable
     -> TermLike variable
-    -> EqualityPattern variable
+    -> Equation variable
 conditionalEqualityPattern left requires right =
-    patt & Lens.set (field @"requires") requires
-  where
-    patt = equalityPattern left right
+    mkEquation predicateSort left right & Lens.set (field @"requires") requires
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -1200,7 +1042,15 @@ evaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluateWithAxioms axioms =
-    runSimplifier env . Pattern.simplify SideCondition.top
+    evaluateConditionalWithAxioms axioms SideCondition.top
+
+evaluateConditionalWithAxioms
+    :: BuiltinAndAxiomSimplifierMap
+    -> SideCondition Variable
+    -> Pattern Variable
+    -> IO (OrPattern Variable)
+evaluateConditionalWithAxioms axioms sideCondition =
+    runSimplifier env . Pattern.simplify sideCondition
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap
@@ -1256,9 +1106,9 @@ axiom
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate.Predicate Variable
-    -> EqualityRule Variable
+    -> Equation Variable
 axiom left right requires =
-    EqualityRule EqualityPattern
+    Equation
         { left
         , requires
         , right

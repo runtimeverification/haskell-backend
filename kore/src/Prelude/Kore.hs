@@ -34,6 +34,8 @@ module Prelude.Kore
     , module From
     -- * Comonad
     , module Control.Comonad
+    , Cofree
+    , CofreeF (..)
     -- * Hashable
     , Hashable (..)
     -- * Monad
@@ -56,6 +58,10 @@ import Control.Applicative
     , optional
     )
 import Control.Comonad
+import Control.Comonad.Trans.Cofree
+    ( Cofree
+    , CofreeF (..)
+    )
 import Control.Error
     ( either
     , headMay

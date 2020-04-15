@@ -25,9 +25,6 @@ module Kore.Repl.Interpreter
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
-    ( CofreeF (..)
-    )
 import Control.Lens
     ( (%=)
     , (.=)

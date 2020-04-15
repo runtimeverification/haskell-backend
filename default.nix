@@ -1,4 +1,7 @@
-{ profiling ? false }:
+{ profiling ? false
+, release ? false
+, threaded ? !profiling
+}:
 
 let
   sources = import ./nix/sources.nix;
@@ -28,6 +31,9 @@ let
           profilingDetail = "none";
           # package kore
           packages.kore = {
+            flags = {
+              inherit release threaded;
+            };
             enableLibraryProfiling = profiling;
             enableExecutableProfiling = profiling;
             profilingDetail = "toplevel-functions";
