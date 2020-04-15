@@ -17,9 +17,6 @@ module Kore.ASTHelpers
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
-    ( CofreeF (..)
-    )
 import Data.Foldable
     ( foldl'
     )

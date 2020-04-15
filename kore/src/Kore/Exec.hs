@@ -61,6 +61,9 @@ import Kore.Attribute.Symbol
     )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Equation
+    ( Equation
+    )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
@@ -102,9 +105,6 @@ import qualified Kore.Profiler.Profile as Profiler
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
-import Kore.Step.EqualityPattern
-    ( EqualityRule
-    )
 import Kore.Step.Rule
     ( extractImplicationClaims
     , extractRewriteAxioms
@@ -177,7 +177,7 @@ type Config = Pattern Variable
 type Rewrite = RewriteRule Variable
 
 -- | Function rule used during execution.
-type Equality = EqualityRule Variable
+type Equality = Equation Variable
 
 type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
 
