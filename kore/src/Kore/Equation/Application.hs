@@ -651,7 +651,7 @@ data DebugAttemptEquation
 
 instance Pretty DebugAttemptEquation where
     pretty (DebugAttemptEquation equation termLike)
-      | isEmpty srcLoc
+      | isLocEmpty loc
       = Pretty.vsep
         [ "applying generated equation"
         , Pretty.indent 4 (pretty equation)
@@ -662,18 +662,13 @@ instance Pretty DebugAttemptEquation where
       =  Pretty.vsep
         [ Pretty.hsep
             [ "applying equation at"
-            , pretty srcLoc
+            , pretty loc
             , "to term:"
             ]
         , Pretty.indent 4 (unparse termLike)
         ]
       where
-        kLoc = Attribute.sourceLocation $ attributes equation
-        srcLoc
-            | isEmpty kLoc = from (locationFromAst equation)
-            | otherwise = kLoc
-        isEmpty Attribute.SourceLocation { source = Attribute.Source file } =
-            isNothing file
+        loc = srcLoc equation
     pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
         Pretty.vsep
         [ "equation is not applicable:"
@@ -742,7 +737,7 @@ data DebugApplyEquation
 
 instance Pretty DebugApplyEquation where
     pretty (DebugApplyEquation equation result)
-      | isEmpty srcLoc
+      | isLocEmpty loc
       = Pretty.vsep
         [ "applied generated equation"
         , Pretty.indent 4 (pretty equation)
@@ -753,18 +748,24 @@ instance Pretty DebugApplyEquation where
       = Pretty.vsep
         [ Pretty.hsep
             [ "applied equation at"
-            , pretty srcLoc
+            , pretty loc
             , "with result:"
             ]
         , Pretty.indent 4 (unparse result)
         ]
       where
-        kLoc = Attribute.sourceLocation $ attributes equation
-        srcLoc
-            | isEmpty kLoc = from (locationFromAst equation)
-            | otherwise = kLoc
-        isEmpty Attribute.SourceLocation { source = Attribute.Source file } =
-            isNothing file
+        loc = srcLoc equation
+
+srcLoc :: Equation Variable -> Attribute.SourceLocation
+srcLoc equation
+    | isLocEmpty kLoc = from (locationFromAst equation)
+    | otherwise = kLoc
+  where
+    kLoc = Attribute.sourceLocation $ attributes equation
+
+isLocEmpty :: Attribute.SourceLocation -> Bool
+isLocEmpty Attribute.SourceLocation { source = Attribute.Source file } =
+    isNothing file
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
