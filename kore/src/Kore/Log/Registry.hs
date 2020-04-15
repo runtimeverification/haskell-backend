@@ -45,20 +45,11 @@ import Kore.Equation.Application
 import Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules
     )
-import Kore.Log.DebugAppliedRule
-    ( DebugAppliedRule
-    )
-import Kore.Log.DebugAxiomEvaluation
-    ( DebugAxiomEvaluation
-    )
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
     )
 import Kore.Log.DebugProofState
     ( DebugProofState
-    )
-import Kore.Log.DebugSkipSimplification
-    ( DebugSkipSimplification
     )
 import Kore.Log.DebugSolver
     ( DebugSolverRecv
@@ -119,16 +110,13 @@ registry =
 
 entryTypeReps :: [SomeTypeRep]
 entryTypeReps =
-    [ someTypeRep $ Proxy @DebugAppliedRule
-    , someTypeRep $ Proxy @DebugAxiomEvaluation
-    , someTypeRep $ Proxy @DebugSolverSend
+    [ someTypeRep $ Proxy @DebugSolverSend
     , someTypeRep $ Proxy @DebugSolverRecv
     , someTypeRep $ Proxy @DebugProofState
     , someTypeRep $ Proxy @DebugAppliedRewriteRules
     , someTypeRep $ Proxy @WarnBottomHook
     , someTypeRep $ Proxy @WarnDecidePredicateUnknown
     , someTypeRep $ Proxy @WarnFunctionWithoutEvaluators
-    , someTypeRep $ Proxy @DebugSkipSimplification
     , someTypeRep $ Proxy @DebugEvaluateCondition
     , someTypeRep $ Proxy @ErrorException
     , someTypeRep $ Proxy @LogMessage
