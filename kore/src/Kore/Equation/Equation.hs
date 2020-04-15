@@ -34,6 +34,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
@@ -189,6 +190,13 @@ instance
             <> freeVariables requires
             <> freeVariables right
             <> freeVariables ensures
+
+instance
+    AstWithLocation variable =>
+    AstWithLocation (Equation variable)
+  where
+    locationFromAst = locationFromAst . left
+    updateAstLocation = undefined
 
 mapVariables
     :: (Ord variable1, InternalVariable variable2)

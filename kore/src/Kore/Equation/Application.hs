@@ -43,6 +43,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
@@ -667,7 +668,10 @@ instance Pretty DebugAttemptEquation where
         , Pretty.indent 4 (unparse termLike)
         ]
       where
-        srcLoc = Attribute.sourceLocation $ attributes equation
+        kLoc = Attribute.sourceLocation $ attributes equation
+        srcLoc
+            | isEmpty kLoc = from (locationFromAst equation)
+            | otherwise = kLoc
         isEmpty Attribute.SourceLocation { source = Attribute.Source file } =
             isNothing file
     pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
@@ -755,7 +759,10 @@ instance Pretty DebugApplyEquation where
         , Pretty.indent 4 (unparse result)
         ]
       where
-        srcLoc = Attribute.sourceLocation $ attributes equation
+        kLoc = Attribute.sourceLocation $ attributes equation
+        srcLoc
+            | isEmpty kLoc = from (locationFromAst equation)
+            | otherwise = kLoc
         isEmpty Attribute.SourceLocation { source = Attribute.Source file } =
             isNothing file
 
