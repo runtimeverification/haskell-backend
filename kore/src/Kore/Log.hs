@@ -285,8 +285,7 @@ makeKoreLogger exeName timestampSwitch logToText =
                 & toList
         addTypeToDoc se =
             fmap (\doc ->
-                Pretty.hsep [Pretty.parens (type' se), doc <> Pretty.colon]
-                )
+                Pretty.hsep [Pretty.parens (type' se), doc <> Pretty.colon])
             . shortDoc
             $ se
     indent = Pretty.indent 4
