@@ -29,9 +29,9 @@ import Log
 
 data DebugProofState =
     DebugProofState
-        { proofState :: !(ProofState (ReachabilityRule Variable))
-        , transition :: !(Prim (RewriteRule Variable))
-        , result :: !(Maybe (ProofState (ReachabilityRule Variable)))
+        { proofState :: ProofState (ReachabilityRule Variable)
+        , transition :: Prim (RewriteRule Variable)
+        , result :: Maybe (ProofState (ReachabilityRule Variable))
         }
 
 instance Pretty DebugProofState where

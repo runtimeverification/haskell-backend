@@ -22,12 +22,7 @@ import Control.Error
     , throwE
     )
 import qualified Data.Foldable as Foldable
-import qualified Data.Functor.Foldable as Recursive
-import Data.Text
-    ( Text
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-
 
 import qualified Branch as BranchT
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
@@ -49,24 +44,11 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
-    ( end
-    , endNotApplicable
-    , endNotApplicableConditionally
-    , klabelIdentifier
-    , notEvaluated
-    , notEvaluatedConditionally
-    , reevaluationWhile
-    , startWhile
-    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -240,50 +222,31 @@ maybeEvaluatePattern
   = do
     BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
     lift . tracing $ do
-        merged <- bracketAxiomEvaluationLog $ do
-            let sideConditions =
-                    sideCondition
-                    `SideCondition.andCondition` childrenCondition
+        merged <- do
             result <-
                 Profile.axiomEvaluation identifier
-                $ evaluator termLike sideConditions
+                $ evaluator termLike sideCondition
             flattened <- case result of
-                AttemptedAxiom.NotApplicable -> do
-                    DebugAxiomEvaluation.notEvaluated
-                        identifier
-                        klabelIdentifier
-                    return AttemptedAxiom.NotApplicable
-                na@(AttemptedAxiom.NotApplicableUntilConditionChanges _) -> do
-                    DebugAxiomEvaluation.notEvaluatedConditionally
-                        identifier
-                        klabelIdentifier
-                    return na
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = orResults
                     , remainders = orRemainders
-                    } ->
-                        DebugAxiomEvaluation.reevaluationWhile
-                            ( OrPattern.toPatterns
-                            $ MultiOr.merge orResults orRemainders
-                            )
+                    } -> do
+                        simplified <-
+                            Profile.resimplification
+                                identifier (length orResults)
+                            $ mapM simplifyIfNeeded orResults
+                        let simplifiedResult = MultiOr.flatten simplified
+                        Profile.axiomBranching
                             identifier
-                            klabelIdentifier
-                            $ do
-                                simplified <-
-                                    Profile.resimplification
-                                        identifier (length orResults)
-                                    $ mapM simplifyIfNeeded orResults
-                                let simplifiedResult = MultiOr.flatten simplified
-                                Profile.axiomBranching
-                                    identifier
-                                    (length orResults)
-                                    (length simplifiedResult)
-                                return
-                                    (AttemptedAxiom.Applied AttemptedAxiomResults
-                                        { results = simplifiedResult
-                                        , remainders = orRemainders
-                                        }
-                                    )
+                            (length orResults)
+                            (length simplifiedResult)
+                        return
+                            (AttemptedAxiom.Applied AttemptedAxiomResults
+                                { results = simplifiedResult
+                                , remainders = orRemainders
+                                }
+                            )
+                _ -> return result
             Profile.mergeSubstitutions identifier
                 $ mergeWithConditionAndSubstitution
                     sideCondition
@@ -303,38 +266,7 @@ maybeEvaluatePattern
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
-    klabelIdentifier :: Maybe Text
-    klabelIdentifier = DebugAxiomEvaluation.klabelIdentifier termLike
-
     tracing = Profile.equalitySimplification identifier termLike
-
-    children = case Recursive.project termLike of
-        (_ :< termLikeF) -> Foldable.toList termLikeF
-
-    bracketAxiomEvaluationLog
-        :: simplifier (AttemptedAxiom variable)
-        -> simplifier (AttemptedAxiom variable)
-    bracketAxiomEvaluationLog action =
-        DebugAxiomEvaluation.startWhile children identifier klabelIdentifier $ do
-            result <- action
-            case result of
-                AttemptedAxiom.NotApplicable ->
-                    DebugAxiomEvaluation.endNotApplicable
-                        identifier
-                        klabelIdentifier
-                AttemptedAxiom.NotApplicableUntilConditionChanges _ ->
-                    DebugAxiomEvaluation.endNotApplicableConditionally
-                        identifier
-                        klabelIdentifier
-                AttemptedAxiom.Applied attemptResults ->
-                    DebugAxiomEvaluation.end
-                        (OrPattern.toPatterns $ MultiOr.merge results remainders)
-                        identifier
-                        klabelIdentifier
-                  where
-                    AttemptedAxiomResults { results, remainders } =
-                        attemptResults
-            return result
 
     unchangedPatt =
         Conditional
