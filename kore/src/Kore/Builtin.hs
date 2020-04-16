@@ -17,7 +17,7 @@ module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.ApplicationVerifiers
     , Builtin.Function
-    , Builtin
+    , Kore.Internal.TermLike.Builtin
     , Builtin.SymbolVerifier (..)
     , Builtin.SortVerifier (..)
     , Builtin.ApplicationVerifier (..)
@@ -53,6 +53,7 @@ import Data.Text
 import Kore.Attribute.Hook
     ( Hook (..)
     )
+import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -73,6 +74,9 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
+import Kore.Domain.Builtin
+    ( Builtin (BuiltinMap, BuiltinSet)
+    )
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (..)
     , VerifiedModule
@@ -210,15 +214,13 @@ renormalize
     :: InternalVariable variable
     => TermLike variable -> TermLike variable
 renormalize =
-    Recursive.fold (renormalize1 . Recursive.embed)
-  where
-    renormalize1 termLike = case termLike of
-        BuiltinMap_ internalMap ->
+    Recursive.fold $ \base@(attrs :< termLikeF) ->
+    let bottom' = mkBottom (Attribute.Pattern.patternSort attrs) in
+    case termLikeF of
+        BuiltinF (BuiltinMap internalMap) ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
             & maybe bottom' mkBuiltinMap
-        BuiltinSet_ internalSet ->
+        BuiltinF (BuiltinSet internalSet) ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
             & maybe bottom' mkBuiltinSet
-        _ -> termLike
-      where
-        bottom' = mkBottom (termLikeSort termLike)
+        _ -> Recursive.embed base
