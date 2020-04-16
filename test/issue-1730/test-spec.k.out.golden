@@ -1,0 +1,14 @@
+  <generatedTop>
+    <k>
+      DotVar1
+    </k>
+    <a>
+      X
+    </a>
+  </generatedTop>
+#And
+  {
+    X <=Int Y
+  #Equals
+    true
+  }
