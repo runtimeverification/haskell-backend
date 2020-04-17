@@ -96,8 +96,6 @@ instance AstWithLocation Endianness where
     locationFromAst (BigEndian symbol) = locationFromAst symbol
     locationFromAst (LittleEndian symbol) = locationFromAst symbol
 
-    updateAstLocation = undefined
-
 toSymbol :: Endianness -> Symbol
 toSymbol (BigEndian symbol) = symbol
 toSymbol (LittleEndian symbol) = symbol

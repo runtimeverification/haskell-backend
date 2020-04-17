@@ -96,8 +96,6 @@ instance AstWithLocation Signedness where
     locationFromAst (Signed symbol) = locationFromAst symbol
     locationFromAst (Unsigned symbol) = locationFromAst symbol
 
-    updateAstLocation = undefined
-
 toSymbol :: Signedness -> Symbol
 toSymbol (Signed symbol) = symbol
 toSymbol (Unsigned symbol) = symbol

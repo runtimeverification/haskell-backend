@@ -127,8 +127,6 @@ instance SQL.Column Symbol where
 instance AstWithLocation Symbol where
     locationFromAst = locationFromAst . symbolConstructor
 
-    updateAstLocation = undefined
-
 toSymbolOrAlias :: Symbol -> SymbolOrAlias
 toSymbolOrAlias symbol =
     SymbolOrAlias

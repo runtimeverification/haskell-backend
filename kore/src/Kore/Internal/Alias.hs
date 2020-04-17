@@ -97,8 +97,6 @@ instance Synthetic Sort (Application (Alias patternType)) where
 instance AstWithLocation (Alias patternType) where
     locationFromAst = locationFromAst . aliasConstructor
 
-    updateAstLocation = undefined
-
 toSymbolOrAlias :: Alias patternType -> SymbolOrAlias
 toSymbolOrAlias alias =
     SymbolOrAlias

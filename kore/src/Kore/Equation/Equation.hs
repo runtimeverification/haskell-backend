@@ -191,12 +191,8 @@ instance
             <> freeVariables right
             <> freeVariables ensures
 
-instance
-    AstWithLocation variable =>
-    AstWithLocation (Equation variable)
-  where
+instance AstWithLocation variable => AstWithLocation (Equation variable) where
     locationFromAst = locationFromAst . left
-    updateAstLocation = undefined
 
 mapVariables
     :: (Ord variable1, InternalVariable variable2)

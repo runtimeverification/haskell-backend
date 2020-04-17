@@ -562,13 +562,9 @@ instance
                 locationFromAst bytesSort
             BuiltinF builtin -> locationFromAst (Domain.builtinSort builtin)
 
-    updateAstLocation = undefined
-
 instance AstWithLocation variable => AstWithLocation (TermLike variable)
   where
     locationFromAst = locationFromAst . tailF . Recursive.project
-
-    updateAstLocation = undefined
 
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
 
