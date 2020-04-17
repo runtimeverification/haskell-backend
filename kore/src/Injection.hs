@@ -9,6 +9,12 @@ import Control.Lens
     ( Prism'
     )
 import qualified Control.Lens as Lens
+import Data.Dynamic
+    ( Dynamic
+    , Typeable
+    , fromDynamic
+    , toDyn
+    )
 
 {- | The canonical injection or inclusion of @from ↪ into@.
 
@@ -61,4 +67,11 @@ instance Injection (Maybe a) a where
     {-# INLINE inject #-}
 
     retract = id
+    {-# INLINE retract #-}
+
+instance Typeable a => Injection Dynamic a where
+    inject = toDyn
+    {-# INLINE inject #-}
+
+    retract = fromDynamic
     {-# INLINE retract #-}
