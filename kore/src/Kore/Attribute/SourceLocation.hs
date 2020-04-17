@@ -43,8 +43,7 @@ import Kore.Attribute.Source
     )
 import Kore.Debug
 import Kore.Syntax
-    ( AstLocation (AstLocationFile)
-    , FileLocation (..)
+    ( FileLocation (..)
     )
 
 data SourceLocation = SourceLocation
@@ -83,10 +82,6 @@ instance From FileLocation SourceLocation where
                 }
             , source = Source (Just fileName)
             }
-
-instance From AstLocation SourceLocation where
-    from (AstLocationFile location) = from location
-    from _ = def
 
 instance Pretty SourceLocation where
     pretty SourceLocation

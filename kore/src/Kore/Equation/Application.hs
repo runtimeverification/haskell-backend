@@ -93,6 +93,10 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT
+import Kore.Syntax.Id
+    ( AstLocation (..)
+    , FileLocation (..)
+    )
 import Kore.Syntax.Variable
     ( Variable
     , toVariable
@@ -650,25 +654,15 @@ data DebugAttemptEquation
     deriving (GHC.Generic)
 
 instance Pretty DebugAttemptEquation where
-    pretty (DebugAttemptEquation equation termLike)
-      | isLocEmpty loc
-      = Pretty.vsep
-        [ "applying generated equation"
-        , Pretty.indent 4 (pretty equation)
-        , "to term:"
-        , Pretty.indent 4 (unparse termLike)
-        ]
-      | otherwise
-      =  Pretty.vsep
-        [ Pretty.hsep
-            [ "applying equation at"
-            , pretty loc
-            , "to term:"
+    pretty (DebugAttemptEquation equation termLike) =
+        Pretty.vsep
+        [ (Pretty.hsep . catMaybes)
+            [ Just "applying equation"
+            , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
+            , Just "to term:"
             ]
         , Pretty.indent 4 (unparse termLike)
         ]
-      where
-        loc = srcLoc equation
     pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
         Pretty.vsep
         [ "equation is not applicable:"
@@ -679,7 +673,12 @@ instance Pretty DebugAttemptEquation where
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
-    shortDoc _ = Just "while applying equation"
+    shortDoc (DebugAttemptEquation equation _) =
+        (Just . Pretty.hsep . catMaybes)
+            [ Just "while applying equation"
+            , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
+            ]
+    shortDoc _ = Nothing
 
 {- | Log the result of attempting to apply an 'Equation'.
 
@@ -736,30 +735,22 @@ data DebugApplyEquation
     deriving (GHC.Generic)
 
 instance Pretty DebugApplyEquation where
-    pretty (DebugApplyEquation equation result)
-      | isLocEmpty loc
-      = Pretty.vsep
-        [ "applied generated equation"
-        , Pretty.indent 4 (pretty equation)
-        , "to term:"
-        , Pretty.indent 4 (unparse result)
-        ]
-      | otherwise
-      = Pretty.vsep
-        [ Pretty.hsep
-            [ "applied equation at"
-            , pretty loc
-            , "with result:"
+    pretty (DebugApplyEquation equation result) =
+        Pretty.vsep
+        [ (Pretty.hsep . catMaybes)
+            [ Just "applied equation"
+            , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
+            , Just "with result:"
             ]
         , Pretty.indent 4 (unparse result)
         ]
-      where
-        loc = srcLoc equation
 
-srcLoc :: Equation Variable -> Attribute.SourceLocation
+srcLoc :: Equation Variable -> Maybe Attribute.SourceLocation
 srcLoc equation
-    | isLocEmpty kLoc = from (locationFromAst equation)
-    | otherwise = kLoc
+  | (not . isLocEmpty) kLoc = Just kLoc
+  | AstLocationFile fileLocation <- locationFromAst equation =
+    Just (from @FileLocation fileLocation)
+  | otherwise = Nothing
   where
     kLoc = Attribute.sourceLocation $ attributes equation
 
