@@ -22,6 +22,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -90,6 +91,10 @@ instance Synthetic ConstructorLike (Const Signedness) where
         -- Signedness symbols are constructors
         const (ConstructorLike (Just ConstructorLikeHead))
     {-# INLINE synthetic #-}
+
+instance AstWithLocation Signedness where
+    locationFromAst (Signed symbol) = locationFromAst symbol
+    locationFromAst (Unsigned symbol) = locationFromAst symbol
 
 toSymbol :: Signedness -> Symbol
 toSymbol (Signed symbol) = symbol
