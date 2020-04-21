@@ -15,6 +15,9 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
+import Control.Monad
+    ( (<=<)
+    )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT
@@ -22,6 +25,9 @@ import Control.Monad.Reader
     )
 import Data.Profunctor
     ( Profunctor (..)
+    )
+import Data.Profunctor.Choice
+    ( Choice (..)
     )
 
 import Kore.Sort
@@ -36,6 +42,19 @@ instance Functor simplifier => Profunctor (CeilSimplifier simplifier) where
     dimap fl fr (CeilSimplifier simpl) =
         CeilSimplifier (dimap (fmap fl) (fmap fr) simpl)
     {-# INLINE dimap #-}
+
+instance Monad simplifier => Choice (CeilSimplifier simplifier) where
+    left' (CeilSimplifier simpl) =
+        CeilSimplifier (return . Left <=< simpl <=< traverse chooseLeft)
+      where
+        chooseLeft = either return (const empty)
+    {-# INLINE left' #-}
+
+    right' (CeilSimplifier simpl) =
+        CeilSimplifier (return . Right <=< simpl <=< traverse chooseRight)
+      where
+        chooseRight = either (const empty) return
+    {-# INLINE right' #-}
 
 instance
     Monad simplifier
