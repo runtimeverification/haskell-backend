@@ -18,8 +18,7 @@ module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions
     , KEqual (..)
-    , termKEqualsFalse
-    , termKEqualsTrue
+    , termKEquals
       -- * keys
     , eqKey
     , neqKey
@@ -227,7 +226,7 @@ matchKEqual (App_ symbol [operand1, operand2]) = do
     return KEqual { symbol, operand1, operand2 }
 matchKEqual _ = Nothing
 
-termKEqualsTrue
+termKEquals
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
@@ -235,7 +234,7 @@ termKEqualsTrue
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termKEqualsTrue unifyChildren a b =
+termKEquals unifyChildren a b =
     worker a b <|> worker b a
   where
     unifyChildren' term1 term2 =
@@ -263,32 +262,6 @@ termKEqualsTrue unifyChildren a b =
             , predicate = condition
             , substitution = mempty
             }
-    worker _ _ = empty
-
-termKEqualsFalse
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-termKEqualsFalse unifyChildren a b =
-    worker a b <|> worker b a
-  where
-    unifyChildren' term1 term2 =
-        unificationPredicate term1 term2
-        <|> return (makeEqualsPredicate_ term1 term2)
-    unificationPredicate term1 term2 =
-        Condition.toPredicate
-        . Pattern.withoutTerm
-        <$> unifyChildren term1 term2
-    atLeastOneSymbolic term1 term2 =
-        case (Builtin.toKey term1, Builtin.toKey term2) of
-           (Nothing, _) -> True
-           (_, Nothing) -> True
-           _ -> False
-    worker termLike1 termLike2
       | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
       , isFunctionPattern termLike1
       , Just value2 <- Bool.matchBool termLike2

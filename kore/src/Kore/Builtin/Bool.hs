@@ -56,14 +56,10 @@ import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
-    )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
