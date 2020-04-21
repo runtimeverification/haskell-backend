@@ -280,8 +280,6 @@ and @encode@ to extract its data
 data Encodable
     = AlreadyEncoded !SExpr
     | Encodable !SExpr
-    -- TODO (virgil): maybe use Id in Encodable to make it more obvious what
-    -- happens.
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Encodable
