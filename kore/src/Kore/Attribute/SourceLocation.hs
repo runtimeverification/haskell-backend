@@ -42,6 +42,9 @@ import Kore.Attribute.Source
     ( Source (..)
     )
 import Kore.Debug
+import Kore.Syntax
+    ( FileLocation (..)
+    )
 
 data SourceLocation = SourceLocation
     { location :: !Location
@@ -69,6 +72,16 @@ instance ParseAttributes SourceLocation where
 instance From SourceLocation Attributes where
     -- TODO (thomas.tuegel): Implement
     from _ = def
+
+instance From FileLocation SourceLocation where
+    from FileLocation { fileName, line, column } =
+        SourceLocation
+            { location = Location
+                { start = Just LineColumn { line, column }
+                , end = Nothing
+                }
+            , source = Source (Just fileName)
+            }
 
 instance Pretty SourceLocation where
     pretty SourceLocation
