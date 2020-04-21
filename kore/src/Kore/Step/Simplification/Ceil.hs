@@ -17,6 +17,10 @@ module Kore.Step.Simplification.Ceil
 
 import Prelude.Kore
 
+import Control.Error
+    ( MaybeT
+    , maybeT
+    )
 import Control.Monad.Reader
     ( ReaderT (..)
     )
@@ -188,6 +192,7 @@ makeEvaluateTerm
 
       | BuiltinF child <- projected =
         makeEvaluateBuiltin sideCondition child
+        & flip maybeT return (makeSimplifiedCeil sideCondition Nothing term)
 
       | InjF inj <- projected = do
         InjSimplifier { evaluateCeilInj } <- askInjSimplifier
@@ -246,7 +251,7 @@ makeEvaluateBuiltin
     => MonadSimplify simplifier
     => SideCondition variable
     -> Builtin (TermLike variable)
-    -> simplifier (OrCondition variable)
+    -> MaybeT simplifier (OrCondition variable)
 makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
     runCeilSimplifierWith
         (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
