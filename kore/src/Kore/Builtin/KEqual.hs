@@ -253,25 +253,16 @@ termKEquals unifyChildren a b =
       | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
       , isFunctionPattern termLike1
       , Just value2 <- Bool.matchBool termLike2
-      , value2
       , atLeastOneSymbolic operand1 operand2
       = lift $ do
         condition <- unifyChildren' operand1 operand2
+        let finalCondition =
+                if value2
+                    then condition
+                    else makeNotPredicate condition
         pure Conditional
             { term = termLike2
-            , predicate = condition
-            , substitution = mempty
-            }
-      | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
-      , isFunctionPattern termLike1
-      , Just value2 <- Bool.matchBool termLike2
-      , not value2
-      , atLeastOneSymbolic operand1 operand2
-      = lift $ do
-        condition <- unifyChildren' operand1 operand2
-        pure Conditional
-            { term = termLike2
-            , predicate = makeNotPredicate condition
+            , predicate = finalCondition
             , substitution = mempty
             }
     worker _ _ = empty
