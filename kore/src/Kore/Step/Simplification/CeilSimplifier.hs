@@ -37,6 +37,21 @@ instance Functor simplifier => Profunctor (CeilSimplifier simplifier) where
         CeilSimplifier (dimap (fmap fl) (fmap fr) simpl)
     {-# INLINE dimap #-}
 
+instance
+    Monad simplifier
+    => Semigroup (CeilSimplifier simplifier input output)
+  where
+    (<>) (CeilSimplifier simplifier1) (CeilSimplifier simplifier2) =
+        CeilSimplifier (\input -> simplifier1 input <|> simplifier2 input)
+    {-# INLINE (<>) #-}
+
+instance
+    Monad simplifier
+    => Monoid (CeilSimplifier simplifier input output)
+  where
+    mempty = CeilSimplifier (\_ -> empty)
+    {-# INLINE mempty #-}
+
 hoistCeilSimplifier
     :: Monad m
     => (forall x. m x -> n x)
