@@ -1067,6 +1067,13 @@ test_updateList =
             (mkInt 0)
             (mkInt 2)
         )
+    , notApplies "different abstract keys; evaluates requires with SMT"
+        [updateListSimplifier]
+        (updateList
+            (updateList varL (mkElemVar xInt) (mkInt 1))
+            (addInt (mkElemVar xInt) (mkInt 1))
+            (mkInt 2)
+        )
     , notApplies "different keys; evaluates requires with function rule"
         [updateListSimplifier]
         (updateList
@@ -1094,6 +1101,13 @@ test_updateList =
     , equals "positive index outside rage"
         (updateList singletonList (mkInt 1) (mkInt 1))
         [mkBottom_]
+    , applies "same abstract key"
+        [updateListSimplifier]
+        (updateList
+            (updateList singletonList (mkElemVar xInt) (mkInt 1))
+            (mkElemVar xInt)
+            (mkInt 2)
+        )
     ]
 
 singletonList :: TermLike Variable
@@ -1163,6 +1177,13 @@ test_updateMap =
             (mkInt 0)
             (mkInt 2)
         )
+    , notApplies "different abstract keys; evaluates requires with SMT"
+        [updateMapSimplifier]
+        (updateMap
+            (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
+            (addInt (mkElemVar xInt) (mkInt 1))
+            (mkInt 2)
+        )
     , notApplies "different keys; evaluates requires with function rule"
         [updateMapSimplifier]
         (updateMap
@@ -1177,6 +1198,13 @@ test_updateMap =
             (mkInt 2)
         )
         [mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []]
+    , applies "same abstract key"
+        [updateMapSimplifier]
+        (updateMap
+            (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
+            (mkElemVar xInt)
+            (mkInt 2)
+        )
     ]
 
 updateMap
