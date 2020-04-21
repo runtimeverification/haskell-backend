@@ -259,7 +259,7 @@ termKEqualsTrue unifyChildren a b =
       = lift $ do
         condition <- unifyChildren' operand1 operand2
         pure Conditional
-            { term = mkTop (termLikeSort termLike1)
+            { term = termLike2
             , predicate = condition
             , substitution = mempty
             }
@@ -297,7 +297,7 @@ termKEqualsFalse unifyChildren a b =
       = lift $ do
         condition <- unifyChildren' operand1 operand2
         pure Conditional
-            { term = mkTop (termLikeSort termLike1)
+            { term = termLike2
             , predicate = makeNotPredicate condition
             , substitution = mempty
             }

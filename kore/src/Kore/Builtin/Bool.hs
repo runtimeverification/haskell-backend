@@ -227,20 +227,18 @@ termNotBool unifyChildren a b =
     worker a b <|> worker b a
   where
     unifyChildren' boolTerm term =
-        Pattern.withoutTerm <$> unifyChildren (falseTerm term) term
-        <|> return (equalsCondition boolTerm term)
-    equalsCondition boolTerm term =
-        Condition.fromPredicate
-        $ makeEqualsPredicate_ (falseTerm boolTerm) term
-    falseTerm term = asInternal (termLikeSort term) False
-    worker termLike1 trueTerm
+        Pattern.withoutTerm <$> unifyChildren boolTerm term
+
+    makeNot :: TermLike variable -> Bool -> TermLike variable
+    makeNot term value =
+        asInternal (termLikeSort term) (not value)
+    worker termLike1 boolTerm
       | Just BoolNot { operand } <- matchBoolNot termLike1
       , isFunctionPattern termLike1
-      , Just value2 <- matchBool trueTerm
-      , value2
+      , Just value <- matchBool boolTerm
       = lift $ do
-        condition <- unifyChildren' trueTerm operand
-        pure (Pattern.withCondition trueTerm condition)
+        condition <- unifyChildren' (makeNot boolTerm value) operand
+        pure (Pattern.withCondition boolTerm condition)
     worker _ _ = empty
 
 {- | Match a @BOOL.Bool@ builtin value.
