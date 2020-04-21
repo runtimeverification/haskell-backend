@@ -12,6 +12,9 @@ module Kore.Builtin.AssocComm.CeilSimplifier
 
 import Prelude.Kore
 
+import Control.Error
+    ( MaybeT
+    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( zipWithM
@@ -248,7 +251,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
             allValues = concreteValues <> abstractValues
 
         let makeEvaluateTerm, defineAbstractKey, defineOpaque
-                :: TermLike variable -> simplifier (OrCondition variable)
+                :: TermLike variable -> MaybeT simplifier (OrCondition variable)
             makeEvaluateTerm termLike =
                 runCeilSimplifier ceilSimplifierTermLike
                     Ceil
@@ -261,7 +264,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
 
             defineValue
                 ::  Domain.Value normalized (TermLike variable)
-                ->  simplifier (MultiAnd (OrCondition variable))
+                ->  MaybeT simplifier (MultiAnd (OrCondition variable))
             defineValue =
                 Foldable.foldlM worker mempty
               where
@@ -300,14 +303,14 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
     distinctKey
         ::  TermLike variable
         ->  [TermLike variable]
-        ->  simplifier (MultiAnd (OrCondition variable))
+        ->  MaybeT simplifier (MultiAnd (OrCondition variable))
     distinctKey thisKey otherKeys =
         MultiAnd.make <$> traverse (notEquals thisKey) otherKeys
 
     notEquals
         ::  TermLike variable
         ->  TermLike variable
-        ->  simplifier (OrCondition variable)
+        ->  MaybeT simplifier (OrCondition variable)
     notEquals t1 t2 = do
         sideCondition <- Reader.ask
         Equals.makeEvaluateTermsToPredicate tMin tMax sideCondition

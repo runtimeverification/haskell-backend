@@ -240,7 +240,7 @@ ceilSimplifierTermLike
             (OrCondition variable)
 ceilSimplifierTermLike =
     CeilSimplifier $ \Ceil { ceilChild = termLike } ->
-    ReaderT $ \sideCondition ->
+    lift $ ReaderT $ \sideCondition ->
         makeEvaluateTerm sideCondition termLike
 
 {-| Evaluates the ceil of a domain value.

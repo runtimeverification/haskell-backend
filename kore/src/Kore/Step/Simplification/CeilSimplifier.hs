@@ -12,6 +12,10 @@ module Kore.Step.Simplification.CeilSimplifier
 
 import Prelude.Kore
 
+import Control.Error
+    ( MaybeT
+    )
+import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT
     , runReaderT
@@ -24,7 +28,9 @@ import Kore.Sort
 import Kore.Syntax.Ceil
 
 newtype CeilSimplifier simplifier input output =
-    CeilSimplifier { runCeilSimplifier :: Ceil Sort input -> simplifier output }
+    CeilSimplifier {
+        runCeilSimplifier :: Ceil Sort input -> MaybeT simplifier output
+    }
 
 instance Functor simplifier => Profunctor (CeilSimplifier simplifier) where
     dimap fl fr (CeilSimplifier simpl) =
@@ -32,18 +38,20 @@ instance Functor simplifier => Profunctor (CeilSimplifier simplifier) where
     {-# INLINE dimap #-}
 
 hoistCeilSimplifier
-    :: (forall x. m x -> n x)
+    :: Monad m
+    => (forall x. m x -> n x)
     -> CeilSimplifier m input output
     -> CeilSimplifier n input output
 hoistCeilSimplifier transform (CeilSimplifier simpl) =
-    CeilSimplifier (transform . simpl)
+    CeilSimplifier (Morph.hoist transform . simpl)
 {-# INLINE hoistCeilSimplifier #-}
 
 runCeilSimplifierWith
-    :: CeilSimplifier (ReaderT env simplifier) input output
+    :: Monad simplifier
+    => CeilSimplifier (ReaderT env simplifier) input output
     -> env
     -> Ceil Sort input
-    -> simplifier output
+    -> MaybeT simplifier output
 runCeilSimplifierWith ceilSimplifier env =
     runCeilSimplifier (hoistCeilSimplifier (flip runReaderT env) ceilSimplifier)
 {-# INLINE runCeilSimplifierWith #-}
