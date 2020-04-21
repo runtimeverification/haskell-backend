@@ -17,7 +17,8 @@ import Control.Monad
     ( zipWithM
     )
 import Control.Monad.Reader
-    ( ReaderT (..)
+    ( MonadReader
+    , ReaderT (..)
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
@@ -191,17 +192,16 @@ generalizeMapElement freeVariables' element =
 newBuiltinAssocCommCeilSimplifier
     :: forall normalized variable simplifier
     .   InternalVariable variable
+    =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
     =>  Traversable (Domain.Value normalized)
     =>  Domain.AcWrapper normalized
     =>  MkBuiltinAssocComm normalized variable
     ->  MkNotMember normalized variable
-    ->  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
+    ->  CeilSimplifier simplifier
             (TermLike variable)
             (OrCondition variable)
-    ->  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
+    ->  CeilSimplifier simplifier
             (BuiltinAssocComm normalized variable)
             (OrCondition variable)
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
@@ -259,9 +259,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
             allValues = concreteValues <> abstractValues
 
         let makeEvaluateTerm, defineAbstractKey, defineOpaque
-                ::  TermLike variable
-                ->  ReaderT (SideCondition variable) simplifier
-                        (OrCondition variable)
+                :: TermLike variable -> simplifier (OrCondition variable)
             makeEvaluateTerm termLike =
                 runCeilSimplifier ceilSimplifierTermLike
                     Ceil
@@ -274,8 +272,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
 
             defineValue
                 ::  Domain.Value normalized (TermLike variable)
-                ->  ReaderT (SideCondition variable) simplifier
-                        (MultiAnd (OrCondition variable))
+                ->  simplifier (MultiAnd (OrCondition variable))
             defineValue =
                 Foldable.foldlM worker mempty
               where
@@ -314,15 +311,14 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
     distinctKey
         ::  TermLike variable
         ->  [TermLike variable]
-        ->  ReaderT (SideCondition variable) simplifier
-                (MultiAnd (OrCondition variable))
+        ->  simplifier (MultiAnd (OrCondition variable))
     distinctKey thisKey otherKeys =
         MultiAnd.make <$> traverse (notEquals thisKey) otherKeys
 
     notEquals
         ::  TermLike variable
         ->  TermLike variable
-        -> ReaderT (SideCondition variable) simplifier (OrCondition variable)
+        ->  simplifier (OrCondition variable)
     notEquals t1 t2 = do
         sideCondition <- Reader.ask
         Equals.makeEvaluateTermsToPredicate tMin tMax sideCondition
