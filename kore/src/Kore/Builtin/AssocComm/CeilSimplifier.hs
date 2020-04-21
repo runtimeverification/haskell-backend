@@ -18,7 +18,6 @@ import Control.Monad
     )
 import Control.Monad.Reader
     ( MonadReader
-    , ReaderT (..)
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
@@ -91,18 +90,14 @@ type MkNotMember normalized variable =
 newSetCeilSimplifier
     ::  forall variable simplifier
     .   InternalVariable variable
+    =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
-    =>  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
-            (TermLike variable)
-            (OrCondition variable)
-    ->  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
+    =>  CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    ->  CeilSimplifier simplifier
             (BuiltinAssocComm Domain.NormalizedSet variable)
             (OrCondition variable)
 newSetCeilSimplifier ceilSimplifierTermLike =
-    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } ->
-    ReaderT $ \sideCondition -> do
+    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
@@ -113,30 +108,25 @@ newSetCeilSimplifier ceilSimplifierTermLike =
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
                 & Predicate.markSimplifiedMaybeConditional Nothing
-        runCeilSimplifierWith
+        runCeilSimplifier
             (newBuiltinAssocCommCeilSimplifier
                 TermLike.mkBuiltinSet
                 mkNotMember
                 ceilSimplifierTermLike
             )
-            sideCondition
             ceil
 
 newMapCeilSimplifier
     ::  forall variable simplifier
     .   InternalVariable variable
+    =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
-    =>  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
-            (TermLike variable)
-            (OrCondition variable)
-    ->  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
+    =>  CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    ->  CeilSimplifier simplifier
             (BuiltinAssocComm Domain.NormalizedMap variable)
             (OrCondition variable)
 newMapCeilSimplifier ceilSimplifierTermLike =
-    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } ->
-    ReaderT $ \sideCondition -> do
+    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
@@ -153,13 +143,12 @@ newMapCeilSimplifier ceilSimplifierTermLike =
                     generalizeMapElement
                         (TermLike.freeVariables termLike)
                         element
-        runCeilSimplifierWith
+        runCeilSimplifier
             (newBuiltinAssocCommCeilSimplifier
                 TermLike.mkBuiltinMap
                 mkNotMember
                 ceilSimplifierTermLike
             )
-            sideCondition
             ceil
 
 {- | Generalize a 'MapElement' by replacing the 'MapValue' with a variable.
