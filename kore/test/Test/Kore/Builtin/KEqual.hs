@@ -55,6 +55,30 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
 
+    , testCaseWithSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
+        let expect = Pattern.top
+            original =
+                mkEquals_
+                    (Test.Bool.asInternal True)
+                    (keqBool
+                        (kseq (mkElemVar (elemVarS "x" kItemSort)) dotk)
+                        (kseq (mkElemVar (elemVarS "x" kItemSort)) dotk)
+                    )
+        actual <- evaluate original
+        assertEqual' "" expect actual
+
+    , testCaseWithSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
+        let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
+            original =
+                mkAnd
+                    (Test.Bool.asInternal True)
+                    (keqBool
+                        (kseq (inj kItemSort (mkElemVar (elemVarS "x" idSort))) dotk)
+                        (kseq (inj kItemSort (mkElemVar (elemVarS "x" idSort))) dotk)
+                    )
+        actual <- evaluate original
+        assertEqual' "" expect actual
+
     , testCaseWithSMT "distinct domain values" $ do
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
             original = keqBool (inj kSort dvT) (inj kSort dvX)
