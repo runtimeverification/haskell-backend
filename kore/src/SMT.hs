@@ -31,7 +31,6 @@ module SMT
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.Logger
-    , SimpleSMT.nameFromSExpr
     , SimpleSMT.showSExpr
     , SimpleSMT.tBool
     , SimpleSMT.tInt
@@ -235,8 +234,8 @@ instance MonadLog NoSMT where
 instance MonadSMT NoSMT where
     withSolver = id
     declare name _ = return (Atom name)
-    declareFun FunctionDeclaration { name } = return (Atom name)
-    declareSort SortDeclaration { name } = return (Atom name)
+    declareFun FunctionDeclaration { name } = return name
+    declareSort SortDeclaration { name } = return name
     declareDatatype _ = return ()
     declareDatatypes _ = return ()
     loadFile _ = return ()
@@ -308,7 +307,7 @@ instance MonadSMT SMT where
                 )
 
     declare name typ =
-        withSolver' $ \solver -> SimpleSMT.declare solver name typ
+        withSolver' $ \solver -> SimpleSMT.declare solver (Atom name) typ
 
     declareFun declaration =
         withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
