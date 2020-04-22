@@ -244,7 +244,7 @@ returnList builtinListSort builtinListChild = do
     tools <- Simplifier.askMetadataTools
     return (Reflection.give tools $ asPattern builtinListSort builtinListChild)
 
-evalElement :: Builtin.Function
+evalElement :: BuiltinAndAxiomSimplifier
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
@@ -253,11 +253,11 @@ evalElement =
             [elem'] -> returnList resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
 
-evalGet :: Builtin.Function
+evalGet :: BuiltinAndAxiomSimplifier
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
-    evalGet0 :: Builtin.FunctionImplementation
+    evalGet0 :: Builtin.Function
     evalGet0 resultSort [_list, _ix] = do
         let emptyList = do
                 _list <- expectBuiltinList getKey _list
@@ -279,11 +279,11 @@ evalGet =
             maybe Pattern.bottom Pattern.fromTermLike
     evalGet0 _ _ = Builtin.wrongArity getKey
 
-evalUpdate :: Builtin.Function
+evalUpdate :: BuiltinAndAxiomSimplifier
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 :: Builtin.FunctionImplementation
+    evalUpdate0 :: Builtin.Function
     evalUpdate0 resultSort [_list, _ix, value] = do
         _list <- expectBuiltinList getKey _list
         _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
@@ -298,11 +298,11 @@ evalUpdate =
             else return (Pattern.bottomOf resultSort)
     evalUpdate0 _ _ = Builtin.wrongArity updateKey
 
-evalIn :: Builtin.Function
+evalIn :: BuiltinAndAxiomSimplifier
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
-    evalIn0 :: Builtin.FunctionImplementation
+    evalIn0 :: Builtin.Function
     evalIn0 resultSort [_elem, _list] = do
         _list <- expectConcreteBuiltinList inKey _list
         _elem <- hoistMaybe $ Builtin.toKey _elem
@@ -311,7 +311,7 @@ evalIn =
             & return
     evalIn0 _ _ = Builtin.wrongArity inKey
 
-evalUnit :: Builtin.Function
+evalUnit :: BuiltinAndAxiomSimplifier
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
@@ -320,11 +320,11 @@ evalUnit =
             [] -> returnList resultSort Seq.empty
             _ -> Builtin.wrongArity "LIST.unit"
 
-evalConcat :: Builtin.Function
+evalConcat :: BuiltinAndAxiomSimplifier
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 :: Builtin.FunctionImplementation
+    evalConcat0 :: Builtin.Function
     evalConcat0 resultSort [_list1, _list2] = do
         let leftIdentity = do
                 _list1 <- expectBuiltinList concatKey _list1
@@ -343,11 +343,11 @@ evalConcat =
         leftIdentity <|> rightIdentity <|> bothConcrete
     evalConcat0 _ _ = Builtin.wrongArity concatKey
 
-evalSize :: Builtin.Function
+evalSize :: BuiltinAndAxiomSimplifier
 evalSize =
     Builtin.functionEvaluator evalSize0
   where
-    evalSize0 :: Builtin.FunctionImplementation
+    evalSize0 :: Builtin.Function
     evalSize0 resultSort [_list] = do
         _list <- expectBuiltinList sizeKey _list
         Seq.length _list
@@ -357,7 +357,7 @@ evalSize =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
         [ (concatKey, evalConcat)

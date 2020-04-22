@@ -246,7 +246,7 @@ returnConcreteSet
     -> m (Pattern variable)
 returnConcreteSet = Ac.returnConcreteAc
 
-evalElement :: Builtin.Function
+evalElement :: BuiltinAndAxiomSimplifier
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
@@ -267,11 +267,11 @@ evalElement =
                     }
     evalElement0 _ _ = Builtin.wrongArity Set.elementKey
 
-evalIn :: Builtin.Function
+evalIn :: BuiltinAndAxiomSimplifier
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
-    evalIn0 :: Builtin.FunctionImplementation
+    evalIn0 :: Builtin.Function
     evalIn0 resultSort [_elem, _set] = do
         let setSymbolic = do
                 _elem <- hoistMaybe $ Builtin.toKey _elem
@@ -304,7 +304,7 @@ evalIn =
             | otherwise = empty
     evalIn0 _ _ = Builtin.wrongArity Set.inKey
 
-evalUnit :: Builtin.Function
+evalUnit :: BuiltinAndAxiomSimplifier
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
@@ -313,11 +313,11 @@ evalUnit =
             [] -> returnConcreteSet resultSort Map.empty
             _ -> Builtin.wrongArity Set.unitKey
 
-evalConcat :: Builtin.Function
+evalConcat :: BuiltinAndAxiomSimplifier
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0 :: Builtin.FunctionImplementation
+    evalConcat0 :: Builtin.Function
     evalConcat0 resultSort [set1, set2] =
         Ac.evalConcatNormalizedOrBottom @Domain.NormalizedSet
             resultSort
@@ -325,12 +325,12 @@ evalConcat =
             (Ac.toNormalized set2)
     evalConcat0 _ _ = Builtin.wrongArity Set.concatKey
 
-evalDifference :: Builtin.Function
+evalDifference :: BuiltinAndAxiomSimplifier
 evalDifference =
     Builtin.functionEvaluator evalDifference0
   where
     ctx = Set.differenceKey
-    evalDifference0 :: Builtin.FunctionImplementation
+    evalDifference0 :: Builtin.Function
     evalDifference0 resultSort [_set1, _set2] = do
         let rightIdentity = do
                 _set2 <- expectConcreteBuiltinSet ctx _set2
@@ -344,10 +344,10 @@ evalDifference =
         rightIdentity <|> bothConcrete
     evalDifference0 _ _ = Builtin.wrongArity Set.differenceKey
 
-evalToList :: Builtin.Function
+evalToList :: BuiltinAndAxiomSimplifier
 evalToList = Builtin.functionEvaluator evalToList0
   where
-    evalToList0 :: Builtin.FunctionImplementation
+    evalToList0 :: Builtin.Function
     evalToList0 resultSort [_set] = do
         _set <- expectConcreteBuiltinSet Set.toListKey _set
         map dropNoValue (Map.toList _set)
@@ -358,10 +358,10 @@ evalToList = Builtin.functionEvaluator evalToList0
 
     dropNoValue (a, Domain.SetValue) = a
 
-evalSize :: Builtin.Function
+evalSize :: BuiltinAndAxiomSimplifier
 evalSize = Builtin.functionEvaluator evalSize0
   where
-    evalSize0 :: Builtin.FunctionImplementation
+    evalSize0 :: Builtin.Function
     evalSize0 resultSort [_set] = do
         _set <- expectConcreteBuiltinSet Set.sizeKey _set
         Map.size _set
@@ -370,23 +370,23 @@ evalSize = Builtin.functionEvaluator evalSize0
             & return
     evalSize0 _ _ = Builtin.wrongArity Set.sizeKey
 
-evalIntersection :: Builtin.Function
+evalIntersection :: BuiltinAndAxiomSimplifier
 evalIntersection =
     Builtin.functionEvaluator evalIntersection0
   where
     ctx = Set.intersectionKey
-    evalIntersection0 :: Builtin.FunctionImplementation
+    evalIntersection0 :: Builtin.Function
     evalIntersection0 resultSort [_set1, _set2] = do
         _set1 <- expectConcreteBuiltinSet ctx _set1
         _set2 <- expectConcreteBuiltinSet ctx _set2
         returnConcreteSet resultSort (Map.intersection _set1 _set2)
     evalIntersection0 _ _ = Builtin.wrongArity Set.intersectionKey
 
-evalList2set :: Builtin.Function
+evalList2set :: BuiltinAndAxiomSimplifier
 evalList2set =
     Builtin.functionEvaluator evalList2set0
   where
-    evalList2set0 :: Builtin.FunctionImplementation
+    evalList2set0 :: Builtin.Function
     evalList2set0 resultSort [_list] = do
         _list <- List.expectConcreteBuiltinList Set.list2setKey _list
         let _set =
@@ -399,7 +399,7 @@ evalList2set =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
         [ (Set.concatKey, evalConcat)

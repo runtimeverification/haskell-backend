@@ -76,6 +76,9 @@ import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifier
+    )
 
 
 {- | Verify that the sort is hooked to the builtin @String@ sort.
@@ -226,7 +229,7 @@ expectBuiltinString ctx =
         _ -> empty
 
 
-evalSubstr :: Builtin.Function
+evalSubstr :: BuiltinAndAxiomSimplifier
 evalSubstr = Builtin.functionEvaluator evalSubstr0
   where
     substr :: Int -> Int -> Text -> Text
@@ -242,7 +245,7 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
             & return
     evalSubstr0 _ _ = Builtin.wrongArity substrKey
 
-evalLength :: Builtin.Function
+evalLength :: BuiltinAndAxiomSimplifier
 evalLength = Builtin.functionEvaluator evalLength0
   where
     evalLength0 resultSort [_str] = do
@@ -253,7 +256,7 @@ evalLength = Builtin.functionEvaluator evalLength0
             & return
     evalLength0 _ _ = Builtin.wrongArity lengthKey
 
-evalFind :: Builtin.Function
+evalFind :: BuiltinAndAxiomSimplifier
 evalFind = Builtin.functionEvaluator evalFind0
   where
     maybeNotFound :: Maybe Int -> Integer
@@ -272,7 +275,7 @@ evalFind = Builtin.functionEvaluator evalFind0
             & return
     evalFind0 _ _ = Builtin.wrongArity findKey
 
-evalString2Base :: Builtin.Function
+evalString2Base :: BuiltinAndAxiomSimplifier
 evalString2Base = Builtin.functionEvaluator evalString2Base0
   where
     evalString2Base0 resultSort [_str, _base] = do
@@ -294,7 +297,7 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
             _ -> return (Pattern.bottomOf resultSort)
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
-evalString2Int :: Builtin.Function
+evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
   where
     evalString2Int0 resultSort [_str] = do
@@ -305,7 +308,7 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
             _ -> return (Pattern.bottomOf resultSort)
     evalString2Int0 _ _ = Builtin.wrongArity string2IntKey
 
-evalInt2String :: Builtin.Function
+evalInt2String :: BuiltinAndAxiomSimplifier
 evalInt2String = Builtin.functionEvaluator evalInt2String0
   where
     evalInt2String0 resultSort [_int] = do
@@ -315,7 +318,7 @@ evalInt2String = Builtin.functionEvaluator evalInt2String0
             & return
     evalInt2String0 _ _ = Builtin.wrongArity int2StringKey
 
-evalChr :: Builtin.Function
+evalChr :: BuiltinAndAxiomSimplifier
 evalChr = Builtin.functionEvaluator evalChr0
   where
     evalChr0 resultSort [_n] = do
@@ -325,7 +328,7 @@ evalChr = Builtin.functionEvaluator evalChr0
             & return
     evalChr0 _ _ = Builtin.wrongArity chrKey
 
-evalOrd :: Builtin.Function
+evalOrd :: BuiltinAndAxiomSimplifier
 evalOrd = Builtin.functionEvaluator evalOrd0
   where
     evalOrd0 resultSort [_str] = do
@@ -341,7 +344,7 @@ evalOrd = Builtin.functionEvaluator evalOrd0
             . ord
     evalOrd0 _ _ = Builtin.wrongArity ordKey
 
-evalToken2String :: Builtin.Function
+evalToken2String :: BuiltinAndAxiomSimplifier
 evalToken2String = Builtin.functionEvaluator evalToken2String0
   where
     evalToken2String0 resultSort [_dv] = do
@@ -349,7 +352,7 @@ evalToken2String = Builtin.functionEvaluator evalToken2String0
         return (asPattern resultSort _dv)
     evalToken2String0 _ _ = Builtin.wrongArity token2StringKey
 
-evalString2Token :: Builtin.Function
+evalString2Token :: BuiltinAndAxiomSimplifier
 evalString2Token = Builtin.functionEvaluator evalString2Token0
   where
     evalString2Token0 resultSort [_str] = do
@@ -360,7 +363,7 @@ evalString2Token = Builtin.functionEvaluator evalString2Token0
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
     [ comparator eqKey (==)

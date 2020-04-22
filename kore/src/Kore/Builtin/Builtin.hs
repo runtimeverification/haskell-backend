@@ -16,7 +16,6 @@ builtin modules.
  -}
 module Kore.Builtin.Builtin
     ( Function
-    , FunctionImplementation
       -- * Implementing builtin functions
     , notImplemented
     , unaryOperator
@@ -131,9 +130,7 @@ import Kore.Unparser
 
 -- TODO (thomas.tuegel): Include hook name here.
 
-type Function = BuiltinAndAxiomSimplifier
-
-notImplemented :: Function
+notImplemented :: BuiltinAndAxiomSimplifier
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
@@ -176,13 +173,13 @@ unaryOperator
     -- ^ Builtin function name (for error messages)
     -> (a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> BuiltinAndAxiomSimplifier
 unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    unaryOperator0 :: FunctionImplementation
+    unaryOperator0 :: Function
     unaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
@@ -214,13 +211,13 @@ binaryOperator
     -- ^ Builtin function name (for error messages)
     -> (a -> a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> BuiltinAndAxiomSimplifier
 binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    binaryOperator0 :: FunctionImplementation
+    binaryOperator0 :: Function
     binaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
@@ -252,13 +249,13 @@ ternaryOperator
     -- ^ Builtin function name (for error messages)
     -> (a -> a -> a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> BuiltinAndAxiomSimplifier
 ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    ternaryOperator0 :: FunctionImplementation
+    ternaryOperator0 :: Function
     ternaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
@@ -268,7 +265,7 @@ ternaryOperator extractVal asPattern ctx op =
             [_, _, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
-type FunctionImplementation
+type Function
     = forall variable simplifier
         .  InternalVariable variable
         => MonadSimplify simplifier
@@ -276,7 +273,7 @@ type FunctionImplementation
         -> [TermLike variable]
         -> MaybeT simplifier (Pattern variable)
 
-functionEvaluator :: FunctionImplementation -> Function
+functionEvaluator :: Function -> BuiltinAndAxiomSimplifier
 functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
