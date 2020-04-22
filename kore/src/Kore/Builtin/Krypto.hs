@@ -83,7 +83,7 @@ sha3256Key = "KRYPTO.sha3256"
 ripemd160Key = "KRYPTO.ripemd160"
 
 hashKeccak256Key, hashSha3_256Key, hashSha256Key, hashRipemd160Key
-    :: IsString s => s 
+    :: IsString s => s
 hashKeccak256Key = "HASH.keccak256"
 hashSha3_256Key = "HASH.sha3_256"
 hashSha256Key = "HASH.sha256"
