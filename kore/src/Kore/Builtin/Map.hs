@@ -352,7 +352,7 @@ evalUpdate :: Builtin.Function
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 resultSort = \arguments ->
+   evalUpdate0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_map, _key, value) =
                     case arguments of
@@ -366,21 +366,15 @@ evalUpdate =
                 resultSort
                 (Map.insert _key (Domain.MapValue value) _map)
 
-evalInKeys :: Builtin.Function
-evalInKeys =
-    Builtin.functionEvaluator evalInKeys0
-  where
-    evalInKeys0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_key, _map) =
-                    case arguments of
-                        [_key, _map] -> (_key, _map)
-                        _ -> Builtin.wrongArity Map.in_keysKey
-            _key <- hoistMaybe $ Builtin.toKey _key
-            _map <- expectConcreteBuiltinMap Map.in_keysKey _map
-            Builtin.appliedFunction
-                $ Bool.asPattern resultSort
-                $ Map.member _key _map
+evalInKeys :: Builtin.FunctionImplementation
+evalInKeys resultSort [_key, _map] =
+    Builtin.getAttemptedAxiom $ do
+        _key <- hoistMaybe $ Builtin.toKey _key
+        _map <- expectConcreteBuiltinMap Map.in_keysKey _map
+        Map.member _key _map
+            & Bool.asPattern resultSort
+            & Builtin.appliedFunction
+evalInKeys _ _ = Builtin.wrongArity Map.in_keysKey
 
 evalInclusion :: Builtin.Function
 evalInclusion =
@@ -529,7 +523,7 @@ builtinFunctions =
         , (Map.elementKey, evalElement)
         , (Map.unitKey, evalUnit)
         , (Map.updateKey, evalUpdate)
-        , (Map.in_keysKey, evalInKeys)
+        , (Map.in_keysKey, Builtin.functionEvaluator evalInKeys)
         , (Map.keysKey, evalKeys)
         , (Map.keys_listKey, evalKeysList)
         , (Map.removeKey, evalRemove)
