@@ -232,178 +232,131 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
     substr :: Int -> Int -> Text -> Text
     substr startIndex endIndex =
         Text.take (endIndex - startIndex) . Text.drop startIndex
-    evalSubstr0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let (_str, _start, _end) =
-                    case arguments of
-                        [_str, _start, _end] -> (_str, _start, _end)
-                        _                    -> Builtin.wrongArity substrKey
-            _str   <- expectBuiltinString substrKey _str
-            _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
-            _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
-            Builtin.appliedFunction
-                . asPattern resultSort
-                $ substr _start _end _str
+
+    evalSubstr0 resultSort [_str, _start, _end] = do
+        _str   <- expectBuiltinString substrKey _str
+        _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
+        _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
+        substr _start _end _str
+            & asPattern resultSort
+            & return
+    evalSubstr0 _ _ = Builtin.wrongArity substrKey
 
 evalLength :: Builtin.Function
 evalLength = Builtin.functionEvaluator evalLength0
   where
-    evalLength0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _str =
-                    case arguments of
-                        [_str] -> _str
-                        _      -> Builtin.wrongArity lengthKey
-            _str <- expectBuiltinString lengthKey _str
-            Builtin.appliedFunction
-                . Int.asPattern resultSort
-                . toInteger
-                $ Text.length _str
+    evalLength0 resultSort [_str] = do
+        _str <- expectBuiltinString lengthKey _str
+        Text.length _str
+            & toInteger
+            & Int.asPattern resultSort
+            & return
+    evalLength0 _ _ = Builtin.wrongArity lengthKey
 
 evalFind :: Builtin.Function
 evalFind = Builtin.functionEvaluator evalFind0
   where
     maybeNotFound :: Maybe Int -> Integer
     maybeNotFound = maybe (-1) toInteger
-    evalFind0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let (_str, _substr, _idx) =
-                    case arguments of
-                        [_str, _substr, _idx] -> (_str, _substr, _idx)
-                        _                     -> Builtin.wrongArity findKey
-            _str <- expectBuiltinString findKey _str
-            _substr <- expectBuiltinString findKey _substr
-            _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
-            Builtin.appliedFunction
-                . Int.asPattern resultSort
-                . maybeNotFound
-                $ findIndex
+
+    evalFind0 resultSort [_str, _substr, _idx] = do
+        _str <- expectBuiltinString findKey _str
+        _substr <- expectBuiltinString findKey _substr
+        _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
+        let result =
+                findIndex
                     (Text.isPrefixOf _substr)
                     (Text.tails . Text.drop _idx $ _str)
+        maybeNotFound result
+            & Int.asPattern resultSort
+            & return
+    evalFind0 _ _ = Builtin.wrongArity findKey
 
 evalString2Base :: Builtin.Function
 evalString2Base = Builtin.functionEvaluator evalString2Base0
   where
-    evalString2Base0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let (_str, _base) =
-                    case arguments of
-                        [_str, _base] -> (_str, _base)
-                        _             -> Builtin.wrongArity string2BaseKey
-            _str  <- expectBuiltinString string2BaseKey _str
-            _base <- Int.expectBuiltinInt string2BaseKey _base
-            let readN =
-                    case _base of
-                        -- no builtin reader for number in octal notation
-                        8  -> \s ->
-                            case readOct $ Text.unpack s of
-                                [(result, "")] -> Right (result, "")
-                                _              -> Left ""
-                        10 -> Text.signed Text.decimal
-                        16 -> Text.hexadecimal
-                        _  -> const empty
-            case readN _str of
-                Right (result, Text.unpack -> "") ->
-                    Builtin.appliedFunction
-                        . Int.asPattern resultSort
-                        $ result
-                _ ->
-                    Builtin.appliedFunction Pattern.bottom
+    evalString2Base0 resultSort [_str, _base] = do
+        _str  <- expectBuiltinString string2BaseKey _str
+        _base <- Int.expectBuiltinInt string2BaseKey _base
+        let readN =
+                case _base of
+                    -- no builtin reader for number in octal notation
+                    8  -> \s ->
+                        case readOct $ Text.unpack s of
+                            [(result, "")] -> Right (result, "")
+                            _              -> Left ""
+                    10 -> Text.signed Text.decimal
+                    16 -> Text.hexadecimal
+                    _  -> const empty
+        case readN _str of
+            Right (result, Text.unpack -> "") ->
+                return (Int.asPattern resultSort result)
+            _ -> return (Pattern.bottomOf resultSort)
+    evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
 evalString2Int :: Builtin.Function
 evalString2Int = Builtin.functionEvaluator evalString2Int0
   where
-    evalString2Int0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _str =
-                    case arguments of
-                        [_str] -> _str
-                        _      -> Builtin.wrongArity string2IntKey
-            _str <- expectBuiltinString string2IntKey _str
-            case Text.signed Text.decimal _str of
-                Right (result, Text.unpack -> "") ->
-                    Builtin.appliedFunction
-                    . Int.asPattern resultSort
-                    $ result
-                _ ->
-                    Builtin.appliedFunction Pattern.bottom
+    evalString2Int0 resultSort [_str] = do
+        _str <- expectBuiltinString string2IntKey _str
+        case Text.signed Text.decimal _str of
+            Right (result, Text.unpack -> "") ->
+                return (Int.asPattern resultSort result)
+            _ -> return (Pattern.bottomOf resultSort)
+    evalString2Int0 _ _ = Builtin.wrongArity string2IntKey
 
 evalInt2String :: Builtin.Function
 evalInt2String = Builtin.functionEvaluator evalInt2String0
   where
-    evalInt2String0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _int =
-                    case arguments of
-                        [_str] -> _str
-                        _      -> Builtin.wrongArity int2StringKey
-            _int <- Int.expectBuiltinInt int2StringKey _int
-            Builtin.appliedFunction
-                . asPattern resultSort
-                . Text.pack
-                $ show _int
+    evalInt2String0 resultSort [_int] = do
+        _int <- Int.expectBuiltinInt int2StringKey _int
+        Text.pack (show _int)
+            & asPattern resultSort
+            & return
+    evalInt2String0 _ _ = Builtin.wrongArity int2StringKey
 
 evalChr :: Builtin.Function
 evalChr = Builtin.functionEvaluator evalChr0
   where
-    evalChr0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _n =
-                    case arguments of
-                        [_n] -> _n
-                        _    -> Builtin.wrongArity chrKey
-            _n <- Int.expectBuiltinInt chrKey _n
-            Builtin.appliedFunction
-                . asPattern resultSort
-                $ Text.singleton $ chr $ fromIntegral _n
+    evalChr0 resultSort [_n] = do
+        _n <- Int.expectBuiltinInt chrKey _n
+        Text.singleton (chr $ fromIntegral _n)
+            & asPattern resultSort
+            & return
+    evalChr0 _ _ = Builtin.wrongArity chrKey
 
 evalOrd :: Builtin.Function
 evalOrd = Builtin.functionEvaluator evalOrd0
   where
-    evalOrd0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _str =
-                    case arguments of
-                        [_str] -> _str
-                        _    -> Builtin.wrongArity ordKey
-            _str <- expectBuiltinString ordKey _str
-            Builtin.appliedFunction
-                . maybe Pattern.bottom charToOrdInt
-                $ if Text.length _str == 1
-                      then Just (Text.head _str)
-                      else Nothing
+    evalOrd0 resultSort [_str] = do
+        _str <- expectBuiltinString ordKey _str
+        let result
+              | Text.length _str == 1 = charToOrdInt (Text.head _str)
+              | otherwise = Pattern.bottomOf resultSort
+        return result
       where
         charToOrdInt =
             Int.asPattern resultSort
             . toInteger
             . ord
+    evalOrd0 _ _ = Builtin.wrongArity ordKey
 
 evalToken2String :: Builtin.Function
 evalToken2String = Builtin.functionEvaluator evalToken2String0
   where
-      evalToken2String0 resultSort arguments =
-          Builtin.getAttemptedAxiom $ do
-              let _dv =
-                      case arguments of
-                          [_dv] -> _dv
-                          _     -> Builtin.wrongArity token2StringKey
-              _dv <- Builtin.expectDomainValue token2StringKey _dv
-              Builtin.appliedFunction . asPattern resultSort $ _dv
+    evalToken2String0 resultSort [_dv] = do
+        _dv <- Builtin.expectDomainValue token2StringKey _dv
+        return (asPattern resultSort _dv)
+    evalToken2String0 _ _ = Builtin.wrongArity token2StringKey
 
 evalString2Token :: Builtin.Function
 evalString2Token = Builtin.functionEvaluator evalString2Token0
   where
-      evalString2Token0 resultSort arguments =
-          Builtin.getAttemptedAxiom $ do
-              let _str =
-                      case arguments of
-                          [_str] -> _str
-                          _     -> Builtin.wrongArity token2StringKey
-              _str <- expectBuiltinString string2TokenKey _str
-              Builtin.appliedFunction
-                 $ Builtin.makeDomainValuePattern
-                    resultSort
-                    _str
+    evalString2Token0 resultSort [_str] = do
+        _str <- expectBuiltinString string2TokenKey _str
+        Builtin.makeDomainValuePattern resultSort _str
+            & return
+    evalString2Token0 _ _ = Builtin.wrongArity token2StringKey
 
 {- | Implement builtin function evaluation.
  -}

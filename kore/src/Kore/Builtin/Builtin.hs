@@ -182,19 +182,14 @@ unaryOperator extractVal asPattern ctx op =
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    unaryOperator0
-        :: InternalVariable variable
-        => MonadSimplify m
-        => Sort
-        -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+    unaryOperator0 :: FunctionImplementation
     unaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
-                (appliedFunction . asPattern resultSort) r
-            [_] -> return NotApplicable
+                return (asPattern resultSort r)
+            [_] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin binary operator.
@@ -225,19 +220,14 @@ binaryOperator extractVal asPattern ctx op =
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    binaryOperator0
-        :: InternalVariable variable
-        => MonadSimplify m
-        => Sort
-        -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+    binaryOperator0 :: FunctionImplementation
     binaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
-                (appliedFunction . asPattern resultSort) r
-            [_, _] -> return NotApplicable
+                return (asPattern resultSort r)
+            [_, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin ternary operator.
@@ -268,19 +258,14 @@ ternaryOperator extractVal asPattern ctx op =
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    ternaryOperator0
-        :: InternalVariable variable
-        => MonadSimplify m
-        => Sort
-        -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+    ternaryOperator0 :: FunctionImplementation
     ternaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
                 -- Apply the operator to three domain values
                 let r = op (get a) (get b) (get c)
-                (appliedFunction . asPattern resultSort) r
-            [_, _, _] -> return NotApplicable
+                return (asPattern resultSort r)
+            [_, _, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 type FunctionImplementation
@@ -289,7 +274,7 @@ type FunctionImplementation
         => MonadSimplify simplifier
         => Sort
         -> [TermLike variable]
-        -> simplifier (AttemptedAxiom variable)
+        -> MaybeT simplifier (Pattern variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
@@ -303,9 +288,9 @@ functionEvaluator impl =
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator (valid :< app) =
-        impl resultSort
-        $ fmap TermLike.removeEvaluated applicationChildren
+    evaluator (valid :< app) = do
+        let args = map TermLike.removeEvaluated applicationChildren
+        getAttemptedAxiom (impl resultSort args >>= appliedFunction)
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid

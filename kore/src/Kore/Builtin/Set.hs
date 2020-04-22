@@ -243,74 +243,66 @@ returnConcreteSet
     :: (MonadSimplify m, InternalVariable variable)
     => Sort
     -> Map (TermLike Concrete) (Domain.SetValue (TermLike variable))
-    -> m (AttemptedAxiom variable)
+    -> m (Pattern variable)
 returnConcreteSet = Ac.returnConcreteAc
 
 evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 resultSort arguments =
-        Builtin.getAttemptedAxiom
-            (case arguments of
-                [_elem] ->
-                    case Builtin.toKey _elem of
-                        Just concrete ->
-                            TermLike.assertConstructorLikeKeys [_elem]
-                            $ returnConcreteSet
-                                resultSort
-                                (Map.singleton concrete Domain.SetValue)
-                        Nothing ->
-                            Ac.returnAc resultSort
-                            $ Domain.wrapAc Domain.NormalizedAc
-                                { elementsWithVariables =
-                                    [Domain.SetElement _elem]
-                                , concreteElements = Map.empty
-                                , opaque = []
-                                }
-                _ -> Builtin.wrongArity Set.elementKey
-            )
+    evalElement0 resultSort [_elem] =
+        case Builtin.toKey _elem of
+            Just concrete ->
+                TermLike.assertConstructorLikeKeys [_elem]
+                $ returnConcreteSet
+                    resultSort
+                    (Map.singleton concrete Domain.SetValue)
+            Nothing ->
+                (Ac.returnAc resultSort . Domain.wrapAc)
+                Domain.NormalizedAc
+                    { elementsWithVariables =
+                        [Domain.SetElement _elem]
+                    , concreteElements = Map.empty
+                    , opaque = []
+                    }
+    evalElement0 _ _ = Builtin.wrongArity Set.elementKey
 
 evalIn :: Builtin.Function
 evalIn =
     Builtin.functionEvaluator evalIn0
   where
     evalIn0 :: Builtin.FunctionImplementation
-    evalIn0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_elem, _set) =
-                    case arguments of
-                        [_elem, _set] -> (_elem, _set)
-                        _ -> Builtin.wrongArity Set.inKey
-            let setSymbolic = do
-                    _elem <- hoistMaybe $ Builtin.toKey _elem
-                    _set' <- expectBuiltinSet Set.inKey _set
-                    let result = Domain.isConcreteKeyOfAc _elem _set'
-                    returnIfTrueAndDefined result _set
-                bothSymbolic = do
-                    _set' <- expectBuiltinSet Set.inKey _set
-                    let result = Domain.isSymbolicKeyOfAc _elem _set'
-                    returnIfTrueAndDefined result _set
-                bothConcrete = do
-                    _elem <- hoistMaybe $ Builtin.toKey _elem
-                    _set <- expectConcreteBuiltinSet Set.inKey _set
-                    (Builtin.appliedFunction . asExpandedBoolPattern)
-                        (Map.member _elem _set)
-            setSymbolic <|> bothSymbolic <|> bothConcrete
+    evalIn0 resultSort [_elem, _set] = do
+        let setSymbolic = do
+                _elem <- hoistMaybe $ Builtin.toKey _elem
+                _set' <- expectBuiltinSet Set.inKey _set
+                let result = Domain.isConcreteKeyOfAc _elem _set'
+                returnIfTrueAndDefined result _set
+            bothSymbolic = do
+                _set' <- expectBuiltinSet Set.inKey _set
+                let result = Domain.isSymbolicKeyOfAc _elem _set'
+                returnIfTrueAndDefined result _set
+            bothConcrete = do
+                _elem <- hoistMaybe $ Builtin.toKey _elem
+                _set <- expectConcreteBuiltinSet Set.inKey _set
+                Map.member _elem _set
+                    & asExpandedBoolPattern
+                    & return
+        setSymbolic <|> bothSymbolic <|> bothConcrete
       where
         asExpandedBoolPattern = Bool.asPattern resultSort
         returnIfTrueAndDefined result setTerm
-            | result =
+            | result = do
                 let condition =
                         Conditional.fromPredicate
                         $ makeCeilPredicate resultSort setTerm
                     trueWithCondition =
-                        Builtin.appliedFunction
-                        $ Pattern.andCondition
+                        Pattern.andCondition
                             (asExpandedBoolPattern result)
                             condition
-                 in trueWithCondition
+                return trueWithCondition
             | otherwise = empty
+    evalIn0 _ _ = Builtin.wrongArity Set.inKey
 
 evalUnit :: Builtin.Function
 evalUnit =
@@ -325,25 +317,13 @@ evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
-    evalConcat0
-        :: forall variable m
-        .  InternalVariable variable
-        => MonadSimplify m
-        => Sort
-        -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
-    evalConcat0 resultSort arguments = Builtin.getAttemptedAxiom $ do
-        let (_set1, _set2) =
-                case arguments of
-                    [_set1, _set2] -> (_set1, _set2)
-                    _ -> Builtin.wrongArity Set.concatKey
-
-            normalized1 :: Ac.NormalizedOrBottom Domain.NormalizedSet variable
-            normalized1 = Ac.toNormalized _set1
-            normalized2 :: Ac.NormalizedOrBottom Domain.NormalizedSet variable
-            normalized2 = Ac.toNormalized _set2
-
-        Ac.evalConcatNormalizedOrBottom resultSort normalized1 normalized2
+    evalConcat0 :: Builtin.FunctionImplementation
+    evalConcat0 resultSort [set1, set2] =
+        Ac.evalConcatNormalizedOrBottom @Domain.NormalizedSet
+            resultSort
+            (Ac.toNormalized set1)
+            (Ac.toNormalized set2)
+    evalConcat0 _ _ = Builtin.wrongArity Set.concatKey
 
 evalDifference :: Builtin.Function
 evalDifference =
@@ -351,42 +331,30 @@ evalDifference =
   where
     ctx = Set.differenceKey
     evalDifference0 :: Builtin.FunctionImplementation
-    evalDifference0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let (_set1, _set2) =
-                    case arguments of
-                        [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity Set.differenceKey
-                rightIdentity = do
-                    _set2 <- expectConcreteBuiltinSet ctx _set2
-                    if Map.null _set2
-                        then
-                            Builtin.appliedFunction
-                            $ Pattern.fromTermLike _set1
-                        else empty
-                bothConcrete = do
-                    _set1 <- expectConcreteBuiltinSet ctx _set1
-                    _set2 <- expectConcreteBuiltinSet ctx _set2
-                    returnConcreteSet resultSort (Map.difference _set1 _set2)
-            rightIdentity <|> bothConcrete
+    evalDifference0 resultSort [_set1, _set2] = do
+        let rightIdentity = do
+                _set2 <- expectConcreteBuiltinSet ctx _set2
+                if Map.null _set2
+                    then return (Pattern.fromTermLike _set1)
+                    else empty
+            bothConcrete = do
+                _set1 <- expectConcreteBuiltinSet ctx _set1
+                _set2 <- expectConcreteBuiltinSet ctx _set2
+                returnConcreteSet resultSort (Map.difference _set1 _set2)
+        rightIdentity <|> bothConcrete
+    evalDifference0 _ _ = Builtin.wrongArity Set.differenceKey
 
 evalToList :: Builtin.Function
 evalToList = Builtin.functionEvaluator evalToList0
   where
     evalToList0 :: Builtin.FunctionImplementation
-    evalToList0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _set =
-                        case arguments of
-                            [_set] -> _set
-                            _      -> Builtin.wrongArity Set.toListKey
-            _set <- expectConcreteBuiltinSet Set.toListKey _set
-            List.returnList resultSort
-                . fmap TermLike.fromConcrete
-                . Seq.fromList
-                . map dropNoValue
-                . Map.toList
-                $ _set
+    evalToList0 resultSort [_set] = do
+        _set <- expectConcreteBuiltinSet Set.toListKey _set
+        map dropNoValue (Map.toList _set)
+            & Seq.fromList
+            & fmap TermLike.fromConcrete
+            & List.returnList resultSort
+    evalToList0 _ _ = Builtin.wrongArity Set.toListKey
 
     dropNoValue (a, Domain.SetValue) = a
 
@@ -394,18 +362,13 @@ evalSize :: Builtin.Function
 evalSize = Builtin.functionEvaluator evalSize0
   where
     evalSize0 :: Builtin.FunctionImplementation
-    evalSize0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _set =
-                        case arguments of
-                            [_set] -> _set
-                            _      -> Builtin.wrongArity Set.sizeKey
-            _set <- expectConcreteBuiltinSet Set.sizeKey _set
-            Builtin.appliedFunction
-                . Int.asPattern resultSort
-                . toInteger
-                . Map.size
-                $ _set
+    evalSize0 resultSort [_set] = do
+        _set <- expectConcreteBuiltinSet Set.sizeKey _set
+        Map.size _set
+            & toInteger
+            & Int.asPattern resultSort
+            & return
+    evalSize0 _ _ = Builtin.wrongArity Set.sizeKey
 
 evalIntersection :: Builtin.Function
 evalIntersection =
@@ -413,34 +376,26 @@ evalIntersection =
   where
     ctx = Set.intersectionKey
     evalIntersection0 :: Builtin.FunctionImplementation
-    evalIntersection0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let (_set1, _set2) =
-                    case arguments of
-                        [_set1, _set2] -> (_set1, _set2)
-                        _ -> Builtin.wrongArity Set.intersectionKey
-            _set1 <- expectConcreteBuiltinSet ctx _set1
-            _set2 <- expectConcreteBuiltinSet ctx _set2
-            returnConcreteSet resultSort (Map.intersection _set1 _set2)
+    evalIntersection0 resultSort [_set1, _set2] = do
+        _set1 <- expectConcreteBuiltinSet ctx _set1
+        _set2 <- expectConcreteBuiltinSet ctx _set2
+        returnConcreteSet resultSort (Map.intersection _set1 _set2)
+    evalIntersection0 _ _ = Builtin.wrongArity Set.intersectionKey
 
 evalList2set :: Builtin.Function
 evalList2set =
     Builtin.functionEvaluator evalList2set0
   where
     evalList2set0 :: Builtin.FunctionImplementation
-    evalList2set0 resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _list =
-                    case arguments of
-                        [_map] -> _map
-                        _      -> Builtin.wrongArity Set.list2setKey
-            _list <- List.expectConcreteBuiltinList Set.list2setKey _list
-            let _set =
-                    TermLike.assertConstructorLikeKeys _list
-                        $ Map.fromList
-                            $ fmap (\x -> (x, Domain.SetValue))
-                            $ Foldable.toList _list
-            returnConcreteSet resultSort _set
+    evalList2set0 resultSort [_list] = do
+        _list <- List.expectConcreteBuiltinList Set.list2setKey _list
+        let _set =
+                fmap (\x -> (x, Domain.SetValue)) _list
+                & Foldable.toList
+                & Map.fromList
+                & TermLike.assertConstructorLikeKeys _list
+        returnConcreteSet resultSort _set
+    evalList2set0 _ _ = Builtin.wrongArity Set.list2setKey
 
 {- | Implement builtin function evaluation.
  -}

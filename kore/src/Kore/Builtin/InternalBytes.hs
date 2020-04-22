@@ -183,28 +183,23 @@ evalBytes2String =
     Builtin.functionEvaluator evalBytes2String0
   where
     evalBytes2String0 :: Builtin.FunctionImplementation
-    evalBytes2String0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let _bytes =
-                    case arguments of
-                        [_bytes] -> _bytes
-                        _ -> Builtin.wrongArity bytes2StringKey
-            bytestring <- matchBuiltinBytes _bytes
-            Builtin.appliedFunction
-                . String.asPattern resultSort
-                . Encoding.decode8Bit
-                $ bytestring
+    evalBytes2String0 resultSort [_bytes] = do
+            _bytes <- matchBuiltinBytes _bytes
+            Encoding.decode8Bit _bytes
+                & String.asPattern resultSort
+                & return
+    evalBytes2String0 _ _ = Builtin.wrongArity bytes2StringKey
 
 evalString2Bytes :: Builtin.Function
 evalString2Bytes =
     Builtin.functionEvaluator evalString2Bytes0
   where
     evalString2Bytes0 :: Builtin.FunctionImplementation
-    evalString2Bytes0 resultSort [_string] =
-        Builtin.getAttemptedAxiom $ do
-            _string <- String.expectBuiltinString string2BytesKey _string
-            Builtin.appliedFunction . asPattern resultSort
-                $ Encoding.encode8Bit _string
+    evalString2Bytes0 resultSort [_string] = do
+        _string <- String.expectBuiltinString string2BytesKey _string
+        Encoding.encode8Bit _string
+            & asPattern resultSort
+            & return
     evalString2Bytes0 _ _ = Builtin.wrongArity string2BytesKey
 
 evalUpdate :: Builtin.Function
@@ -212,204 +207,178 @@ evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
     evalUpdate0 :: Builtin.FunctionImplementation
-    evalUpdate0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_bytes, _index, _value) =
-                    case arguments of
-                        [_bytes, _index, _value] -> (_bytes, _index, _value)
-                        _ -> Builtin.wrongArity updateKey
-            _bytes <- matchBuiltinBytes _bytes
-            _index <- fromInteger <$> Int.expectBuiltinInt updateKey _index
-            _value <- fromInteger <$> Int.expectBuiltinInt updateKey _value
-            if _index < 0 || _index > (ByteString.length _bytes - 1)
-                then Builtin.appliedFunction Pattern.bottom
-                else
-                    Builtin.appliedFunction . asPattern resultSort
-                        $ ByteString.take _index _bytes
-                            <> ByteString.singleton _value
-                            <> ByteString.drop (_index + 1) _bytes
+    evalUpdate0 resultSort [_bytes, _index, _value] = do
+        _bytes <- matchBuiltinBytes _bytes
+        _index <- fromInteger <$> Int.expectBuiltinInt updateKey _index
+        _value <- fromInteger <$> Int.expectBuiltinInt updateKey _value
+        let result
+              | _index >= 0, _index < ByteString.length _bytes =
+                ByteString.take _index _bytes
+                <> ByteString.singleton _value
+                <> ByteString.drop (_index + 1) _bytes
+                & asPattern resultSort
+              | otherwise = Pattern.bottomOf resultSort
+        return result
+    evalUpdate0 _ _ = Builtin.wrongArity updateKey
 
 evalGet :: Builtin.Function
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
     evalGet0 :: Builtin.FunctionImplementation
-    evalGet0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_bytes, _index) =
-                    case arguments of
-                        [_bytes, _index] -> (_bytes, _index)
-                        _ -> Builtin.wrongArity getKey
-            _bytes <- matchBuiltinBytes _bytes
-            _index <- fromInteger <$> Int.expectBuiltinInt getKey _index
-            if _index >= ByteString.length _bytes || _index < 0
-                then Builtin.appliedFunction Pattern.bottom
-                else
-                    Builtin.appliedFunction
-                        . Int.asPattern resultSort
-                        . toInteger
-                        $ ByteString.index _bytes _index
+    evalGet0 resultSort [_bytes, _index] = do
+        _bytes <- matchBuiltinBytes _bytes
+        _index <- fromInteger <$> Int.expectBuiltinInt getKey _index
+        let result
+              | _index >= 0, _index < ByteString.length _bytes =
+                ByteString.index _bytes _index
+                & toInteger
+                & Int.asPattern resultSort
+              | otherwise =
+                Pattern.bottomOf resultSort
+        return result
+    evalGet0 _ _ = Builtin.wrongArity getKey
 
 evalSubstr :: Builtin.Function
 evalSubstr =
     Builtin.functionEvaluator evalSubstr0
   where
     evalSubstr0 :: Builtin.FunctionImplementation
-    evalSubstr0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_bytes, _start, _end) =
-                    case arguments of
-                        [_bytes, _start, _end] -> (_bytes, _start, _end)
-                        _ -> Builtin.wrongArity substrKey
-            _bytes <- matchBuiltinBytes _bytes
-            _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
-            _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
-            let outOfBounds =
-                       (_start < 0)
-                    || (_end > ByteString.length _bytes)
-                    || (_end - _start < 0)
-            if outOfBounds
-                then Builtin.appliedFunction Pattern.bottom
-                else
-                    Builtin.appliedFunction . asPattern resultSort
-                        $ ByteString.take (_end - _start)
-                        . ByteString.drop _start
-                        $ _bytes
+    evalSubstr0 resultSort [_bytes, _start, _end] = do
+        _bytes <- matchBuiltinBytes _bytes
+        _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
+        _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
+        let result
+              | _start >= 0, _end >= _start, _end <= ByteString.length _bytes =
+                _bytes
+                & ByteString.drop _start
+                & ByteString.take (_end - _start)
+                & asPattern resultSort
+              | otherwise = Pattern.bottomOf resultSort
+        return result
+    evalSubstr0 _ _ = Builtin.wrongArity substrKey
 
 evalReplaceAt :: Builtin.Function
 evalReplaceAt =
     Builtin.functionEvaluator evalReplaceAt0
   where
     evalReplaceAt0 :: Builtin.FunctionImplementation
-    evalReplaceAt0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_bytes, _index, _new) =
-                    case arguments of
-                        [_bytes, _index, _new] -> (_bytes, _index, _new)
-                        _ -> Builtin.wrongArity replaceAtKey
-            _bytes <- matchBuiltinBytes _bytes
-            _index <- fromInteger <$> Int.expectBuiltinInt replaceAtKey _index
-            _new   <- matchBuiltinBytes _new
-            Builtin.appliedFunction
-                . maybe Pattern.bottom (asPattern resultSort)
-                $ go _bytes _index _new
+    evalReplaceAt0 resultSort [_bytes, _index, _new] = do
+        _bytes <- matchBuiltinBytes _bytes
+        _index <- fromInteger <$> Int.expectBuiltinInt replaceAtKey _index
+        _new   <- matchBuiltinBytes _new
+        go _bytes _index _new
+            & maybe (Pattern.bottomOf resultSort) (asPattern resultSort)
+            & return
+    evalReplaceAt0 _ _ = Builtin.wrongArity replaceAtKey
 
-    go _bytes _index _new
-      | ByteString.length _new == 0 = Just _bytes
-      | _index >= ByteString.length _bytes = Nothing
-      | _index < 0 = Nothing
-      | ByteString.length _bytes == 0 = Nothing
-      | otherwise = Just $ ByteString.take _index _bytes
-                            <> _new
-                            <> ByteString.drop (_index + ByteString.length _new) _bytes
+    go bytes index replacement
+      | delta == 0 = Just bytes
+      | index >= ByteString.length bytes = Nothing
+      | index < 0 = Nothing
+      | ByteString.length bytes == 0 = Nothing
+      | otherwise =
+        ByteString.take index bytes
+        <> replacement
+        <> ByteString.drop (index + delta) bytes
+        & Just
+      where
+        delta = ByteString.length replacement
 
 evalPadRight :: Builtin.Function
 evalPadRight =
     Builtin.functionEvaluator evalPadRight0
   where
     evalPadRight0 :: Builtin.FunctionImplementation
-    evalPadRight0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_bytes, _length, _value) =
-                    case arguments of
-                        [_bytes, _length, _value] -> (_bytes, _length, _value)
-                        _ -> Builtin.wrongArity padRightKey
+    evalPadRight0 resultSort [_bytes, _length, _value] = do
             _bytes  <- matchBuiltinBytes _bytes
             _length <- fromInteger <$> Int.expectBuiltinInt padRightKey _length
             _value  <- fromInteger <$> Int.expectBuiltinInt padRightKey _value
-            Builtin.appliedFunction $ go resultSort _bytes _length _value
+            (return . asPattern resultSort) (go _bytes _length _value)
+    evalPadRight0 _ _ = Builtin.wrongArity padRightKey
 
-    go resultSort bytes len val
-      | len <= ByteString.length bytes = asPattern resultSort bytes
-      | otherwise =
-        asPattern resultSort
-            $ bytes <> ByteString.replicate (len - ByteString.length bytes) val
+    go bytes len2 val =
+        bytes <> ByteString.replicate (max 0 delta) val
+      where
+        len1 = ByteString.length bytes
+        delta = len2 - len1
 
 evalPadLeft :: Builtin.Function
 evalPadLeft =
     Builtin.functionEvaluator evalPadLeft0
   where
     evalPadLeft0 :: Builtin.FunctionImplementation
-    evalPadLeft0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_bytes, _length, _value) =
-                    case arguments of
-                        [_bytes, _length, _value] -> (_bytes, _length, _value)
-                        _ -> Builtin.wrongArity padLeftKey
+    evalPadLeft0 resultSort [_bytes, _length, _value] = do
             _bytes  <- matchBuiltinBytes _bytes
             _length <- fromInteger <$> Int.expectBuiltinInt padLeftKey _length
             _value  <- fromInteger <$> Int.expectBuiltinInt padLeftKey _value
-            Builtin.appliedFunction $ go resultSort _bytes _length _value
+            return . asPattern resultSort $ go _bytes _length _value
+    evalPadLeft0 _ _ = Builtin.wrongArity padLeftKey
 
-    go resultSort bytes len val
-      | len <= ByteString.length bytes = asPattern resultSort bytes
-      | otherwise =
-        asPattern resultSort
-            $ ByteString.replicate (len - ByteString.length bytes) val <> bytes
+    go bytes len2 val =
+        ByteString.replicate (max 0 delta) val <> bytes
+      where
+        len1 = ByteString.length bytes
+        delta = len2 - len1
 
 evalReverse :: Builtin.Function
 evalReverse =
     Builtin.functionEvaluator evalReverse0
   where
     evalReverse0 :: Builtin.FunctionImplementation
-    evalReverse0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let _bytes =
-                    case arguments of
-                        [_bytes] -> _bytes
-                        _ -> Builtin.wrongArity reverseKey
-            _bytes  <- matchBuiltinBytes _bytes
-            Builtin.appliedFunction . asPattern resultSort
-                $ ByteString.reverse _bytes
+    evalReverse0 resultSort [_bytes] = do
+        _bytes  <- matchBuiltinBytes _bytes
+        ByteString.reverse _bytes
+            & asPattern resultSort
+            & return
+    evalReverse0 _ _ = Builtin.wrongArity reverseKey
 
 evalLength :: Builtin.Function
 evalLength =
     Builtin.functionEvaluator evalLength0
   where
     evalLength0 :: Builtin.FunctionImplementation
-    evalLength0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let _bytes =
-                    case arguments of
-                        [_bytes] -> _bytes
-                        _ -> Builtin.wrongArity lengthKey
-            _bytes  <- matchBuiltinBytes _bytes
-            Builtin.appliedFunction
-                . Int.asPattern resultSort
-                . toInteger
-                $ ByteString.length _bytes
+    evalLength0 resultSort [_bytes] = do
+        _bytes  <- matchBuiltinBytes _bytes
+        toInteger (ByteString.length _bytes)
+            & Int.asPattern resultSort
+            & return
+    evalLength0 _ _ = Builtin.wrongArity lengthKey
 
 evalConcat :: Builtin.Function
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0 :: Builtin.FunctionImplementation
-    evalConcat0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_lhs, _rhs) =
-                    case arguments of
-                        [_lhs, _rhs] -> (_lhs, _rhs)
-                        _ -> Builtin.wrongArity concatKey
+    evalConcat0 resultSort [_lhs, _rhs] = do
             _lhs  <- matchBuiltinBytes _lhs
             _rhs  <- matchBuiltinBytes _rhs
-            Builtin.appliedFunction . asPattern resultSort $ _lhs <> _rhs
+            _lhs <> _rhs
+                & asPattern resultSort
+                & return
+    evalConcat0 _ _ = Builtin.wrongArity concatKey
 
 evalInt2bytes :: Builtin.Function
 evalInt2bytes =
     Builtin.functionEvaluator evalInt2bytes0
   where
     evalInt2bytes0 :: Builtin.FunctionImplementation
-    evalInt2bytes0 resultSort [len, int, end] =
-        Builtin.getAttemptedAxiom $ do
-            end' <-
-                case end of
-                    Endianness_ endianness -> return endianness
-                    _                      -> empty
-            len' <- Int.expectBuiltinInt int2bytesKey len
-            int' <- Int.expectBuiltinInt int2bytesKey int
-            let result = int2bytes (fromInteger len') int' end'
-            Builtin.appliedFunction $ asPattern resultSort result
+    evalInt2bytes0 resultSort [len, int, _end] = do
+        _end <- matchEndianness _end
+        len' <- Int.expectBuiltinInt int2bytesKey len
+        int' <- Int.expectBuiltinInt int2bytesKey int
+        int2bytes (fromInteger len') int' _end
+            & asPattern resultSort
+            & return
     evalInt2bytes0 _ _ = Builtin.wrongArity int2bytesKey
+
+matchEndianness :: Alternative f => TermLike variable -> f Endianness
+matchEndianness (Endianness_ endianness) = pure endianness
+matchEndianness _                        = empty
+
+matchSignedness :: Alternative f => TermLike variable -> f Signedness
+matchSignedness (Signedness_ signedness) = pure signedness
+matchSignedness _                        = empty
 
 int2bytes :: Int -> Integer -> Endianness -> ByteString
 int2bytes len int end =
@@ -433,19 +402,13 @@ evalBytes2int =
     Builtin.functionEvaluator evalBytes2int0
   where
     evalBytes2int0 :: Builtin.FunctionImplementation
-    evalBytes2int0 resultSort [bytes, end, sign] =
-        Builtin.getAttemptedAxiom $ do
-            end' <-
-                case end of
-                    Endianness_ endianness -> return endianness
-                    _                      -> empty
-            sign' <-
-                case sign of
-                    Signedness_ signedness -> return signedness
-                    _                      -> empty
-            bytes' <- matchBuiltinBytes bytes
-            let result = bytes2int bytes' end' sign'
-            Builtin.appliedFunction $ Int.asPattern resultSort result
+    evalBytes2int0 resultSort [bytes, _end, _sign] = do
+        _end <- matchEndianness _end
+        _sign <- matchSignedness _sign
+        bytes' <- matchBuiltinBytes bytes
+        bytes2int bytes' _end _sign
+            & Int.asPattern resultSort
+            & return
     evalBytes2int0 _ _ = Builtin.wrongArity bytes2intKey
 
 bytes2int :: ByteString -> Endianness -> Signedness -> Integer
