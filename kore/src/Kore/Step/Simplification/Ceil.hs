@@ -188,9 +188,9 @@ makeEvaluateTerm sideCondition ceilChild =
         [ newPredicateCeilSimplifier
         , newDefinedCeilSimplifier
         , newApplicationCeilSimplifier
-        , newBuiltinCeilSimplifier
         , newInjCeilSimplifier
         , newAxiomCeilSimplifier
+        , newBuiltinCeilSimplifier
         ]
 
 ceilSimplifierTermLike
