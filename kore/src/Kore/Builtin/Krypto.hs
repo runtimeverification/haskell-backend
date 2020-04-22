@@ -21,9 +21,14 @@ module Kore.Builtin.Krypto
     -- * Constants
     , keccak256Key
     , sha256Key
+    , hashSha256Key
     , sha3256Key
+    , hashSha3_256Key
     , ripemd160Key
+    , hashRipemd160Key
     , ecdsaRecoverKey
+    , secp256k1EcdsaRecoverKey
+    , hashKeccak256Key
     ) where
 
 import Prelude.Kore
@@ -77,6 +82,16 @@ sha256Key = "KRYPTO.sha256"
 sha3256Key = "KRYPTO.sha3256"
 ripemd160Key = "KRYPTO.ripemd160"
 
+hashKeccak256Key, hashSha3_256Key, hashSha256Key, hashRipemd160Key
+    :: IsString s => s 
+hashKeccak256Key = "HASH.keccak256"
+hashSha3_256Key = "HASH.sha3_256"
+hashSha256Key = "HASH.sha256"
+hashRipemd160Key = "HASH.ripemd160"
+
+secp256k1EcdsaRecoverKey :: IsString s => s
+secp256k1EcdsaRecoverKey = "SECP256K1.ecdsaRecover"
+
 verifiers :: Builtin.Verifiers
 verifiers =
     Builtin.Verifiers
@@ -94,10 +109,23 @@ symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
     [ (keccak256Key, verifyHashFunction)
+    , (hashKeccak256Key, verifyHashFunction)
     , (sha256Key, verifyHashFunction)
+    , (hashSha256Key, verifyHashFunction)
     , (sha3256Key, verifyHashFunction)
+    , (hashSha3_256Key, verifyHashFunction)
     , (ripemd160Key, verifyHashFunction)
+    , (hashRipemd160Key, verifyHashFunction)
     , (ecdsaRecoverKey
+      , Builtin.verifySymbol
+            String.assertSort
+            [ String.assertSort
+            , Int.assertSort
+            , String.assertSort
+            , String.assertSort
+            ]
+      )
+    , (secp256k1EcdsaRecoverKey
       , Builtin.verifySymbol
             String.assertSort
             [ String.assertSort
@@ -114,10 +142,15 @@ builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
         [ (keccak256Key, evalKeccak)
+        , (hashKeccak256Key, evalKeccak)
         , (sha256Key, evalSha256)
+        , (hashSha256Key, evalSha256)
         , (sha3256Key, evalSha3256)
+        , (hashSha3_256Key, evalSha3256)
         , (ripemd160Key, evalRipemd160)
+        , (hashRipemd160Key, evalRipemd160)
         , (ecdsaRecoverKey, evalECDSARecover)
+        , (secp256k1EcdsaRecoverKey, evalECDSARecover)
         ]
 
 verifyHashFunction :: Builtin.SymbolVerifier
