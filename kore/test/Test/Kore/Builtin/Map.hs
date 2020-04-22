@@ -623,10 +623,6 @@ test_inclusion =
         )
     ]
 
-
-
-
-
 -- | Check that simplification is carried out on map elements.
 test_simplify :: TestTree
 test_simplify =
@@ -676,20 +672,6 @@ test_isBuiltin =
         assertBool "" (not (Map.isSymbolUnit Mock.aSymbol))
         assertBool "" (not (Map.isSymbolUnit Mock.concatMapSymbol))
     ]
-
--- | Construct a pattern for a map which may have symbolic keys.
-asSymbolicPattern
-    :: Map (TermLike Variable) (TermLike Variable)
-    -> TermLike Variable
-asSymbolicPattern result
-    | Map.null result =
-        applyUnit
-    | otherwise =
-        foldr1 applyConcat (applyElement <$> Map.toAscList result)
-  where
-    applyUnit = mkApplySymbol unitMapSymbol []
-    applyElement (key, value) = elementMap key value
-    applyConcat map1 map2 = concatMap map1 map2
 
 {- | Unify two maps with concrete keys and variable values.
  -}
@@ -1336,6 +1318,22 @@ hprop_unparse =
         )
   where
     genValue = Test.Int.asInternal <$> genInteger
+
+-- * Helpers
+
+-- | Construct a pattern for a map which may have symbolic keys.
+asSymbolicPattern
+    :: Map (TermLike Variable) (TermLike Variable)
+    -> TermLike Variable
+asSymbolicPattern result
+    | Map.null result =
+        applyUnit
+    | otherwise =
+        foldr1 applyConcat (applyElement <$> Map.toAscList result)
+  where
+    applyUnit = mkApplySymbol unitMapSymbol []
+    applyElement (key, value) = elementMap key value
+    applyConcat map1 map2 = concatMap map1 map2
 
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
 asTermLike :: Map (TermLike Concrete) (TermLike Variable) -> TermLike Variable
