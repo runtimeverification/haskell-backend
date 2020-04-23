@@ -43,7 +43,7 @@ import Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import Kore.Debug
 import Kore.Error
-    ( printError,
+    ( printError
     )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule

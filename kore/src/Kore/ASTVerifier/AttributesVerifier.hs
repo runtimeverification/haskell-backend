@@ -143,11 +143,11 @@ verifyNoHookedSupersort
 verifyNoHookedSupersort supersortsAtts = do
     let isHooked = (getHasDomainValues . hasDomainValues) <$> supersortsAtts
     case elem True isHooked of
-        False -> 
+        False ->
             return ()
         True ->
             koreFail "Hooked sorts cannot be supersorts."
-   
+
 verifyAxiomAttributes
     :: forall error attrs
     .  MonadError (Error VerifyError) error
