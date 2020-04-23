@@ -19,8 +19,8 @@ module SMT.AST
     , SExpr (..)
     , buildSExpr, parseSExpr, parseSExprFile, readSExpr, readSExprs
     , sendSExpr, showSExpr
-    , nameFromSExpr
     , buildText
+    , mapSExpr
 
     , SmtConstructor
     , SmtConstructorArgument
@@ -194,26 +194,16 @@ instance
     (Debug sort, Debug name, Diff sort, Diff name)
     => Diff (FunctionDeclaration sort name)
 
--- | Extracts the name from a sexpression denoting a named object.
-nameFromSExpr :: SExpr -> Text
-nameFromSExpr (Atom name) = name
-nameFromSExpr (List (Atom name : _)) = name
-nameFromSExpr e =
-    (error . unlines)
-        [ "Cannot extract name from s-expression."
-        , "expression=" ++ showSExpr e
-        ]
-
 -- | Instantiate Constructor with the types needed by SimpleSMT.
-type SmtConstructor = Constructor SExpr Text Text
+type SmtConstructor = Constructor SExpr Text SExpr
 -- | Instantiate ConstructorArgument with the types needed by SimpleSMT.
-type SmtConstructorArgument = ConstructorArgument SExpr Text
+type SmtConstructorArgument = ConstructorArgument SExpr SExpr
 -- | Instantiate DataTypeDeclaration with the types needed by SimpleSMT.
-type SmtDataTypeDeclaration = DataTypeDeclaration SExpr Text Text
+type SmtDataTypeDeclaration = DataTypeDeclaration SExpr Text SExpr
 -- | Instantiate SortDeclaration with the types needed by SimpleSMT.
-type SmtSortDeclaration = SortDeclaration Text
+type SmtSortDeclaration = SortDeclaration SExpr
 -- | Instantiate FunctionDeclaration with the types needed by SimpleSMT.
-type SmtFunctionDeclaration = FunctionDeclaration SExpr Text
+type SmtFunctionDeclaration = FunctionDeclaration SExpr SExpr
 
 -- | Stream an S-expression into 'Builder'.
 buildSExpr :: SExpr -> Builder
@@ -255,10 +245,12 @@ sendSExpr h = sendSExprWorker
 type Parser = Parsec Void Text
 
 parseSExprSpace :: Parser ()
-parseSExprSpace =
-    Lexer.space Parser.space1 skipLineComment empty
-  where
-    skipLineComment = Lexer.skipLineComment ";"
+parseSExprSpace = Lexer.space Parser.space1 skipLineComment empty
+{-# INLINE parseSExprSpace #-}
+
+skipLineComment :: Parser ()
+skipLineComment = Lexer.skipLineComment ";"
+{-# INLINE skipLineComment #-}
 
 -- | Basic S-expression parser.
 parseSExpr :: Parser SExpr
@@ -287,8 +279,7 @@ parseSExpr = parseAtom <|> parseList
     lexeme = Lexer.lexeme parseSExprSpace
 
 parseSExprFile :: Parser [SExpr]
-parseSExprFile =
-    parseSExprSpace *> Parser.some parseSExpr
+parseSExprFile = parseSExprSpace *> Parser.some parseSExpr
 
 -- | Parse one S-expression.
 readSExpr :: MonadFail m => Text -> m SExpr
@@ -306,3 +297,7 @@ readSExprs txt =
 
 buildText :: SExpr -> Text
 buildText = Text.Lazy.toStrict . Text.Builder.toLazyText . buildSExpr
+
+mapSExpr :: (Text -> Text) -> SExpr -> SExpr
+mapSExpr f (Atom text) = Atom (f text)
+mapSExpr f (List sExprs) = List (mapSExpr f <$> sExprs)

@@ -9,10 +9,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Default
-    ( def
-    )
-
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
     ( Conditional (Conditional)
@@ -33,11 +29,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    , EqualityRule (EqualityRule)
-    , equalityPattern
-    )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -46,8 +37,10 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
 
-import Test.Kore.Step.Axiom.Evaluate
-    ( concrete
+import Test.Kore.Equation.Application
+    ( axiom
+    , axiom_
+    , concrete
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -176,9 +169,10 @@ test_definitionEvaluation =
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator = definitionEvaluation
-                [ concrete [mkElemVar Mock.x] $ EqualityRule $ equalityPattern
+                [ axiom_
                     (Mock.functionalConstr10 (mkElemVar Mock.x))
                     (Mock.g (mkElemVar Mock.x))
+                    & concrete [mkElemVar Mock.x]
                 ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
@@ -587,20 +581,6 @@ axiomEvaluator
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate_)
-
-axiom
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
-    -> EqualityRule Variable
-axiom left right requires =
-    EqualityRule EqualityPattern
-        { left
-        , requires
-        , right
-        , ensures = Kore.Internal.Predicate.makeTruePredicate_
-        , attributes = def
-        }
 
 evaluate
     :: BuiltinAndAxiomSimplifier

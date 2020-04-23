@@ -53,12 +53,11 @@ mkEvaluator PartitionedEquations { functionRules, simplificationRules } =
             else
                 Just . firstFullEvaluation
                 $ simplificationEvaluation
-                . from
                 <$> simplificationRules
     definitionEvaluator =
         if null functionRules
             then Nothing
-            else Just . definitionEvaluation $ from <$> functionRules
+            else Just $ definitionEvaluation functionRules
 
 mkEvaluatorRegistry
     :: Map AxiomIdentifier [Equation Variable]

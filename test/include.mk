@@ -22,7 +22,7 @@ DEF_KORE ?= $(DEF_KORE_DEFAULT)
 TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
 
 TESTS = \
-    $(wildcard $(DEF_DIR)/*.verify) \
+	$(wildcard $(DEF_DIR)/*.verify) \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
 	$(wildcard $(TEST_DIR)/*.merge) \
@@ -74,7 +74,6 @@ $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	$(KORE_PARSER) $(DEF_KORE_DEFAULT) --verify >/dev/null 2>$@ || /bin/true
 	$(DIFF) $@.golden $@ || $(FAILED)
 
-
 ### SEARCH
 
 %.search.final.$(EXT).out: KRUN_OPTS += --search-final
@@ -121,8 +120,8 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 %-repl-script-spec.k.out: %-repl-script-spec.k.repl
-%-repl-script-spec.k.out: \
-	HASKELL_BACKEND_COMMAND = $(KORE_REPL) -r --repl-script $<.repl
+%-repl-script-spec.k.out: KORE_REPL_OPTS = -r --repl-script $<.repl
+%-repl-script-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 ### BMC
 

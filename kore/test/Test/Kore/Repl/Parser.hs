@@ -4,20 +4,26 @@ module Test.Kore.Repl.Parser
 
 import Prelude.Kore
 
-import Data.Default
-import qualified Data.GraphViz as Graph
-import qualified Data.Set as Set
-import Numeric.Natural
 import Test.Tasty
     ( TestTree
     , testGroup
     )
 
-import qualified Kore.Log as Log
-import Kore.Log.Registry
-    ( debugAppliedRuleType
-    , debugAxiomEvaluationType
+import Data.Default
+import qualified Data.GraphViz as Graph
+import Data.Proxy
+import qualified Data.Set as Set
+import Numeric.Natural
+import Type.Reflection
+    ( SomeTypeRep
+    , someTypeRep
     )
+
+import Kore.Equation.Application
+    ( DebugApplyEquation
+    , DebugAttemptEquation
+    )
+import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
 
@@ -454,32 +460,36 @@ logTests =
             { Log.logLevel = Log.Warning
             , Log.logType = Log.LogStdErr
             }
-    , "log [DebugAppliedRule] stderr"
+    , "log [DebugAttemptEquation] stderr"
         `parsesTo_` Log def
             { Log.logLevel = Log.Warning
             , Log.logType = Log.LogStdErr
-            , Log.logEntries = Set.singleton debugAppliedRuleType
+            , Log.logEntries = Set.singleton debugAttemptEquationType
             }
-    , "log error [DebugAppliedRule] stderr"
+    , "log error [DebugAttemptEquation] stderr"
         `parsesTo_` Log def
             { Log.logLevel = Log.Error
             , Log.logType = Log.LogStdErr
-            , Log.logEntries = Set.singleton debugAppliedRuleType
+            , Log.logEntries = Set.singleton debugAttemptEquationType
             }
-    , "log info [ DebugAppliedRule,  DebugAxiomEvaluation ] file \"f s\""
+    , "log info [ DebugAttemptEquation,  DebugApplyEquation ] file \"f s\""
         `parsesTo_` Log def
             { Log.logLevel = Log.Info
             , Log.logType = Log.LogFileText "f s"
             , Log.logEntries =
                 Set.fromList
-                    [debugAppliedRuleType, debugAxiomEvaluationType]
+                    [debugAttemptEquationType, debugApplyEquationType]
             }
-    , "log info [ DebugAppliedRule   DebugAxiomEvaluation ] file \"f s\""
+    , "log info [ DebugAttemptEquation   DebugApplyEquation ] file \"f s\""
         `parsesTo_` Log def
             { Log.logLevel = Log.Info
             , Log.logType = Log.LogFileText "f s"
             , Log.logEntries =
                 Set.fromList
-                    [debugAppliedRuleType, debugAxiomEvaluationType]
+                    [debugAttemptEquationType, debugApplyEquationType]
             }
     ]
+
+debugAttemptEquationType, debugApplyEquationType :: SomeTypeRep
+debugAttemptEquationType = someTypeRep (Proxy @DebugAttemptEquation)
+debugApplyEquationType = someTypeRep (Proxy @DebugApplyEquation)

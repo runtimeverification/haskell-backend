@@ -117,11 +117,11 @@ builtinDeclaration
         }
     )
   = do
-    smtName <- SMT.nameFromSExpr <$> getSmthook
+    smtName <- getSmthook
     return
         ( symbolConstructor
         , AST.Symbol
-            { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName)
+            { smtFromSortArgs = emptySortArgsToSmt smtName
             , declaration =
                 AST.SymbolBuiltin AST.IndirectSymbolDeclaration
                     { name = AST.AlreadyEncoded smtName
@@ -146,11 +146,11 @@ smtlibDeclaration
         }
     )
   = do
-    smtName <- SMT.nameFromSExpr <$> getSmtlib
+    smtName <- getSmtlib
     return
         ( symbolConstructor
         , AST.Symbol
-            { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName)
+            { smtFromSortArgs = emptySortArgsToSmt smtName
             , declaration = AST.SymbolDeclaredDirectly
                 SMT.FunctionDeclaration
                     { name = AST.AlreadyEncoded smtName
@@ -178,7 +178,7 @@ constructorDeclaration
         ( symbolConstructor
         , AST.Symbol
             { smtFromSortArgs =
-                emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
+                emptySortArgsToSmt (AST.encode encodedName)
             , declaration =
                 AST.SymbolConstructor AST.IndirectSymbolDeclaration
                     { name = encodedName

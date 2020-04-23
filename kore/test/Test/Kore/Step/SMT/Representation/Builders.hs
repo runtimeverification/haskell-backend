@@ -68,8 +68,7 @@ unresolvedSortMap identifier = (identifier, unresolvedSort identifier)
 unresolvedSort :: Kore.Id -> AST.UnresolvedSort
 unresolvedSort identifier =
     AST.Sort
-        { smtFromSortArgs = const $ const $ Just
-            $ AST.Atom (AST.encode encodable)
+        { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
         , declaration = AST.SortDeclarationSort AST.SortDeclaration
             { name = encodable
             , arity = 0
@@ -84,8 +83,7 @@ unresolvedDataMap identifier = (identifier, unresolvedData identifier)
 unresolvedData :: Kore.Id -> AST.UnresolvedSort
 unresolvedData identifier =
     AST.Sort
-        { smtFromSortArgs = const $ const $ Just
-            $ AST.Atom (AST.encode encodable)
+        { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
         , declaration = AST.SortDeclarationDataType AST.DataTypeDeclaration
             { name = encodable
             , typeArguments = []
@@ -118,8 +116,7 @@ unresolvedIndirectSortMap identifier name =
 unresolvedIndirectSort :: AST.Encodable -> AST.UnresolvedSort
 unresolvedIndirectSort name =
     AST.Sort
-        { smtFromSortArgs = const $ const $ Just
-            $ AST.Atom (AST.encode name)
+        { smtFromSortArgs = const $ const $ Just $ AST.encode name
         , declaration = AST.SortDeclaredIndirectly name
         }
 
@@ -137,8 +134,7 @@ unresolvedConstructorSymbol
     :: Kore.Id -> Kore.Sort -> [Kore.Sort] -> AST.UnresolvedSymbol
 unresolvedConstructorSymbol identifier resultSort argumentSorts =
     AST.Symbol
-        { smtFromSortArgs = const $ const $ Just
-            $ AST.Atom (AST.encode encodable)
+        { smtFromSortArgs = const $ const $ Just $ AST.encode encodable
         , declaration = AST.SymbolConstructor
             AST.IndirectSymbolDeclaration
                 { name = encodable
@@ -169,7 +165,7 @@ unresolvedSmtlibSymbol encodedName inputSorts resultSort =
             $ AST.Atom encodedName
         , declaration = AST.SymbolDeclaredDirectly
             AST.FunctionDeclaration
-                { name = AST.AlreadyEncoded encodedName
+                { name = AST.AlreadyEncoded (AST.Atom encodedName)
                 , inputSorts = map AST.SortReference inputSorts
                 , resultSort = AST.SortReference resultSort
                 }
@@ -192,7 +188,7 @@ unresolvedSmthookSymbol encodedName resultSort argumentSorts =
             $ AST.Atom encodedName
         , declaration = AST.SymbolBuiltin
             AST.IndirectSymbolDeclaration
-                { name = AST.AlreadyEncoded encodedName
+                { name = AST.AlreadyEncoded (AST.Atom encodedName)
                 , resultSort = AST.SortReference resultSort
                 , argumentSorts = map AST.SortReference argumentSorts
                 }

@@ -30,7 +30,6 @@ module SMT.SimpleSMT
     -- ** S-Expressions
     , SExpr(..)
     , showSExpr, readSExprs
-    , nameFromSExpr
 
     -- * Common SMT-LIB 2 Commands
     , Constructor (..)
@@ -285,7 +284,6 @@ newSolver exe opts logger = do
             debug (Solver solverHandle logger) errs
 
     setOption solver ":print-success" "true"
-    setOption solver ":produce-models" "true"
     Monad.when featureProduceAssertions
         $ setOption solver ":produce-assertions" "true"
 
@@ -456,7 +454,7 @@ inNewScope s m = do
 
 -- | Declare a constant.  A common abbreviation for 'declareFun'.
 -- For convenience, returns an the declared name as a constant expression.
-declare :: Solver -> Text -> SExpr -> IO SExpr
+declare :: Solver -> SExpr -> SExpr -> IO SExpr
 declare proc f t = declareFun proc (FunctionDeclaration f [] t)
 
 -- | Declare a function or a constant.
@@ -464,8 +462,8 @@ declare proc f t = declareFun proc (FunctionDeclaration f [] t)
 declareFun :: Solver -> SmtFunctionDeclaration -> IO SExpr
 declareFun proc FunctionDeclaration {name, inputSorts, resultSort} = do
     ackCommand proc
-        $ fun "declare-fun" [ Atom name, List inputSorts, resultSort ]
-    return (const name)
+        $ fun "declare-fun" [ name, List inputSorts, resultSort ]
+    pure name
 
 declareSort :: Solver -> SmtSortDeclaration -> IO SExpr
 declareSort
@@ -473,8 +471,8 @@ declareSort
     SortDeclaration {name, arity}
   = do
     ackCommand proc
-        $ fun "declare-sort" [ Atom name, (Atom . Text.pack . show) arity ]
-    pure (const name)
+        $ fun "declare-sort" [ name, (Atom . Text.pack . show) arity ]
+    pure name
 
 -- | Declare a set of ADTs
 declareDatatypes
@@ -504,7 +502,7 @@ declareDatatypes proc datatypes = do
         DataTypeDeclaration { name, typeArguments = [] }
         constructors
       =
-        mapM_ (declareConstructor (Atom name)) constructors
+        mapM_ (declareConstructor name) constructors
     declareConstructors declaration constructors = (error . unlines)
         [ "Not implemented."
         , "declaration = " ++ show declaration
@@ -512,11 +510,11 @@ declareDatatypes proc datatypes = do
         ]
 
     declareConstructor :: SExpr -> SmtConstructor -> IO SExpr
-    declareConstructor sort Constructor {name, arguments} =
+    declareConstructor sort Constructor {name = symbol, arguments} =
         declareFun
             proc
             FunctionDeclaration
-                { name
+                { name = Atom symbol
                 , inputSorts = map argType arguments
                 , resultSort = sort
                 }
@@ -529,7 +527,7 @@ declareDatatypes proc datatypes = do
         forallQ
             -- TODO(virgil): make sure that "x" is not used in any constructors
             -- or sorts.
-            [List [Atom "x", Atom name]]
+            [List [Atom "x", name]]
             (orMany (map (builtWithConstructor "x") constructors))
     noJunkAxiom declaration constructors = (error . unlines)
         [ "Not implemented."
@@ -552,7 +550,7 @@ declareDatatypes proc datatypes = do
             (eq (Atom variable) (fun name (map mkArg arguments)))
       where
         mkArg :: SmtConstructorArgument -> SExpr
-        mkArg ConstructorArgument {name = argName} = Atom argName
+        mkArg ConstructorArgument {name = argName} = argName
         mkQuantifier :: SmtConstructorArgument -> SExpr
         mkQuantifier c@ConstructorArgument {argType} =
             List [mkArg c, argType]
@@ -643,10 +641,7 @@ check solver = do
                 asserts <- command solver (List [Atom "get-assertions"])
                 warn solver (buildText asserts)
             return Unknown
-        Atom "sat"     -> do
-            model <- command solver (List [Atom "get-model"])
-            debug solver (buildText model)
-            return Sat
+        Atom "sat"     -> return Sat
         _ -> fail $ unlines
             [ "Unexpected result from the SMT solver:"
             , "  Expected: unsat, unknown, or sat"

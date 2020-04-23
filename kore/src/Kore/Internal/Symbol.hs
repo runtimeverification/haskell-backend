@@ -44,6 +44,7 @@ import Data.Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
@@ -122,6 +123,9 @@ instance Synthetic Sort (Application Symbol) where
 instance SQL.Column Symbol where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+
+instance AstWithLocation Symbol where
+    locationFromAst = locationFromAst . symbolConstructor
 
 toSymbolOrAlias :: Symbol -> SymbolOrAlias
 toSymbolOrAlias symbol =

@@ -11,6 +11,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 
 import qualified Branch
+import qualified Kore.Equation as Equation
 import Kore.Internal.Condition
     ( Condition
     )
@@ -34,10 +35,6 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
-import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    , equalityPattern
-    )
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
     ( Env (..)
@@ -414,7 +411,8 @@ normalizeExcept predicated =
         Map.fromList
             [   ( Axiom.Identifier.Application Mock.functional10Id
                 , EvaluationStrategy.definitionEvaluation
-                    [ EqualityRule $ equalityPattern
+                    [ Equation.mkEquation
+                        (mkSortVariable "R")
                         (Mock.functional10 (mkElemVar Mock.x))
                         (mkElemVar Mock.x)
                     ]

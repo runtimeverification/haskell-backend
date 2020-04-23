@@ -25,6 +25,9 @@ module Kore.Internal.TermLike.TermLike
 import Prelude.Kore
 
 import Control.Comonad.Trans.Cofree
+    ( CofreeT (..)
+    , tailF
+    )
 import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
     ( NFData (..)
@@ -65,6 +68,7 @@ import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
 import Generically
+import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.ConstructorLike
     ( HasConstructorLike (extractConstructorLike)
@@ -508,6 +512,59 @@ instance
 
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
+
+instance
+    ( AstWithLocation variable
+    , AstWithLocation child
+    ) =>
+    AstWithLocation (TermLikeF variable child)
+  where
+    locationFromAst =
+        \case
+            AndF And { andSort } -> locationFromAst andSort
+            ApplySymbolF Application { applicationSymbolOrAlias } ->
+                locationFromAst applicationSymbolOrAlias
+            ApplyAliasF Application { applicationSymbolOrAlias } ->
+                locationFromAst applicationSymbolOrAlias
+            BottomF Bottom { bottomSort } -> locationFromAst bottomSort
+            CeilF Ceil { ceilResultSort } -> locationFromAst ceilResultSort
+            DomainValueF domain -> locationFromAst $ domainValueSort domain
+            EqualsF Equals { equalsResultSort } ->
+                locationFromAst equalsResultSort
+            ExistsF Exists { existsSort } -> locationFromAst existsSort
+            FloorF Floor { floorResultSort } ->
+                locationFromAst floorResultSort
+            ForallF Forall { forallSort } -> locationFromAst forallSort
+            IffF Iff { iffSort } -> locationFromAst iffSort
+            ImpliesF Implies { impliesSort } ->
+                locationFromAst impliesSort
+            InF In { inResultSort } ->
+                locationFromAst inResultSort
+            MuF Mu { muVariable = SetVariable variable } ->
+                locationFromAst variable
+            NextF Next { nextSort } -> locationFromAst nextSort
+            NotF Not { notSort } -> locationFromAst notSort
+            NuF Nu { nuVariable = SetVariable variable } ->
+                locationFromAst variable
+            OrF Or { orSort } -> locationFromAst orSort
+            RewritesF Rewrites { rewritesSort } ->
+                locationFromAst rewritesSort
+            StringLiteralF _ -> AstLocationUnknown
+            TopF Top { topSort } -> locationFromAst topSort
+            VariableF (Const variable) -> locationFromAst variable
+            InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort
+            EvaluatedF Evaluated { getEvaluated } ->
+                locationFromAst getEvaluated
+            InjF Inj { injChild } -> locationFromAst injChild
+            SignednessF (Const signedness) -> locationFromAst signedness
+            EndiannessF (Const endianness) -> locationFromAst endianness
+            InternalBytesF (Const InternalBytes { bytesSort }) ->
+                locationFromAst bytesSort
+            BuiltinF builtin -> locationFromAst (Domain.builtinSort builtin)
+
+instance AstWithLocation variable => AstWithLocation (TermLike variable)
+  where
+    locationFromAst = locationFromAst . tailF . Recursive.project
 
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
 

@@ -18,6 +18,7 @@ import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -92,6 +93,9 @@ instance Synthetic Sort (Application (Alias patternType)) where
         Alias { aliasSorts } = alias
         resultSort = applicationSortsResult aliasSorts
         operandSorts = applicationSortsOperands aliasSorts
+
+instance AstWithLocation (Alias patternType) where
+    locationFromAst = locationFromAst . aliasConstructor
 
 toSymbolOrAlias :: Alias patternType -> SymbolOrAlias
 toSymbolOrAlias alias =

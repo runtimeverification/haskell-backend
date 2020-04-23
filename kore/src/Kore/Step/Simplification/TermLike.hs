@@ -11,9 +11,6 @@ module Kore.Step.Simplification.TermLike
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
-    ( CofreeF ((:<))
-    )
 import qualified Control.Lens.Combinators as Lens
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive

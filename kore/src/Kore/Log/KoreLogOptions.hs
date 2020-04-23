@@ -12,6 +12,12 @@ module Kore.Log.KoreLogOptions
     , TimestampsSwitch (..)
     , WarningSwitch (..)
     , parseKoreLogOptions
+    , DebugApplyEquationOptions (..)
+    , selectDebugApplyEquation
+    , DebugAttemptEquationOptions (..)
+    , selectDebugAttemptEquation
+    , DebugEquationOptions (..)
+    , selectDebugEquation
     ) where
 
 import Prelude.Kore
@@ -20,10 +26,17 @@ import Data.Default
 import Data.Functor
     ( void
     )
+import Data.HashSet
+    ( HashSet
+    )
+import qualified Data.HashSet as HashSet
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Options.Applicative
@@ -38,11 +51,11 @@ import Type.Reflection
     ( SomeTypeRep (..)
     )
 
-import Kore.Log.DebugAppliedRule
-import Kore.Log.DebugAxiomEvaluation
-    ( DebugAxiomEvaluationOptions
-    , parseDebugAxiomEvaluationOptions
+import Kore.Equation
+    ( DebugApplyEquation (..)
+    , DebugAttemptEquation (..)
     )
+import qualified Kore.Equation as Equation
 import Kore.Log.DebugSolver
     ( DebugSolverOptions
     , parseDebugSolverOptions
@@ -60,20 +73,21 @@ import Log
 {- | Command line options for logging.
  -}
 data KoreLogOptions = KoreLogOptions
-    { logType   :: KoreLogType
+    { logType   :: !KoreLogType
     -- ^ desired output method, see 'KoreLogType'
-    , logLevel  :: Severity
+    , logLevel  :: !Severity
     -- ^ minimal log level, passed via "--log-level"
-    , timestampsSwitch :: TimestampsSwitch
+    , timestampsSwitch :: !TimestampsSwitch
     -- ^ enable or disable timestamps
-    , logEntries :: EntryTypes
+    , logEntries :: !EntryTypes
     -- ^ extra entries to show, ignoring 'logLevel'
-    , debugAppliedRuleOptions :: DebugAppliedRuleOptions
-    , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
-    , debugSolverOptions :: DebugSolverOptions
-    , exeName :: ExeName
-    , logSQLiteOptions :: LogSQLiteOptions
-    , warningSwitch :: WarningSwitch
+    , debugSolverOptions :: !DebugSolverOptions
+    , exeName :: !ExeName
+    , logSQLiteOptions :: !LogSQLiteOptions
+    , warningSwitch :: !WarningSwitch
+    , debugApplyEquationOptions :: !DebugApplyEquationOptions
+    , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
+    , debugEquationOptions :: !DebugEquationOptions
     }
     deriving (Eq, Show)
 
@@ -84,12 +98,13 @@ instance Default KoreLogOptions where
             , logLevel = Warning
             , timestampsSwitch = def @TimestampsSwitch
             , logEntries = mempty
-            , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
-            , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
             , debugSolverOptions = def @DebugSolverOptions
             , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
             , warningSwitch = def @WarningSwitch
+            , debugApplyEquationOptions = def @DebugApplyEquationOptions
+            , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
+            , debugEquationOptions = def @DebugEquationOptions
             }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -147,12 +162,13 @@ parseKoreLogOptions exeName =
     <*> (parseSeverity <|> pure Warning)
     <*> (parseTimestampsSwitch <|> pure TimestampsEnable)
     <*> (mconcat <$> many parseEntryTypes)
-    <*> parseDebugAppliedRuleOptions
-    <*> parseDebugAxiomEvaluationOptions
     <*> parseDebugSolverOptions
     <*> pure exeName
     <*> parseLogSQLiteOptions
     <*> parseWarningSwitch
+    <*> parseDebugApplyEquationOptions
+    <*> parseDebugAttemptEquationOptions
+    <*> parseDebugEquationOptions
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -224,3 +240,126 @@ data WarningSwitch = AsWarning | AsError
 
 instance Default WarningSwitch where
     def = AsWarning
+
+newtype DebugApplyEquationOptions =
+    DebugApplyEquationOptions { selected :: HashSet Text }
+    deriving (Eq, Show)
+    deriving (Semigroup, Monoid)
+
+instance Default DebugApplyEquationOptions where
+    def = DebugApplyEquationOptions HashSet.empty
+
+parseDebugApplyEquationOptions :: Parser DebugApplyEquationOptions
+parseDebugApplyEquationOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugApplyEquationOptions . HashSet.singleton . Text.pack)
+        $ Options.strOption
+        $ mconcat
+            [ Options.metavar "EQUATION_IDENTIFIER"
+            , Options.long "debug-apply-equation"
+            , Options.help
+                "Log every applied equation that matches EQUATION_IDENTIFIER, \
+                \which may be the name of a symbol or a rule. \
+                \The name of a symbol may be a Kore identifier or a K label, \
+                \which will match any equation where the named symbol \
+                \occurs on the left-hand side. \
+                \The name of a rule is given with the K module name \
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+            ]
+
+selectDebugApplyEquation
+    :: DebugApplyEquationOptions
+    -> ActualEntry
+    -> Bool
+selectDebugApplyEquation options ActualEntry { actualEntry }
+  | Just (DebugApplyEquation equation _) <- fromEntry actualEntry =
+    any (flip HashSet.member selected) (Equation.identifiers equation)
+  | otherwise = False
+  where
+    DebugApplyEquationOptions { selected } = options
+
+newtype DebugAttemptEquationOptions =
+    DebugAttemptEquationOptions { selected :: HashSet Text }
+    deriving (Eq, Show)
+    deriving (Semigroup, Monoid)
+
+instance Default DebugAttemptEquationOptions where
+    def = DebugAttemptEquationOptions HashSet.empty
+
+parseDebugAttemptEquationOptions :: Parser DebugAttemptEquationOptions
+parseDebugAttemptEquationOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugAttemptEquationOptions . HashSet.singleton . Text.pack)
+        $ Options.strOption
+        $ mconcat
+            [ Options.metavar "EQUATION_IDENTIFIER"
+            , Options.long "debug-attempt-equation"
+            , Options.help
+                "Log every attempt to apply an equation \
+                \that matches EQUATION_IDENTIFIER, \
+                \which may be the name of a symbol or a rule. \
+                \The name of a symbol may be a Kore identifier or a K label, \
+                \which will match any equation where the named symbol \
+                \occurs on the left-hand side. \
+                \The name of a rule is given with the K module name \
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+            ]
+
+selectDebugAttemptEquation
+    :: DebugAttemptEquationOptions
+    -> ActualEntry
+    -> Bool
+selectDebugAttemptEquation options ActualEntry { actualEntry }
+  | Just equation <- getEquation =
+    any (flip HashSet.member selected) (Equation.identifiers equation)
+  | otherwise = False
+  where
+    getEquation = do
+        debugAttemptEquation <- fromEntry actualEntry
+        case debugAttemptEquation of
+            DebugAttemptEquation equation _ -> pure equation
+            DebugAttemptEquationResult equation _ -> pure equation
+    DebugAttemptEquationOptions { selected } = options
+
+newtype DebugEquationOptions =
+    DebugEquationOptions { selected :: HashSet Text }
+    deriving (Eq, Show)
+    deriving (Semigroup, Monoid)
+
+instance Default DebugEquationOptions where
+    def = DebugEquationOptions HashSet.empty
+
+parseDebugEquationOptions :: Parser DebugEquationOptions
+parseDebugEquationOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugEquationOptions . HashSet.singleton . Text.pack)
+        $ Options.strOption
+        $ mconcat
+            [ Options.metavar "EQUATION_IDENTIFIER"
+            , Options.long "debug-equation"
+            , Options.help
+                "Log every attempt to apply or successful application of \
+                \an equation that matches EQUATION_IDENTIFIER, \
+                \which may be the name of a symbol or a rule. \
+                \The name of a symbol may be a Kore identifier or a K label, \
+                \which will match any equation where the named symbol \
+                \occurs on the left-hand side. \
+                \The name of a rule is given with the K module name \
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+            ]
+
+selectDebugEquation
+    :: DebugEquationOptions
+    -> ActualEntry
+    -> Bool
+selectDebugEquation DebugEquationOptions { selected } =
+    (fmap or . sequence)
+    [ selectDebugApplyEquation DebugApplyEquationOptions { selected }
+    , selectDebugAttemptEquation DebugAttemptEquationOptions { selected }
+    ]

@@ -12,6 +12,7 @@ module Kore.Equation.Equation
     , isSimplificationRule
     , equationPriority
     , substitute
+    , identifiers
     ) where
 
 import Prelude.Kore
@@ -20,29 +21,37 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
-    ( Symbol
+    ( Symbol (..)
     )
 import Kore.Internal.TermLike
     ( ElementVariable
+    , Id (..)
     , InternalVariable
     , SetVariable
     , Sort
@@ -53,6 +62,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Step
     ( Renaming
+    )
+import Kore.Syntax.Application
+    ( Application (..)
     )
 import Kore.TopBottom
 import Kore.Unparser
@@ -179,6 +191,9 @@ instance
             <> freeVariables right
             <> freeVariables ensures
 
+instance AstWithLocation variable => AstWithLocation (Equation variable) where
+    locationFromAst = locationFromAst . left
+
 mapVariables
     :: (Ord variable1, InternalVariable variable2)
     => (ElementVariable variable1 -> ElementVariable variable2)
@@ -262,3 +277,32 @@ substitute assignments equation =
         }
   where
     Equation { requires, left, right, ensures, attributes } = equation
+
+{- | The list of identifiers for an 'Equation'.
+
+The identifiers are:
+
+* the rule label
+* symbol names on the left-hand side
+* symbol 'Klabel's on the left-hand side
+
+ -}
+identifiers :: Equation variable -> [Text]
+identifiers Equation { left, attributes } =
+    rule <> symbols
+  where
+    symbols =
+        flip Recursive.fold left $ \case
+            _ :< TermLike.ApplySymbolF application ->
+                applySymbolIdentifiers application <> Foldable.fold application
+            termLikeF -> Foldable.fold termLikeF
+    rule = maybe [] pure $ Attribute.unLabel $ Attribute.label attributes
+
+    applySymbolIdentifiers application =
+        catMaybes [symbolName, symbolKlabel]
+      where
+        Application { applicationSymbolOrAlias = symbol } = application
+        symbolName = Just . getId $ symbolConstructor symbol
+        symbolKlabel =
+            (Attribute.Symbol.getKlabel . Attribute.Symbol.klabel)
+            (symbolAttributes symbol)
