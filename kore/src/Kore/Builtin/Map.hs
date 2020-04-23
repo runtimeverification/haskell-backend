@@ -248,95 +248,74 @@ returnConcreteMap
     -> m (Pattern variable)
 returnConcreteMap = Ac.returnConcreteAc
 
-evalLookup :: BuiltinAndAxiomSimplifier
-evalLookup =
-    Builtin.functionEvaluator evalLookup0
-  where
-    evalLookup0 :: Builtin.Function
-    evalLookup0 resultSort [_map, _key] = do
-        let emptyMap = do
-                _map <- expectConcreteBuiltinMap Map.lookupKey _map
-                if Map.null _map
-                    then return (Pattern.bottomOf resultSort)
-                    else empty
-            bothConcrete = do
-                _key <- hoistMaybe $ Builtin.toKey _key
-                _map <- expectConcreteBuiltinMap Map.lookupKey _map
-                (return . maybeBottom)
-                    (Domain.getMapValue <$> Map.lookup _key _map)
-        emptyMap <|> bothConcrete
-      where
-        maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
-    evalLookup0 _ _ = Builtin.wrongArity Map.lookupKey
+evalLookup :: Builtin.Function
+evalLookup resultSort [_map, _key] = do
+    let emptyMap = do
+            _map <- expectConcreteBuiltinMap Map.lookupKey _map
+            if Map.null _map
+                then return (Pattern.bottomOf resultSort)
+                else empty
+        bothConcrete = do
+            _key <- hoistMaybe $ Builtin.toKey _key
+            _map <- expectConcreteBuiltinMap Map.lookupKey _map
+            (return . maybeBottom)
+                (Domain.getMapValue <$> Map.lookup _key _map)
+    emptyMap <|> bothConcrete
+    where
+    maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
+evalLookup _ _ = Builtin.wrongArity Map.lookupKey
 
-evalLookupOrDefault :: BuiltinAndAxiomSimplifier
-evalLookupOrDefault =
-    Builtin.functionEvaluator evalLookupOrDefault0
-  where
-    evalLookupOrDefault0 :: Builtin.Function
-    evalLookupOrDefault0 _ [_map, _key, _def] = do
-        _key <- hoistMaybe $ Builtin.toKey _key
-        _map <- expectConcreteBuiltinMap Map.lookupKey _map
-        Map.lookup _key _map
-            & maybe _def Domain.getMapValue
-            & Pattern.fromTermLike
-            & return
-    evalLookupOrDefault0 _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
+evalLookupOrDefault :: Builtin.Function
+evalLookupOrDefault _ [_map, _key, _def] = do
+    _key <- hoistMaybe $ Builtin.toKey _key
+    _map <- expectConcreteBuiltinMap Map.lookupKey _map
+    Map.lookup _key _map
+        & maybe _def Domain.getMapValue
+        & Pattern.fromTermLike
+        & return
+evalLookupOrDefault _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
 
 -- | evaluates the map element builtin.
-evalElement :: BuiltinAndAxiomSimplifier
-evalElement =
-    Builtin.functionEvaluator evalElement0
-  where
-    evalElement0 resultSort [_key, _value] =
-        case Builtin.toKey _key of
-            Just concrete ->
-                Map.singleton concrete (Domain.MapValue _value)
-                & returnConcreteMap resultSort
-                & TermLike.assertConstructorLikeKeys [_key]
-            Nothing ->
-                (Ac.returnAc resultSort . Domain.wrapAc)
-                Domain.NormalizedAc
-                    { elementsWithVariables =
-                        [Domain.MapElement (_key, _value)]
-                    , concreteElements = Map.empty
-                    , opaque = []
-                    }
-    evalElement0 _ _ = Builtin.wrongArity Map.elementKey
+evalElement :: Builtin.Function
+evalElement resultSort [_key, _value] =
+    case Builtin.toKey _key of
+        Just concrete ->
+            Map.singleton concrete (Domain.MapValue _value)
+            & returnConcreteMap resultSort
+            & TermLike.assertConstructorLikeKeys [_key]
+        Nothing ->
+            (Ac.returnAc resultSort . Domain.wrapAc)
+            Domain.NormalizedAc
+                { elementsWithVariables =
+                    [Domain.MapElement (_key, _value)]
+                , concreteElements = Map.empty
+                , opaque = []
+                }
+evalElement _ _ = Builtin.wrongArity Map.elementKey
 
 -- | evaluates the map concat builtin.
-evalConcat :: BuiltinAndAxiomSimplifier
-evalConcat =
-    Builtin.functionEvaluator evalConcat0
-  where
-    evalConcat0 :: Builtin.Function
-    evalConcat0 resultSort [map1, map2] =
-        Ac.evalConcatNormalizedOrBottom @Domain.NormalizedMap
-            resultSort
-            (Ac.toNormalized map1)
-            (Ac.toNormalized map2)
-    evalConcat0 _ _ = Builtin.wrongArity Map.concatKey
+evalConcat :: Builtin.Function
+evalConcat resultSort [map1, map2] =
+    Ac.evalConcatNormalizedOrBottom @Domain.NormalizedMap
+        resultSort
+        (Ac.toNormalized map1)
+        (Ac.toNormalized map2)
+evalConcat _ _ = Builtin.wrongArity Map.concatKey
 
-evalUnit :: BuiltinAndAxiomSimplifier
-evalUnit =
-    Builtin.functionEvaluator evalUnit0
-  where
-    evalUnit0 resultSort =
-        \case
-            [] -> returnConcreteMap resultSort Map.empty
-            _ -> Builtin.wrongArity Map.unitKey
+evalUnit :: Builtin.Function
+evalUnit resultSort =
+    \case
+        [] -> returnConcreteMap resultSort Map.empty
+        _ -> Builtin.wrongArity Map.unitKey
 
-evalUpdate :: BuiltinAndAxiomSimplifier
-evalUpdate =
-    Builtin.functionEvaluator evalUpdate0
-  where
-    evalUpdate0 resultSort [_map, _key, value] = do
-        _key <- hoistMaybe $ Builtin.toKey _key
-        _map <- expectConcreteBuiltinMap Map.updateKey _map
-        Map.insert _key (Domain.MapValue value) _map
-            & returnConcreteMap resultSort
-            & TermLike.assertConstructorLikeKeys (_key : Map.keys _map)
-    evalUpdate0 _ _ = Builtin.wrongArity Map.updateKey
+evalUpdate :: Builtin.Function
+evalUpdate resultSort [_map, _key, value] = do
+    _key <- hoistMaybe $ Builtin.toKey _key
+    _map <- expectConcreteBuiltinMap Map.updateKey _map
+    Map.insert _key (Domain.MapValue value) _map
+        & returnConcreteMap resultSort
+        & TermLike.assertConstructorLikeKeys (_key : Map.keys _map)
+evalUpdate _ _ = Builtin.wrongArity Map.updateKey
 
 evalInKeys :: Builtin.Function
 evalInKeys resultSort [_key, _map] = do
@@ -347,124 +326,99 @@ evalInKeys resultSort [_key, _map] = do
         & return
 evalInKeys _ _ = Builtin.wrongArity Map.in_keysKey
 
-evalInclusion :: BuiltinAndAxiomSimplifier
-evalInclusion =
-    Builtin.functionEvaluator evalInclusion0
-  where
-    evalInclusion0 resultSort [_mapLeft, _mapRight] = do
-        _mapLeft <- expectConcreteBuiltinMap Map.inclusionKey _mapLeft
-        _mapRight <- expectConcreteBuiltinMap Map.inclusionKey _mapRight
-        Map.isSubmapOf _mapLeft _mapRight
-            & Bool.asPattern resultSort
-            & return
-    evalInclusion0 _ _ = Builtin.wrongArity Map.inclusionKey
+evalInclusion :: Builtin.Function
+evalInclusion resultSort [_mapLeft, _mapRight] = do
+    _mapLeft <- expectConcreteBuiltinMap Map.inclusionKey _mapLeft
+    _mapRight <- expectConcreteBuiltinMap Map.inclusionKey _mapRight
+    Map.isSubmapOf _mapLeft _mapRight
+        & Bool.asPattern resultSort
+        & return
+evalInclusion _ _ = Builtin.wrongArity Map.inclusionKey
 
-evalKeys :: BuiltinAndAxiomSimplifier
-evalKeys =
-    Builtin.functionEvaluator evalKeys0
-  where
-    evalKeys0 resultSort [_map] = do
-        _map <- expectConcreteBuiltinMap Map.keysKey _map
-        fmap (const Domain.SetValue) _map
-            & Builtin.Set.returnConcreteSet resultSort
-    evalKeys0 _ _ = Builtin.wrongArity Map.keysKey
+evalKeys :: Builtin.Function
+evalKeys resultSort [_map] = do
+    _map <- expectConcreteBuiltinMap Map.keysKey _map
+    fmap (const Domain.SetValue) _map
+        & Builtin.Set.returnConcreteSet resultSort
+evalKeys _ _ = Builtin.wrongArity Map.keysKey
 
-evalKeysList :: BuiltinAndAxiomSimplifier
-evalKeysList =
-    Builtin.functionEvaluator evalKeysList0
-  where
-    evalKeysList0 :: Builtin.Function
-    evalKeysList0 resultSort [_map] = do
-        _map <- expectConcreteBuiltinMap Map.keys_listKey _map
-        Map.keys _map
-            & fmap TermLike.fromConcrete
-            & Seq.fromList
-            & Builtin.List.returnList resultSort
-    evalKeysList0 _ _ = Builtin.wrongArity Map.keys_listKey
+evalKeysList :: Builtin.Function
+evalKeysList resultSort [_map] = do
+    _map <- expectConcreteBuiltinMap Map.keys_listKey _map
+    Map.keys _map
+        & fmap TermLike.fromConcrete
+        & Seq.fromList
+        & Builtin.List.returnList resultSort
+evalKeysList _ _ = Builtin.wrongArity Map.keys_listKey
 
-evalRemove :: BuiltinAndAxiomSimplifier
-evalRemove =
-    Builtin.functionEvaluator evalRemove0
-  where
-    evalRemove0 :: Builtin.Function
-    evalRemove0 resultSort [_map, _key] = do
-        let emptyMap = do
-                _map <- expectConcreteBuiltinMap Map.removeKey _map
-                if Map.null _map
-                    then returnConcreteMap resultSort Map.empty
-                    else empty
-            bothConcrete = do
-                _map <- expectConcreteBuiltinMap Map.removeKey _map
-                _key <- hoistMaybe $ Builtin.toKey _key
-                returnConcreteMap resultSort $ Map.delete _key _map
-        emptyMap <|> bothConcrete
-    evalRemove0 _ _ = Builtin.wrongArity Map.removeKey
+evalRemove :: Builtin.Function
+evalRemove resultSort [_map, _key] = do
+    let emptyMap = do
+            _map <- expectConcreteBuiltinMap Map.removeKey _map
+            if Map.null _map
+                then returnConcreteMap resultSort Map.empty
+                else empty
+        bothConcrete = do
+            _map <- expectConcreteBuiltinMap Map.removeKey _map
+            _key <- hoistMaybe $ Builtin.toKey _key
+            returnConcreteMap resultSort $ Map.delete _key _map
+    emptyMap <|> bothConcrete
+evalRemove _ _ = Builtin.wrongArity Map.removeKey
 
-evalRemoveAll :: BuiltinAndAxiomSimplifier
-evalRemoveAll =
-    Builtin.functionEvaluator evalRemoveAll0
-  where
-    evalRemoveAll0 :: Builtin.Function
-    evalRemoveAll0 resultSort [_map, _set] = do
-        let emptyMap = do
-                _map <- expectConcreteBuiltinMap Map.removeAllKey _map
-                if Map.null _map
-                    then returnConcreteMap resultSort Map.empty
-                    else empty
-            bothConcrete = do
-                _map <- expectConcreteBuiltinMap Map.removeAllKey _map
-                _set <-
-                    Builtin.Set.expectConcreteBuiltinSet
-                        Map.removeAllKey
-                        _set
-                Map.difference _map _set
-                    & returnConcreteMap resultSort
-        emptyMap <|> bothConcrete
-    evalRemoveAll0 _ _ = Builtin.wrongArity Map.removeAllKey
+evalRemoveAll :: Builtin.Function
+evalRemoveAll resultSort [_map, _set] = do
+    let emptyMap = do
+            _map <- expectConcreteBuiltinMap Map.removeAllKey _map
+            if Map.null _map
+                then returnConcreteMap resultSort Map.empty
+                else empty
+        bothConcrete = do
+            _map <- expectConcreteBuiltinMap Map.removeAllKey _map
+            _set <-
+                Builtin.Set.expectConcreteBuiltinSet
+                    Map.removeAllKey
+                    _set
+            Map.difference _map _set
+                & returnConcreteMap resultSort
+    emptyMap <|> bothConcrete
+evalRemoveAll _ _ = Builtin.wrongArity Map.removeAllKey
 
-evalSize :: BuiltinAndAxiomSimplifier
-evalSize =
-    Builtin.functionEvaluator evalSize0
-  where
-    evalSize0 :: Builtin.Function
-    evalSize0 resultSort [_map] = do
-        _map <- expectConcreteBuiltinMap Map.sizeKey _map
-        (Map.size _map)
-            & toInteger
-            & Int.asPattern resultSort
-            & return
-    evalSize0 _ _ = Builtin.wrongArity Map.sizeKey
+evalSize :: Builtin.Function
+evalSize resultSort [_map] = do
+    _map <- expectConcreteBuiltinMap Map.sizeKey _map
+    (Map.size _map)
+        & toInteger
+        & Int.asPattern resultSort
+        & return
+evalSize _ _ = Builtin.wrongArity Map.sizeKey
 
-evalValues :: BuiltinAndAxiomSimplifier
-evalValues =
-    Builtin.functionEvaluator evalValues0
-  where
-    evalValues0 resultSort [_map] = do
-        _map <- expectConcreteBuiltinMap Map.valuesKey _map
-        fmap Domain.getMapValue (Map.elems _map)
-            & Seq.fromList
-            & Builtin.List.returnList resultSort
-    evalValues0 _ _ = Builtin.wrongArity Map.valuesKey
+evalValues :: Builtin.Function
+evalValues resultSort [_map] = do
+    _map <- expectConcreteBuiltinMap Map.valuesKey _map
+    fmap Domain.getMapValue (Map.elems _map)
+        & Seq.fromList
+        & Builtin.List.returnList resultSort
+evalValues _ _ = Builtin.wrongArity Map.valuesKey
 
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
-        [ (Map.concatKey, evalConcat)
-        , (Map.lookupKey, evalLookup)
-        , (Map.lookupOrDefaultKey, evalLookupOrDefault)
-        , (Map.elementKey, evalElement)
-        , (Map.unitKey, evalUnit)
-        , (Map.updateKey, evalUpdate)
+        [ (Map.concatKey, Builtin.functionEvaluator evalConcat)
+        , (Map.lookupKey, Builtin.functionEvaluator evalLookup)
+        , (Map.lookupOrDefaultKey, Builtin.functionEvaluator evalLookupOrDefault)
+        , (Map.elementKey, Builtin.functionEvaluator evalElement)
+        , (Map.unitKey, Builtin.functionEvaluator evalUnit)
+        , (Map.updateKey, Builtin.functionEvaluator evalUpdate)
         , (Map.in_keysKey, Builtin.functionEvaluator evalInKeys)
-        , (Map.keysKey, evalKeys)
-        , (Map.keys_listKey, evalKeysList)
-        , (Map.removeKey, evalRemove)
-        , (Map.removeAllKey, evalRemoveAll)
-        , (Map.sizeKey, evalSize)
-        , (Map.valuesKey, evalValues)
-        , (Map.inclusionKey, evalInclusion)
+        , (Map.keysKey, Builtin.functionEvaluator evalKeys)
+        , (Map.keys_listKey, Builtin.functionEvaluator evalKeysList)
+        , (Map.removeKey, Builtin.functionEvaluator evalRemove)
+        , (Map.removeAllKey, Builtin.functionEvaluator evalRemoveAll)
+        , (Map.sizeKey, Builtin.functionEvaluator evalSize)
+        , (Map.valuesKey, Builtin.functionEvaluator evalValues)
+        , (Map.inclusionKey, Builtin.functionEvaluator evalInclusion)
         ]
 
 {- | Convert a Map-sorted 'TermLike' to its internal representation.
