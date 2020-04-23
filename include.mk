@@ -66,10 +66,6 @@ $(KORE_REPL):
 $(KORE_PARSER):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
 
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 $(K_RELEASE_DEFAULT)/lib/java/kernel-1.0-SNAPSHOT.jar:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_RELEASE_DEFAULT) $(K_RELEASE_TAR)
