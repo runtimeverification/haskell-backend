@@ -76,6 +76,9 @@ import Kore.Log.WarnDecidePredicateUnknown
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
+import Kore.Log.WarnSymbolSMTRepresentation
+    ( WarnSymbolSMTRepresentation
+    )
 import Log
     ( Entry
     , LogMessage
@@ -117,6 +120,7 @@ entryTypeReps =
     , someTypeRep $ Proxy @WarnBottomHook
     , someTypeRep $ Proxy @WarnDecidePredicateUnknown
     , someTypeRep $ Proxy @WarnFunctionWithoutEvaluators
+    , someTypeRep $ Proxy @WarnSymbolSMTRepresentation
     , someTypeRep $ Proxy @DebugEvaluateCondition
     , someTypeRep $ Proxy @ErrorException
     , someTypeRep $ Proxy @LogMessage

@@ -5,7 +5,7 @@ License     : NCSA
 -}
 
 module Kore.Log.WarnSymbolSMTRepresentation
-    ( WarnSymbolSMTRepresentation
+    ( WarnSymbolSMTRepresentation (..)
     , warnSymbolSMTRepresentation
     ) where
 
