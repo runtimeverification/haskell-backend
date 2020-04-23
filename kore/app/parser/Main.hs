@@ -43,7 +43,7 @@ import Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import Kore.Debug
 import Kore.Error
-    ( printError
+    ( printError,
     )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
@@ -60,6 +60,8 @@ import Kore.Parser
     )
 import Kore.Syntax.Definition
 import Kore.Unparser as Unparser
+
+import System.Exit
 
 import GlobalMain
 
@@ -199,5 +201,5 @@ mainVerify definition = flip runLoggerT Log.emptyLogger $ do
                 definition
             )
     case verifyResult of
-        Left err1            -> error (printError err1)
+        Left err1            -> liftIO $ die $ printError err1
         Right indexedModules -> return indexedModules
