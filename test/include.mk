@@ -22,6 +22,7 @@ DEF_KORE ?= $(DEF_KORE_DEFAULT)
 TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
 
 TESTS = \
+	$(wildcard $(DEF_DIR)/*.verify) \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
 	$(wildcard $(TEST_DIR)/*.merge) \
@@ -67,6 +68,10 @@ $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "krun" $<
 	rm -f $@
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ 2>/dev/null
+	$(DIFF) $@.golden $@ || $(FAILED)
+
+%.verify.out: $(DEF_KORE_DEFAULT)
+	$(KORE_PARSER) $(DEF_KORE_DEFAULT) --verify >/dev/null 2>$@ || /bin/true
 	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### SEARCH
