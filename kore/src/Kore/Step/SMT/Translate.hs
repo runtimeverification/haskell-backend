@@ -63,15 +63,15 @@ import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
+import Kore.Log.WarnSymbolSMTRepresentation
+    ( warnSymbolSMTRepresentation
+    )
 import Kore.Step.SMT.Resolvers
     ( translateSort
     , translateSymbol
     )
 import Log
     ( MonadLog (..)
-    )
-import Kore.Log.WarnSymbolSMTRepresentation
-    ( warnSymbolSMTRepresentation
     )
 import SMT
     ( SExpr (..)
