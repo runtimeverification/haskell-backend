@@ -43,8 +43,8 @@ import Kore.Unparser
 -}
 create
     :: MonadSimplify simplifier
-    => NotSimplifier (t simplifier) variable
-    -> SubstitutionSimplifier t simplifier
+    => NotSimplifier simplifier
+    -> SubstitutionSimplifier simplifier simplifier
     -> ConditionSimplifier simplifier
 create notSimplifier substitutionSimplifier =
     ConditionSimplifier $ simplify substitutionSimplifier notSimplifier
@@ -63,8 +63,8 @@ simplify
         , InternalVariable variable
         , MonadSimplify simplifier
         )
-    =>  SubstitutionSimplifier t simplifier
-    ->  NotSimplifier (t simplifier) variable
+    =>  SubstitutionSimplifier simplifier simplifier
+    ->  NotSimplifier simplifier
     ->  SideCondition variable
     ->  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
@@ -92,7 +92,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } notSimplifier sideCondi
 
     normalize
         ::  forall any'
-        .   NotSimplifier (t simplifier) variable
+        .   NotSimplifier simplifier
         ->  Conditional variable any'
         ->  BranchT simplifier (Conditional variable any')
     normalize notSimplifier conditional@Conditional { substitution } = do

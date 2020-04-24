@@ -15,10 +15,11 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 
-newtype NotSimplifier simplifier variable =
+newtype NotSimplifier simplifier =
     NotSimplifier
         { runNotSimplifier
-            :: SideCondition variable
+            :: forall variable
+            .  SideCondition variable
             -> OrPattern variable
             -> simplifier (OrPattern variable)
         }

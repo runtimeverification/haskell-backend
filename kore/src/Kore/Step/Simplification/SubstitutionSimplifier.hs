@@ -108,15 +108,15 @@ import Kore.Variables.UnifiedVariable
     , isSetVar
     )
 
-newtype SubstitutionSimplifier t simplifier =
+newtype SubstitutionSimplifier simplifier1 simplifier2 =
     SubstitutionSimplifier
         { simplifySubstitution
             :: forall variable
             .  InternalVariable variable
-            => NotSimplifier (t simplifier) variable
+            => NotSimplifier simplifier1
             -> SideCondition variable
             -> Substitution variable
-            -> simplifier (OrCondition variable)
+            -> simplifier2 (OrCondition variable)
         }
 
 {- | A 'SubstitutionSimplifier' to use during simplification.
@@ -129,14 +129,14 @@ substitution.
 substitutionSimplifier
     :: forall simplifier
     .  MonadSimplify simplifier
-    => SubstitutionSimplifier BranchT simplifier
+    => SubstitutionSimplifier (BranchT simplifier) simplifier
 substitutionSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper
         :: forall variable
         .  InternalVariable variable
-        => NotSimplifier (BranchT simplifier) variable
+        => NotSimplifier (BranchT simplifier)
         -> SideCondition variable
         -> Substitution variable
         -> simplifier (OrCondition variable)
@@ -167,7 +167,7 @@ newtype MakeAnd monad =
         { makeAnd
             :: forall variable
             .  InternalVariable variable
-            => NotSimplifier monad variable
+            => NotSimplifier monad
             -> TermLike variable
             -> TermLike variable
             -> SideCondition variable
@@ -193,7 +193,7 @@ simplifyAnds
     .   ( InternalVariable variable
         , Monad monad
         )
-    => NotSimplifier monad variable
+    => NotSimplifier monad
     -> MakeAnd monad
     -> NonEmpty (TermLike variable)
     -> monad (Pattern variable)
@@ -228,7 +228,7 @@ deduplicateSubstitution
     .   ( InternalVariable variable
         , Monad monad
         )
-    =>  NotSimplifier monad variable
+    =>  NotSimplifier monad
     ->  MakeAnd monad
     ->  Substitution variable
     ->  monad
@@ -289,7 +289,7 @@ simplifySubstitutionWorker
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
-    => NotSimplifier simplifier variable
+    => NotSimplifier simplifier
     -> SideCondition variable
     -> MakeAnd simplifier
     -> Substitution variable

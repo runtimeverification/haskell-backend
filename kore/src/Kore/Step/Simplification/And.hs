@@ -111,6 +111,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
     )
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.UnifierT
@@ -165,11 +166,12 @@ Also, we have
 -}
 simplify
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => NotSimplifier (BranchT simplifier)
+    -> SideCondition variable
     -> And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify sideCondition And { andFirst = first, andSecond = second } =
-    simplifyEvaluated sideCondition first second
+simplify notSimplifier sideCondition And { andFirst = first, andSecond = second } =
+    simplifyEvaluated notSimplifier sideCondition first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -190,11 +192,12 @@ to carry around.
 -}
 simplifyEvaluated
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => NotSimplifier (BranchT simplifier)
+    -> SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated sideCondition first second
+simplifyEvaluated notSimplifier sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
   | OrPattern.isTrue first   = return second
@@ -204,17 +207,18 @@ simplifyEvaluated sideCondition first second
         gather $ do
             first1 <- scatter first
             second1 <- scatter second
-            makeEvaluate sideCondition first1 second1
+            makeEvaluate notSimplifier sideCondition first1 second1
     return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => NotSimplifier (BranchT simplifier)
+    -> SideCondition variable
     -> [OrPattern variable]
     -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple _ [] = return OrPattern.top
-simplifyEvaluatedMultiple sideCondition (pat : patterns) =
-    foldM (simplifyEvaluated sideCondition) pat patterns
+simplifyEvaluatedMultiple _ _ [] = return OrPattern.top
+simplifyEvaluatedMultiple notSimplifier sideCondition (pat : patterns) =
+    foldM (simplifyEvaluated notSimplifier sideCondition) pat patterns
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
@@ -225,26 +229,29 @@ makeEvaluate
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => SideCondition variable
+    => NotSimplifier (BranchT simplifier)
+    -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluate sideCondition first second
+makeEvaluate notSimplifier sideCondition first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
-  | otherwise = makeEvaluateNonBool sideCondition first second
+  | otherwise = makeEvaluateNonBool notSimplifier sideCondition first second
 
 makeEvaluateNonBool
     ::  ( InternalVariable variable
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => SideCondition variable
+    => NotSimplifier (BranchT simplifier)
+    -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
 makeEvaluateNonBool
+    notSimplifier
     sideCondition
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
@@ -254,7 +261,7 @@ makeEvaluateNonBool
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
-    normalized <- Substitution.normalize sideCondition merged
+    normalized <- Substitution.normalize notSimplifier sideCondition merged
     let normalizedPredicates =
             applyAndIdempotenceAndFindContradictions
                 (Conditional.term normalized)
@@ -268,6 +275,7 @@ makeEvaluateNonBool
                 }
         Changed changed ->
             simplifyCondition
+                notSimplifier
                 sideCondition
                 normalized
                     { term = normalizedPredicates

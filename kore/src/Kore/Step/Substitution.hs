@@ -33,6 +33,7 @@ import Kore.Internal.SideCondition
 import Kore.Internal.Substitution
     ( Substitution
     )
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -43,12 +44,13 @@ import qualified Kore.Step.Simplification.SubstitutionSimplifier as Substitution
 normalize
     :: forall variable term simplifier
     .  (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => NotSimplifier (BranchT simplifier)
+    -> SideCondition variable
     -> Conditional variable term
     -> BranchT simplifier (Conditional variable term)
-normalize sideCondition conditional@Conditional { substitution } = do
+normalize notSimplifier sideCondition conditional@Conditional { substitution } = do
     results <- Monad.Trans.lift $
-        simplifySubstitution sideCondition substitution
+        simplifySubstitution notSimplifier sideCondition substitution
     scatter (applyTermPredicate <$> results)
   where
     applyTermPredicate =
@@ -67,12 +69,14 @@ mergePredicatesAndSubstitutions
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
-    => SideCondition variable
+    => NotSimplifier simplifier
+    -> SideCondition variable
     -> [Predicate variable]
     -> [Substitution variable]
     -> BranchT simplifier (Condition variable)
-mergePredicatesAndSubstitutions topCondition predicates substitutions =
+mergePredicatesAndSubstitutions notSimplifier topCondition predicates substitutions =
     simplifyCondition
+        notSimplifier
         topCondition
         Conditional
             { term = ()

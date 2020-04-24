@@ -116,7 +116,7 @@ termUnification
     .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => NotSimplifier unifier variable
+    => NotSimplifier unifier
     -> TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
@@ -144,7 +144,7 @@ maybeTermEquals
     :: InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => NotSimplifier unifier variable
+    => NotSimplifier unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -156,7 +156,7 @@ maybeTermAnd
     :: InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => NotSimplifier unifier variable
+    => NotSimplifier unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -169,7 +169,7 @@ andFunctions
     .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => NotSimplifier unifier variable
+    => NotSimplifier unifier
     -> [TermTransformationOld variable unifier]
 andFunctions f =
     map (forAnd . snd) (filter appliesToAnd (andEqualsFunctions f))
@@ -189,7 +189,7 @@ equalsFunctions
     .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => NotSimplifier unifier variable
+    => NotSimplifier unifier
     -> [TermTransformationOld variable unifier]
 equalsFunctions f =
     map (forEquals . snd) (filter appliesToEquals (andEqualsFunctions f))
@@ -209,7 +209,7 @@ andEqualsFunctions
     .  InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
-    => NotSimplifier unifier variable
+    => NotSimplifier unifier
     -> [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions f = fmap mapEqualsFunctions
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd f s), "expandAlias")

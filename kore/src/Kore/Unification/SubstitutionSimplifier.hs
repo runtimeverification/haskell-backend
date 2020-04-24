@@ -60,14 +60,14 @@ uses 'Unifier.throwUnificationError'.
 substitutionSimplifier
     :: forall unifier
     .  MonadUnify unifier
-    => SubstitutionSimplifier IdentityT unifier
+    => SubstitutionSimplifier unifier unifier
 substitutionSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper
         :: forall variable
         .  InternalVariable variable
-        => NotSimplifier (IdentityT unifier) variable
+        => NotSimplifier unifier
         -> SideCondition variable
         -> Substitution variable
         -> unifier (OrCondition variable)
@@ -75,7 +75,6 @@ substitutionSimplifier =
         (predicate, result) <-
             worker substitution
             & maybeT empty return
-            & runIdentityT
         let condition = Condition.fromNormalizationSimplified result
         let condition' = Condition.fromPredicate predicate <> condition
             conditions = OrCondition.fromCondition condition'
@@ -85,7 +84,7 @@ substitutionSimplifier =
         worker
             :: Substitution variable
             -> MaybeT
-                (IdentityT unifier)
+                unifier
                 (Predicate variable, Normalization variable)
         worker = simplifySubstitutionWorker notSimplifier sideCondition unificationMakeAnd
 
@@ -95,5 +94,5 @@ unificationMakeAnd =
   where
     makeAnd notSimplifier termLike1 termLike2 sideCondition = do
         unified <- termUnification notSimplifier termLike1 termLike2
-        Simplifier.simplifyCondition sideCondition unified
+        Simplifier.simplifyCondition notSimplifier sideCondition unified
             & BranchT.alternate

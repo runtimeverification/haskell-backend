@@ -108,6 +108,7 @@ import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier
     )
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
     ( OverloadSimplifier (..)
     )
@@ -154,7 +155,8 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
 
     simplifyCondition
         :: InternalVariable variable
-        => SideCondition variable
+        => NotSimplifier m2
+        -> SideCondition variable
         -> Conditional variable term
         -> BranchT m (Conditional variable term)
     default simplifyCondition
@@ -163,13 +165,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
             , MonadSimplify n
             , m ~ trans n
             )
-        =>  SideCondition variable
+        =>  NotSimplifier m2
+        ->  SideCondition variable
         ->  Conditional variable term
         ->  BranchT m (Conditional variable term)
-    simplifyCondition sideCondition conditional = do
+    simplifyCondition notSimplifier sideCondition conditional = do
         results <-
             lift . lift
-            $ Branch.gather $ simplifyCondition sideCondition conditional
+            $ Branch.gather $ simplifyCondition notSimplifier sideCondition conditional
         Branch.scatter results
     {-# INLINE simplifyCondition #-}
 

@@ -232,7 +232,7 @@ termKEquals
     .  InternalVariable variable
     => MonadUnify unifier
     => TermSimplifier variable unifier
-    -> NotSimplifier unifier variable
+    -> NotSimplifier unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
