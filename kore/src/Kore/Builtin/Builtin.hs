@@ -16,7 +16,6 @@ builtin modules.
  -}
 module Kore.Builtin.Builtin
     ( Function
-    , FunctionImplementation
       -- * Implementing builtin functions
     , notImplemented
     , unaryOperator
@@ -131,9 +130,7 @@ import Kore.Unparser
 
 -- TODO (thomas.tuegel): Include hook name here.
 
-type Function = BuiltinAndAxiomSimplifier
-
-notImplemented :: Function
+notImplemented :: BuiltinAndAxiomSimplifier
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
@@ -176,25 +173,20 @@ unaryOperator
     -- ^ Builtin function name (for error messages)
     -> (a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> BuiltinAndAxiomSimplifier
 unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    unaryOperator0
-        :: InternalVariable variable
-        => MonadSimplify m
-        => Sort
-        -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+    unaryOperator0 :: Function
     unaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
                 -- Apply the operator to a domain value
                 let r = op (get a)
-                (appliedFunction . asPattern resultSort) r
-            [_] -> return NotApplicable
+                return (asPattern resultSort r)
+            [_] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin binary operator.
@@ -219,25 +211,20 @@ binaryOperator
     -- ^ Builtin function name (for error messages)
     -> (a -> a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> BuiltinAndAxiomSimplifier
 binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    binaryOperator0
-        :: InternalVariable variable
-        => MonadSimplify m
-        => Sort
-        -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+    binaryOperator0 :: Function
     binaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
                 let r = op (get a) (get b)
-                (appliedFunction . asPattern resultSort) r
-            [_, _] -> return NotApplicable
+                return (asPattern resultSort r)
+            [_, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin ternary operator.
@@ -262,36 +249,31 @@ ternaryOperator
     -- ^ Builtin function name (for error messages)
     -> (a -> a -> a -> b)
     -- ^ Operation on builtin types
-    -> Function
+    -> BuiltinAndAxiomSimplifier
 ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
-    ternaryOperator0
-        :: InternalVariable variable
-        => MonadSimplify m
-        => Sort
-        -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+    ternaryOperator0 :: Function
     ternaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
                 -- Apply the operator to three domain values
                 let r = op (get a) (get b) (get c)
-                (appliedFunction . asPattern resultSort) r
-            [_, _, _] -> return NotApplicable
+                return (asPattern resultSort r)
+            [_, _, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
-type FunctionImplementation
+type Function
     = forall variable simplifier
         .  InternalVariable variable
         => MonadSimplify simplifier
         => Sort
         -> [TermLike variable]
-        -> simplifier (AttemptedAxiom variable)
+        -> MaybeT simplifier (Pattern variable)
 
-functionEvaluator :: FunctionImplementation -> Function
+functionEvaluator :: Function -> BuiltinAndAxiomSimplifier
 functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
@@ -303,9 +285,9 @@ functionEvaluator impl =
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator (valid :< app) =
-        impl resultSort
-        $ fmap TermLike.removeEvaluated applicationChildren
+    evaluator (valid :< app) = do
+        let args = map TermLike.removeEvaluated applicationChildren
+        getAttemptedAxiom (impl resultSort args >>= appliedFunction)
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid

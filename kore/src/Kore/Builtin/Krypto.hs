@@ -68,6 +68,9 @@ import Kore.Builtin.Encoding
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifier
+    )
 
 keccak256Key, ecdsaRecoverKey, sha256Key, sha3256Key, ripemd160Key
     :: IsString s => s
@@ -110,7 +113,7 @@ symbolVerifiers =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
         [ (keccak256Key, evalKeccak)
@@ -134,56 +137,49 @@ evalHashFunction
     :: HashAlgorithm algorithm
     => String  -- ^ hook name for error messages
     -> algorithm  -- ^ hash function
-    -> Builtin.Function
+    -> BuiltinAndAxiomSimplifier
 evalHashFunction context algorithm =
     Builtin.functionEvaluator evalHashFunctionWorker
   where
-    evalHashFunctionWorker :: Builtin.FunctionImplementation
-    evalHashFunctionWorker resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let
-                arg =
-                    case arguments of
-                      [input] -> input
-                      _ -> Builtin.wrongArity context
-            str <- String.expectBuiltinString context arg
+    evalHashFunctionWorker :: Builtin.Function
+    evalHashFunctionWorker resultSort [input] = do
+            str <- String.expectBuiltinString context input
             let bytes = encode8Bit str
                 digest = hashWith algorithm bytes
                 result = fromString (show digest)
-            Builtin.appliedFunction $ String.asPattern resultSort result
+            return (String.asPattern resultSort result)
+    evalHashFunctionWorker _ _ = Builtin.wrongArity context
 
-evalKeccak :: Builtin.Function
+evalKeccak :: BuiltinAndAxiomSimplifier
 evalKeccak = evalHashFunction keccak256Key Keccak_256
 
-evalSha256 :: Builtin.Function
+evalSha256 :: BuiltinAndAxiomSimplifier
 evalSha256 = evalHashFunction sha256Key SHA256
 
-evalSha3256 :: Builtin.Function
+evalSha3256 :: BuiltinAndAxiomSimplifier
 evalSha3256 = evalHashFunction sha3256Key SHA3_256
 
-evalRipemd160 :: Builtin.Function
+evalRipemd160 :: BuiltinAndAxiomSimplifier
 evalRipemd160 = evalHashFunction ripemd160Key RIPEMD160
 
-evalECDSARecover :: Builtin.Function
+evalECDSARecover :: BuiltinAndAxiomSimplifier
 evalECDSARecover =
     Builtin.functionEvaluator eval0
   where
-    eval0 :: Builtin.FunctionImplementation
-    eval0 resultSort [messageHash0, v0, r0, s0] =
-        Builtin.getAttemptedAxiom $ do
-            messageHash <- string2Integer . Text.unpack
-                    <$> String.expectBuiltinString "" messageHash0
-            v <- Int.expectBuiltinInt "" v0
-            r <- string2Integer . Text.unpack
-                    <$> String.expectBuiltinString "" r0
-            s <- string2Integer . Text.unpack
-                    <$> String.expectBuiltinString "" s0
-            Builtin.appliedFunction
-                $ String.asPattern resultSort
-                $ Text.pack
-                $ byteString2String
-                $ pad 64 0
-                $ signatureToKey messageHash r s v
+    eval0 :: Builtin.Function
+    eval0 resultSort [messageHash0, v0, r0, s0] = do
+        messageHash <- string2Integer . Text.unpack
+                <$> String.expectBuiltinString "" messageHash0
+        v <- Int.expectBuiltinInt "" v0
+        r <- string2Integer . Text.unpack
+                <$> String.expectBuiltinString "" r0
+        s <- string2Integer . Text.unpack
+                <$> String.expectBuiltinString "" s0
+        pad 64 0 (signatureToKey messageHash r s v)
+            & byteString2String
+            & Text.pack
+            & String.asPattern resultSort
+            & return
     eval0 _ _ = Builtin.wrongArity ecdsaRecoverKey
 
 pad :: Int -> Word8 -> ByteString -> ByteString

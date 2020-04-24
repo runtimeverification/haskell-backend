@@ -98,6 +98,9 @@ import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import Kore.Internal.TermLike as TermLike
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifier
+    )
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
@@ -238,7 +241,7 @@ expectBuiltinInt ctx =
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
     [
