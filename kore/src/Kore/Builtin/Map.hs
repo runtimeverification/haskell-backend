@@ -386,7 +386,7 @@ evalRemoveAll _ _ = Builtin.wrongArity Map.removeAllKey
 evalSize :: Builtin.Function
 evalSize resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.sizeKey _map
-    (Map.size _map)
+    Map.size _map
         & toInteger
         & Int.asPattern resultSort
         & return
