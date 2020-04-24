@@ -540,12 +540,12 @@ returnAc
         )
     => Sort
     -> TermNormalizedAc normalized variable
-    -> m (AttemptedAxiom variable)
+    -> m (Pattern variable)
 returnAc resultSort ac = do
     tools <- Simplifier.askMetadataTools
-    Builtin.appliedFunction
-        $ Pattern.fromTermLike
-        $ asInternal tools resultSort ac
+    asInternal tools resultSort ac
+        & Pattern.fromTermLike
+        & return
 
 {- | Converts an Ac of concrete elements to a @NormalizedAc@ and returns it
 as a function result.
@@ -557,10 +557,10 @@ returnConcreteAc
         )
     => Sort
     -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
-    -> m (AttemptedAxiom variable)
+    -> m (Pattern variable)
 returnConcreteAc resultSort concrete =
-    returnAc resultSort
-    $ Domain.wrapAc Domain.NormalizedAc
+    (returnAc resultSort . Domain.wrapAc)
+    Domain.NormalizedAc
         { elementsWithVariables = []
         , concreteElements = concrete
         , opaque = []
@@ -648,23 +648,25 @@ asPattern resultSort =
 NormalizedOrBottom, providind the result in the form of a function result.
 -}
 evalConcatNormalizedOrBottom
-    :: forall m normalized variable
-    .   ( MonadSimplify m
+    :: forall normalized simplifier variable
+    .   ( MonadSimplify simplifier
         , InternalVariable variable
         , TermWrapper normalized
         )
     => Sort
     -> NormalizedOrBottom normalized variable
     -> NormalizedOrBottom normalized variable
-    -> MaybeT m (AttemptedAxiom variable)
-evalConcatNormalizedOrBottom _ Bottom _ = return emptyAttemptedAxiom
-evalConcatNormalizedOrBottom _ _ Bottom = return emptyAttemptedAxiom
+    -> MaybeT simplifier (Pattern variable)
+evalConcatNormalizedOrBottom resultSort Bottom _ =
+    return (Pattern.bottomOf resultSort)
+evalConcatNormalizedOrBottom resultSort _ Bottom =
+    return (Pattern.bottomOf resultSort)
 evalConcatNormalizedOrBottom
     resultSort
     (Normalized normalized1)
     (Normalized normalized2)
   =
-    maybe (return emptyAttemptedAxiom) (returnAc resultSort)
+    maybe (return $ Pattern.bottomOf resultSort) (returnAc resultSort)
     $ concatNormalized normalized1 normalized2
 
 
