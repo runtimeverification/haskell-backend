@@ -15,6 +15,7 @@ import qualified Data.Set as Set
 import Test.Tasty
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
@@ -1065,37 +1066,37 @@ builtinAxioms :: BuiltinAndAxiomSimplifierMap
 builtinAxioms =
     Map.fromList
         [   ( AxiomIdentifier.Application Mock.concatMapId
-            , builtinEvaluation Map.evalConcat
+            , Builtin.functionEvaluator Map.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.elementMapId
-            , builtinEvaluation Map.evalElement
+            , Builtin.functionEvaluator Map.evalElement
             )
         ,   ( AxiomIdentifier.Application Mock.unitMapId
-            , builtinEvaluation Map.evalUnit
+            , Builtin.functionEvaluator Map.evalUnit
             )
         ,   ( AxiomIdentifier.Application Mock.concatSetId
-            , builtinEvaluation Set.evalConcat
+            , Builtin.functionEvaluator Set.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.concatSetId
-            , builtinEvaluation Set.evalConcat
+            , Builtin.functionEvaluator Set.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.elementSetId
-            , builtinEvaluation Set.evalElement
+            , Builtin.functionEvaluator Set.evalElement
             )
         ,   ( AxiomIdentifier.Application Mock.unitSetId
-            , builtinEvaluation Set.evalUnit
+            , Builtin.functionEvaluator Set.evalUnit
             )
         ,   ( AxiomIdentifier.Application Mock.concatListId
-            , builtinEvaluation List.evalConcat
+            , Builtin.functionEvaluator List.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.elementListId
-            , builtinEvaluation List.evalElement
+            , Builtin.functionEvaluator List.evalElement
             )
         ,   ( AxiomIdentifier.Application Mock.unitListId
-            , builtinEvaluation List.evalUnit
+            , Builtin.functionEvaluator List.evalUnit
             )
         ,   ( AxiomIdentifier.Application Mock.concatListId
-            , builtinEvaluation List.evalConcat
+            , Builtin.functionEvaluator List.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.tdivIntId
             , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)
