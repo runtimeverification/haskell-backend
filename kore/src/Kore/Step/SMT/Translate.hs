@@ -241,7 +241,6 @@ translatePredicateWith translateTerm predicate =
         let translated = translateSymbol applicationSymbolOrAlias
         sexpr <- maybe empty return translated
         when (isNothing translated)
-            $ lift . lift . lift
             $ warnSymbolSMTRepresentation applicationSymbolOrAlias
         children <- zipWithM translatePattern
             applicationChildrenSorts

@@ -42,7 +42,7 @@ instance SOP.HasDatatypeInfo WarnSymbolSMTRepresentation
 instance Pretty WarnSymbolSMTRepresentation where
     pretty WarnSymbolSMTRepresentation { symbol } =
         Pretty.vsep
-            [ "Cannot translate symbol into SMT-LIB:"
+            [ "Cannot translate symbol despite being given an SMT-LIB expression"
             , Pretty.indent 4 (unparse symbol)
             ]
 
