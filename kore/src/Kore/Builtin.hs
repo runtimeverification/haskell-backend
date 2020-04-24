@@ -16,7 +16,7 @@ This module is intended to be imported qualified.
 module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.ApplicationVerifiers
-    , Builtin.Function
+    , BuiltinAndAxiomSimplifier
     , Kore.Internal.TermLike.Builtin
     , Builtin.SymbolVerifier (..)
     , Builtin.SortVerifier (..)
@@ -92,6 +92,9 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifier
+    )
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -126,10 +129,10 @@ koreVerifiers =
 koreEvaluators
     :: VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map AxiomIdentifier Builtin.Function
+    -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
 koreEvaluators = evaluators builtins
   where
-    builtins :: Map Text Builtin.Function
+    builtins :: Map Text BuiltinAndAxiomSimplifier
     builtins =
         Map.unions
             [ Bool.builtinFunctions
@@ -152,11 +155,11 @@ koreEvaluators = evaluators builtins
 
  -}
 evaluators
-    :: Map Text Builtin.Function
+    :: Map Text BuiltinAndAxiomSimplifier
     -- ^ Builtin functions indexed by name
     -> VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map AxiomIdentifier Builtin.Function
+    -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
 evaluators builtins indexedModule =
     Map.mapMaybe
         lookupBuiltins
@@ -182,7 +185,7 @@ evaluators builtins indexedModule =
         -> Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
-    lookupBuiltins :: StepperAttributes -> Maybe Builtin.Function
+    lookupBuiltins :: StepperAttributes -> Maybe BuiltinAndAxiomSimplifier
     lookupBuiltins Attribute.Symbol { Attribute.hook = Hook { getHook } } =
         do
             name <- getHook
