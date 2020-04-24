@@ -31,6 +31,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -42,10 +43,11 @@ import Kore.Unparser
 -}
 create
     :: MonadSimplify simplifier
-    => SubstitutionSimplifier simplifier
+    => NotSimplifier (t simplifier) variable
+    -> SubstitutionSimplifier t simplifier
     -> ConditionSimplifier simplifier
-create substitutionSimplifier =
-    ConditionSimplifier $ simplify substitutionSimplifier
+create notSimplifier substitutionSimplifier =
+    ConditionSimplifier $ simplify substitutionSimplifier notSimplifier
 
 {- | Simplify a 'Condition'.
 
@@ -56,17 +58,18 @@ The 'term' of 'Conditional' may be any type; it passes through @simplify@
 unmodified.
 -}
 simplify
-    ::  forall simplifier variable any
+    ::  forall simplifier variable any t
     .   ( HasCallStack
         , InternalVariable variable
         , MonadSimplify simplifier
         )
-    =>  SubstitutionSimplifier simplifier
+    =>  SubstitutionSimplifier t simplifier
+    ->  NotSimplifier (t simplifier) variable
     ->  SideCondition variable
     ->  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
-simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
-    normalize initial >>= worker
+simplify SubstitutionSimplifier { simplifySubstitution } notSimplifier sideCondition initial =
+    normalize notSimplifier initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
@@ -74,7 +77,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
         simplified <- simplifyPredicate sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
-        normalized <- normalize merged
+        normalized <- normalize notSimplifier merged
         -- Check for full simplification *after* normalization. Simplification
         -- may have produced irrelevant substitutions that become relevant after
         -- normalization.
@@ -89,12 +92,13 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
 
     normalize
         ::  forall any'
-        .   Conditional variable any'
+        .   NotSimplifier (t simplifier) variable
+        ->  Conditional variable any'
         ->  BranchT simplifier (Conditional variable any')
-    normalize conditional@Conditional { substitution } = do
+    normalize notSimplifier conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- lift $
-            simplifySubstitution sideCondition substitution
+            simplifySubstitution notSimplifier sideCondition substitution
         predicate' <- Branch.scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 

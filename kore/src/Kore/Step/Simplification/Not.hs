@@ -61,6 +61,7 @@ import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
 import qualified Kore.Step.Simplification.And as And
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
     ( TopBottom (..)
@@ -245,3 +246,10 @@ mkMultiAndPredicate predicates =
     -- Using Foldable.fold because the Monoid instance of Condition
     -- implements And semantics.
     return $ Foldable.fold predicates
+
+notSimplifier
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => NotSimplifier simplifier variable
+notSimplifier =
+    NotSimplifier simplifyEvaluated

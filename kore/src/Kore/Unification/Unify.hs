@@ -12,6 +12,9 @@ import Prelude.Kore
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
+import Control.Monad.Trans.Identity
+    ( IdentityT (..)
+    )
 import Data.Text.Prettyprint.Doc
     ( Doc
     )
@@ -64,3 +67,7 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
     explainAndReturnBottom message first second = do
         explainBottom message first second
         empty
+
+instance MonadUnify unifier => MonadUnify (IdentityT unifier) where
+    gather x = IdentityT $ gather @unifier (runIdentityT x)
+    scatter = IdentityT . scatter

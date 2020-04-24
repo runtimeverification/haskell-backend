@@ -69,6 +69,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
     ( SentenceSymbol (..)
@@ -231,10 +232,11 @@ termKEquals
     .  InternalVariable variable
     => MonadUnify unifier
     => TermSimplifier variable unifier
+    -> NotSimplifier unifier variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termKEquals unifyChildren a b =
+termKEquals unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
     unifyChildren' term1 term2 =
@@ -253,7 +255,7 @@ termKEquals unifyChildren a b =
       | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
       , isFunctionPattern termLike1
       , Just value2 <- Bool.matchBool termLike2
-      , atLeastOneSymbolic operand1 operand2
+      -- , atLeastOneSymbolic operand1 operand2
       = lift $ do
         condition <- unifyChildren' operand1 operand2
         let finalCondition =

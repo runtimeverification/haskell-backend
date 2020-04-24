@@ -14,7 +14,11 @@ module Kore.Unification.SubstitutionSimplifier
 import Prelude.Kore
 
 import Control.Error
-    ( maybeT
+    ( MaybeT
+    , maybeT
+    )
+import Control.Monad.Trans.Identity
+    ( IdentityT (..)
     )
 
 import qualified Branch as BranchT
@@ -23,15 +27,20 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.Substitution
-    ( Substitution
+    ( Normalization
+    , Substitution
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
+import Kore.Step.Simplification.NotSimplifier
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( MakeAnd (..)
@@ -51,31 +60,40 @@ uses 'Unifier.throwUnificationError'.
 substitutionSimplifier
     :: forall unifier
     .  MonadUnify unifier
-    => SubstitutionSimplifier unifier
+    => SubstitutionSimplifier IdentityT unifier
 substitutionSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper
         :: forall variable
         .  InternalVariable variable
-        => SideCondition variable
+        => NotSimplifier (IdentityT unifier) variable
+        -> SideCondition variable
         -> Substitution variable
         -> unifier (OrCondition variable)
-    wrapper sideCondition substitution = do
-        (predicate, result) <- worker substitution & maybeT empty return
+    wrapper notSimplifier sideCondition substitution = do
+        (predicate, result) <-
+            worker substitution
+            & maybeT empty return
+            & runIdentityT
         let condition = Condition.fromNormalizationSimplified result
         let condition' = Condition.fromPredicate predicate <> condition
             conditions = OrCondition.fromCondition condition'
         TopBottom.guardAgainstBottom conditions
         return conditions
       where
-        worker = simplifySubstitutionWorker sideCondition unificationMakeAnd
+        worker
+            :: Substitution variable
+            -> MaybeT
+                (IdentityT unifier)
+                (Predicate variable, Normalization variable)
+        worker = simplifySubstitutionWorker notSimplifier sideCondition unificationMakeAnd
 
 unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =
     MakeAnd { makeAnd }
   where
-    makeAnd termLike1 termLike2 sideCondition = do
-        unified <- termUnification termLike1 termLike2
+    makeAnd notSimplifier termLike1 termLike2 sideCondition = do
+        unified <- termUnification notSimplifier termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified
             & BranchT.alternate
