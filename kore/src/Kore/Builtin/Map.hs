@@ -24,6 +24,7 @@ module Kore.Builtin.Map
     , evalConcat
     , evalElement
     , evalUnit
+    , evalInKeys
     ) where
 
 import Prelude.Kore

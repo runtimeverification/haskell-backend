@@ -40,6 +40,7 @@ module Test.Kore.Builtin.Map
     , test_renormalize
     , test_concretizeKeysAxiom
     , hprop_unparse
+    , test_inKeys
     --
     , normalizedMap
     , asInternal
@@ -61,6 +62,9 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
+import Control.Error
+    ( runMaybeT
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.List as List
@@ -104,6 +108,7 @@ import SMT
     ( SMT
     )
 
+import Test.Expect
 import Test.Kore
     ( elementVariableGen
     , standaloneGen
@@ -121,6 +126,9 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
+    ( runSimplifierNoSMT
+    )
 import Test.SMT
 import Test.Tasty.HUnit.Ext
 
@@ -1318,6 +1326,61 @@ hprop_unparse =
         )
   where
     genValue = Test.Int.asInternal <$> genInteger
+
+test_inKeys :: [TestTree]
+test_inKeys =
+    [ testCase "empty Map contains no keys" $ do
+        actual1 <- inKeys concreteKey unitMap
+        assertEqual "no concrete keys" (Just False) actual1
+        actual2 <- inKeys symbolicKey unitMap
+        assertEqual "no symbolic keys" (Just False) actual2
+    , testGroup "concrete Map"
+        [ testCase "concrete key is present" $ do
+            actual <- inKeys concreteKey concreteMap
+            assertEqual "" (Just True) actual
+        , testCase "concrete key is absent" $ do
+            let key = Test.Int.asInternal 1
+            actual <- inKeys key concreteMap
+            assertEqual "" (Just False) actual
+        , testCase "symbolic key is undecided" $ do
+            actual <- inKeys symbolicKey concreteMap
+            assertEqual "" Nothing actual
+        ]
+    , testGroup "symbolic Map"
+        [ testCase "symbolic key is present" $ do
+            actual <- inKeys symbolicKey symbolicMap
+            assertEqual "" (Just True) actual
+        , testCase "concrete key is undecided" $ do
+            actual <- inKeys concreteKey symbolicMap
+            assertEqual "" Nothing actual
+        , testCase "symbolic key is undecided" $ do
+            let key = mkIntVar (testId "x'")
+            actual <- inKeys key symbolicMap
+            assertEqual "" Nothing actual
+        ]
+    ]
+  where
+    concreteKey = Test.Int.asInternal 0
+    concreteMap = asInternal [(Test.Int.asInternal 0, mkIntVar (testId "y"))]
+    symbolicKey = mkIntVar (testId "x")
+    symbolicMap = asInternal [(mkIntVar (testId "x"), mkIntVar (testId "y"))]
+    inKeys
+        :: HasCallStack
+        => TermLike Variable
+        -> TermLike Variable
+        -> IO (Maybe Bool)
+    inKeys termKey termMap = do
+        output <-
+            Map.evalInKeys boolSort [termKey, termMap]
+            & runMaybeT
+            & runSimplifierNoSMT testEnv
+        case output of
+            Nothing -> return Nothing
+            Just result -> do
+                let (term, condition) = splitTerm result
+                assertTop condition
+                bool <- expectBool term
+                return (Just bool)
 
 -- * Helpers
 
