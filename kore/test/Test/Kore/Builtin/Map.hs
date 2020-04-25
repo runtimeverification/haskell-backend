@@ -1339,6 +1339,8 @@ test_inKeys =
         assertEqual "no concrete keys" (Just False) actual1
         actual2 <- inKeys x (asInternal [])
         assertEqual "no symbolic keys" (Just False) actual2
+        actual3 <- inKeys (tdivInt y z) (asInternal [])
+        assertEqual "no partial keys" (Just False) actual3
     , testGroup "concrete Map"
         [ testCase "concrete key is present" $ do
             actual <- inKeys concreteKey concreteMap
@@ -1358,6 +1360,9 @@ test_inKeys =
         , testCase "concrete key is present" $ do
             actual <- inKeys concreteKey symbolicMap
             assertEqual "" (Just True) actual
+        , testCase "partial key is present" $ do
+            actual <- inKeys (tdivInt y z) symbolicMap
+            assertEqual "" (Just True) actual
         , testCase "symbolic key is undecided" $ do
             let key = mkIntVar (testId "z")
             actual <- inKeys key symbolicMap
@@ -1365,6 +1370,9 @@ test_inKeys =
         , testCase "concrete key is undecided" $ do
             let key = Test.Int.asInternal 2
             actual <- inKeys key symbolicMap
+            assertEqual "" Nothing actual
+        , testCase "partial key is undecided" $ do
+            actual <- inKeys (tdivInt x z) symbolicMap
             assertEqual "" Nothing actual
         ]
     ]
@@ -1385,7 +1393,7 @@ test_inKeys =
     symbolicMap =
         asInternal
         [ (x, u)
-        , (y, v)
+        , (tdivInt y z, v)
         , (Test.Int.asInternal 0, w)
         ]
     inKeys
