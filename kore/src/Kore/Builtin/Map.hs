@@ -319,12 +319,30 @@ evalUpdate resultSort [_map, _key, value] = do
 evalUpdate _ _ = Builtin.wrongArity Map.updateKey
 
 evalInKeys :: Builtin.Function
-evalInKeys resultSort [_key, _map] = do
-    _key <- hoistMaybe $ Builtin.toKey _key
-    _map <- expectConcreteBuiltinMap Map.in_keysKey _map
-    Map.member _key _map
-        & Bool.asPattern resultSort
-        & return
+evalInKeys resultSort [_key, _map] =
+    concreteMap <|> symbolicMap
+  where
+    -- When the map is concrete, decide if a concrete key is present or absent.
+    concreteMap = do
+        _map <- expectConcreteBuiltinMap Map.in_keysKey _map
+        _key <- hoistMaybe $ Builtin.toKey _key
+        Map.member _key _map
+            & Bool.asPattern resultSort
+            & return
+    -- When the map is symbolic, decide if a key is present.
+    symbolicMap = do
+        _map <- expectBuiltinMap Map.in_keysKey _map
+        let inKeys =
+                (or . catMaybes)
+                -- The key may be concrete or symbolic.
+                [ do
+                    _key <- Builtin.toKey _key
+                    pure (Domain.isConcreteKeyOfAc _key _map)
+                , pure (Domain.isSymbolicKeyOfAc _key _map)
+                ]
+        Monad.guard inKeys
+        -- We cannot decide if the key is absent because the Map is symbolic.
+        Bool.asPattern resultSort True & return
 evalInKeys _ _ = Builtin.wrongArity Map.in_keysKey
 
 evalInclusion :: Builtin.Function
