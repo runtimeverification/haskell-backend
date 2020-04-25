@@ -1337,38 +1337,57 @@ test_inKeys =
     [ testCase "empty Map contains no keys" $ do
         actual1 <- inKeys concreteKey (asInternal [])
         assertEqual "no concrete keys" (Just False) actual1
-        actual2 <- inKeys symbolicKey (asInternal [])
+        actual2 <- inKeys x (asInternal [])
         assertEqual "no symbolic keys" (Just False) actual2
     , testGroup "concrete Map"
         [ testCase "concrete key is present" $ do
             actual <- inKeys concreteKey concreteMap
             assertEqual "" (Just True) actual
         , testCase "concrete key is absent" $ do
-            let key = Test.Int.asInternal 1
+            let key = Test.Int.asInternal 2
             actual <- inKeys key concreteMap
             assertEqual "" (Just False) actual
         , testCase "symbolic key is undecided" $ do
-            actual <- inKeys symbolicKey concreteMap
+            actual <- inKeys x concreteMap
             assertEqual "" Nothing actual
         ]
     , testGroup "symbolic Map"
         [ testCase "symbolic key is present" $ do
-            actual <- inKeys symbolicKey symbolicMap
+            actual <- inKeys x symbolicMap
             assertEqual "" (Just True) actual
-        , testCase "concrete key is undecided" $ do
+        , testCase "concrete key is present" $ do
             actual <- inKeys concreteKey symbolicMap
-            assertEqual "" Nothing actual
+            assertEqual "" (Just True) actual
         , testCase "symbolic key is undecided" $ do
-            let key = mkIntVar (testId "x'")
+            let key = mkIntVar (testId "z")
+            actual <- inKeys key symbolicMap
+            assertEqual "" Nothing actual
+        , testCase "concrete key is undecided" $ do
+            let key = Test.Int.asInternal 2
             actual <- inKeys key symbolicMap
             assertEqual "" Nothing actual
         ]
     ]
   where
     concreteKey = Test.Int.asInternal 0
-    concreteMap = asInternal [(Test.Int.asInternal 0, mkIntVar (testId "y"))]
-    symbolicKey = mkIntVar (testId "x")
-    symbolicMap = asInternal [(mkIntVar (testId "x"), mkIntVar (testId "y"))]
+    concreteMap =
+        asInternal
+        [ (Test.Int.asInternal 0, u)
+        , (Test.Int.asInternal 1, v)
+        ]
+    x, y, z, u, v, w :: TermLike Variable
+    x = mkIntVar (testId "x")
+    y = mkIntVar (testId "y")
+    z = mkIntVar (testId "z")
+    u = mkIntVar (testId "u")
+    v = mkIntVar (testId "v")
+    w = mkIntVar (testId "w")
+    symbolicMap =
+        asInternal
+        [ (x, u)
+        , (y, v)
+        , (Test.Int.asInternal 0, w)
+        ]
     inKeys
         :: HasCallStack
         => TermLike Variable
