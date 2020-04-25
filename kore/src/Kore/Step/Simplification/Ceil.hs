@@ -219,9 +219,9 @@ newDefinedCeilSimplifier
     => InternalVariable variable
     => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
 newDefinedCeilSimplifier = CeilSimplifier $ \input ->
-    case isDefinedPattern (ceilChild input) of
-        True -> return OrCondition.top
-        _ -> empty
+    if isDefinedPattern (ceilChild input)
+        then return OrCondition.top
+        else empty
 
 newApplicationCeilSimplifier
     :: MonadReader (SideCondition variable) simplifier

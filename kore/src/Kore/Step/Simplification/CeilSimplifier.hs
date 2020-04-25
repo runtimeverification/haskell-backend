@@ -84,7 +84,7 @@ instance
     Monad simplifier
     => Monoid (CeilSimplifier simplifier input output)
   where
-    mempty = CeilSimplifier (\_ -> empty)
+    mempty = CeilSimplifier (const empty)
     {-# INLINE mempty #-}
 
 hoistCeilSimplifier
