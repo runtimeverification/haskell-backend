@@ -320,8 +320,13 @@ evalUpdate _ _ = Builtin.wrongArity Map.updateKey
 
 evalInKeys :: Builtin.Function
 evalInKeys resultSort [_key, _map] =
-    concreteMap <|> symbolicMap
+    emptyMap <|> concreteMap <|> symbolicMap
   where
+    -- The empty map contains no keys.
+    emptyMap = do
+        _map <- expectConcreteBuiltinMap Map.in_keysKey _map
+        Monad.guard (Map.null _map)
+        Bool.asPattern resultSort False & return
     -- When the map is concrete, decide if a concrete key is present or absent.
     concreteMap = do
         _map <- expectConcreteBuiltinMap Map.in_keysKey _map

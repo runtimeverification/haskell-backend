@@ -1335,9 +1335,9 @@ hprop_unparse =
 test_inKeys :: [TestTree]
 test_inKeys =
     [ testCase "empty Map contains no keys" $ do
-        actual1 <- inKeys concreteKey unitMap
+        actual1 <- inKeys concreteKey (asInternal [])
         assertEqual "no concrete keys" (Just False) actual1
-        actual2 <- inKeys symbolicKey unitMap
+        actual2 <- inKeys symbolicKey (asInternal [])
         assertEqual "no symbolic keys" (Just False) actual2
     , testGroup "concrete Map"
         [ testCase "concrete key is present" $ do
