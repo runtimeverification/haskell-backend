@@ -65,6 +65,9 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
+import Control.Monad
+    ( guard
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.List as List
@@ -92,7 +95,9 @@ import Kore.Internal.MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeTruePredicate
+    ( makeCeilPredicate
+    , makeMultipleAndPredicate
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
@@ -1378,7 +1383,20 @@ test_inKeys =
             Nothing -> return Nothing
             Just result -> do
                 let (term, condition) = splitTerm result
-                assertTop condition
+                assertTop (substitution condition)
+                let expectPredicate
+                      | null predicates = makeTruePredicate boolSort
+                      | otherwise = makeMultipleAndPredicate predicates
+                    predicates =
+                        catMaybes
+                        [ do
+                            (guard . not) (isDefinedPattern termKey)
+                            pure (makeCeilPredicate boolSort termKey)
+                        , do
+                            (guard . not) (isDefinedPattern termMap)
+                            pure (makeCeilPredicate boolSort termMap)
+                        ]
+                assertEqual "" expectPredicate (predicate condition)
                 bool <- expectBool term
                 return (Just bool)
 
