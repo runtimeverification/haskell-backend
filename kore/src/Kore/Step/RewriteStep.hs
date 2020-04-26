@@ -141,7 +141,9 @@ finalizeRule initial unifiedRule =
             SideCondition.topTODO
             (Just initialCondition)
             unificationCondition
-        checkSubstitutionCoverage initial (fmap RewriteRule unifiedRule)
+        checkSubstitutionCoverage
+            (Pattern.mapVariables (fmap RewritingVariable) (fmap RewritingVariable) initial)
+            (RewriteRule <$> Conditional.mapVariables Rule.mapRuleVariables (fmap RewritingVariable) (fmap RewritingVariable) unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <-
             finalizeAppliedRule
