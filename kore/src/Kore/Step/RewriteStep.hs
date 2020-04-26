@@ -17,15 +17,9 @@ import Prelude.Kore
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
-import Data.Generics.Wrapped
-    ( _Unwrapped
-    )
 import qualified Data.Sequence as Seq
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
 import qualified Branch
-import Debug
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -51,6 +45,7 @@ import Kore.Log.DebugAppliedRewriteRules
 import Kore.Log.ErrorRewritesInstantiation
     ( checkSubstitutionCoverage
     )
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
@@ -75,80 +70,13 @@ import Kore.Step.Step
     , toConfigurationVariables
     , unifyRules
     )
-import Kore.Unparser
 import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
-import Kore.Variables.UnifiedVariable
-    ( foldMapVariable
-    )
-
-newtype RewritingVariable =
-    RewritingVariable { getRewritingVariable :: Target Variable }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
-    deriving newtype FreshPartialOrd
-    deriving newtype VariableName
-    deriving newtype SubstitutionOrd
-    deriving newtype Unparse
-
-instance Hashable RewritingVariable
-
-instance SOP.Generic RewritingVariable
-
-instance SOP.HasDatatypeInfo RewritingVariable
-
-instance Debug RewritingVariable
-
-instance Diff RewritingVariable
-
-instance From RewritingVariable Variable where
-    from = from @_ @Variable . getRewritingVariable
-
-instance From Variable RewritingVariable where
-    from = RewritingVariable . from @Variable
-
-instance SortedVariable RewritingVariable where
-    lensVariableSort = _Unwrapped . lensVariableSort
-
-instance FreshVariable RewritingVariable
-
-getElementRewritingVariable
-    :: ElementVariable RewritingVariable -> ElementVariable Variable
-getElementRewritingVariable =
-    Target.unTargetElement . fmap getRewritingVariable
-
-getSetRewritingVariable
-    :: SetVariable RewritingVariable -> SetVariable Variable
-getSetRewritingVariable =
-    Target.unTargetSet . fmap getRewritingVariable
-
-getPatternRewritingVariable
-    :: Pattern RewritingVariable
-    -> Pattern Variable
-getPatternRewritingVariable =
-    Pattern.mapVariables
-        getElementRewritingVariable
-        getSetRewritingVariable
-
-isNonTarget :: RewritingVariable -> Bool
-isNonTarget = Target.isNonTarget . getRewritingVariable
 
 withoutUnification :: UnifiedRule rule variable -> rule variable
 withoutUnification = Conditional.term
-
-{- | Remove axiom variables from the substitution and unwrap all variables.
- -}
-unwrapConfiguration :: Pattern RewritingVariable -> Pattern Variable
-unwrapConfiguration config@Conditional { substitution } =
-    getPatternRewritingVariable
-        config { Pattern.substitution = substitution' }
-  where
-    substitution' =
-        Substitution.filter
-            (foldMapVariable isNonTarget)
-            substitution
 
 {- | Produce the final configurations of an applied rule.
 
