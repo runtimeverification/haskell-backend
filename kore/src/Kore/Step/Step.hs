@@ -112,16 +112,16 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
 
-type UnifiedRule = Conditional
+type UnifiedRule rule variable = Conditional variable (rule variable)
 
 type Result rule variable =
     Step.Result
-        (UnifiedRule (Target variable) (rule (Target variable)))
+        (UnifiedRule rule (Target variable))
         (Pattern variable)
 
 type Results rule variable =
     Step.Results
-        (UnifiedRule (Target variable) (rule (Target variable)))
+        (UnifiedRule rule (Target variable))
         (Pattern variable)
 
 type Renaming variable =
@@ -212,7 +212,7 @@ unifyRules
     -- ^ Initial configuration
     -> [rule (Target variable)]
     -- ^ Rule
-    -> simplifier [UnifiedRule (Target variable) (rule (Target variable))]
+    -> simplifier [UnifiedRule rule (Target variable)]
 unifyRules unificationProcedure sideCondition initial rules =
     Branch.gather $ do
         rule <- Branch.scatter rules
@@ -242,7 +242,7 @@ unifyRule
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
-    -> BranchT simplifier (UnifiedRule variable (rule variable))
+    -> BranchT simplifier (UnifiedRule rule variable)
 unifyRule unificationProcedure sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
@@ -267,7 +267,7 @@ unifyRule unificationProcedure sideCondition initial rule = do
 wouldNarrowWith
     :: Ord variable
     => UnifyingRule rule
-    => UnifiedRule variable (rule variable)
+    => UnifiedRule rule variable
     -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
@@ -332,9 +332,9 @@ checkFunctionLike
     => InternalVariable variable'
     => Foldable f
     => UnifyingRule rule
-    => Eq (f (UnifiedRule variable' (rule variable')))
-    => Monoid (f (UnifiedRule variable' (rule variable')))
-    => f (UnifiedRule variable' (rule variable'))
+    => Eq (f (UnifiedRule rule variable'))
+    => Monoid (f (UnifiedRule rule variable'))
+    => f (UnifiedRule rule variable')
     -> TermLike variable
     -> Either String ()
 checkFunctionLike unifiedRules pat

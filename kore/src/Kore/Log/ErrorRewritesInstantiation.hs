@@ -81,7 +81,7 @@ data ErrorRewritesInstantiation =
 
 data SubstitutionCoverageError =
     SubstitutionCoverageError
-        { solution :: !(UnifiedRule Variable (RewriteRule Variable))
+        { solution :: !(UnifiedRule RewriteRule Variable)
         , missingVariables :: !(Set (UnifiedVariable Variable))
         }
 
@@ -165,7 +165,7 @@ checkSubstitutionCoverage
     => MonadLog monadLog
     => Pattern (Target variable)
     -- ^ Initial configuration
-    -> UnifiedRule (Target variable) (RewriteRule (Target variable))
+    -> UnifiedRule RewriteRule (Target variable)
     -- ^ Unified rule
     -> monadLog ()
 checkSubstitutionCoverage initial unified

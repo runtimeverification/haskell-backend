@@ -55,7 +55,7 @@ import Log
 data DebugAppliedRewriteRules =
     DebugAppliedRewriteRules
         { configuration :: Pattern Variable
-        , appliedRewriteRules :: [UnifiedRule Variable (RewriteRule Variable)]
+        , appliedRewriteRules :: [UnifiedRule RewriteRule Variable]
         }
 
 instance Pretty DebugAppliedRewriteRules where
@@ -85,7 +85,7 @@ debugAppliedRewriteRules
     :: MonadLog log
     => InternalVariable variable
     => Pattern (Target variable)
-    -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
+    -> [UnifiedRule RulePattern (Target variable)]
     -> log ()
 debugAppliedRewriteRules initial rules =
     logEntry DebugAppliedRewriteRules

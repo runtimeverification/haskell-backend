@@ -135,7 +135,7 @@ getPatternRewritingVariable =
 isNonTarget :: RewritingVariable -> Bool
 isNonTarget = Target.isNonTarget . getRewritingVariable
 
-withoutUnification :: UnifiedRule variable rule -> rule
+withoutUnification :: UnifiedRule rule variable -> rule variable
 withoutUnification = Conditional.term
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
@@ -202,7 +202,7 @@ finalizeRule
     :: MonadSimplify simplifier
     => Pattern (Target Variable)
     -- ^ Initial conditions
-    -> UnifiedRule (Target Variable) (RulePattern (Target Variable))
+    -> UnifiedRule RulePattern (Target Variable)
     -- ^ Rewriting axiom
     -> simplifier [Result RulePattern Variable]
 finalizeRule initial unifiedRule =
@@ -223,7 +223,7 @@ finalizeRule initial unifiedRule =
 type Finalizer simplifier =
         MonadSimplify simplifier
     =>  Pattern (Target Variable)
-    ->  [UnifiedRule (Target Variable) (RulePattern (Target Variable))]
+    ->  [UnifiedRule RulePattern (Target Variable)]
     ->  simplifier (Results RulePattern Variable)
 
 finalizeRulesParallel :: forall simplifier. Finalizer simplifier
