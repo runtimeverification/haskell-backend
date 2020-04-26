@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariable (..)
     , unwrapConfiguration
+    , isConfigVariable
     ) where
 
 import Prelude.Kore
@@ -82,8 +83,8 @@ getPatternRewritingVariable =
         getElementRewritingVariable
         getSetRewritingVariable
 
-isNonTarget :: RewritingVariable -> Bool
-isNonTarget = Target.isNonTarget . getRewritingVariable
+isConfigVariable :: RewritingVariable -> Bool
+isConfigVariable = Target.isNonTarget . getRewritingVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
@@ -94,5 +95,5 @@ unwrapConfiguration config@Conditional { substitution } =
   where
     substitution' =
         Substitution.filter
-            (foldMapVariable isNonTarget)
+            (foldMapVariable isConfigVariable)
             substitution
