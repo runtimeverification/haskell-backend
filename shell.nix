@@ -10,4 +10,5 @@ project.shellFor {
     [
       ghcid ghcide gnumake hlint stylish-haskell yq z3
     ];
+  exactDeps = true;
 }
