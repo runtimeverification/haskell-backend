@@ -5,6 +5,11 @@ let
 in
 
 project.shellFor {
+  additional = hspkgs:
+    [
+      hspkgs.ghc-tags-plugin
+      hspkgs.terminfo
+    ];
   buildInputs =
     with pkgs;
     [
