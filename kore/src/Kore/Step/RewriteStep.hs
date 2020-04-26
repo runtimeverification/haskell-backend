@@ -165,11 +165,11 @@ See also: 'applyInitialConditions'
 finalizeAppliedRule
     :: forall simplifier
     .  MonadSimplify simplifier
-    => RulePattern (Target Variable)
+    => RulePattern RewritingVariable
     -- ^ Applied rule
-    -> OrCondition (Target Variable)
+    -> OrCondition RewritingVariable
     -- ^ Conditions of applied rule
-    -> simplifier (OrPattern (Target Variable))
+    -> simplifier (OrPattern RewritingVariable)
 finalizeAppliedRule renamedRule appliedConditions =
     MultiOr.gather
     $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
@@ -215,8 +215,11 @@ finalizeRule initial unifiedRule =
             unificationCondition
         checkSubstitutionCoverage initial (fmap RewriteRule unifiedRule)
         let renamedRule = Conditional.term unifiedRule
-        final <- finalizeAppliedRule renamedRule applied
-        let result = unwrapConfiguration . Pattern.mapVariables (fmap RewritingVariable) (fmap RewritingVariable) <$> final
+        final <-
+            finalizeAppliedRule
+                (Rule.mapRuleVariables (fmap RewritingVariable) (fmap RewritingVariable) renamedRule)
+                (Condition.mapVariables (fmap RewritingVariable) (fmap RewritingVariable) <$> applied)
+        let result = unwrapConfiguration <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
