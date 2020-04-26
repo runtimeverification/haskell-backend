@@ -11,10 +11,8 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Remainder as Remainder
-import Kore.Syntax.Variable
-    ( Variable
-    )
 import Kore.Variables.Target
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -26,19 +24,21 @@ test_existentiallyQuantifyTarget =
     ]
   where
     becomes original expect =
-        equals (Remainder.existentiallyQuantifyTarget original) expect
+        equals (Remainder.existentiallyQuantifyRuleVariables original) expect
 
-target :: Predicate (Target Variable)
+target :: Predicate RewritingVariable
 target =
     Predicate.makeEqualsPredicate_
-        (mkElemVar $ mkElementNonTarget Mock.x)
+        (mkElemVar . fmap RewritingVariable $ mkElementNonTarget Mock.x)
         (Mock.sigma
-            (mkElemVar $ mkElementTarget Mock.y)
-            (mkElemVar $ mkElementTarget Mock.z)
+            (mkElemVar . fmap RewritingVariable $ mkElementTarget Mock.y)
+            (mkElemVar . fmap RewritingVariable $ mkElementTarget Mock.z)
         )
 
-quantified :: Predicate (Target Variable)
+quantified :: Predicate RewritingVariable
 quantified =
     Predicate.makeMultipleExists
-        [mkElementTarget Mock.y, mkElementTarget Mock.z]
+        [ RewritingVariable <$> mkElementTarget Mock.y
+        , RewritingVariable <$> mkElementTarget Mock.z
+        ]
         target

@@ -6,8 +6,11 @@ License     : NCSA
 
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariable (..)
+    , getElementRewritingVariable
+    , getSetRewritingVariable
     , unwrapConfiguration
     , isConfigVariable
+    , isRuleVariable
     ) where
 
 import Prelude.Kore
@@ -85,6 +88,9 @@ getPatternRewritingVariable =
 
 isConfigVariable :: RewritingVariable -> Bool
 isConfigVariable = Target.isNonTarget . getRewritingVariable
+
+isRuleVariable :: RewritingVariable -> Bool
+isRuleVariable = Target.isTarget . getRewritingVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}

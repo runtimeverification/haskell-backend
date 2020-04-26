@@ -88,8 +88,10 @@ import Kore.Internal.TermLike
     , SetVariable
     , SortedVariable
     , TermLike
+    , Variable
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
@@ -116,12 +118,12 @@ type UnifiedRule rule variable = Conditional variable (rule variable)
 
 type Result rule variable =
     Step.Result
-        (UnifiedRule rule (Target variable))
+        (UnifiedRule rule RewritingVariable)
         (Pattern variable)
 
 type Results rule variable =
     Step.Results
-        (UnifiedRule rule (Target variable))
+        (UnifiedRule rule RewritingVariable)
         (Pattern variable)
 
 type Renaming variable =
@@ -203,16 +205,15 @@ class UnifyingRule rule where
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
-    :: InternalVariable variable
-    => MonadSimplify simplifier
+    :: MonadSimplify simplifier
     => UnifyingRule rule
     => UnificationProcedure simplifier
-    -> SideCondition (Target variable)
-    -> Pattern (Target variable)
+    -> SideCondition RewritingVariable
+    -> Pattern RewritingVariable
     -- ^ Initial configuration
-    -> [rule (Target variable)]
+    -> [rule RewritingVariable]
     -- ^ Rule
-    -> simplifier [UnifiedRule rule (Target variable)]
+    -> simplifier [UnifiedRule rule RewritingVariable]
 unifyRules unificationProcedure sideCondition initial rules =
     Branch.gather $ do
         rule <- Branch.scatter rules
@@ -289,34 +290,34 @@ The rule's variables are:
 
  -}
 targetRuleVariables
-    :: InternalVariable variable
-    => UnifyingRule rule
-    => SideCondition (Target variable)
-    -> Pattern (Target variable)
-    -> rule variable
-    -> rule (Target variable)
+    :: UnifyingRule rule
+    => SideCondition RewritingVariable
+    -> Pattern RewritingVariable
+    -> rule Variable
+    -> rule RewritingVariable
 targetRuleVariables sideCondition initial =
     snd
     . refreshRule avoiding
-    . mapRuleVariables Target.mkElementTarget Target.mkSetTarget
+    . mapRuleVariables
+        (fmap RewritingVariable . Target.mkElementTarget)
+        (fmap RewritingVariable . Target.mkSetTarget)
   where
     avoiding = freeVariables sideCondition <> freeVariables initial
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
-unTargetRule
-    :: (FreshPartialOrd variable, SortedVariable variable)
-    => UnifyingRule rule
-    => rule (Target variable) -> rule variable
-unTargetRule = mapRuleVariables Target.unTargetElement Target.unTargetSet
+unTargetRule :: UnifyingRule rule => rule RewritingVariable -> rule Variable
+unTargetRule =
+    mapRuleVariables
+        (Target.unTargetElement . fmap getRewritingVariable)
+        (Target.unTargetSet . fmap getRewritingVariable)
 
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults
     :: InternalVariable variable
-    => InternalVariable variable'
     => Monad m
     => UnifyingRule rule
-    => Eq (rule (Target variable'))
+    => Eq (rule RewritingVariable)
     => TermLike variable
     -> Results rule variable'
     -> m ()
@@ -387,12 +388,11 @@ applyInitialConditions sideCondition initial unification = do
     return evaluated
 
 -- |Renames configuration variables to distinguish them from those in the rule.
-toConfigurationVariables
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern (Target variable)
+toConfigurationVariables :: Pattern Variable -> Pattern RewritingVariable
 toConfigurationVariables =
-    Pattern.mapVariables Target.mkElementNonTarget Target.mkSetNonTarget
+    Pattern.mapVariables
+        (fmap RewritingVariable . Target.mkElementNonTarget)
+        (fmap RewritingVariable . Target.mkSetNonTarget)
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition

@@ -59,6 +59,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RHS (..)
@@ -76,9 +77,6 @@ import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
     ( nextVariable
-    )
-import Kore.Variables.Target
-    ( Target
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -180,7 +178,7 @@ test_renameRuleVariables =
                     , attributes = Default.def
                     }
             actual = Step.targetRuleVariables SideCondition.top initial axiom
-            initialFreeVariables :: FreeVariables (Target Variable)
+            initialFreeVariables :: FreeVariables RewritingVariable
             initialFreeVariables = freeVariables initial
             actualFreeVariables = freeVariables actual
         assertEqual "Expected no common free variables"

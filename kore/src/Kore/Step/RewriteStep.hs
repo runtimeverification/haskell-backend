@@ -70,10 +70,6 @@ import Kore.Step.Step
     , toConfigurationVariables
     , unifyRules
     )
-import Kore.Variables.Target
-    ( Target
-    )
-import qualified Kore.Variables.Target as Target
 
 withoutUnification :: UnifiedRule rule variable -> rule variable
 withoutUnification = Conditional.term
@@ -128,9 +124,9 @@ finalizeAppliedRule renamedRule appliedConditions =
 
 finalizeRule
     :: MonadSimplify simplifier
-    => Pattern (Target Variable)
+    => Pattern RewritingVariable
     -- ^ Initial conditions
-    -> UnifiedRule RulePattern (Target Variable)
+    -> UnifiedRule RulePattern RewritingVariable
     -- ^ Rewriting axiom
     -> simplifier [Result RulePattern Variable]
 finalizeRule initial unifiedRule =
@@ -141,22 +137,17 @@ finalizeRule initial unifiedRule =
             SideCondition.topTODO
             (Just initialCondition)
             unificationCondition
-        checkSubstitutionCoverage
-            (Pattern.mapVariables (fmap RewritingVariable) (fmap RewritingVariable) initial)
-            (RewriteRule <$> Conditional.mapVariables Rule.mapRuleVariables (fmap RewritingVariable) (fmap RewritingVariable) unifiedRule)
+        checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
-        final <-
-            finalizeAppliedRule
-                (Rule.mapRuleVariables (fmap RewritingVariable) (fmap RewritingVariable) renamedRule)
-                (Condition.mapVariables (fmap RewritingVariable) (fmap RewritingVariable) <$> applied)
+        final <- finalizeAppliedRule renamedRule applied
         let result = unwrapConfiguration <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer simplifier =
         MonadSimplify simplifier
-    =>  Pattern (Target Variable)
-    ->  [UnifiedRule RulePattern (Target Variable)]
+    =>  Pattern RewritingVariable
+    ->  [UnifiedRule RulePattern RewritingVariable]
     ->  simplifier (Results RulePattern Variable)
 
 finalizeRulesParallel :: forall simplifier. Finalizer simplifier
@@ -171,7 +162,7 @@ finalizeRulesParallel initial unifiedRules = do
         { results = Seq.fromList results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
+            $ Pattern.mapVariables getElementRewritingVariable getSetRewritingVariable
             <$> remainders'
         }
 
@@ -188,7 +179,7 @@ finalizeRulesSequence initial unifiedRules = do
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
             OrPattern.fromPatterns
-            $ Pattern.mapVariables Target.unTargetElement Target.unTargetSet
+            $ Pattern.mapVariables getElementRewritingVariable getSetRewritingVariable
             <$> remainders'
         }
   where
@@ -212,7 +203,7 @@ applyRulesWithFinalizer
     -> UnificationProcedure simplifier
     -> [RulePattern Variable]
     -- ^ Rewrite rules
-    -> Pattern (Target Variable)
+    -> Pattern RewritingVariable
     -- ^ Configuration being rewritten
     -> simplifier (Results RulePattern Variable)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
@@ -234,7 +225,7 @@ applyRulesParallel
     => UnificationProcedure simplifier
     -> [RulePattern Variable]
     -- ^ Rewrite rules
-    -> Pattern (Target Variable)
+    -> Pattern RewritingVariable
     -- ^ Configuration being rewritten
     -> simplifier (Results RulePattern Variable)
 applyRulesParallel = applyRulesWithFinalizer finalizeRulesParallel
@@ -274,7 +265,7 @@ applyRulesSequence
     => UnificationProcedure simplifier
     -> [RulePattern Variable]
     -- ^ Rewrite rules
-    -> Pattern (Target Variable)
+    -> Pattern RewritingVariable
     -- ^ Configuration being rewritten
     -> simplifier (Results RulePattern Variable)
 applyRulesSequence = applyRulesWithFinalizer finalizeRulesSequence
