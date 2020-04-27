@@ -66,7 +66,6 @@ import Kore.Step.Step
     , applyRemainder
     , assertFunctionLikeResults
     , simplifyPredicate
-    , targetRuleVariables
     , toConfigurationVariables
     , unifyRules
     )
@@ -208,7 +207,8 @@ applyRulesWithFinalizer
     -> simplifier (Results RulePattern Variable)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     let sideCondition = SideCondition.topTODO
-        rules' = targetRuleVariables sideCondition initial <$> rules
+        initialVariables = freeVariables sideCondition <> freeVariables initial
+        rules' = mkRewritingRule initialVariables <$> rules
     results <- unifyRules unificationProcedure sideCondition initial rules'
     debugAppliedRewriteRules initial results
     finalize initial results

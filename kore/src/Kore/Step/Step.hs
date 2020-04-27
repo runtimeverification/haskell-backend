@@ -17,7 +17,6 @@ module Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , simplifyPredicate
-    , targetRuleVariables
     , toConfigurationVariables
     , toConfigurationVariablesCondition
     , unTargetRule
@@ -47,9 +46,6 @@ import Branch
     ( BranchT
     )
 import qualified Branch
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (freeVariables)
-    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Condition
     ( Condition
@@ -191,29 +187,6 @@ wouldNarrowWith unified =
         leftAxiom = matchingPattern axiom
     Conditional { substitution } = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
-
-{- | Prepare a rule for unification or matching with the configuration.
-
-The rule's variables are:
-
-* marked with 'Target' so that they are preferred targets for substitution, and
-* renamed to avoid any free variables from the configuration and side condition.
-
- -}
-targetRuleVariables
-    :: UnifyingRule rule
-    => SideCondition RewritingVariable
-    -> Pattern RewritingVariable
-    -> rule Variable
-    -> rule RewritingVariable
-targetRuleVariables sideCondition initial =
-    snd
-    . refreshRule avoiding
-    . mapRuleVariables
-        (fmap RewritingVariable . Target.mkElementTarget)
-        (fmap RewritingVariable . Target.mkSetTarget)
-  where
-    avoiding = freeVariables sideCondition <> freeVariables initial
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}

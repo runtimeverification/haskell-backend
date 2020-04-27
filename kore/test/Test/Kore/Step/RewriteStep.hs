@@ -177,7 +177,7 @@ test_renameRuleVariables =
                     , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
                     , attributes = Default.def
                     }
-            actual = Step.targetRuleVariables SideCondition.top initial axiom
+            actual = mkRewritingRule initialFreeVariables axiom
             initialFreeVariables :: FreeVariables RewritingVariable
             initialFreeVariables = freeVariables initial
             actualFreeVariables = freeVariables actual
