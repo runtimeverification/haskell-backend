@@ -20,9 +20,6 @@ module Kore.Rewriting.RewritingVariable
 
 import Prelude.Kore
 
-import Data.Generics.Wrapped
-    ( _Unwrapped
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -44,25 +41,63 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.UnifyingRule
 import Kore.Unparser
-import Kore.Variables.Target
-    ( Target
-    )
-import qualified Kore.Variables.Target as Target
+import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     , foldMapVariable
     )
 
-newtype RewritingVariable =
-    RewritingVariable { getRewritingVariable :: Target Variable }
-    deriving (Eq, Ord, Show)
+data RewritingVariable
+    = ConfigVariable !Variable
+    | RuleVariable   !Variable
+    deriving (Show)
     deriving (GHC.Generic)
-    deriving newtype FreshPartialOrd
-    deriving newtype VariableName
-    deriving newtype SubstitutionOrd
-    deriving newtype Unparse
 
-instance Hashable RewritingVariable
+instance Eq RewritingVariable where
+    (==) = on (==) (from @_ @Variable)
+    {-# INLINE (==) #-}
+
+instance Ord RewritingVariable where
+    compare = on compare (from @_ @Variable)
+    {-# INLINE compare #-}
+
+instance Hashable RewritingVariable where
+    hashWithSalt salt = hashWithSalt salt . from @_ @Variable
+    {-# INLINE hashWithSalt #-}
+
+instance FreshPartialOrd RewritingVariable where
+    infVariable =
+        \case
+            RuleVariable var   -> RuleVariable (infVariable var)
+            ConfigVariable var -> ConfigVariable (infVariable var)
+    {-# INLINE infVariable #-}
+
+    supVariable =
+        \case
+            RuleVariable var   -> RuleVariable (supVariable var)
+            ConfigVariable var -> ConfigVariable (supVariable var)
+    {-# INLINE supVariable #-}
+
+    nextVariable =
+        \case
+            RuleVariable var   -> RuleVariable (nextVariable var)
+            ConfigVariable var -> ConfigVariable (nextVariable var)
+    {-# INLINE nextVariable #-}
+
+instance VariableName RewritingVariable
+
+instance SubstitutionOrd RewritingVariable where
+    compareSubstitution (RuleVariable _) (ConfigVariable _) = LT
+    compareSubstitution (ConfigVariable _) (RuleVariable _) = GT
+    compareSubstitution variable1 variable2 =
+        on compareSubstitution (from @_ @Variable) variable1 variable2
+
+instance Unparse RewritingVariable where
+    unparse (ConfigVariable variable) = "Config" <> unparse variable
+    unparse (RuleVariable variable) = "Rule" <> unparse variable
+
+    unparse2 (ConfigVariable variable) = "Config" <> unparse2 variable
+    unparse2 (RuleVariable variable) = "Rule" <> unparse2 variable
 
 instance SOP.Generic RewritingVariable
 
@@ -73,25 +108,30 @@ instance Debug RewritingVariable
 instance Diff RewritingVariable
 
 instance From RewritingVariable Variable where
-    from = from @_ @Variable . getRewritingVariable
+    from (ConfigVariable variable) = variable
+    from (RuleVariable variable) = variable
 
 instance From Variable RewritingVariable where
-    from = RewritingVariable . from @Variable
+    from = RuleVariable
 
 instance SortedVariable RewritingVariable where
-    lensVariableSort = _Unwrapped . lensVariableSort
+    lensVariableSort f =
+        \case
+            ConfigVariable variable ->
+                ConfigVariable <$> lensVariableSort f variable
+            RuleVariable variable ->
+                RuleVariable <$> lensVariableSort f variable
+    {-# INLINE lensVariableSort #-}
 
 instance FreshVariable RewritingVariable
 
 getElementRewritingVariable
     :: ElementVariable RewritingVariable -> ElementVariable Variable
-getElementRewritingVariable =
-    Target.unTargetElement . fmap getRewritingVariable
+getElementRewritingVariable = fmap (from @_ @Variable)
 
 getSetRewritingVariable
     :: SetVariable RewritingVariable -> SetVariable Variable
-getSetRewritingVariable =
-    Target.unTargetSet . fmap getRewritingVariable
+getSetRewritingVariable = fmap (from @_ @Variable)
 
 getPatternRewritingVariable
     :: Pattern RewritingVariable
@@ -102,10 +142,12 @@ getPatternRewritingVariable =
         getSetRewritingVariable
 
 isConfigVariable :: RewritingVariable -> Bool
-isConfigVariable = Target.isNonTarget . getRewritingVariable
+isConfigVariable (ConfigVariable _) = True
+isConfigVariable _ = False
 
 isRuleVariable :: RewritingVariable -> Bool
-isRuleVariable = Target.isTarget . getRewritingVariable
+isRuleVariable (RuleVariable _) = True
+isRuleVariable _ = False
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
@@ -136,23 +178,21 @@ mkRewritingRule avoiding =
     snd
     . refreshRule avoiding
     . mapRuleVariables
-        (fmap RewritingVariable . Target.mkElementTarget)
-        (fmap RewritingVariable . Target.mkSetTarget)
+        (fmap RuleVariable)
+        (fmap RuleVariable)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
 unRewritingRule :: UnifyingRule rule => rule RewritingVariable -> rule Variable
 unRewritingRule =
-    mapRuleVariables
-        (Target.unTargetElement . fmap getRewritingVariable)
-        (Target.unTargetSet . fmap getRewritingVariable)
+    mapRuleVariables getElementRewritingVariable getSetRewritingVariable
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern Variable -> Pattern RewritingVariable
 mkRewritingPattern =
     Pattern.mapVariables
-        (fmap RewritingVariable . Target.mkElementNonTarget)
-        (fmap RewritingVariable . Target.mkSetNonTarget)
+        (fmap ConfigVariable)
+        (fmap ConfigVariable)
 
 getRemainderPredicate :: Predicate RewritingVariable -> Predicate Variable
 getRemainderPredicate predicate =
@@ -183,9 +223,9 @@ isUnifiedConfigVariable (SetVar setVar) =
 mkElementConfigVariable
     :: ElementVariable Variable
     -> ElementVariable RewritingVariable
-mkElementConfigVariable = fmap RewritingVariable . Target.mkElementNonTarget
+mkElementConfigVariable = fmap ConfigVariable
 
 mkElementRuleVariable
     :: ElementVariable Variable
     -> ElementVariable RewritingVariable
-mkElementRuleVariable = fmap RewritingVariable . Target.mkElementTarget
+mkElementRuleVariable = fmap RuleVariable
