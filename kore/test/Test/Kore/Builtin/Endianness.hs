@@ -117,5 +117,5 @@ unify
 unify term1 term2 =
     runNoSMT
     $ runSimplifier testEnv
-    $ runUnifierT
+    $ runUnifierT Not.notSimplifier
     $ termUnification Not.notSimplifier term1 term2

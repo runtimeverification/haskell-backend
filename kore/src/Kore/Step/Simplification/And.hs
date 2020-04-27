@@ -455,7 +455,7 @@ termAnd
     -> BranchT simplifier (Pattern variable)
 termAnd notSimplifier p1 p2 =
     either (const andTerm) BranchT.scatter
-    =<< (lift . runUnifierT) (termAndWorker p1 p2)
+    =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)
   where
     andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
     termAndWorker

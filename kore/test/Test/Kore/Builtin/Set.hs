@@ -1784,7 +1784,7 @@ unifiedBy (termLike1, termLike2) substitution testName =
     testCase testName $ do
         Right actual <-
             runSimplifier testEnv
-            $ runUnifierT
+            $ runUnifierT Not.notSimplifier
             $ termUnification Not.notSimplifier termLike1 termLike2
         liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
   where

@@ -413,7 +413,9 @@ termEqualsAnd
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where
-    run it = (runUnifierT . runMaybeT) it >>= either missingCase BranchT.scatter
+    run it =
+        (runUnifierT Not.notSimplifier . runMaybeT) it
+        >>= either missingCase BranchT.scatter
     missingCase = const (return Nothing)
 
     maybeTermEqualsWorker
@@ -432,7 +434,7 @@ termEqualsAnd p1 p2 =
         -> unifier (Pattern variable)
     termEqualsAndWorker first second =
         either ignoreErrors scatterResults
-        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
+        =<< (runUnifierT Not.notSimplifier . runMaybeT) (maybeTermEqualsWorker first second)
       where
         ignoreErrors _ = return equalsPredicate
         scatterResults =

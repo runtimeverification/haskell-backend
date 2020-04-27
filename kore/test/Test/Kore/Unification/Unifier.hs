@@ -206,7 +206,7 @@ andSimplifySuccess term1 term2 results = do
     Right subst' <-
         runNoSMT
         $ runSimplifier testEnv
-        $ Monad.Unify.runUnifierT
+        $ Monad.Unify.runUnifierT Not.notSimplifier
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual (message expect subst') expect subst'
   where
@@ -234,7 +234,7 @@ andSimplifyFailure term1 term2 err = do
     actual <-
         runNoSMT
         $ runSimplifier testEnv
-        $ Monad.Unify.runUnifierT
+        $ Monad.Unify.runUnifierT Not.notSimplifier
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
 
@@ -251,7 +251,7 @@ andSimplifyException message term1 term2 exceptionMessage =
         test = do
             assignment <-
                 runNoSMT $ runSimplifier testEnv
-                $ Monad.Unify.runUnifierT
+                $ Monad.Unify.runUnifierT Not.notSimplifier
                 $ simplifyAnds (unificationProblem term1 term2 :| [])
             _ <- evaluate assignment
             assertFailure "This evaluation should fail"
@@ -279,7 +279,7 @@ unificationProcedureSuccessWithSimplifiers
                 SideCondition.topTODO
                 term1
                 term2
-            & Monad.Unify.runUnifierT
+            & Monad.Unify.runUnifierT Not.notSimplifier
             & runSimplifier mockEnv
             & runNoSMT
         let

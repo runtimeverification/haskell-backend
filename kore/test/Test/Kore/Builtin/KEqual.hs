@@ -112,7 +112,7 @@ test_KEqual =
                     (kseq (inj kItemSort dvX) dotk)
                     (kseq (inj kItemSort dvT) dotk)
         actual <-
-            runSimplifierBranch testEnv . runUnifierT . runMaybeT $ KEqual.termKEquals (termUnification Not.notSimplifier) Not.notSimplifier t1 t2
+            runSimplifierBranch testEnv . runUnifierT Not.notSimplifier . runMaybeT $ KEqual.termKEquals (termUnification Not.notSimplifier) Not.notSimplifier t1 t2
         -- let actual2 = KEqual.termKEquals ((gather . unificationProcedure) topTODO) t1 t2
         traceM
             $ "\n\n TEST RESULT:\n"

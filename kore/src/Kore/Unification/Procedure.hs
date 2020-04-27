@@ -19,6 +19,10 @@ import Control.Error
     )
 
 import qualified Branch as BranchT
+import Control.Monad.Trans.Reader
+    ( ask
+    , runReaderT
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -39,6 +43,7 @@ import Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
     )
+import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
@@ -49,6 +54,7 @@ import Kore.Unification.Error
 import Kore.Unification.UnificationProcedure
 import Kore.Unification.UnifierT
     ( getUnifierT
+    , substitutionSimplifier
     )
 import Kore.Unification.Unify
     ( InternalVariable
@@ -85,10 +91,15 @@ unificationProcedureWorker sideCondition p1 p2
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
 
+-- TODO: factor out
 unificationProcedure
     :: MonadSimplify simplifier
     => UnificationProcedure (ExceptT UnificationError simplifier)
 unificationProcedure =
     UnificationProcedure $ \sideCondition term1 term2 ->
-        unificationProcedureWorker sideCondition term1 term2
-        & getUnifierT
+        flip runReaderT conditionSimplifier
+        . getUnifierT
+        $ unificationProcedureWorker sideCondition term1 term2
+  where
+    conditionSimplifier =
+        ConditionSimplifier.create (substitutionSimplifier Not.notSimplifier)

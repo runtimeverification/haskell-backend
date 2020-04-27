@@ -17,9 +17,6 @@ import Control.Error
     ( MaybeT
     , maybeT
     )
-import Control.Monad.Trans.Identity
-    ( IdentityT (..)
-    )
 
 import qualified Branch as BranchT
 import qualified Kore.Internal.Condition as Condition
