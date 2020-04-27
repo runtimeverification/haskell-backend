@@ -464,9 +464,6 @@ instance Debug variable => Debug (RewriteRule variable)
 
 instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
 
-instance InternalVariable variable => Pretty (RewriteRule variable) where
-    pretty (RewriteRule rule) = Pretty.pretty rule
-
 instance
     InternalVariable variable
     => Unparse (RewriteRule variable)
