@@ -235,7 +235,7 @@ transitionRule
                     mapRules =
                         StepResult.mapRules
                         $ RewriteRule
-                        . Step.unTargetRule
+                        . Step.unRewritingRule
                         . Step.withoutUnification
                     mapConfigs =
                         StepResult.mapConfigs

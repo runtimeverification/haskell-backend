@@ -19,12 +19,12 @@ module Kore.Step.Step
     , simplifyPredicate
     , toConfigurationVariables
     , toConfigurationVariablesCondition
-    , unTargetRule
     , assertFunctionLikeResults
     , checkFunctionLike
     , wouldNarrowWith
     -- * Re-exports
     , UnificationProcedure (..)
+    , unRewritingRule
     -- Below exports are just for tests
     , Step.gatherResults
     , Step.remainders
@@ -187,14 +187,6 @@ wouldNarrowWith unified =
         leftAxiom = matchingPattern axiom
     Conditional { substitution } = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
-
-{- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
- -}
-unTargetRule :: UnifyingRule rule => rule RewritingVariable -> rule Variable
-unTargetRule =
-    mapRuleVariables
-        (Target.unTargetElement . fmap getRewritingVariable)
-        (Target.unTargetSet . fmap getRewritingVariable)
 
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults

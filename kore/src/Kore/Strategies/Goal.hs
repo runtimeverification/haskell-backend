@@ -960,7 +960,7 @@ deriveResults goal Results { results, remainders } =
 
     fromAppliedRule =
         (fromRulePattern . goalToRule $ goal)
-            . Step.unTargetRule
+            . Step.unRewritingRule
             . Step.withoutUnification
 
 withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a
