@@ -47,6 +47,7 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     )
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Result as StepResult
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
@@ -224,7 +225,7 @@ transitionRule
         eitherResults <-
             Step.applyRewriteRulesParallel
                 unificationProcedure
-                rules
+                (mkRewritingRule <$> rules)
                 config
             & lift . lift . runExceptT
         case eitherResults of

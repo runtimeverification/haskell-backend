@@ -44,6 +44,7 @@ import Kore.HasPriority
 import Kore.Internal.Pattern
     ( Pattern
     )
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
@@ -119,7 +120,7 @@ transitionRule =
         eitherResults <-
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
-                [rule]
+                [mkRewritingRule rule]
                 config
             & lift . runExceptT
         case eitherResults of

@@ -794,7 +794,7 @@ applyRewriteRulesParallel
 applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
         Unification.unificationProcedure
-        rules
+        (mkRewritingRule <$> rules)
         (simplifiedPattern initial)
     & runSimplifierNoSMT Mock.env . runExceptT
 
@@ -1184,7 +1184,7 @@ applyRewriteRulesSequence initial rules =
     Step.applyRewriteRulesSequence
         Unification.unificationProcedure
         (simplifiedPattern initial)
-        rules
+        (mkRewritingRule <$> rules)
     & runSimplifier Mock.env . runExceptT
 
 test_applyRewriteRulesSequence :: [TestTree]

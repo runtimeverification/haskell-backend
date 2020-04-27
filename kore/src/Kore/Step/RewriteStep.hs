@@ -243,14 +243,14 @@ applyRewriteRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> [RewriteRule Variable]
+    -> [RewriteRule RewritingVariable]
     -- ^ Rewrite rules
     -> Pattern Variable
     -- ^ Configuration being rewritten
     -> simplifier (Results RulePattern Variable)
 applyRewriteRulesParallel
     unificationProcedure
-    (map (getRewriteRule . mkRewritingRule) -> rules)
+    (map getRewriteRule -> rules)
     (mkRewritingPattern -> initial)
   = do
     results <- applyRulesParallel unificationProcedure rules initial
@@ -285,13 +285,13 @@ applyRewriteRulesSequence
     => UnificationProcedure simplifier
     -> Pattern Variable
     -- ^ Configuration being rewritten
-    -> [RewriteRule Variable]
+    -> [RewriteRule RewritingVariable]
     -- ^ Rewrite rules
     -> simplifier (Results RulePattern Variable)
 applyRewriteRulesSequence
     unificationProcedure
     (mkRewritingPattern -> initialConfig)
-    (map (getRewriteRule . mkRewritingRule) -> rules)
+    (map getRewriteRule -> rules)
   = do
     results <- applyRulesSequence unificationProcedure rules initialConfig
     assertFunctionLikeResults (term initialConfig) results

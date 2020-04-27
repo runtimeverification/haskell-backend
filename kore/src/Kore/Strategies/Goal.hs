@@ -102,6 +102,7 @@ import Kore.Log.InfoReachability
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.Result
     ( Result (..)
     , Results (..)
@@ -877,7 +878,7 @@ derivePar =
     deriveWith $ Step.applyRewriteRulesParallel Unification.unificationProcedure
 
 type Deriver monad =
-        [RewriteRule Variable]
+        [RewriteRule RewritingVariable]
     ->  Pattern Variable
     ->  ExceptT UnificationError monad (Step.Results RulePattern Variable)
 
@@ -904,7 +905,7 @@ deriveWith takeStep rules goal =
   where
     configuration :: Pattern Variable
     configuration = getConfiguration goal
-    rewrites = RewriteRule . toRulePattern <$> rules
+    rewrites = mkRewritingRule . RewriteRule . toRulePattern <$> rules
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
