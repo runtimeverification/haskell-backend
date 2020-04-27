@@ -21,7 +21,6 @@ module Kore.Step.RulePattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
-    , getPriorityOfRule
     , applySubstitution
     , topExistsToImplicitForall
     , isFreeOf
@@ -79,6 +78,7 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
+import Kore.HasPriority
 import Kore.Internal.Alias
     ( Alias (..)
     )
@@ -243,6 +243,9 @@ instance TopBottom (RulePattern variable) where
     isTop _ = False
     isBottom _ = False
 
+instance HasPriority (RulePattern variable) where
+    getPriority = Attribute.getPriorityOfAxiom . attributes
+
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern
     :: InternalVariable variable
@@ -302,9 +305,6 @@ isNormalRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Normal -> True
         _ -> False
-
-getPriorityOfRule :: RulePattern variable -> Integer
-getPriorityOfRule = Attribute.getPriorityOfAxiom . attributes
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm
@@ -477,6 +477,9 @@ instance
   where
     freeVariables (RewriteRule rule) = freeVariables rule
     {-# INLINE freeVariables #-}
+
+instance HasPriority (RewriteRule variable) where
+    getPriority = getPriority . getRewriteRule
 
 {-  | Implication-based pattern.
 -}

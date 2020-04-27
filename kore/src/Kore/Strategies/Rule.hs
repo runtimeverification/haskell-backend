@@ -18,6 +18,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.HasPriority
 import Kore.Internal.Variable
     ( Variable
     )
@@ -55,6 +56,9 @@ instance ToRulePattern (Rule (OnePathRule Variable))
 
 instance FromRulePattern (Rule (OnePathRule Variable))
 
+instance HasPriority (Rule (OnePathRule Variable)) where
+    getPriority = getPriority . unRuleOnePath
+
 -- * All-path reachability
 
 newtype instance Rule (AllPathRule Variable) =
@@ -72,6 +76,9 @@ instance Diff (Rule (AllPathRule Variable))
 instance ToRulePattern (Rule (AllPathRule Variable))
 
 instance FromRulePattern (Rule (AllPathRule Variable))
+
+instance HasPriority (Rule (AllPathRule Variable)) where
+    getPriority = getPriority . unRuleAllPath
 
 -- * Reachability
 
@@ -91,3 +98,6 @@ instance Diff (Rule (ReachabilityRule Variable))
 instance ToRulePattern (Rule (ReachabilityRule Variable))
 
 instance FromRulePattern (Rule (ReachabilityRule Variable))
+
+instance HasPriority (Rule (ReachabilityRule Variable)) where
+    getPriority = getPriority . unReachabilityRewriteRule
