@@ -83,11 +83,12 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
                 )
     {-# INLINE localSimplifierAxioms #-}
 
-    simplifyCondition notSimplifier sideCondition condition =
+    simplifyCondition sideCondition condition =
         simplifyCondition' sideCondition condition
       where
         ConditionSimplifier simplifyCondition' =
-            ConditionSimplifier.create notSimplifier substitutionSimplifier
+            -- TODO: substitutionSimplifier needs notSimplifier
+            ConditionSimplifier.create substitutionSimplifier
     {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where

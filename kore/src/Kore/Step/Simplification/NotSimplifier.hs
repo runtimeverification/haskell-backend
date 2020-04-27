@@ -14,12 +14,16 @@ import Kore.Internal.OrPattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.TermLike
+    ( InternalVariable
+    )
 
 newtype NotSimplifier simplifier =
     NotSimplifier
         { runNotSimplifier
             :: forall variable
-            .  SideCondition variable
+            .  InternalVariable variable
+            => SideCondition variable
             -> OrPattern variable
             -> simplifier (OrPattern variable)
         }

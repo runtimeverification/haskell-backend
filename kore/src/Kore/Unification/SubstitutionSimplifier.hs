@@ -27,6 +27,9 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -36,6 +39,9 @@ import Kore.Internal.SideCondition
 import Kore.Internal.Substitution
     ( Normalization
     , Substitution
+    )
+import Kore.Internal.TermLike
+    ( TermLike
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -60,18 +66,18 @@ uses 'Unifier.throwUnificationError'.
 substitutionSimplifier
     :: forall unifier
     .  MonadUnify unifier
-    => SubstitutionSimplifier unifier unifier
-substitutionSimplifier =
+    => NotSimplifier unifier
+    -> SubstitutionSimplifier unifier
+substitutionSimplifier notSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper
         :: forall variable
         .  InternalVariable variable
-        => NotSimplifier unifier
-        -> SideCondition variable
+        => SideCondition variable
         -> Substitution variable
         -> unifier (OrCondition variable)
-    wrapper notSimplifier sideCondition substitution = do
+    wrapper sideCondition substitution = do
         (predicate, result) <-
             worker substitution
             & maybeT empty return
@@ -86,13 +92,27 @@ substitutionSimplifier =
             -> MaybeT
                 unifier
                 (Predicate variable, Normalization variable)
-        worker = simplifySubstitutionWorker notSimplifier sideCondition unificationMakeAnd
+        worker =
+            simplifySubstitutionWorker
+                sideCondition
+                (unificationMakeAnd notSimplifier)
 
-unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
-unificationMakeAnd =
+unificationMakeAnd
+    :: forall unifier
+    .  MonadUnify unifier
+    => NotSimplifier unifier
+    -> MakeAnd unifier
+unificationMakeAnd notSimplifier =
     MakeAnd { makeAnd }
   where
-    makeAnd notSimplifier termLike1 termLike2 sideCondition = do
+    makeAnd
+        :: forall variable
+        .  InternalVariable variable
+        => TermLike variable
+        -> TermLike variable
+        -> SideCondition variable
+        -> unifier (Pattern variable)
+    makeAnd termLike1 termLike2 sideCondition = do
         unified <- termUnification notSimplifier termLike1 termLike2
-        Simplifier.simplifyCondition notSimplifier sideCondition unified
+        Simplifier.simplifyCondition sideCondition unified
             & BranchT.alternate

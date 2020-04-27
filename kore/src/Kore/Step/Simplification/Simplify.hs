@@ -155,8 +155,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
 
     simplifyCondition
         :: InternalVariable variable
-        => NotSimplifier m2
-        -> SideCondition variable
+        => SideCondition variable
         -> Conditional variable term
         -> BranchT m (Conditional variable term)
     default simplifyCondition
@@ -165,14 +164,13 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
             , MonadSimplify n
             , m ~ trans n
             )
-        =>  NotSimplifier m2
-        ->  SideCondition variable
+        =>  SideCondition variable
         ->  Conditional variable term
         ->  BranchT m (Conditional variable term)
-    simplifyCondition notSimplifier sideCondition conditional = do
+    simplifyCondition sideCondition conditional = do
         results <-
             lift . lift
-            $ Branch.gather $ simplifyCondition notSimplifier sideCondition conditional
+            $ Branch.gather $ simplifyCondition sideCondition conditional
         Branch.scatter results
     {-# INLINE simplifyCondition #-}
 
