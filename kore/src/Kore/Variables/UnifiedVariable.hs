@@ -65,7 +65,7 @@ from element variables (introduced by 'ElemVar').
 data UnifiedVariable variable
     = ElemVar !(ElementVariable variable)
     | SetVar  !(SetVariable variable)
-    deriving (Generic, Eq, Ord, Show, Functor)
+    deriving (Generic, Eq, Ord, Show)
 
 instance NFData variable => NFData (UnifiedVariable variable)
 
