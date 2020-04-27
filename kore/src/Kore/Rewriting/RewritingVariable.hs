@@ -54,20 +54,10 @@ import Kore.Variables.UnifiedVariable
 data RewritingVariable
     = ConfigVariable !Variable
     | RuleVariable   !Variable
-    deriving (Show)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
 
-instance Eq RewritingVariable where
-    (==) = on (==) (from @_ @Variable)
-    {-# INLINE (==) #-}
-
-instance Ord RewritingVariable where
-    compare = on compare (from @_ @Variable)
-    {-# INLINE compare #-}
-
-instance Hashable RewritingVariable where
-    hashWithSalt salt = hashWithSalt salt . from @_ @Variable
-    {-# INLINE hashWithSalt #-}
+instance Hashable RewritingVariable
 
 instance FreshPartialOrd RewritingVariable where
     infVariable =
@@ -217,10 +207,7 @@ mkRewritingRule
     => FreeVariables RewritingVariable
     -> rule Variable
     -> rule RewritingVariable
-mkRewritingRule avoiding =
-    snd
-    . refreshRule avoiding
-    . mapRuleVariables (fmap RuleVariable) (fmap RuleVariable)
+mkRewritingRule _ = mapRuleVariables (fmap RuleVariable) (fmap RuleVariable)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
