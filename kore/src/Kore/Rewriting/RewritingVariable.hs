@@ -12,6 +12,7 @@ module Kore.Rewriting.RewritingVariable
     , isConfigVariable
     , isRuleVariable
     , mkRewritingRule
+    , unRewritingRule
     ) where
 
 import Prelude.Kore
@@ -128,3 +129,11 @@ mkRewritingRule avoiding =
     . mapRuleVariables
         (fmap RewritingVariable . Target.mkElementTarget)
         (fmap RewritingVariable . Target.mkSetTarget)
+
+{- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
+ -}
+unRewritingRule :: UnifyingRule rule => rule RewritingVariable -> rule Variable
+unRewritingRule =
+    mapRuleVariables
+        (Target.unTargetElement . fmap getRewritingVariable)
+        (Target.unTargetSet . fmap getRewritingVariable)
