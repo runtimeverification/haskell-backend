@@ -118,7 +118,7 @@ instance SortedVariable RewritingVariable where
     lensVariableSort f =
         \case
             ConfigVariable variable ->
-                ConfigVariable <$> lensVariableSort f variable
+                RuleVariable <$> lensVariableSort f variable
             RuleVariable variable ->
                 RuleVariable <$> lensVariableSort f variable
     {-# INLINE lensVariableSort #-}
