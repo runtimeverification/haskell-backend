@@ -23,7 +23,6 @@ module Kore.Step.Step
     , unTargetRule
     , assertFunctionLikeResults
     , checkFunctionLike
-    , checkSubstitutionCoverage
     , wouldNarrowWith
     -- * Re-exports
     , UnificationProcedure (..)
@@ -111,7 +110,6 @@ import Kore.Variables.Target
 import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
-    , foldMapVariable
     )
 
 type UnifiedRule = Conditional
@@ -356,67 +354,6 @@ checkFunctionLike unifiedRules pat
         ]
       where
         left = matchingPattern term
-
-{- | Check that the final substitution covers the applied rule appropriately.
-
-For normal execution, the final substitution should cover all the free
-variables on the left-hand side of the applied rule; otherwise, we would
-wrongly introduce existentially-quantified variables into the final
-configuration. Failure of the coverage check indicates a problem with
-unification, so in that case @checkSubstitutionCoverage@ throws
-an error message with the axiom and the initial and final configurations.
-
-For symbolic execution, we expect to replace symbolic variables with
-more specific patterns (narrowing), so we just quantify the variables
-we added to the result.
-
-@checkSubstitutionCoverage@ calls @quantifyVariables@ to remove
-the axiom variables from the substitution and unwrap all the 'Target's.
--}
-checkSubstitutionCoverage
-    :: forall variable monad rule
-    .  InternalVariable variable
-    => Monad monad
-    => UnifyingRule rule
-    => Pretty.Pretty (rule (Target variable))
-    => Pattern (Target variable)
-    -- ^ Initial configuration
-    -> UnifiedRule (Target variable) (rule (Target variable))
-    -- ^ Unified rule
-    -> monad ()
-checkSubstitutionCoverage initial unified
-  | isCoveringSubstitution || isSymbolic = return ()
-  | otherwise =
-    -- The substitution does not cover all the variables on the left-hand side
-    -- of the rule *and* we did not generate a substitution for a symbolic
-    -- initial configuration. This is a fatal error because it indicates
-    -- something has gone horribly wrong.
-    (error . show . Pretty.vsep)
-        [ "While applying axiom:"
-        , Pretty.indent 4 (Pretty.pretty axiom)
-        , "from the initial configuration:"
-        , Pretty.indent 4 (unparse initial)
-        , "with the unifier:"
-        , Pretty.indent 4 (unparse unifier)
-        , "Failed substitution coverage check!"
-        , "The substitution (above, in the unifier) \
-          \did not cover the axiom variables:"
-        , (Pretty.indent 4 . Pretty.sep)
-            (unparse <$> Set.toAscList uncovered)
-        , "in the left-hand side of the axiom."
-        ]
-  where
-    Conditional { term = axiom } = unified
-    unifier :: Pattern (Target variable)
-    unifier = TermLike.mkTop_ <$ Conditional.withoutTerm unified
-    Conditional { substitution } = unified
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
-    uncovered = wouldNarrowWith unified
-    isCoveringSubstitution = Set.null uncovered
-    isSymbolic =
-        Foldable.any (foldMapVariable Target.isNonTarget)
-            substitutionVariables
-
 
 {- | Apply the initial conditions to the results of rule unification.
 
