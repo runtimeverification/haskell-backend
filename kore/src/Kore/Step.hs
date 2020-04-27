@@ -40,6 +40,7 @@ import Numeric.Natural
     ( Natural
     )
 
+import Kore.HasPriority
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -48,7 +49,6 @@ import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern
     , ToRulePattern (..)
-    , getPriorityOfRule
     , isCoolingRule
     , isHeatingRule
     , isNormalRule
@@ -167,28 +167,22 @@ anyRewrite rewrites =
     Strategy.any (rewriteStep <$> rewrites)
 
 priorityAllStrategy
-    :: ToRulePattern rewrite
+    :: HasPriority rewrite
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAllStrategy rewrites =
     Strategy.first (fmap allRewrites priorityGroups)
   where
-    priorityGroups =
-        groupSortOn
-            (getPriorityOfRule . toRulePattern)
-            rewrites
+    priorityGroups = groupSortOn getPriority rewrites
 
 priorityAnyStrategy
-    :: ToRulePattern rewrite
+    :: HasPriority rewrite
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAnyStrategy rewrites =
     anyRewrite sortedRewrites
   where
-    sortedRewrites =
-        sortOn
-            (getPriorityOfRule . toRulePattern)
-            rewrites
+    sortedRewrites = sortOn getPriority rewrites
 
 {- | Heat the configuration, apply a normal rewrite, and cool the result.
  -}

@@ -64,6 +64,7 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
+import Kore.HasPriority
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
@@ -321,10 +322,7 @@ instance Goal (OnePathRule Variable) where
                 rewrites
             )
       where
-        rewrites =
-            sortOn
-                (RulePattern.getPriorityOfRule . toRulePattern)
-                rules
+        rewrites = sortOn getPriority rules
         coinductiveRewrites =
             OnePathRewriteRule
             . RewriteRule
@@ -370,10 +368,7 @@ instance Goal (AllPathRule Variable) where
                 priorityGroups
             )
       where
-        priorityGroups =
-            groupSortOn
-                (RulePattern.getPriorityOfRule . toRulePattern)
-                rules
+        priorityGroups = groupSortOn getPriority rules
         coinductiveRewrites =
             AllPathRewriteRule
             . RewriteRule
