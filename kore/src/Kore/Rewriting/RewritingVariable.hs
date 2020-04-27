@@ -6,20 +6,20 @@ License     : NCSA
 
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariable
-    , mkConfigVariable
-    , mkRuleVariable
-    , getResultPattern
     , isConfigVariable
     , isRuleVariable
-    , mkRewritingRule
-    , unRewritingRule
-    , mkRewritingPattern
-    , getRemainderPredicate
-    , getRemainderPattern
+    , mkConfigVariable
+    , mkRuleVariable
     , mkElementConfigVariable
     , mkElementRuleVariable
     , mkUnifiedRuleVariable
     , mkUnifiedConfigVariable
+    , mkRewritingRule
+    , unRewritingRule
+    , mkRewritingPattern
+    , getResultPattern
+    , getRemainderPredicate
+    , getRemainderPattern
     ) where
 
 import Prelude.Kore
@@ -135,6 +135,28 @@ instance FreshVariable RewritingVariable where
         sameName = on (==) (variableName . from @_ @Variable)
     {-# INLINE refreshVariable #-}
 
+mkElementConfigVariable
+    :: ElementVariable Variable
+    -> ElementVariable RewritingVariable
+mkElementConfigVariable = fmap ConfigVariable
+
+mkElementRuleVariable
+    :: ElementVariable Variable
+    -> ElementVariable RewritingVariable
+mkElementRuleVariable = fmap RuleVariable
+
+mkUnifiedRuleVariable
+    :: UnifiedVariable Variable
+    -> UnifiedVariable RewritingVariable
+mkUnifiedRuleVariable (ElemVar var) = ElemVar (RuleVariable <$> var)
+mkUnifiedRuleVariable (SetVar var) = SetVar (RuleVariable <$> var)
+
+mkUnifiedConfigVariable
+    :: UnifiedVariable Variable
+    -> UnifiedVariable RewritingVariable
+mkUnifiedConfigVariable (ElemVar var) = ElemVar (ConfigVariable <$> var)
+mkUnifiedConfigVariable (SetVar var) = SetVar (ConfigVariable <$> var)
+
 getRuleVariable :: RewritingVariable -> Maybe Variable
 getRuleVariable (RuleVariable var) = Just var
 getRuleVariable _ = Nothing
@@ -145,13 +167,6 @@ getUnifiedRuleVariable
 getUnifiedRuleVariable (ElemVar var) = ElemVar <$> traverse getRuleVariable var
 getUnifiedRuleVariable (SetVar var) = SetVar <$> traverse getRuleVariable var
 
-mkUnifiedRuleVariable, mkUnifiedConfigVariable
-    :: UnifiedVariable Variable -> UnifiedVariable RewritingVariable
-mkUnifiedRuleVariable (ElemVar var) = ElemVar (RuleVariable <$> var)
-mkUnifiedRuleVariable (SetVar var) = SetVar (RuleVariable <$> var)
-mkUnifiedConfigVariable (ElemVar var) = ElemVar (ConfigVariable <$> var)
-mkUnifiedConfigVariable (SetVar var) = SetVar (ConfigVariable <$> var)
-
 getElementRewritingVariable
     :: ElementVariable RewritingVariable -> ElementVariable Variable
 getElementRewritingVariable = fmap (from @_ @Variable)
@@ -160,13 +175,17 @@ getSetRewritingVariable
     :: SetVariable RewritingVariable -> SetVariable Variable
 getSetRewritingVariable = fmap (from @_ @Variable)
 
-getPatternRewritingVariable
+getPattern
     :: Pattern RewritingVariable
     -> Pattern Variable
-getPatternRewritingVariable =
+getPattern pattern' =
     Pattern.mapVariables
         getElementRewritingVariable
         getSetRewritingVariable
+        pattern'
+    & assert (all isUnifiedConfigVariable freeVars)
+  where
+    FreeVariables freeVars = freeVariables pattern'
 
 mkConfigVariable :: Variable -> RewritingVariable
 mkConfigVariable = ConfigVariable
@@ -189,7 +208,7 @@ getResultPattern
     -> Pattern RewritingVariable
     -> Pattern Variable
 getResultPattern initial config@Conditional { substitution } =
-    getPatternRewritingVariable renamed
+    getPattern renamed
   where
     substitution' =
         Substitution.filter
@@ -255,27 +274,10 @@ getRemainderPredicate predicate =
     FreeVariables freeVars = freeVariables predicate
 
 getRemainderPattern :: Pattern RewritingVariable -> Pattern Variable
-getRemainderPattern pattern' =
-    Pattern.mapVariables
-        getElementRewritingVariable
-        getSetRewritingVariable
-        pattern'
-    & assert (all isUnifiedConfigVariable freeVars)
-  where
-    FreeVariables freeVars = freeVariables pattern'
+getRemainderPattern = getPattern
 
 isUnifiedConfigVariable :: UnifiedVariable RewritingVariable -> Bool
 isUnifiedConfigVariable (ElemVar elemVar) =
     isConfigVariable (getElementVariable elemVar)
 isUnifiedConfigVariable (SetVar setVar) =
     isConfigVariable (getSetVariable setVar)
-
-mkElementConfigVariable
-    :: ElementVariable Variable
-    -> ElementVariable RewritingVariable
-mkElementConfigVariable = fmap ConfigVariable
-
-mkElementRuleVariable
-    :: ElementVariable Variable
-    -> ElementVariable RewritingVariable
-mkElementRuleVariable = fmap RuleVariable
