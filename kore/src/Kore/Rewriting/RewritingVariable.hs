@@ -5,16 +5,17 @@ License     : NCSA
  -}
 
 module Kore.Rewriting.RewritingVariable
-    ( RewritingVariable (..)
-    , getElementRewritingVariable
-    , getSetRewritingVariable
-    , unwrapConfiguration
+    ( RewritingVariable
+    , getResultPattern
     , isConfigVariable
     , isRuleVariable
     , mkRewritingRule
     , unRewritingRule
     , mkRewritingPattern
     , mkRemainderPredicate
+    , mkRemainderPattern
+    , mkElementConfigVariable
+    , mkElementRuleVariable
     ) where
 
 import Prelude.Kore
@@ -108,8 +109,8 @@ isRuleVariable = Target.isTarget . getRewritingVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
-unwrapConfiguration :: Pattern RewritingVariable -> Pattern Variable
-unwrapConfiguration config@Conditional { substitution } =
+getResultPattern :: Pattern RewritingVariable -> Pattern Variable
+getResultPattern config@Conditional { substitution } =
     getPatternRewritingVariable
         config { Pattern.substitution = substitution' }
   where
@@ -163,8 +164,28 @@ mkRemainderPredicate predicate =
   where
     FreeVariables freeVars = freeVariables predicate
 
+mkRemainderPattern :: Pattern RewritingVariable -> Pattern Variable
+mkRemainderPattern pattern' =
+    Pattern.mapVariables
+        getElementRewritingVariable
+        getSetRewritingVariable
+        pattern'
+    & assert (all isUnifiedConfigVariable freeVars)
+  where
+    FreeVariables freeVars = freeVariables pattern'
+
 isUnifiedConfigVariable :: UnifiedVariable RewritingVariable -> Bool
 isUnifiedConfigVariable (ElemVar elemVar) =
     isConfigVariable (getElementVariable elemVar)
 isUnifiedConfigVariable (SetVar setVar) =
     isConfigVariable (getSetVariable setVar)
+
+mkElementConfigVariable
+    :: ElementVariable Variable
+    -> ElementVariable RewritingVariable
+mkElementConfigVariable = fmap RewritingVariable . Target.mkElementNonTarget
+
+mkElementRuleVariable
+    :: ElementVariable Variable
+    -> ElementVariable RewritingVariable
+mkElementRuleVariable = fmap RewritingVariable . Target.mkElementTarget

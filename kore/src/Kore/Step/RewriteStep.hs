@@ -139,7 +139,7 @@ finalizeRule initial unifiedRule =
         checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
-        let result = unwrapConfiguration <$> final
+        let result = getResultPattern <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
@@ -160,9 +160,7 @@ finalizeRulesParallel initial unifiedRules = do
     return Step.Results
         { results = Seq.fromList results
         , remainders =
-            OrPattern.fromPatterns
-            $ Pattern.mapVariables getElementRewritingVariable getSetRewritingVariable
-            <$> remainders'
+            OrPattern.fromPatterns $ mkRemainderPattern <$> remainders'
         }
 
 finalizeRulesSequence :: forall simplifier. Finalizer simplifier
@@ -177,9 +175,7 @@ finalizeRulesSequence initial unifiedRules = do
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
-            OrPattern.fromPatterns
-            $ Pattern.mapVariables getElementRewritingVariable getSetRewritingVariable
-            <$> remainders'
+            OrPattern.fromPatterns $ mkRemainderPattern <$> remainders'
         }
   where
     initialTerm = Conditional.term initial

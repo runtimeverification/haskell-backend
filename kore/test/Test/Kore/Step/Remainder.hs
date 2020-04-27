@@ -13,7 +13,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Remainder as Remainder
-import Kore.Variables.Target
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Terse
@@ -29,16 +28,16 @@ test_existentiallyQuantifyTarget =
 target :: Predicate RewritingVariable
 target =
     Predicate.makeEqualsPredicate_
-        (mkElemVar . fmap RewritingVariable $ mkElementNonTarget Mock.x)
+        (mkElemVar $ mkElementConfigVariable Mock.x)
         (Mock.sigma
-            (mkElemVar . fmap RewritingVariable $ mkElementTarget Mock.y)
-            (mkElemVar . fmap RewritingVariable $ mkElementTarget Mock.z)
+            (mkElemVar $ mkElementRuleVariable Mock.y)
+            (mkElemVar $ mkElementRuleVariable Mock.z)
         )
 
 quantified :: Predicate RewritingVariable
 quantified =
     Predicate.makeMultipleExists
-        [ RewritingVariable <$> mkElementTarget Mock.y
-        , RewritingVariable <$> mkElementTarget Mock.z
+        [ mkElementRuleVariable Mock.y
+        , mkElementRuleVariable Mock.z
         ]
         target
