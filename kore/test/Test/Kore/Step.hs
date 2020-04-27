@@ -59,6 +59,7 @@ import Kore.Internal.TermLike
     , mkImplies
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
 import Kore.Sort
     ( Sort (..)
     )
@@ -142,7 +143,7 @@ takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
     $ runSimplifier mockEnv
-    $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
+    $ makeExecutionGraph start (mkRewritingRule . unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
@@ -532,7 +533,9 @@ runStep
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy Unlimited transitionRule strategy configuration
+  where
+    strategy = [priorityAllStrategy $ mkRewritingRule <$> axioms]
 
 runStepMockEnv
     :: Pattern Variable
@@ -542,4 +545,6 @@ runStepMockEnv
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy Unlimited transitionRule strategy configuration
+  where
+    strategy = [priorityAllStrategy $ mkRewritingRule <$> axioms]
