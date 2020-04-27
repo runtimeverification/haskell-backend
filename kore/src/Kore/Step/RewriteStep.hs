@@ -160,7 +160,7 @@ finalizeRulesParallel initial unifiedRules = do
     return Step.Results
         { results = Seq.fromList results
         , remainders =
-            OrPattern.fromPatterns $ mkRemainderPattern <$> remainders'
+            OrPattern.fromPatterns $ getRemainderPattern <$> remainders'
         }
 
 finalizeRulesSequence :: forall simplifier. Finalizer simplifier
@@ -175,7 +175,7 @@ finalizeRulesSequence initial unifiedRules = do
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
-            OrPattern.fromPatterns $ mkRemainderPattern <$> remainders'
+            OrPattern.fromPatterns $ getRemainderPattern <$> remainders'
         }
   where
     initialTerm = Conditional.term initial

@@ -63,10 +63,8 @@ The resulting predicate has the 'Target' variables unwrapped.
 See also: 'remainder\''
 
  -}
-remainder
-    :: MultiOr (Condition RewritingVariable)
-    -> Predicate Variable
-remainder = mkRemainderPredicate . remainder'
+remainder :: MultiOr (Condition RewritingVariable) -> Predicate Variable
+remainder = getRemainderPredicate . remainder'
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 

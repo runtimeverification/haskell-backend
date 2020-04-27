@@ -12,8 +12,8 @@ module Kore.Rewriting.RewritingVariable
     , mkRewritingRule
     , unRewritingRule
     , mkRewritingPattern
-    , mkRemainderPredicate
-    , mkRemainderPattern
+    , getRemainderPredicate
+    , getRemainderPattern
     , mkElementConfigVariable
     , mkElementRuleVariable
     ) where
@@ -154,8 +154,8 @@ mkRewritingPattern =
         (fmap RewritingVariable . Target.mkElementNonTarget)
         (fmap RewritingVariable . Target.mkSetNonTarget)
 
-mkRemainderPredicate :: Predicate RewritingVariable -> Predicate Variable
-mkRemainderPredicate predicate =
+getRemainderPredicate :: Predicate RewritingVariable -> Predicate Variable
+getRemainderPredicate predicate =
     Predicate.mapVariables
         getElementRewritingVariable
         getSetRewritingVariable
@@ -164,8 +164,8 @@ mkRemainderPredicate predicate =
   where
     FreeVariables freeVars = freeVariables predicate
 
-mkRemainderPattern :: Pattern RewritingVariable -> Pattern Variable
-mkRemainderPattern pattern' =
+getRemainderPattern :: Pattern RewritingVariable -> Pattern Variable
+getRemainderPattern pattern' =
     Pattern.mapVariables
         getElementRewritingVariable
         getSetRewritingVariable
