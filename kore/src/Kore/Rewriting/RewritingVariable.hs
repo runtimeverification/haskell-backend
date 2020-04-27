@@ -6,6 +6,8 @@ License     : NCSA
 
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariable
+    , mkConfigVariable
+    , mkRuleVariable
     , getResultPattern
     , isConfigVariable
     , isRuleVariable
@@ -16,6 +18,8 @@ module Kore.Rewriting.RewritingVariable
     , getRemainderPattern
     , mkElementConfigVariable
     , mkElementRuleVariable
+    , mkUnifiedRuleVariable
+    , mkUnifiedConfigVariable
     ) where
 
 import Prelude.Kore
@@ -151,6 +155,12 @@ getPatternRewritingVariable =
     Pattern.mapVariables
         getElementRewritingVariable
         getSetRewritingVariable
+
+mkConfigVariable :: Variable -> RewritingVariable
+mkConfigVariable = ConfigVariable
+
+mkRuleVariable :: Variable -> RewritingVariable
+mkRuleVariable = RuleVariable
 
 isConfigVariable :: RewritingVariable -> Bool
 isConfigVariable (ConfigVariable _) = True
