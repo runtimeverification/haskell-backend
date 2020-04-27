@@ -20,6 +20,9 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 
 import qualified Branch
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -123,12 +126,13 @@ finalizeAppliedRule renamedRule appliedConditions =
 
 finalizeRule
     :: MonadSimplify simplifier
-    => Pattern RewritingVariable
+    => FreeVariables RewritingVariable
+    -> Pattern RewritingVariable
     -- ^ Initial conditions
     -> UnifiedRule RulePattern RewritingVariable
     -- ^ Rewriting axiom
     -> simplifier [Result RulePattern Variable]
-finalizeRule initial unifiedRule =
+finalizeRule initialVariables initial unifiedRule =
     Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
@@ -139,19 +143,22 @@ finalizeRule initial unifiedRule =
         checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
-        let result = getResultPattern <$> final
+        let result = getResultPattern initialVariables <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer simplifier =
         MonadSimplify simplifier
-    =>  Pattern RewritingVariable
+    =>  FreeVariables RewritingVariable
+    ->  Pattern RewritingVariable
     ->  [UnifiedRule RulePattern RewritingVariable]
     ->  simplifier (Results RulePattern Variable)
 
 finalizeRulesParallel :: forall simplifier. Finalizer simplifier
-finalizeRulesParallel initial unifiedRules = do
-    results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
+finalizeRulesParallel initialVariables initial unifiedRules = do
+    results <-
+        traverse (finalizeRule initialVariables initial) unifiedRules
+        & fmap Foldable.fold
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
     remainders' <-
@@ -164,7 +171,7 @@ finalizeRulesParallel initial unifiedRules = do
         }
 
 finalizeRulesSequence :: forall simplifier. Finalizer simplifier
-finalizeRulesSequence initial unifiedRules = do
+finalizeRulesSequence initialVariables initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
@@ -182,7 +189,9 @@ finalizeRulesSequence initial unifiedRules = do
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
-        results <- Monad.Trans.lift $ finalizeRule remainderPattern unifiedRule
+        results <-
+            finalizeRule initialVariables remainderPattern unifiedRule
+            & Monad.Trans.lift
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
                 Condition.fromPredicate
@@ -207,7 +216,7 @@ applyRulesWithFinalizer finalize unificationProcedure rules initial = do
         rules' = mkRewritingRule initialVariables <$> rules
     results <- unifyRules unificationProcedure sideCondition initial rules'
     debugAppliedRewriteRules initial results
-    finalize initial results
+    finalize initialVariables initial results
 {-# INLINE applyRulesWithFinalizer #-}
 
 {- | Apply the given rules to the initial configuration in parallel.

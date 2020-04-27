@@ -20,6 +20,8 @@ module Kore.Rewriting.RewritingVariable
 
 import Prelude.Kore
 
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -38,7 +40,9 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike hiding
+    ( refreshVariables
+    )
 import Kore.Rewriting.UnifyingRule
 import Kore.Unparser
 import Kore.Variables.Fresh
@@ -125,6 +129,23 @@ instance SortedVariable RewritingVariable where
 
 instance FreshVariable RewritingVariable
 
+getRuleVariable :: RewritingVariable -> Maybe Variable
+getRuleVariable (RuleVariable var) = Just var
+getRuleVariable _ = Nothing
+
+getUnifiedRuleVariable
+    :: UnifiedVariable RewritingVariable
+    -> Maybe (UnifiedVariable Variable)
+getUnifiedRuleVariable (ElemVar var) = ElemVar <$> traverse getRuleVariable var
+getUnifiedRuleVariable (SetVar var) = SetVar <$> traverse getRuleVariable var
+
+mkUnifiedRuleVariable, mkUnifiedConfigVariable
+    :: UnifiedVariable Variable -> UnifiedVariable RewritingVariable
+mkUnifiedRuleVariable (ElemVar var) = ElemVar (RuleVariable <$> var)
+mkUnifiedRuleVariable (SetVar var) = SetVar (RuleVariable <$> var)
+mkUnifiedConfigVariable (ElemVar var) = ElemVar (ConfigVariable <$> var)
+mkUnifiedConfigVariable (SetVar var) = SetVar (ConfigVariable <$> var)
+
 getElementRewritingVariable
     :: ElementVariable RewritingVariable -> ElementVariable Variable
 getElementRewritingVariable = fmap (from @_ @Variable)
@@ -151,15 +172,37 @@ isRuleVariable _ = False
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
-getResultPattern :: Pattern RewritingVariable -> Pattern Variable
-getResultPattern config@Conditional { substitution } =
-    getPatternRewritingVariable
-        config { Pattern.substitution = substitution' }
+getResultPattern
+    :: FreeVariables RewritingVariable
+    -> Pattern RewritingVariable
+    -> Pattern Variable
+getResultPattern initial config@Conditional { substitution } =
+    getPatternRewritingVariable renamed
   where
     substitution' =
         Substitution.filter
             (foldMapVariable isConfigVariable)
             substitution
+    filtered = config { Pattern.substitution = substitution' }
+    avoiding =
+        Set.map (from @_ @(UnifiedVariable Variable))
+        $ getFreeVariables initial
+    introduced =
+        Set.fromAscList
+        . mapMaybe getUnifiedRuleVariable
+        . Set.toAscList
+        . getFreeVariables
+        $ freeVariables filtered
+    renaming =
+        Map.mapKeys mkUnifiedRuleVariable
+        . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
+        $ refreshVariables avoiding introduced
+    renamed :: Pattern RewritingVariable
+    renamed =
+        filtered
+            { term = TermLike.substitute renaming (term filtered)
+            , predicate = Predicate.substitute renaming (predicate filtered)
+            }
 
 {- | Prepare a rule for unification or matching with the configuration.
 
@@ -177,9 +220,7 @@ mkRewritingRule
 mkRewritingRule avoiding =
     snd
     . refreshRule avoiding
-    . mapRuleVariables
-        (fmap RuleVariable)
-        (fmap RuleVariable)
+    . mapRuleVariables (fmap RuleVariable) (fmap RuleVariable)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
