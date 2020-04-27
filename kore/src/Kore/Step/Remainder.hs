@@ -66,9 +66,7 @@ See also: 'remainder\''
 remainder
     :: MultiOr (Condition RewritingVariable)
     -> Predicate Variable
-remainder =
-    Predicate.mapVariables getElementRewritingVariable getSetRewritingVariable
-    . remainder'
+remainder = mkRemainderPredicate . remainder'
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 

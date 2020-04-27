@@ -14,6 +14,7 @@ module Kore.Rewriting.RewritingVariable
     , mkRewritingRule
     , unRewritingRule
     , mkRewritingPattern
+    , mkRemainderPredicate
     ) where
 
 import Prelude.Kore
@@ -26,13 +27,18 @@ import qualified GHC.Generics as GHC
 
 import Debug
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
+    ( FreeVariables (..)
+    , HasFreeVariables (..)
     )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.UnifyingRule
@@ -42,7 +48,8 @@ import Kore.Variables.Target
     )
 import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
-    ( foldMapVariable
+    ( UnifiedVariable (..)
+    , foldMapVariable
     )
 
 newtype RewritingVariable =
@@ -145,3 +152,19 @@ mkRewritingPattern =
     Pattern.mapVariables
         (fmap RewritingVariable . Target.mkElementNonTarget)
         (fmap RewritingVariable . Target.mkSetNonTarget)
+
+mkRemainderPredicate :: Predicate RewritingVariable -> Predicate Variable
+mkRemainderPredicate predicate =
+    Predicate.mapVariables
+        getElementRewritingVariable
+        getSetRewritingVariable
+        predicate
+    & assert (all isUnifiedConfigVariable freeVars)
+  where
+    FreeVariables freeVars = freeVariables predicate
+
+isUnifiedConfigVariable :: UnifiedVariable RewritingVariable -> Bool
+isUnifiedConfigVariable (ElemVar elemVar) =
+    isConfigVariable (getElementVariable elemVar)
+isUnifiedConfigVariable (SetVar setVar) =
+    isConfigVariable (getSetVariable setVar)
