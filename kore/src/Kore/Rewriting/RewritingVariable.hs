@@ -13,6 +13,7 @@ module Kore.Rewriting.RewritingVariable
     , isRuleVariable
     , mkRewritingRule
     , unRewritingRule
+    , mkRewritingPattern
     ) where
 
 import Prelude.Kore
@@ -137,3 +138,10 @@ unRewritingRule =
     mapRuleVariables
         (Target.unTargetElement . fmap getRewritingVariable)
         (Target.unTargetSet . fmap getRewritingVariable)
+
+-- |Renames configuration variables to distinguish them from those in the rule.
+mkRewritingPattern :: Pattern Variable -> Pattern RewritingVariable
+mkRewritingPattern =
+    Pattern.mapVariables
+        (fmap RewritingVariable . Target.mkElementNonTarget)
+        (fmap RewritingVariable . Target.mkSetNonTarget)
