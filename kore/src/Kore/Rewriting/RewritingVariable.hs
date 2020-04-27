@@ -245,10 +245,9 @@ The rule's variables are:
  -}
 mkRewritingRule
     :: UnifyingRule rule
-    => FreeVariables RewritingVariable
-    -> rule Variable
+    => rule Variable
     -> rule RewritingVariable
-mkRewritingRule _ = mapRuleVariables (fmap RuleVariable) (fmap RuleVariable)
+mkRewritingRule = mapRuleVariables (fmap RuleVariable) (fmap RuleVariable)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}

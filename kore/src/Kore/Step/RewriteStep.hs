@@ -213,7 +213,7 @@ applyRulesWithFinalizer
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     let sideCondition = SideCondition.topTODO
         initialVariables = freeVariables sideCondition <> freeVariables initial
-        rules' = mkRewritingRule initialVariables <$> rules
+        rules' = mkRewritingRule <$> rules
     results <- unifyRules unificationProcedure sideCondition initial rules'
     debugAppliedRewriteRules initial results
     finalize initialVariables initial results
