@@ -51,6 +51,7 @@ instance Pretty WarnFunctionWithoutEvaluators where
 
 instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
+    helpDoc _ = "log functions without evaluators"
 
 instance SQL.Table WarnFunctionWithoutEvaluators
 

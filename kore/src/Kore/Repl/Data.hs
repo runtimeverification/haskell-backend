@@ -68,7 +68,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -396,7 +395,7 @@ helpText =
     \Names added via b) need to be prefixed with the module name followed by\n\
     \ dot, e.g. IMP.myName\n\
     \Available entry types:\n    "
-    <> intercalate "\n    " (fmap Text.unpack Log.getEntryTypesAsText)
+    <> intercalate "\n    " Log.getEntryTypesAsText
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.

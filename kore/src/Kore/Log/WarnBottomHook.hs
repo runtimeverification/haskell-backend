@@ -54,6 +54,7 @@ instance Pretty WarnBottomHook where
 
 instance Entry WarnBottomHook where
     entrySeverity _ = Warning
+    helpDoc _ = "log undefinedness on hooked sort"
 
 instance SQL.Table WarnBottomHook
 

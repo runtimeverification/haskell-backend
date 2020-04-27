@@ -48,6 +48,7 @@ instance Pretty WarnSymbolSMTRepresentation where
 
 instance Entry WarnSymbolSMTRepresentation where
     entrySeverity _ = Warning
+    helpDoc _ = "log SMT symbol translation issues"
 
 instance SQL.Table WarnSymbolSMTRepresentation
 

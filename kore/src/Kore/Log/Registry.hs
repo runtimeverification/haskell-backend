@@ -28,6 +28,7 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Tuple
     ( swap
     )
@@ -80,7 +81,7 @@ import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
     )
 import Log
-    ( Entry
+    ( Entry (..)
     , LogMessage
     , SomeEntry (..)
     )
@@ -112,24 +113,32 @@ registry =
         (asText type', type')
 
 entryTypeReps :: [SomeTypeRep]
-entryTypeReps =
-    [ someTypeRep $ Proxy @DebugSolverSend
-    , someTypeRep $ Proxy @DebugSolverRecv
-    , someTypeRep $ Proxy @DebugProofState
-    , someTypeRep $ Proxy @DebugAppliedRewriteRules
-    , someTypeRep $ Proxy @WarnBottomHook
-    , someTypeRep $ Proxy @WarnDecidePredicateUnknown
-    , someTypeRep $ Proxy @WarnFunctionWithoutEvaluators
-    , someTypeRep $ Proxy @WarnSymbolSMTRepresentation
-    , someTypeRep $ Proxy @DebugEvaluateCondition
-    , someTypeRep $ Proxy @ErrorException
-    , someTypeRep $ Proxy @LogMessage
-    , someTypeRep $ Proxy @InfoAttemptUnification
-    , someTypeRep $ Proxy @InfoReachability
-    , someTypeRep $ Proxy @ErrorRewritesInstantiation
-    , someTypeRep $ Proxy @DebugAttemptEquation
-    , someTypeRep $ Proxy @DebugApplyEquation
+entryHelpDocs :: [Pretty.Doc ()]
+(entryTypeReps, entryHelpDocs) =
+    unzip
+    [ mk $ Proxy @DebugSolverSend
+    , mk $ Proxy @DebugSolverRecv
+    , mk $ Proxy @DebugProofState
+    , mk $ Proxy @DebugAppliedRewriteRules
+    , mk $ Proxy @WarnBottomHook
+    , mk $ Proxy @WarnDecidePredicateUnknown
+    , mk $ Proxy @WarnFunctionWithoutEvaluators
+    , mk $ Proxy @WarnSymbolSMTRepresentation
+    , mk $ Proxy @DebugEvaluateCondition
+    , mk $ Proxy @ErrorException
+    , mk $ Proxy @LogMessage
+    , mk $ Proxy @InfoAttemptUnification
+    , mk $ Proxy @InfoReachability
+    , mk $ Proxy @ErrorRewritesInstantiation
+    , mk $ Proxy @DebugAttemptEquation
+    , mk $ Proxy @DebugApplyEquation
     ]
+  where
+    mk proxy =
+        let tRep = someTypeRep proxy
+        in  ( tRep
+            , Pretty.hsep [Pretty.pretty (asText tRep <> ":"), helpDoc proxy]
+            )
 
 asText :: SomeTypeRep -> Text
 asText = Text.pack . show
@@ -167,5 +176,5 @@ toSomeEntryType =
 typeOfSomeEntry :: SomeEntry -> SomeTypeRep
 typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
 
-getEntryTypesAsText :: [Text]
-getEntryTypesAsText = Map.keys . textToType $ registry
+getEntryTypesAsText :: [String]
+getEntryTypesAsText = show <$> entryHelpDocs
