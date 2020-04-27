@@ -45,6 +45,7 @@ import Kore.Step.Simplification.Data
     ( Env (..)
     , runSimplifier
     )
+import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
@@ -192,7 +193,7 @@ simplifyAnds
     => NonEmpty (TermLike Variable)
     -> unifier (Pattern Variable)
 simplifyAnds =
-    SubstitutionSimplifier.simplifyAnds Unification.unificationMakeAnd
+    SubstitutionSimplifier.simplifyAnds (Unification.unificationMakeAnd Not.notSimplifier)
 
 andSimplifySuccess
     :: HasCallStack

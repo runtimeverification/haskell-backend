@@ -23,6 +23,7 @@ import Kore.Step.Simplification.AndTerms
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.Error
     ( UnificationError
     )
@@ -117,4 +118,4 @@ unify term1 term2 =
     runNoSMT
     $ runSimplifier testEnv
     $ runUnifierT
-    $ termUnification term1 term2
+    $ termUnification Not.notSimplifier term1 term2

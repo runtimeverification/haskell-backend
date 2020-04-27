@@ -13,6 +13,7 @@ module Kore.Step.Simplification.Not
     , simplify
     , simplifyEvaluated
     , simplifyEvaluatedPredicate
+    , notSimplifier
     ) where
 
 import Prelude.Kore
@@ -234,7 +235,7 @@ mkMultiAndPattern
     -> MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
 mkMultiAndPattern sideCondition patterns =
-    Foldable.foldrM (And.makeEvaluate sideCondition) Pattern.top patterns
+    Foldable.foldrM (And.makeEvaluate notSimplifier sideCondition) Pattern.top patterns
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
@@ -248,8 +249,7 @@ mkMultiAndPredicate predicates =
     return $ Foldable.fold predicates
 
 notSimplifier
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => NotSimplifier simplifier variable
+    :: MonadSimplify simplifier
+    => NotSimplifier simplifier
 notSimplifier =
     NotSimplifier simplifyEvaluated

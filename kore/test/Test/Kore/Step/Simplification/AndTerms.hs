@@ -57,6 +57,9 @@ import Kore.Step.Simplification.AndTerms
 import Kore.Step.Simplification.Equals
     ( termEquals
     )
+import Kore.Step.Simplification.Not
+    ( notSimplifier
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Sentence
     ( SentenceAlias
@@ -1272,7 +1275,7 @@ unify first second =
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
         MaybeT . fmap Error.hush . Monad.Unify.runUnifierT
-        $ termUnification (simplifiedTerm first) (simplifiedTerm second)
+        $ termUnification notSimplifier (simplifiedTerm first) (simplifiedTerm second)
 
 simplify
     :: TermLike Variable
@@ -1280,7 +1283,7 @@ simplify
     -> IO [Pattern Variable]
 simplify first second =
     runSimplifierBranch mockEnv
-    $ termAnd (simplifiedTerm first) (simplifiedTerm second)
+    $ termAnd notSimplifier (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env
 

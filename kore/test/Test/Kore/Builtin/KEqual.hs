@@ -5,16 +5,43 @@ module Test.Kore.Builtin.KEqual
     , test_KIte
     ) where
 
+import Kore.Internal.SideCondition
+    ( topTODO
+    )
+import Kore.Unification.Procedure
+    ( unificationProcedure
+    )
+import Kore.Unification.Unify
+    ( gather
+    )
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
+import Test.Tasty.HUnit
 
+import Control.Monad.Trans.Maybe
+    ( runMaybeT
+    )
 import qualified Data.Text as Text
 
+import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
+    )
+import Kore.Step.Simplification.Data
+    ( runSimplifierBranch
+    )
+import qualified Kore.Step.Simplification.Not as Not
+import Kore.Unification.UnifierT
+    ( runUnifierT
+    )
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
@@ -78,6 +105,37 @@ test_KEqual =
                     )
         actual <- evaluate original
         assertEqual' "" expect actual
+
+    , testCaseWithSMT "1TESTING" $ do
+        let t1 = Test.Bool.asInternal False
+            t2 = keqBool
+                    (kseq (inj kItemSort dvX) dotk)
+                    (kseq (inj kItemSort dvT) dotk)
+        actual <-
+            runSimplifierBranch testEnv . runUnifierT . runMaybeT $ KEqual.termKEquals (termUnification Not.notSimplifier) Not.notSimplifier t1 t2
+        -- let actual2 = KEqual.termKEquals ((gather . unificationProcedure) topTODO) t1 t2
+        traceM
+            $ "\n\n TEST RESULT:\n"
+            <> show ((fmap . fmap . fmap . fmap) unparseToString actual)
+        return ()
+        -- assertEqual' "" expect actual
+
+    , testCaseWithSMT "2TESTING" $ do
+        let original =
+                mkApplySymbol
+                    notBoolSymbol
+                    [mkEquals_
+                        (Test.Bool.asInternal False)
+                        (keqBool
+                            (kseq (inj kItemSort dvX) dotk)
+                            (kseq (inj kItemSort dvT) dotk)
+                        )
+                    ]
+        actual <- evaluate original
+        traceM
+            $ "\n\n TEST2 RESULT:\n"
+            <> unparseToString actual
+        -- assertEqual' "" expect actual
 
     , testCaseWithSMT "distinct domain values" $ do
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal False

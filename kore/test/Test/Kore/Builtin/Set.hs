@@ -114,6 +114,7 @@ import Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Syntax.Id
     ( Id
     )
@@ -1784,7 +1785,7 @@ unifiedBy (termLike1, termLike2) substitution testName =
         Right actual <-
             runSimplifier testEnv
             $ runUnifierT
-            $ termUnification termLike1 termLike2
+            $ termUnification Not.notSimplifier termLike1 termLike2
         liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
   where
     expect = Condition.fromSubstitution $ Substitution.unsafeWrap substitution

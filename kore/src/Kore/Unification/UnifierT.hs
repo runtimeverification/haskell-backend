@@ -87,8 +87,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
         simplifyCondition' sideCondition condition
       where
         ConditionSimplifier simplifyCondition' =
-            -- TODO: substitutionSimplifier needs notSimplifier
-            ConditionSimplifier.create substitutionSimplifier
+            ConditionSimplifier.create (substitutionSimplifier undefined)
     {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where

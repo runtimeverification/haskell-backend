@@ -20,6 +20,7 @@ import Prelude.Kore
 
 import Control.Error
     ( fromMaybe
+    , runExceptT
     , runMaybeT
     )
 import Control.Monad
@@ -115,11 +116,13 @@ import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.UnifierT
-    ( runUnifierT
+    ( UnifierT (..)
+    , runUnifierT
     )
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import qualified Kore.Unification.Unify as Unifier
 import Kore.Unparser
     ( unparse
     )
@@ -165,8 +168,9 @@ Also, we have
     the same for two string literals and two chars
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => NotSimplifier (BranchT simplifier)
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -191,8 +195,9 @@ to carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => NotSimplifier (BranchT simplifier)
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
@@ -211,8 +216,9 @@ simplifyEvaluated notSimplifier sideCondition first second
     return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => NotSimplifier (BranchT simplifier)
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> [OrPattern variable]
     -> simplifier (OrPattern variable)
@@ -229,7 +235,7 @@ makeEvaluate
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => NotSimplifier (BranchT simplifier)
+    => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
@@ -245,7 +251,7 @@ makeEvaluateNonBool
         , HasCallStack
         , MonadSimplify simplifier
         )
-    => NotSimplifier (BranchT simplifier)
+    => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
@@ -256,12 +262,12 @@ makeEvaluateNonBool
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    terms <- termAnd firstTerm secondTerm
+    terms <- termAnd notSimplifier firstTerm secondTerm
     let firstCondition = Conditional.withoutTerm first
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
-    normalized <- Substitution.normalize notSimplifier sideCondition merged
+    normalized <- Substitution.normalize sideCondition merged
     let normalizedPredicates =
             applyAndIdempotenceAndFindContradictions
                 (Conditional.term normalized)
@@ -275,7 +281,6 @@ makeEvaluateNonBool
                 }
         Changed changed ->
             simplifyCondition
-                notSimplifier
                 sideCondition
                 normalized
                     { term = normalizedPredicates
@@ -441,23 +446,24 @@ The comment for 'simplify' describes all the special cases handled by this.
 -}
 termAnd
     :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
+    .  InternalVariable variable
+    => MonadSimplify simplifier
     => HasCallStack
-    => TermLike variable
+    => NotSimplifier (UnifierT simplifier)
+    -> TermLike variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
-termAnd p1 p2 =
+termAnd notSimplifier p1 p2 =
     either (const andTerm) BranchT.scatter
     =<< (lift . runUnifierT) (termAndWorker p1 p2)
   where
     andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
     termAndWorker
-        :: MonadUnify unifier
-        => TermLike variable
+        :: TermLike variable
         -> TermLike variable
-        -> unifier (Pattern variable)
+        -> UnifierT simplifier (Pattern variable)
     termAndWorker first second = do
-        let maybeTermAnd' = maybeTermAnd termAndWorker first second
+        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker first second
         patt <- runMaybeT maybeTermAnd'
         return $ fromMaybe andPattern patt
       where

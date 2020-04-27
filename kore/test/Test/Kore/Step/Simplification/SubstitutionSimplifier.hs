@@ -18,6 +18,9 @@ import Kore.Internal.Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.Not
+    ( notSimplifier
+    )
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
@@ -207,7 +210,7 @@ test_SubstitutionSimplifier =
                     (all Substitution.isNormalized actualSubstitutions)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        Unification.substitutionSimplifier
+                        Unification.substitutionSimplifier notSimplifier
                 actual <-
                     runSimplifier Mock.env . runUnifierT
                     $ simplifySubstitution SideCondition.top input

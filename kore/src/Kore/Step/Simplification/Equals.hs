@@ -73,7 +73,8 @@ import qualified Kore.Step.Simplification.Implies as Implies
     ( simplifyEvaluated
     )
 import qualified Kore.Step.Simplification.Not as Not
-    ( simplifyEvaluated
+    ( notSimplifier
+    , simplifyEvaluated
     , simplifyEvaluatedPredicate
     )
 import qualified Kore.Step.Simplification.Or as Or
@@ -231,7 +232,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         foldM
-            (And.simplifyEvaluated sideCondition)
+            (And.simplifyEvaluated Not.notSimplifier sideCondition)
             (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
@@ -240,7 +241,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
         foldM
-            (And.simplifyEvaluated sideCondition)
+            (And.simplifyEvaluated Not.notSimplifier sideCondition)
             firstCeil
             (oneNotBottom : firstEqualsSeconds)
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
@@ -301,9 +302,9 @@ makeEvaluate
     secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
     negationAnd <-
-        And.simplifyEvaluated sideCondition firstCeilNegation secondCeilNegation
-    ceilAnd <- And.simplifyEvaluated sideCondition firstCeil secondCeil
-    equalityAnd <- And.simplifyEvaluated sideCondition termEquality ceilAnd
+        And.simplifyEvaluated Not.notSimplifier sideCondition firstCeilNegation secondCeilNegation
+    ceilAnd <- And.simplifyEvaluated Not.notSimplifier sideCondition firstCeil secondCeil
+    equalityAnd <- And.simplifyEvaluated Not.notSimplifier sideCondition termEquality ceilAnd
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
@@ -421,7 +422,7 @@ termEqualsAnd p1 p2 =
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    maybeTermEqualsWorker = maybeTermEquals termEqualsAndWorker
+    maybeTermEqualsWorker = maybeTermEquals Not.notSimplifier termEqualsAndWorker
 
     termEqualsAndWorker
         :: forall unifier
