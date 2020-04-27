@@ -65,8 +65,8 @@ import Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
+    , mkRewritingPattern
     , simplifyPredicate
-    , toConfigurationVariables
     , unifyRules
     )
 
@@ -247,7 +247,7 @@ applyRewriteRulesParallel
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
-    (toConfigurationVariables -> initial)
+    (mkRewritingPattern -> initial)
   = do
     results <- applyRulesParallel unificationProcedure rules initial
     assertFunctionLikeResults (term initial) results
@@ -286,7 +286,7 @@ applyRewriteRulesSequence
     -> simplifier (Results RulePattern Variable)
 applyRewriteRulesSequence
     unificationProcedure
-    (toConfigurationVariables -> initialConfig)
+    (mkRewritingPattern -> initialConfig)
     (map getRewriteRule -> rules)
   = do
     results <- applyRulesSequence unificationProcedure rules initialConfig

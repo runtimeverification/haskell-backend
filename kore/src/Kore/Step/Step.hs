@@ -17,7 +17,6 @@ module Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , simplifyPredicate
-    , toConfigurationVariables
     , toConfigurationVariablesCondition
     , assertFunctionLikeResults
     , checkFunctionLike
@@ -25,6 +24,7 @@ module Kore.Step.Step
     -- * Re-exports
     , UnificationProcedure (..)
     , unRewritingRule
+    , mkRewritingPattern
     -- Below exports are just for tests
     , Step.gatherResults
     , Step.remainders
@@ -74,7 +74,6 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
-    , Variable
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
@@ -262,13 +261,6 @@ applyInitialConditions sideCondition initial unification = do
     -- then the rule is considered to apply with a \bottom result.
     TopBottom.guardAgainstBottom evaluated
     return evaluated
-
--- |Renames configuration variables to distinguish them from those in the rule.
-toConfigurationVariables :: Pattern Variable -> Pattern RewritingVariable
-toConfigurationVariables =
-    Pattern.mapVariables
-        (fmap RewritingVariable . Target.mkElementNonTarget)
-        (fmap RewritingVariable . Target.mkSetNonTarget)
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition

@@ -165,7 +165,7 @@ test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =
     [ testCase "renames axiom left variables" $ do
         let initial =
-                Step.toConfigurationVariables
+                Step.mkRewritingPattern
                 $ Pattern.fromTermLike
                 $ Mock.f (mkElemVar Mock.x)
             axiom =
