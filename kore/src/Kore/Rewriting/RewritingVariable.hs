@@ -24,6 +24,8 @@ module Kore.Rewriting.RewritingVariable
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -121,7 +123,17 @@ instance SortedVariable RewritingVariable where
                 RuleVariable <$> lensVariableSort f variable
     {-# INLINE lensVariableSort #-}
 
-instance FreshVariable RewritingVariable
+instance FreshVariable RewritingVariable where
+    refreshVariable avoiding original = do
+        largest <- assignSort <$> Set.lookupLT (supVariable original) avoiding
+        Monad.guard (largest >= infVariable original)
+        let next = nextVariable largest
+        assert (sameName original next) pure next
+      where
+        originalSort = Lens.view lensVariableSort original
+        assignSort = Lens.set lensVariableSort originalSort
+        sameName = on (==) (variableName . from @_ @Variable)
+    {-# INLINE refreshVariable #-}
 
 getRuleVariable :: RewritingVariable -> Maybe Variable
 getRuleVariable (RuleVariable var) = Just var
