@@ -343,8 +343,8 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            x'' = nextVariable . nextVariable $ Mock.x
-            final = mkElemVar x''
+            x' = nextVariable $ Mock.x
+            final = mkElemVar x'
             initial = pure (mkElemVar Mock.y)
             axiom =
                 RewriteRule $ rulePattern
@@ -467,11 +467,10 @@ test_applyRewriteRule_ =
     -- vs
     -- sigma(a, i(b)) with substitution b=a
     , testCase "non-function substitution error" $ do
-        let x' = nextVariable Mock.x
-            expect = Left $ unsupportedPatterns
+        let expect = Left $ unsupportedPatterns
                 "Unknown unification case."
                 (Mock.plain10 (mkElemVar Mock.y))
-                (mkElemVar x')
+                (mkElemVar Mock.x)
             initial = pure $
                 Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
