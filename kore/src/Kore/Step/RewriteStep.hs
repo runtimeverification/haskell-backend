@@ -205,7 +205,7 @@ applyRulesWithFinalizer
     .  MonadSimplify simplifier
     => Finalizer simplifier
     -> UnificationProcedure simplifier
-    -> [RulePattern Variable]
+    -> [RulePattern RewritingVariable]
     -- ^ Rewrite rules
     -> Pattern RewritingVariable
     -- ^ Configuration being rewritten
@@ -213,8 +213,7 @@ applyRulesWithFinalizer
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     let sideCondition = SideCondition.topTODO
         initialVariables = freeVariables sideCondition <> freeVariables initial
-        rules' = mkRewritingRule <$> rules
-    results <- unifyRules unificationProcedure sideCondition initial rules'
+    results <- unifyRules unificationProcedure sideCondition initial rules
     debugAppliedRewriteRules initial results
     finalize initialVariables initial results
 {-# INLINE applyRulesWithFinalizer #-}
@@ -228,7 +227,7 @@ applyRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> [RulePattern Variable]
+    -> [RulePattern RewritingVariable]
     -- ^ Rewrite rules
     -> Pattern RewritingVariable
     -- ^ Configuration being rewritten
@@ -251,7 +250,7 @@ applyRewriteRulesParallel
     -> simplifier (Results RulePattern Variable)
 applyRewriteRulesParallel
     unificationProcedure
-    (map getRewriteRule -> rules)
+    (map (getRewriteRule . mkRewritingRule) -> rules)
     (mkRewritingPattern -> initial)
   = do
     results <- applyRulesParallel unificationProcedure rules initial
@@ -268,7 +267,7 @@ applyRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> [RulePattern Variable]
+    -> [RulePattern RewritingVariable]
     -- ^ Rewrite rules
     -> Pattern RewritingVariable
     -- ^ Configuration being rewritten
@@ -292,7 +291,7 @@ applyRewriteRulesSequence
 applyRewriteRulesSequence
     unificationProcedure
     (mkRewritingPattern -> initialConfig)
-    (map getRewriteRule -> rules)
+    (map (getRewriteRule . mkRewritingRule) -> rules)
   = do
     results <- applyRulesSequence unificationProcedure rules initialConfig
     assertFunctionLikeResults (term initialConfig) results
