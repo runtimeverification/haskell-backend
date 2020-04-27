@@ -11,6 +11,7 @@ module Kore.Rewriting.RewritingVariable
     , unwrapConfiguration
     , isConfigVariable
     , isRuleVariable
+    , mkRewritingRule
     ) where
 
 import Prelude.Kore
@@ -22,6 +23,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -29,6 +33,7 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.UnifyingRule
 import Kore.Unparser
 import Kore.Variables.Target
     ( Target
@@ -103,3 +108,23 @@ unwrapConfiguration config@Conditional { substitution } =
         Substitution.filter
             (foldMapVariable isConfigVariable)
             substitution
+
+{- | Prepare a rule for unification or matching with the configuration.
+
+The rule's variables are:
+
+* marked with 'Target' so that they are preferred targets for substitution, and
+* renamed to avoid any free variables from the configuration and side condition.
+
+ -}
+mkRewritingRule
+    :: UnifyingRule rule
+    => FreeVariables RewritingVariable
+    -> rule Variable
+    -> rule RewritingVariable
+mkRewritingRule avoiding =
+    snd
+    . refreshRule avoiding
+    . mapRuleVariables
+        (fmap RewritingVariable . Target.mkElementTarget)
+        (fmap RewritingVariable . Target.mkSetTarget)
