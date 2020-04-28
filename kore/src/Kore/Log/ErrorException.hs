@@ -28,7 +28,7 @@ instance Pretty ErrorException where
 
 instance Entry ErrorException where
     entrySeverity _ = Error
-    helpDoc _ = "log errors"
+    helpDoc _ = "log internal errors"
 
 errorException :: MonadLog log => SomeException -> log ()
 errorException = logEntry . ErrorException
