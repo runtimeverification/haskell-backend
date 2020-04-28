@@ -3,26 +3,14 @@ module Test.Kore.Builtin.KEqual
     , test_kneq
     , test_KEqual
     , test_KIte
+    , test_KEqualSimplification
     ) where
 
-import Kore.Internal.SideCondition
-    ( topTODO
-    )
-import Kore.Unification.Procedure
-    ( unificationProcedure
-    )
-import Kore.Unification.Unify
-    ( gather
-    )
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Control.Monad.Trans.Maybe
     ( runMaybeT
@@ -30,6 +18,9 @@ import Control.Monad.Trans.Maybe
 import qualified Data.Text as Text
 
 import qualified Kore.Builtin.KEqual as KEqual
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.AndTerms
@@ -39,8 +30,14 @@ import Kore.Step.Simplification.Data
     ( runSimplifierBranch
     )
 import qualified Kore.Step.Simplification.Not as Not
+import Kore.Unification.Error
+    ( UnificationError
+    )
 import Kore.Unification.UnifierT
     ( runUnifierT
+    )
+import SMT
+    ( SMT
     )
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -106,36 +103,17 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "1TESTING" $ do
-        let t1 = Test.Bool.asInternal False
-            t2 = keqBool
-                    (kseq (inj kItemSort dvX) dotk)
-                    (kseq (inj kItemSort dvT) dotk)
-        actual <-
-            runSimplifierBranch testEnv . runUnifierT Not.notSimplifier . runMaybeT $ KEqual.termKEquals (termUnification Not.notSimplifier) Not.notSimplifier t1 t2
-        -- let actual2 = KEqual.termKEquals ((gather . unificationProcedure) topTODO) t1 t2
-        traceM
-            $ "\n\n TEST RESULT:\n"
-            <> show ((fmap . fmap . fmap . fmap) unparseToString actual)
-        return ()
-        -- assertEqual' "" expect actual
-
-    , testCaseWithSMT "2TESTING" $ do
-        let original =
-                mkApplySymbol
-                    notBoolSymbol
-                    [mkEquals_
-                        (Test.Bool.asInternal False)
-                        (keqBool
-                            (kseq (inj kItemSort dvX) dotk)
-                            (kseq (inj kItemSort dvT) dotk)
-                        )
-                    ]
+    , testCaseWithSMT "distinct constructor-like terms" $ do
+        let expect = Pattern.top
+            original =
+                mkEquals_
+                    (Test.Bool.asInternal False)
+                    (keqBool
+                        (kseq (inj kItemSort dvX) dotk)
+                        (kseq (inj kItemSort dvT) dotk)
+                    )
         actual <- evaluate original
-        traceM
-            $ "\n\n TEST2 RESULT:\n"
-            <> unparseToString actual
-        -- assertEqual' "" expect actual
+        assertEqual' "" expect actual
 
     , testCaseWithSMT "distinct domain values" $ do
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
@@ -160,17 +138,6 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
     ]
-  where
-    dvT =
-        mkDomainValue DomainValue
-            { domainValueSort = idSort
-            , domainValueChild = mkStringLiteral "t"
-            }
-    dvX =
-        mkDomainValue DomainValue
-            { domainValueSort = idSort
-            , domainValueChild = mkStringLiteral "x"
-            }
 
 test_KIte :: [TestTree]
 test_KIte =
@@ -198,3 +165,43 @@ test_KIte =
         actual <- evaluate original
         assertEqual' "" expect actual
     ]
+
+test_KEqualSimplification :: [TestTree]
+test_KEqualSimplification =
+    [ testCaseWithSMT "constructor1 =/=K constructor2" $ do
+        let term1 = Test.Bool.asInternal False
+            term2 =
+                keqBool
+                    (kseq (inj kItemSort dvX) dotk)
+                    (kseq (inj kItemSort dvT) dotk)
+            expect = [Right [Just Pattern.top]]
+        actual <- runKEqualSimplification term1 term2
+        assertEqual' "" expect actual
+
+    ]
+
+dvT, dvX :: TermLike Variable
+dvT =
+    mkDomainValue DomainValue
+        { domainValueSort = idSort
+        , domainValueChild = mkStringLiteral "t"
+        }
+dvX =
+    mkDomainValue DomainValue
+        { domainValueSort = idSort
+        , domainValueChild = mkStringLiteral "x"
+        }
+
+runKEqualSimplification
+    :: TermLike Variable
+    -> TermLike Variable
+    -> SMT [Either UnificationError [Maybe (Pattern Variable)]]
+runKEqualSimplification term1 term2 =
+    runSimplifierBranch testEnv
+    . runUnifierT Not.notSimplifier
+    . runMaybeT
+    $ KEqual.termKEquals
+        (termUnification Not.notSimplifier)
+        Not.notSimplifier
+        term1
+        term2

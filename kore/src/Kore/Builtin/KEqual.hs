@@ -55,18 +55,11 @@ import Kore.Builtin.Builtin
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
-import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
-    , makeNotPredicate
-    )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.NotSimplifier
@@ -74,6 +67,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
     ( SentenceSymbol (..)
     )
+import Kore.Unification.Unify as Unify
 import Kore.Unification.Unify
     ( MonadUnify
     )
@@ -236,35 +230,21 @@ termKEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termKEquals unifyChildren notSimplifier a b =
+termKEquals unifyChildren (NotSimplifier notSimplifier) a b =
     worker a b <|> worker b a
   where
-    unifyChildren' term1 term2 =
-        unificationPredicate term1 term2
-        <|> return (makeEqualsPredicate_ term1 term2)
-    unificationPredicate term1 term2 =
-        Condition.toPredicate
-        . Pattern.withoutTerm
-        <$> unifyChildren term1 term2
-    atLeastOneSymbolic term1 term2 =
-        case (Builtin.toKey term1, Builtin.toKey term2) of
-           (Nothing, _) -> True
-           (_, Nothing) -> True
-           _ -> False
     worker termLike1 termLike2
       | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
       , isFunctionPattern termLike1
       , Just value2 <- Bool.matchBool termLike2
-      -- , atLeastOneSymbolic operand1 operand2
       = lift $ do
-        condition <- unifyChildren' operand1 operand2
-        let finalCondition =
-                if value2
-                    then condition
-                    else makeNotPredicate condition
-        pure Conditional
-            { term = termLike2
-            , predicate = finalCondition
-            , substitution = mempty
-            }
+        solution <-
+            fmap OrPattern.fromPatterns
+            <$> Unify.gather
+            $ unifyChildren operand1 operand2
+        finalSolution <-
+            if value2
+                then return solution
+                else notSimplifier SideCondition.top solution
+        return . OrPattern.toPattern $ finalSolution
     worker _ _ = empty
