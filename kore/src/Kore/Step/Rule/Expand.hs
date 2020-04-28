@@ -135,7 +135,7 @@ instance ExpandSingleConstructors (RulePattern Variable) where
                     }
                 }
 
-instance ExpandSingleConstructors (OnePathRule Variable) where
+instance ExpandSingleConstructors OnePathRule where
     expandSingleConstructors tools =
         OnePathRule . expandSingleConstructors tools . getOnePathRule
 

@@ -76,7 +76,7 @@ import Test.SMT
 import Test.Tasty.HUnit.Ext
 
 class OnePathRuleBase base where
-    rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
+    rewritesTo :: base Variable -> base Variable -> OnePathRule
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
@@ -238,8 +238,8 @@ test_simplifyRule =
     x = mkElemVar Mock.x
 
 runSimplifyRule
-    :: OnePathRule Variable
-    -> IO [OnePathRule Variable]
+    :: OnePathRule
+    -> IO [OnePathRule]
 runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
     $ runNoSMT

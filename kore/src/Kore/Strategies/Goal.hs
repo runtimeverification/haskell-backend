@@ -289,12 +289,12 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-instance Goal (OnePathRule Variable) where
+instance Goal OnePathRule where
 
-    type Prim (OnePathRule Variable) =
-        ProofState.Prim (Rule (OnePathRule Variable))
+    type Prim OnePathRule =
+        ProofState.Prim (Rule OnePathRule)
 
-    type ProofState (OnePathRule Variable) a =
+    type ProofState OnePathRule a =
         ProofState.ProofState a
 
     transitionRule =
@@ -329,7 +329,7 @@ instance Goal (OnePathRule Variable) where
             . getOnePathRule
             <$> goals
 
-instance ClaimExtractor (OnePathRule Variable) where
+instance ClaimExtractor OnePathRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (OnePathClaimPattern claim) -> Just (attrs, claim)
@@ -476,7 +476,7 @@ instance ClaimExtractor ReachabilityRule where
             Right (AllPathClaimPattern claim) -> Just (attrs, AllPath claim)
             _ -> Nothing
 
-maybeOnePath :: ReachabilityRule -> Maybe (OnePathRule Variable)
+maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
 maybeOnePath (OnePath rule) = Just rule
 maybeOnePath _ = Nothing
 
@@ -486,7 +486,7 @@ maybeAllPath _ = Nothing
 
 reachabilityOnePathStrategy
     :: Functor t
-    => t (Strategy (Prim (OnePathRule Variable)))
+    => t (Strategy (Prim OnePathRule))
     -> t (Strategy (Prim ReachabilityRule))
 reachabilityOnePathStrategy strategy' =
     (fmap . fmap . fmap)
@@ -508,13 +508,13 @@ allPathProofState
 allPathProofState = fmap AllPath
 
 onePathProofState
-    :: ProofState (OnePathRule Variable) (OnePathRule Variable)
+    :: ProofState OnePathRule OnePathRule
     -> ProofState ReachabilityRule ReachabilityRule
 onePathProofState = fmap OnePath
 
 primRuleOnePath
     :: ProofState.Prim (Rule ReachabilityRule)
-    -> ProofState.Prim (Rule (OnePathRule Variable))
+    -> ProofState.Prim (Rule OnePathRule)
 primRuleOnePath = fmap ruleReachabilityToRuleOnePath
 
 primRuleAllPath
@@ -532,7 +532,7 @@ ruleReachabilityToRuleAllPath = coerce
 
 ruleReachabilityToRuleOnePath
     :: Rule ReachabilityRule
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 ruleReachabilityToRuleOnePath = coerce
 
 ruleAllPathToRuleReachability
@@ -541,7 +541,7 @@ ruleAllPathToRuleReachability
 ruleAllPathToRuleReachability = coerce
 
 ruleOnePathToRuleReachability
-    :: Rule (OnePathRule Variable)
+    :: Rule OnePathRule
     -> Rule ReachabilityRule
 ruleOnePathToRuleReachability = coerce
 
@@ -1095,7 +1095,7 @@ configurationDestinationToRule ruleType configuration rhs =
 class ToReachabilityRule rule where
     toReachabilityRule :: rule -> ReachabilityRule
 
-instance ToReachabilityRule (OnePathRule Variable) where
+instance ToReachabilityRule OnePathRule where
     toReachabilityRule = OnePath
 
 instance ToReachabilityRule (AllPathRule Variable) where

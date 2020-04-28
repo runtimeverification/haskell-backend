@@ -49,23 +49,23 @@ data family Rule goal
 
 -- * One-path reachability
 
-newtype instance Rule (OnePathRule Variable) =
+newtype instance Rule OnePathRule =
     OnePathRewriteRule { unRuleOnePath :: RewriteRule Variable }
     deriving (GHC.Generic, Show, Unparse)
 
-instance SOP.Generic (Rule (OnePathRule Variable))
+instance SOP.Generic (Rule OnePathRule)
 
-instance SOP.HasDatatypeInfo (Rule (OnePathRule Variable))
+instance SOP.HasDatatypeInfo (Rule OnePathRule)
 
-instance Debug (Rule (OnePathRule Variable))
+instance Debug (Rule OnePathRule)
 
-instance Diff (Rule (OnePathRule Variable))
+instance Diff (Rule OnePathRule)
 
-instance ToRulePattern (Rule (OnePathRule Variable))
+instance ToRulePattern (Rule OnePathRule)
 
-instance FromRulePattern (Rule (OnePathRule Variable))
+instance FromRulePattern (Rule OnePathRule)
 
-instance HasPriority (Rule (OnePathRule Variable)) where
+instance HasPriority (Rule OnePathRule) where
     getPriority = getPriority . unRuleOnePath
 
 -- * All-path reachability

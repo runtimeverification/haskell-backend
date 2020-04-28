@@ -108,7 +108,7 @@ instance SimplifyRuleLHS (RewriteRule Variable) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
 
-instance SimplifyRuleLHS (OnePathRule Variable) where
+instance SimplifyRuleLHS OnePathRule where
     simplifyRuleLhs =
         fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
 

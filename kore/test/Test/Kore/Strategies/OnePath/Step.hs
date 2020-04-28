@@ -87,14 +87,14 @@ import Test.Tasty.HUnit.Ext
 makeOnePathRule
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRule term dest =
     OnePathRule $ rulePattern term dest
 
 makeOnePathRuleFromPatterns
     :: Pattern Variable
     -> Pattern Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRuleFromPatterns
     configuration
     destination
@@ -118,7 +118,7 @@ makeOnePathRuleFromPatterns
 makeOnePathRuleFromPatternsWithCond
     :: Pattern Variable
     -> Pattern Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRuleFromPatternsWithCond
     configuration
     destination
@@ -801,7 +801,7 @@ test_onePathStrategy =
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 simpleRewrite left right =
     OnePathRewriteRule
     $ RewriteRule RulePattern
@@ -823,7 +823,7 @@ rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 rewriteWithPredicate left right predicate =
     OnePathRewriteRule
     $ RewriteRule RulePattern
@@ -903,8 +903,8 @@ runOnePathSteps
     return (sort $ nub result)
 
 assertStuck
-    :: OnePathRule Variable
-    -> [ProofState.ProofState (OnePathRule Variable)]
+    :: OnePathRule
+    -> [ProofState.ProofState OnePathRule]
     -> [ProofState.ProofState ReachabilityRule]
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
