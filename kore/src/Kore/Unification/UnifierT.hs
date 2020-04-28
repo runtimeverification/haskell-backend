@@ -42,7 +42,6 @@ import Kore.Step.Simplification.Simplify
     ( ConditionSimplifier (..)
     , InternalVariable
     , MonadSimplify (..)
-    , emptyConditionSimplifier
     )
 import Kore.Unification.Error
 import Kore.Unification.SubstitutionSimplifier
@@ -56,9 +55,6 @@ import SMT
     ( MonadSMT (..)
     )
 
--- newtype UnifierT (m :: * -> *) a =
---     UnifierT { getUnifierT :: BranchT (ExceptT UnificationError m) a }
---     deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
 newtype UnifierT (m :: * -> *) a =
     UnifierT
         { getUnifierT

@@ -506,9 +506,12 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     {-# INLINE logWhile #-}
 
 instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    -- TODO: maybe implement some mapUnifierT and use it here and in UnifierT
-    localSimplifierTermLike = undefined
-    localSimplifierAxioms = undefined
+    localSimplifierTermLike locally (UnifierWithExplanation unifierT) =
+        UnifierWithExplanation
+        $ localSimplifierTermLike locally unifierT
+    localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
+        UnifierWithExplanation
+        $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     throwUnificationError =
