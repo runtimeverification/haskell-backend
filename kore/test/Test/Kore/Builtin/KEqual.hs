@@ -92,9 +92,9 @@ test_KEqual =
         assertEqual' "" expect actual
 
     , testCaseWithSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
-        let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
+        let expect = Pattern.top
             original =
-                mkAnd
+                mkEquals_
                     (Test.Bool.asInternal True)
                     (keqBool
                         (kseq (inj kItemSort (mkElemVar (elemVarS "x" idSort))) dotk)
