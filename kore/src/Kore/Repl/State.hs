@@ -157,7 +157,7 @@ import Kore.Syntax.Variable
     )
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph :: ReachabilityRule Variable -> ExecutionGraph Axiom
+emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph Axiom
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
   where
@@ -182,7 +182,7 @@ getClaimByIndex
     :: MonadState ReplState m
     => Int
     -- ^ index in the claims list
-    -> m (Maybe (ReachabilityRule Variable))
+    -> m (Maybe ReachabilityRule)
 getClaimByIndex index = Lens.preuse $ field @"claims" . Lens.element index
 
 -- | Get nth axiom from the axioms list.
@@ -208,7 +208,7 @@ getClaimByName
     :: MonadState ReplState m
     => String
     -- ^ label attribute
-    -> m (Maybe (ReachabilityRule Variable))
+    -> m (Maybe ReachabilityRule)
 getClaimByName name = do
     claims <- Lens.use (field @"claims")
     return $ find (isNameEqual name) claims
@@ -225,7 +225,7 @@ getClaimIndexByName name= do
 getAxiomOrClaimByName
     :: MonadState ReplState m
     => RuleName
-    -> m (Maybe (Either Axiom (ReachabilityRule Variable)))
+    -> m (Maybe (Either Axiom ReachabilityRule))
 getAxiomOrClaimByName (RuleName name) = do
     mAxiom <- getAxiomByName name
     case mAxiom of
@@ -260,7 +260,7 @@ getNameText = from
 getAxiomOrClaimByIndex
     :: MonadState ReplState m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either Axiom (ReachabilityRule Variable)))
+    -> m (Maybe (Either Axiom ReachabilityRule))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
@@ -275,7 +275,7 @@ getInternalIdentifier = from
 -- | Update the currently selected claim to prove.
 switchToProof
     :: MonadState ReplState m
-    => ReachabilityRule Variable -> ClaimIndex -> m ()
+    => ReachabilityRule -> ClaimIndex -> m ()
 switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
@@ -497,7 +497,7 @@ runStepper'
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => [ReachabilityRule Variable]
+    => [ReachabilityRule]
     -> [Axiom]
     -> ReplNode
     -> t m (ExecutionGraph Axiom, StepResult)
@@ -666,7 +666,7 @@ conjOfClaims claims sort =
 generateInProgressClaims
     :: forall m
     .  MonadState ReplState m
-    => m [ReachabilityRule Variable]
+    => m [ReachabilityRule]
 generateInProgressClaims = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
@@ -676,16 +676,16 @@ generateInProgressClaims = do
   where
     startedClaims
         :: Map.Map ClaimIndex (ExecutionGraph Axiom)
-        -> [ReachabilityRule Variable]
-        -> [ReachabilityRule Variable]
+        -> [ReachabilityRule]
+        -> [ReachabilityRule]
     startedClaims graphs claims =
         fmap (uncurry createClaim)
         $ claimsWithPatterns graphs claims
         >>= sequence
     notStartedClaims
         :: Map.Map ClaimIndex (ExecutionGraph Axiom)
-        -> [ReachabilityRule Variable]
-        -> [ReachabilityRule Variable]
+        -> [ReachabilityRule]
+        -> [ReachabilityRule]
     notStartedClaims graphs claims =
         filter (not . Goal.isTrusted)
                 ( (claims !!)

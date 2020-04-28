@@ -320,7 +320,7 @@ prove
     -- ^ The module containing the claims that were proven in a previous run.
     -> smt
         (Either
-            (StuckVerification (TermLike Variable) (ReachabilityRule Variable))
+            (StuckVerification (TermLike Variable) ReachabilityRule)
             ()
         )
 prove
@@ -350,8 +350,8 @@ prove
         return $ Bifunctor.first stuckVerificationPatternToTerm result
   where
     extractUntrustedClaims'
-        :: [ReachabilityRule Variable]
-        -> [ReachabilityRule Variable]
+        :: [ReachabilityRule]
+        -> [ReachabilityRule]
     extractUntrustedClaims' =
         filter (not . Goal.isTrusted)
 
@@ -572,8 +572,8 @@ assertSomeClaims claims =
         ++  "on the representation of claims."
 
 makeReachabilityRule
-    :: (Attribute.Axiom Symbol Variable, ReachabilityRule Variable)
-    -> ReachabilityRule Variable
+    :: (Attribute.Axiom Symbol Variable, ReachabilityRule)
+    -> ReachabilityRule
 makeReachabilityRule (attributes, reachabilityRule) =
     case reachabilityRule of
         OnePath (OnePathRule rulePattern) ->
@@ -655,9 +655,9 @@ initialize verifiedModule within = do
 
 data InitializedProver =
     InitializedProver
-        { axioms :: ![Goal.Rule (ReachabilityRule Variable)]
-        , claims :: ![ReachabilityRule Variable]
-        , alreadyProven :: ![ReachabilityRule Variable]
+        { axioms :: ![Goal.Rule ReachabilityRule]
+        , claims :: ![ReachabilityRule]
+        , alreadyProven :: ![ReachabilityRule]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -682,7 +682,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
         let Initialized { rewriteRules } = initialized
             changedSpecClaims
                 ::  [   ( Attribute.Axiom Symbol Variable
-                        , MaybeChanged (ReachabilityRule Variable)
+                        , MaybeChanged ReachabilityRule
                         )
                     ]
             changedSpecClaims =
@@ -707,14 +707,14 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
             maybeClaimsAlreadyProven
                 :: Maybe
                     [   ( Attribute.Axiom Symbol Variable
-                        , ReachabilityRule Variable
+                        , ReachabilityRule
                         )
                     ]
             maybeClaimsAlreadyProven =
                 Goal.extractClaims <$> maybeAlreadyProvenModule
             claimsAlreadyProven
                 ::  [   (Attribute.Axiom Symbol Variable
-                        , ReachabilityRule Variable
+                        , ReachabilityRule
                         )
                     ]
             claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
@@ -723,7 +723,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
 
         let specClaims
                 ::  [   ( Attribute.Axiom Symbol Variable
-                        , ReachabilityRule Variable
+                        , ReachabilityRule
                         )
                     ]
             specClaims =
@@ -744,8 +744,8 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
   where
     expandClaim
         :: SmtMetadataTools attributes
-        -> ReachabilityRule Variable
-        -> MaybeChanged (ReachabilityRule Variable)
+        -> ReachabilityRule
+        -> MaybeChanged ReachabilityRule
     expandClaim tools claim =
         if claim /= expanded
             then Changed expanded
@@ -754,7 +754,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
         expanded = expandSingleConstructors tools claim
 
     logChangedClaim
-        :: MaybeChanged (ReachabilityRule Variable)
+        :: MaybeChanged ReachabilityRule
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)

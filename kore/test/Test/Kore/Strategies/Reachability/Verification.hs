@@ -1112,14 +1112,14 @@ test_reachabilityVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (ReachabilityRule Variable)
+    -> Rule ReachabilityRule
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
 simpleOnePathClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> ReachabilityRule Variable
+    -> ReachabilityRule
 simpleOnePathClaim left right =
     OnePath . OnePathRule
     $ RulePattern
@@ -1133,7 +1133,7 @@ simpleOnePathClaim left right =
 simpleAllPathClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> ReachabilityRule Variable
+    -> ReachabilityRule
 simpleAllPathClaim left right =
     AllPath . AllPathRule
     $ RulePattern
@@ -1147,7 +1147,7 @@ simpleAllPathClaim left right =
 simpleOnePathTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> ReachabilityRule Variable
+    -> ReachabilityRule
 simpleOnePathTrustedClaim left right =
     OnePath
     . OnePathRule
@@ -1163,7 +1163,7 @@ simpleOnePathTrustedClaim left right =
 simpleAllPathTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> ReachabilityRule Variable
+    -> ReachabilityRule
 simpleAllPathTrustedClaim left right =
     AllPath
     . AllPathRule

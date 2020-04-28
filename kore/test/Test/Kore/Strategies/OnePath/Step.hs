@@ -142,7 +142,7 @@ makeOnePathRuleFromPatternsWithCond
 makeReachabilityOnePathRule
     :: TermLike Variable
     -> TermLike Variable
-    -> ReachabilityRule Variable
+    -> ReachabilityRule
 makeReachabilityOnePathRule term dest =
     OnePath (makeOnePathRule term dest)
 
@@ -815,7 +815,7 @@ simpleRewrite left right =
 simpleReachabilityRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (ReachabilityRule Variable)
+    -> Rule ReachabilityRule
 simpleReachabilityRewrite left right =
     coerce (simpleRewrite left right)
 
@@ -838,7 +838,7 @@ rewriteReachabilityWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> Rule (ReachabilityRule Variable)
+    -> Rule ReachabilityRule
 rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)
 
@@ -903,10 +903,9 @@ runOnePathSteps
     return (sort $ nub result)
 
 assertStuck
-    :: (Debug variable, Diff variable)
-    => OnePathRule variable
-    -> [ProofState.ProofState (OnePathRule variable)]
-    -> [ProofState.ProofState (ReachabilityRule variable)]
+    :: OnePathRule Variable
+    -> [ProofState.ProofState (OnePathRule Variable)]
+    -> [ProofState.ProofState ReachabilityRule]
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
     assertEqual "as one-path claim" [ ProofState.GoalStuck expectedGoal ] actual

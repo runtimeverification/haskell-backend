@@ -576,50 +576,50 @@ instance From (OnePathRule variable) Attribute.RuleIndex where
 
 {-  | Unified One-Path and All-Path Claim rule pattern.
 -}
-data ReachabilityRule variable
-    = OnePath !(OnePathRule variable)
-    | AllPath !(AllPathRule variable)
+data ReachabilityRule
+    = OnePath !(OnePathRule Variable)
+    | AllPath !(AllPathRule Variable)
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData variable => NFData (ReachabilityRule variable)
+instance NFData ReachabilityRule
 
-instance SOP.Generic (ReachabilityRule variable)
+instance SOP.Generic ReachabilityRule
 
-instance SOP.HasDatatypeInfo (ReachabilityRule variable)
+instance SOP.HasDatatypeInfo ReachabilityRule
 
-instance Debug variable => Debug (ReachabilityRule variable)
+instance Debug ReachabilityRule
 
-instance (Debug variable, Diff variable) => Diff (ReachabilityRule variable)
+instance Diff ReachabilityRule
 
-instance InternalVariable variable => Unparse (ReachabilityRule variable) where
+instance Unparse ReachabilityRule where
     unparse (OnePath rule) = unparse rule
     unparse (AllPath rule) = unparse rule
     unparse2 (AllPath rule) = unparse2 rule
     unparse2 (OnePath rule) = unparse2 rule
 
-instance TopBottom (ReachabilityRule variable) where
+instance TopBottom ReachabilityRule where
     isTop _ = False
     isBottom _ = False
 
-instance Pretty (ReachabilityRule Variable) where
+instance Pretty ReachabilityRule where
     pretty (OnePath (OnePathRule rule)) =
         Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
     pretty (AllPath (AllPathRule rule)) =
         Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
 
-instance From (ReachabilityRule variable) Attribute.SourceLocation where
+instance From ReachabilityRule Attribute.SourceLocation where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From (ReachabilityRule variable) Attribute.Label where
+instance From ReachabilityRule Attribute.Label where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From (ReachabilityRule variable) Attribute.RuleIndex where
+instance From ReachabilityRule Attribute.RuleIndex where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-toSentence :: ReachabilityRule Variable -> Verified.Sentence
+toSentence :: ReachabilityRule -> Verified.Sentence
 toSentence rule =
     Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
         { sentenceAxiomParameters = []
@@ -682,7 +682,7 @@ instance ToRulePattern (AllPathRule Variable)
 
 instance ToRulePattern (ImplicationRule Variable)
 
-instance ToRulePattern (ReachabilityRule Variable) where
+instance ToRulePattern ReachabilityRule where
     toRulePattern (OnePath rule) = toRulePattern rule
     toRulePattern (AllPath rule) = toRulePattern rule
 
@@ -692,7 +692,7 @@ instance FromRulePattern (AllPathRule Variable)
 
 instance FromRulePattern (ImplicationRule Variable)
 
-instance FromRulePattern (ReachabilityRule Variable) where
+instance FromRulePattern ReachabilityRule where
     fromRulePattern (OnePath _) rulePat =
         OnePath $ coerce rulePat
     fromRulePattern (AllPath _) rulePat =
@@ -739,10 +739,7 @@ instance
   where
     from = allPathRuleToTerm
 
-instance
-    InternalVariable variable
-      => From (ReachabilityRule variable) (TermLike variable)
-  where
+instance From ReachabilityRule (TermLike Variable) where
     from (OnePath claim) = from claim
     from (AllPath claim) = from claim
 

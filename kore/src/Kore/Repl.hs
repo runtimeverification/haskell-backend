@@ -97,7 +97,7 @@ runRepl
     => MonadCatch m
     => [Axiom]
     -- ^ list of axioms to used in the proof
-    -> [ReachabilityRule Variable]
+    -> [ReachabilityRule]
     -- ^ list of claims to be proven
     -> MVar (Log.LogAction IO Log.ActualEntry)
     -> ReplScript
@@ -191,8 +191,8 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
 
     addIndexesToClaims
         :: Int
-        -> [ReachabilityRule Variable]
-        -> [ReachabilityRule Variable]
+        -> [ReachabilityRule]
+        -> [ReachabilityRule]
     addIndexesToClaims len claims'' =
         let toAxiomAndBack claim' index =
                 ruleToGoal
@@ -231,15 +231,15 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
 
-    firstClaim :: ReachabilityRule Variable
+    firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph Axiom
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: ReachabilityRule Variable
-        -> [ReachabilityRule Variable]
+        :: ReachabilityRule
+        -> [ReachabilityRule]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode

@@ -116,7 +116,7 @@ instance SimplifyRuleLHS (AllPathRule Variable) where
     simplifyRuleLhs =
         fmap (fmap AllPathRule) . simplifyClaimRule . getAllPathRule
 
-instance SimplifyRuleLHS (ReachabilityRule Variable) where
+instance SimplifyRuleLHS ReachabilityRule where
     simplifyRuleLhs (OnePath rule) =
         (fmap . fmap) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =

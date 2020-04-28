@@ -430,7 +430,7 @@ type ExecutionGraph rule =
 type InnerGraph rule =
     Gr CommonProofState (Seq rule)
 
-type Claim = ReachabilityRule Variable
+type Claim = ReachabilityRule
 type Axiom = Rule Claim
 
 -- | State for the repl.

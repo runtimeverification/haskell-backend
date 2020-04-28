@@ -91,31 +91,31 @@ instance HasPriority (Rule (AllPathRule Variable)) where
 
 -- * Reachability
 
-newtype instance Rule (ReachabilityRule Variable) =
+newtype instance Rule ReachabilityRule =
     ReachabilityRewriteRule
         { unReachabilityRewriteRule :: RewriteRule Variable }
     deriving (GHC.Generic, Show, Unparse)
 
-instance SOP.Generic (Rule (ReachabilityRule Variable))
+instance SOP.Generic (Rule ReachabilityRule)
 
-instance SOP.HasDatatypeInfo (Rule (ReachabilityRule Variable))
+instance SOP.HasDatatypeInfo (Rule ReachabilityRule)
 
-instance Debug (Rule (ReachabilityRule Variable))
+instance Debug (Rule ReachabilityRule)
 
-instance Diff (Rule (ReachabilityRule Variable))
+instance Diff (Rule ReachabilityRule)
 
-instance ToRulePattern (Rule (ReachabilityRule Variable))
+instance ToRulePattern (Rule ReachabilityRule)
 
-instance FromRulePattern (Rule (ReachabilityRule Variable))
+instance FromRulePattern (Rule ReachabilityRule)
 
-instance HasPriority (Rule (ReachabilityRule Variable)) where
+instance HasPriority (Rule ReachabilityRule) where
     getPriority = getPriority . unReachabilityRewriteRule
 
-instance From (Rule (ReachabilityRule Variable)) Attribute.SourceLocation where
+instance From (Rule ReachabilityRule) Attribute.SourceLocation where
     from = from @(RewriteRule Variable) . unReachabilityRewriteRule
 
-instance From (Rule (ReachabilityRule Variable)) Attribute.Label where
+instance From (Rule ReachabilityRule) Attribute.Label where
     from = from @(RewriteRule Variable) . unReachabilityRewriteRule
 
-instance From (Rule (ReachabilityRule Variable)) Attribute.RuleIndex where
+instance From (Rule ReachabilityRule) Attribute.RuleIndex where
     from = from @(RewriteRule Variable) . unReachabilityRewriteRule

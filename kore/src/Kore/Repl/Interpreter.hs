@@ -395,7 +395,7 @@ prove indexOrName = do
         startProving
         claim'
   where
-    startProving :: ReachabilityRule Variable -> m ()
+    startProving :: ReachabilityRule -> m ()
     startProving claim
       | isTrusted claim =
         putStrLn'
@@ -591,12 +591,12 @@ allProofs = do
 
     notStartedProofs
         :: Map.Map ClaimIndex (ExecutionGraph Axiom)
-        -> Map.Map ClaimIndex (ReachabilityRule Variable)
+        -> Map.Map ClaimIndex ReachabilityRule
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
         notStartedOrTrusted <$> cls `Map.difference` gphs
 
-    notStartedOrTrusted :: ReachabilityRule Variable -> GraphProofStatus
+    notStartedOrTrusted :: ReachabilityRule -> GraphProofStatus
     notStartedOrTrusted cl =
         if isTrusted cl
            then TrustedClaim
@@ -814,30 +814,30 @@ tryAxiomClaimWorker mode ref = do
                         IfPossible ->
                             tryForceAxiomOrClaim axiomOrClaim node
   where
-    notEqualClaimTypes :: Either Axiom (ReachabilityRule Variable) -> ReachabilityRule Variable -> Bool
+    notEqualClaimTypes :: Either Axiom ReachabilityRule -> ReachabilityRule -> Bool
     notEqualClaimTypes axiomOrClaim' claim' =
         not (either (const True) (equalClaimTypes claim') axiomOrClaim')
 
-    equalClaimTypes :: ReachabilityRule Variable -> ReachabilityRule Variable -> Bool
+    equalClaimTypes :: ReachabilityRule -> ReachabilityRule -> Bool
     equalClaimTypes =
         isSameType `on` castToReachability
 
-    castToReachability :: ReachabilityRule Variable -> Maybe (ReachabilityRule Variable)
+    castToReachability :: ReachabilityRule -> Maybe ReachabilityRule
     castToReachability = Typeable.cast
 
-    isReachabilityRule :: ReachabilityRule Variable -> Bool
+    isReachabilityRule :: ReachabilityRule -> Bool
     isReachabilityRule = isJust . castToReachability
 
     isSameType
-        :: Maybe (ReachabilityRule Variable)
-        -> Maybe (ReachabilityRule Variable)
+        :: Maybe ReachabilityRule
+        -> Maybe ReachabilityRule
         -> Bool
     isSameType (Just (OnePath _)) (Just (OnePath _)) = True
     isSameType (Just (AllPath _)) (Just (AllPath _)) = True
     isSameType _ _ = False
 
     showUnificationFailure
-        :: Either Axiom (ReachabilityRule Variable)
+        :: Either Axiom ReachabilityRule
         -> ReplNode
         -> ReplM m ()
     showUnificationFailure axiomOrClaim' node = do
@@ -866,7 +866,7 @@ tryAxiomClaimWorker mode ref = do
                         SideCondition.assumeTrueCondition secondCondition
 
     tryForceAxiomOrClaim
-        :: Either Axiom (ReachabilityRule Variable)
+        :: Either Axiom ReachabilityRule
         -> ReplNode
         -> ReplM m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
@@ -895,7 +895,7 @@ tryAxiomClaimWorker mode ref = do
       where
         first' = TermLike.refreshVariables (freeVariables second) first
 
-    extractLeftPattern :: Either Axiom (ReachabilityRule Variable) -> TermLike Variable
+    extractLeftPattern :: Either Axiom ReachabilityRule -> TermLike Variable
     extractLeftPattern = left . either toRulePattern toRulePattern
 
 -- | Removes specified node and all its child nodes.
@@ -998,7 +998,7 @@ savePartialProof maybeNatural file = do
     maybeNode =
         ReplNode . naturalToInt <$> maybeNatural
 
-    makeTrusted :: ReachabilityRule Variable -> ReachabilityRule Variable
+    makeTrusted :: ReachabilityRule -> ReachabilityRule
     makeTrusted goal@(toRulePattern -> rule) =
         fromRulePattern goal
         $ rule
@@ -1011,8 +1011,8 @@ savePartialProof maybeNatural file = do
     removeIfRoot
         :: ReplNode
         -> ClaimIndex
-        -> [ReachabilityRule Variable]
-        -> [ReachabilityRule Variable]
+        -> [ReachabilityRule]
+        -> [ReachabilityRule]
     removeIfRoot (ReplNode node) (ClaimIndex index) claims
         | index >= 0 && index < length claims
         , node == 0 =
