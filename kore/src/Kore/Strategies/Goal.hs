@@ -47,6 +47,9 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import Data.Kind
+    ( Type
+    )
 import Data.List.Extra
     ( groupSortOn
     , sortOn
@@ -200,7 +203,7 @@ proven = Foldable.null . unprovenNodes
 
 class Goal goal where
     type Prim goal
-    type ProofState goal a
+    type ProofState goal :: Type -> Type
 
     goalToRule :: goal -> Rule goal
     default goalToRule
@@ -290,12 +293,8 @@ Things to note when implementing your own:
 -}
 
 instance Goal OnePathRule where
-
-    type Prim OnePathRule =
-        ProofState.Prim (Rule OnePathRule)
-
-    type ProofState OnePathRule a =
-        ProofState.ProofState a
+    type Prim OnePathRule = ProofState.Prim (Rule OnePathRule)
+    type ProofState OnePathRule = ProofState.ProofState
 
     transitionRule =
         (withDebugProofState . transitionRuleTemplate)
@@ -330,12 +329,8 @@ instance ClaimExtractor OnePathRule where
             _ -> Nothing
 
 instance Goal AllPathRule where
-
-    type Prim AllPathRule =
-        ProofState.Prim (Rule AllPathRule)
-
-    type ProofState AllPathRule a =
-        ProofState.ProofState a
+    type Prim AllPathRule = ProofState.Prim (Rule AllPathRule)
+    type ProofState AllPathRule = ProofState.ProofState
 
     transitionRule =
         (withDebugProofState . transitionRuleTemplate)
@@ -370,12 +365,8 @@ instance ClaimExtractor AllPathRule where
             _ -> Nothing
 
 instance Goal ReachabilityRule where
-
-    type Prim ReachabilityRule =
-        ProofState.Prim (Rule ReachabilityRule)
-
-    type ProofState ReachabilityRule a =
-        ProofState.ProofState a
+    type Prim ReachabilityRule = ProofState.Prim (Rule ReachabilityRule)
+    type ProofState ReachabilityRule = ProofState.ProofState
 
     goalToRule (OnePath rule) = coerce rule
     goalToRule (AllPath rule) = coerce rule
