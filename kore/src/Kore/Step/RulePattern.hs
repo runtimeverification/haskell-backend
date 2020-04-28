@@ -13,6 +13,7 @@ module Kore.Step.RulePattern
     , ReachabilityRule (..)
     , ImplicationRule (..)
     , RHS (..)
+    , HasAttributes (..)
     , ToRulePattern (..)
     , FromRulePattern (..)
     , UnifyingRule (..)
@@ -427,6 +428,12 @@ applySubstitution substitution rule =
     subst = Substitution.toMap substitution
     finalRule = substitute subst rule
     substitutedVariables = Substitution.variables substitution
+
+class HasAttributes rule where
+    getAttributes :: rule variable -> Attribute.Axiom Symbol variable
+
+instance HasAttributes RulePattern where
+    getAttributes = attributes
 
 -- | The typeclasses 'ToRulePattern' and 'FromRulePattern' are intended to
 -- be implemented by types which contain more (or the same amount of)
