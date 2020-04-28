@@ -298,20 +298,14 @@ instance Goal OnePathRule where
         ProofState.ProofState a
 
     transitionRule =
-        withDebugProofState
-        $ transitionRuleTemplate
-            TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+        (withDebugProofState . transitionRuleTemplate)
+        TransitionRuleTemplate
+            { simplifyTemplate = simplify
+            , removeDestinationTemplate = removeDestination
+            , isTriviallyValidTemplate = isTriviallyValid
+            , deriveParTemplate = derivePar
+            , deriveSeqTemplate = deriveSeq
+            }
 
     strategy _ goals rules =
         onePathFirstStep rewrites
@@ -344,20 +338,14 @@ instance Goal AllPathRule where
         ProofState.ProofState a
 
     transitionRule =
-        withDebugProofState
-        $ transitionRuleTemplate
-            TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+        (withDebugProofState . transitionRuleTemplate)
+        TransitionRuleTemplate
+            { simplifyTemplate = simplify
+            , removeDestinationTemplate = removeDestination
+            , isTriviallyValidTemplate = isTriviallyValid
+            , deriveParTemplate = derivePar
+            , deriveSeqTemplate = deriveSeq
+            }
 
     strategy _ goals rules =
         allPathFirstStep priorityGroups
