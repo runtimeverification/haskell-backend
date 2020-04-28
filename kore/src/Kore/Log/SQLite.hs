@@ -38,6 +38,9 @@ import Kore.Log.WarnBottomHook
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
+import Kore.Log.WarnSymbolSMTRepresentation
+    ( WarnSymbolSMTRepresentation
+    )
 import Log
     ( ActualEntry
     , Entry
@@ -122,6 +125,7 @@ foldMapEntries mapEntry =
         [ mapEntry (Proxy @DebugEvaluateCondition)
         , mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
+        , mapEntry (Proxy @WarnSymbolSMTRepresentation)
         ]
 
 -- | Declare the SQL tables for all known 'SQL.Table' 'Entry' types.
