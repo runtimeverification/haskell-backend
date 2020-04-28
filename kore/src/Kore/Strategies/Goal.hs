@@ -335,12 +335,12 @@ instance ClaimExtractor OnePathRule where
             Right (OnePathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
 
-instance Goal (AllPathRule Variable) where
+instance Goal AllPathRule where
 
-    type Prim (AllPathRule Variable) =
-        ProofState.Prim (Rule (AllPathRule Variable))
+    type Prim AllPathRule =
+        ProofState.Prim (Rule AllPathRule)
 
-    type ProofState (AllPathRule Variable) a =
+    type ProofState AllPathRule a =
         ProofState.ProofState a
 
     transitionRule =
@@ -375,7 +375,7 @@ instance Goal (AllPathRule Variable) where
             . getAllPathRule
             <$> goals
 
-instance ClaimExtractor (AllPathRule Variable) where
+instance ClaimExtractor AllPathRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (AllPathClaimPattern claim) -> Just (attrs, claim)
@@ -480,7 +480,7 @@ maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
 maybeOnePath (OnePath rule) = Just rule
 maybeOnePath _ = Nothing
 
-maybeAllPath :: ReachabilityRule -> Maybe (AllPathRule Variable)
+maybeAllPath :: ReachabilityRule -> Maybe AllPathRule
 maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
@@ -495,7 +495,7 @@ reachabilityOnePathStrategy strategy' =
 
 reachabilityAllPathStrategy
     :: Functor t
-    => t (Strategy (Prim (AllPathRule Variable)))
+    => t (Strategy (Prim AllPathRule))
     -> t (Strategy (Prim ReachabilityRule))
 reachabilityAllPathStrategy strategy' =
     (fmap . fmap . fmap)
@@ -503,7 +503,7 @@ reachabilityAllPathStrategy strategy' =
         strategy'
 
 allPathProofState
-    :: ProofState (AllPathRule Variable) (AllPathRule Variable)
+    :: ProofState AllPathRule AllPathRule
     -> ProofState ReachabilityRule ReachabilityRule
 allPathProofState = fmap AllPath
 
@@ -519,7 +519,7 @@ primRuleOnePath = fmap ruleReachabilityToRuleOnePath
 
 primRuleAllPath
     :: ProofState.Prim (Rule ReachabilityRule)
-    -> ProofState.Prim (Rule (AllPathRule Variable))
+    -> ProofState.Prim (Rule AllPathRule)
 primRuleAllPath = fmap ruleReachabilityToRuleAllPath
 
 -- The functions below are easier to read coercions between
@@ -527,7 +527,7 @@ primRuleAllPath = fmap ruleReachabilityToRuleAllPath
 -- instances of 'Goal' as 'Rule's.
 ruleReachabilityToRuleAllPath
     :: Rule ReachabilityRule
-    -> Rule (AllPathRule Variable)
+    -> Rule AllPathRule
 ruleReachabilityToRuleAllPath = coerce
 
 ruleReachabilityToRuleOnePath
@@ -536,7 +536,7 @@ ruleReachabilityToRuleOnePath
 ruleReachabilityToRuleOnePath = coerce
 
 ruleAllPathToRuleReachability
-    :: Rule (AllPathRule Variable)
+    :: Rule AllPathRule
     -> Rule ReachabilityRule
 ruleAllPathToRuleReachability = coerce
 
@@ -728,8 +728,8 @@ onePathFollowupStep claims axioms =
         ]
 
 groupStrategy
-    :: [[Rule (AllPathRule Variable)]]
-    -> [Prim (AllPathRule Variable)]
+    :: [[Rule AllPathRule]]
+    -> [Prim AllPathRule]
 groupStrategy [] =
     [DerivePar [], Simplify, TriviallyValid]
 groupStrategy axiomGroups = do
@@ -737,8 +737,8 @@ groupStrategy axiomGroups = do
     [DerivePar group, Simplify, TriviallyValid]
 
 allPathFirstStep
-    :: [[Rule (AllPathRule Variable)]]
-    -> Strategy (Prim (AllPathRule Variable))
+    :: [[Rule AllPathRule]]
+    -> Strategy (Prim AllPathRule)
 allPathFirstStep axiomGroups =
     (Strategy.sequence . map Strategy.apply) $
         [ CheckProven
@@ -755,9 +755,9 @@ allPathFirstStep axiomGroups =
         ]
 
 allPathFollowupStep
-    :: [Rule (AllPathRule Variable)]
-    -> [[Rule (AllPathRule Variable)]]
-    -> Strategy (Prim (AllPathRule Variable))
+    :: [Rule AllPathRule]
+    -> [[Rule AllPathRule]]
+    -> Strategy (Prim AllPathRule)
 allPathFollowupStep claims axiomGroups =
     (Strategy.sequence . map Strategy.apply) $
         [ CheckProven
@@ -1098,7 +1098,7 @@ class ToReachabilityRule rule where
 instance ToReachabilityRule OnePathRule where
     toReachabilityRule = OnePath
 
-instance ToReachabilityRule (AllPathRule Variable) where
+instance ToReachabilityRule AllPathRule where
     toReachabilityRule = AllPath
 
 instance ToReachabilityRule ReachabilityRule where

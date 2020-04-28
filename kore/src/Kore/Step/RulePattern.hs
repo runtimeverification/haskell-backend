@@ -578,7 +578,7 @@ instance From OnePathRule Attribute.RuleIndex where
 -}
 data ReachabilityRule
     = OnePath !OnePathRule
-    | AllPath !(AllPathRule Variable)
+    | AllPath !AllPathRule
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData ReachabilityRule
@@ -633,21 +633,21 @@ toSentence rule =
 
 {-  | All-Path-Claim rule pattern.
 -}
-newtype AllPathRule variable =
-    AllPathRule { getAllPathRule :: RulePattern variable }
+newtype AllPathRule =
+    AllPathRule { getAllPathRule :: RulePattern Variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData variable => NFData (AllPathRule variable)
+instance NFData AllPathRule
 
-instance SOP.Generic (AllPathRule variable)
+instance SOP.Generic AllPathRule
 
-instance SOP.HasDatatypeInfo (AllPathRule variable)
+instance SOP.HasDatatypeInfo AllPathRule
 
-instance Debug variable => Debug (AllPathRule variable)
+instance Debug AllPathRule
 
-instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
+instance Diff AllPathRule
 
-instance InternalVariable variable => Unparse (AllPathRule variable) where
+instance Unparse AllPathRule where
     unparse claimPattern =
         "claim {}"
         <> Pretty.line'
@@ -661,24 +661,24 @@ instance InternalVariable variable => Unparse (AllPathRule variable) where
             unparse2 (allPathRuleToTerm claimPattern)
         Pretty.<+> "[]"
 
-instance TopBottom (AllPathRule variable) where
+instance TopBottom AllPathRule where
     isTop _ = False
     isBottom _ = False
 
-instance From (AllPathRule variable) Attribute.SourceLocation where
+instance From AllPathRule Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes . getAllPathRule
 
-instance From (AllPathRule variable) Attribute.Label where
+instance From AllPathRule Attribute.Label where
     from = Attribute.label . attributes . getAllPathRule
 
-instance From (AllPathRule variable) Attribute.RuleIndex where
+instance From AllPathRule Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getAllPathRule
 
 instance ToRulePattern (RewriteRule Variable)
 
 instance ToRulePattern OnePathRule
 
-instance ToRulePattern (AllPathRule Variable)
+instance ToRulePattern AllPathRule
 
 instance ToRulePattern (ImplicationRule Variable)
 
@@ -688,7 +688,7 @@ instance ToRulePattern ReachabilityRule where
 
 instance FromRulePattern OnePathRule
 
-instance FromRulePattern (AllPathRule Variable)
+instance FromRulePattern AllPathRule
 
 instance FromRulePattern (ImplicationRule Variable)
 
@@ -730,10 +730,7 @@ rewriteRuleToTerm
 instance From OnePathRule (TermLike Variable) where
     from = onePathRuleToTerm
 
-instance
-    InternalVariable variable
-      => From (AllPathRule variable) (TermLike variable)
-  where
+instance From AllPathRule (TermLike Variable) where
     from = allPathRuleToTerm
 
 instance From ReachabilityRule (TermLike Variable) where
@@ -779,10 +776,7 @@ mkImpliesRule left requires alias right =
     rhsTerm = rhsToTerm right
 
 -- | Converts an 'AllPathRule' into its term representation
-allPathRuleToTerm
-    :: InternalVariable variable
-    => AllPathRule variable
-    -> TermLike.TermLike variable
+allPathRuleToTerm :: AllPathRule -> TermLike.TermLike Variable
 allPathRuleToTerm (AllPathRule (RulePattern left _ requires rhs _)) =
     mkImpliesRule left requires (Just wAF) rhs
 

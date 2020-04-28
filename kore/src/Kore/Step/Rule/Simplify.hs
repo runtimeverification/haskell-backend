@@ -112,7 +112,7 @@ instance SimplifyRuleLHS OnePathRule where
     simplifyRuleLhs =
         fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
 
-instance SimplifyRuleLHS (AllPathRule Variable) where
+instance SimplifyRuleLHS AllPathRule where
     simplifyRuleLhs =
         fmap (fmap AllPathRule) . simplifyClaimRule . getAllPathRule
 

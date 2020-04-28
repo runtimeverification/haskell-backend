@@ -70,23 +70,23 @@ instance HasPriority (Rule OnePathRule) where
 
 -- * All-path reachability
 
-newtype instance Rule (AllPathRule Variable) =
+newtype instance Rule AllPathRule =
     AllPathRewriteRule { unRuleAllPath :: RewriteRule Variable }
     deriving (GHC.Generic, Show, Unparse)
 
-instance SOP.Generic (Rule (AllPathRule Variable))
+instance SOP.Generic (Rule AllPathRule)
 
-instance SOP.HasDatatypeInfo (Rule (AllPathRule Variable))
+instance SOP.HasDatatypeInfo (Rule AllPathRule)
 
-instance Debug (Rule (AllPathRule Variable))
+instance Debug (Rule AllPathRule)
 
-instance Diff (Rule (AllPathRule Variable))
+instance Diff (Rule AllPathRule)
 
-instance ToRulePattern (Rule (AllPathRule Variable))
+instance ToRulePattern (Rule AllPathRule)
 
-instance FromRulePattern (Rule (AllPathRule Variable))
+instance FromRulePattern (Rule AllPathRule)
 
-instance HasPriority (Rule (AllPathRule Variable)) where
+instance HasPriority (Rule AllPathRule) where
     getPriority = getPriority . unRuleAllPath
 
 -- * Reachability

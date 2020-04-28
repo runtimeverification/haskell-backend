@@ -139,7 +139,7 @@ instance ExpandSingleConstructors OnePathRule where
     expandSingleConstructors tools =
         OnePathRule . expandSingleConstructors tools . getOnePathRule
 
-instance ExpandSingleConstructors (AllPathRule Variable) where
+instance ExpandSingleConstructors AllPathRule where
     expandSingleConstructors tools =
         AllPathRule . expandSingleConstructors tools . getAllPathRule
 

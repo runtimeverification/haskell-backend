@@ -115,7 +115,7 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
     | OnePathClaimPattern OnePathRule
-    | AllPathClaimPattern (AllPathRule variable)
+    | AllPathClaimPattern AllPathRule
     | ImplicationAxiomPattern (ImplicationRule variable)
     deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
