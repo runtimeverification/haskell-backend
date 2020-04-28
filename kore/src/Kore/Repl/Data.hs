@@ -460,14 +460,14 @@ data ReplState = ReplState
     deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config claim m = Config
+data Config m = Config
     { stepper
-        :: claim
-        -> [claim]
-        -> [Rule claim]
-        -> ExecutionGraph (Rule claim)
+        :: ReachabilityRule Variable
+        -> [ReachabilityRule Variable]
+        -> [Axiom]
+        -> ExecutionGraph Axiom
         -> ReplNode
-        -> m (ExecutionGraph (Rule claim))
+        -> m (ExecutionGraph Axiom)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: SideCondition Variable

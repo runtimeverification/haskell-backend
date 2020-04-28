@@ -217,8 +217,7 @@ import Kore.Unparser
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
-type ReplM claim m a =
-    RWST (Config claim m) ReplOutput ReplState m a
+type ReplM m a = RWST (Config m) ReplOutput ReplState m a
 
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
@@ -230,7 +229,7 @@ replInterpreter
     => MonadIO m
     => (String -> IO ())
     -> ReplCommand
-    -> ReaderT (Config (ReachabilityRule Variable) m) (StateT ReplState m) ReplStatus
+    -> ReaderT (Config m) (StateT ReplState m) ReplStatus
 replInterpreter fn cmd =
     replInterpreter0
         (PrintAuxOutput fn)
@@ -244,7 +243,7 @@ replInterpreter0
     => PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
-    -> ReaderT (Config (ReachabilityRule Variable) m) (StateT ReplState m) ReplStatus
+    -> ReaderT (Config m) (StateT ReplState m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
                 ShowUsage             -> showUsage             $> Continue
@@ -295,8 +294,8 @@ replInterpreter0 printAux printKore replCmd = do
     -- and updates the state, returning the writer output along with the
     -- monadic result.
     evaluateCommand
-        :: ReplM claim m ReplStatus
-        -> ReaderT (Config claim m) (StateT ReplState m) (ReplOutput, ReplStatus)
+        :: ReplM m ReplStatus
+        -> ReaderT (Config m) (StateT ReplState m) (ReplOutput, ReplStatus)
     evaluateCommand c = do
         st <- get
         config <- Reader.ask
@@ -328,7 +327,7 @@ showUsage = putStrLn' showUsageMessage
 
 exit
     :: MonadIO m
-    => ReplM (ReachabilityRule Variable) m ReplStatus
+    => ReplM m ReplStatus
 exit = do
     proofs <- allProofs
     ofile <- Lens.view (field @"outputFile")
@@ -461,7 +460,7 @@ proveSteps
     => MonadIO m
     => Natural
     -- ^ maximum number of steps to perform
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 proveSteps n = do
     let node = ReplNode . fromEnum $ n
     result <- loopM performStepNoBranching (n, SingleResult node)
@@ -477,7 +476,7 @@ proveStepsF
     => MonadIO m
     => Natural
     -- ^ maximum number of steps to perform
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 proveStepsF n = do
     node   <- Lens.use (field @"node")
     recursiveForcedStep n node
@@ -489,7 +488,7 @@ loadScript
     => MonadIO m
     => FilePath
     -- ^ path to file
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 loadScript file = parseEvalScript file
 
 handleLog
@@ -517,7 +516,7 @@ showConfig
     :: Monad m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim m ()
+    -> ReplM m ()
 showConfig configNode = do
     maybeConfig <- getConfigAt configNode
     case maybeConfig of
@@ -530,24 +529,24 @@ showConfig configNode = do
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
 omitCell
-    :: forall claim m
+    :: forall m
     .  Monad m
     => Maybe String
     -- ^ Nothing to show current list, @Just str@ to add/remove to list
-    -> ReplM claim m ()
+    -> ReplM m ()
 omitCell =
     \case
         Nothing  -> showCells
         Just str -> addOrRemove str
   where
-    showCells :: ReplM claim m ()
+    showCells :: ReplM m ()
     showCells = do
         omit <- Lens.use (field @"omit")
         if Set.null omit
             then putStrLn' "Omit list is currently empty."
             else Foldable.traverse_ putStrLn' omit
 
-    addOrRemove :: String -> ReplM claim m ()
+    addOrRemove :: String -> ReplM m ()
     addOrRemove str = field @"omit" %= toggle str
 
     toggle :: String -> Set String -> Set String
@@ -557,7 +556,7 @@ omitCell =
 
 -- | Shows all leaf nodes identifiers which are either stuck or can be
 -- evaluated further.
-showLeafs :: forall claim m. Monad m => ReplM claim m ()
+showLeafs :: forall m. Monad m => ReplM m ()
 showLeafs = do
     leafsByType <- sortLeafsByType <$> getInnerGraph
     case Map.foldMapWithKey showPair leafsByType of
@@ -567,7 +566,7 @@ showLeafs = do
     showPair :: NodeState -> [Graph.Node] -> String
     showPair ns xs = show ns <> ": " <> show xs
 
-proofStatus :: forall m. Monad m => ReplM (ReachabilityRule Variable) m ()
+proofStatus :: forall m. Monad m => ReplM m ()
 proofStatus = do
     proofs <- allProofs
     putStrLn' . showProofStatus $ proofs
@@ -575,7 +574,7 @@ proofStatus = do
 allProofs
     :: forall m
     .  Monad m
-    => ReplM (ReachabilityRule Variable) m (Map.Map ClaimIndex GraphProofStatus)
+    => ReplM m (Map.Map ClaimIndex GraphProofStatus)
 allProofs = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
@@ -640,7 +639,7 @@ showPrecBranch
     :: Monad m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim m ()
+    -> ReplM m ()
 showPrecBranch maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -662,7 +661,7 @@ showChildren
     :: Monad m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
-    -> ReplM claim m ()
+    -> ReplM m ()
 showChildren maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -744,7 +743,7 @@ redirect
     -- ^ command to redirect
     -> FilePath
     -- ^ file path
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 redirect cmd file = do
     liftIO $ withExistingDirectory file (`writeFile` "")
     appendCommand cmd file
@@ -756,8 +755,8 @@ runInterpreterWithOutput
     => PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
-    -> Config (ReachabilityRule Variable) m
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> Config m
+    -> ReplM m ()
 runInterpreterWithOutput printAux printKore cmd config =
     get >>= (\st -> lift
             $ execStateReader config st
@@ -775,7 +774,7 @@ tryAxiomClaim
     => MonadIO m
     => RuleReference
     -- ^ tagged index in the axioms or claims list
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 tryAxiomClaim = tryAxiomClaimWorker Never
 
 -- | Attempt to use a specific axiom or claim to progress the current proof.
@@ -785,7 +784,7 @@ tryFAxiomClaim
     => MonadIO m
     => RuleReference
     -- ^ tagged index in the axioms or claims list
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 tryFAxiomClaim = tryAxiomClaimWorker IfPossible
 
 tryAxiomClaimWorker
@@ -795,7 +794,7 @@ tryAxiomClaimWorker
     => AlsoApplyRule
     -> RuleReference
     -- ^ tagged index in the axioms or claims list
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 tryAxiomClaimWorker mode ref = do
     maybeAxiomOrClaim <-
         ruleReference
@@ -843,7 +842,7 @@ tryAxiomClaimWorker mode ref = do
     showUnificationFailure
         :: Either Axiom (ReachabilityRule Variable)
         -> ReplNode
-        -> ReplM (ReachabilityRule Variable) m ()
+        -> ReplM m ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
         maybeSecond <- getConfigAt (Just node)
@@ -860,7 +859,7 @@ tryAxiomClaimWorker mode ref = do
                         }
                     second
               where
-                patternUnifier :: Pattern Variable -> ReplM (ReachabilityRule Variable) m ()
+                patternUnifier :: Pattern Variable -> ReplM m ()
                 patternUnifier
                     (Pattern.splitTerm -> (secondTerm, secondCondition))
                   =
@@ -872,7 +871,7 @@ tryAxiomClaimWorker mode ref = do
     tryForceAxiomOrClaim
         :: Either Axiom (ReachabilityRule Variable)
         -> ReplNode
-        -> ReplM (ReachabilityRule Variable) m ()
+        -> ReplM m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
         (graph, result) <-
             runStepper'
@@ -892,7 +891,7 @@ tryAxiomClaimWorker mode ref = do
         :: SideCondition Variable
         -> TermLike Variable
         -> TermLike Variable
-        -> ReplM (ReachabilityRule Variable) m ()
+        -> ReplM m ()
     runUnifier' sideCondition first second =
         runUnifier sideCondition first' second
         >>= tell . formatUnificationMessage
@@ -962,7 +961,7 @@ savePartialProof
     .  MonadIO m
     => Maybe Natural
     -> FilePath
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 savePartialProof maybeNatural file = do
     currentClaim <- Lens.use (field @"claim")
     currentIndex <- Lens.use (field @"claimIndex")
@@ -990,7 +989,7 @@ savePartialProof maybeNatural file = do
 
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
-        -> ReplM claim m ()
+        -> ReplM m ()
     saveUnparsedDefinitionToFile definition =
         liftIO
         $ withFile
@@ -1044,7 +1043,7 @@ pipe
     -- ^ path to the program that will receive the command's output
     -> [String]
     -- ^ additional arguments to be passed to the program
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 pipe cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
@@ -1086,7 +1085,7 @@ appendTo
     -- ^ command
     -> FilePath
     -- ^ file to append to
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 appendTo cmd file =
     withExistingDirectory file (appendCommand cmd)
 
@@ -1096,7 +1095,7 @@ appendCommand
     => MonadIO m
     => ReplCommand
     -> FilePath
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 appendCommand cmd file = do
     config <- ask
     runInterpreterWithOutput
@@ -1125,7 +1124,7 @@ tryAlias
     => ReplAlias
     -> PrintAuxOutput
     -> PrintKoreOutput
-    -> ReplM (ReachabilityRule Variable) m ReplStatus
+    -> ReplM m ReplStatus
 tryAlias replAlias@ReplAlias { name } printAux printKore = do
     res <- findAlias name
     case res of
@@ -1142,9 +1141,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
   where
     runInterpreter
         :: ReplCommand
-        -> Config (ReachabilityRule Variable) m
+        -> Config m
         -> ReplState
-        -> ReplM (ReachabilityRule Variable) m (ReplStatus, ReplState)
+        -> ReplM m (ReplStatus, ReplState)
     runInterpreter cmd config st =
         lift
             $ (`runStateT` st)
@@ -1161,7 +1160,7 @@ performStepNoBranching
     => MonadIO m
     => (Natural, StepResult)
     -- ^ (current step, last result)
-    -> ReplM (ReachabilityRule Variable) m (Either (Natural, StepResult) (Natural, StepResult))
+    -> ReplM m (Either (Natural, StepResult) (Natural, StepResult))
 performStepNoBranching =
     \case
         -- Termination branch
@@ -1180,7 +1179,7 @@ recursiveForcedStep
     => MonadIO m
     => Natural
     -> ReplNode
-    -> ReplM (ReachabilityRule Variable) m ()
+    -> ReplM m ()
 recursiveForcedStep n node
   | n == 0    = pure ()
   | otherwise = do
@@ -1371,7 +1370,7 @@ parseEvalScript
     .  MonadSimplify m
     => MonadIO m
     => MonadState ReplState (t m)
-    => MonadReader (Config (ReachabilityRule Variable) m) (t m)
+    => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
     => FilePath
     -> t m ()

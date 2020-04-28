@@ -695,7 +695,7 @@ mkState axioms claims claim =
 
 mkConfig
     :: MVar (Log.LogAction IO Log.ActualEntry)
-    -> Config Claim Simplifier
+    -> Config Simplifier
 mkConfig logger =
     Config
         { stepper     = stepper0

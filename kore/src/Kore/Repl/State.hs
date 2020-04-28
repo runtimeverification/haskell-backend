@@ -155,7 +155,7 @@ import Kore.Syntax.Variable
     )
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph axiom
+emptyExecutionGraph :: ReachabilityRule Variable -> ExecutionGraph Axiom
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
   where
@@ -478,7 +478,7 @@ liftSimplifierWithLogger mLogger simplifier = do
 -- (claim, axioms, claims, current node and execution graph).
 runStepper
     :: MonadState ReplState (t m)
-    => MonadReader (Config (ReachabilityRule Variable) m) (t m)
+    => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
@@ -497,7 +497,7 @@ runStepper = do
 -- starting at the selected node.
 runStepper'
     :: MonadState ReplState (t m)
-    => MonadReader (Config (ReachabilityRule Variable) m) (t m)
+    => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
@@ -524,7 +524,7 @@ runStepper' claims axioms node = do
 
 runUnifier
     :: MonadState ReplState (t m)
-    => MonadReader (Config claim m) (t m)
+    => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m

@@ -137,10 +137,10 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> RWST (Config (ReachabilityRule Variable) m) String ReplState m ()
+    evaluateScript :: ReplScript -> RWST (Config m) String ReplState m ()
     evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
 
-    repl0 :: ReaderT (Config (ReachabilityRule Variable) m) (StateT ReplState m) ()
+    repl0 :: ReaderT (Config m) (StateT ReplState m) ()
     repl0 = do
         str <- prompt
         let command = fromMaybe ShowUsage $ parseMaybe commandParser str
@@ -167,7 +167,7 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
                     { Log.exeName = Log.ExeName "kore-repl" }
             }
 
-    config :: Config (ReachabilityRule Variable) m
+    config :: Config m
     config =
         Config
             { stepper    = stepper0
