@@ -127,7 +127,7 @@ check whether they are equal or not, producing a builtin boolean value.
 sort) and return the first term if the expression is true, and the second
 otherwise.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
     [ (eqKey, applicationAxiomSimplifier (evalKEq True))

@@ -45,6 +45,9 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules
     ( debugAppliedRewriteRules
     )
+import Kore.Log.ErrorRewritesInstantiation
+    ( checkSubstitutionCoverage
+    )
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
@@ -64,7 +67,6 @@ import Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
-    , checkSubstitutionCoverage
     , simplifyPredicate
     , targetRuleVariables
     , toConfigurationVariables
@@ -170,7 +172,7 @@ finalizeRule initial unifiedRule =
             SideCondition.topTODO
             (Just initialCondition)
             unificationCondition
-        checkSubstitutionCoverage initial unifiedRule
+        checkSubstitutionCoverage initial (fmap RewriteRule unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
         let result = unwrapConfiguration <$> final

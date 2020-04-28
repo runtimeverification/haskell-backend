@@ -239,158 +239,108 @@ returnList
     :: (MonadSimplify m, InternalVariable variable)
     => Sort
     -> Seq (TermLike variable)
-    -> m (AttemptedAxiom variable)
+    -> m (Pattern variable)
 returnList builtinListSort builtinListChild = do
     tools <- Simplifier.askMetadataTools
-    Builtin.appliedFunction
-        $ Reflection.give tools
-        $ asPattern builtinListSort builtinListChild
+    return (Reflection.give tools $ asPattern builtinListSort builtinListChild)
 
 evalElement :: Builtin.Function
-evalElement =
-    Builtin.functionEvaluator evalElement0
-  where
-    evalElement0 resultSort =
-        \case
-            [elem'] -> returnList resultSort (Seq.singleton elem')
-            _ -> Builtin.wrongArity elementKey
+evalElement resultSort =
+    \case
+        [elem'] -> returnList resultSort (Seq.singleton elem')
+        _ -> Builtin.wrongArity elementKey
 
 evalGet :: Builtin.Function
-evalGet =
-    Builtin.functionEvaluator evalGet0
-  where
-    evalGet0 :: Builtin.FunctionImplementation
-    evalGet0 _ = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_list, _ix) =
-                    case arguments of
-                        [_list, _ix] -> (_list, _ix)
-                        _ -> Builtin.wrongArity getKey
-                emptyList = do
-                    _list <- expectBuiltinList getKey _list
-                    if Seq.null _list
-                        then Builtin.appliedFunction Pattern.bottom
-                        else empty
-                bothConcrete = do
-                    _list <- expectBuiltinList getKey _list
-                    _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
-                    let ix
-                            | _ix < 0 =
-                                -- negative indices count from end of list
-                                _ix + Seq.length _list
-                            | otherwise = _ix
-                    (Builtin.appliedFunction . maybeBottom)
-                        (Seq.lookup ix _list)
-            emptyList <|> bothConcrete
-      where
-        maybeBottom =
-            maybe Pattern.bottom Pattern.fromTermLike
-
-evalUpdate :: Builtin.Function
-evalUpdate =
-    Builtin.functionEvaluator evalUpdate0
-  where
-    evalUpdate0 :: Builtin.FunctionImplementation
-    evalUpdate0 resultSort [_list, _ix, value] =
-        Builtin.getAttemptedAxiom $ do
+evalGet resultSort [_list, _ix] = do
+    let emptyList = do
+            _list <- expectBuiltinList getKey _list
+            if Seq.null _list
+                then return (Pattern.bottomOf resultSort)
+                else empty
+        bothConcrete = do
             _list <- expectBuiltinList getKey _list
             _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
-            let len = Seq.length _list
-                ix
-                  | _ix < 0 =
-                    -- negative indices count from end of list
-                    _ix + len
-                  | otherwise = _ix
-            if ix >= 0 && ix < len
-                then returnList resultSort (Seq.update ix value _list)
-                else Builtin.appliedFunction Pattern.bottom
-    evalUpdate0 _ _ = Builtin.wrongArity updateKey
+            let ix
+                    | _ix < 0 =
+                        -- negative indices count from end of list
+                        _ix + Seq.length _list
+                    | otherwise = _ix
+            return (maybeBottom (Seq.lookup ix _list))
+    emptyList <|> bothConcrete
+    where
+    maybeBottom =
+        maybe Pattern.bottom Pattern.fromTermLike
+evalGet _ _ = Builtin.wrongArity getKey
+
+evalUpdate :: Builtin.Function
+evalUpdate resultSort [_list, _ix, value] = do
+    _list <- expectBuiltinList getKey _list
+    _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
+    let len = Seq.length _list
+        ix
+            | _ix < 0 =
+            -- negative indices count from end of list
+            _ix + len
+            | otherwise = _ix
+    if ix >= 0 && ix < len
+        then returnList resultSort (Seq.update ix value _list)
+        else return (Pattern.bottomOf resultSort)
+evalUpdate _ _ = Builtin.wrongArity updateKey
 
 evalIn :: Builtin.Function
-evalIn =
-    Builtin.functionEvaluator evalIn0
-  where
-    evalIn0 :: Builtin.FunctionImplementation
-    evalIn0 resultSort [_elem, _list] =
-        Builtin.getAttemptedAxiom $ do
-            _list <- expectConcreteBuiltinList inKey _list
-            _elem <- hoistMaybe $ Builtin.toKey _elem
-            Builtin.appliedFunction
-                $ Bool.asPattern resultSort
-                $ _elem `elem` _list
-    evalIn0 _ _ = Builtin.wrongArity inKey
+evalIn resultSort [_elem, _list] = do
+    _list <- expectConcreteBuiltinList inKey _list
+    _elem <- hoistMaybe $ Builtin.toKey _elem
+    _elem `elem` _list
+        & Bool.asPattern resultSort
+        & return
+evalIn _ _ = Builtin.wrongArity inKey
 
 evalUnit :: Builtin.Function
-evalUnit =
-    Builtin.functionEvaluator evalUnit0
-  where
-    evalUnit0 resultSort =
-        \case
-            [] -> returnList resultSort Seq.empty
-            _ -> Builtin.wrongArity "LIST.unit"
+evalUnit resultSort =
+    \case
+        [] -> returnList resultSort Seq.empty
+        _ -> Builtin.wrongArity "LIST.unit"
 
 evalConcat :: Builtin.Function
-evalConcat =
-    Builtin.functionEvaluator evalConcat0
-  where
-    evalConcat0
-        :: (InternalVariable variable, MonadSimplify simplifier)
-        => Sort
-        -> [TermLike variable]
-        -> simplifier (AttemptedAxiom variable)
-    evalConcat0 resultSort = \arguments ->
-        Builtin.getAttemptedAxiom $ do
-            let (_list1, _list2) =
-                    case arguments of
-                        [_list1, _list2] -> (_list1, _list2)
-                        _ -> Builtin.wrongArity concatKey
-                leftIdentity = do
-                    _list1 <- expectBuiltinList concatKey _list1
-                    if Seq.null _list1
-                        then
-                            Builtin.appliedFunction
-                            $ Pattern.fromTermLike _list2
-                        else
-                            empty
-                rightIdentity = do
-                    _list2 <- expectBuiltinList concatKey _list2
-                    if Seq.null _list2
-                        then
-                            Builtin.appliedFunction
-                            $ Pattern.fromTermLike _list1
-                        else
-                            empty
-                bothConcrete = do
-                    _list1 <- expectBuiltinList concatKey _list1
-                    _list2 <- expectBuiltinList concatKey _list2
-                    returnList resultSort (_list1 <> _list2)
-            leftIdentity <|> rightIdentity <|> bothConcrete
+evalConcat resultSort [_list1, _list2] = do
+    let leftIdentity = do
+            _list1 <- expectBuiltinList concatKey _list1
+            if Seq.null _list1
+                then return (Pattern.fromTermLike _list2)
+                else empty
+        rightIdentity = do
+            _list2 <- expectBuiltinList concatKey _list2
+            if Seq.null _list2
+                then return (Pattern.fromTermLike _list1)
+                else empty
+        bothConcrete = do
+            _list1 <- expectBuiltinList concatKey _list1
+            _list2 <- expectBuiltinList concatKey _list2
+            returnList resultSort (_list1 <> _list2)
+    leftIdentity <|> rightIdentity <|> bothConcrete
+evalConcat _ _ = Builtin.wrongArity concatKey
 
 evalSize :: Builtin.Function
-evalSize =
-    Builtin.functionEvaluator evalSize0
-  where
-    evalSize0 :: Builtin.FunctionImplementation
-    evalSize0 resultSort [_list] =
-        Builtin.getAttemptedAxiom $ do
-            _list <- expectBuiltinList sizeKey _list
-            Seq.length _list
-                & fromIntegral & Int.asPattern resultSort
-                & Builtin.appliedFunction
-    evalSize0 _ _ = Builtin.wrongArity sizeKey
+evalSize resultSort [_list] = do
+    _list <- expectBuiltinList sizeKey _list
+    Seq.length _list
+        & fromIntegral & Int.asPattern resultSort
+        & return
+evalSize _ _ = Builtin.wrongArity sizeKey
 
 {- | Implement builtin function evaluation.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
-        [ (concatKey, evalConcat)
-        , (elementKey, evalElement)
-        , (unitKey, evalUnit)
-        , (getKey, evalGet)
-        , (updateKey, evalUpdate)
-        , (inKey, evalIn)
-        , (sizeKey, evalSize)
+        [ (concatKey, Builtin.functionEvaluator evalConcat)
+        , (elementKey, Builtin.functionEvaluator evalElement)
+        , (unitKey, Builtin.functionEvaluator evalUnit)
+        , (getKey, Builtin.functionEvaluator evalGet)
+        , (updateKey, Builtin.functionEvaluator evalUpdate)
+        , (inKey, Builtin.functionEvaluator evalIn)
+        , (sizeKey, Builtin.functionEvaluator evalSize)
         ]
 
 {- | Simplify the conjunction or equality of two concrete List domain values.

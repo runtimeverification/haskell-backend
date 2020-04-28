@@ -54,6 +54,7 @@ import Kore.Attribute.Synthetic
     ( synthesize
     )
 import qualified Kore.Builtin.Bool as Builtin.Bool
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
@@ -1416,7 +1417,7 @@ headSortsMapping =
 zeroarySmtSort :: Id -> SMT.UnresolvedSort
 zeroarySmtSort sortId =
     SMT.Sort
-        { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
+        { smtFromSortArgs = const (const (Just encodedId))
         , declaration = SMT.SortDeclarationSort SMT.SortDeclaration
             { name = SMT.encodable sortId
             , arity = 0
@@ -1429,15 +1430,13 @@ builtinZeroarySmtSort :: SMT.SExpr -> SMT.UnresolvedSort
 builtinZeroarySmtSort sExpr =
     SMT.Sort
         { smtFromSortArgs = const (const (Just sExpr))
-        , declaration =
-            SMT.SortDeclaredIndirectly
-                (SMT.AlreadyEncoded (SMT.nameFromSExpr sExpr))
+        , declaration = SMT.SortDeclaredIndirectly (SMT.AlreadyEncoded sExpr)
         }
 
 smtConstructor :: Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtConstructor symbolId argumentSorts resultSort =
     SMT.Symbol
-        { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
+        { smtFromSortArgs = const (const (Just encodedId))
         , declaration =
             SMT.SymbolConstructor SMT.IndirectSymbolDeclaration
                 { name = encodableId
@@ -1456,7 +1455,7 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
         { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
         , declaration =
             SMT.SymbolBuiltin SMT.IndirectSymbolDeclaration
-                { name = SMT.AlreadyEncoded builtin
+                { name = SMT.AlreadyEncoded $ SMT.Atom builtin
                 , resultSort = SMT.SortReference resultSort
                 , argumentSorts = map SMT.SortReference argumentSorts
                 }
@@ -1853,31 +1852,31 @@ builtinSimplifiers :: BuiltinAndAxiomSimplifierMap
 builtinSimplifiers =
     Map.fromList
         [   ( AxiomIdentifier.Application unitMapId
-            , builtinEvaluation Map.evalUnit
+            , Builtin.functionEvaluator Map.evalUnit
             )
         ,   ( AxiomIdentifier.Application elementMapId
-            , builtinEvaluation Map.evalElement
+            , Builtin.functionEvaluator Map.evalElement
             )
         ,   ( AxiomIdentifier.Application concatMapId
-            , builtinEvaluation Map.evalConcat
+            , Builtin.functionEvaluator Map.evalConcat
             )
         ,   ( AxiomIdentifier.Application unitSetId
-            , builtinEvaluation Set.evalUnit
+            , Builtin.functionEvaluator Set.evalUnit
             )
         ,   ( AxiomIdentifier.Application elementSetId
-            , builtinEvaluation Set.evalElement
+            , Builtin.functionEvaluator Set.evalElement
             )
         ,   ( AxiomIdentifier.Application concatSetId
-            , builtinEvaluation Set.evalConcat
+            , Builtin.functionEvaluator Set.evalConcat
             )
         ,   ( AxiomIdentifier.Application unitListId
-            , builtinEvaluation List.evalUnit
+            , Builtin.functionEvaluator List.evalUnit
             )
         ,   ( AxiomIdentifier.Application elementListId
-            , builtinEvaluation List.evalElement
+            , Builtin.functionEvaluator List.evalElement
             )
         ,   ( AxiomIdentifier.Application concatListId
-            , builtinEvaluation List.evalConcat
+            , Builtin.functionEvaluator List.evalConcat
             )
         ,   ( AxiomIdentifier.Application tdivIntId
             , builtinEvaluation

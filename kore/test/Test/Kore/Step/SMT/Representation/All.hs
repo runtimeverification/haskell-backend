@@ -76,7 +76,7 @@ test_symbolParsing =
     astSortDeclaration name =
         AST.Sort
             { smtFromSortArgs = const $ const $ Just
-                $ SMT.Atom (AST.encode (AST.encodable name))
+                $ AST.encode (AST.encodable name)
             , declaration = AST.SortDeclarationSort
                 SMT.SortDeclaration
                     { name = AST.encode (AST.encodable name)
@@ -87,7 +87,7 @@ test_symbolParsing =
 testsForModule
     :: String
     -> VerifiedModule Attribute.Symbol
-    ->  [  AST.Declarations SMT.SExpr Text Text
+    ->  [  AST.Declarations SMT.SExpr Text SMT.SExpr
         -> TestTree
         ]
     -> TestTree

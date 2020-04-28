@@ -77,7 +77,7 @@ resolve declarations =
 
 smtResolvers
     :: UnresolvedDeclarations
-    -> Resolvers SMT.SExpr Text Text
+    -> Resolvers SMT.SExpr Text SMT.SExpr
 smtResolvers Declarations {sorts, symbols} =
     Resolvers
         { sortResolver = referenceCheckSort

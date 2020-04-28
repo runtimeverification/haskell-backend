@@ -63,7 +63,8 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
-    ( TermSimplifier
+    ( BuiltinAndAxiomSimplifier
+    , TermSimplifier
     )
 import Kore.Unification.Unify
     ( MonadUnify
@@ -156,7 +157,7 @@ parse = (Parsec.<|>) true false
 
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
     [ (orKey, binaryOperator orKey (||))

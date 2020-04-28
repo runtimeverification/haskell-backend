@@ -12,7 +12,7 @@ UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
 K_RELEASE_TAR = $(BUILD_DIR)/k-nightly.tar.gz
-K_RELEASE_TAR_URL = $(shell cat deps/k_release)/k-nightly.tar.gz
+K_RELEASE_TAR_URL = https://github.com/kframework/k/releases/download/$(shell cat deps/k_release)/k-nightly.tar.gz
 K_RELEASE_DEFAULT = $(BUILD_DIR)/k
 K_RELEASE ?= $(K_RELEASE_DEFAULT)
 K_RELEASE_BIN = $(K_RELEASE)/bin
@@ -42,6 +42,11 @@ STACK = stack
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
+KORE_PARSER = $(BUILD_DIR)/kore/bin/kore-parser
+KORE_PARSER_OPTS =
+export KORE_PARSER
+export KORE_PARSER_OPTS
+
 KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
 KORE_EXEC_OPTS =
 export KORE_EXEC
@@ -57,6 +62,9 @@ $(KORE_EXEC):
 
 $(KORE_REPL):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-repl
+
+$(KORE_PARSER):
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
 
 $(K_RELEASE_DEFAULT)/lib/java/kernel-1.0-SNAPSHOT.jar:
 	mkdir -p $(BUILD_DIR)
