@@ -21,6 +21,9 @@ import Control.Monad
     )
 import qualified Control.Monad.Except as Error
 import qualified Control.Monad.Morph as Morph
+import Control.Monad.Reader
+    ( MonadReader (..)
+    )
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
@@ -69,6 +72,8 @@ instance MonadTrans UnifierT where
     lift = UnifierT . lift . lift . lift
     {-# INLINE lift #-}
 
+deriving instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
+
 deriving instance MonadLog m => MonadLog (UnifierT m)
 
 deriving instance MonadSMT m => MonadSMT (UnifierT m)
@@ -93,6 +98,11 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
                 )
                 readerT
     {-# INLINE localSimplifierAxioms #-}
+
+    simplifyCondition sideCondition condition = do
+        ConditionSimplifier conditionSimplifier <- ask
+        conditionSimplifier sideCondition condition
+    {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
     throwUnificationError = UnifierT . lift . lift . Error.throwError

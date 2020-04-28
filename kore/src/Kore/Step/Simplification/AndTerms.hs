@@ -171,8 +171,8 @@ andFunctions
     => HasCallStack
     => NotSimplifier unifier
     -> [TermTransformationOld variable unifier]
-andFunctions f =
-    map (forAnd . snd) (filter appliesToAnd (andEqualsFunctions f))
+andFunctions notSimplifier =
+    map (forAnd . snd) (filter appliesToAnd (andEqualsFunctions notSimplifier))
   where
     appliesToAnd :: (SimplificationTarget, a) -> Bool
     appliesToAnd (AndT, _) = True
@@ -191,8 +191,8 @@ equalsFunctions
     => HasCallStack
     => NotSimplifier unifier
     -> [TermTransformationOld variable unifier]
-equalsFunctions f =
-    map (forEquals . snd) (filter appliesToEquals (andEqualsFunctions f))
+equalsFunctions notSimplifier =
+    map (forEquals . snd) (filter appliesToEquals (andEqualsFunctions notSimplifier))
   where
     appliesToEquals :: (SimplificationTarget, a) -> Bool
     appliesToEquals (AndT, _) = False

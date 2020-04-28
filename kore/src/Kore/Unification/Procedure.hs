@@ -20,8 +20,7 @@ import Control.Error
 
 import qualified Branch as BranchT
 import Control.Monad.Trans.Reader
-    ( ask
-    , runReaderT
+    ( runReaderT
     )
 import Kore.Internal.Condition
     ( Condition
