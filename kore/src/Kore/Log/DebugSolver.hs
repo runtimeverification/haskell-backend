@@ -73,7 +73,7 @@ instance Pretty DebugSolverRecv where
 
 instance Entry DebugSolverSend where
     entrySeverity _ = Debug
-    helpDoc _ = "log SMT solver queries"
+    helpDoc _ = "log commands sent to SMT solver"
 
 instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
