@@ -167,7 +167,7 @@
                             Lbl'-LT-'mAddr'-GT-'{}(
                                 /* Fl Fn D Sfa */ VarMEMADDR:SortInt{}
                             ),
-                            /* Fn Sfc */
+                            /* Fl Fn D Sfc */
                             Lbl'-LT-'memInst'-GT-'{}(
                                 /* Fl Fn D Sfa */
                                 Lbl'-LT-'mAddr'-GT-'{}(
@@ -182,9 +182,9 @@
                                 Lbl'-LT-'msize'-GT-'{}(
                                     /* Fl Fn D Sfa */ VarSIZE:SortInt{}
                                 ),
-                                /* Fn Sfc */
+                                /* Fl Fn D Sfc */
                                 Lbl'-LT-'mdata'-GT-'{}(
-                                    /* Fn Sfc */
+                                    /* Fl Fn D Sfc */
                                     Lbl'Hash'setRange'LParUndsCommUndsCommUndsCommUndsRParUnds'WASM-DATA'Unds'ByteMap'Unds'ByteMap'Unds'Int'Unds'Int'Unds'Int{}(
                                         /* Fl Fn D Sfa */
                                         LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
@@ -423,7 +423,7 @@
         \not{SortGeneratedTopCell{}}(
             /* Sfc */
             \equals{SortByteMap{}, SortGeneratedTopCell{}}(
-                /* Fn Sfc */
+                /* Fl Fn D Sfc */
                 Lbl'Hash'setRange'LParUndsCommUndsCommUndsCommUndsRParUnds'WASM-DATA'Unds'ByteMap'Unds'ByteMap'Unds'Int'Unds'Int'Unds'Int{}(
                     /* Fl Fn D Sfa */
                     LblByteMap'-LT-PipeUndsPipe-GT-Unds'WASM-DATA'Unds'ByteMap'Unds'Map{}(
