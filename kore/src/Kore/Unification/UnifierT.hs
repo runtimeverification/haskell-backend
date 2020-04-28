@@ -8,6 +8,7 @@ module Kore.Unification.UnifierT
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT
+    , evalEnvUnifierT
     , substitutionSimplifier
     -- * Re-exports
     , module Kore.Unification.Unify
@@ -123,7 +124,6 @@ lowerExceptT
     -> unifier a
 lowerExceptT e = runExceptT e >>= either throwUnificationError pure
 
--- TODO: factor out common part
 runUnifierT
     :: MonadSimplify m
     => NotSimplifier (UnifierT m)
@@ -132,11 +132,7 @@ runUnifierT
 runUnifierT notSimplifier =
     runExceptT
     . BranchT.gather
-    . flip runReaderT conditionSimplifier
-    . getUnifierT
-  where
-    conditionSimplifier =
-        ConditionSimplifier.create (substitutionSimplifier notSimplifier)
+    . evalEnvUnifierT notSimplifier
 
 {- | Run a 'Unifier', returning 'Nothing' upon error.
  -}
@@ -148,7 +144,15 @@ maybeUnifierT
 maybeUnifierT notSimplifier =
     hushT
     . BranchT.gather
-    . flip runReaderT conditionSimplifier
+    . evalEnvUnifierT notSimplifier
+
+evalEnvUnifierT
+    :: MonadSimplify m
+    => NotSimplifier (UnifierT m)
+    -> UnifierT m a
+    -> BranchT (ExceptT UnificationError m) a
+evalEnvUnifierT notSimplifier =
+    flip runReaderT conditionSimplifier
     . getUnifierT
   where
     conditionSimplifier =
