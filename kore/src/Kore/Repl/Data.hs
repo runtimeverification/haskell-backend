@@ -13,6 +13,7 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , RuleName (..), RuleReference(..)
     , ReplNode (..)
+    , Axiom
     , ReplState (..)
     , ReplOutput (..)
     , ReplOut (..)
@@ -428,17 +429,19 @@ type ExecutionGraph rule =
 type InnerGraph rule =
     Gr CommonProofState (Seq rule)
 
+type Axiom = Rule (ReachabilityRule Variable)
+
 -- | State for the repl.
-data ReplState claim = ReplState
-    { axioms     :: [Rule claim]
+data ReplState = ReplState
+    { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims     :: [claim]
+    , claims     :: [ReachabilityRule Variable]
     -- ^ List of claims to be proven
-    , claim      :: claim
+    , claim      :: ReachabilityRule Variable
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph (Rule claim))
+    , graphs     :: Map ClaimIndex (ExecutionGraph Axiom)
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -451,7 +454,8 @@ data ReplState claim = ReplState
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     , koreLogOptions :: !KoreLogOptions
-    -- ^ The log level, log scopes and log type decide what gets logged and where.
+    -- ^ The log level, log scopes and log type decide what gets logged and
+    -- where.
     }
     deriving (GHC.Generic)
 

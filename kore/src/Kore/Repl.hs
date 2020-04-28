@@ -87,8 +87,6 @@ import Kore.Unparser
     ( unparseToString
     )
 
-type Axiom = Rule (ReachabilityRule Variable)
-
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
@@ -132,24 +130,24 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState (ReachabilityRule Variable) -> m ()
+    runReplCommand :: ReplCommand -> ReplState -> m ()
     runReplCommand cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> RWST (Config (ReachabilityRule Variable) m) String (ReplState (ReachabilityRule Variable)) m ()
+    evaluateScript :: ReplScript -> RWST (Config (ReachabilityRule Variable) m) String ReplState m ()
     evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
 
-    repl0 :: ReaderT (Config (ReachabilityRule Variable) m) (StateT (ReplState (ReachabilityRule Variable)) m) ()
+    repl0 :: ReaderT (Config (ReachabilityRule Variable) m) (StateT ReplState m) ()
     repl0 = do
         str <- prompt
         let command = fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState (ReachabilityRule Variable)
+    state :: ReplState
     state =
         ReplState
             { axioms         = addIndexesToAxioms axioms'
@@ -275,7 +273,7 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
+    prompt :: MonadIO n => MonadState ReplState n => n String
     prompt = do
         node <- Lens.use (field @"node")
         liftIO $ do
