@@ -22,9 +22,10 @@ import Kore.HasPriority
 import Kore.Internal.Variable
     ( Variable
     )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( AllPathRule
-    , FromRulePattern
+    , FromRulePattern (..)
     , OnePathRule
     , ReachabilityRule
     , RewriteRule (..)
@@ -41,7 +42,7 @@ data family Rule goal
 -- * One-path reachability
 
 newtype instance Rule (OnePathRule Variable) =
-    OnePathRewriteRule { unRuleOnePath :: RewriteRule Variable }
+    OnePathRewriteRule { unRuleOnePath :: RewriteRule RewritingVariable }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule (OnePathRule Variable))
@@ -52,9 +53,8 @@ instance Debug (Rule (OnePathRule Variable))
 
 instance Diff (Rule (OnePathRule Variable))
 
-instance ToRulePattern (Rule (OnePathRule Variable))
-
-instance FromRulePattern (Rule (OnePathRule Variable))
+instance FromRulePattern (Rule (OnePathRule Variable)) where
+    fromRulePattern _ = OnePathRewriteRule . mkRewritingRule . RewriteRule
 
 instance HasPriority (Rule (OnePathRule Variable)) where
     getPriority = getPriority . unRuleOnePath
@@ -62,7 +62,7 @@ instance HasPriority (Rule (OnePathRule Variable)) where
 -- * All-path reachability
 
 newtype instance Rule (AllPathRule Variable) =
-    AllPathRewriteRule { unRuleAllPath :: RewriteRule Variable }
+    AllPathRewriteRule { unRuleAllPath :: RewriteRule RewritingVariable }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule (AllPathRule Variable))
@@ -73,9 +73,8 @@ instance Debug (Rule (AllPathRule Variable))
 
 instance Diff (Rule (AllPathRule Variable))
 
-instance ToRulePattern (Rule (AllPathRule Variable))
-
-instance FromRulePattern (Rule (AllPathRule Variable))
+instance FromRulePattern (Rule (AllPathRule Variable)) where
+    fromRulePattern _ = AllPathRewriteRule . mkRewritingRule . RewriteRule
 
 instance HasPriority (Rule (AllPathRule Variable)) where
     getPriority = getPriority . unRuleAllPath
@@ -84,7 +83,7 @@ instance HasPriority (Rule (AllPathRule Variable)) where
 
 newtype instance Rule (ReachabilityRule Variable) =
     ReachabilityRewriteRule
-        { unReachabilityRewriteRule :: RewriteRule Variable }
+        { unReachabilityRewriteRule :: RewriteRule RewritingVariable }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule (ReachabilityRule Variable))
@@ -95,9 +94,8 @@ instance Debug (Rule (ReachabilityRule Variable))
 
 instance Diff (Rule (ReachabilityRule Variable))
 
-instance ToRulePattern (Rule (ReachabilityRule Variable))
-
-instance FromRulePattern (Rule (ReachabilityRule Variable))
+instance FromRulePattern (Rule (ReachabilityRule Variable)) where
+    fromRulePattern _ = ReachabilityRewriteRule . mkRewritingRule . RewriteRule
 
 instance HasPriority (Rule (ReachabilityRule Variable)) where
     getPriority = getPriority . unReachabilityRewriteRule
