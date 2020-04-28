@@ -230,9 +230,7 @@ termNotBool unifyChildren a b =
       | Just BoolNot { operand } <- matchBoolNot termLike1
       , isFunctionPattern termLike1
       , Just value <- matchBool boolTerm
-      = lift $ do
-        result <- unifyChildren (makeNot boolTerm value) operand
-        pure result
+      = lift $ unifyChildren (makeNot boolTerm value) operand
     worker _ _ = empty
 
 {- | Match a @BOOL.Bool@ builtin value.
