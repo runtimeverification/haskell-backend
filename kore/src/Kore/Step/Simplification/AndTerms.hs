@@ -120,7 +120,7 @@ termUnification
     -> TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification f =
+termUnification notSimplifier =
     termUnificationWorker
   where
     termUnificationWorker
@@ -130,7 +130,8 @@ termUnification f =
     termUnificationWorker pat1 pat2 = do
         let
             maybeTermUnification :: MaybeT unifier (Pattern variable)
-            maybeTermUnification = maybeTermAnd f termUnificationWorker pat1 pat2
+            maybeTermUnification =
+                maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
             unsupportedPatternsError =
                 throwUnificationError
                     (unsupportedPatterns
@@ -150,7 +151,8 @@ maybeTermEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermEquals f = maybeTransformTerm (equalsFunctions f)
+maybeTermEquals notSimplifier =
+    maybeTransformTerm (equalsFunctions notSimplifier)
 
 maybeTermAnd
     :: InternalVariable variable
@@ -162,7 +164,8 @@ maybeTermAnd
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermAnd f = maybeTransformTerm (andFunctions f)
+maybeTermAnd notSimplifier =
+    maybeTransformTerm (andFunctions notSimplifier)
 
 andFunctions
     :: forall variable unifier
@@ -172,7 +175,8 @@ andFunctions
     => NotSimplifier unifier
     -> [TermTransformationOld variable unifier]
 andFunctions notSimplifier =
-    map (forAnd . snd) (filter appliesToAnd (andEqualsFunctions notSimplifier))
+    forAnd . snd
+    <$> filter appliesToAnd (andEqualsFunctions notSimplifier)
   where
     appliesToAnd :: (SimplificationTarget, a) -> Bool
     appliesToAnd (AndT, _) = True
@@ -211,8 +215,8 @@ andEqualsFunctions
     => HasCallStack
     => NotSimplifier unifier
     -> [(SimplificationTarget, TermTransformation variable unifier)]
-andEqualsFunctions f = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd f s), "expandAlias")
+andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
+    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s), "expandAlias")
     , (AndT,    \_ _ _ -> boolAnd, "boolAnd")
     , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
     , (BothT,   \_ _ _ -> bytesDifferent, "bytesDifferent")
@@ -227,7 +231,7 @@ andEqualsFunctions f = fmap mapEqualsFunctions
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
     , (BothT,   \_ _ s -> Builtin.Bool.termAndEquals s, "Builtin.Bool.termAndEquals")
     , (BothT,   \_ _ s -> Builtin.Bool.termNotBool s, "Builtin.Bool.termNotBool")
-    , (BothT,   \_ _ s -> Builtin.KEqual.termKEquals s f, "Builtin.KEqual.termKEquals")
+    , (BothT,   \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier, "Builtin.KEqual.termKEquals")
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
