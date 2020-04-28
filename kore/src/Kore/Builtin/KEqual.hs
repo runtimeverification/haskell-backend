@@ -57,9 +57,9 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
+    ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -234,8 +234,8 @@ termKEquals
 termKEquals unifyChildren (NotSimplifier notSimplifier) a b =
     worker a b <|> worker b a
   where
-    eraseTerm patt =
-        patt { term = mkTop_ }
+    eraseTerm =
+        Pattern.fromCondition . Pattern.withoutTerm
     worker termLike1 termLike2
       | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
       , isFunctionPattern termLike1
