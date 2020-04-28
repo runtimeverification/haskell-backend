@@ -223,14 +223,13 @@ termNotBool
 termNotBool unifyChildren a b =
     worker a b <|> worker b a
   where
-    makeNot :: TermLike variable -> Bool -> TermLike variable
-    makeNot term value =
-        asInternal (termLikeSort term) (not value)
     worker termLike1 boolTerm
       | Just BoolNot { operand } <- matchBoolNot termLike1
       , isFunctionPattern termLike1
       , Just value <- matchBool boolTerm
-      = lift $ unifyChildren (makeNot boolTerm value) operand
+      = lift $ do
+        let notValue = asInternal (termLikeSort boolTerm) (not value)
+        unifyChildren notValue operand
     worker _ _ = empty
 
 {- | Match a @BOOL.Bool@ builtin value.
