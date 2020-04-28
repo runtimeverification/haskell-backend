@@ -239,7 +239,7 @@ getAxiomOrClaimByName (RuleName name) = do
             return . Just . Left $ axiom
 
 isNameEqual
-    :: ToRulePattern rule
+    :: From rule AttrLabel.Label
     => String -> rule -> Bool
 isNameEqual name rule =
     maybe
@@ -251,12 +251,9 @@ isNameEqual name rule =
         )
 
 getNameText
-    :: ToRulePattern rule
+    :: From rule AttrLabel.Label
     => rule -> AttrLabel.Label
-getNameText =
-    Attribute.label
-    . attributes
-    . toRulePattern
+getNameText = from
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
@@ -271,12 +268,9 @@ getAxiomOrClaimByIndex =
             (getClaimByIndex . coerce)
 
 getInternalIdentifier
-    :: ToRulePattern rule
+    :: From rule Attribute.RuleIndex
     => rule -> Attribute.RuleIndex
-getInternalIdentifier =
-    Attribute.identifier
-    . Rule.attributes
-    . toRulePattern
+getInternalIdentifier = from
 
 -- | Update the currently selected claim to prove.
 switchToProof

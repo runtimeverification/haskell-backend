@@ -1253,14 +1253,16 @@ printNotFound = putStrLn' "Variable or index not found"
 -- parameter is needed in order to distinguish between axioms and claims and
 -- represents the number of available axioms.
 showDotGraph
-    :: ToRulePattern axiom
+    :: From axiom AttrLabel.Label
+    => From axiom RuleIndex
     => Int -> Gr CommonProofState (Maybe (Seq axiom)) -> IO ()
 showDotGraph len =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
 
 saveDotGraph
-    :: ToRulePattern axiom
+    :: From axiom AttrLabel.Label
+    => From axiom RuleIndex
     => Int
     -> Gr CommonProofState (Maybe (Seq axiom))
     -> Graph.GraphvizOutput
@@ -1280,7 +1282,8 @@ saveDotGraph len gr format file =
             path
 
 graphParams
-    :: ToRulePattern axiom
+    :: From axiom AttrLabel.Label
+    => From axiom RuleIndex
     => Int
     -> Graph.GraphvizParams
          Graph.Node

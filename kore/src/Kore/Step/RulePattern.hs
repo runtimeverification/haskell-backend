@@ -222,6 +222,12 @@ instance (Debug variable, Diff variable) => Diff (RulePattern variable)
 instance From (RulePattern variable) Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes
 
+instance From (RulePattern variable) Attribute.Label where
+    from = Attribute.label . attributes
+
+instance From (RulePattern variable) Attribute.RuleIndex where
+    from = Attribute.identifier . attributes
+
 instance InternalVariable variable => Pretty (RulePattern variable) where
     pretty rulePattern'@(RulePattern _ _ _ _ _ ) =
         Pretty.vsep
@@ -477,6 +483,12 @@ instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
 instance From (RewriteRule variable) Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes . getRewriteRule
 
+instance From (RewriteRule variable) Attribute.Label where
+    from = Attribute.label . attributes . getRewriteRule
+
+instance From (RewriteRule variable) Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getRewriteRule
+
 instance
     InternalVariable variable
     => Unparse (RewriteRule variable)
@@ -556,6 +568,12 @@ instance TopBottom (OnePathRule variable) where
 instance From (OnePathRule variable) Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes . getOnePathRule
 
+instance From (OnePathRule variable) Attribute.Label where
+    from = Attribute.label . attributes . getOnePathRule
+
+instance From (OnePathRule variable) Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getOnePathRule
+
 {-  | Unified One-Path and All-Path Claim rule pattern.
 -}
 data ReachabilityRule variable
@@ -590,6 +608,14 @@ instance Pretty (ReachabilityRule Variable) where
         Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
 
 instance From (ReachabilityRule variable) Attribute.SourceLocation where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From (ReachabilityRule variable) Attribute.Label where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From (ReachabilityRule variable) Attribute.RuleIndex where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
@@ -641,6 +667,12 @@ instance TopBottom (AllPathRule variable) where
 
 instance From (AllPathRule variable) Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes . getAllPathRule
+
+instance From (AllPathRule variable) Attribute.Label where
+    from = Attribute.label . attributes . getAllPathRule
+
+instance From (AllPathRule variable) Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getAllPathRule
 
 instance ToRulePattern (RewriteRule Variable)
 
