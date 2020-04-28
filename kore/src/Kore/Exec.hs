@@ -120,7 +120,10 @@ import Kore.Step.Rule.Simplify
     ( SimplifyRuleLHS (..)
     )
 import Kore.Step.RulePattern
-    ( ReachabilityRule (..)
+    ( AllPathRule (..)
+    , ImplicationRule (..)
+    , OnePathRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , getRewriteRule
@@ -420,7 +423,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSomeClaims specClaims
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
-            claims = fmap makeClaim specClaims
+            claims = fmap makeImplicationRule specClaims
 
         Bounded.checkClaim
             breadthLimit
@@ -568,18 +571,21 @@ assertSomeClaims claims =
         ++  "Possible explanation: the frontend and the backend don't agree "
         ++  "on the representation of claims."
 
-makeClaim
-    :: Goal.FromRulePattern claim
-    => Goal.ToRulePattern claim
-    => (Attribute.Axiom Symbol Variable, claim) -> claim
-makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
-    Goal.fromRulePattern ruleType RulePattern
-        { attributes = attributes
-        , left = left rule
-        , antiLeft = antiLeft rule
-        , requires = requires rule
-        , rhs = rhs rule
-        }
+makeReachabilityRule
+    :: (Attribute.Axiom Symbol Variable, ReachabilityRule Variable)
+    -> ReachabilityRule Variable
+makeReachabilityRule (attributes, reachabilityRule) =
+    case reachabilityRule of
+        OnePath (OnePathRule rulePattern) ->
+            OnePath (OnePathRule rulePattern { attributes })
+        AllPath (AllPathRule rulePattern) ->
+            AllPath (AllPathRule rulePattern { attributes })
+
+makeImplicationRule
+    :: (Attribute.Axiom Symbol Variable, ImplicationRule Variable)
+    -> ImplicationRule Variable
+makeImplicationRule (attributes, ImplicationRule rulePattern) =
+    ImplicationRule rulePattern { attributes }
 
 simplifyRuleOnSecond
     :: (MonadSimplify simplifier, Claim claim)
@@ -729,9 +735,9 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let claims = fmap makeClaim specAxioms
+        let claims = fmap makeReachabilityRule specAxioms
             axioms = coerce rewriteRules
-            alreadyProven = fmap makeClaim claimsAlreadyProven
+            alreadyProven = fmap makeReachabilityRule claimsAlreadyProven
             initializedProver =
                 InitializedProver {axioms, claims, alreadyProven}
         within initializedProver
