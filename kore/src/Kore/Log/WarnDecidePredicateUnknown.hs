@@ -45,7 +45,7 @@ instance Pretty WarnDecidePredicateUnknown where
 
 instance Entry WarnDecidePredicateUnknown where
     entrySeverity _ = Warning
-    helpDoc _ = "log predicate decision failure"
+    helpDoc _ = "warn when the solver cannot decide satisfiability of a formula"
 
 warnDecidePredicateUnknown
     :: MonadLog log
