@@ -246,5 +246,5 @@ termKEquals unifyChildren (NotSimplifier notSimplifier) a b =
             if value2
                 then return solution
                 else notSimplifier SideCondition.top solution
-        return . OrPattern.toPattern $ finalSolution
+        Unify.scatter finalSolution
     worker _ _ = empty
