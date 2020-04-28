@@ -48,7 +48,6 @@ import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern
-    , ToRulePattern (..)
     , isCoolingRule
     , isHeatingRule
     , isNormalRule
@@ -190,10 +189,7 @@ priorityAnyStrategy rewrites =
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    ::  ( forall rewrite
-        .  ToRulePattern rewrite
-        => [rewrite] -> Strategy (Prim rewrite)
-        )
+    :: (forall rewrite.  [rewrite] -> Strategy (Prim rewrite))
     -- ^ 'allRewrites' or 'anyRewrite'
     -> [RewriteRule Variable]
     -> Strategy (Prim (RewriteRule Variable))
