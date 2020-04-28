@@ -1272,8 +1272,13 @@ unify first second =
         -- The unification error is discarded because, for testing purposes, we
         -- are not interested in the /reason/ unification failed. For the tests,
         -- the failure is almost always due to unsupported patterns anyway.
-        MaybeT . fmap Error.hush . Monad.Unify.runUnifierT Not.notSimplifier
-        $ termUnification Not.notSimplifier (simplifiedTerm first) (simplifiedTerm second)
+        MaybeT
+        . fmap Error.hush
+        . Monad.Unify.runUnifierT Not.notSimplifier
+        $ termUnification
+            Not.notSimplifier
+            (simplifiedTerm first)
+            (simplifiedTerm second)
 
 simplify
     :: TermLike Variable

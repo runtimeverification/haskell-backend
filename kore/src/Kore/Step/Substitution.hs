@@ -33,7 +33,6 @@ import Kore.Internal.SideCondition
 import Kore.Internal.Substitution
     ( Substitution
     )
-import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)

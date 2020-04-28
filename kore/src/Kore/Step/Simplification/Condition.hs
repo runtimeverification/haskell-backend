@@ -31,7 +31,6 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -57,7 +56,7 @@ The 'term' of 'Conditional' may be any type; it passes through @simplify@
 unmodified.
 -}
 simplify
-    ::  forall simplifier variable any t
+    ::  forall simplifier variable any
     .   ( HasCallStack
         , InternalVariable variable
         , MonadSimplify simplifier

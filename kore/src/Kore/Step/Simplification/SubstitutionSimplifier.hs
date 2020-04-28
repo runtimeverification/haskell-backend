@@ -93,7 +93,6 @@ import Kore.Internal.TermLike
     , mkAnd
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
@@ -146,15 +145,7 @@ substitutionSimplifier =
             TopBottom.guardAgainstBottom condition'
             return condition'
       where
-        worker
-            :: Substitution variable
-            -> MaybeT
-                (BranchT simplifier)
-                (Predicate variable, Normalization variable)
-        worker =
-            simplifySubstitutionWorker
-                sideCondition
-                simplificationMakeAnd
+        worker = simplifySubstitutionWorker sideCondition simplificationMakeAnd
 
 -- * Implementation
 
@@ -173,8 +164,7 @@ newtype MakeAnd monad =
         }
 
 simplificationMakeAnd
-    :: MonadSimplify simplifier
-    => MakeAnd (BranchT simplifier)
+    :: MonadSimplify simplifier => MakeAnd (BranchT simplifier)
 simplificationMakeAnd =
     MakeAnd { makeAnd }
   where

@@ -19,9 +19,7 @@ module Kore.Step.Simplification.And
 import Prelude.Kore
 
 import Control.Error
-    ( fromMaybe
-    , runExceptT
-    , runMaybeT
+    ( runMaybeT
     )
 import Control.Monad
     ( foldM
@@ -119,10 +117,6 @@ import Kore.Unification.UnifierT
     ( UnifierT (..)
     , runUnifierT
     )
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
-import qualified Kore.Unification.Unify as Unifier
 import Kore.Unparser
     ( unparse
     )

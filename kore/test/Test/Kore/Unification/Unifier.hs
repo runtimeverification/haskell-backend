@@ -193,7 +193,8 @@ simplifyAnds
     => NonEmpty (TermLike Variable)
     -> unifier (Pattern Variable)
 simplifyAnds =
-    SubstitutionSimplifier.simplifyAnds (Unification.unificationMakeAnd Not.notSimplifier)
+    SubstitutionSimplifier.simplifyAnds
+        (Unification.unificationMakeAnd Not.notSimplifier)
 
 andSimplifySuccess
     :: HasCallStack

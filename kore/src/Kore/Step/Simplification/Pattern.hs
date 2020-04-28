@@ -30,9 +30,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
     ( pattern Exists_
     )
-import Kore.Step.Simplification.Not
-    ( notSimplifier
-    )
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify

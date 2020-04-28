@@ -196,7 +196,8 @@ equalsFunctions
     => NotSimplifier unifier
     -> [TermTransformationOld variable unifier]
 equalsFunctions notSimplifier =
-    map (forEquals . snd) (filter appliesToEquals (andEqualsFunctions notSimplifier))
+    forEquals . snd
+    <$> filter appliesToEquals (andEqualsFunctions notSimplifier)
   where
     appliesToEquals :: (SimplificationTarget, a) -> Bool
     appliesToEquals (AndT, _) = False

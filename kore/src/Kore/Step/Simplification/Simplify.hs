@@ -108,7 +108,6 @@ import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier
     )
-import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
     ( OverloadSimplifier (..)
     )

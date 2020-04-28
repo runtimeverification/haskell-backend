@@ -301,13 +301,14 @@ makeEvaluate
     firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
     secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-    negationAnd <-
-        And.simplifyEvaluated Not.notSimplifier sideCondition firstCeilNegation secondCeilNegation
-    ceilAnd <- And.simplifyEvaluated Not.notSimplifier sideCondition firstCeil secondCeil
-    equalityAnd <- And.simplifyEvaluated Not.notSimplifier sideCondition termEquality ceilAnd
+    negationAnd <- simplifyEvaluatedAnd firstCeilNegation secondCeilNegation
+    ceilAnd <- simplifyEvaluatedAnd firstCeil secondCeil
+    equalityAnd <- simplifyEvaluatedAnd termEquality ceilAnd
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
+    simplifyEvaluatedAnd =
+        And.simplifyEvaluated Not.notSimplifier sideCondition
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -424,7 +425,8 @@ termEqualsAnd p1 p2 =
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    maybeTermEqualsWorker = maybeTermEquals Not.notSimplifier termEqualsAndWorker
+    maybeTermEqualsWorker =
+        maybeTermEquals Not.notSimplifier termEqualsAndWorker
 
     termEqualsAndWorker
         :: forall unifier
@@ -434,8 +436,9 @@ termEqualsAnd p1 p2 =
         -> unifier (Pattern variable)
     termEqualsAndWorker first second =
         either ignoreErrors scatterResults
-        =<< (runUnifierT Not.notSimplifier . runMaybeT) (maybeTermEqualsWorker first second)
+        =<< runUnification (maybeTermEqualsWorker first second)
       where
+        runUnification = runUnifierT Not.notSimplifier . runMaybeT
         ignoreErrors _ = return equalsPredicate
         scatterResults =
             maybe
