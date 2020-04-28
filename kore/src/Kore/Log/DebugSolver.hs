@@ -77,7 +77,7 @@ instance Entry DebugSolverSend where
 
 instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
-    helpDoc _ = "log SMT solver answers"
+    helpDoc _ = "log responses received from SMT solver
 
 logDebugSolverSendWith
     :: LogAction m SomeEntry
