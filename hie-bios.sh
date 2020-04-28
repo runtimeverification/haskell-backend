@@ -18,11 +18,15 @@ out -ikore/src/
 out -ikore/test/
 out -ikore/app/share/
 out -ikore/bench/
-out -ikore/$(stack path --dist-dir)/build/autogen/
-out -clear-package-db
-out -package-db $(stack path --local-pkg-db)
-out -package-db $(stack path --snapshot-pkg-db)
-out -package-db $(stack path --global-pkg-db)
+
+# Set -package-db options, unless GHC_PACKAGE_PATH is set already.
+if [[ -z "${GHC_PACKAGE_PATH}" ]] && [[ -z "${IN_NIX_SHELL}" ]]
+then
+    out -clear-package-db
+    out -package-db $(stack path --local-pkg-db)
+    out -package-db $(stack path --snapshot-pkg-db)
+    out -package-db $(stack path --global-pkg-db)
+fi
 
 yq -r '. "ghc-options" []' < ./kore/package.yaml | while read opt
 do

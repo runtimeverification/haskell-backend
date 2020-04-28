@@ -17,14 +17,23 @@ module Kore.Step.Simplification.Ceil
 
 import Prelude.Kore
 
-import Control.Monad.Reader
-    ( ReaderT (..)
+import Control.Error
+    ( MaybeT
+    , maybeT
     )
+import Control.Monad.Reader
+    ( MonadReader
+    , ReaderT (..)
+    )
+import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
     ( isTotal
+    )
+import Kore.Attribute.Synthetic
+    ( synthesize
     )
 import qualified Kore.Builtin.AssocComm.CeilSimplifier as AssocComm
 import qualified Kore.Domain.Builtin as Domain
@@ -48,7 +57,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate_
-    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -164,57 +172,115 @@ makeEvaluateTerm
     => SideCondition variable
     -> TermLike variable
     -> simplifier (OrCondition variable)
-makeEvaluateTerm
-    sideCondition
-    term@(Recursive.project -> _ :< projected)
-  =
-    makeEvaluateTermWorker
+makeEvaluateTerm sideCondition ceilChild =
+    runCeilSimplifierWith
+        ceilSimplifier
+        sideCondition
+        Ceil
+            { ceilResultSort = Sort.predicateSort
+            , ceilOperandSort = termLikeSort ceilChild
+            , ceilChild
+            }
+    & maybeT (makeSimplifiedCeil sideCondition Nothing ceilChild) return
   where
-    makeEvaluateTermWorker
-      | isTop term            = return OrCondition.top
-      | isBottom term         = return OrCondition.bottom
-      | isDefinedPattern term = return OrCondition.top
+    ceilSimplifier =
+        mconcat
+        [ newPredicateCeilSimplifier
+        , newDefinedCeilSimplifier
+        , newApplicationCeilSimplifier
+        , newBuiltinCeilSimplifier
+        , newInjCeilSimplifier
+        , newAxiomCeilSimplifier
+        ]
 
-      | ApplySymbolF app <- projected
-      , let Application { applicationSymbolOrAlias = patternHead } = app
-      , let headAttributes = symbolAttributes patternHead
-      , Attribute.Symbol.isTotal headAttributes = do
-            let Application { applicationChildren = children } = app
+ceilSimplifierTermLike
+    ::  InternalVariable variable
+    =>  MonadSimplify simplifier
+    =>  CeilSimplifier
+            (ReaderT (SideCondition variable) simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+ceilSimplifierTermLike =
+    CeilSimplifier $ \Ceil { ceilChild = termLike } ->
+    lift $ ReaderT $ \sideCondition ->
+        makeEvaluateTerm sideCondition termLike
+
+newPredicateCeilSimplifier
+    :: Monad simplifier
+    => InternalVariable variable
+    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newPredicateCeilSimplifier = CeilSimplifier $ \input ->
+    case Predicate.makePredicate (ceilChild input) of
+        Left _ -> empty
+        Right predicate -> return (OrCondition.fromPredicate predicate)
+
+newDefinedCeilSimplifier
+    :: Monad simplifier
+    => InternalVariable variable
+    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newDefinedCeilSimplifier = CeilSimplifier $ \input ->
+    if isDefinedPattern (ceilChild input)
+        then return OrCondition.top
+        else empty
+
+newApplicationCeilSimplifier
+    :: MonadReader (SideCondition variable) simplifier
+    => MonadSimplify simplifier
+    => InternalVariable variable
+    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newApplicationCeilSimplifier = CeilSimplifier $ \input ->
+    case ceilChild input of
+        App_ patternHead children
+          | let headAttributes = symbolAttributes patternHead
+          , Attribute.Symbol.isTotal headAttributes -> do
+            sideCondition <- Reader.ask
             simplifiedChildren <- mapM (makeEvaluateTerm sideCondition) children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate
                 sideCondition
                 (MultiAnd.make ceils)
+        _ -> empty
 
-      | BuiltinF child <- projected =
-        makeEvaluateBuiltin sideCondition child
+newInjCeilSimplifier
+    :: MonadReader (SideCondition variable) simplifier
+    => MonadSimplify simplifier
+    => InternalVariable variable
+    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newInjCeilSimplifier = CeilSimplifier $ \input ->
+    case ceilChild input of
+        Inj_ inj -> do
+            InjSimplifier { evaluateCeilInj } <- askInjSimplifier
+            sideCondition <- Reader.ask
+            (makeEvaluateTerm sideCondition . ceilChild . evaluateCeilInj)
+                input { ceilChild = inj }
+        _ -> empty
 
-      | InjF inj <- projected = do
-        InjSimplifier { evaluateCeilInj } <- askInjSimplifier
-        (makeEvaluateTerm sideCondition . ceilChild . evaluateCeilInj)
-            Ceil
-                { ceilResultSort = termLikeSort term -- sort is irrelevant
-                , ceilOperandSort = termLikeSort term
-                , ceilChild = inj
-                }
+newBuiltinCeilSimplifier
+    :: MonadReader (SideCondition variable) simplifier
+    => MonadSimplify simplifier
+    => InternalVariable variable
+    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
+    case ceilChild input of
+        Builtin_ builtin -> do
+            sideCondition <- Reader.ask
+            makeEvaluateBuiltin sideCondition builtin
+        _ -> empty
 
-      | otherwise = do
-        evaluation <- Axiom.evaluatePattern
-            sideCondition
-            Conditional
-                { term = ()
-                , predicate = makeTruePredicate_
-                , substitution = mempty
-                }
-            (mkCeil_ term)
-            (\maybeCondition ->
-                OrPattern.fromPatterns
-                . map Pattern.fromCondition
-                . OrCondition.toConditions
-                <$> makeSimplifiedCeil sideCondition maybeCondition term
-            )
-        return (fmap toCondition evaluation)
-
+newAxiomCeilSimplifier
+    :: MonadReader (SideCondition variable) simplifier
+    => MonadSimplify simplifier
+    => InternalVariable variable
+    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
+    sideCondition <- Reader.ask
+    evaluation <- Axiom.evaluatePattern
+        sideCondition
+        Condition.top
+        (synthesize $ CeilF input)
+        (const empty)
+    return (fmap toCondition evaluation)
+  where
     toCondition Conditional {term = Top_ _, predicate, substitution} =
         Conditional {term = (), predicate, substitution}
     toCondition patt =
@@ -226,18 +292,6 @@ makeEvaluateTerm
             ++ "and programming errors."
             )
 
-ceilSimplifierTermLike
-    ::  InternalVariable variable
-    =>  MonadSimplify simplifier
-    =>  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
-            (TermLike variable)
-            (OrCondition variable)
-ceilSimplifierTermLike =
-    CeilSimplifier $ \Ceil { ceilChild = termLike } ->
-    ReaderT $ \sideCondition ->
-        makeEvaluateTerm sideCondition termLike
-
 {-| Evaluates the ceil of a domain value.
 -}
 makeEvaluateBuiltin
@@ -246,7 +300,7 @@ makeEvaluateBuiltin
     => MonadSimplify simplifier
     => SideCondition variable
     -> Builtin (TermLike variable)
-    -> simplifier (OrCondition variable)
+    -> MaybeT simplifier (OrCondition variable)
 makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
     runCeilSimplifierWith
         (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
