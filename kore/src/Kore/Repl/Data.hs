@@ -497,6 +497,7 @@ deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift
+    {-# INLINE lift #-}
 
 instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     logEntry entry = UnifierWithExplanation $ logEntry entry

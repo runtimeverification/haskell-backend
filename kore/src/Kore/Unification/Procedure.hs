@@ -90,5 +90,5 @@ unificationProcedure
     => UnificationProcedure (ExceptT UnificationError simplifier)
 unificationProcedure =
     UnificationProcedure $ \sideCondition term1 term2 ->
-        evalEnvUnifierT Not.notSimplifier
-        $ unificationProcedureWorker sideCondition term1 term2
+        unificationProcedureWorker sideCondition term1 term2
+        & evalEnvUnifierT Not.notSimplifier

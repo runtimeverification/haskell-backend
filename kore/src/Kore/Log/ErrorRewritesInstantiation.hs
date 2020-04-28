@@ -195,7 +195,7 @@ checkSubstitutionCoverage initial unified
                     (fmap unTargetVariable)
                     (fmap unTargetVariable)
                 )
-                substitutionVariables
+                uncovered
         }
     configuration = Conditional
         { term = mapUnTargetTermLike $ Pattern.term initial
