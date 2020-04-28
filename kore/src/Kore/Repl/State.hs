@@ -140,7 +140,9 @@ import Kore.Strategies.ProofState
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
-import Kore.Strategies.Verification
+import Kore.Strategies.Verification hiding
+    ( Claim
+    )
 import Kore.Syntax.Definition
     ( Definition (..)
     , Module (..)
@@ -641,11 +643,7 @@ substituteAlias
         SimpleArgument str -> str
         QuotedArgument str -> "\"" <> str <> "\""
 
-createClaim
-    :: Claim claim
-    => claim
-    -> Pattern Variable
-    -> claim
+createClaim :: Claim -> Pattern Variable -> Claim
 createClaim claim cpattern =
     fromRulePattern
         claim
@@ -767,12 +765,9 @@ replOutputToString (ReplOutput out) =
     out >>= replOut id id
 
 createNewDefinition
-    :: forall claim
-    .  Claim claim
-    => From claim (TermLike Variable)
-    => ModuleName
+    :: ModuleName
     -> String
-    -> [claim]
+    -> [Claim]
     -> Definition (Sentence (TermLike Variable))
 createNewDefinition mainModuleName name claims =
     Definition
@@ -798,7 +793,7 @@ createNewDefinition mainModuleName name claims =
                 , sentenceImportAttributes = mempty
                 }
 
-    claimToSentence :: claim -> Sentence (TermLike Variable)
+    claimToSentence :: Claim -> Sentence (TermLike Variable)
     claimToSentence claim =
         SentenceClaimSentence
         . SentenceClaim
@@ -808,10 +803,10 @@ createNewDefinition mainModuleName name claims =
             , sentenceAxiomAttributes = trustedToAttribute claim
             }
 
-    claimToTerm :: claim -> TermLike Variable
+    claimToTerm :: Claim -> TermLike Variable
     claimToTerm = from
 
-    trustedToAttribute :: claim -> Syntax.Attributes
+    trustedToAttribute :: Claim -> Syntax.Attributes
     trustedToAttribute
         ( Attribute.trusted
         . attributes

@@ -94,8 +94,6 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Simplification
 
-type Claim = ReachabilityRule Variable
-
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
     [ showUsage                   `tests` "Showing the usage message"

@@ -13,6 +13,7 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , RuleName (..), RuleReference(..)
     , ReplNode (..)
+    , Claim
     , Axiom
     , ReplState (..)
     , ReplOutput (..)
@@ -429,15 +430,16 @@ type ExecutionGraph rule =
 type InnerGraph rule =
     Gr CommonProofState (Seq rule)
 
-type Axiom = Rule (ReachabilityRule Variable)
+type Claim = ReachabilityRule Variable
+type Axiom = Rule Claim
 
 -- | State for the repl.
 data ReplState = ReplState
     { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims     :: [ReachabilityRule Variable]
+    , claims     :: [Claim]
     -- ^ List of claims to be proven
-    , claim      :: ReachabilityRule Variable
+    , claim      :: Claim
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
@@ -462,8 +464,8 @@ data ReplState = ReplState
 -- | Configuration environment for the repl.
 data Config m = Config
     { stepper
-        :: ReachabilityRule Variable
-        -> [ReachabilityRule Variable]
+        :: Claim
+        -> [Claim]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode

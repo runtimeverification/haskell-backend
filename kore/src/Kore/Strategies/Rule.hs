@@ -18,6 +18,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.Attribute.SourceLocation
+    ( SourceLocation
+    )
 import Kore.HasPriority
 import Kore.Internal.Variable
     ( Variable
@@ -101,3 +104,6 @@ instance FromRulePattern (Rule (ReachabilityRule Variable))
 
 instance HasPriority (Rule (ReachabilityRule Variable)) where
     getPriority = getPriority . unReachabilityRewriteRule
+
+instance From (Rule (ReachabilityRule Variable)) SourceLocation where
+    from = from @(RewriteRule Variable) . unReachabilityRewriteRule

@@ -183,9 +183,6 @@ import Kore.Step.RulePattern
     , RulePattern (..)
     )
 import qualified Kore.Step.RulePattern as Rule
-import qualified Kore.Step.RulePattern as Axiom
-    ( attributes
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -1193,20 +1190,13 @@ recursiveForcedStep n node
 
 -- | Display a rule as a String.
 showRewriteRule
-    :: ToRulePattern rule
-    => Unparse rule
+    :: Unparse rule
+    => From rule SourceLocation
     => rule
     -> ReplOutput
 showRewriteRule rule =
     makeKoreReplOutput (unparseToString rule)
-    <> makeAuxReplOutput
-        (show . Pretty.pretty . extractSourceAndLocation $ rule')
-  where
-    rule' = toRulePattern rule
-
-    extractSourceAndLocation :: RulePattern Variable -> SourceLocation
-    extractSourceAndLocation RulePattern { Axiom.attributes } =
-        Attribute.sourceLocation attributes
+    <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy
