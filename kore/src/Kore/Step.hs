@@ -189,7 +189,7 @@ priorityAnyStrategy rewrites =
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    :: (forall rewrite.  [rewrite] -> Strategy (Prim rewrite))
+    :: ([RewriteRule Variable] -> Strategy (Prim (RewriteRule Variable)))
     -- ^ 'allRewrites' or 'anyRewrite'
     -> [RewriteRule Variable]
     -> Strategy (Prim (RewriteRule Variable))
