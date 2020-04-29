@@ -343,7 +343,7 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            x' = nextVariable $ Mock.x
+            x' = nextVariable Mock.x
             final = mkElemVar x'
             initial = pure (mkElemVar Mock.y)
             axiom =
