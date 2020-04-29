@@ -79,6 +79,7 @@ instance SOP.HasDatatypeInfo ErrorRewritesInstantiation
 
 instance Entry ErrorRewritesInstantiation where
     entrySeverity _ = Error
+    helpDoc _ = "log rewrite instantiation errors"
 
 instance Pretty ErrorRewritesInstantiation where
     pretty

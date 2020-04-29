@@ -75,6 +75,7 @@ instance Pretty DebugAppliedRewriteRules where
 
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
+    helpDoc _ = "log applied rewrite rules"
 
 debugAppliedRewriteRules
     :: MonadLog log
