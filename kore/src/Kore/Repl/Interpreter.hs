@@ -1472,7 +1472,7 @@ parseEvalScript file (RunModeOutput shouldOutput) = do
 
         executeCommandWithOutput command = do
             node <- Lens.use (field @"node")
-            liftIO $ putStr $ "(" <> show (unReplNode node) <> ")> "
+            liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             liftIO $ putStrLn $ show command
             replInterpreter0
                     (PrintAuxOutput $ printIfNotEmpty)
