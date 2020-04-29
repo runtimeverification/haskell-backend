@@ -1461,10 +1461,17 @@ parseEvalScript file = do
            lift
                $ execStateReader config st
                $ Foldable.for_ cmds
-               $ replInterpreter0
-                    (PrintAuxOutput $ \_ -> return ())
-                    (PrintKoreOutput $ \_ -> return ())
+               $ executeCommand
 
+        executeCommand command = do
+            node <- Lens.use (field @"node")
+            liftIO $ putStr $ "(" <> show (unReplNode node) <> ")> "
+            liftIO $ putStrLn $ show command
+            replInterpreter0
+                    (PrintAuxOutput $ printIfNotEmpty)
+                    (PrintKoreOutput $ printIfNotEmpty)
+                    command
+        
 formatUnificationMessage
     :: Either ReplOutput (NonEmpty (Condition Variable))
     -> ReplOutput
