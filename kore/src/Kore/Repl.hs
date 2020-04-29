@@ -107,21 +107,32 @@ runRepl
     -- ^ optional script
     -> ReplMode
     -- ^ mode to run in
+    -> RunModeOutput
+    -- ^ optional flag for output in run mode
     -> OutputFile
     -- ^ optional output file
     -> ModuleName
     -> m ()
-runRepl _ [] _ _ _ outputFile _ =
+runRepl _ [] _ _ _ _ outputFile _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
     in liftIO . printTerm . unparseToString $ topTerm
   where
     topTerm :: TermLike Variable
     topTerm = mkTop $ mkSortVariable "R"
 
-runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = do
+runRepl 
+    axioms' 
+    claims' 
+    logger 
+    replScript 
+    replMode 
+    runModeOutput
+    outputFile 
+    mainModuleName 
+    = do
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
-            $ evaluateScript replScript
+            $ evaluateScript replScript runModeOutput
     case replMode of
         Interactive -> do
             replGreeting
@@ -140,8 +151,8 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> RWST (Config claim m) String (ReplState claim) m ()
-    evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
+    evaluateScript :: ReplScript -> RunModeOutput -> RWST (Config claim m) String (ReplState claim) m ()
+    evaluateScript script runModeOutput = maybe (pure ()) (flip parseEvalScript runModeOutput) (unReplScript script)
 
     repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
     repl0 = do

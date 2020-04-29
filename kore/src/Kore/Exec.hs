@@ -378,6 +378,8 @@ proveWithRepl
     -- ^ Optional script
     -> Repl.Data.ReplMode
     -- ^ Run in a specific repl mode
+    -> Repl.Data.RunModeOutput
+    -- ^ Optional flag for output in run-mode
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
     -> ModuleName
@@ -389,13 +391,22 @@ proveWithRepl
     mvar
     replScript
     replMode
+    runModeOutput
     outputFile
     mainModuleName
   =
     evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
-        Repl.runRepl axioms claims mvar replScript replMode outputFile mainModuleName
+        Repl.runRepl 
+            axioms 
+            claims 
+            mvar 
+            replScript 
+            replMode 
+            runModeOutput 
+            outputFile 
+            mainModuleName
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck

@@ -120,7 +120,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 %-repl-script-spec.k.out: %-repl-script-spec.k.repl
-%-repl-script-spec.k.out: KORE_REPL_OPTS = -r --repl-script $<.repl
+%-repl-script-spec.k.out: KORE_REPL_OPTS = -r --save-run-output --repl-script $<.repl
 %-repl-script-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 ### BMC
