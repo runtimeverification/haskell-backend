@@ -104,7 +104,6 @@ import qualified Kore.Profiler.Profile as Profiler
     )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
-import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.Rule
     ( extractImplicationClaims
@@ -176,12 +175,11 @@ type Config = Pattern Variable
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule Variable
-type Rewrite' = RewriteRule RewritingVariable
 
 -- | Function rule used during execution.
 type Equality = Equation Variable
 
-type ExecutionGraph' = Strategy.ExecutionGraph Config Rewrite'
+type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
 
 -- | A collection of rules and simplifiers used during execution.
 newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
@@ -191,7 +189,7 @@ data Execution =
     Execution
         { simplifier :: !TermLikeSimplifier
         , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
-        , executionGraph :: !ExecutionGraph'
+        , executionGraph :: !ExecutionGraph
         }
 
 -- | Symbolic execution
@@ -204,7 +202,7 @@ exec
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite'] -> [Strategy (Prim Rewrite')])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
@@ -240,7 +238,7 @@ execGetExitCode
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite'] -> [Strategy (Prim Rewrite')])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The final pattern (top cell) to extract the exit code
@@ -269,7 +267,7 @@ search
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite'] -> [Strategy (Prim Rewrite')])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
@@ -597,7 +595,7 @@ execute
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite'] -> [Strategy (Prim Rewrite')])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
@@ -619,8 +617,7 @@ execute breadthLimit verifiedModule strategy inputPattern =
               where
                 patternSort = termLikeSort inputPattern
             runStrategy' =
-                runStrategy breadthLimit transitionRule
-                $ strategy $ mkRewritingRule <$> rewriteRules
+                runStrategy breadthLimit transitionRule (strategy rewriteRules)
         executionGraph <- runStrategy' initialPattern
         return Execution
             { simplifier

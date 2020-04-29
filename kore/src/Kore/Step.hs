@@ -102,10 +102,10 @@ transitionRule
     :: forall m
     .  HasCallStack
     => MonadSimplify m
-    => Prim (RewriteRule RewritingVariable)
+    => Prim (RewriteRule Variable)
     -> Pattern Variable
     -- ^ Configuration being rewritten
-    -> TransitionT (RewriteRule RewritingVariable) m (Pattern Variable)
+    -> TransitionT (RewriteRule Variable) m (Pattern Variable)
 transitionRule =
     \case
         Simplify -> transitionSimplify
@@ -120,7 +120,7 @@ transitionRule =
         eitherResults <-
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
-                [rule]
+                [mkRewritingRule rule]
                 config
             & lift . runExceptT
         case eitherResults of
