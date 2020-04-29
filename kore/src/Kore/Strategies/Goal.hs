@@ -298,27 +298,21 @@ instance Goal (OnePathRule Variable) where
     type ProofState (OnePathRule Variable) a =
         ProofState.ProofState a
 
-    goalToRule =
-        OnePathRewriteRule
-        . mkRewritingRule
-        . RewriteRule
-        . getOnePathRule
-
-    ruleToGoal _ =
-        OnePathRule
-        . unRewritingRule
-        . getRewriteRule
-        . unRuleOnePath
-
     transitionRule =
-        (withDebugProofState . transitionRuleTemplate)
-        TransitionRuleTemplate
-            { simplifyTemplate = simplify
-            , removeDestinationTemplate = removeDestination
-            , isTriviallyValidTemplate = isTriviallyValid
-            , deriveParTemplate = derivePar
-            , deriveSeqTemplate = deriveSeq
-            }
+        withDebugProofState
+        $ transitionRuleTemplate
+            TransitionRuleTemplate
+                { simplifyTemplate =
+                    simplify
+                , removeDestinationTemplate =
+                    removeDestination
+                , isTriviallyValidTemplate =
+                    isTriviallyValid
+                , deriveParTemplate =
+                    derivePar
+                , deriveSeqTemplate =
+                    deriveSeq
+                }
 
     strategy _ goals rules =
         onePathFirstStep rewrites
@@ -330,7 +324,11 @@ instance Goal (OnePathRule Variable) where
             )
       where
         rewrites = sortOn getPriority rules
-        coinductiveRewrites = goalToRule <$> goals
+        coinductiveRewrites =
+            OnePathRewriteRule
+            . RewriteRule
+            . getOnePathRule
+            <$> goals
 
 instance ClaimExtractor (OnePathRule Variable) where
     extractClaim (attrs, sentence) =
@@ -346,27 +344,21 @@ instance Goal (AllPathRule Variable) where
     type ProofState (AllPathRule Variable) a =
         ProofState.ProofState a
 
-    goalToRule =
-        AllPathRewriteRule
-        . mkRewritingRule
-        . RewriteRule
-        . getAllPathRule
-
-    ruleToGoal _ =
-        AllPathRule
-        . unRewritingRule
-        . getRewriteRule
-        . unRuleAllPath
-
     transitionRule =
-        (withDebugProofState . transitionRuleTemplate)
-        TransitionRuleTemplate
-            { simplifyTemplate = simplify
-            , removeDestinationTemplate = removeDestination
-            , isTriviallyValidTemplate = isTriviallyValid
-            , deriveParTemplate = derivePar
-            , deriveSeqTemplate = deriveSeq
-            }
+        withDebugProofState
+        $ transitionRuleTemplate
+            TransitionRuleTemplate
+                { simplifyTemplate =
+                    simplify
+                , removeDestinationTemplate =
+                    removeDestination
+                , isTriviallyValidTemplate =
+                    isTriviallyValid
+                , deriveParTemplate =
+                    derivePar
+                , deriveSeqTemplate =
+                    deriveSeq
+                }
 
     strategy _ goals rules =
         allPathFirstStep priorityGroups
@@ -378,7 +370,11 @@ instance Goal (AllPathRule Variable) where
             )
       where
         priorityGroups = groupSortOn getPriority rules
-        coinductiveRewrites = goalToRule <$> goals
+        coinductiveRewrites =
+            AllPathRewriteRule
+            . RewriteRule
+            . getAllPathRule
+            <$> goals
 
 instance ClaimExtractor (AllPathRule Variable) where
     extractClaim (attrs, sentence) =
@@ -394,25 +390,11 @@ instance Goal (ReachabilityRule Variable) where
     type ProofState (ReachabilityRule Variable) a =
         ProofState.ProofState a
 
-    goalToRule (OnePath rule) =
-        goalToRule rule
-        & unRuleOnePath
-        & ReachabilityRewriteRule
-    goalToRule (AllPath rule) =
-        goalToRule rule
-        & unRuleAllPath
-        & ReachabilityRewriteRule
+    goalToRule (OnePath rule) = coerce rule
+    goalToRule (AllPath rule) = coerce rule
 
-    ruleToGoal (OnePath goal) =
-        OnePath
-        . ruleToGoal goal
-        . OnePathRewriteRule
-        . unReachabilityRewriteRule
-    ruleToGoal (AllPath goal) =
-        AllPath
-        . ruleToGoal goal
-        . AllPathRewriteRule
-        . unReachabilityRewriteRule
+    ruleToGoal (OnePath _) rule = OnePath (coerce rule)
+    ruleToGoal (AllPath _) rule = AllPath (coerce rule)
 
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
@@ -455,11 +437,17 @@ instance Goal (ReachabilityRule Variable) where
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
             state@(GoalStuck _) ->
                 case prim of
-                    CheckGoalStuck -> debugProofStateFinal state CheckGoalStuck
+                    CheckGoalStuck ->
+                        debugProofStateFinal
+                            state
+                            CheckGoalStuck
                     _ -> return proofstate
             Proven ->
                 case prim of
-                    CheckProven -> debugProofStateFinal Proven CheckProven
+                    CheckProven ->
+                        debugProofStateFinal
+                            Proven
+                            CheckProven
                     _ -> return proofstate
 
     strategy
@@ -881,8 +869,8 @@ derivePar
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => FromRulePattern goal
+    => ToRulePattern (Rule goal)
     => FromRulePattern (Rule goal)
-    => Coercible (Rule goal) (RewriteRule RewritingVariable)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -902,8 +890,8 @@ deriveWith
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => FromRulePattern goal
+    => ToRulePattern (Rule goal)
     => FromRulePattern (Rule goal)
-    => Coercible (Rule goal) (RewriteRule RewritingVariable)
     => Deriver m
     -> [Rule goal]
     -> goal
@@ -917,7 +905,7 @@ deriveWith takeStep rules goal =
   where
     configuration :: Pattern Variable
     configuration = getConfiguration goal
-    rewrites = coerce @(Rule goal) @(RewriteRule RewritingVariable) <$> rules
+    rewrites = mkRewritingRule . RewriteRule . toRulePattern <$> rules
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -927,8 +915,8 @@ deriveSeq
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => FromRulePattern goal
+    => ToRulePattern (Rule goal)
     => FromRulePattern (Rule goal)
-    => Coercible (Rule goal) (RewriteRule RewritingVariable)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -1121,7 +1109,7 @@ debugProofStateBracket
     :: forall monad goal
     .  MonadLog monad
     => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule RewritingVariable)
+    => Coercible (Rule goal) (RewriteRule Variable)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => ProofState goal goal
@@ -1149,7 +1137,7 @@ debugProofStateFinal
     .  Alternative monad
     => MonadLog monad
     => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule RewritingVariable)
+    => Coercible (Rule goal) (RewriteRule Variable)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => ProofState goal goal
@@ -1172,7 +1160,7 @@ withDebugProofState
     :: forall monad goal
     .  MonadLog monad
     => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule RewritingVariable)
+    => Coercible (Rule goal) (RewriteRule Variable)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     =>

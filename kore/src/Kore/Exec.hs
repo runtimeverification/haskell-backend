@@ -570,18 +570,6 @@ assertSomeClaims claims =
         ++  "Possible explanation: the frontend and the backend don't agree "
         ++  "on the representation of claims."
 
-makeReachabilityClaim
-    :: (Attribute.Axiom Symbol Variable, ReachabilityRule Variable)
-    -> ReachabilityRule Variable
-makeReachabilityClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
-    Goal.fromRulePattern ruleType RulePattern
-        { attributes = attributes
-        , left = left rule
-        , antiLeft = antiLeft rule
-        , requires = requires rule
-        , rhs = rhs rule
-        }
-
 makeClaim
     :: Goal.FromRulePattern claim
     => Goal.ToRulePattern claim
@@ -744,7 +732,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let claims = fmap makeReachabilityClaim specAxioms
+        let claims = fmap makeClaim specAxioms
             axioms = coerce rewriteRules
             alreadyProven = fmap makeClaim claimsAlreadyProven
             initializedProver =

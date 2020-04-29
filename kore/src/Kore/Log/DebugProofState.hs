@@ -17,7 +17,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import Kore.Internal.TermLike
     ( Variable
     )
-import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RewriteRule (..)
@@ -31,7 +30,7 @@ import Log
 data DebugProofState =
     DebugProofState
         { proofState :: ProofState (ReachabilityRule Variable)
-        , transition :: Prim (RewriteRule RewritingVariable)
+        , transition :: Prim (RewriteRule Variable)
         , result :: Maybe (ProofState (ReachabilityRule Variable))
         }
 
