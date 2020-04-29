@@ -26,6 +26,7 @@ module Kore.Step.RulePattern
     , topExistsToImplicitForall
     , isFreeOf
     , Kore.Step.RulePattern.substitute
+    , lhsEqualsRhs
     , rhsSubstitute
     , rhsForgetSimplified
     , rhsToTerm
@@ -873,3 +874,20 @@ instance UnifyingRule RewriteRule where
     mapRuleVariables mapElemVar mapSetVar (RewriteRule rule) =
         RewriteRule (mapRuleVariables mapElemVar mapSetVar rule)
     {-# INLINE mapRuleVariables #-}
+
+lhsEqualsRhs
+    :: InternalVariable variable
+    => RewriteRule variable
+    -> Bool
+lhsEqualsRhs rewriteRule =
+    lhs == rhsToTerm rhs
+  where
+    RulePattern { left, antiLeft, requires, rhs } =
+        getRewriteRule rewriteRule
+    lhs
+      | Just antiLeftTerm <- antiLeft
+      = TermLike.mkAnd
+            (TermLike.mkNot antiLeftTerm)
+            (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
+      | otherwise
+      = TermLike.mkAnd (Predicate.unwrapPredicate requires) left

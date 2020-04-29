@@ -41,6 +41,9 @@ import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( coerce
     )
+import Data.Foldable
+    ( find
+    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -95,6 +98,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
+import Kore.Log.ErrorRewriteRuleId
+    ( errorRewriteRuleId
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -124,6 +130,7 @@ import Kore.Step.RulePattern
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , getRewriteRule
+    , lhsEqualsRhs
     )
 import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
@@ -641,6 +648,7 @@ initialize verifiedModule within = do
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             return (MultiAnd.extractPatterns simplified)
+    maybe (pure ()) errorRewriteRuleId (find lhsEqualsRhs rewriteRules)
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
     --let axioms = coerce (concat simplifiedRewrite)

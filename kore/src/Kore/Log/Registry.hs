@@ -58,6 +58,9 @@ import Kore.Log.DebugSolver
 import Kore.Log.ErrorException
     ( ErrorException
     )
+import Kore.Log.ErrorRewriteRuleId
+    ( ErrorRewriteRuleId
+    )
 import Kore.Log.ErrorRewritesInstantiation
     ( ErrorRewritesInstantiation
     )
@@ -123,6 +126,7 @@ entryTypeReps =
     , someTypeRep $ Proxy @WarnSymbolSMTRepresentation
     , someTypeRep $ Proxy @DebugEvaluateCondition
     , someTypeRep $ Proxy @ErrorException
+    , someTypeRep $ Proxy @ErrorRewriteRuleId
     , someTypeRep $ Proxy @LogMessage
     , someTypeRep $ Proxy @InfoAttemptUnification
     , someTypeRep $ Proxy @InfoReachability
