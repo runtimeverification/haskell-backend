@@ -34,7 +34,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Variable
     ( InternalVariable
-    , Variable
     , toVariable
     )
 import Kore.Rewriting.RewritingVariable
@@ -64,7 +63,7 @@ import qualified Pretty
 data ErrorRewritesInstantiation =
     ErrorRewritesInstantiation
         { problem :: !(Either UnificationError SubstitutionCoverageError)
-        , configuration :: !(Pattern Variable)
+        , configuration :: !(Pattern RewritingVariable)
         }
     deriving (GHC.Generic)
 
@@ -130,7 +129,7 @@ errorRewritesInstantiation configuration' unificationError = do
     error "Aborting execution"
   where
     mapVariables = Pattern.mapVariables (fmap toVariable) (fmap toVariable)
-    configuration = mapVariables configuration'
+    configuration = mkRewritingPattern $ mapVariables configuration'
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -156,7 +155,7 @@ checkSubstitutionCoverage
     -> UnifiedRule RewriteRule RewritingVariable
     -- ^ Unified rule
     -> monadLog ()
-checkSubstitutionCoverage initial solution
+checkSubstitutionCoverage configuration solution
   | isCoveringSubstitution || isSymbolic = return ()
   | otherwise = do
     -- The substitution does not cover all the variables on the left-hand side
@@ -170,7 +169,6 @@ checkSubstitutionCoverage initial solution
   where
     substitutionCoverageError =
         SubstitutionCoverageError { solution, missingVariables }
-    configuration = unwrapConfiguration initial
 
     Conditional { substitution } = solution
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
