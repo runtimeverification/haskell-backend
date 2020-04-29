@@ -25,7 +25,6 @@ for spec in \
     simple-arithmetic \
     locals \
     loops \
-    memory-concrete-type \
     memory-symbolic-type
 do
     kollect "test-$spec" \
@@ -33,7 +32,12 @@ do
             tests/proofs/"$spec"-spec.k \
             --def-module KWASM-LEMMAS
 done
-    
+
+kollect "test-memory-concrete-type" \
+    ./kwasm prove --backend haskell \
+        tests/proofs/memory-concrete-type-spec.k \
+        --def-module MEMORY-CONCRETE-TYPE-LEMMAS
+
 kollect "test-wrc20" \
     ./kwasm prove --backend haskell \
         tests/proofs/wrc20-spec.k \
