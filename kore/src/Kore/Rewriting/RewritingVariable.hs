@@ -180,13 +180,19 @@ getPattern
     => Pattern RewritingVariable
     -> Pattern Variable
 getPattern pattern' =
+    getPatternAux pattern'
+    & assert (all isUnifiedConfigVariable freeVars)
+  where
+    FreeVariables freeVars = freeVariables pattern'
+
+getPatternAux
+    :: Pattern RewritingVariable
+    -> Pattern Variable
+getPatternAux pattern' =
     Pattern.mapVariables
         getElementRewritingVariable
         getSetRewritingVariable
         pattern'
-    & assert (all isUnifiedConfigVariable freeVars)
-  where
-    FreeVariables freeVars = freeVariables pattern'
 
 mkConfigVariable :: Variable -> RewritingVariable
 mkConfigVariable = ConfigVariable
@@ -210,7 +216,7 @@ getResultPattern
     -> Pattern RewritingVariable
     -> Pattern Variable
 getResultPattern initial config@Conditional { substitution } =
-    getPattern renamed
+    getPatternAux renamed
   where
     substitution' =
         Substitution.filter
