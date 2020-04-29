@@ -141,7 +141,7 @@ verifyNoHookedSupersort
     => [Kore.Attribute.Sort.Sort]
     -> error ()
 verifyNoHookedSupersort supersortsAtts = do
-    let isHooked = (getHasDomainValues . hasDomainValues) <$> supersortsAtts
+    let isHooked = getHasDomainValues . hasDomainValues <$> supersortsAtts
     when (or isHooked) $ koreFail "Hooked sorts may not have subsorts."
 
 verifyAxiomAttributes
@@ -153,7 +153,7 @@ verifyAxiomAttributes
 verifyAxiomAttributes indexedModule axiom = do
     let overload = axiom Lens.^. field @"overload"
         supersorts = Subsort.supersort <$> getSubsorts (axiom Lens.^. field @"subsorts")
-        supersortsAtts = (getSortAttributes indexedModule) <$> supersorts
+        supersortsAtts = getSortAttributes indexedModule <$> supersorts
     verifyNoHookedSupersort supersortsAtts
     case getOverload overload of
             Nothing -> do
