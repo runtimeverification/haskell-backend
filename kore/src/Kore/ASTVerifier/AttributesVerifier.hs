@@ -142,11 +142,7 @@ verifyNoHookedSupersort
     -> error ()
 verifyNoHookedSupersort supersortsAtts = do
     let isHooked = (getHasDomainValues . hasDomainValues) <$> supersortsAtts
-    case elem True isHooked of
-        False ->
-            return ()
-        True ->
-            koreFail "Hooked sorts cannot be supersorts."
+    when (or isHooked) $ koreFail "Hooked sorts may not have subsorts."
 
 verifyAxiomAttributes
     :: forall error attrs
