@@ -51,6 +51,7 @@ instance Pretty WarnFunctionWithoutEvaluators where
 
 instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
+    helpDoc _ = "warn when encountering a function with no definition"
 
 instance SQL.Table WarnFunctionWithoutEvaluators
 

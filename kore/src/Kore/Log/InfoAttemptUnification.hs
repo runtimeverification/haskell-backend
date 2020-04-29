@@ -41,6 +41,7 @@ instance SOP.HasDatatypeInfo InfoAttemptUnification
 instance Entry InfoAttemptUnification where
     entrySeverity _ = Info
     shortDoc _ = Just "while attempting unification"
+    helpDoc _ = "log unification attempts"
 
 instance Pretty InfoAttemptUnification where
     pretty InfoAttemptUnification { term1, term2 } =
