@@ -1,4 +1,4 @@
 Error:
   module 'TEST':
   axiom declaration:
-    Hooked sorts cannot be supersorts.
+    Hooked sorts may not have subsorts.
