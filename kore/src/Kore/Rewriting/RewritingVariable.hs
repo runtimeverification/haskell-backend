@@ -176,7 +176,8 @@ getSetRewritingVariable
 getSetRewritingVariable = fmap (from @_ @Variable)
 
 getPattern
-    :: Pattern RewritingVariable
+    :: HasCallStack
+    => Pattern RewritingVariable
     -> Pattern Variable
 getPattern pattern' =
     Pattern.mapVariables
@@ -204,7 +205,8 @@ isRuleVariable _ = False
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
 getResultPattern
-    :: FreeVariables RewritingVariable
+    :: HasCallStack
+    => FreeVariables RewritingVariable
     -> Pattern RewritingVariable
     -> Pattern Variable
 getResultPattern initial config@Conditional { substitution } =
@@ -272,7 +274,10 @@ getRemainderPredicate predicate =
   where
     FreeVariables freeVars = freeVariables predicate
 
-getRemainderPattern :: Pattern RewritingVariable -> Pattern Variable
+getRemainderPattern
+    :: HasCallStack
+    => Pattern RewritingVariable
+    -> Pattern Variable
 getRemainderPattern = getPattern
 
 isUnifiedConfigVariable :: UnifiedVariable RewritingVariable -> Bool
