@@ -55,6 +55,7 @@ import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( evaluate
@@ -138,7 +139,7 @@ matchWith
     -> MaybeT m (OrCondition variable)
 matchWith sideCondition e1 e2 = do
     eitherUnifiers <-
-        lift $ Unifier.runUnifierT
+        lift $ Unifier.runUnifierT Not.notSimplifier
         $ unificationProcedureWorker sideCondition t1 t2
     let
         maybeUnifiers :: Maybe [Condition variable]

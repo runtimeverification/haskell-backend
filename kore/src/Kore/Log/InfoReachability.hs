@@ -79,6 +79,7 @@ instance Entry InfoReachability where
         Just "While applying axioms in sequence"
     shortDoc (InfoDerivePar _ _) =
         Just "While applying axioms in parallel"
+    helpDoc _ = "log reachability proof steps"
 
 whileSimplify
     :: MonadLog log

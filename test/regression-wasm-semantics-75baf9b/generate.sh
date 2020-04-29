@@ -33,3 +33,8 @@ do
             tests/proofs/"$spec"-spec.k \
             --def-module KWASM-LEMMAS
 done
+    
+kollect "test-wrc20" \
+    ./kwasm prove --backend haskell \
+        tests/proofs/wrc20-spec.k \
+        --def-module WRC20-LEMMAS

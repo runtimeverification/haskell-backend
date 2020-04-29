@@ -57,3 +57,4 @@ instance Pretty DebugProofState where
 
 instance Entry DebugProofState where
     entrySeverity _ = Debug
+    helpDoc _ = "log proof state"

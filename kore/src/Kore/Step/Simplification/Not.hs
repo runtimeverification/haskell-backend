@@ -13,6 +13,7 @@ module Kore.Step.Simplification.Not
     , simplify
     , simplifyEvaluated
     , simplifyEvaluatedPredicate
+    , notSimplifier
     ) where
 
 import Prelude.Kore
@@ -61,6 +62,7 @@ import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
 import qualified Kore.Step.Simplification.And as And
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
     ( TopBottom (..)
@@ -233,7 +235,10 @@ mkMultiAndPattern
     -> MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
 mkMultiAndPattern sideCondition patterns =
-    Foldable.foldrM (And.makeEvaluate sideCondition) Pattern.top patterns
+    Foldable.foldrM
+        (And.makeEvaluate notSimplifier sideCondition)
+        Pattern.top
+        patterns
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
@@ -245,3 +250,9 @@ mkMultiAndPredicate predicates =
     -- Using Foldable.fold because the Monoid instance of Condition
     -- implements And semantics.
     return $ Foldable.fold predicates
+
+notSimplifier
+    :: MonadSimplify simplifier
+    => NotSimplifier simplifier
+notSimplifier =
+    NotSimplifier simplifyEvaluated

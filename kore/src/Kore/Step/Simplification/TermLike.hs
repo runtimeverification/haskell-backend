@@ -115,7 +115,8 @@ import qualified Kore.Step.Simplification.Next as Next
     ( simplify
     )
 import qualified Kore.Step.Simplification.Not as Not
-    ( simplify
+    ( notSimplifier
+    , simplify
     )
 import qualified Kore.Step.Simplification.Nu as Nu
     ( simplify
@@ -384,7 +385,8 @@ simplifyInternal term sideCondition = do
             SignednessF _ -> doNotSimplify
             --
             AndF andF ->
-                And.simplify sideCondition =<< simplifyChildren andF
+                And.simplify Not.notSimplifier sideCondition
+                    =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
