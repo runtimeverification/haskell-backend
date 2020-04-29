@@ -12,6 +12,7 @@ module Kore.Attribute.Axiom
     , HeatCool (..)
     , ProductionID (..)
     , Priority (..)
+    , Owise (..)
     , Assoc (..)
     , Comm (..)
     , Unit (..)
