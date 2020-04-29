@@ -529,7 +529,7 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , removeDestinationTemplate
-        :: (goal -> ProofState goal goal)
+        :: (forall x. x -> ProofState goal x)
         -> goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , isTriviallyValidTemplate :: goal -> Bool
@@ -762,7 +762,7 @@ removeDestination
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => FromRulePattern goal
-    => (goal -> ProofState goal goal)
+    => (forall x. x -> ProofState goal x)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 removeDestination stateConstructor goal =
