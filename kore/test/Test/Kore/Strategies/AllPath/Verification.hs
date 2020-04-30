@@ -368,14 +368,14 @@ test_allPathVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (AllPathRule Variable)
+    -> Rule AllPathRule
 simpleAxiom left right =
     AllPathRewriteRule $ simpleRewrite left right
 
 simpleClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> AllPathRule Variable
+    -> AllPathRule
 simpleClaim left right =
     AllPathRule
     RulePattern
@@ -389,7 +389,7 @@ simpleClaim left right =
 simpleTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> AllPathRule Variable
+    -> AllPathRule
 simpleTrustedClaim left right =
     AllPathRule
     RulePattern
@@ -405,7 +405,7 @@ simplePriorityAxiom
     :: TermLike Variable
     -> TermLike Variable
     -> Integer
-    -> Rule (AllPathRule Variable)
+    -> Rule AllPathRule
 simplePriorityAxiom left right priority =
     AllPathRewriteRule . RewriteRule
     $ RulePattern

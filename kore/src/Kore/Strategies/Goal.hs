@@ -47,6 +47,9 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import Data.Kind
+    ( Type
+    )
 import Data.List.Extra
     ( groupSortOn
     , sortOn
@@ -199,7 +202,7 @@ proven = Foldable.null . unprovenNodes
 
 class Goal goal where
     type Prim goal
-    type ProofState goal a
+    type ProofState goal :: Type -> Type
 
     goalToRule :: goal -> Rule goal
     default goalToRule
@@ -288,29 +291,19 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-instance Goal (OnePathRule Variable) where
-
-    type Prim (OnePathRule Variable) =
-        ProofState.Prim (Rule (OnePathRule Variable))
-
-    type ProofState (OnePathRule Variable) a =
-        ProofState.ProofState a
+instance Goal OnePathRule where
+    type Prim OnePathRule = ProofState.Prim (Rule OnePathRule)
+    type ProofState OnePathRule = ProofState.ProofState
 
     transitionRule =
-        withDebugProofState
-        $ transitionRuleTemplate
-            TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+        (withDebugProofState . transitionRuleTemplate)
+        TransitionRuleTemplate
+            { simplifyTemplate = simplify
+            , removeDestinationTemplate = removeDestination
+            , isTriviallyValidTemplate = isTriviallyValid
+            , deriveParTemplate = derivePar
+            , deriveSeqTemplate = deriveSeq
+            }
 
     strategy _ goals rules =
         onePathFirstStep rewrites
@@ -321,45 +314,32 @@ instance Goal (OnePathRule Variable) where
                 rewrites
             )
       where
-        rewrites =
-            sortOn
-                (RulePattern.getPriorityOfRule . toRulePattern)
-                rules
+        rewrites = sortOn Attribute.Axiom.getPriorityOfAxiom rules
         coinductiveRewrites =
             OnePathRewriteRule
             . RewriteRule
             . getOnePathRule
             <$> goals
 
-instance ClaimExtractor (OnePathRule Variable) where
+instance ClaimExtractor OnePathRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (OnePathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
 
-instance Goal (AllPathRule Variable) where
-
-    type Prim (AllPathRule Variable) =
-        ProofState.Prim (Rule (AllPathRule Variable))
-
-    type ProofState (AllPathRule Variable) a =
-        ProofState.ProofState a
+instance Goal AllPathRule where
+    type Prim AllPathRule = ProofState.Prim (Rule AllPathRule)
+    type ProofState AllPathRule = ProofState.ProofState
 
     transitionRule =
-        withDebugProofState
-        $ transitionRuleTemplate
-            TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+        (withDebugProofState . transitionRuleTemplate)
+        TransitionRuleTemplate
+            { simplifyTemplate = simplify
+            , removeDestinationTemplate = removeDestination
+            , isTriviallyValidTemplate = isTriviallyValid
+            , deriveParTemplate = derivePar
+            , deriveSeqTemplate = deriveSeq
+            }
 
     strategy _ goals rules =
         allPathFirstStep priorityGroups
@@ -370,29 +350,22 @@ instance Goal (AllPathRule Variable) where
                 priorityGroups
             )
       where
-        priorityGroups =
-            groupSortOn
-                (RulePattern.getPriorityOfRule . toRulePattern)
-                rules
+        priorityGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom rules
         coinductiveRewrites =
             AllPathRewriteRule
             . RewriteRule
             . getAllPathRule
             <$> goals
 
-instance ClaimExtractor (AllPathRule Variable) where
+instance ClaimExtractor AllPathRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (AllPathClaimPattern claim) -> Just (attrs, claim)
             _ -> Nothing
 
-instance Goal (ReachabilityRule Variable) where
-
-    type Prim (ReachabilityRule Variable) =
-        ProofState.Prim (Rule (ReachabilityRule Variable))
-
-    type ProofState (ReachabilityRule Variable) a =
-        ProofState.ProofState a
+instance Goal ReachabilityRule where
+    type Prim ReachabilityRule = ProofState.Prim (Rule ReachabilityRule)
+    type ProofState ReachabilityRule = ProofState.ProofState
 
     goalToRule (OnePath rule) = coerce rule
     goalToRule (AllPath rule) = coerce rule
@@ -402,16 +375,16 @@ instance Goal (ReachabilityRule Variable) where
 
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
-        => Prim (ReachabilityRule Variable)
+        => Prim ReachabilityRule
         -> ProofState
-            (ReachabilityRule Variable)
-            (ReachabilityRule Variable)
+            ReachabilityRule
+            ReachabilityRule
         -> Strategy.TransitionT
-            (Rule (ReachabilityRule Variable))
+            (Rule ReachabilityRule)
             m
             ( ProofState
-                (ReachabilityRule Variable)
-                (ReachabilityRule Variable)
+                ReachabilityRule
+                ReachabilityRule
             )
     transitionRule = logTransitionRule $ \prim proofstate ->
         case proofstate of
@@ -455,10 +428,10 @@ instance Goal (ReachabilityRule Variable) where
                     _ -> return proofstate
 
     strategy
-        :: ReachabilityRule Variable
-        -> [ReachabilityRule Variable]
-        -> [Rule (ReachabilityRule Variable)]
-        -> Stream (Strategy (Prim (ReachabilityRule Variable)))
+        :: ReachabilityRule
+        -> [ReachabilityRule]
+        -> [Rule ReachabilityRule]
+        -> Stream (Strategy (Prim ReachabilityRule))
     strategy goal claims axioms =
         case goal of
             OnePath rule ->
@@ -474,25 +447,25 @@ instance Goal (ReachabilityRule Variable) where
                     (mapMaybe maybeAllPath claims)
                     (fmap ruleReachabilityToRuleAllPath axioms)
 
-instance ClaimExtractor (ReachabilityRule Variable) where
+instance ClaimExtractor ReachabilityRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (OnePathClaimPattern claim) -> Just (attrs, OnePath claim)
             Right (AllPathClaimPattern claim) -> Just (attrs, AllPath claim)
             _ -> Nothing
 
-maybeOnePath :: ReachabilityRule Variable -> Maybe (OnePathRule Variable)
+maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
 maybeOnePath (OnePath rule) = Just rule
 maybeOnePath _ = Nothing
 
-maybeAllPath :: ReachabilityRule Variable -> Maybe (AllPathRule Variable)
+maybeAllPath :: ReachabilityRule -> Maybe AllPathRule
 maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
 reachabilityOnePathStrategy
     :: Functor t
-    => t (Strategy (Prim (OnePathRule Variable)))
-    -> t (Strategy (Prim (ReachabilityRule Variable)))
+    => t (Strategy (Prim OnePathRule))
+    -> t (Strategy (Prim ReachabilityRule))
 reachabilityOnePathStrategy strategy' =
     (fmap . fmap . fmap)
         ruleOnePathToRuleReachability
@@ -500,54 +473,54 @@ reachabilityOnePathStrategy strategy' =
 
 reachabilityAllPathStrategy
     :: Functor t
-    => t (Strategy (Prim (AllPathRule Variable)))
-    -> t (Strategy (Prim (ReachabilityRule Variable)))
+    => t (Strategy (Prim AllPathRule))
+    -> t (Strategy (Prim ReachabilityRule))
 reachabilityAllPathStrategy strategy' =
     (fmap . fmap . fmap)
         ruleAllPathToRuleReachability
         strategy'
 
 allPathProofState
-    :: ProofState (AllPathRule Variable) (AllPathRule Variable)
-    -> ProofState (ReachabilityRule Variable) (ReachabilityRule Variable)
+    :: ProofState AllPathRule AllPathRule
+    -> ProofState ReachabilityRule ReachabilityRule
 allPathProofState = fmap AllPath
 
 onePathProofState
-    :: ProofState (OnePathRule Variable) (OnePathRule Variable)
-    -> ProofState (ReachabilityRule Variable) (ReachabilityRule Variable)
+    :: ProofState OnePathRule OnePathRule
+    -> ProofState ReachabilityRule ReachabilityRule
 onePathProofState = fmap OnePath
 
 primRuleOnePath
-    :: ProofState.Prim (Rule (ReachabilityRule Variable))
-    -> ProofState.Prim (Rule (OnePathRule Variable))
+    :: ProofState.Prim (Rule ReachabilityRule)
+    -> ProofState.Prim (Rule OnePathRule)
 primRuleOnePath = fmap ruleReachabilityToRuleOnePath
 
 primRuleAllPath
-    :: ProofState.Prim (Rule (ReachabilityRule Variable))
-    -> ProofState.Prim (Rule (AllPathRule Variable))
+    :: ProofState.Prim (Rule ReachabilityRule)
+    -> ProofState.Prim (Rule AllPathRule)
 primRuleAllPath = fmap ruleReachabilityToRuleAllPath
 
 -- The functions below are easier to read coercions between
 -- the newtypes over 'RewriteRule Variable' defined in the
 -- instances of 'Goal' as 'Rule's.
 ruleReachabilityToRuleAllPath
-    :: Rule (ReachabilityRule Variable)
-    -> Rule (AllPathRule Variable)
+    :: Rule ReachabilityRule
+    -> Rule AllPathRule
 ruleReachabilityToRuleAllPath = coerce
 
 ruleReachabilityToRuleOnePath
-    :: Rule (ReachabilityRule Variable)
-    -> Rule (OnePathRule Variable)
+    :: Rule ReachabilityRule
+    -> Rule OnePathRule
 ruleReachabilityToRuleOnePath = coerce
 
 ruleAllPathToRuleReachability
-    :: Rule (AllPathRule Variable)
-    -> Rule (ReachabilityRule Variable)
+    :: Rule AllPathRule
+    -> Rule ReachabilityRule
 ruleAllPathToRuleReachability = coerce
 
 ruleOnePathToRuleReachability
-    :: Rule (OnePathRule Variable)
-    -> Rule (ReachabilityRule Variable)
+    :: Rule OnePathRule
+    -> Rule ReachabilityRule
 ruleOnePathToRuleReachability = coerce
 
 data TransitionRuleTemplate monad goal =
@@ -555,7 +528,7 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , removeDestinationTemplate
-        :: (goal -> ProofState goal goal)
+        :: (forall x. x -> ProofState goal x)
         -> goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , isTriviallyValidTemplate :: goal -> Bool
@@ -572,7 +545,7 @@ data TransitionRuleTemplate monad goal =
 logTransitionRule
     :: forall m goal
     .  MonadSimplify m
-    => goal ~ ReachabilityRule Variable
+    => goal ~ ReachabilityRule
     =>  (  Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -733,8 +706,8 @@ onePathFollowupStep claims axioms =
         ]
 
 groupStrategy
-    :: [[Rule (AllPathRule Variable)]]
-    -> [Prim (AllPathRule Variable)]
+    :: [[Rule AllPathRule]]
+    -> [Prim AllPathRule]
 groupStrategy [] =
     [DerivePar [], Simplify, TriviallyValid]
 groupStrategy axiomGroups = do
@@ -742,8 +715,8 @@ groupStrategy axiomGroups = do
     [DerivePar group, Simplify, TriviallyValid]
 
 allPathFirstStep
-    :: [[Rule (AllPathRule Variable)]]
-    -> Strategy (Prim (AllPathRule Variable))
+    :: [[Rule AllPathRule]]
+    -> Strategy (Prim AllPathRule)
 allPathFirstStep axiomGroups =
     (Strategy.sequence . map Strategy.apply) $
         [ CheckProven
@@ -760,9 +733,9 @@ allPathFirstStep axiomGroups =
         ]
 
 allPathFollowupStep
-    :: [Rule (AllPathRule Variable)]
-    -> [[Rule (AllPathRule Variable)]]
-    -> Strategy (Prim (AllPathRule Variable))
+    :: [Rule AllPathRule]
+    -> [[Rule AllPathRule]]
+    -> Strategy (Prim AllPathRule)
 allPathFollowupStep claims axiomGroups =
     (Strategy.sequence . map Strategy.apply) $
         [ CheckProven
@@ -788,7 +761,7 @@ removeDestination
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => FromRulePattern goal
-    => (goal -> ProofState goal goal)
+    => (forall x. x -> ProofState goal x)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 removeDestination stateConstructor goal =
@@ -1098,15 +1071,15 @@ configurationDestinationToRule ruleType configuration rhs =
         }
 
 class ToReachabilityRule rule where
-    toReachabilityRule :: rule -> ReachabilityRule Variable
+    toReachabilityRule :: rule -> ReachabilityRule
 
-instance ToReachabilityRule (OnePathRule Variable) where
+instance ToReachabilityRule OnePathRule where
     toReachabilityRule = OnePath
 
-instance ToReachabilityRule (AllPathRule Variable) where
+instance ToReachabilityRule AllPathRule where
     toReachabilityRule = AllPath
 
-instance ToReachabilityRule (ReachabilityRule Variable) where
+instance ToReachabilityRule ReachabilityRule where
     toReachabilityRule = id
 
 debugProofStateBracket

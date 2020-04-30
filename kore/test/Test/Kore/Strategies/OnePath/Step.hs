@@ -87,14 +87,14 @@ import Test.Tasty.HUnit.Ext
 makeOnePathRule
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRule term dest =
     OnePathRule $ rulePattern term dest
 
 makeOnePathRuleFromPatterns
     :: Pattern Variable
     -> Pattern Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRuleFromPatterns
     configuration
     destination
@@ -118,7 +118,7 @@ makeOnePathRuleFromPatterns
 makeOnePathRuleFromPatternsWithCond
     :: Pattern Variable
     -> Pattern Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRuleFromPatternsWithCond
     configuration
     destination
@@ -142,7 +142,7 @@ makeOnePathRuleFromPatternsWithCond
 makeReachabilityOnePathRule
     :: TermLike Variable
     -> TermLike Variable
-    -> ReachabilityRule Variable
+    -> ReachabilityRule
 makeReachabilityOnePathRule term dest =
     OnePath (makeOnePathRule term dest)
 
@@ -801,7 +801,7 @@ test_onePathStrategy =
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 simpleRewrite left right =
     OnePathRewriteRule
     $ RewriteRule RulePattern
@@ -815,7 +815,7 @@ simpleRewrite left right =
 simpleReachabilityRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (ReachabilityRule Variable)
+    -> Rule ReachabilityRule
 simpleReachabilityRewrite left right =
     coerce (simpleRewrite left right)
 
@@ -823,7 +823,7 @@ rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 rewriteWithPredicate left right predicate =
     OnePathRewriteRule
     $ RewriteRule RulePattern
@@ -838,7 +838,7 @@ rewriteReachabilityWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> Rule (ReachabilityRule Variable)
+    -> Rule ReachabilityRule
 rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)
 
@@ -903,10 +903,9 @@ runOnePathSteps
     return (sort $ nub result)
 
 assertStuck
-    :: (Debug variable, Diff variable)
-    => OnePathRule variable
-    -> [ProofState.ProofState (OnePathRule variable)]
-    -> [ProofState.ProofState (ReachabilityRule variable)]
+    :: OnePathRule
+    -> [ProofState.ProofState OnePathRule]
+    -> [ProofState.ProofState ReachabilityRule]
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
     assertEqual "as one-path claim" [ ProofState.GoalStuck expectedGoal ] actual

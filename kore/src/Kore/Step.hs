@@ -40,6 +40,7 @@ import Numeric.Natural
     ( Natural
     )
 
+import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -47,8 +48,6 @@ import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern
-    , ToRulePattern (..)
-    , getPriorityOfRule
     , isCoolingRule
     , isHeatingRule
     , isNormalRule
@@ -167,28 +166,22 @@ anyRewrite rewrites =
     Strategy.any (rewriteStep <$> rewrites)
 
 priorityAllStrategy
-    :: ToRulePattern rewrite
+    :: From rewrite (Attribute.Priority, Attribute.Owise)
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAllStrategy rewrites =
     Strategy.first (fmap allRewrites priorityGroups)
   where
-    priorityGroups =
-        groupSortOn
-            (getPriorityOfRule . toRulePattern)
-            rewrites
+    priorityGroups = groupSortOn Attribute.getPriorityOfAxiom rewrites
 
 priorityAnyStrategy
-    :: ToRulePattern rewrite
+    :: From rewrite (Attribute.Priority, Attribute.Owise)
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAnyStrategy rewrites =
     anyRewrite sortedRewrites
   where
-    sortedRewrites =
-        sortOn
-            (getPriorityOfRule . toRulePattern)
-            rewrites
+    sortedRewrites = sortOn Attribute.getPriorityOfAxiom rewrites
 
 {- | Heat the configuration, apply a normal rewrite, and cool the result.
  -}
@@ -196,10 +189,7 @@ priorityAnyStrategy rewrites =
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    ::  ( forall rewrite
-        .  ToRulePattern rewrite
-        => [rewrite] -> Strategy (Prim rewrite)
-        )
+    :: ([RewriteRule Variable] -> Strategy (Prim (RewriteRule Variable)))
     -- ^ 'allRewrites' or 'anyRewrite'
     -> [RewriteRule Variable]
     -> Strategy (Prim (RewriteRule Variable))

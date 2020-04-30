@@ -108,15 +108,15 @@ instance SimplifyRuleLHS (RewriteRule Variable) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
 
-instance SimplifyRuleLHS (OnePathRule Variable) where
+instance SimplifyRuleLHS OnePathRule where
     simplifyRuleLhs =
         fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
 
-instance SimplifyRuleLHS (AllPathRule Variable) where
+instance SimplifyRuleLHS AllPathRule where
     simplifyRuleLhs =
         fmap (fmap AllPathRule) . simplifyClaimRule . getAllPathRule
 
-instance SimplifyRuleLHS (ReachabilityRule Variable) where
+instance SimplifyRuleLHS ReachabilityRule where
     simplifyRuleLhs (OnePath rule) =
         (fmap . fmap) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =

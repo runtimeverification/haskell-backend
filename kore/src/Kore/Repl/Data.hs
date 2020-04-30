@@ -13,6 +13,8 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , RuleName (..), RuleReference(..)
     , ReplNode (..)
+    , Claim
+    , Axiom
     , ReplState (..)
     , ReplOutput (..)
     , ReplOut (..)
@@ -428,17 +430,20 @@ type ExecutionGraph rule =
 type InnerGraph rule =
     Gr CommonProofState (Seq rule)
 
+type Claim = ReachabilityRule
+type Axiom = Rule Claim
+
 -- | State for the repl.
-data ReplState claim = ReplState
-    { axioms     :: [Rule claim]
+data ReplState = ReplState
+    { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims     :: [claim]
+    , claims     :: [Claim]
     -- ^ List of claims to be proven
-    , claim      :: claim
+    , claim      :: Claim
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph (Rule claim))
+    , graphs     :: Map ClaimIndex (ExecutionGraph Axiom)
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -451,19 +456,20 @@ data ReplState claim = ReplState
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     , koreLogOptions :: !KoreLogOptions
-    -- ^ The log level, log scopes and log type decide what gets logged and where.
+    -- ^ The log level, log scopes and log type decide what gets logged and
+    -- where.
     }
     deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config claim m = Config
+data Config m = Config
     { stepper
-        :: claim
-        -> [claim]
-        -> [Rule claim]
-        -> ExecutionGraph (Rule claim)
+        :: Claim
+        -> [Claim]
+        -> [Axiom]
+        -> ExecutionGraph Axiom
         -> ReplNode
-        -> m (ExecutionGraph (Rule claim))
+        -> m (ExecutionGraph Axiom)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: SideCondition Variable
