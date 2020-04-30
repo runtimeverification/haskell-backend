@@ -267,7 +267,7 @@ rulePattern left right =
     RulePattern
         { left
         , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate_
+        , requires = Predicate.makeTruePredicate (TermLike.termLikeSort left)
         , rhs = termToRHS right
         , attributes = Default.def
         }
@@ -330,7 +330,11 @@ injectTermIntoRHS
     => TermLike.TermLike variable
     -> RHS variable
 injectTermIntoRHS right =
-    RHS { existentials = [], right, ensures = Predicate.makeTruePredicate_ }
+    RHS
+    { existentials = []
+    , right
+    , ensures = Predicate.makeTruePredicate (TermLike.termLikeSort right)
+    }
 
 -- | Parses a term representing a RHS into a RHS
 termToRHS
