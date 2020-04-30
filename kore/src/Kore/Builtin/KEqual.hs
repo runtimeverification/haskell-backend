@@ -19,6 +19,7 @@ module Kore.Builtin.KEqual
     , builtinFunctions
     , KEqual (..)
     , termKEquals
+    , unifyIfThenElse
       -- * keys
     , eqKey
     , neqKey
@@ -45,6 +46,7 @@ import Data.Text
     ( Text
     )
 
+import qualified Branch
 import Kore.Attribute.Hook
     ( Hook (..)
     )
@@ -55,11 +57,15 @@ import Kore.Builtin.Builtin
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeCeilPredicate_
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -251,4 +257,58 @@ termKEquals unifyChildren (NotSimplifier notSimplifier) a b =
                 then return solution'
                 else notSimplifier SideCondition.top solution'
         Unify.scatter finalSolution
+    worker _ _ = empty
+
+{- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
+ -}
+data IfThenElse term =
+    IfThenElse
+        { symbol :: !Symbol
+        , condition :: !term
+        , branch1, branch2 :: !term
+        }
+
+{- | Match the @KEQUAL.eq@ hooked symbol.
+ -}
+matchIfThenElse :: TermLike variable -> Maybe (IfThenElse (TermLike variable))
+matchIfThenElse (App_ symbol [condition, branch1, branch2]) = do
+    hook' <- (getHook . symbolHook) symbol
+    Monad.guard (hook' == iteKey)
+    return IfThenElse { symbol, condition, branch1, branch2 }
+matchIfThenElse _ = Nothing
+
+unifyIfThenElse
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyIfThenElse unifyChildren a b =
+    worker a b <|> worker b a
+  where
+    takeCondition value condition' =
+        makeCeilPredicate_ (mkAnd (Bool.asInternal sort value) condition')
+        & Condition.fromPredicate
+      where
+        sort = termLikeSort condition'
+    worker termLike1 termLike2
+      | Just ifThenElse <- matchIfThenElse termLike1
+      = lift (takeBranch1 ifThenElse <|> takeBranch2 ifThenElse)
+      where
+        takeBranch1 IfThenElse { condition, branch1 } = do
+            solution <- unifyChildren branch1 termLike2
+            let branchCondition = takeCondition True condition
+            Pattern.andCondition solution branchCondition
+                & simplifyCondition SideCondition.top
+                & Branch.gather
+                & (>>= Unify.scatter)
+        takeBranch2 IfThenElse { condition, branch2 } = do
+            solution <- unifyChildren branch2 termLike2
+            let branchCondition = takeCondition False condition
+            Pattern.andCondition solution branchCondition
+                & simplifyCondition SideCondition.top
+                & Branch.gather
+                & (>>= Unify.scatter)
     worker _ _ = empty
