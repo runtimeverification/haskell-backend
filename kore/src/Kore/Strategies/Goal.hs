@@ -31,6 +31,7 @@ import Prelude.Kore
 import Control.Error
     ( ExceptT
     , runExceptT
+    , throwE
     )
 import Control.Exception
     ( throw
@@ -778,34 +779,42 @@ removeDestination
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 removeDestination lensRulePattern mkState goal =
-    Lens.traverseOf lensRulePattern removeDestinationWorker goal
+    goal
+    & Lens.traverseOf lensRulePattern (Compose . removeDestinationWorker)
     & getCompose
     & lift
   where
     removeDestinationWorker
         :: RulePattern Variable
-        -> Compose m (ProofState goal) (RulePattern Variable)
+        -> m (ProofState goal (RulePattern Variable))
     removeDestinationWorker rulePattern =
-        let configuration = Lens.view RulePattern.leftPattern rulePattern
-            configFreeVars = freeVariables configuration
-            destination =
-                Lens.view (field @"rhs") rulePattern
-                & topExistsToImplicitForall configFreeVars
-        in Compose $ withConfiguration' configuration $ do
+        do
             removal <- removalPredicate destination configuration
-            if isTop removal
-                then pure . mkState $ rulePattern
-                else do
-                    simplifiedRemoval <-
-                        Conditional.andPredicate configuration removal
-                        & simplifyTopConfiguration
-                        & (>>= SMT.Evaluator.filterMultiOr)
-                    if not (isBottom simplifiedRemoval)
-                        then
-                            let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
-                                rulePattern' = rulePattern & Lens.set RulePattern.leftPattern stuckConfiguration
-                            in pure . GoalStuck $ rulePattern'
-                        else pure Proven
+            when (isTop removal) (succeed . mkState $ rulePattern)
+            simplifiedRemoval <-
+                return (Conditional.andPredicate configuration removal)
+                >>= simplifyTopConfiguration
+                >>= SMT.Evaluator.filterMultiOr
+            when (isBottom simplifiedRemoval) (succeed Proven)
+            let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+            rulePattern
+                & Lens.set RulePattern.leftPattern stuckConfiguration
+                & GoalStuck
+                & pure
+        & run
+        & withConfiguration' configuration
+      where
+        configuration = Lens.view RulePattern.leftPattern rulePattern
+        configFreeVars = freeVariables configuration
+        destination =
+            Lens.view (field @"rhs") rulePattern
+            & topExistsToImplicitForall configFreeVars
+
+        succeed :: r -> ExceptT r m a
+        succeed = throwE
+
+        run :: ExceptT r m r -> m r
+        run acts = runExceptT acts >>= either pure pure
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
