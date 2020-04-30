@@ -1438,7 +1438,7 @@ parseEvalScript file (ScriptModeOutput shouldOutput) = do
         then do
             contents <- lift . liftIO $ readFile file
             let result = runParser scriptParser file contents
-            either parseFailed executeScript result 
+            either parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
   where
@@ -1463,19 +1463,19 @@ parseEvalScript file (ScriptModeOutput shouldOutput) = do
                $ execStateReader config st
                $ Foldable.for_ cmds
                $ if shouldOutput then executeCommandWithOutput else executeCommand
-    
-        executeCommand 
-            :: ReplCommand 
+
+        executeCommand
+            :: ReplCommand
             -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
         executeCommand command = do
-            replInterpreter0 
+            replInterpreter0
                 (PrintAuxOutput $ \_ -> return ())
                 (PrintKoreOutput $ \_ -> return ())
                 command
-        
+
         executeCommandWithOutput
             :: ReplCommand
-            -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus 
+            -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
         executeCommandWithOutput command = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
@@ -1484,7 +1484,7 @@ parseEvalScript file (ScriptModeOutput shouldOutput) = do
                     (PrintAuxOutput $ printIfNotEmpty)
                     (PrintKoreOutput $ printIfNotEmpty)
                     command
-        
+
 formatUnificationMessage
     :: Either ReplOutput (NonEmpty (Condition Variable))
     -> ReplOutput

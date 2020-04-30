@@ -120,15 +120,15 @@ runRepl _ [] _ _ _ _ outputFile _ =
     topTerm :: TermLike Variable
     topTerm = mkTop $ mkSortVariable "R"
 
-runRepl 
-    axioms' 
-    claims' 
-    logger 
-    replScript 
-    replMode 
+runRepl
+    axioms'
+    claims'
+    logger
+    replScript
+    replMode
     runModeOutput
-    outputFile 
-    mainModuleName 
+    outputFile
+    mainModuleName
     = do
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
@@ -151,11 +151,11 @@ runRepl
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript 
-        :: ReplScript 
-        -> ScriptModeOutput 
+    evaluateScript
+        :: ReplScript
+        -> ScriptModeOutput
         -> RWST (Config claim m) String (ReplState claim) m ()
-    evaluateScript script outputFlag = 
+    evaluateScript script outputFlag =
         maybe (pure ()) (flip parseEvalScript outputFlag) (unReplScript script)
 
     repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()

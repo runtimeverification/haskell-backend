@@ -398,14 +398,14 @@ proveWithRepl
     evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
-        Repl.runRepl 
-            axioms 
-            claims 
-            mvar 
-            replScript 
-            replMode 
-            scriptModeOutput 
-            outputFile 
+        Repl.runRepl
+            axioms
+            claims
+            mvar
+            replScript
+            replMode
+            scriptModeOutput
+            outputFile
             mainModuleName
 
 -- | Bounded model check a spec given as a module containing rules to be checked

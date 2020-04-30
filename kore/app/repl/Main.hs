@@ -224,7 +224,7 @@ mainWithOptions
                     "You must supply the path to the repl script\
                     \ in order to run the repl in run-script mode."
                 exitFailure
-        
+
         when (replMode == Interactive && scriptModeOutput == (ScriptModeOutput True)) $
             lift $ do
                 putStrLn
