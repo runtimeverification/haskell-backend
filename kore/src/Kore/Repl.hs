@@ -107,7 +107,7 @@ runRepl
     -- ^ optional script
     -> ReplMode
     -- ^ mode to run in
-    -> RunModeOutput
+    -> ScriptModeOutput
     -- ^ optional flag for output in run mode
     -> OutputFile
     -- ^ optional output file
@@ -151,8 +151,8 @@ runRepl
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> RunModeOutput -> RWST (Config claim m) String (ReplState claim) m ()
-    evaluateScript script runModeOutput = maybe (pure ()) (flip parseEvalScript runModeOutput) (unReplScript script)
+    evaluateScript :: ReplScript -> ScriptModeOutput -> RWST (Config claim m) String (ReplState claim) m ()
+    evaluateScript script scriptModeOutput = maybe (pure ()) (flip parseEvalScript scriptModeOutput) (unReplScript script)
 
     repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
     repl0 = do

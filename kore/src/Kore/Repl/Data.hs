@@ -31,7 +31,7 @@ module Kore.Repl.Data
     , LogType (..)
     , ReplScript (..)
     , ReplMode (..)
-    , RunModeOutput (..)
+    , ScriptModeOutput (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
     ) where
@@ -125,7 +125,7 @@ newtype ReplScript = ReplScript
 data ReplMode = Interactive | RunScript
     deriving (Eq, Show)
 
-newtype RunModeOutput = RunModeOutput Bool
+newtype ScriptModeOutput = ScriptModeOutput Bool
     deriving (Eq, Show)
 
 newtype OutputFile = OutputFile

@@ -509,7 +509,7 @@ loadScript
     => FilePath
     -- ^ path to file
     -> ReplM claim m ()
-loadScript file = parseEvalScript file (RunModeOutput False)
+loadScript file = parseEvalScript file (ScriptModeOutput False)
 
 handleLog
     :: MonadState (ReplState claim) m
@@ -1430,9 +1430,9 @@ parseEvalScript
     => MonadReader (Config claim m) (t m)
     => Monad.Trans.MonadTrans t
     => FilePath
-    -> RunModeOutput
+    -> ScriptModeOutput
     -> t m ()
-parseEvalScript file (RunModeOutput shouldOutput) = do
+parseEvalScript file (ScriptModeOutput shouldOutput) = do
     exists <- lift . liftIO . doesFileExist $ file
     if exists
         then do

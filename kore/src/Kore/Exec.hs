@@ -378,7 +378,7 @@ proveWithRepl
     -- ^ Optional script
     -> Repl.Data.ReplMode
     -- ^ Run in a specific repl mode
-    -> Repl.Data.RunModeOutput
+    -> Repl.Data.ScriptModeOutput
     -- ^ Optional flag for output in run-mode
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
@@ -391,7 +391,7 @@ proveWithRepl
     mvar
     replScript
     replMode
-    runModeOutput
+    scriptModeOutput
     outputFile
     mainModuleName
   =
@@ -404,7 +404,7 @@ proveWithRepl
             mvar 
             replScript 
             replMode 
-            runModeOutput 
+            scriptModeOutput 
             outputFile 
             mainModuleName
 

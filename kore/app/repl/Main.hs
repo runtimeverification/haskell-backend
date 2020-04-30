@@ -81,7 +81,7 @@ data KoreReplOptions = KoreReplOptions
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
     , replMode         :: !ReplMode
-    , runModeOutput    :: !RunModeOutput
+    , scriptModeOutput :: !ScriptModeOutput
     , replScript       :: !ReplScript
     , outputFile       :: !OutputFile
     , koreLogOptions   :: !KoreLogOptions
@@ -94,7 +94,7 @@ parseKoreReplOptions =
     <*> parseKoreProveOptions
     <*> parseSmtOptions
     <*> parseReplMode
-    <*> parseRunModeOutput
+    <*> parseScriptModeOutput
     <*> parseReplScript
     <*> parseOutputFile
     <*> parseKoreLogOptions (ExeName "kore-repl")
@@ -138,11 +138,11 @@ parseKoreReplOptions =
             <> help "Repl run script mode"
             )
 
-    parseRunModeOutput :: Parser RunModeOutput
-    parseRunModeOutput =
+    parseScriptModeOutput :: Parser ScriptModeOutput
+    parseScriptModeOutput =
         flag
-            (RunModeOutput False)
-            (RunModeOutput True)
+            (ScriptModeOutput False)
+            (ScriptModeOutput True)
             ( long "save-run-output"
             <> help "Get output in run mode."
             )
@@ -199,7 +199,7 @@ mainWithOptions
         , smtOptions
         , replScript
         , replMode
-        , runModeOutput
+        , scriptModeOutput
         , outputFile
         , koreLogOptions
         }
@@ -225,7 +225,7 @@ mainWithOptions
                     \ in order to run the repl in run-script mode."
                 exitFailure
         
-        when (replMode == Interactive && runModeOutput == (RunModeOutput True)) $
+        when (replMode == Interactive && scriptModeOutput == (ScriptModeOutput True)) $
             lift $ do
                 putStrLn
                     "The --saveRunOutput flag is only available\
@@ -242,7 +242,7 @@ mainWithOptions
                 mvarLogAction
                 replScript
                 replMode
-                runModeOutput
+                scriptModeOutput
                 outputFile
                 mainModuleName
 
