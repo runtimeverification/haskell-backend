@@ -33,6 +33,7 @@ import Kore.Internal.Variable
     ( Variable (..)
     , toVariable
     )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern (..)
@@ -41,21 +42,15 @@ import Kore.Step.Step
     ( UnifiedRule
     , mapRuleVariables
     )
-import Kore.Unification.Unify
-    ( InternalVariable
-    )
 import Kore.Unparser
     ( unparse
-    )
-import Kore.Variables.Target
-    ( Target
     )
 import Log
 
 data DebugAppliedRewriteRules =
     DebugAppliedRewriteRules
         { configuration :: Pattern Variable
-        , appliedRewriteRules :: [UnifiedRule Variable (RewriteRule Variable)]
+        , appliedRewriteRules :: [UnifiedRule RewriteRule Variable]
         }
 
 instance Pretty DebugAppliedRewriteRules where
@@ -84,9 +79,8 @@ instance Entry DebugAppliedRewriteRules where
 
 debugAppliedRewriteRules
     :: MonadLog log
-    => InternalVariable variable
-    => Pattern (Target variable)
-    -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
+    => Pattern RewritingVariable
+    -> [UnifiedRule RulePattern RewritingVariable]
     -> log ()
 debugAppliedRewriteRules initial rules =
     logEntry DebugAppliedRewriteRules
