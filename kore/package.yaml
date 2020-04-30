@@ -14,6 +14,9 @@ extra-source-files:
   - test/resources/*.kore
   - test/resources/*.kore.golden
 
+data-files:
+  - data/
+
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
 # category:            Web
