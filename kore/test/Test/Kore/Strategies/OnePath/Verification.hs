@@ -468,14 +468,14 @@ test_onePathVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 simpleAxiom left right =
     OnePathRewriteRule $ simpleRewrite left right
 
 simpleClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 simpleClaim left right =
     OnePathRule
     RulePattern
@@ -489,7 +489,7 @@ simpleClaim left right =
 simpleTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 simpleTrustedClaim left right =
     OnePathRule
     RulePattern
@@ -505,7 +505,7 @@ simplePriorityAxiom
     :: TermLike Variable
     -> TermLike Variable
     -> Integer
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 simplePriorityAxiom left right priority =
     OnePathRewriteRule . RewriteRule
     $ RulePattern

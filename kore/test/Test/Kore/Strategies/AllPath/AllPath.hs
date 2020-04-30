@@ -320,7 +320,7 @@ newtype instance Goal.Rule Goal =
 instance Goal.Goal Goal where
     type Prim Goal = ProofState.Prim (Goal.Rule Goal)
 
-    type ProofState Goal a = ProofState.ProofState a
+    type ProofState Goal = ProofState.ProofState
 
     strategy _ goals rules =
         firstStep :> Stream.iterate id nextStep
