@@ -28,6 +28,7 @@ module Kore.Internal.Substitution
     , modify
     , Kore.Internal.Substitution.mapVariables
     , mapTerms
+    , mapAssignmentVariables
     , isNormalized
     , isSimplified
     , forgetSimplified

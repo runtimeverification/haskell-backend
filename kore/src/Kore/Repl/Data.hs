@@ -68,7 +68,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -88,8 +87,9 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step.Simplification.Data
-    ( MonadSimplify
+    ( MonadSimplify (..)
     )
+import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
@@ -396,7 +396,7 @@ helpText =
     \Names added via b) need to be prefixed with the module name followed by\n\
     \ dot, e.g. IMP.myName\n\
     \Available entry types:\n    "
-    <> intercalate "\n    " (fmap Text.unpack Log.getEntryTypesAsText)
+    <> intercalate "\n    " Log.getEntryTypesAsText
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.
@@ -494,6 +494,10 @@ deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
+instance MonadTrans UnifierWithExplanation where
+    lift = UnifierWithExplanation . lift . lift
+    {-# INLINE lift #-}
+
 instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     logEntry entry = UnifierWithExplanation $ logEntry entry
     {-# INLINE logEntry #-}
@@ -501,7 +505,13 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
         UnifierWithExplanation $ logWhile entry (getUnifierWithExplanation ma)
     {-# INLINE logWhile #-}
 
-deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
+instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
+    localSimplifierTermLike locally (UnifierWithExplanation unifierT) =
+        UnifierWithExplanation
+        $ localSimplifierTermLike locally unifierT
+    localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
+        UnifierWithExplanation
+        $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     throwUnificationError =
@@ -570,7 +580,7 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
     unificationResults =
         fmap (\(r, ex) -> flip (,) ex <$> r)
         . flip runAccumT mempty
-        . Monad.Unify.runUnifierT
+        . Monad.Unify.runUnifierT Not.notSimplifier
         $ unifier
     explainError = Left . makeAuxReplOutput . show . Pretty.pretty
     failWithExplanation

@@ -8,6 +8,7 @@ module Kore.Unification.UnifierT
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT
+    , evalEnvUnifierT
     , substitutionSimplifier
     -- * Re-exports
     , module Kore.Unification.Unify
@@ -21,8 +22,15 @@ import Control.Monad
     )
 import qualified Control.Monad.Except as Error
 import qualified Control.Monad.Morph as Morph
+import Control.Monad.Reader
+    ( MonadReader (..)
+    )
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
+    )
+import Control.Monad.Trans.Reader
+    ( ReaderT (..)
+    , mapReaderT
     )
 
 import Branch
@@ -33,6 +41,7 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
     ( ConditionSimplifier (..)
     , InternalVariable
@@ -51,12 +60,20 @@ import SMT
     )
 
 newtype UnifierT (m :: * -> *) a =
-    UnifierT { getUnifierT :: BranchT (ExceptT UnificationError m) a }
+    UnifierT
+        { getUnifierT
+            :: ReaderT
+                (ConditionSimplifier (UnifierT m))
+                (BranchT (ExceptT UnificationError m))
+                a
+        }
     deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
 
 instance MonadTrans UnifierT where
-    lift = UnifierT . lift . lift
+    lift = UnifierT . lift . lift . lift
     {-# INLINE lift #-}
+
+deriving instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
 
 deriving instance MonadLog m => MonadLog (UnifierT m)
 
@@ -65,39 +82,39 @@ deriving instance MonadSMT m => MonadSMT (UnifierT m)
 deriving instance MonadProfiler m => MonadProfiler (UnifierT m)
 
 instance MonadSimplify m => MonadSimplify (UnifierT m) where
-    localSimplifierTermLike locally =
-        \(UnifierT branchT) ->
-            UnifierT
+    localSimplifierTermLike locally (UnifierT readerT) =
+        UnifierT $
+            mapReaderT
                 (BranchT.mapBranchT
                     (Morph.hoist (localSimplifierTermLike locally))
-                    branchT
                 )
+                readerT
     {-# INLINE localSimplifierTermLike #-}
 
-    localSimplifierAxioms locally =
-        \(UnifierT branchT) ->
-            UnifierT
+    localSimplifierAxioms locally (UnifierT readerT) =
+        UnifierT $
+            mapReaderT
                 (BranchT.mapBranchT
                     (Morph.hoist (localSimplifierAxioms locally))
-                    branchT
                 )
+                readerT
     {-# INLINE localSimplifierAxioms #-}
 
-    simplifyCondition sideCondition condition =
-        simplifyCondition' sideCondition condition
-      where
-        ConditionSimplifier simplifyCondition' =
-            ConditionSimplifier.create substitutionSimplifier
+    simplifyCondition sideCondition condition = do
+        ConditionSimplifier conditionSimplifier <- ask
+        conditionSimplifier sideCondition condition
     {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
-    throwUnificationError = UnifierT . lift . Error.throwError
+    throwUnificationError = UnifierT . lift . lift . Error.throwError
     {-# INLINE throwUnificationError #-}
 
-    gather = UnifierT . lift . BranchT.gather . getUnifierT
+    gather (UnifierT readerT) =
+        UnifierT $ mapReaderT (lift . BranchT.gather) readerT
     {-# INLINE gather #-}
 
-    scatter = UnifierT . BranchT.scatter
+    scatter ta =
+        UnifierT . ReaderT $ const (BranchT.scatter ta)
     {-# INLINE scatter #-}
 
 -- | Lower an 'ExceptT UnificationError' into a 'MonadUnify'.
@@ -109,11 +126,34 @@ lowerExceptT e = runExceptT e >>= either throwUnificationError pure
 
 runUnifierT
     :: MonadSimplify m
-    => UnifierT m a
+    => NotSimplifier (UnifierT m)
+    -> UnifierT m a
     -> m (Either UnificationError [a])
-runUnifierT = runExceptT . BranchT.gather . getUnifierT
+runUnifierT notSimplifier =
+    runExceptT
+    . BranchT.gather
+    . evalEnvUnifierT notSimplifier
 
 {- | Run a 'Unifier', returning 'Nothing' upon error.
  -}
-maybeUnifierT :: MonadSimplify m => UnifierT m a -> MaybeT m [a]
-maybeUnifierT = hushT . BranchT.gather . getUnifierT
+maybeUnifierT
+    :: MonadSimplify m
+    => NotSimplifier (UnifierT m)
+    -> UnifierT m a
+    -> MaybeT m [a]
+maybeUnifierT notSimplifier =
+    hushT
+    . BranchT.gather
+    . evalEnvUnifierT notSimplifier
+
+evalEnvUnifierT
+    :: MonadSimplify m
+    => NotSimplifier (UnifierT m)
+    -> UnifierT m a
+    -> BranchT (ExceptT UnificationError m) a
+evalEnvUnifierT notSimplifier =
+    flip runReaderT conditionSimplifier
+    . getUnifierT
+  where
+    conditionSimplifier =
+        ConditionSimplifier.create (substitutionSimplifier notSimplifier)

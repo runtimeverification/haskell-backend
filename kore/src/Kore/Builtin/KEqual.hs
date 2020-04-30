@@ -17,6 +17,8 @@ builtin modules.
 module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions
+    , KEqual (..)
+    , termKEquals
       -- * keys
     , eqKey
     , neqKey
@@ -25,6 +27,11 @@ module Kore.Builtin.KEqual
 
 import Prelude.Kore
 
+import Control.Error
+    ( MaybeT
+    , hoistMaybe
+    )
+import qualified Control.Monad as Monad
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
@@ -38,6 +45,9 @@ import Data.Text
     ( Text
     )
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin
@@ -46,19 +56,21 @@ import Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
+import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.And as And
-import qualified Kore.Step.Simplification.Ceil as Ceil
-import qualified Kore.Step.Simplification.Equals as Equals
-import qualified Kore.Step.Simplification.Not as Not
-import qualified Kore.Step.Simplification.Or as Or
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
     ( SentenceSymbol (..)
+    )
+import Kore.Unification.Unify as Unify
+import Kore.Unification.Unify
+    ( MonadUnify
     )
 
 verifiers :: Builtin.Verifiers
@@ -116,7 +128,7 @@ check whether they are equal or not, producing a builtin boolean value.
 sort) and return the first term if the expression is true, and the second
 otherwise.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
     [ (eqKey, applicationAxiomSimplifier (evalKEq True))
@@ -125,7 +137,8 @@ builtinFunctions =
     ]
 
 evalKEq
-    :: (InternalVariable variable, MonadSimplify simplifier)
+    :: forall variable simplifier
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => Bool
     -> CofreeF
         (Application Symbol)
@@ -134,39 +147,24 @@ evalKEq
     -> simplifier (AttemptedAxiom variable)
 evalKEq true (valid :< app) =
     case applicationChildren of
-        [t1, t2] -> evalEq t1 t2
+        [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
-    sideCondition = SideCondition.topTODO
-    false = not true
     sort = Attribute.patternSort valid
     Application { applicationChildren } = app
+    comparison x y
+        | true = x == y
+        | otherwise = x /= y
+    evalEq
+        :: TermLike variable
+        -> TermLike variable
+        -> MaybeT simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2 = do
-        let pattern1 = Pattern.fromTermLike termLike1
-            pattern2 = Pattern.fromTermLike termLike2
-
-        defined1 <- Ceil.makeEvaluate sideCondition pattern1
-        defined2 <- Ceil.makeEvaluate sideCondition pattern2
-        defined <- And.simplifyEvaluated sideCondition defined1 defined2
-
-        equalTerms <-
-            Equals.makeEvaluateTermsToPredicate
-                termLike1
-                termLike2
-                sideCondition
-        let trueTerm = Bool.asInternal sort true
-            truePatterns = Pattern.withCondition trueTerm <$> equalTerms
-
-        notEqualTerms <- Not.simplifyEvaluatedPredicate equalTerms
-        let falseTerm = Bool.asInternal sort false
-            falsePatterns = Pattern.withCondition falseTerm <$> notEqualTerms
-
-        let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
-        results <- And.simplifyEvaluated sideCondition defined undefinedResults
-        pure $ Applied AttemptedAxiomResults
-            { results
-            , remainders = OrPattern.bottom
-            }
+        asConcrete1 <- hoistMaybe $ Builtin.toKey termLike1
+        asConcrete2 <- hoistMaybe $ Builtin.toKey termLike2
+        Builtin.appliedFunction
+            $ Bool.asPattern sort
+            $ comparison asConcrete1 asConcrete2
 
 evalKIte
     :: forall variable simplifier
@@ -206,3 +204,51 @@ neqKey = "KEQUAL.neq"
 
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
+
+{- | The @KEQUAL.eq@ hooked symbol applied to @term@-type arguments.
+ -}
+data KEqual term =
+    KEqual
+        { symbol :: !Symbol
+        , operand1, operand2 :: !term
+        }
+
+{- | Match the @KEQUAL.eq@ hooked symbol.
+ -}
+matchKEqual :: TermLike variable -> Maybe (KEqual (TermLike variable))
+matchKEqual (App_ symbol [operand1, operand2]) = do
+    hook2 <- (getHook . symbolHook) symbol
+    Monad.guard (hook2 == eqKey)
+    return KEqual { symbol, operand1, operand2 }
+matchKEqual _ = Nothing
+
+termKEquals
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> NotSimplifier unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termKEquals unifyChildren (NotSimplifier notSimplifier) a b =
+    worker a b <|> worker b a
+  where
+    eraseTerm =
+        Pattern.fromCondition . Pattern.withoutTerm
+    worker termLike1 termLike2
+      | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
+      , isFunctionPattern termLike1
+      , Just value2 <- Bool.matchBool termLike2
+      = lift $ do
+        solution <-
+            fmap OrPattern.fromPatterns
+            <$> Unify.gather
+            $ unifyChildren operand1 operand2
+        let solution' = fmap eraseTerm solution
+        finalSolution <-
+            if value2
+                then return solution'
+                else notSimplifier SideCondition.top solution'
+        Unify.scatter finalSolution
+    worker _ _ = empty

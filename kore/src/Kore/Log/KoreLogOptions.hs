@@ -185,7 +185,7 @@ parseEntryTypes =
             [ "Log entries: logs entries of supplied types"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text . Text.unpack <$> getEntryTypesAsText)
+                (OptPretty.text <$> getEntryTypesAsText)
             ]
 
     parseCommaSeparatedEntries =

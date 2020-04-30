@@ -40,6 +40,7 @@ module Test.Kore.Builtin.Map
     , test_renormalize
     , test_concretizeKeysAxiom
     , hprop_unparse
+    , test_inKeys
     --
     , normalizedMap
     , asInternal
@@ -61,6 +62,12 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
+import Control.Error
+    ( runMaybeT
+    )
+import Control.Monad
+    ( guard
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.List as List
@@ -88,7 +95,9 @@ import Kore.Internal.MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeTruePredicate
+    ( makeCeilPredicate
+    , makeMultipleAndPredicate
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
@@ -104,6 +113,7 @@ import SMT
     ( SMT
     )
 
+import Test.Expect
 import Test.Kore
     ( elementVariableGen
     , standaloneGen
@@ -121,6 +131,9 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
+    ( runSimplifierNoSMT
+    )
 import Test.SMT
 import Test.Tasty.HUnit.Ext
 
@@ -623,10 +636,6 @@ test_inclusion =
         )
     ]
 
-
-
-
-
 -- | Check that simplification is carried out on map elements.
 test_simplify :: TestTree
 test_simplify =
@@ -676,20 +685,6 @@ test_isBuiltin =
         assertBool "" (not (Map.isSymbolUnit Mock.aSymbol))
         assertBool "" (not (Map.isSymbolUnit Mock.concatMapSymbol))
     ]
-
--- | Construct a pattern for a map which may have symbolic keys.
-asSymbolicPattern
-    :: Map (TermLike Variable) (TermLike Variable)
-    -> TermLike Variable
-asSymbolicPattern result
-    | Map.null result =
-        applyUnit
-    | otherwise =
-        foldr1 applyConcat (applyElement <$> Map.toAscList result)
-  where
-    applyUnit = mkApplySymbol unitMapSymbol []
-    applyElement (key, value) = elementMap key value
-    applyConcat map1 map2 = concatMap map1 map2
 
 {- | Unify two maps with concrete keys and variable values.
  -}
@@ -1336,6 +1331,117 @@ hprop_unparse =
         )
   where
     genValue = Test.Int.asInternal <$> genInteger
+
+test_inKeys :: [TestTree]
+test_inKeys =
+    [ testCase "empty Map contains no keys" $ do
+        actual1 <- inKeys concreteKey (asInternal [])
+        assertEqual "no concrete keys" (Just False) actual1
+        actual2 <- inKeys x (asInternal [])
+        assertEqual "no symbolic keys" (Just False) actual2
+        actual3 <- inKeys (tdivInt y z) (asInternal [])
+        assertEqual "no partial keys" (Just False) actual3
+    , testGroup "concrete Map"
+        [ testCase "concrete key is present" $ do
+            actual <- inKeys concreteKey concreteMap
+            assertEqual "" (Just True) actual
+        , testCase "concrete key is absent" $ do
+            let key = Test.Int.asInternal 2
+            actual <- inKeys key concreteMap
+            assertEqual "" (Just False) actual
+        , testCase "symbolic key is undecided" $ do
+            actual <- inKeys x concreteMap
+            assertEqual "" Nothing actual
+        ]
+    , testGroup "symbolic Map"
+        [ testCase "symbolic key is present" $ do
+            actual <- inKeys x symbolicMap
+            assertEqual "" (Just True) actual
+        , testCase "concrete key is present" $ do
+            actual <- inKeys concreteKey symbolicMap
+            assertEqual "" (Just True) actual
+        , testCase "partial key is present" $ do
+            actual <- inKeys (tdivInt y z) symbolicMap
+            assertEqual "" (Just True) actual
+        , testCase "symbolic key is undecided" $ do
+            let key = mkIntVar (testId "z")
+            actual <- inKeys key symbolicMap
+            assertEqual "" Nothing actual
+        , testCase "concrete key is undecided" $ do
+            let key = Test.Int.asInternal 2
+            actual <- inKeys key symbolicMap
+            assertEqual "" Nothing actual
+        , testCase "partial key is undecided" $ do
+            actual <- inKeys (tdivInt x z) symbolicMap
+            assertEqual "" Nothing actual
+        ]
+    ]
+  where
+    concreteKey = Test.Int.asInternal 0
+    concreteMap =
+        asInternal
+        [ (Test.Int.asInternal 0, u)
+        , (Test.Int.asInternal 1, v)
+        ]
+    x, y, z, u, v, w :: TermLike Variable
+    x = mkIntVar (testId "x")
+    y = mkIntVar (testId "y")
+    z = mkIntVar (testId "z")
+    u = mkIntVar (testId "u")
+    v = mkIntVar (testId "v")
+    w = mkIntVar (testId "w")
+    symbolicMap =
+        asInternal
+        [ (x, u)
+        , (tdivInt y z, v)
+        , (Test.Int.asInternal 0, w)
+        ]
+    inKeys
+        :: HasCallStack
+        => TermLike Variable
+        -> TermLike Variable
+        -> IO (Maybe Bool)
+    inKeys termKey termMap = do
+        output <-
+            Map.evalInKeys boolSort [termKey, termMap]
+            & runMaybeT
+            & runSimplifierNoSMT testEnv
+        case output of
+            Nothing -> return Nothing
+            Just result -> do
+                let (term, condition) = splitTerm result
+                assertTop (substitution condition)
+                let expectPredicate
+                      | null predicates = makeTruePredicate boolSort
+                      | otherwise = makeMultipleAndPredicate predicates
+                    predicates =
+                        catMaybes
+                        [ do
+                            (guard . not) (isDefinedPattern termKey)
+                            pure (makeCeilPredicate boolSort termKey)
+                        , do
+                            (guard . not) (isDefinedPattern termMap)
+                            pure (makeCeilPredicate boolSort termMap)
+                        ]
+                assertEqual "" expectPredicate (predicate condition)
+                bool <- expectBool term
+                return (Just bool)
+
+-- * Helpers
+
+-- | Construct a pattern for a map which may have symbolic keys.
+asSymbolicPattern
+    :: Map (TermLike Variable) (TermLike Variable)
+    -> TermLike Variable
+asSymbolicPattern result
+    | Map.null result =
+        applyUnit
+    | otherwise =
+        foldr1 applyConcat (applyElement <$> Map.toAscList result)
+  where
+    applyUnit = mkApplySymbol unitMapSymbol []
+    applyElement (key, value) = elementMap key value
+    applyConcat map1 map2 = concatMap map1 map2
 
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
 asTermLike :: Map (TermLike Concrete) (TermLike Variable) -> TermLike Variable
