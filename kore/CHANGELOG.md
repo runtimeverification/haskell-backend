@@ -14,6 +14,22 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.20.0.0] - 2020-04-29
+
+### Added
+
+- Added documentation for the `--log-entries` option.
+
+### Changed
+
+- Clarified the message accompanying the "substitution coverage" error.
+
+### Fixed
+
+- The `smtlib` and `smt-hook` attributes handle SMT-LIB lists correctly.
+  The argument of these attributes would not be instantiated correctly if it was
+  a list, but SMT-LIB atoms were always handled correctly.
+
 ## [0.19.0.0] - 2020-04-15
 
 ### Added
