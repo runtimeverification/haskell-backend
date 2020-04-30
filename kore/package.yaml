@@ -14,7 +14,7 @@ extra-source-files:
   - test/resources/*.kore
   - test/resources/*.kore.golden
 
-data-files:
+data-dir:
   - data/
 
 # Metadata used when publishing your package
