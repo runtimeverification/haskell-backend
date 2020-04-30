@@ -6,7 +6,7 @@ License     : NCSA
 
 module Kore.Step.Remainder
     ( remainder, remainder'
-    , existentiallyQuantifyTarget
+    , existentiallyQuantifyRuleVariables
     , ceilChildOfApplicationOrTop
     ) where
 
@@ -42,16 +42,13 @@ import Kore.Internal.Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify (..)
     )
-import Kore.Variables.Target
-    ( Target
-    )
-import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
     )
@@ -66,13 +63,8 @@ The resulting predicate has the 'Target' variables unwrapped.
 See also: 'remainder\''
 
  -}
-remainder
-    :: InternalVariable variable
-    => MultiOr (Condition (Target variable))
-    -> Predicate variable
-remainder =
-    Predicate.mapVariables Target.unTargetElement Target.unTargetSet
-    . remainder'
+remainder :: MultiOr (Condition RewritingVariable) -> Predicate Variable
+remainder = getRemainderPredicate . remainder'
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 
@@ -81,25 +73,23 @@ by any applied rule.
 
  -}
 remainder'
-    :: InternalVariable variable
-    => MultiOr (Condition (Target variable))
-    -> Predicate (Target variable)
+    :: MultiOr (Condition RewritingVariable)
+    -> Predicate RewritingVariable
 remainder' results =
     mkMultiAndPredicate $ mkNotExists conditions
   where
     conditions = mkMultiAndPredicate . unificationConditions <$> results
-    mkNotExists = mkNotMultiOr . fmap existentiallyQuantifyTarget
+    mkNotExists = mkNotMultiOr . fmap existentiallyQuantifyRuleVariables
 
 -- | Existentially-quantify target (axiom) variables in the 'Condition'.
-existentiallyQuantifyTarget
-    :: InternalVariable variable
-    => Predicate (Target variable)
-    -> Predicate (Target variable)
-existentiallyQuantifyTarget predicate =
-    Predicate.makeMultipleExists freeTargetVariables predicate
+existentiallyQuantifyRuleVariables
+    :: Predicate RewritingVariable
+    -> Predicate RewritingVariable
+existentiallyQuantifyRuleVariables predicate =
+    Predicate.makeMultipleExists freeRuleVariables predicate
   where
-    freeTargetVariables =
-        filter (Target.isTarget . getElementVariable)
+    freeRuleVariables =
+        filter (isRuleVariable . getElementVariable)
         . Predicate.freeElementVariables
         $ predicate
 
@@ -129,15 +119,15 @@ mkMultiAndPredicate =
 {- | Represent the unification solution as a conjunction of predicates.
  -}
 unificationConditions
-    :: InternalVariable variable
-    => Condition (Target variable)
+    :: Condition RewritingVariable
     -- ^ Unification solution
-    -> MultiAnd (Predicate (Target variable))
+    -> MultiAnd (Predicate RewritingVariable)
 unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
     substitution' =
-        Substitution.filter (foldMapVariable Target.isNonTarget)
+        Substitution.filter
+            (foldMapVariable isConfigVariable)
             substitution
 
 substitutionConditions

@@ -17,15 +17,14 @@ module Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , simplifyPredicate
-    , targetRuleVariables
-    , toConfigurationVariables
     , toConfigurationVariablesCondition
-    , unTargetRule
     , assertFunctionLikeResults
     , checkFunctionLike
     , wouldNarrowWith
     -- * Re-exports
     , UnificationProcedure (..)
+    , unRewritingRule
+    , mkRewritingPattern
     -- Below exports are just for tests
     , Step.gatherResults
     , Step.remainders
@@ -36,9 +35,6 @@ module Kore.Step.Step
 import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
-import Data.Map.Strict
-    ( Map
-    )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -50,10 +46,6 @@ import Branch
     ( BranchT
     )
 import qualified Branch
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    , HasFreeVariables (freeVariables)
-    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Condition
     ( Condition
@@ -71,9 +63,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -83,13 +72,12 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , InternalVariable
-    , SetVariable
-    , SortedVariable
+    ( InternalVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+import Kore.Rewriting.UnifyingRule
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
@@ -101,9 +89,6 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.UnificationProcedure
 import Kore.Unparser
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import Kore.Variables.Target
     ( Target
     )
@@ -112,107 +97,29 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
 
-type UnifiedRule = Conditional
+type UnifiedRule rule variable = Conditional variable (rule variable)
 
 type Result rule variable =
     Step.Result
-        (UnifiedRule (Target variable) (rule (Target variable)))
+        (UnifiedRule rule RewritingVariable)
         (Pattern variable)
 
 type Results rule variable =
     Step.Results
-        (UnifiedRule (Target variable) (rule (Target variable)))
+        (UnifiedRule rule RewritingVariable)
         (Pattern variable)
-
-type Renaming variable =
-    Map (UnifiedVariable variable) (UnifiedVariable variable)
-
-data InstantiationFailure variable
-    = ConcreteFailure (UnifiedVariable variable) (TermLike variable)
-    | SymbolicFailure (UnifiedVariable variable) (TermLike variable)
-    | UninstantiatedConcrete (UnifiedVariable variable)
-    | UninstantiatedSymbolic (UnifiedVariable variable)
-
-instance InternalVariable variable
-    => Pretty.Pretty (InstantiationFailure variable)
-  where
-    pretty (ConcreteFailure var term) =
-        Pretty.vsep
-            [ "Rule instantiation failure:"
-            , Pretty.indent 4 (unparse var <> " is marked as concrete.")
-            , Pretty.indent 4
-                ("However, " <> unparse term <> " is not concrete.")
-            ]
-    pretty (SymbolicFailure var term) =
-        Pretty.vsep
-            [ "Rule instantiation failure:"
-            , Pretty.indent 4 (unparse var <> " is marked as symbolic.")
-            , Pretty.indent 4
-                ("However, " <> unparse term <> " is not symbolic.")
-            ]
-    pretty (UninstantiatedConcrete var) =
-        Pretty.vsep
-            [ "Rule instantiation failure:"
-            , Pretty.indent 4 (unparse var <> " is marked as concrete.")
-            , Pretty.indent 4 "However, it was not instantiated."
-            ]
-    pretty (UninstantiatedSymbolic var) =
-        Pretty.vsep
-            [ "Rule instantiation failure:"
-            , Pretty.indent 4 (unparse var <> " is marked as symbolic.")
-            , Pretty.indent 4 "However, it was not instantiated."
-            ]
-
--- | A rule which can be unified against a configuration
-class UnifyingRule rule where
-    -- | The pattern used for matching/unifying the rule with the configuration.
-    matchingPattern :: rule variable -> TermLike variable
-
-    -- | The condition to be checked upon matching the rule
-    precondition :: rule variable -> Predicate variable
-
-    {-| Refresh the variables of a rule.
-    The free variables of a rule are implicitly quantified, so they are
-    renamed to avoid collision with any variables in the given set.
-     -}
-    refreshRule
-        :: InternalVariable variable
-        => FreeVariables variable  -- ^ Variables to avoid
-        -> rule variable
-        -> (Renaming variable, rule variable)
-
-    {-| Apply a given function to all variables in a rule. This is used for
-    distinguishing rule variables from configuration variables.
-    -}
-    mapRuleVariables
-        :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
-        => (ElementVariable variable1 -> ElementVariable variable2)
-        -> (SetVariable variable1 -> SetVariable variable2)
-        -> rule variable1
-        -> rule variable2
-
-    -- | Checks whether a given substitution is acceptable for a rule
-    checkInstantiation
-        :: InternalVariable variable
-        => rule variable
-        -> Map.Map (UnifiedVariable variable) (TermLike variable)
-        -> [InstantiationFailure variable]
-    checkInstantiation _ _ = []
-    {-# INLINE checkInstantiation #-}
-
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
-    :: InternalVariable variable
-    => MonadSimplify simplifier
+    :: MonadSimplify simplifier
     => UnifyingRule rule
     => UnificationProcedure simplifier
-    -> SideCondition (Target variable)
-    -> Pattern (Target variable)
+    -> SideCondition RewritingVariable
+    -> Pattern RewritingVariable
     -- ^ Initial configuration
-    -> [rule (Target variable)]
+    -> [rule RewritingVariable]
     -- ^ Rule
-    -> simplifier [UnifiedRule (Target variable) (rule (Target variable))]
+    -> simplifier [UnifiedRule rule RewritingVariable]
 unifyRules unificationProcedure sideCondition initial rules =
     Branch.gather $ do
         rule <- Branch.scatter rules
@@ -242,7 +149,7 @@ unifyRule
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
-    -> BranchT simplifier (UnifiedRule variable (rule variable))
+    -> BranchT simplifier (UnifiedRule rule variable)
 unifyRule unificationProcedure sideCondition initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
@@ -267,7 +174,7 @@ unifyRule unificationProcedure sideCondition initial rule = do
 wouldNarrowWith
     :: Ord variable
     => UnifyingRule rule
-    => UnifiedRule variable (rule variable)
+    => UnifiedRule rule variable
     -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
@@ -280,43 +187,12 @@ wouldNarrowWith unified =
     Conditional { substitution } = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
-{- | Prepare a rule for unification or matching with the configuration.
-
-The rule's variables are:
-
-* marked with 'Target' so that they are preferred targets for substitution, and
-* renamed to avoid any free variables from the configuration and side condition.
-
- -}
-targetRuleVariables
-    :: InternalVariable variable
-    => UnifyingRule rule
-    => SideCondition (Target variable)
-    -> Pattern (Target variable)
-    -> rule variable
-    -> rule (Target variable)
-targetRuleVariables sideCondition initial =
-    snd
-    . refreshRule avoiding
-    . mapRuleVariables Target.mkElementTarget Target.mkSetTarget
-  where
-    avoiding = freeVariables sideCondition <> freeVariables initial
-
-{- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
- -}
-unTargetRule
-    :: (FreshPartialOrd variable, SortedVariable variable)
-    => UnifyingRule rule
-    => rule (Target variable) -> rule variable
-unTargetRule = mapRuleVariables Target.unTargetElement Target.unTargetSet
-
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults
     :: InternalVariable variable
-    => InternalVariable variable'
     => Monad m
     => UnifyingRule rule
-    => Eq (rule (Target variable'))
+    => Eq (rule RewritingVariable)
     => TermLike variable
     -> Results rule variable'
     -> m ()
@@ -332,9 +208,9 @@ checkFunctionLike
     => InternalVariable variable'
     => Foldable f
     => UnifyingRule rule
-    => Eq (f (UnifiedRule variable' (rule variable')))
-    => Monoid (f (UnifiedRule variable' (rule variable')))
-    => f (UnifiedRule variable' (rule variable'))
+    => Eq (f (UnifiedRule rule variable'))
+    => Monoid (f (UnifiedRule rule variable'))
+    => f (UnifiedRule rule variable')
     -> TermLike variable
     -> Either String ()
 checkFunctionLike unifiedRules pat
@@ -385,14 +261,6 @@ applyInitialConditions sideCondition initial unification = do
     -- then the rule is considered to apply with a \bottom result.
     TopBottom.guardAgainstBottom evaluated
     return evaluated
-
--- |Renames configuration variables to distinguish them from those in the rule.
-toConfigurationVariables
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern (Target variable)
-toConfigurationVariables =
-    Pattern.mapVariables Target.mkElementNonTarget Target.mkSetNonTarget
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition

@@ -23,7 +23,6 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Axiom
     ( Axiom (..)
-    , mapAxiomVariables
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -32,19 +31,14 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Substitution
-    ( Substitution
-    )
 import qualified Kore.Internal.Substitution as Substitution
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
-    , Variable
     , toVariable
     )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
-    ( RHS (..)
-    , RewriteRule (..)
+    ( RewriteRule (..)
     , RulePattern (..)
     , rewriteRuleToTerm
     )
@@ -56,15 +50,9 @@ import Kore.Unification.Error
 import Kore.Unparser
     ( unparse
     )
-import Kore.Variables.Target
-    ( Target
-    , unTarget
-    )
-import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     , foldMapVariable
-    , mapUnifiedVariable
     )
 import Log
 import Pretty
@@ -75,14 +63,14 @@ import qualified Pretty
 data ErrorRewritesInstantiation =
     ErrorRewritesInstantiation
         { problem :: !(Either UnificationError SubstitutionCoverageError)
-        , configuration :: !(Pattern Variable)
+        , configuration :: !(Pattern RewritingVariable)
         }
     deriving (GHC.Generic)
 
 data SubstitutionCoverageError =
     SubstitutionCoverageError
-        { solution :: !(UnifiedRule Variable (RewriteRule Variable))
-        , missingVariables :: !(Set (UnifiedVariable Variable))
+        { solution :: !(UnifiedRule RewriteRule RewritingVariable)
+        , missingVariables :: !(Set (UnifiedVariable RewritingVariable))
         }
 
 instance SOP.Generic ErrorRewritesInstantiation
@@ -91,6 +79,7 @@ instance SOP.HasDatatypeInfo ErrorRewritesInstantiation
 
 instance Entry ErrorRewritesInstantiation where
     entrySeverity _ = Error
+    helpDoc _ = "log rewrite instantiation errors"
 
 instance Pretty ErrorRewritesInstantiation where
     pretty
@@ -141,7 +130,7 @@ errorRewritesInstantiation configuration' unificationError = do
     error "Aborting execution"
   where
     mapVariables = Pattern.mapVariables (fmap toVariable) (fmap toVariable)
-    configuration = mapVariables configuration'
+    configuration = mkRewritingPattern $ mapVariables configuration'
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -160,15 +149,14 @@ we added to the result.
 the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
-    :: forall variable monadLog
-    .  InternalVariable variable
-    => MonadLog monadLog
-    => Pattern (Target variable)
+    :: forall monadLog
+    .  MonadLog monadLog
+    => Pattern RewritingVariable
     -- ^ Initial configuration
-    -> UnifiedRule (Target variable) (RewriteRule (Target variable))
+    -> UnifiedRule RewriteRule RewritingVariable
     -- ^ Unified rule
     -> monadLog ()
-checkSubstitutionCoverage initial unified
+checkSubstitutionCoverage configuration solution
   | isCoveringSubstitution || isSymbolic = return ()
   | otherwise = do
     -- The substitution does not cover all the variables on the left-hand side
@@ -180,75 +168,13 @@ checkSubstitutionCoverage initial unified
         { problem = Right substitutionCoverageError, configuration }
     error "Error! Please report this."
   where
-    substitutionCoverageError = SubstitutionCoverageError
-        { solution = Conditional
-            { term =
-                RewriteRule . mapUnTargetRulePattern . getRewriteRule
-                $ Pattern.term unified
-            , predicate = fmap mapUnTargetTermLike $ Pattern.predicate unified
-            , substitution =
-                mapUnTargetSubstitution $ Pattern.substitution unified
-            }
-        , missingVariables =
-            Set.map
-                ( mapUnifiedVariable
-                    (fmap unTargetVariable)
-                    (fmap unTargetVariable)
-                )
-                uncovered
-        }
-    configuration = Conditional
-        { term = mapUnTargetTermLike $ Pattern.term initial
-        , predicate = fmap mapUnTargetTermLike $ Pattern.predicate initial
-        , substitution = mapUnTargetSubstitution $ Pattern.substitution initial
-        }
-    mapUnTargetTermLike
-        :: TermLike.TermLike (Target variable)
-        -> TermLike.TermLike Variable
-    mapUnTargetTermLike =
-        TermLike.mapVariables (fmap unTargetVariable) (fmap unTargetVariable)
-    mapUnTargetSubstitution
-        :: Substitution (Target variable)
-        -> Substitution Variable
-    mapUnTargetSubstitution =
-        Substitution.modify
-            (fmap
-                (Substitution.mapAssignmentVariables
-                    (fmap unTargetVariable)
-                    (fmap unTargetVariable)
-                )
-            )
-    mapUnTargetRulePattern
-        :: RulePattern (Target variable)
-        -> RulePattern Variable
-    mapUnTargetRulePattern
-        RulePattern { left, antiLeft, requires, rhs, attributes}
-      =
-        RulePattern
-            { left = mapUnTargetTermLike left
-            , antiLeft = fmap mapUnTargetTermLike antiLeft
-            , requires = fmap mapUnTargetTermLike requires
-            , rhs = mapUnTargetRHS rhs
-            , attributes =
-                mapAxiomVariables
-                    (fmap unTargetVariable)
-                    (fmap unTargetVariable)
-                    attributes
-            }
-    mapUnTargetRHS :: RHS (Target variable) -> RHS Variable
-    mapUnTargetRHS RHS { existentials, right, ensures} =
-        RHS
-            { existentials = (fmap . fmap) unTargetVariable existentials
-            , right = mapUnTargetTermLike right
-            , ensures = fmap mapUnTargetTermLike ensures
-            }
-    unTargetVariable :: Target variable -> Variable
-    unTargetVariable = toVariable . unTarget
+    substitutionCoverageError =
+        SubstitutionCoverageError { solution, missingVariables }
 
-    Conditional { substitution } = unified
+    Conditional { substitution } = solution
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
-    uncovered = wouldNarrowWith unified
-    isCoveringSubstitution = Set.null uncovered
+    missingVariables = wouldNarrowWith solution
+    isCoveringSubstitution = Set.null missingVariables
     isSymbolic =
-        Foldable.any (foldMapVariable Target.isNonTarget)
+        Foldable.any (foldMapVariable isConfigVariable)
             substitutionVariables

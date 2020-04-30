@@ -21,13 +21,18 @@ import Debug
 import Kore.Attribute.Label as Attribute
     ( Label
     )
+import Kore.Attribute.Owise as Attribute
+    ( Owise
+    )
+import Kore.Attribute.Priority as Attribute
+    ( Priority
+    )
 import Kore.Attribute.RuleIndex as Attribute
     ( RuleIndex
     )
 import Kore.Attribute.SourceLocation as Attribute
     ( SourceLocation
     )
-import Kore.HasPriority
 import Kore.Internal.Variable
     ( Variable
     )
@@ -65,8 +70,8 @@ instance ToRulePattern (Rule OnePathRule)
 
 instance FromRulePattern (Rule OnePathRule)
 
-instance HasPriority (Rule OnePathRule) where
-    getPriority = getPriority . unRuleOnePath
+instance From (Rule OnePathRule) (Attribute.Priority, Attribute.Owise) where
+    from = from @(RewriteRule _) . unRuleOnePath
 
 -- * All-path reachability
 
@@ -86,8 +91,8 @@ instance ToRulePattern (Rule AllPathRule)
 
 instance FromRulePattern (Rule AllPathRule)
 
-instance HasPriority (Rule AllPathRule) where
-    getPriority = getPriority . unRuleAllPath
+instance From (Rule AllPathRule) (Attribute.Priority, Attribute.Owise) where
+    from = from @(RewriteRule _) . unRuleAllPath
 
 -- * Reachability
 
@@ -108,8 +113,9 @@ instance ToRulePattern (Rule ReachabilityRule)
 
 instance FromRulePattern (Rule ReachabilityRule)
 
-instance HasPriority (Rule ReachabilityRule) where
-    getPriority = getPriority . unReachabilityRewriteRule
+instance From (Rule ReachabilityRule) (Attribute.Priority, Attribute.Owise)
+  where
+    from = from @(RewriteRule _) . unReachabilityRewriteRule
 
 instance From (Rule ReachabilityRule) Attribute.SourceLocation where
     from = from @(RewriteRule Variable) . unReachabilityRewriteRule

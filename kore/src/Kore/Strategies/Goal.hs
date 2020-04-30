@@ -78,7 +78,6 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
-import Kore.HasPriority
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
@@ -116,6 +115,7 @@ import Kore.Log.InfoReachability
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.Result
     ( Result (..)
     , Results (..)
@@ -326,7 +326,7 @@ instance Goal OnePathRule where
                 rewrites
             )
       where
-        rewrites = sortOn getPriority rules
+        rewrites = sortOn Attribute.Axiom.getPriorityOfAxiom rules
         coinductiveRewrites =
             OnePathRewriteRule
             . RewriteRule
@@ -362,7 +362,7 @@ instance Goal AllPathRule where
                 priorityGroups
             )
       where
-        priorityGroups = groupSortOn getPriority rules
+        priorityGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom rules
         coinductiveRewrites =
             AllPathRewriteRule
             . RewriteRule
@@ -864,7 +864,7 @@ derivePar =
     deriveWith $ Step.applyRewriteRulesParallel Unification.unificationProcedure
 
 type Deriver monad =
-        [RewriteRule Variable]
+        [RewriteRule RewritingVariable]
     ->  Pattern Variable
     ->  ExceptT UnificationError monad (Step.Results RulePattern Variable)
 
@@ -891,7 +891,7 @@ deriveWith takeStep rules goal =
   where
     configuration :: Pattern Variable
     configuration = getConfiguration goal
-    rewrites = RewriteRule . toRulePattern <$> rules
+    rewrites = mkRewritingRule . RewriteRule . toRulePattern <$> rules
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -942,7 +942,7 @@ deriveResults goal Results { results, remainders } =
 
     fromAppliedRule =
         (fromRulePattern . goalToRule $ goal)
-            . Step.unTargetRule
+            . Step.unRewritingRule
             . Step.withoutUnification
 
 withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a

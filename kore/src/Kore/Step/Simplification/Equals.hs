@@ -73,7 +73,8 @@ import qualified Kore.Step.Simplification.Implies as Implies
     ( simplifyEvaluated
     )
 import qualified Kore.Step.Simplification.Not as Not
-    ( simplifyEvaluated
+    ( notSimplifier
+    , simplifyEvaluated
     , simplifyEvaluatedPredicate
     )
 import qualified Kore.Step.Simplification.Or as Or
@@ -231,7 +232,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
         foldM
-            (And.simplifyEvaluated sideCondition)
+            (And.simplifyEvaluated Not.notSimplifier sideCondition)
             (OrPattern.fromPatterns [Pattern.top])
             (firstNotCeil : secondNotCeils)
     firstEqualsSeconds <-
@@ -240,7 +241,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
         foldM
-            (And.simplifyEvaluated sideCondition)
+            (And.simplifyEvaluated Not.notSimplifier sideCondition)
             firstCeil
             (oneNotBottom : firstEqualsSeconds)
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
@@ -300,13 +301,14 @@ makeEvaluate
     firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
     secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-    negationAnd <-
-        And.simplifyEvaluated sideCondition firstCeilNegation secondCeilNegation
-    ceilAnd <- And.simplifyEvaluated sideCondition firstCeil secondCeil
-    equalityAnd <- And.simplifyEvaluated sideCondition termEquality ceilAnd
+    negationAnd <- simplifyEvaluatedAnd firstCeilNegation secondCeilNegation
+    ceilAnd <- simplifyEvaluatedAnd firstCeil secondCeil
+    equalityAnd <- simplifyEvaluatedAnd termEquality ceilAnd
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
+    simplifyEvaluatedAnd =
+        And.simplifyEvaluated Not.notSimplifier sideCondition
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -412,7 +414,9 @@ termEqualsAnd
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where
-    run it = (runUnifierT . runMaybeT) it >>= either missingCase BranchT.scatter
+    run it =
+        (runUnifierT Not.notSimplifier . runMaybeT) it
+        >>= either missingCase BranchT.scatter
     missingCase = const (return Nothing)
 
     maybeTermEqualsWorker
@@ -421,7 +425,8 @@ termEqualsAnd p1 p2 =
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    maybeTermEqualsWorker = maybeTermEquals termEqualsAndWorker
+    maybeTermEqualsWorker =
+        maybeTermEquals Not.notSimplifier termEqualsAndWorker
 
     termEqualsAndWorker
         :: forall unifier
@@ -431,8 +436,9 @@ termEqualsAnd p1 p2 =
         -> unifier (Pattern variable)
     termEqualsAndWorker first second =
         either ignoreErrors scatterResults
-        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
+        =<< runUnification (maybeTermEqualsWorker first second)
       where
+        runUnification = runUnifierT Not.notSimplifier . runMaybeT
         ignoreErrors _ = return equalsPredicate
         scatterResults =
             maybe

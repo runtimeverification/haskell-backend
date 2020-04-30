@@ -35,6 +35,7 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
@@ -171,7 +172,7 @@ test_termAndEquals =
     run =
         runNoSMT
         . runSimplifier testEnv
-        . runUnifierT
+        . runUnifierT Not.notSimplifier
         . runMaybeT
 
     expectRight (Right r) = return r

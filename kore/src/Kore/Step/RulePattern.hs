@@ -72,6 +72,7 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
@@ -79,7 +80,6 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
-import Kore.HasPriority
 import Kore.Internal.Alias
     ( Alias (..)
     )
@@ -253,8 +253,8 @@ instance TopBottom (RulePattern variable) where
     isTop _ = False
     isBottom _ = False
 
-instance HasPriority (RulePattern variable) where
-    getPriority = Attribute.getPriorityOfAxiom . attributes
+instance From (RulePattern variable) (Attribute.Priority, Attribute.Owise) where
+    from = from @(Attribute.Axiom _ _) . attributes
 
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern
@@ -503,8 +503,8 @@ instance
     freeVariables (RewriteRule rule) = freeVariables rule
     {-# INLINE freeVariables #-}
 
-instance HasPriority (RewriteRule variable) where
-    getPriority = getPriority . getRewriteRule
+instance From (RewriteRule variable) (Attribute.Priority, Attribute.Owise) where
+    from = from @(RulePattern _) . getRewriteRule
 
 {-  | Implication-based pattern.
 -}
