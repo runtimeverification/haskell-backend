@@ -84,6 +84,7 @@ import Kore.Internal.Alias
     ( Alias (..)
     )
 import Kore.Internal.ApplicationSorts
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -282,15 +283,9 @@ leftPattern =
     get RulePattern { left, requires } =
         Pattern.withCondition left $ from @(Predicate _) requires
     set rule@(RulePattern _ _ _ _ _) pattern' =
-        applySubstitution
-            (Pattern.substitution pattern')
-            rule
-                { left = Pattern.term pattern'
-                , requires = coerceSort (Pattern.predicate pattern')
-                }
+        rule { left, requires = Condition.toPredicate condition }
       where
-        sort = TermLike.termLikeSort (Pattern.term pattern')
-        coerceSort = Predicate.coerceSort sort
+        (left, condition) = Pattern.splitTerm pattern'
 
 {- | Does the axiom pattern represent a heating rule?
  -}
