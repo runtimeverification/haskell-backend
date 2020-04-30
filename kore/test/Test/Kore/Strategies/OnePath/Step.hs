@@ -45,6 +45,7 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -99,42 +100,19 @@ makeOnePathRuleFromPatterns
     configuration
     destination
   =
-    let (left, Condition.toPredicate -> requires) =
+    let (left, Condition.toPredicate -> requires') =
             Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures) =
+        (right, Condition.toPredicate -> ensures') =
             Pattern.splitTerm destination
     in coerce RulePattern
         { left
         , antiLeft = Nothing
-        , requires
+        , requires = Predicate.coerceSort (TermLike.termLikeSort left) requires'
         , rhs = RHS
             { existentials = []
             , right
-            , ensures
-            }
-        , attributes = Default.def
-        }
-
-makeOnePathRuleFromPatternsWithCond
-    :: Pattern Variable
-    -> Pattern Variable
-    -> OnePathRule
-makeOnePathRuleFromPatternsWithCond
-    configuration
-    destination
-  =
-    let (left, Condition.toPredicate -> requires) =
-            Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures) =
-            Pattern.splitTerm destination
-    in coerce RulePattern
-        { left
-        , antiLeft = Nothing
-        , requires
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures
+            , ensures =
+                Predicate.coerceSort (TermLike.termLikeSort right) ensures'
             }
         , attributes = Default.def
         }
@@ -771,11 +749,13 @@ test_onePathStrategy =
         -- Normal axiom: -
         -- Expected: stuck, since the terms unify but the conditions do not
         let goal =
-                makeOnePathRuleFromPatternsWithCond
+                makeOnePathRuleFromPatterns
                     ( Conditional
                         { term = TermLike.mkElemVar Mock.x
                         , predicate =
-                            makeEqualsPredicate_ (TermLike.mkElemVar Mock.x) Mock.a
+                            makeEqualsPredicate Mock.testSort
+                                (TermLike.mkElemVar Mock.x)
+                                Mock.a
                         , substitution = mempty
                         }
                     )
@@ -783,7 +763,7 @@ test_onePathStrategy =
                         { term = TermLike.mkElemVar Mock.x
                         , predicate =
                             makeNotPredicate
-                                $ makeEqualsPredicate_
+                                $ makeEqualsPredicate Mock.testSort
                                     (TermLike.mkElemVar Mock.x)
                                     Mock.a
                         , substitution = mempty
