@@ -106,6 +106,7 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
+    , termLikeSort
     )
 import Kore.Log.DebugProofState
 import Kore.Log.ErrorRewritesInstantiation
@@ -1073,12 +1074,12 @@ configurationDestinationToRule
     -> RHS Variable
     -> rule
 configurationDestinationToRule ruleType configuration rhs =
-    let (left, Condition.toPredicate -> requires) =
+    let (left, Condition.toPredicate -> requires') =
             Pattern.splitTerm configuration
     in fromRulePattern ruleType $ RulePattern
         { left
         , antiLeft = Nothing
-        , requires
+        , requires = Predicate.coerceSort (termLikeSort left) requires'
         , rhs
         , attributes = Default.def
         }

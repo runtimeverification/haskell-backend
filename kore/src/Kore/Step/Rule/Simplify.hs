@@ -129,16 +129,25 @@ simplifyClaimRule
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyClaimRule =
-    fmap MultiAnd.make
-    . Branch.gather
-    . Lens.traverseOf RulePattern.leftPattern worker
+    fmap MultiAnd.make . Branch.gather . worker
   where
-    worker, simplify, filterWithSolver
+    simplify, filterWithSolver
         :: Pattern variable
         -> BranchT simplifier (Pattern variable)
-    worker =
+    simplify =
         (return . Pattern.requireDefined)
-        >=> simplify
+        >=> Pattern.simplifyTopConfiguration
+        >=> Branch.scatter
         >=> filterWithSolver
-    simplify = Pattern.simplifyTopConfiguration >=> Branch.scatter
     filterWithSolver = SMT.Evaluator.filterBranch
+
+    worker :: RulePattern variable -> BranchT simplifier (RulePattern variable)
+    worker rulePattern = do
+        let lhs = Lens.view RulePattern.leftPattern rulePattern
+        simplified <- simplify lhs
+        let substitution = Pattern.substitution simplified
+            lhs' = simplified { Pattern.substitution = mempty }
+        rulePattern
+            & Lens.set RulePattern.leftPattern lhs'
+            & RulePattern.applySubstitution substitution
+            & return
