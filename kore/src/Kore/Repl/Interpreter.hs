@@ -1463,13 +1463,19 @@ parseEvalScript file (ScriptModeOutput shouldOutput) = do
                $ execStateReader config st
                $ Foldable.for_ cmds
                $ if shouldOutput then executeCommandWithOutput else executeCommand
-        
+    
+        executeCommand 
+            :: ReplCommand 
+            -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
         executeCommand command = do
             replInterpreter0 
                 (PrintAuxOutput $ \_ -> return ())
                 (PrintKoreOutput $ \_ -> return ())
                 command
-
+        
+        executeCommandWithOutput
+            :: ReplCommand
+            -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus 
         executeCommandWithOutput command = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
