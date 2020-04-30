@@ -96,6 +96,7 @@ import Kore.Parser
 import Kore.Profiler.Data
     ( MonadProfiler
     )
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
@@ -300,7 +301,7 @@ runStepResult
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
-        [axiom]
+        [mkRewritingRule axiom]
         configuration
     & runSimplifier testEnv . runExceptT
 

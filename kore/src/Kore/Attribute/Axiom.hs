@@ -12,6 +12,7 @@ module Kore.Attribute.Axiom
     , HeatCool (..)
     , ProductionID (..)
     , Priority (..)
+    , Owise (..)
     , Assoc (..)
     , Comm (..)
     , Unit (..)
@@ -205,6 +206,9 @@ instance From symbol SymbolOrAlias => From (Axiom symbol Variable) Attributes wh
             , from . owise
             ]
 
+instance From (Axiom symbol variable) (Priority, Owise) where
+    from Axiom { priority, owise } = (priority, owise)
+
 instance SQL.Column (Axiom SymbolOrAlias Variable) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn tableName _ =
@@ -272,11 +276,10 @@ mapAxiomVariables e s axiom@Axiom { concrete, symbolic } =
         , symbolic = mapSymbolicVariables e s symbolic
         }
 
-getPriorityOfAxiom :: Axiom symbol variable -> Integer
 getPriorityOfAxiom
-    Axiom
-    { priority = Priority { getPriority }
-    , owise = Owise { isOwise }
-    }
+    :: forall attrs. From attrs (Priority, Owise) => attrs -> Integer
+getPriorityOfAxiom attrs
   | isOwise   = owisePriority
   | otherwise = fromMaybe defaultPriority getPriority
+  where
+    (Priority { getPriority }, Owise { isOwise }) = from @attrs attrs

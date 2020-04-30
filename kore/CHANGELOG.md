@@ -22,7 +22,6 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Execution does not branch when evaluating the hooked `KEQUAL.eq` function.
 - Clarified the message accompanying the "substitution coverage" error.
 
 ### Fixed

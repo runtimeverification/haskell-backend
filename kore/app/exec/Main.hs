@@ -541,7 +541,7 @@ koreProve execOptions proveOptions = do
 
     saveProven
         :: VerifiedModule StepperAttributes
-        -> [ReachabilityRule Variable]
+        -> [ReachabilityRule]
         -> FilePath
         -> IO ()
     saveProven specModule provenClaims outputFile =
