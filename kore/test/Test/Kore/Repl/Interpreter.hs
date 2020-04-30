@@ -94,9 +94,6 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Simplification
 
-type Claim = OnePathRule Variable
-type Axiom = Rule (OnePathRule Variable)
-
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
     [ showUsage                   `tests` "Showing the usage message"
@@ -564,14 +561,14 @@ add1 =
 
 zeroToTen :: Claim
 zeroToTen =
-    coerce $ rulePatternWithName zero (mkAnd mkTop_ ten) "0to10Claim"
+    OnePath $ coerce $ rulePatternWithName zero (mkAnd mkTop_ ten) "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
 
 emptyClaim :: Claim
 emptyClaim =
-    coerce
+    OnePath . coerce
     $ rulePatternWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 rulePatternWithName
@@ -595,7 +592,7 @@ runWithState
     -> [Axiom]
     -> [Claim]
     -> Claim
-    -> (ReplState Claim -> ReplState Claim)
+    -> (ReplState -> ReplState)
     -> IO Result
 runWithState command axioms claims claim stateTransformer = do
     let logger = mempty
@@ -626,7 +623,7 @@ runWithState command axioms claims claim stateTransformer = do
 data Result = Result
     { output   :: ReplOutput
     , continue :: ReplStatus
-    , state    :: ReplState Claim
+    , state    :: ReplState
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -636,7 +633,7 @@ equalsOutput :: ReplOutput -> ReplOutput -> Assertion
 equalsOutput actual expected =
     actual @?= expected
 
-hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
+hasCurrentNode :: ReplState -> ReplNode -> IO ()
 hasCurrentNode st n = do
     node st `equals` n
     graphNode <- evalStateT (getTargetNode justNode) st
@@ -644,7 +641,7 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
+hasAlias :: ReplState -> AliasDefinition -> IO ()
 hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
@@ -653,7 +650,7 @@ hasAlias st alias@AliasDefinition { name } =
         actual `equals` Just alias
 
 hasLogging
-    :: ReplState Claim
+    :: ReplState
     -> Log.KoreLogOptions
     -> IO ()
 hasLogging st expectedLogging =
@@ -662,7 +659,7 @@ hasLogging st expectedLogging =
     in
         actualLogging `equals` expectedLogging
 
-hasCurrentClaimIndex :: ReplState Claim -> ClaimIndex -> IO ()
+hasCurrentClaimIndex :: ReplState -> ClaimIndex -> IO ()
 hasCurrentClaimIndex st expectedClaimIndex =
     let
         actualClaimIndex = claimIndex st
@@ -676,7 +673,7 @@ mkState
     :: [Axiom]
     -> [Claim]
     -> Claim
-    -> ReplState Claim
+    -> ReplState
 mkState axioms claims claim =
     ReplState
         { axioms         = axioms
@@ -696,7 +693,7 @@ mkState axioms claims claim =
 
 mkConfig
     :: MVar (Log.LogAction IO Log.ActualEntry)
-    -> Config Claim Simplifier
+    -> Config Simplifier
 mkConfig logger =
     Config
         { stepper     = stepper0

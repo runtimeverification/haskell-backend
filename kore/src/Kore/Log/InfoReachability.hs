@@ -13,22 +13,15 @@ module Kore.Log.InfoReachability
 
 import Prelude.Kore
 
-import Kore.Internal.Variable
-    ( Variable
-    )
 import Kore.Strategies.Rule
 import Log
 import qualified Pretty
 
 data InfoReachability
-    = InfoSimplify !(ReachabilityRule Variable)
-    | InfoRemoveDestination !(ReachabilityRule Variable)
-    | InfoDeriveSeq
-        ![Rule (ReachabilityRule Variable)]
-        !(ReachabilityRule Variable)
-    | InfoDerivePar
-        ![Rule (ReachabilityRule Variable)]
-        !(ReachabilityRule Variable)
+    = InfoSimplify !ReachabilityRule
+    | InfoRemoveDestination !ReachabilityRule
+    | InfoDeriveSeq ![Rule ReachabilityRule] !ReachabilityRule
+    | InfoDerivePar ![Rule ReachabilityRule] !ReachabilityRule
 
 prettyInfoReachabilityGoal
     :: Pretty.Pretty goal
@@ -90,30 +83,30 @@ instance Entry InfoReachability where
 
 whileSimplify
     :: MonadLog log
-    => ReachabilityRule Variable
+    => ReachabilityRule
     -> log a
     -> log a
 whileSimplify goal = logWhile (InfoSimplify goal)
 
 whileRemoveDestination
     :: MonadLog log
-    => ReachabilityRule Variable
+    => ReachabilityRule
     -> log a
     -> log a
 whileRemoveDestination goal = logWhile (InfoRemoveDestination goal)
 
 whileDeriveSeq
     :: MonadLog log
-    => [Rule (ReachabilityRule Variable)]
-    -> ReachabilityRule Variable
+    => [Rule ReachabilityRule]
+    -> ReachabilityRule
     -> log a
     -> log a
 whileDeriveSeq rules goal = logWhile (InfoDeriveSeq rules goal)
 
 whileDerivePar
     :: MonadLog log
-    => [Rule (ReachabilityRule Variable)]
-    -> ReachabilityRule Variable
+    => [Rule ReachabilityRule]
+    -> ReachabilityRule
     -> log a
     -> log a
 whileDerivePar rules goal = logWhile (InfoDerivePar rules goal)

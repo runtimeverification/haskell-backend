@@ -13,6 +13,7 @@ module Kore.Step.RulePattern
     , ReachabilityRule (..)
     , ImplicationRule (..)
     , RHS (..)
+    , HasAttributes (..)
     , ToRulePattern (..)
     , FromRulePattern (..)
     , UnifyingRule (..)
@@ -21,7 +22,6 @@ module Kore.Step.RulePattern
     , isHeatingRule
     , isCoolingRule
     , isNormalRule
-    , getPriorityOfRule
     , applySubstitution
     , topExistsToImplicitForall
     , isFreeOf
@@ -72,6 +72,7 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
@@ -218,6 +219,15 @@ instance Debug variable => Debug (RulePattern variable)
 
 instance (Debug variable, Diff variable) => Diff (RulePattern variable)
 
+instance From (RulePattern variable) Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes
+
+instance From (RulePattern variable) Attribute.Label where
+    from = Attribute.label . attributes
+
+instance From (RulePattern variable) Attribute.RuleIndex where
+    from = Attribute.identifier . attributes
+
 instance InternalVariable variable => Pretty (RulePattern variable) where
     pretty rulePattern'@(RulePattern _ _ _ _ _ ) =
         Pretty.vsep
@@ -242,6 +252,9 @@ instance InternalVariable variable => Pretty (RulePattern variable) where
 instance TopBottom (RulePattern variable) where
     isTop _ = False
     isBottom _ = False
+
+instance From (RulePattern variable) (Attribute.Priority, Attribute.Owise) where
+    from = from @(Attribute.Axiom _ _) . attributes
 
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern
@@ -302,9 +315,6 @@ isNormalRule RulePattern { attributes } =
     case Attribute.heatCool attributes of
         Attribute.Normal -> True
         _ -> False
-
-getPriorityOfRule :: RulePattern variable -> Integer
-getPriorityOfRule = Attribute.getPriorityOfAxiom . attributes
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm
@@ -428,6 +438,12 @@ applySubstitution substitution rule =
     finalRule = substitute subst rule
     substitutedVariables = Substitution.variables substitution
 
+class HasAttributes rule where
+    getAttributes :: rule variable -> Attribute.Axiom Symbol variable
+
+instance HasAttributes RulePattern where
+    getAttributes = attributes
+
 -- | The typeclasses 'ToRulePattern' and 'FromRulePattern' are intended to
 -- be implemented by types which contain more (or the same amount of)
 -- information as 'RulePattern Variable'.
@@ -464,6 +480,15 @@ instance Debug variable => Debug (RewriteRule variable)
 
 instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
 
+instance From (RewriteRule variable) Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes . getRewriteRule
+
+instance From (RewriteRule variable) Attribute.Label where
+    from = Attribute.label . attributes . getRewriteRule
+
+instance From (RewriteRule variable) Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getRewriteRule
+
 instance
     InternalVariable variable
     => Unparse (RewriteRule variable)
@@ -477,6 +502,9 @@ instance
   where
     freeVariables (RewriteRule rule) = freeVariables rule
     {-# INLINE freeVariables #-}
+
+instance From (RewriteRule variable) (Attribute.Priority, Attribute.Owise) where
+    from = from @(RulePattern _) . getRewriteRule
 
 {-  | Implication-based pattern.
 -}
@@ -504,21 +532,21 @@ instance
 
 {-  | One-Path-Claim rule pattern.
 -}
-newtype OnePathRule variable =
-    OnePathRule { getOnePathRule :: RulePattern variable }
+newtype OnePathRule =
+    OnePathRule { getOnePathRule :: RulePattern Variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData variable => NFData (OnePathRule variable)
+instance NFData OnePathRule
 
-instance SOP.Generic (OnePathRule variable)
+instance SOP.Generic OnePathRule
 
-instance SOP.HasDatatypeInfo (OnePathRule variable)
+instance SOP.HasDatatypeInfo OnePathRule
 
-instance Debug variable => Debug (OnePathRule variable)
+instance Debug OnePathRule
 
-instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
+instance Diff OnePathRule
 
-instance InternalVariable variable => Unparse (OnePathRule variable) where
+instance Unparse OnePathRule where
     unparse claimPattern =
         "claim {}"
         <> Pretty.line'
@@ -533,44 +561,65 @@ instance InternalVariable variable => Unparse (OnePathRule variable) where
             unparse2 (onePathRuleToTerm claimPattern)
         Pretty.<+> "[]"
 
-instance TopBottom (OnePathRule variable) where
+instance TopBottom OnePathRule where
     isTop _ = False
     isBottom _ = False
 
+instance From OnePathRule Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes . getOnePathRule
+
+instance From OnePathRule Attribute.Label where
+    from = Attribute.label . attributes . getOnePathRule
+
+instance From OnePathRule Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getOnePathRule
+
 {-  | Unified One-Path and All-Path Claim rule pattern.
 -}
-data ReachabilityRule variable
-    = OnePath !(OnePathRule variable)
-    | AllPath !(AllPathRule variable)
+data ReachabilityRule
+    = OnePath !OnePathRule
+    | AllPath !AllPathRule
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData variable => NFData (ReachabilityRule variable)
+instance NFData ReachabilityRule
 
-instance SOP.Generic (ReachabilityRule variable)
+instance SOP.Generic ReachabilityRule
 
-instance SOP.HasDatatypeInfo (ReachabilityRule variable)
+instance SOP.HasDatatypeInfo ReachabilityRule
 
-instance Debug variable => Debug (ReachabilityRule variable)
+instance Debug ReachabilityRule
 
-instance (Debug variable, Diff variable) => Diff (ReachabilityRule variable)
+instance Diff ReachabilityRule
 
-instance InternalVariable variable => Unparse (ReachabilityRule variable) where
+instance Unparse ReachabilityRule where
     unparse (OnePath rule) = unparse rule
     unparse (AllPath rule) = unparse rule
     unparse2 (AllPath rule) = unparse2 rule
     unparse2 (OnePath rule) = unparse2 rule
 
-instance TopBottom (ReachabilityRule variable) where
+instance TopBottom ReachabilityRule where
     isTop _ = False
     isBottom _ = False
 
-instance Pretty (ReachabilityRule Variable) where
+instance Pretty ReachabilityRule where
     pretty (OnePath (OnePathRule rule)) =
         Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
     pretty (AllPath (AllPathRule rule)) =
         Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
 
-toSentence :: ReachabilityRule Variable -> Verified.Sentence
+instance From ReachabilityRule Attribute.SourceLocation where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.Label where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.RuleIndex where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+toSentence :: ReachabilityRule -> Verified.Sentence
 toSentence rule =
     Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
         { sentenceAxiomParameters = []
@@ -584,21 +633,21 @@ toSentence rule =
 
 {-  | All-Path-Claim rule pattern.
 -}
-newtype AllPathRule variable =
-    AllPathRule { getAllPathRule :: RulePattern variable }
+newtype AllPathRule =
+    AllPathRule { getAllPathRule :: RulePattern Variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData variable => NFData (AllPathRule variable)
+instance NFData AllPathRule
 
-instance SOP.Generic (AllPathRule variable)
+instance SOP.Generic AllPathRule
 
-instance SOP.HasDatatypeInfo (AllPathRule variable)
+instance SOP.HasDatatypeInfo AllPathRule
 
-instance Debug variable => Debug (AllPathRule variable)
+instance Debug AllPathRule
 
-instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
+instance Diff AllPathRule
 
-instance InternalVariable variable => Unparse (AllPathRule variable) where
+instance Unparse AllPathRule where
     unparse claimPattern =
         "claim {}"
         <> Pretty.line'
@@ -612,29 +661,38 @@ instance InternalVariable variable => Unparse (AllPathRule variable) where
             unparse2 (allPathRuleToTerm claimPattern)
         Pretty.<+> "[]"
 
-instance TopBottom (AllPathRule variable) where
+instance TopBottom AllPathRule where
     isTop _ = False
     isBottom _ = False
 
+instance From AllPathRule Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes . getAllPathRule
+
+instance From AllPathRule Attribute.Label where
+    from = Attribute.label . attributes . getAllPathRule
+
+instance From AllPathRule Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getAllPathRule
+
 instance ToRulePattern (RewriteRule Variable)
 
-instance ToRulePattern (OnePathRule Variable)
+instance ToRulePattern OnePathRule
 
-instance ToRulePattern (AllPathRule Variable)
+instance ToRulePattern AllPathRule
 
 instance ToRulePattern (ImplicationRule Variable)
 
-instance ToRulePattern (ReachabilityRule Variable) where
+instance ToRulePattern ReachabilityRule where
     toRulePattern (OnePath rule) = toRulePattern rule
     toRulePattern (AllPath rule) = toRulePattern rule
 
-instance FromRulePattern (OnePathRule Variable)
+instance FromRulePattern OnePathRule
 
-instance FromRulePattern (AllPathRule Variable)
+instance FromRulePattern AllPathRule
 
 instance FromRulePattern (ImplicationRule Variable)
 
-instance FromRulePattern (ReachabilityRule Variable) where
+instance FromRulePattern ReachabilityRule where
     fromRulePattern (OnePath _) rulePat =
         OnePath $ coerce rulePat
     fromRulePattern (AllPath _) rulePat =
@@ -669,30 +727,18 @@ rewriteRuleToTerm
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (rhsToTerm rhs)
 
-instance
-    InternalVariable variable
-      => From (OnePathRule variable) (TermLike variable)
-  where
+instance From OnePathRule (TermLike Variable) where
     from = onePathRuleToTerm
 
-instance
-    InternalVariable variable
-      => From (AllPathRule variable) (TermLike variable)
-  where
+instance From AllPathRule (TermLike Variable) where
     from = allPathRuleToTerm
 
-instance
-    InternalVariable variable
-      => From (ReachabilityRule variable) (TermLike variable)
-  where
+instance From ReachabilityRule (TermLike Variable) where
     from (OnePath claim) = from claim
     from (AllPath claim) = from claim
 
 -- | Converts a 'OnePathRule' into its term representation
-onePathRuleToTerm
-    :: InternalVariable variable
-    => OnePathRule variable
-    -> TermLike.TermLike variable
+onePathRuleToTerm :: OnePathRule -> TermLike.TermLike Variable
 onePathRuleToTerm (OnePathRule (RulePattern left _ requires rhs _)) =
     mkImpliesRule left requires (Just wEF) rhs
 
@@ -730,10 +776,7 @@ mkImpliesRule left requires alias right =
     rhsTerm = rhsToTerm right
 
 -- | Converts an 'AllPathRule' into its term representation
-allPathRuleToTerm
-    :: InternalVariable variable
-    => AllPathRule variable
-    -> TermLike.TermLike variable
+allPathRuleToTerm :: AllPathRule -> TermLike.TermLike Variable
 allPathRuleToTerm (AllPathRule (RulePattern left _ requires rhs _)) =
     mkImpliesRule left requires (Just wAF) rhs
 

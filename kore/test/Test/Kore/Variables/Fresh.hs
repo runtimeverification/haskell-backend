@@ -6,6 +6,10 @@ module Test.Kore.Variables.Fresh
     , test_FreshPartialOrd_ElementVariable
     , test_FreshPartialOrd_SetVariable
     , test_FreshPartialOrd_UnifiedVariable
+    --
+    , testFreshPartialOrd
+    , relatedVariableGen
+    , relatedUnifiedVariableGen
     ) where
 
 import Prelude.Kore
