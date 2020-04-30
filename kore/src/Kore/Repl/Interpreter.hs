@@ -1467,7 +1467,7 @@ parseEvalScript file (ScriptModeOutput shouldOutput) = do
         executeCommand
             :: ReplCommand
             -> ReaderT (Config claim m) (StateT (ReplState claim) m) ReplStatus
-        executeCommand command = do
+        executeCommand command =
             replInterpreter0
                 (PrintAuxOutput $ \_ -> return ())
                 (PrintKoreOutput $ \_ -> return ())
@@ -1479,10 +1479,10 @@ parseEvalScript file (ScriptModeOutput shouldOutput) = do
         executeCommandWithOutput command = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
-            liftIO $ putStrLn $ show command
+            liftIO $ print command
             replInterpreter0
-                    (PrintAuxOutput $ printIfNotEmpty)
-                    (PrintKoreOutput $ printIfNotEmpty)
+                    (PrintAuxOutput printIfNotEmpty)
+                    (PrintKoreOutput printIfNotEmpty)
                     command
 
 formatUnificationMessage

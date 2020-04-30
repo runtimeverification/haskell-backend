@@ -225,7 +225,7 @@ mainWithOptions
                     \ in order to run the repl in run-script mode."
                 exitFailure
 
-        when (replMode == Interactive && scriptModeOutput == (ScriptModeOutput True)) $
+        when (replMode == Interactive && scriptModeOutput == ScriptModeOutput True) $
             lift $ do
                 putStrLn
                     "The --saveRunOutput flag is only available\
