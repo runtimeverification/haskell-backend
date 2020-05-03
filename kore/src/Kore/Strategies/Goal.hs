@@ -821,23 +821,15 @@ simplify
     => Lens' goal (RulePattern Variable)
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify lensRulePattern goal =
-    Lens.forOf lensRulePattern goal $ \rulePattern ->
-        let configuration = Lens.view RulePattern.leftPattern rulePattern in
-        withConfiguration' configuration $ do
-            configs <-
-                simplifyTopConfiguration configuration
-                >>= SMT.Evaluator.filterMultiOr
-                & lift
-            if isBottom configs
-                then
-                    Lens.set RulePattern.leftPattern Pattern.bottom rulePattern
-                    & pure
-                else do
-                    let simplified =
-                            flip (Lens.set RulePattern.leftPattern) rulePattern
-                            <$> configs
-                    Foldable.asum (pure <$> simplified)
+simplify lensRulePattern =
+    Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config ->
+    withConfiguration' config $ do
+        configs <-
+            simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
+            & lift
+        if isBottom configs
+            then pure Pattern.bottom
+            else Foldable.asum (pure <$> configs)
 
 isTriviallyValid
     :: ToRulePattern goal
