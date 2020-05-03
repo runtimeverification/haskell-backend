@@ -312,7 +312,7 @@ instance Goal OnePathRule where
     transitionRule =
         (withDebugProofState . transitionRuleTemplate)
         TransitionRuleTemplate
-            { simplifyTemplate = simplify
+            { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid
             , deriveParTemplate = derivePar
@@ -348,7 +348,7 @@ instance Goal AllPathRule where
     transitionRule =
         (withDebugProofState . transitionRuleTemplate)
         TransitionRuleTemplate
-            { simplifyTemplate = simplify
+            { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid
             , deriveParTemplate = derivePar
@@ -818,23 +818,26 @@ removeDestination lensRulePattern mkState goal =
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
-    => ToRulePattern goal
-    => FromRulePattern goal
-    => goal
+    => Lens' goal (RulePattern Variable)
+    -> goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = withConfiguration goal $ do
-    configs <- lift $
-        simplifyTopConfiguration configuration
-    filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-    if null filteredConfigs
-        then pure $ configurationDestinationToRule goal Pattern.bottom destination
-        else do
-            let simplifiedRules =
-                    fmap (flip (configurationDestinationToRule goal) destination) filteredConfigs
-            Foldable.asum (pure <$> simplifiedRules)
-  where
-    destination = getDestination goal
-    configuration = getConfiguration goal
+simplify lensRulePattern goal =
+    Lens.forOf lensRulePattern goal $ \rulePattern ->
+        let configuration = Lens.view RulePattern.leftPattern rulePattern in
+        withConfiguration' configuration $ do
+            configs <-
+                simplifyTopConfiguration configuration
+                >>= SMT.Evaluator.filterMultiOr
+                & lift
+            if isBottom configs
+                then
+                    Lens.set RulePattern.leftPattern Pattern.bottom rulePattern
+                    & pure
+                else do
+                    let simplified =
+                            flip (Lens.set RulePattern.leftPattern) rulePattern
+                            <$> configs
+                    Foldable.asum (pure <$> simplified)
 
 isTriviallyValid
     :: ToRulePattern goal
