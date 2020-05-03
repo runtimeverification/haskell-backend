@@ -314,7 +314,7 @@ instance Goal OnePathRule where
         TransitionRuleTemplate
             { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
-            , isTriviallyValidTemplate = isTriviallyValid
+            , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
             , deriveParTemplate = derivePar
             , deriveSeqTemplate = deriveSeq
             }
@@ -350,7 +350,7 @@ instance Goal AllPathRule where
         TransitionRuleTemplate
             { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
-            , isTriviallyValidTemplate = isTriviallyValid
+            , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
             , deriveParTemplate = derivePar
             , deriveSeqTemplate = deriveSeq
             }
@@ -831,10 +831,9 @@ simplify lensRulePattern =
             then pure Pattern.bottom
             else Foldable.asum (pure <$> configs)
 
-isTriviallyValid
-    :: ToRulePattern goal
-    => goal -> Bool
-isTriviallyValid = isBottom . RulePattern.left . toRulePattern
+isTriviallyValid :: Lens' goal (RulePattern variable) -> goal -> Bool
+isTriviallyValid lensRulePattern =
+    isBottom . RulePattern.left . Lens.view lensRulePattern
 
 isTrusted
     :: forall goal
