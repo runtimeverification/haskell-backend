@@ -84,6 +84,7 @@ import Kore.Internal.Alias
     ( Alias (..)
     )
 import Kore.Internal.ApplicationSorts
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -266,7 +267,7 @@ rulePattern left right =
     RulePattern
         { left
         , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate_
+        , requires = Predicate.makeTruePredicate (TermLike.termLikeSort left)
         , rhs = termToRHS right
         , attributes = Default.def
         }
@@ -282,15 +283,9 @@ leftPattern =
     get RulePattern { left, requires } =
         Pattern.withCondition left $ from @(Predicate _) requires
     set rule@(RulePattern _ _ _ _ _) pattern' =
-        applySubstitution
-            (Pattern.substitution pattern')
-            rule
-                { left = Pattern.term pattern'
-                , requires = coerceSort (Pattern.predicate pattern')
-                }
+        rule { left, requires = Condition.toPredicate condition }
       where
-        sort = TermLike.termLikeSort (Pattern.term pattern')
-        coerceSort = Predicate.coerceSort sort
+        (left, condition) = Pattern.splitTerm pattern'
 
 {- | Does the axiom pattern represent a heating rule?
  -}
@@ -335,7 +330,11 @@ injectTermIntoRHS
     => TermLike.TermLike variable
     -> RHS variable
 injectTermIntoRHS right =
-    RHS { existentials = [], right, ensures = Predicate.makeTruePredicate_ }
+    RHS
+    { existentials = []
+    , right
+    , ensures = Predicate.makeTruePredicate (TermLike.termLikeSort right)
+    }
 
 -- | Parses a term representing a RHS into a RHS
 termToRHS
