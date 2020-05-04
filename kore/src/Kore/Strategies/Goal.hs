@@ -315,8 +315,8 @@ instance Goal OnePathRule where
             { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
-            , deriveParTemplate = derivePar _Unwrapped
-            , deriveSeqTemplate = deriveSeq _Unwrapped
+            , deriveParTemplate = derivePar _Unwrapped OnePathRewriteRule
+            , deriveSeqTemplate = deriveSeq _Unwrapped OnePathRewriteRule
             }
 
     strategy _ goals rules =
@@ -351,8 +351,8 @@ instance Goal AllPathRule where
             { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
-            , deriveParTemplate = derivePar _Unwrapped
-            , deriveSeqTemplate = deriveSeq _Unwrapped
+            , deriveParTemplate = derivePar _Unwrapped AllPathRewriteRule
+            , deriveSeqTemplate = deriveSeq _Unwrapped AllPathRewriteRule
             }
 
     strategy _ goals rules =
@@ -848,16 +848,15 @@ instance Exception WithConfiguration
 derivePar
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
-    => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern (Rule goal)
-    => FromRulePattern (Rule goal)
     => Lens' goal (RulePattern Variable)
+    -> (RewriteRule Variable -> Rule goal)
     -> [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar lensRulePattern =
-    deriveWith lensRulePattern
+derivePar lensRulePattern mkRule =
+    deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
 
 type Deriver monad =
@@ -869,21 +868,20 @@ type Deriver monad =
 deriveWith
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
-    => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern (Rule goal)
-    => FromRulePattern (Rule goal)
     => Lens' goal (RulePattern Variable)
+    -> (RewriteRule Variable -> Rule goal)
     -> Deriver m
     -> [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveWith lensRulePattern takeStep rules goal =
+deriveWith lensRulePattern mkRule takeStep rules goal =
     (\x -> getCompose $ x goal)
     $ Lens.traverseOf (lensRulePattern . RulePattern.leftPattern)
     $ \config -> Compose $ withConfiguration' config $ do
         results <- takeStep rewrites config & assertInstantiated config
-        deriveResults goal results
+        deriveResults mkRule results
   where
     rewrites = mkRewritingRule . RewriteRule . toRulePattern <$> rules
     assertInstantiated config act =
@@ -894,28 +892,25 @@ deriveWith lensRulePattern takeStep rules goal =
 deriveSeq
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
-    => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern (Rule goal)
-    => FromRulePattern (Rule goal)
     => Lens' goal (RulePattern Variable)
+    -> (RewriteRule Variable -> Rule goal)
     -> [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq lensRulePattern =
-    deriveWith lensRulePattern . flip
+deriveSeq lensRulePattern mkRule =
+    deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
 deriveResults
     :: MonadSimplify simplifier
-    => Goal goal
-    => FromRulePattern (Rule goal)
-    => goal
+    => (RewriteRule Variable -> Rule goal)
     -> Step.Results RulePattern Variable
     -> Strategy.TransitionT (Rule goal) simplifier
         (ProofState.ProofState (Pattern Variable))
 -- TODO (thomas.tuegel): Remove goal argument.
-deriveResults goal Results { results, remainders } =
+deriveResults mkRule Results { results, remainders } =
     addResults <|> addRemainders
   where
     addResults = Foldable.asum (addResult <$> results)
@@ -936,9 +931,7 @@ deriveResults goal Results { results, remainders } =
     addRule = Transition.addRule . fromAppliedRule
 
     fromAppliedRule =
-        (fromRulePattern . goalToRule $ goal)
-            . Step.unRewritingRule
-            . Step.withoutUnification
+        mkRule . RewriteRule . Step.unRewritingRule . Step.withoutUnification
 
 withConfiguration' :: MonadCatch m => Pattern Variable -> m a -> m a
 withConfiguration' configuration =
