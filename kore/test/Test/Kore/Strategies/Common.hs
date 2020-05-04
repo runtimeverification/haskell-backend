@@ -16,6 +16,9 @@ import Numeric.Natural
     ( Natural
     )
 
+import qualified Kore.Attribute.Trusted as Attribute
+    ( Trusted
+    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -56,6 +59,7 @@ runVerificationToPattern
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
     => Show (Rule claim)
+    => From claim Attribute.Trusted
     => Limit Natural
     -> Limit Natural
     -> [Rule claim]
@@ -82,6 +86,7 @@ runVerification
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
     => Show (Rule claim)
+    => From claim Attribute.Trusted
     => Limit Natural
     -> Limit Natural
     -> [Rule claim]

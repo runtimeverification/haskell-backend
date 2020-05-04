@@ -835,15 +835,8 @@ isTriviallyValid :: Lens' goal (RulePattern variable) -> goal -> Bool
 isTriviallyValid lensRulePattern =
     isBottom . RulePattern.left . Lens.view lensRulePattern
 
-isTrusted
-    :: forall goal
-    .  ToRulePattern goal
-    => goal -> Bool
-isTrusted =
-    Attribute.Trusted.isTrusted
-    . Attribute.Axiom.trusted
-    . RulePattern.attributes
-    . toRulePattern
+isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
+isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
 
 -- | Exception that contains the last configuration before the error.
 data WithConfiguration = WithConfiguration (Pattern Variable) SomeException
