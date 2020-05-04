@@ -9,6 +9,7 @@ import Prelude.Kore
 import Control.Monad.Trans.Except
     ( runExceptT
     )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Limit
     ( Limit (..)
     )
@@ -33,7 +34,7 @@ import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
-    , StuckVerification (StuckVerification)
+    , Stuck (..)
     , ToProve (ToProve)
     )
 import qualified Kore.Strategies.Verification as Verification
@@ -68,10 +69,7 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
             alreadyProven
         return (toPattern stuck)
   where
-    toPattern (Left StuckVerification {stuckDescription}) =
-        Left stuckDescription
-    toPattern (Right a) = Right a
-
+    toPattern = Bifunctor.first stuckPattern
 
 runVerification
     :: Limit Natural
@@ -79,7 +77,7 @@ runVerification
     -> [Rule ReachabilityRule]
     -> [ReachabilityRule]
     -> [ReachabilityRule]
-    -> IO (Either (StuckVerification (Pattern Variable) ReachabilityRule) ())
+    -> IO (Either Stuck ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
     runSimplifier mockEnv $ do
         SMT.AST.declare Mock.smtDeclarations

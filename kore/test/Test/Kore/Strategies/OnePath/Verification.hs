@@ -36,10 +36,7 @@ import Kore.Step.RulePattern
     )
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
-    ( StuckVerification (StuckVerification)
-    )
-import qualified Kore.Strategies.Verification as Verification.DoNotUse
-    ( StuckVerification (..)
+    ( Stuck (..)
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -237,8 +234,8 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left StuckVerification
-                { stuckDescription = Pattern.fromTermLike Mock.c
+            (Left Stuck
+                { stuckPattern = Pattern.fromTermLike Mock.c
                 , provenClaims = []
                 }
             )
@@ -262,8 +259,8 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left StuckVerification
-                { stuckDescription = Pattern.fromTermLike Mock.e
+            (Left Stuck
+                { stuckPattern = Pattern.fromTermLike Mock.e
                 , provenClaims = [simpleClaim Mock.a Mock.c]
                 }
             )

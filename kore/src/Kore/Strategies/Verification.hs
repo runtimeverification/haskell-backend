@@ -9,7 +9,7 @@ This should be imported qualified.
 module Kore.Strategies.Verification
     ( Claim
     , CommonProofState
-    , StuckVerification (..)
+    , Stuck (..)
     , AllClaims (..)
     , Axioms (..)
     , ToProve (..)
@@ -61,8 +61,15 @@ import Kore.Step.RulePattern
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
+    ( ExecutionGraph (..)
+    , GraphSearchOrder
+    , Strategy
+    , executionHistoryStep
+    , runStrategyWithSearchOrder
+    )
 import Kore.Step.Transition
-    ( runTransitionT
+    ( TransitionT
+    , runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
@@ -118,26 +125,24 @@ first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
 
 If the verification fails, returns an error containing a pattern that could
 not be rewritten (either because no axiom could be applied or because we
-didn't manage to verify a claim within the its maximum number of steps.
+didn't manage to verify a claim within the its maximum number of steps).
 
 If the verification succeeds, it returns ().
 -}
--- TODO (thomas.tuegel): Specialize type of StuckVerification.
-data StuckVerification patt claim
-    = StuckVerification
-        { stuckDescription :: !patt
-        , provenClaims :: ![claim]
-        }
+data Stuck =
+    Stuck
+    { stuckPattern :: !(Pattern Variable)
+    , provenClaims :: ![ReachabilityRule]
+    }
     deriving (Eq, GHC.Generic, Show)
 
-instance SOP.Generic (StuckVerification patt claim)
+instance SOP.Generic Stuck
 
-instance SOP.HasDatatypeInfo (StuckVerification patt claim)
+instance SOP.HasDatatypeInfo Stuck
 
-instance (Debug patt, Debug claim) => Debug (StuckVerification patt claim)
+instance Debug Stuck
 
-instance (Debug patt, Debug claim, Diff patt, Diff claim)
-    => Diff (StuckVerification patt claim)
+instance Diff Stuck
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
@@ -155,7 +160,7 @@ verify
     -> ToProve ReachabilityRule
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (StuckVerification (Pattern Variable) ReachabilityRule) m ()
+    -> ExceptT Stuck m ()
 verify
     breadthLimit
     searchOrder
@@ -182,14 +187,9 @@ verify
                 then Right rule
                 else Left claim
 
-    addStillProven
-        :: StuckVerification (Pattern Variable) ReachabilityRule
-        -> StuckVerification (Pattern Variable) ReachabilityRule
-    addStillProven
-        StuckVerification { stuckDescription, provenClaims }
-      =
-        StuckVerification
-            { stuckDescription, provenClaims = stillProven ++ provenClaims }
+    addStillProven :: Stuck -> Stuck
+    addStillProven stuck@Stuck { provenClaims } =
+        stuck { provenClaims = stillProven ++ provenClaims }
 
 verifyHelper
     :: forall m
@@ -201,7 +201,7 @@ verifyHelper
     -> ToProve ReachabilityRule
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (StuckVerification (Pattern Variable) ReachabilityRule) m ()
+    -> ExceptT Stuck m ()
 verifyHelper
     breadthLimit
     searchOrder
@@ -214,16 +214,14 @@ verifyHelper
     verifyWorker
         :: [ReachabilityRule]
         -> (ReachabilityRule, Limit Natural)
-        -> ExceptT (StuckVerification (Pattern Variable) ReachabilityRule) m [ReachabilityRule]
+        -> ExceptT Stuck m [ReachabilityRule]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
             verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
-        wrapStuckPattern
-            :: Pattern Variable -> StuckVerification (Pattern Variable) ReachabilityRule
-        wrapStuckPattern stuckDescription =
-            StuckVerification { stuckDescription, provenClaims }
+        wrapStuckPattern :: Pattern Variable -> Stuck
+        wrapStuckPattern stuckPattern = Stuck { stuckPattern, provenClaims }
 
 verifyClaim
     :: forall claim m

@@ -35,8 +35,7 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
-    ( first
-    , second
+    ( second
     )
 import Data.Coerce
     ( coerce
@@ -153,12 +152,9 @@ import Kore.Strategies.Verification
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
     , Claim
-    , StuckVerification (StuckVerification)
+    , Stuck (..)
     , ToProve (ToProve)
     , verify
-    )
-import qualified Kore.Strategies.Verification as StuckVerification
-    ( StuckVerification (..)
     )
 import Kore.Syntax.Module
     ( ModuleName
@@ -318,11 +314,7 @@ prove
     -- ^ The spec module
     -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
-    -> smt
-        (Either
-            (StuckVerification (TermLike Variable) ReachabilityRule)
-            ()
-        )
+    -> smt (Either Stuck ())
 prove
     searchOrder
     breadthLimit
@@ -347,25 +339,10 @@ prove
                         (extractUntrustedClaims' claims)
                     )
                 )
-        return $ Bifunctor.first stuckVerificationPatternToTerm result
+        return result
   where
-    extractUntrustedClaims'
-        :: [ReachabilityRule]
-        -> [ReachabilityRule]
-    extractUntrustedClaims' =
-        filter (not . Goal.isTrusted)
-
-    stuckVerificationPatternToTerm
-        :: StuckVerification (Pattern Variable) claim
-        -> StuckVerification (TermLike Variable) claim
-    stuckVerificationPatternToTerm
-        stuck@StuckVerification {stuckDescription}
-      =
-        stuck
-            { StuckVerification.stuckDescription =
-                Pattern.toTermLike stuckDescription
-            }
-
+    extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
+    extractUntrustedClaims' = filter (not . Goal.isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
