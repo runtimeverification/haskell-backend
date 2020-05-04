@@ -192,20 +192,16 @@ verify
             { stuckDescription, provenClaims = stillProven ++ provenClaims }
 
 verifyHelper
-    :: forall claim m
-    .  Claim claim
-    => ProofState claim (Pattern Variable) ~ CommonProofState
-    => Show claim
-    => (MonadCatch m, MonadSimplify m)
-    => Show (Rule claim)
+    :: forall m
+    .  (MonadCatch m, MonadSimplify m)
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims claim
-    -> Axioms claim
-    -> ToProve claim
+    -> AllClaims ReachabilityRule
+    -> Axioms ReachabilityRule
+    -> ToProve ReachabilityRule
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (StuckVerification (Pattern Variable) claim) m ()
+    -> ExceptT (StuckVerification (Pattern Variable) ReachabilityRule) m ()
 verifyHelper
     breadthLimit
     searchOrder
@@ -216,16 +212,16 @@ verifyHelper
     Monad.foldM_ verifyWorker [] toProve
   where
     verifyWorker
-        :: [claim]
-        -> (claim, Limit Natural)
-        -> ExceptT (StuckVerification (Pattern Variable) claim) m [claim]
+        :: [ReachabilityRule]
+        -> (ReachabilityRule, Limit Natural)
+        -> ExceptT (StuckVerification (Pattern Variable) ReachabilityRule) m [ReachabilityRule]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
             verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
         wrapStuckPattern
-            :: Pattern Variable -> StuckVerification (Pattern Variable) claim
+            :: Pattern Variable -> StuckVerification (Pattern Variable) ReachabilityRule
         wrapStuckPattern stuckDescription =
             StuckVerification { stuckDescription, provenClaims }
 
