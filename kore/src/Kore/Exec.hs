@@ -151,7 +151,6 @@ import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
-    , Claim
     , Stuck (..)
     , ToProve (ToProve)
     , verify
@@ -565,9 +564,9 @@ makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
 simplifyRuleOnSecond
-    :: (MonadSimplify simplifier, Claim claim)
-    => (Attribute.Axiom Symbol variable, claim)
-    -> simplifier (Attribute.Axiom Symbol variable, claim)
+    :: MonadSimplify simplifier
+    => (Attribute.Axiom Symbol variable, ReachabilityRule)
+    -> simplifier (Attribute.Axiom Symbol variable, ReachabilityRule)
 simplifyRuleOnSecond (atts, rule) = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
     return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')

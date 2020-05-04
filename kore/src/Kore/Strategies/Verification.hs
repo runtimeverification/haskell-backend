@@ -7,8 +7,7 @@ This should be imported qualified.
 -}
 
 module Kore.Strategies.Verification
-    ( Claim
-    , CommonProofState
+    ( CommonProofState
     , Stuck (..)
     , AllClaims (..)
     , Axioms (..)
@@ -54,8 +53,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Step.Rule.Expand
-import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
     ( RHS
     )
@@ -93,24 +90,6 @@ commonProofStateTransformer =
         , goalStuckTransformer = id
         , provenValue = Pattern.bottom
         }
-
-{- | Class type for claim-like rules
--}
-type Claim claim =
-    ( ToRulePattern claim
-    , ToRulePattern (Rule claim)
-    , FromRulePattern claim
-    , FromRulePattern (Rule claim)
-    , Unparse claim
-    , Unparse (Rule claim)
-    , Goal claim
-    , ClaimExtractor claim
-    , ExpandSingleConstructors claim
-    , SimplifyRuleLHS claim
-    , Typeable claim
-    , Prim claim ~ ProofState.Prim (Rule claim)
-    , ProofState claim claim ~ ProofState.ProofState claim
-    )
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
