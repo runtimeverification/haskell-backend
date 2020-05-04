@@ -272,20 +272,19 @@ verifyClaim
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: forall claim m
+    :: forall m
     .  (MonadCatch m, MonadSimplify m)
-    => Claim claim
-    => claim
+    => ReachabilityRule
     -- ^ claim that is being proven
-    -> [claim]
+    -> [ReachabilityRule]
     -- ^ list of claims in the spec module
-    -> [Rule claim]
+    -> [Rule ReachabilityRule]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonProofState (Rule claim)
+    -> ExecutionGraph CommonProofState (Rule ReachabilityRule)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> m (ExecutionGraph CommonProofState (Rule claim))
+    -> m (ExecutionGraph CommonProofState (Rule ReachabilityRule))
 verifyClaimStep
     target
     claims
@@ -300,15 +299,15 @@ verifyClaimStep
         eg
         node
   where
-    strategy' :: Strategy (Prim claim)
+    strategy' :: Strategy (Prim ReachabilityRule)
     strategy'
         | isRoot = firstStep
         | otherwise = followupStep
 
-    firstStep :: Strategy (Prim claim)
+    firstStep :: Strategy (Prim ReachabilityRule)
     firstStep = strategy target claims axioms Stream.!! 0
 
-    followupStep :: Strategy (Prim claim)
+    followupStep :: Strategy (Prim ReachabilityRule)
     followupStep = strategy target claims axioms Stream.!! 1
 
     isRoot :: Bool
