@@ -315,8 +315,8 @@ instance Goal OnePathRule where
             { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
-            , deriveParTemplate = derivePar _Unwrapped OnePathRewriteRule
-            , deriveSeqTemplate = deriveSeq _Unwrapped OnePathRewriteRule
+            , deriveParTemplate = deriveParOnePath
+            , deriveSeqTemplate = deriveSeqOnePath
             }
 
     strategy _ goals rules =
@@ -335,6 +335,28 @@ instance Goal OnePathRule where
             . getOnePathRule
             <$> goals
 
+deriveParOnePath
+    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    =>  [Rule OnePathRule]
+    ->  OnePathRule
+    ->  Strategy.TransitionT (Rule OnePathRule) simplifier
+            (ProofState OnePathRule OnePathRule)
+deriveParOnePath rules =
+    derivePar _Unwrapped OnePathRewriteRule rewrites
+  where
+    rewrites = mkRewritingRule . unRuleOnePath <$> rules
+
+deriveSeqOnePath
+    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    =>  [Rule OnePathRule]
+    ->  OnePathRule
+    ->  Strategy.TransitionT (Rule OnePathRule) simplifier
+            (ProofState OnePathRule OnePathRule)
+deriveSeqOnePath rules =
+    deriveSeq _Unwrapped OnePathRewriteRule rewrites
+  where
+    rewrites = mkRewritingRule . unRuleOnePath <$> rules
+
 instance ClaimExtractor OnePathRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
@@ -351,8 +373,8 @@ instance Goal AllPathRule where
             { simplifyTemplate = simplify _Unwrapped
             , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
-            , deriveParTemplate = derivePar _Unwrapped AllPathRewriteRule
-            , deriveSeqTemplate = deriveSeq _Unwrapped AllPathRewriteRule
+            , deriveParTemplate = deriveParAllPath
+            , deriveSeqTemplate = deriveSeqAllPath
             }
 
     strategy _ goals rules =
@@ -370,6 +392,28 @@ instance Goal AllPathRule where
             . RewriteRule
             . getAllPathRule
             <$> goals
+
+deriveParAllPath
+    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    =>  [Rule AllPathRule]
+    ->  AllPathRule
+    ->  Strategy.TransitionT (Rule AllPathRule) simplifier
+            (ProofState AllPathRule AllPathRule)
+deriveParAllPath rules =
+    derivePar _Unwrapped AllPathRewriteRule rewrites
+  where
+    rewrites = mkRewritingRule . unRuleAllPath <$> rules
+
+deriveSeqAllPath
+    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    =>  [Rule AllPathRule]
+    ->  AllPathRule
+    ->  Strategy.TransitionT (Rule AllPathRule) simplifier
+            (ProofState AllPathRule AllPathRule)
+deriveSeqAllPath rules =
+    deriveSeq _Unwrapped AllPathRewriteRule rewrites
+  where
+    rewrites = mkRewritingRule . unRuleAllPath <$> rules
 
 instance ClaimExtractor AllPathRule where
     extractClaim (attrs, sentence) =
@@ -849,10 +893,9 @@ derivePar
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => ProofState.ProofState goal ~ ProofState goal goal
-    => ToRulePattern (Rule goal)
     => Lens' goal (RulePattern Variable)
     -> (RewriteRule Variable -> Rule goal)
-    -> [Rule goal]
+    -> [RewriteRule RewritingVariable]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 derivePar lensRulePattern mkRule =
@@ -869,21 +912,19 @@ deriveWith
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => ProofState.ProofState goal ~ ProofState goal goal
-    => ToRulePattern (Rule goal)
     => Lens' goal (RulePattern Variable)
     -> (RewriteRule Variable -> Rule goal)
     -> Deriver m
-    -> [Rule goal]
+    -> [RewriteRule RewritingVariable]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveWith lensRulePattern mkRule takeStep rules goal =
+deriveWith lensRulePattern mkRule takeStep rewrites goal =
     (\x -> getCompose $ x goal)
     $ Lens.traverseOf (lensRulePattern . RulePattern.leftPattern)
     $ \config -> Compose $ withConfiguration' config $ do
         results <- takeStep rewrites config & assertInstantiated config
         deriveResults mkRule results
   where
-    rewrites = mkRewritingRule . RewriteRule . toRulePattern <$> rules
     assertInstantiated config act =
         (lift . runExceptT) act
         >>= either (errorRewritesInstantiation config) return
@@ -893,10 +934,9 @@ deriveSeq
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => ProofState.ProofState goal ~ ProofState goal goal
-    => ToRulePattern (Rule goal)
     => Lens' goal (RulePattern Variable)
     -> (RewriteRule Variable -> Rule goal)
-    -> [Rule goal]
+    -> [RewriteRule RewritingVariable]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 deriveSeq lensRulePattern mkRule =
