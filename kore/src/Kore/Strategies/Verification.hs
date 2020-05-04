@@ -224,17 +224,13 @@ verifyHelper
         wrapStuckPattern stuckPattern = Stuck { stuckPattern, provenClaims }
 
 verifyClaim
-    :: forall claim m
+    :: forall m
     .  (MonadCatch m, MonadSimplify m)
-    => ProofState claim (Pattern Variable) ~ CommonProofState
-    => Claim claim
-    => Show claim
-    => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims claim
-    -> Axioms claim
-    -> (claim, Limit Natural)
+    -> AllClaims ReachabilityRule
+    -> Axioms ReachabilityRule
+    -> (ReachabilityRule, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
     breadthLimit
@@ -263,9 +259,9 @@ verifyClaim
   where
     modifiedTransitionRule
         :: RHS Variable
-        -> Prim claim
+        -> Prim ReachabilityRule
         -> CommonProofState
-        -> TransitionT (Rule claim) (Verifier m) CommonProofState
+        -> TransitionT (Rule ReachabilityRule) (Verifier m) CommonProofState
     modifiedTransitionRule destination prim proofState' = do
         transitions <-
             lift . lift . runTransitionT
