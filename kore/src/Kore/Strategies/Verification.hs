@@ -122,7 +122,7 @@ didn't manage to verify a claim within the its maximum number of steps.
 
 If the verification succeeds, it returns ().
 -}
-
+-- TODO (thomas.tuegel): Specialize type of StuckVerification.
 data StuckVerification patt claim
     = StuckVerification
         { stuckDescription :: !patt
@@ -145,21 +145,17 @@ newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
 newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
 
 verify
-    :: forall claim m
-    .  Claim claim
-    => ProofState claim (Pattern Variable) ~ CommonProofState
-    => Show claim
-    => (MonadCatch m, MonadSimplify m)
-    => Show (Rule claim)
+    :: forall m
+    .  (MonadCatch m, MonadSimplify m)
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims claim
-    -> Axioms claim
+    -> AllClaims ReachabilityRule
+    -> Axioms ReachabilityRule
     -> AlreadyProven
-    -> ToProve claim
+    -> ToProve ReachabilityRule
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (StuckVerification (Pattern Variable) claim) m ()
+    -> ExceptT (StuckVerification (Pattern Variable) ReachabilityRule) m ()
 verify
     breadthLimit
     searchOrder
@@ -171,24 +167,24 @@ verify
     withExceptT addStillProven
     $ verifyHelper breadthLimit searchOrder claims axioms unproven
   where
-    unproven :: ToProve claim
-    stillProven :: [claim]
+    unproven :: ToProve ReachabilityRule
+    stillProven :: [ReachabilityRule]
     (unproven, stillProven) =
         (ToProve newToProve, newAlreadyProven)
       where
         (newToProve, newAlreadyProven) =
             partitionEithers (map lookupEither toProve)
         lookupEither
-            :: (claim, Limit Natural)
-            -> Either (claim, Limit Natural) claim
+            :: (ReachabilityRule, Limit Natural)
+            -> Either (ReachabilityRule, Limit Natural) ReachabilityRule
         lookupEither claim@(rule, _) =
             if unparseToText2 rule `elem` alreadyProven
                 then Right rule
                 else Left claim
 
     addStillProven
-        :: StuckVerification (Pattern Variable) claim
-        -> StuckVerification (Pattern Variable) claim
+        :: StuckVerification (Pattern Variable) ReachabilityRule
+        -> StuckVerification (Pattern Variable) ReachabilityRule
     addStillProven
         StuckVerification { stuckDescription, provenClaims }
       =

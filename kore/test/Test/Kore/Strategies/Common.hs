@@ -16,9 +16,6 @@ import Numeric.Natural
     ( Natural
     )
 
-import qualified Kore.Attribute.Trusted as Attribute
-    ( Trusted
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -55,16 +52,11 @@ simpleRewrite left right =
     RewriteRule $ rulePattern left right
 
 runVerificationToPattern
-    :: Verification.Claim claim
-    => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
-    => Show claim
-    => Show (Rule claim)
-    => From claim Attribute.Trusted
-    => Limit Natural
+    :: Limit Natural
     -> Limit Natural
-    -> [Rule claim]
-    -> [claim]
-    -> [claim]
+    -> [Rule ReachabilityRule]
+    -> [ReachabilityRule]
+    -> [ReachabilityRule]
     -> IO (Either (Pattern Variable) ())
 runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
     do
@@ -82,17 +74,12 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
 
 
 runVerification
-    :: Verification.Claim claim
-    => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
-    => Show claim
-    => Show (Rule claim)
-    => From claim Attribute.Trusted
-    => Limit Natural
+    :: Limit Natural
     -> Limit Natural
-    -> [Rule claim]
-    -> [claim]
-    -> [claim]
-    -> IO (Either (StuckVerification (Pattern Variable) claim) ())
+    -> [Rule ReachabilityRule]
+    -> [ReachabilityRule]
+    -> [ReachabilityRule]
+    -> IO (Either (StuckVerification (Pattern Variable) ReachabilityRule) ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
     runSimplifier mockEnv $ do
         SMT.AST.declare Mock.smtDeclarations
