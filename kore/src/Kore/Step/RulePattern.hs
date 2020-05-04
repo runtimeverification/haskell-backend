@@ -30,6 +30,7 @@ module Kore.Step.RulePattern
     , rhsSubstitute
     , rhsForgetSimplified
     , rhsToTerm
+    , lhsToTerm
     , termToRHS
     , injectTermIntoRHS
     , rewriteRuleToTerm
@@ -324,6 +325,22 @@ rhsToTerm RHS { existentials, right, ensures } =
         Predicate.PredicateTrue -> right
         _ -> TermLike.mkAnd (Predicate.fromPredicate sort ensures) right
     sort = TermLike.termLikeSort right
+
+-- | Converts the left-hand side to the term form
+lhsToTerm
+    :: InternalVariable variable
+    => TermLike variable
+    -> Maybe (TermLike variable)
+    -> Predicate variable
+    -> TermLike variable
+lhsToTerm left antiLeft requires
+  | Just antiLeftTerm <- antiLeft
+  = TermLike.mkAnd
+        (TermLike.mkNot antiLeftTerm)
+        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
+  | otherwise
+  = TermLike.mkAnd (Predicate.unwrapPredicate requires) left
+
 
 -- | Wraps a term as a RHS
 injectTermIntoRHS
@@ -707,24 +724,11 @@ rewriteRuleToTerm
     -> TermLike.TermLike variable
 rewriteRuleToTerm
     (RewriteRule
-        (RulePattern
-            left (Just antiLeftTerm) requires rhs _
-        )
+        (RulePattern left antiLeft requires rhs _)
     )
   =
     TermLike.mkRewrites
-        (TermLike.mkAnd
-            (TermLike.mkNot antiLeftTerm)
-            (TermLike.mkAnd (Predicate.unwrapPredicate requires) left))
-        (rhsToTerm rhs)
-
-rewriteRuleToTerm
-    (RewriteRule
-        (RulePattern left Nothing requires rhs _)
-    )
-  =
-    TermLike.mkRewrites
-        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
+        (lhsToTerm left antiLeft requires)
         (rhsToTerm rhs)
 
 instance From OnePathRule (TermLike Variable) where
@@ -919,17 +923,9 @@ instance UnifyingRule RewriteRule where
 
 lhsEqualsRhs
     :: InternalVariable variable
-    => RewriteRule variable
+    => RulePattern variable
     -> Bool
-lhsEqualsRhs rewriteRule =
-    lhs == rhsToTerm rhs
+lhsEqualsRhs rule =
+    lhsToTerm left antiLeft requires == rhsToTerm rhs
   where
-    RulePattern { left, antiLeft, requires, rhs } =
-        getRewriteRule rewriteRule
-    lhs
-      | Just antiLeftTerm <- antiLeft
-      = TermLike.mkAnd
-            (TermLike.mkNot antiLeftTerm)
-            (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
-      | otherwise
-      = TermLike.mkAnd (Predicate.unwrapPredicate requires) left
+    RulePattern { left, antiLeft, requires, rhs } = rule

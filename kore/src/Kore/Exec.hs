@@ -43,6 +43,7 @@ import Data.Coerce
     )
 import Data.Foldable
     ( find
+    , traverse_
     )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
@@ -654,7 +655,9 @@ initialize verifiedModule within = do
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             return (MultiAnd.extractPatterns simplified)
-    maybe (pure ()) errorRewriteRuleId (find lhsEqualsRhs rewriteRules)
+    traverse_
+        errorRewriteRuleId
+        $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
     --let axioms = coerce (concat simplifiedRewrite)
