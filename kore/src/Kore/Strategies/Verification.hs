@@ -314,14 +314,13 @@ verifyClaimStep
     isRoot = node == root
 
 transitionRule'
-    :: forall claim m
+    :: forall m
     .  (MonadCatch m, MonadSimplify m)
-    => Claim claim
-    => claim
+    => ReachabilityRule
     -> RHS Variable
-    -> Prim claim
+    -> Prim ReachabilityRule
     -> CommonProofState
-    -> TransitionT (Rule claim) m CommonProofState
+    -> TransitionT (Rule ReachabilityRule) m CommonProofState
 transitionRule' ruleType destination prim state = do
     let goal = flip (configurationDestinationToRule ruleType) destination <$> state
     next <- transitionRule prim goal
