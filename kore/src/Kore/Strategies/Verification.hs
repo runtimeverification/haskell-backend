@@ -79,6 +79,7 @@ import Kore.Syntax.Variable
     )
 import Kore.Unparser
 
+-- TODO (thomas.tuegel): (Pattern Variable) should be ReachabilityRule.
 type CommonProofState = ProofState.ProofState (Pattern Variable)
 
 commonProofStateTransformer :: ProofStateTransformer (Pattern Variable) (Pattern Variable)
