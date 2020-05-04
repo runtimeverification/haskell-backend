@@ -4,11 +4,13 @@ include include.mk
         test test-kore test-k \
         kore-exec kore-repl
 
-kore: kore-exec kore-repl
+kore: kore-exec kore-repl kore-parser
 
 kore-exec: $(KORE_EXEC)
 
 kore-repl: $(KORE_REPL)
+
+kore-parser: $(KORE_PARSER)
 
 k-frontend: $(K)
 

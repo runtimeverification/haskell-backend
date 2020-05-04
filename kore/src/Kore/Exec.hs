@@ -126,7 +126,10 @@ import Kore.Step.Rule.Simplify
     ( SimplifyRuleLHS (..)
     )
 import Kore.Step.RulePattern
-    ( ReachabilityRule (..)
+    ( AllPathRule (..)
+    , ImplicationRule (..)
+    , OnePathRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , getRewriteRule
@@ -324,7 +327,7 @@ prove
     -- ^ The module containing the claims that were proven in a previous run.
     -> smt
         (Either
-            (StuckVerification (TermLike Variable) (ReachabilityRule Variable))
+            (StuckVerification (TermLike Variable) ReachabilityRule)
             ()
         )
 prove
@@ -354,8 +357,8 @@ prove
         return $ Bifunctor.first stuckVerificationPatternToTerm result
   where
     extractUntrustedClaims'
-        :: [ReachabilityRule Variable]
-        -> [ReachabilityRule Variable]
+        :: [ReachabilityRule]
+        -> [ReachabilityRule]
     extractUntrustedClaims' =
         filter (not . Goal.isTrusted)
 
@@ -427,7 +430,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSomeClaims specClaims
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
-            claims = fmap makeClaim specClaims
+            claims = fmap makeImplicationRule specClaims
 
         Bounded.checkClaim
             breadthLimit
@@ -575,18 +578,21 @@ assertSomeClaims claims =
         ++  "Possible explanation: the frontend and the backend don't agree "
         ++  "on the representation of claims."
 
-makeClaim
-    :: Goal.FromRulePattern claim
-    => Goal.ToRulePattern claim
-    => (Attribute.Axiom Symbol Variable, claim) -> claim
-makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
-    Goal.fromRulePattern ruleType RulePattern
-        { attributes = attributes
-        , left = left rule
-        , antiLeft = antiLeft rule
-        , requires = requires rule
-        , rhs = rhs rule
-        }
+makeReachabilityRule
+    :: (Attribute.Axiom Symbol Variable, ReachabilityRule)
+    -> ReachabilityRule
+makeReachabilityRule (attributes, reachabilityRule) =
+    case reachabilityRule of
+        OnePath (OnePathRule rulePattern) ->
+            OnePath (OnePathRule rulePattern { attributes })
+        AllPath (AllPathRule rulePattern) ->
+            AllPath (AllPathRule rulePattern { attributes })
+
+makeImplicationRule
+    :: (Attribute.Axiom Symbol Variable, ImplicationRule Variable)
+    -> ImplicationRule Variable
+makeImplicationRule (attributes, ImplicationRule rulePattern) =
+    ImplicationRule rulePattern { attributes }
 
 simplifyRuleOnSecond
     :: (MonadSimplify simplifier, Claim claim)
@@ -657,9 +663,9 @@ initialize verifiedModule within = do
 
 data InitializedProver =
     InitializedProver
-        { axioms :: ![Goal.Rule (ReachabilityRule Variable)]
-        , claims :: ![ReachabilityRule Variable]
-        , alreadyProven :: ![ReachabilityRule Variable]
+        { axioms :: ![Goal.Rule ReachabilityRule]
+        , claims :: ![ReachabilityRule]
+        , alreadyProven :: ![ReachabilityRule]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -684,7 +690,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
         let Initialized { rewriteRules } = initialized
             changedSpecClaims
                 ::  [   ( Attribute.Axiom Symbol Variable
-                        , MaybeChanged (ReachabilityRule Variable)
+                        , MaybeChanged ReachabilityRule
                         )
                     ]
             changedSpecClaims =
@@ -709,14 +715,14 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
             maybeClaimsAlreadyProven
                 :: Maybe
                     [   ( Attribute.Axiom Symbol Variable
-                        , ReachabilityRule Variable
+                        , ReachabilityRule
                         )
                     ]
             maybeClaimsAlreadyProven =
                 Goal.extractClaims <$> maybeAlreadyProvenModule
             claimsAlreadyProven
                 ::  [   (Attribute.Axiom Symbol Variable
-                        , ReachabilityRule Variable
+                        , ReachabilityRule
                         )
                     ]
             claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
@@ -725,7 +731,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
 
         let specClaims
                 ::  [   ( Attribute.Axiom Symbol Variable
-                        , ReachabilityRule Variable
+                        , ReachabilityRule
                         )
                     ]
             specClaims =
@@ -737,17 +743,17 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let claims = fmap makeClaim specAxioms
+        let claims = fmap makeReachabilityRule specAxioms
             axioms = coerce rewriteRules
-            alreadyProven = fmap makeClaim claimsAlreadyProven
+            alreadyProven = fmap makeReachabilityRule claimsAlreadyProven
             initializedProver =
                 InitializedProver {axioms, claims, alreadyProven}
         within initializedProver
   where
     expandClaim
         :: SmtMetadataTools attributes
-        -> ReachabilityRule Variable
-        -> MaybeChanged (ReachabilityRule Variable)
+        -> ReachabilityRule
+        -> MaybeChanged ReachabilityRule
     expandClaim tools claim =
         if claim /= expanded
             then Changed expanded
@@ -756,7 +762,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
         expanded = expandSingleConstructors tools claim
 
     logChangedClaim
-        :: MaybeChanged (ReachabilityRule Variable)
+        :: MaybeChanged ReachabilityRule
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)

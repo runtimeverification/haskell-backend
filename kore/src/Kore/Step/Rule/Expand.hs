@@ -135,15 +135,15 @@ instance ExpandSingleConstructors (RulePattern Variable) where
                     }
                 }
 
-instance ExpandSingleConstructors (OnePathRule Variable) where
+instance ExpandSingleConstructors OnePathRule where
     expandSingleConstructors tools =
         OnePathRule . expandSingleConstructors tools . getOnePathRule
 
-instance ExpandSingleConstructors (AllPathRule Variable) where
+instance ExpandSingleConstructors AllPathRule where
     expandSingleConstructors tools =
         AllPathRule . expandSingleConstructors tools . getAllPathRule
 
-instance ExpandSingleConstructors (ReachabilityRule Variable) where
+instance ExpandSingleConstructors ReachabilityRule where
     expandSingleConstructors tools (OnePath rule) =
         OnePath
         . OnePathRule
