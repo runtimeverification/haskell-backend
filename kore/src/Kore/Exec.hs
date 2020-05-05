@@ -103,6 +103,7 @@ import qualified Kore.Profiler.Profile as Profiler
     )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
+import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.Rule
     ( extractImplicationClaims
@@ -713,7 +714,7 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
         let claims = fmap makeReachabilityRule specAxioms
-            axioms = coerce rewriteRules
+            axioms = coerce . mkRewritingRule <$> rewriteRules
             alreadyProven = fmap makeReachabilityRule claimsAlreadyProven
             initializedProver =
                 InitializedProver {axioms, claims, alreadyProven}

@@ -33,15 +33,13 @@ import Kore.Attribute.RuleIndex as Attribute
 import Kore.Attribute.SourceLocation as Attribute
     ( SourceLocation
     )
-import Kore.Internal.Variable
-    ( Variable
-    )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( AllPathRule
     , OnePathRule
     , ReachabilityRule
     , RewriteRule (..)
-    , ToRulePattern
+    , ToRulePattern (..)
     )
 import Kore.Unparser
     ( Unparse
@@ -54,7 +52,7 @@ data family Rule goal
 -- * One-path reachability
 
 newtype instance Rule OnePathRule =
-    OnePathRewriteRule { unRuleOnePath :: RewriteRule Variable }
+    OnePathRewriteRule { unRuleOnePath :: RewriteRule RewritingVariable }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule OnePathRule)
@@ -65,7 +63,8 @@ instance Debug (Rule OnePathRule)
 
 instance Diff (Rule OnePathRule)
 
-instance ToRulePattern (Rule OnePathRule)
+instance ToRulePattern (Rule OnePathRule) where
+    toRulePattern = getRewriteRule . unRewritingRule . unRuleOnePath
 
 instance From (Rule OnePathRule) (Attribute.Priority, Attribute.Owise) where
     from = from @(RewriteRule _) . unRuleOnePath
@@ -73,7 +72,7 @@ instance From (Rule OnePathRule) (Attribute.Priority, Attribute.Owise) where
 -- * All-path reachability
 
 newtype instance Rule AllPathRule =
-    AllPathRewriteRule { unRuleAllPath :: RewriteRule Variable }
+    AllPathRewriteRule { unRuleAllPath :: RewriteRule RewritingVariable }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule AllPathRule)
@@ -84,7 +83,8 @@ instance Debug (Rule AllPathRule)
 
 instance Diff (Rule AllPathRule)
 
-instance ToRulePattern (Rule AllPathRule)
+instance ToRulePattern (Rule AllPathRule) where
+    toRulePattern = getRewriteRule . unRewritingRule . unRuleAllPath
 
 instance From (Rule AllPathRule) (Attribute.Priority, Attribute.Owise) where
     from = from @(RewriteRule _) . unRuleAllPath
@@ -93,7 +93,7 @@ instance From (Rule AllPathRule) (Attribute.Priority, Attribute.Owise) where
 
 newtype instance Rule ReachabilityRule =
     ReachabilityRewriteRule
-        { unReachabilityRewriteRule :: RewriteRule Variable }
+        { unReachabilityRewriteRule :: RewriteRule RewritingVariable }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule ReachabilityRule)
@@ -104,17 +104,18 @@ instance Debug (Rule ReachabilityRule)
 
 instance Diff (Rule ReachabilityRule)
 
-instance ToRulePattern (Rule ReachabilityRule)
+instance ToRulePattern (Rule ReachabilityRule) where
+    toRulePattern = getRewriteRule . unRewritingRule . unReachabilityRewriteRule
 
 instance From (Rule ReachabilityRule) (Attribute.Priority, Attribute.Owise)
   where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
 instance From (Rule ReachabilityRule) Attribute.SourceLocation where
-    from = from @(RewriteRule Variable) . unReachabilityRewriteRule
+    from = from @(RewriteRule _) . unReachabilityRewriteRule
 
 instance From (Rule ReachabilityRule) Attribute.Label where
-    from = from @(RewriteRule Variable) . unReachabilityRewriteRule
+    from = from @(RewriteRule _) . unReachabilityRewriteRule
 
 instance From (Rule ReachabilityRule) Attribute.RuleIndex where
-    from = from @(RewriteRule Variable) . unReachabilityRewriteRule
+    from = from @(RewriteRule _) . unReachabilityRewriteRule

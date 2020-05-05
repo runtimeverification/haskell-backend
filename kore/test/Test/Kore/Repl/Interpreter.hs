@@ -37,13 +37,13 @@ import Data.List.NonEmpty
     ( NonEmpty (..)
     )
 import qualified Data.Map.Strict as Map
+import qualified Data.Map.Strict as StrictMap
 import qualified Data.Sequence as Seq
 import Data.Text
     ( pack
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Condition
@@ -51,8 +51,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
+    ( TermLike
     , elemVarS
     , mkAnd
     , mkBottom_
@@ -64,6 +63,7 @@ import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
@@ -297,7 +297,7 @@ unificationFailure =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePattern one one
+        impossibleAxiom = mkAxiom one one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
@@ -314,7 +314,7 @@ unificationFailureWithName =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePatternWithName one one "impossible"
+        impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = Try . ByName . RuleName $ "impossible"
@@ -331,7 +331,7 @@ unificationSuccess = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePattern zero one
+        axiom = mkAxiom zero one
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
@@ -347,7 +347,7 @@ unificationSuccessWithName = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePatternWithName zero one "0to1"
+        axiom = mkNamedAxiom zero one "0to1"
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByName . RuleName $ "0to1"
@@ -363,7 +363,7 @@ forceFailure =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePattern one one
+        impossibleAxiom = mkAxiom one one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
@@ -380,7 +380,7 @@ forceFailureWithName =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePatternWithName one one "impossible"
+        impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = TryF . ByName . RuleName $ "impossible"
@@ -397,7 +397,7 @@ forceSuccess = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePattern zero one
+        axiom = mkAxiom zero one
         axioms = [ axiom ]
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
@@ -413,7 +413,7 @@ forceSuccessWithName = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePatternWithName zero one "0to1"
+        axiom = mkNamedAxiom zero one "0to1"
         axioms = [ axiom ]
         claim = zeroToTen
         command = TryF . ByName . RuleName $ "0to1"
@@ -553,7 +553,7 @@ proveSecondClaimByName =
 
 add1 :: Axiom
 add1 =
-    coerce $ rulePatternWithName n plusOne "add1Axiom"
+    mkNamedAxiom n plusOne "add1Axiom"
   where
     one     = Int.asInternal intSort 1
     n       = mkElemVar $ elemVarS "x" intSort
@@ -561,7 +561,8 @@ add1 =
 
 zeroToTen :: Claim
 zeroToTen =
-    OnePath $ coerce $ rulePatternWithName zero (mkAnd mkTop_ ten) "0to10Claim"
+    OnePath . coerce
+    $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
@@ -569,19 +570,43 @@ zeroToTen =
 emptyClaim :: Claim
 emptyClaim =
     OnePath . coerce
-    $ rulePatternWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
+    $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
-rulePatternWithName
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+mkNamedAxiom
+    :: TermLike Variable
+    -> TermLike Variable
     -> String
-    -> RulePattern variable
-rulePatternWithName left right name =
+    -> Axiom
+mkNamedAxiom left right name =
     rulePattern left right
     & Lens.set (field @"attributes" . typed @Attribute.Label) label
+    & RewriteRule
+    & mkRewritingRule
+    & coerce
   where
     label = Attribute.Label . pure $ pack name
+
+claimWithName
+    :: TermLike Variable
+    -> TermLike Variable
+    -> String
+    -> RewriteRule Variable
+claimWithName left right name =
+    rulePattern left right
+    & Lens.set (field @"attributes" . typed @Attribute.Label) label
+    & RewriteRule
+  where
+    label = Attribute.Label . pure $ pack name
+
+mkAxiom
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Axiom
+mkAxiom left right =
+    rulePattern left right
+    & RewriteRule
+    & mkRewritingRule
+    & coerce
 
 run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
 run command axioms claims claim =
