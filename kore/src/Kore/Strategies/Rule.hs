@@ -38,7 +38,6 @@ import Kore.Internal.Variable
     )
 import Kore.Step.RulePattern
     ( AllPathRule
-    , FromRulePattern
     , OnePathRule
     , ReachabilityRule
     , RewriteRule (..)
@@ -68,8 +67,6 @@ instance Diff (Rule OnePathRule)
 
 instance ToRulePattern (Rule OnePathRule)
 
-instance FromRulePattern (Rule OnePathRule)
-
 instance From (Rule OnePathRule) (Attribute.Priority, Attribute.Owise) where
     from = from @(RewriteRule _) . unRuleOnePath
 
@@ -88,8 +85,6 @@ instance Debug (Rule AllPathRule)
 instance Diff (Rule AllPathRule)
 
 instance ToRulePattern (Rule AllPathRule)
-
-instance FromRulePattern (Rule AllPathRule)
 
 instance From (Rule AllPathRule) (Attribute.Priority, Attribute.Owise) where
     from = from @(RewriteRule _) . unRuleAllPath
@@ -110,8 +105,6 @@ instance Debug (Rule ReachabilityRule)
 instance Diff (Rule ReachabilityRule)
 
 instance ToRulePattern (Rule ReachabilityRule)
-
-instance FromRulePattern (Rule ReachabilityRule)
 
 instance From (Rule ReachabilityRule) (Attribute.Priority, Attribute.Owise)
   where
