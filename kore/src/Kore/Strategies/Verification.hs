@@ -15,7 +15,6 @@ module Kore.Strategies.Verification
     , AlreadyProven (..)
     , verify
     , verifyClaimStep
-    , toRulePattern
     , commonProofStateTransformer
     ) where
 

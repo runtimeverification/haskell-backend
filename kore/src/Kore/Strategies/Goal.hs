@@ -4,7 +4,6 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
-    , ToRulePattern (..)
     , FromRulePattern (..)
     , ClaimExtractor (..)
     , TransitionRuleTemplate (..)
@@ -135,6 +134,7 @@ import Kore.Step.RulePattern
     , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
+    , ToRulePattern (..)
     , ToRulePattern (..)
     , topExistsToImplicitForall
     )
@@ -1070,19 +1070,11 @@ removalPredicate
             extractElementVariable
             (remainderVariables config dest)
 
-getConfiguration
-    :: forall goal
-    .  ToRulePattern goal
-    => goal
-    -> Pattern Variable
+getConfiguration :: ReachabilityRule -> Pattern Variable
 getConfiguration (toRulePattern -> RulePattern { left, requires }) =
     Pattern.withCondition left (Conditional.fromPredicate requires)
 
-getDestination
-    :: forall goal
-    .  ToRulePattern goal
-    => goal
-    -> RHS Variable
+getDestination :: ReachabilityRule -> RHS Variable
 getDestination (toRulePattern -> RulePattern { rhs }) = rhs
 
 {-| Given a rule to use as a prototype, a 'Pattern' to use as the configuration

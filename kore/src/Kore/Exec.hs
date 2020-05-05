@@ -125,6 +125,7 @@ import Kore.Step.RulePattern
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
+    , ToRulePattern (..)
     , getRewriteRule
     )
 import Kore.Step.RulePattern as RulePattern
@@ -568,7 +569,7 @@ simplifyRuleOnSecond
     => (Attribute.Axiom Symbol variable, ReachabilityRule)
     -> simplifier (Attribute.Axiom Symbol variable, ReachabilityRule)
 simplifyRuleOnSecond (atts, rule) = do
-    rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
+    rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
     return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Construct an execution graph for the given input pattern.
