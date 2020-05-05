@@ -40,6 +40,7 @@ import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( coerce
     )
+import Data.Functor.Compose
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -676,12 +677,11 @@ initializeProver definitionModule specModule maybeTrustedModule = do
                 (Bifunctor.second $ expandClaim tools)
                 (Goal.extractClaims specModule)
         mapMSecond
-            :: Monad m
-            => (rule -> m [rule'])
-            -> (attributes, rule) -> m [(attributes, rule')]
-        mapMSecond f (attribute, rule) = do
-            simplified <- f rule
-            return (map ((,) attribute) simplified)
+            :: Applicative f
+            => (rule -> f [rule'])
+            -> (attributes, rule)
+            -> f [(attributes, rule')]
+        mapMSecond f = getCompose . traverse (Compose . f)
         simplifyToList
             :: SimplifyRuleLHS rule
             => rule
