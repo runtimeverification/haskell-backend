@@ -322,24 +322,28 @@ prove
     depthLimit
     definitionModule
     specModule
-    maybeAlreadyProvenModule
+    trustedModule
   =
-    evalProver definitionModule specModule maybeAlreadyProvenModule
-    $ \initialized -> do
+    evalSimplifier definitionModule $ do
+        initialized <-
+            initializeProver
+                definitionModule
+                specModule
+                trustedModule
         let InitializedProver { axioms, claims, alreadyProven } = initialized
         result <-
-            runExceptT
-            $ verify
+            verify
                 breadthLimit
                 searchOrder
                 (AllClaims claims)
                 (Axioms axioms)
                 (AlreadyProven (map unparseToText2 alreadyProven))
                 (ToProve
-                    (map (\x -> (x,depthLimit))
+                    (map (\x -> (x, depthLimit))
                         (extractUntrustedClaims' claims)
                     )
                 )
+            & runExceptT
         return result
   where
     extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
@@ -366,17 +370,28 @@ proveWithRepl
 proveWithRepl
     definitionModule
     specModule
-    maybeAlreadyProvenModule
+    trustedModule
     mvar
     replScript
     replMode
     outputFile
     mainModuleName
   =
-    evalProver definitionModule specModule maybeAlreadyProvenModule
-    $ \initialized -> do
+    evalSimplifier definitionModule $ do
+        initialized <-
+            initializeProver
+                definitionModule
+                specModule
+                trustedModule
         let InitializedProver { axioms, claims } = initialized
-        Repl.runRepl axioms claims mvar replScript replMode outputFile mainModuleName
+        Repl.runRepl
+            axioms
+            claims
+            mvar
+            replScript
+            replMode
+            outputFile
+            mainModuleName
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
@@ -394,8 +409,8 @@ boundedModelCheck
     -> Strategy.GraphSearchOrder
     -> smt (Bounded.CheckResult (TermLike Variable))
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
-    evalSimplifier definitionModule $ initialize definitionModule
-    $ \initialized -> do
+    evalSimplifier definitionModule $ do
+        initialized <- initialize definitionModule
         let Initialized { rewriteRules } = initialized
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
@@ -457,9 +472,8 @@ mergeRules
     -- ^ The list of rules to merge
     -> smt (Either Text [RewriteRule Variable])
 mergeRules ruleMerger verifiedModule ruleNames =
-    evalSimplifier verifiedModule
-    $ initialize verifiedModule
-    $ \initialized -> do
+    evalSimplifier verifiedModule $ do
+        initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
 
         let nonEmptyRules :: Either Text (NonEmpty (RewriteRule Variable))
@@ -584,39 +598,37 @@ execute
     -> TermLike Variable
     -- ^ The input pattern
     -> simplifier Execution
-execute breadthLimit verifiedModule strategy inputPattern =
-    initialize verifiedModule $ \initialized -> do
-        let Initialized { rewriteRules } = initialized
-        simplifier <- Simplifier.askSimplifierTermLike
-        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-        simplifiedPatterns <-
-            Pattern.simplify
-                SideCondition.top
-                (Pattern.fromTermLike inputPattern)
-        let
-            initialPattern =
-                case MultiOr.extractPatterns simplifiedPatterns of
-                    [] -> Pattern.bottomOf patternSort
-                    (config : _) -> config
-              where
-                patternSort = termLikeSort inputPattern
-            runStrategy' =
-                runStrategy breadthLimit transitionRule (strategy rewriteRules)
-        executionGraph <- runStrategy' initialPattern
-        return Execution
-            { simplifier
-            , axiomIdToSimplifier
-            , executionGraph
-            }
+execute breadthLimit verifiedModule strategy inputPattern = do
+    initialized <- initialize verifiedModule
+    let Initialized { rewriteRules } = initialized
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    simplifiedPatterns <-
+        Pattern.simplify SideCondition.top
+        $ Pattern.fromTermLike inputPattern
+    let
+        initialPattern =
+            case MultiOr.extractPatterns simplifiedPatterns of
+                [] -> Pattern.bottomOf patternSort
+                (config : _) -> config
+          where
+            patternSort = termLikeSort inputPattern
+        runStrategy' =
+            runStrategy breadthLimit transitionRule (strategy rewriteRules)
+    executionGraph <- runStrategy' initialPattern
+    return Execution
+        { simplifier
+        , axiomIdToSimplifier
+        , executionGraph
+        }
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
-    :: forall a simplifier
+    :: forall simplifier
     .  MonadSimplify simplifier
     => VerifiedModule StepperAttributes
-    -> (Initialized -> simplifier a)
-    -> simplifier a
-initialize verifiedModule within = do
+    -> simplifier Initialized
+initialize verifiedModule = do
     let rewriteRules = extractRewriteAxioms verifiedModule
         simplifyToList
             :: SimplifyRuleLHS rule
@@ -627,9 +639,7 @@ initialize verifiedModule within = do
             return (MultiAnd.extractPatterns simplified)
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
-    --let axioms = coerce (concat simplifiedRewrite)
-    let initialized = Initialized { rewriteRules = concat rewriteAxioms }
-    within initialized
+    pure Initialized { rewriteRules = concat rewriteAxioms }
 
 data InitializedProver =
     InitializedProver
@@ -646,79 +656,74 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver
-    :: forall simplifier a
+    :: forall simplifier
     .  MonadSimplify simplifier
     => VerifiedModule StepperAttributes
     -> VerifiedModule StepperAttributes
     -> Maybe (VerifiedModule StepperAttributes)
-    -> (InitializedProver -> simplifier a)
-    -> simplifier a
-initializeProver definitionModule specModule maybeAlreadyProvenModule within =
-    initialize definitionModule
-    $ \initialized -> do
-        tools <- Simplifier.askMetadataTools
-        let Initialized { rewriteRules } = initialized
-            changedSpecClaims
-                ::  [   ( Attribute.Axiom Symbol Variable
-                        , MaybeChanged ReachabilityRule
-                        )
-                    ]
-            changedSpecClaims =
-                map
-                    (Bifunctor.second $ expandClaim tools)
-                    (Goal.extractClaims specModule)
-            mapMSecond
-                :: Monad m
-                => (rule -> m [rule'])
-                -> (attributes, rule) -> m [(attributes, rule')]
-            mapMSecond f (attribute, rule) = do
-                simplified <- f rule
-                return (map ((,) attribute) simplified)
-            simplifyToList
-                :: SimplifyRuleLHS rule
-                => rule
-                -> simplifier [rule]
-            simplifyToList rule = do
-                simplified <- simplifyRuleLhs rule
-                return (MultiAnd.extractPatterns simplified)
+    -> simplifier InitializedProver
+initializeProver definitionModule specModule maybeTrustedModule = do
+    initialized <- initialize definitionModule
+    tools <- Simplifier.askMetadataTools
+    let Initialized { rewriteRules } = initialized
+        changedSpecClaims
+            ::  [   ( Attribute.Axiom Symbol Variable
+                    , MaybeChanged ReachabilityRule
+                    )
+                ]
+        changedSpecClaims =
+            map
+                (Bifunctor.second $ expandClaim tools)
+                (Goal.extractClaims specModule)
+        mapMSecond
+            :: Monad m
+            => (rule -> m [rule'])
+            -> (attributes, rule) -> m [(attributes, rule')]
+        mapMSecond f (attribute, rule) = do
+            simplified <- f rule
+            return (map ((,) attribute) simplified)
+        simplifyToList
+            :: SimplifyRuleLHS rule
+            => rule
+            -> simplifier [rule]
+        simplifyToList rule = do
+            simplified <- simplifyRuleLhs rule
+            return (MultiAnd.extractPatterns simplified)
 
-            maybeClaimsAlreadyProven
-                :: Maybe
-                    [   ( Attribute.Axiom Symbol Variable
-                        , ReachabilityRule
-                        )
-                    ]
-            maybeClaimsAlreadyProven =
-                Goal.extractClaims <$> maybeAlreadyProvenModule
-            claimsAlreadyProven
-                ::  [   (Attribute.Axiom Symbol Variable
-                        , ReachabilityRule
-                        )
-                    ]
-            claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
+        maybeClaimsAlreadyProven
+            :: Maybe
+                [   ( Attribute.Axiom Symbol Variable
+                    , ReachabilityRule
+                    )
+                ]
+        maybeClaimsAlreadyProven = Goal.extractClaims <$> maybeTrustedModule
+        claimsAlreadyProven
+            ::  [   (Attribute.Axiom Symbol Variable
+                    , ReachabilityRule
+                    )
+                ]
+        claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
 
-        mapM_ (logChangedClaim . snd) changedSpecClaims
+    mapM_ (logChangedClaim . snd) changedSpecClaims
 
-        let specClaims
-                ::  [   ( Attribute.Axiom Symbol Variable
-                        , ReachabilityRule
-                        )
-                    ]
-            specClaims =
-                map (Bifunctor.second fromMaybeChanged) changedSpecClaims
-        -- This assertion should come before simplifying the claims,
-        -- since simplification should remove all trivial claims.
-        assertSomeClaims specClaims
-        simplifiedSpecClaims <-
-            mapM (mapMSecond simplifyToList) specClaims
-        specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
-            $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let claims = fmap makeReachabilityRule specAxioms
-            axioms = coerce . mkRewritingRule <$> rewriteRules
-            alreadyProven = fmap makeReachabilityRule claimsAlreadyProven
-            initializedProver =
-                InitializedProver {axioms, claims, alreadyProven}
-        within initializedProver
+    let specClaims
+            ::  [   ( Attribute.Axiom Symbol Variable
+                    , ReachabilityRule
+                    )
+                ]
+        specClaims =
+            map (Bifunctor.second fromMaybeChanged) changedSpecClaims
+    -- This assertion should come before simplifying the claims,
+    -- since simplification should remove all trivial claims.
+    assertSomeClaims specClaims
+    simplifiedSpecClaims <-
+        mapM (mapMSecond simplifyToList) specClaims
+    specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
+        $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
+    let claims = fmap makeReachabilityRule specAxioms
+        axioms = coerce . mkRewritingRule <$> rewriteRules
+        alreadyProven = fmap makeReachabilityRule claimsAlreadyProven
+    pure InitializedProver { axioms, claims, alreadyProven }
   where
     expandClaim
         :: SmtMetadataTools attributes
@@ -737,27 +742,3 @@ initializeProver definitionModule specModule maybeAlreadyProvenModule within =
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
     logChangedClaim (Unchanged _) = return ()
-
-evalProver
-    ::  forall smt a
-      . ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
-        , MonadIO smt
-        , MonadSMT smt
-        )
-    => VerifiedModule StepperAttributes
-    -- ^ The main module
-    -> VerifiedModule StepperAttributes
-    -- ^ The spec module
-    -> Maybe (VerifiedModule StepperAttributes)
-    -- ^ The module containing the claims that were proven in a previous run.
-    -> (InitializedProver -> Simplifier.SimplifierT smt a)
-    -- The prover
-    -> smt a
-evalProver definitionModule specModule maybeAlreadyProvenModule prover =
-    evalSimplifier definitionModule
-    $ initializeProver
-        definitionModule
-        specModule
-        maybeAlreadyProvenModule
-        prover
