@@ -221,16 +221,6 @@ class Goal goal where
         => goal -> Rule goal
     goalToRule = coerce
 
-    -- | Since Goals usually carry more information than Rules,
-    -- we need to know the context when transforming a Rule into a Goal,
-    -- hence the first 'goal' argument. In general it can be ignored
-    -- when the Goal and the Rule are representationally equal.
-    ruleToGoal :: goal -> Rule goal -> goal
-    default ruleToGoal
-        :: Coercible (Rule goal) goal
-        => goal -> Rule goal -> goal
-    ruleToGoal _ = coerce
-
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
         => Prim goal
@@ -424,9 +414,6 @@ instance Goal ReachabilityRule where
 
     goalToRule (OnePath rule) = coerce rule
     goalToRule (AllPath rule) = coerce rule
-
-    ruleToGoal (OnePath _) rule = OnePath (coerce rule)
-    ruleToGoal (AllPath _) rule = AllPath (coerce rule)
 
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
