@@ -16,6 +16,9 @@ import Control.Concurrent.MVar
 import Control.Exception
     ( AsyncException (UserInterrupt)
     )
+import Control.Lens
+    ( Lens'
+    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( forever
@@ -39,6 +42,7 @@ import Control.Monad.State.Strict
     )
 import qualified Data.Default as Default
 import Data.Generics.Product
+import Data.Generics.Wrapped
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List
     ( findIndex
@@ -68,10 +72,6 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.RulePattern
-    ( ToRulePattern (..)
-    )
-import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -209,20 +209,14 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
     addIndex (rw, n) =
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
-    modifyAttribute
-        :: Attribute.Axiom Symbol Variable
-        -> Axiom
-        -> Axiom
-    modifyAttribute att rule =
-        let rp = axiomToRulePatt rule in
-            fromRulePattern rule
-                $ rp { Rule.attributes = att }
+    lensAttribute :: Lens' Axiom (Attribute.Axiom Symbol Variable)
+    lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
-    axiomToRulePatt :: Axiom -> Rule.RulePattern Variable
-    axiomToRulePatt = toRulePattern
+    modifyAttribute :: Attribute.Axiom Symbol Variable -> Axiom -> Axiom
+    modifyAttribute = Lens.set lensAttribute
 
     getAttribute :: Axiom -> Attribute.Axiom Symbol Variable
-    getAttribute = Rule.attributes . axiomToRulePatt
+    getAttribute = Lens.view lensAttribute
 
     mapAttribute
         :: Int
