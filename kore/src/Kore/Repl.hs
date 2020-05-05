@@ -16,9 +16,6 @@ import Control.Concurrent.MVar
 import Control.Exception
     ( AsyncException (UserInterrupt)
     )
-import Control.Lens
-    ( Lens'
-    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( forever
@@ -58,10 +55,6 @@ import Text.Megaparsec
     ( parseMaybe
     )
 
-import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkSortVariable
@@ -72,6 +65,9 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
+import Kore.Step.RulePattern
+    ( ReachabilityRule (..)
+    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -197,33 +193,37 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
         -> [ReachabilityRule]
         -> [ReachabilityRule]
     addIndexesToClaims len claims'' =
-        let toAxiomAndBack claim' index =
-                ruleToGoal
-                    claim'
-                    $ addIndex (goalToRule claim', index)
-        in zipWith toAxiomAndBack claims'' [len..]
+        zipWith addIndexToClaim [len..] claims''
+      where
+        addIndexToClaim n =
+            Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n)
+
+        lensAttribute =
+            Lens.lens
+                (\case
+                    OnePath onePathRule ->
+                        Lens.view (_Unwrapped . field @"attributes") onePathRule
+                    AllPath allPathRule ->
+                        Lens.view (_Unwrapped . field @"attributes") allPathRule
+                )
+                (\case
+                    OnePath onePathRule -> \attrs ->
+                        onePathRule
+                        & Lens.set (_Unwrapped . field @"attributes") attrs
+                        & OnePath
+                    AllPath allPathRule -> \attrs ->
+                        allPathRule
+                        & Lens.set (_Unwrapped . field @"attributes") attrs
+                        & AllPath
+                )
 
     addIndex
         :: (Axiom, Int)
         -> Axiom
     addIndex (rw, n) =
-        modifyAttribute (mapAttribute n (getAttribute rw)) rw
-
-    lensAttribute :: Lens' Axiom (Attribute.Axiom Symbol Variable)
-    lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
-
-    modifyAttribute :: Attribute.Axiom Symbol Variable -> Axiom -> Axiom
-    modifyAttribute = Lens.set lensAttribute
-
-    getAttribute :: Axiom -> Attribute.Axiom Symbol Variable
-    getAttribute = Lens.view lensAttribute
-
-    mapAttribute
-        :: Int
-        -> Attribute.Axiom Symbol variable
-        -> Attribute.Axiom Symbol variable
-    mapAttribute n attr =
-        Lens.over (field @"identifier") (makeRuleIndex n) attr
+        Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n) rw
+      where
+        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
