@@ -34,13 +34,9 @@ import Control.Monad.Catch
 import Control.Monad.Trans.Except
     ( runExceptT
     )
-import qualified Data.Bifunctor as Bifunctor
-    ( second
-    )
 import Data.Coerce
     ( coerce
     )
-import Data.Functor.Compose
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -121,9 +117,7 @@ import Kore.Step.Rule.Simplify
     ( SimplifyRuleLHS (..)
     )
 import Kore.Step.RulePattern
-    ( AllPathRule (..)
-    , ImplicationRule (..)
-    , OnePathRule (..)
+    ( ImplicationRule (..)
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
@@ -564,29 +558,19 @@ assertSomeClaims claims =
         ++  "Possible explanation: the frontend and the backend don't agree "
         ++  "on the representation of claims."
 
-makeReachabilityRule
-    :: (Attribute.Axiom Symbol Variable, ReachabilityRule)
-    -> ReachabilityRule
-makeReachabilityRule (attributes, reachabilityRule) =
-    case reachabilityRule of
-        OnePath (OnePathRule rulePattern) ->
-            OnePath (OnePathRule rulePattern { attributes })
-        AllPath (AllPathRule rulePattern) ->
-            AllPath (AllPathRule rulePattern { attributes })
-
 makeImplicationRule
     :: (Attribute.Axiom Symbol Variable, ImplicationRule Variable)
     -> ImplicationRule Variable
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
-simplifyRuleOnSecond
+simplifyReachabilityRule
     :: MonadSimplify simplifier
-    => (Attribute.Axiom Symbol variable, ReachabilityRule)
-    -> simplifier (Attribute.Axiom Symbol variable, ReachabilityRule)
-simplifyRuleOnSecond (atts, rule) = do
+    => ReachabilityRule
+    -> simplifier ReachabilityRule
+simplifyReachabilityRule rule = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
-    return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')
+    return (Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Construct an execution graph for the given input pattern.
 execute
@@ -667,21 +651,9 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initialize definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized { rewriteRules } = initialized
-        changedSpecClaims
-            ::  [   ( Attribute.Axiom Symbol Variable
-                    , MaybeChanged ReachabilityRule
-                    )
-                ]
+        changedSpecClaims :: [MaybeChanged ReachabilityRule]
         changedSpecClaims =
-            map
-                (Bifunctor.second $ expandClaim tools)
-                (Goal.extractClaims specModule)
-        mapMSecond
-            :: Applicative f
-            => (rule -> f [rule'])
-            -> (attributes, rule)
-            -> f [(attributes, rule')]
-        mapMSecond f = getCompose . traverse (Compose . f)
+            expandClaim tools <$> Goal.extractClaims specModule
         simplifyToList
             :: SimplifyRuleLHS rule
             => rule
@@ -690,39 +662,22 @@ initializeProver definitionModule specModule maybeTrustedModule = do
             simplified <- simplifyRuleLhs rule
             return (MultiAnd.extractPatterns simplified)
 
-        maybeClaimsAlreadyProven
-            :: Maybe
-                [   ( Attribute.Axiom Symbol Variable
-                    , ReachabilityRule
-                    )
-                ]
-        maybeClaimsAlreadyProven = Goal.extractClaims <$> maybeTrustedModule
-        claimsAlreadyProven
-            ::  [   (Attribute.Axiom Symbol Variable
-                    , ReachabilityRule
-                    )
-                ]
-        claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
+        trustedClaims :: [ReachabilityRule]
+        trustedClaims =
+            fmap Goal.extractClaims maybeTrustedModule & fromMaybe []
 
-    mapM_ (logChangedClaim . snd) changedSpecClaims
+    mapM_ logChangedClaim changedSpecClaims
 
-    let specClaims
-            ::  [   ( Attribute.Axiom Symbol Variable
-                    , ReachabilityRule
-                    )
-                ]
-        specClaims =
-            map (Bifunctor.second fromMaybeChanged) changedSpecClaims
+    let specClaims :: [ReachabilityRule]
+        specClaims = map fromMaybeChanged changedSpecClaims
     -- This assertion should come before simplifying the claims,
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
-    simplifiedSpecClaims <-
-        mapM (mapMSecond simplifyToList) specClaims
-    specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
-        $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-    let claims = fmap makeReachabilityRule specAxioms
-        axioms = coerce . mkRewritingRule <$> rewriteRules
-        alreadyProven = fmap makeReachabilityRule claimsAlreadyProven
+    simplifiedSpecClaims <- mapM simplifyToList specClaims
+    claims <- Profiler.initialization "simplifyRuleOnSecond"
+        $ traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    let axioms = coerce . mkRewritingRule <$> rewriteRules
+        alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where
     expandClaim

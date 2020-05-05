@@ -236,19 +236,15 @@ class Goal goal where
 class ClaimExtractor claim where
     extractClaim
         :: (Attribute.Axiom.Axiom Symbol Variable, Verified.SentenceClaim)
-        -> Maybe (Attribute.Axiom.Axiom Symbol Variable, claim)
+        -> Maybe claim
 
 -- | Extracts all One-Path claims from a verified module.
 extractClaims
     :: ClaimExtractor claim
     => VerifiedModule declAtts
-    -- ^'IndexedModule' containing the definition
-    -> [(Attribute.Axiom.Axiom Symbol Variable, claim)]
-extractClaims idxMod =
-    mapMaybe
-        -- applying on second component
-        extractClaim
-        (indexedModuleClaims idxMod)
+    -- ^ 'IndexedModule' containing the definition
+    -> [claim]
+extractClaims = mapMaybe extractClaim . indexedModuleClaims
 
 {- NOTE: Non-deterministic semantics
 
@@ -349,7 +345,7 @@ deriveSeqOnePath rules =
 instance ClaimExtractor OnePathRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just (attrs, claim)
+            Right (OnePathClaimPattern claim) -> Just claim
             _ -> Nothing
 
 instance Goal AllPathRule where
@@ -409,7 +405,7 @@ deriveSeqAllPath rules =
 instance ClaimExtractor AllPathRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (AllPathClaimPattern claim) -> Just (attrs, claim)
+            Right (AllPathClaimPattern claim) -> Just claim
             _ -> Nothing
 
 instance Goal ReachabilityRule where
@@ -498,8 +494,8 @@ instance Goal ReachabilityRule where
 instance ClaimExtractor ReachabilityRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just (attrs, OnePath claim)
-            Right (AllPathClaimPattern claim) -> Just (attrs, AllPath claim)
+            Right (OnePathClaimPattern claim) -> Just (OnePath claim)
+            Right (AllPathClaimPattern claim) -> Just (AllPath claim)
             _ -> Nothing
 
 maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
