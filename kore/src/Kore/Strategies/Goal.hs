@@ -15,7 +15,6 @@ module Kore.Strategies.Goal
     , onePathFollowupStep
     , allPathFirstStep
     , allPathFollowupStep
-    , configurationDestinationToRule
     , getConfiguration
     , getDestination
     , transitionRuleTemplate
@@ -49,7 +48,6 @@ import Data.Coerce
     ( Coercible
     , coerce
     )
-import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
 import Data.Generics.Product
@@ -106,7 +104,6 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
-    , termLikeSort
     )
 import Kore.Log.DebugProofState
 import Kore.Log.ErrorRewritesInstantiation
@@ -1076,27 +1073,6 @@ getConfiguration (toRulePattern -> RulePattern { left, requires }) =
 
 getDestination :: ReachabilityRule -> RHS Variable
 getDestination (toRulePattern -> RulePattern { rhs }) = rhs
-
-{-| Given a rule to use as a prototype, a 'Pattern' to use as the configuration
-and a 'RHS' containing the destination, makes a rule out of them.
--}
-configurationDestinationToRule
-    :: forall rule
-    .  FromRulePattern rule
-    => rule
-    -> Pattern Variable
-    -> RHS Variable
-    -> rule
-configurationDestinationToRule ruleType configuration rhs =
-    let (left, Condition.toPredicate -> requires') =
-            Pattern.splitTerm configuration
-    in fromRulePattern ruleType $ RulePattern
-        { left
-        , antiLeft = Nothing
-        , requires = Predicate.coerceSort (termLikeSort left) requires'
-        , rhs
-        , attributes = Default.def
-        }
 
 class ToReachabilityRule rule where
     toReachabilityRule :: rule -> ReachabilityRule

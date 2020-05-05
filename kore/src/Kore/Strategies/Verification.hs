@@ -20,6 +20,7 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
     ( foldM_
     )
@@ -53,7 +54,11 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Step.RulePattern
-    ( RHS
+    ( AllPathRule (..)
+    , OnePathRule (..)
+    , RHS
+    , ReachabilityRule (..)
+    , leftPattern
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -215,7 +220,6 @@ verifyClaim
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
-        destination = getDestination goal
         limitedStrategy =
             Limit.takeWithin
                 depthLimit
@@ -223,20 +227,20 @@ verifyClaim
     executionGraph <-
         runStrategyWithSearchOrder
             breadthLimit
-            (modifiedTransitionRule destination)
+            modifiedTransitionRule
             limitedStrategy
             searchOrder
             startPattern
     -- Throw the first unproven configuration as an error.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
+    destination = getDestination goal
     modifiedTransitionRule
-        ::  RHS Variable
-        ->  Prim ReachabilityRule
+        ::  Prim ReachabilityRule
         ->  CommonProofState
         ->  TransitionT (Rule ReachabilityRule) (Verifier simplifier)
                 CommonProofState
-    modifiedTransitionRule destination prim proofState' = do
+    modifiedTransitionRule prim proofState' = do
         transitions <-
             lift . lift . runTransitionT
             $ transitionRule' goal destination prim proofState'
@@ -286,7 +290,22 @@ transitionRule'
     -> Prim ReachabilityRule
     -> CommonProofState
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
-transitionRule' ruleType destination prim state = do
-    let goal = flip (configurationDestinationToRule ruleType) destination <$> state
-    next <- transitionRule prim goal
+transitionRule' goal _ prim state = do
+    let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
+    next <- transitionRule prim goal'
     pure $ fmap getConfiguration next
+  where
+    lensReachabilityConfig =
+        Lens.lens
+            (\case
+                OnePath onePathRule ->
+                    Lens.view leftPattern (getOnePathRule onePathRule)
+                AllPath allPathRule ->
+                    Lens.view leftPattern (getAllPathRule allPathRule)
+            )
+            (\case
+                OnePath (OnePathRule rulePattern) -> \b ->
+                    (OnePath . OnePathRule) (Lens.set leftPattern b rulePattern)
+                AllPath (AllPathRule rulePattern) -> \b ->
+                    (AllPath . AllPathRule) (Lens.set leftPattern b rulePattern)
+            )
