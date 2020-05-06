@@ -334,20 +334,18 @@ prove
                 specModule
                 trustedModule
         let InitializedProver { axioms, claims, alreadyProven } = initialized
-        result <-
-            verify
-                breadthLimit
-                searchOrder
-                (AllClaims claims)
-                (Axioms axioms)
-                (AlreadyProven (map unparseToText2 alreadyProven))
-                (ToProve
-                    (map (\x -> (x, depthLimit))
-                        (extractUntrustedClaims' claims)
-                    )
+        verify
+            breadthLimit
+            searchOrder
+            (AllClaims claims)
+            (Axioms axioms)
+            (AlreadyProven (map unparseToText2 alreadyProven))
+            (ToProve
+                (map (\x -> (x, depthLimit))
+                    (extractUntrustedClaims' claims)
                 )
+            )
             & runExceptT
-        return result
   where
     extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
     extractUntrustedClaims' = filter (not . Goal.isTrusted)
