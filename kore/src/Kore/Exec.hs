@@ -99,8 +99,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
-import Kore.Log.ErrorRewriteRuleId
-    ( errorRewriteRuleId
+import Kore.Log.ErrorRewriteLoop
+    ( errorRewriteLoop
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
@@ -656,7 +656,7 @@ initialize verifiedModule within = do
             simplified <- simplifyRuleLhs rule
             return (MultiAnd.extractPatterns simplified)
     traverse_
-        errorRewriteRuleId
+        errorRewriteLoop
         $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
