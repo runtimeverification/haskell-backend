@@ -560,14 +560,12 @@ ruleReachabilityToRuleOnePath = coerce
 ruleAllPathToRuleReachability
     :: Rule AllPathRule
     -> Rule ReachabilityRule
-ruleAllPathToRuleReachability =
-    ReachabilityRewriteRule . mkRewritingRule . RewriteRule . toRulePattern
+ruleAllPathToRuleReachability = coerce
 
 ruleOnePathToRuleReachability
     :: Rule OnePathRule
     -> Rule ReachabilityRule
-ruleOnePathToRuleReachability =
-    ReachabilityRewriteRule . mkRewritingRule . RewriteRule . toRulePattern
+ruleOnePathToRuleReachability = coerce
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
