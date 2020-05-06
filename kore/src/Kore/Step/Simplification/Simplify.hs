@@ -48,6 +48,7 @@ import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Reader
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import Data.Text
@@ -243,6 +244,8 @@ instance MonadSimplify m => MonadSimplify (ListT m) where
     {-# INLINE localSimplifierAxioms #-}
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
+
+instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 

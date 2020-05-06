@@ -29,9 +29,9 @@ import Log
 
 data DebugProofState =
     DebugProofState
-        { proofState :: ProofState (ReachabilityRule Variable)
+        { proofState :: ProofState ReachabilityRule
         , transition :: Prim (RewriteRule Variable)
-        , result :: Maybe (ProofState (ReachabilityRule Variable))
+        , result :: Maybe (ProofState ReachabilityRule)
         }
 
 instance Pretty DebugProofState where
@@ -57,3 +57,4 @@ instance Pretty DebugProofState where
 
 instance Entry DebugProofState where
     entrySeverity _ = Debug
+    helpDoc _ = "log proof state"

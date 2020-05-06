@@ -73,7 +73,7 @@ import Test.Kore.With
 import Test.Tasty.HUnit.Ext
 
 class OnePathRuleBase base where
-    rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
+    rewritesTo :: base Variable -> base Variable -> OnePathRule
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 

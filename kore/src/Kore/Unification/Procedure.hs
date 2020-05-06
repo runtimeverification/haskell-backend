@@ -39,6 +39,7 @@ import Kore.Step.Simplification.AndTerms
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
     )
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyCondition
@@ -47,7 +48,7 @@ import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Error
 import Kore.Unification.UnificationProcedure
 import Kore.Unification.UnifierT
-    ( getUnifierT
+    ( evalEnvUnifierT
     )
 import Kore.Unification.Unify
     ( InternalVariable
@@ -71,7 +72,7 @@ unificationProcedureWorker sideCondition p1 p2
   | p1Sort /= p2Sort =
     Monad.Unify.explainAndReturnBottom "Cannot unify different sorts."  p1 p2
   | otherwise = infoAttemptUnification p1 p2 $ do
-    pat <- termUnification p1 p2
+    pat <- termUnification Not.notSimplifier p1 p2
     TopBottom.guardAgainstBottom pat
     let (term, conditions) = Conditional.splitTerm pat
         mergedSideCondition =
@@ -90,4 +91,4 @@ unificationProcedure
 unificationProcedure =
     UnificationProcedure $ \sideCondition term1 term2 ->
         unificationProcedureWorker sideCondition term1 term2
-        & getUnifierT
+        & evalEnvUnifierT Not.notSimplifier

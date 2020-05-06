@@ -42,6 +42,9 @@ import Kore.Step.SMT.Translate
 import Kore.Syntax.Sentence
     ( SentenceAxiom (..)
     )
+import Log
+    ( MonadLog (..)
+    )
 import SMT
     ( MonadSMT (..)
     , SExpr (..)
@@ -57,6 +60,7 @@ declareSMTLemmas
     .   ( Given (SmtMetadataTools StepperAttributes)
         , MonadIO m
         , MonadSMT m
+        , MonadLog m
         )
     => VerifiedModule StepperAttributes
     -> m ()
