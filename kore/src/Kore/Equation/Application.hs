@@ -679,6 +679,7 @@ instance Entry DebugAttemptEquation where
             , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
             ]
     shortDoc _ = Nothing
+    helpDoc _ = "log equation application attempts"
 
 {- | Log the result of attempting to apply an 'Equation'.
 
@@ -760,6 +761,7 @@ isLocEmpty Attribute.SourceLocation { source = Attribute.Source file } =
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
+    helpDoc _ = "log equation application successes"
 
 {- | Log when an 'Equation' is actually applied.
 

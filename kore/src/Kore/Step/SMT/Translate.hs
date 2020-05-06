@@ -63,9 +63,15 @@ import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
+import Kore.Log.WarnSymbolSMTRepresentation
+    ( warnSymbolSMTRepresentation
+    )
 import Kore.Step.SMT.Resolvers
     ( translateSort
     , translateSymbol
+    )
+import Log
+    ( MonadLog (..)
     )
 import SMT
     ( SExpr (..)
@@ -94,7 +100,7 @@ translatePredicateWith
     :: forall p variable m .
         ( Given (SmtMetadataTools Attribute.Symbol)
         , p ~ TermLike variable
-        , Monad m
+        , MonadLog m
         , InternalVariable variable
         )
     => (SExpr -> TranslateItem variable -> Translator m variable SExpr)
@@ -232,7 +238,10 @@ translatePredicateWith translateTerm predicate =
             , applicationChildren
             }
       = do
-        sexpr <- maybe empty return $ translateSymbol applicationSymbolOrAlias
+        let translated = translateSymbol applicationSymbolOrAlias
+        sexpr <- maybe empty return translated
+        when (isNothing translated)
+            $ warnSymbolSMTRepresentation applicationSymbolOrAlias
         children <- zipWithM translatePattern
             applicationChildrenSorts
             applicationChildren

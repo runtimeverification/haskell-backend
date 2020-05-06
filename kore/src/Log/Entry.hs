@@ -25,6 +25,9 @@ import qualified Control.Lens as Lens
 import Control.Lens.Prism
     ( Prism
     )
+import Data.Proxy
+    ( Proxy (..)
+    )
 import Data.Sequence
     ( Seq
     )
@@ -57,6 +60,9 @@ class Typeable entry => Entry entry where
 
     shortDoc :: entry -> Maybe (Pretty.Doc ann)
     shortDoc = const Nothing
+
+    helpDoc :: Proxy entry -> Pretty.Doc ann
+    helpDoc _ = Pretty.emptyDoc
 
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry

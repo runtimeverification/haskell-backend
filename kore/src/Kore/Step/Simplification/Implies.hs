@@ -31,6 +31,7 @@ import qualified Kore.Step.Simplification.And as And
     )
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
+    , notSimplifier
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
@@ -120,6 +121,7 @@ distributeEvaluateImplies
     -> simplifier (OrPattern variable)
 distributeEvaluateImplies sideCondition firsts second =
     And.simplifyEvaluatedMultiple
+        Not.notSimplifier
         sideCondition
         (map (\first -> makeEvaluateImplies first second) firsts)
 

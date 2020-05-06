@@ -39,6 +39,7 @@ import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
     ( Env (..)
     )
+import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -365,7 +366,7 @@ merge
     (Substitution.mkUnwrappedSubstitution -> s2)
   =
     Test.runSimplifier mockEnv
-    $ Monad.Unify.runUnifierT
+    $ Monad.Unify.runUnifierT Not.notSimplifier
     $ mergeSubstitutionsExcept
     $ Substitution.wrap
     . fmap simplifiedAssignment
@@ -401,7 +402,7 @@ normalizeExcept
 normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ Test.runSimplifier mockEnv
-    $ Monad.Unify.runUnifierT
+    $ Monad.Unify.runUnifierT Not.notSimplifier
     $ Branch.alternate
     $ Simplifier.simplifyCondition SideCondition.top predicated
   where

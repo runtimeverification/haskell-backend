@@ -108,15 +108,15 @@ instance SimplifyRuleLHS (RewriteRule Variable) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
 
-instance SimplifyRuleLHS (OnePathRule Variable) where
+instance SimplifyRuleLHS OnePathRule where
     simplifyRuleLhs =
         fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
 
-instance SimplifyRuleLHS (AllPathRule Variable) where
+instance SimplifyRuleLHS AllPathRule where
     simplifyRuleLhs =
         fmap (fmap AllPathRule) . simplifyClaimRule . getAllPathRule
 
-instance SimplifyRuleLHS (ReachabilityRule Variable) where
+instance SimplifyRuleLHS ReachabilityRule where
     simplifyRuleLhs (OnePath rule) =
         (fmap . fmap) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =
@@ -129,16 +129,25 @@ simplifyClaimRule
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyClaimRule =
-    fmap MultiAnd.make
-    . Branch.gather
-    . Lens.traverseOf RulePattern.leftPattern worker
+    fmap MultiAnd.make . Branch.gather . worker
   where
-    worker, simplify, filterWithSolver
+    simplify, filterWithSolver
         :: Pattern variable
         -> BranchT simplifier (Pattern variable)
-    worker =
+    simplify =
         (return . Pattern.requireDefined)
-        >=> simplify
+        >=> Pattern.simplifyTopConfiguration
+        >=> Branch.scatter
         >=> filterWithSolver
-    simplify = Pattern.simplifyTopConfiguration >=> Branch.scatter
     filterWithSolver = SMT.Evaluator.filterBranch
+
+    worker :: RulePattern variable -> BranchT simplifier (RulePattern variable)
+    worker rulePattern = do
+        let lhs = Lens.view RulePattern.leftPattern rulePattern
+        simplified <- simplify lhs
+        let substitution = Pattern.substitution simplified
+            lhs' = simplified { Pattern.substitution = mempty }
+        rulePattern
+            & Lens.set RulePattern.leftPattern lhs'
+            & RulePattern.applySubstitution substitution
+            & return

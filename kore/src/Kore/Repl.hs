@@ -91,16 +91,13 @@ import Kore.Unparser
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall claim axiom m
+    :: forall m
     .  MonadSimplify m
     => MonadIO m
     => MonadCatch m
-    => Claim claim
-    => From claim (TermLike Variable)
-    => axiom ~ Rule claim
-    => [axiom]
+    => [Axiom]
     -- ^ list of axioms to used in the proof
-    -> [claim]
+    -> [ReachabilityRule]
     -- ^ list of claims to be proven
     -> MVar (Log.LogAction IO Log.ActualEntry)
     -> ReplScript
@@ -126,13 +123,13 @@ runRepl
     logger
     replScript
     replMode
-    runModeOutput
+    scriptModeOutput
     outputFile
     mainModuleName
     = do
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
-            $ evaluateScript replScript runModeOutput
+            $ evaluateScript replScript scriptModeOutput
     case replMode of
         Interactive -> do
             replGreeting
@@ -144,7 +141,7 @@ runRepl
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState claim -> m ()
+    runReplCommand :: ReplCommand -> ReplState -> m ()
     runReplCommand cmd st =
         void
             $ flip evalStateT st
@@ -154,18 +151,18 @@ runRepl
     evaluateScript
         :: ReplScript
         -> ScriptModeOutput
-        -> RWST (Config claim m) String (ReplState claim) m ()
+        -> RWST (Config m) String ReplState m ()
     evaluateScript script outputFlag =
         maybe (pure ()) (flip parseEvalScript outputFlag) (unReplScript script)
 
-    repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
+    repl0 :: ReaderT (Config m) (StateT ReplState m) ()
     repl0 = do
         str <- prompt
         let command = fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState claim
+    state :: ReplState
     state =
         ReplState
             { axioms         = addIndexesToAxioms axioms'
@@ -185,7 +182,7 @@ runRepl
                     { Log.exeName = Log.ExeName "kore-repl" }
             }
 
-    config :: Config claim m
+    config :: Config m
     config =
         Config
             { stepper    = stepper0
@@ -202,15 +199,15 @@ runRepl
         $ findIndex (not . isTrusted) claims'
 
     addIndexesToAxioms
-        :: [axiom]
-        -> [axiom]
+        :: [Axiom]
+        -> [Axiom]
     addIndexesToAxioms axs =
         fmap addIndex (zip axs [0..])
 
     addIndexesToClaims
         :: Int
-        -> [claim]
-        -> [claim]
+        -> [ReachabilityRule]
+        -> [ReachabilityRule]
     addIndexesToClaims len claims'' =
         let toAxiomAndBack claim' index =
                 ruleToGoal
@@ -219,24 +216,24 @@ runRepl
         in zipWith toAxiomAndBack claims'' [len..]
 
     addIndex
-        :: (axiom, Int)
-        -> axiom
+        :: (Axiom, Int)
+        -> Axiom
     addIndex (rw, n) =
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
         :: Attribute.Axiom Symbol Variable
-        -> axiom
-        -> axiom
+        -> Axiom
+        -> Axiom
     modifyAttribute att rule =
         let rp = axiomToRulePatt rule in
             fromRulePattern rule
                 $ rp { Rule.attributes = att }
 
-    axiomToRulePatt :: axiom -> Rule.RulePattern Variable
+    axiomToRulePatt :: Axiom -> Rule.RulePattern Variable
     axiomToRulePatt = toRulePattern
 
-    getAttribute :: axiom -> Attribute.Axiom Symbol Variable
+    getAttribute :: Axiom -> Attribute.Axiom Symbol Variable
     getAttribute = Rule.attributes . axiomToRulePatt
 
     mapAttribute
@@ -249,19 +246,19 @@ runRepl
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
 
-    firstClaim :: claim
+    firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
-    firstClaimExecutionGraph :: ExecutionGraph axiom
+    firstClaimExecutionGraph :: ExecutionGraph Axiom
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: claim
-        -> [claim]
-        -> [axiom]
-        -> ExecutionGraph axiom
+        :: ReachabilityRule
+        -> [ReachabilityRule]
+        -> [Axiom]
+        -> ExecutionGraph Axiom
         -> ReplNode
-        -> m (ExecutionGraph axiom)
+        -> m (ExecutionGraph Axiom)
     stepper0 claim claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
@@ -291,7 +288,7 @@ runRepl
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
+    prompt :: MonadIO n => MonadState ReplState n => n String
     prompt = do
         node <- Lens.use (field @"node")
         liftIO $ do

@@ -141,8 +141,8 @@ parseKoreReplOptions =
     parseScriptModeOutput :: Parser ScriptModeOutput
     parseScriptModeOutput =
         flag
-            (ScriptModeOutput False)
-            (ScriptModeOutput True)
+            DisableOutput
+            EnableOutput
             ( long "save-run-output"
             <> help "Get output in run mode."
             )
@@ -225,10 +225,10 @@ mainWithOptions
                     \ in order to run the repl in run-script mode."
                 exitFailure
 
-        when (replMode == Interactive && scriptModeOutput == ScriptModeOutput True) $
+        when (replMode == Interactive && scriptModeOutput == EnableOutput) $
             lift $ do
                 putStrLn
-                    "The --saveRunOutput flag is only available\
+                    "The --save-run-output flag is only available\
                     \ when running the repl in run-script mode."
                 exitFailure
 

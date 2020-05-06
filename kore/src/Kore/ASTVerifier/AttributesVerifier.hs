@@ -33,6 +33,10 @@ import Kore.Attribute.Hook
 import Kore.Attribute.Overload
     ( Overload (..)
     )
+import Kore.Attribute.Sort
+import Kore.Attribute.Sort.HasDomainValues
+import Kore.Attribute.Subsort as Subsort
+
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Error
@@ -132,6 +136,13 @@ verifyNoHookAttribute attributes = do
         Just _ ->
             koreFail "Unexpected 'hook' attribute"
 
+verifyNoHookedSupersort
+    :: MonadError (Error VerifyError) error
+    => [Kore.Attribute.Sort.Sort]
+    -> error ()
+verifyNoHookedSupersort supersortsAtts = do
+    let isHooked = getHasDomainValues . hasDomainValues <$> supersortsAtts
+    when (or isHooked) $ koreFail "Hooked sorts may not have subsorts."
 
 verifyAxiomAttributes
     :: forall error attrs
@@ -141,6 +152,9 @@ verifyAxiomAttributes
     -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
 verifyAxiomAttributes indexedModule axiom = do
     let overload = axiom Lens.^. field @"overload"
+        supersorts = Subsort.supersort <$> getSubsorts (axiom Lens.^. field @"subsorts")
+        supersortsAtts = getSortAttributes indexedModule <$> supersorts
+    verifyNoHookedSupersort supersortsAtts
     case getOverload overload of
             Nothing -> do
                 let newOverload = Overload Nothing
