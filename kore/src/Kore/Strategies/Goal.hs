@@ -974,6 +974,10 @@ withConfiguration' :: MonadCatch m => Pattern Variable -> m a -> m a
 withConfiguration' configuration =
     handle (throw . WithConfiguration configuration)
 
+withConfiguration' :: MonadCatch m => Pattern Variable -> m a -> m a
+withConfiguration' configuration =
+    handle (throw . WithConfiguration configuration)
+
 {- | The predicate to remove the destination from the present configuration.
  -}
 removalPredicate
