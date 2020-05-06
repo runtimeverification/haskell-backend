@@ -162,7 +162,7 @@ andCondition
     -> Condition variable
     -> SideCondition variable
 andCondition initial@SideCondition {assumedTrue} newCondition =
-    if isNormalized result then result else initial
+    assert (isNormalized result) result
   where
     result = SideCondition
         { representation = toRepresentationCondition merged
