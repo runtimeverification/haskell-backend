@@ -1398,8 +1398,8 @@ parseEvalScript file scriptModeOutput = do
            lift
                $ execStateReader config st
                $ Foldable.for_ cmds
-               $ if scriptModeOutput == EnableOutput 
-                    then executeCommandWithOutput 
+               $ if scriptModeOutput == EnableOutput
+                    then executeCommandWithOutput
                     else executeCommand
 
         executeCommand
