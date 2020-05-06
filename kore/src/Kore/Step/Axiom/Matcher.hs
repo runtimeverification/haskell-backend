@@ -81,7 +81,7 @@ import Kore.Internal.TermLike hiding
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Overloading
-    ( unifyOverloading
+    ( matchOverloading
     )
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
@@ -414,7 +414,7 @@ matchOverload
     :: (MatchingVariable variable, MonadSimplify simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchOverload termPair = Error.hushT (unifyOverloading termPair) >>= push
+matchOverload termPair = Error.hushT (matchOverloading termPair) >>= push
 
 -- * Implementation
 

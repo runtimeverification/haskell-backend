@@ -10,6 +10,8 @@ module Kore.Step.Simplification.OverloadSimplifier
 
 import Prelude.Kore
 
+import qualified Data.Set as Set
+
 import Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
     )
@@ -32,6 +34,8 @@ data OverloadSimplifier =
         -- ^ Whether the first argument is overloading the second
         , isOverloaded :: Symbol -> Bool
         -- ^ Whether the symbol is overloaded
+        , getOverloadedWithSort
+            :: Symbol -> Sort -> Set.Set Symbol
         , resolveOverloading
             :: forall variable
             .  HasCallStack
@@ -76,6 +80,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
     OverloadSimplifier
         { isOverloading
         , isOverloaded
+        , getOverloadedWithSort
         , resolveOverloading
         , unifyOverloadWithinBound
         }
@@ -99,6 +104,12 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
         mkInj = injectTermTo injProto
         overloadedChildrenSorts =
             Symbol.applicationSortsOperands (symbolSorts overloadedHead)
+
+    getOverloadedWithSort :: Symbol -> Sort -> Set.Set Symbol
+    getOverloadedWithSort sym srt = sortOverloads
+      where
+        overloads = OverloadGraph.getOverloaded overloadGraph sym
+        sortOverloads = Set.filter (\s -> resultSort s == srt) overloads
 
     unifyOverloadWithinBound injProto s1 s2 topSort =
         headMay withinBound

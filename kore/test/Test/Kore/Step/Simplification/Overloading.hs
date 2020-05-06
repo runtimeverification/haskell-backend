@@ -208,8 +208,8 @@ unify
     -> IO UnifyResult
 unify termPair = runSimplifier Mock.env $ runExceptT unifyResult
   where
-    unifyResult :: UnifyOverloading Simplifier (TermLike Variable)
-    unifyResult = unifyOverloading termPair
+    unifyResult :: MatchOverloadingResult Simplifier Variable
+    unifyResult = matchOverloading termPair
 
 withUnification
     :: (UnifyResult -> Assertion)
