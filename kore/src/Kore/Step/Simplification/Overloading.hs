@@ -3,58 +3,53 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 module Kore.Step.Simplification.Overloading
-    ( overloadedConstructorSortInjectionAndEquals
-    , matchOverloading
+    ( matchOverloading
     -- for testing purposes
     , unifyOverloading
     , UnifyOverloadingResult
     , MatchOverloadingResult
     , UnifyOverloadingError (..)
+    , Narrowing (..)
+    , OverloadingResolution (..)
     ) where
 
 import Prelude.Kore hiding
     ( concat
     )
 
-import Control.Error
-    ( MaybeT (..)
-    )
 import qualified Control.Monad as Monad
 import Control.Monad.Trans.Except
     ( ExceptT
-    , runExceptT
     , throwE
     )
-import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Data.String
-    ( fromString
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import Kore.Step.Simplification.Simplify as Simplifier
+    ( MonadSimplify (..)
+    , isConstructorOrOverloaded
+    )
+import Kore.Unification.Unify as Unify
 
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import Kore.Attribute.Synthetic
     ( synthesize
     )
 import Kore.Debug
-import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.Pattern
-    ( Pattern
+import Kore.Internal.ApplicationSorts
+    ( applicationSortsOperands
     )
+import qualified Kore.Internal.Inj as Inj
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Step.Simplification.Simplify as Simplifier
-    ( MonadSimplify (..)
-    , TermSimplifier
-    , isConstructorOrOverloaded
-    )
-import Kore.Unification.Unify as Unify
+import qualified Kore.Variables.Fresh as Fresh
 import Pair
 
 data Narrowing variable
     = Narrowing
-        { narrowedSubst :: !(Map.Map variable (TermLike variable))
-        , narrowingVars :: !(Set.Set variable)
+        { narrowedSubst :: !(Predicate.Predicate variable)
+        , narrowingVars :: ![ElementVariable variable]
         , narrowedPair :: !(Pair (TermLike variable))
         }
 
@@ -101,30 +96,6 @@ notApplicable = empty
 
 throwBottom :: Monad unifier => String -> OverloadingResult unifier a
 throwBottom = throwE . Clash
-
-{- |
- If the two constructors form an overload pair, apply the overloading axioms
- on the terms to make the constructors equal, then retry unification on them.
-
-See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
-
- -}
-overloadedConstructorSortInjectionAndEquals
-    :: (InternalVariable variable, MonadUnify unifier)
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
-  = do
-    eunifier <- lift . runExceptT
-        $ unifyOverloading (Pair firstTerm secondTerm)
-    case eunifier of
-        Right (Simple (Pair firstTerm' secondTerm')) -> lift $
-            termMerger firstTerm' secondTerm'
-        Left (Clash message) -> lift $
-            explainAndReturnBottom (fromString message) firstTerm secondTerm
-        Left NotApplicable -> empty
 
 matchOverloading
     :: MonadSimplify unifier
@@ -182,11 +153,22 @@ unifyOverloading termPair = case termPair of
             (Application secondHead secondChildren)
             inj { injChild = () }
     Pair
-        (App_ firstHead firstChildren)
+        firstTerm@(App_ firstHead _)
         (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
         -> unifyOverloadingVsOverloadedVariable
-            (Application firstHead firstChildren)
+            firstHead
+            firstTerm
             secondVar
+            (Attribute.freeVariables firstTerm)
+            inj { injChild = () }
+    Pair -- it's ok to interchange them here, as this becomes error for matching
+        (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
+        firstTerm@(App_ firstHead _)
+        -> unifyOverloadingVsOverloadedVariable
+            firstHead
+            firstTerm
+            secondVar
+            (Attribute.freeVariables firstTerm)
             inj { injChild = () }
     Pair (App_ firstHead _) (Inj_ Inj { injChild }) ->
         notUnifiableTest firstHead injChild
@@ -282,23 +264,51 @@ unifyOverloadingVsOverloaded
 
 unifyOverloadingVsOverloadedVariable
     :: MonadSimplify unifier
-    => Application Symbol (TermLike variable)
+    => InternalVariable variable
+    => Symbol
+    -> TermLike variable
     -> ElementVariable variable
+    -> Attribute.FreeVariables variable
     -> Inj ()
     -> UnifyOverloadingResult unifier variable
 unifyOverloadingVsOverloadedVariable
-    (Application overloadingHead overloadingChildren)
+    overloadingHead
+    overloadingTerm
     overloadedVar
+    freeVars
     injProto@(Inj { injFrom })
   = do
     OverloadSimplifier
-        { isOverloaded, getOverloadedWithSort, resolveOverloading }
+        { isOverloaded, getOverloadedWithSort }
             <- Simplifier.askOverloadSimplifier
     Monad.guard (isOverloaded overloadingHead)
     case Set.toList (getOverloadedWithSort overloadingHead injFrom) of
         [] -> throwBottom "No overloaded found"
-        [overloadedHead] -> undefined
-        overloadedHeads -> throwBottom "Ambiguous overloaded symbols"
+        [overloadedHead] -> do
+            let freshVs = freshVars overloadedHead
+                freshTerms = mkElemVar <$> freshVs
+                overloadedApp = Application overloadedHead freshTerms
+                overloadedTerm =
+                    mkApplySymbol overloadedHead freshTerms
+            narrowedPair <- unifyOverloadingVsOverloaded
+                overloadingHead
+                overloadingTerm
+                overloadedApp
+                injProto
+            return $ WithNarrowing Narrowing
+                { narrowedSubst = Predicate.markSimplified $
+                    Predicate.makeEqualsPredicate_
+                        (mkElemVar overloadedVar)
+                        overloadedTerm
+                , narrowingVars = freshVs
+                , narrowedPair
+                }
+        _ -> throwBottom "Ambiguous overloaded symbols"
+  where
+    allVars = overloadedVar:Attribute.getFreeElementVariables freeVars
+    freshVars s =
+        Fresh.generateFreshVars (Set.fromList allVars) "x"
+        $ applicationSortsOperands $ symbolSorts s
 
 notUnifiableError
     :: Monad unifier => TermLike variable -> OverloadingResult unifier a
