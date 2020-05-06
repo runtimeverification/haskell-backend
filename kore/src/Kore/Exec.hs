@@ -334,20 +334,18 @@ prove
     evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims, alreadyProven } = initialized
-        result <-
-            runExceptT
-            $ verify
-                breadthLimit
-                searchOrder
-                (AllClaims claims)
-                (Axioms axioms)
-                (AlreadyProven (map unparseToText2 alreadyProven))
-                (ToProve
-                    (map (\x -> (x,depthLimit))
-                        (extractUntrustedClaims' claims)
-                    )
+        verify
+            breadthLimit
+            searchOrder
+            (AllClaims claims)
+            (Axioms axioms)
+            (AlreadyProven (map unparseToText2 alreadyProven))
+            (ToProve
+                (map (\x -> (x,depthLimit))
+                    (extractUntrustedClaims' claims)
                 )
-        return result
+            )
+            & runExceptT
   where
     extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
     extractUntrustedClaims' = filter (not . Goal.isTrusted)
