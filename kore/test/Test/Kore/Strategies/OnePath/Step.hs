@@ -775,7 +775,8 @@ test_onePathStrategy =
             goal
             []
             []
-        assertEqual "" (ProofState.GoalStuck goal) _actual
+        assertEqual "" (ProofState.GoalStuck goal)
+            $ trace ("\n\nACTUAL\n\n" <> show _actual) _actual
     ]
 
 simpleRewrite

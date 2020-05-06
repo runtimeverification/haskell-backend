@@ -25,6 +25,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
+    , andCondition
     )
 import Kore.Internal.Substitution
     ( toMap
@@ -74,7 +75,9 @@ simplify sideCondition pattern' =
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
             term' = substitute (toMap $ substitution simplifiedCondition) term
-        orSimplifiedTerms <- simplifyConditionalTermToOr sideCondition term'
+            termSideCondition =
+                sideCondition `SideCondition.andCondition` simplifiedCondition
+        orSimplifiedTerms <- simplifyConditionalTermToOr termSideCondition term'
         simplifiedTerm <- Branch.scatter orSimplifiedTerms
         simplifyCondition
             sideCondition
