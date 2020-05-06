@@ -81,6 +81,7 @@ data KoreReplOptions = KoreReplOptions
     , proveOptions     :: !KoreProveOptions
     , smtOptions       :: !SmtOptions
     , replMode         :: !ReplMode
+    , scriptModeOutput :: !ScriptModeOutput
     , replScript       :: !ReplScript
     , outputFile       :: !OutputFile
     , koreLogOptions   :: !KoreLogOptions
@@ -93,6 +94,7 @@ parseKoreReplOptions =
     <*> parseKoreProveOptions
     <*> parseSmtOptions
     <*> parseReplMode
+    <*> parseScriptModeOutput
     <*> parseReplScript
     <*> parseOutputFile
     <*> parseKoreLogOptions (ExeName "kore-repl")
@@ -134,6 +136,15 @@ parseKoreReplOptions =
             ( long "run-mode"
             <> short 'r'
             <> help "Repl run script mode"
+            )
+
+    parseScriptModeOutput :: Parser ScriptModeOutput
+    parseScriptModeOutput =
+        flag
+            DisableOutput
+            EnableOutput
+            ( long "save-run-output"
+            <> help "Get output in run mode."
             )
 
     parseReplScript :: Parser ReplScript
@@ -188,6 +199,7 @@ mainWithOptions
         , smtOptions
         , replScript
         , replMode
+        , scriptModeOutput
         , outputFile
         , koreLogOptions
         }
@@ -205,25 +217,35 @@ mainWithOptions
                     { SMT.timeOut = smtTimeOut
                     , SMT.preludeFile = smtPrelude
                     }
-        if replMode == RunScript && isNothing (unReplScript replScript)
-            then lift $ do
+
+        when (replMode == RunScript && isNothing (unReplScript replScript)) $
+            lift $ do
                 putStrLn
                     "You must supply the path to the repl script\
                     \ in order to run the repl in run-script mode."
                 exitFailure
-            else
-                SMT.runSMT smtConfig $ do
-                    give (MetadataTools.build indexedModule)
-                        $ declareSMTLemmas indexedModule
-                    proveWithRepl
-                        indexedModule
-                        specDefIndexedModule
-                        Nothing
-                        mvarLogAction
-                        replScript
-                        replMode
-                        outputFile
-                        mainModuleName
+
+        when (replMode == Interactive && scriptModeOutput == EnableOutput) $
+            lift $ do
+                putStrLn
+                    "The --save-run-output flag is only available\
+                    \ when running the repl in run-script mode."
+                exitFailure
+
+        SMT.runSMT smtConfig $ do
+            give (MetadataTools.build indexedModule)
+                $ declareSMTLemmas indexedModule
+            proveWithRepl
+                indexedModule
+                specDefIndexedModule
+                Nothing
+                mvarLogAction
+                replScript
+                replMode
+                scriptModeOutput
+                outputFile
+                mainModuleName
+
 
   where
     mainModuleName :: ModuleName
