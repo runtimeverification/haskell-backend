@@ -16,8 +16,8 @@ This module is intended to be imported qualified.
 module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.ApplicationVerifiers
-    , Builtin.Function
-    , Builtin
+    , BuiltinAndAxiomSimplifier
+    , Kore.Internal.TermLike.Builtin
     , Builtin.SymbolVerifier (..)
     , Builtin.SortVerifier (..)
     , Builtin.ApplicationVerifier (..)
@@ -53,6 +53,7 @@ import Data.Text
 import Kore.Attribute.Hook
     ( Hook (..)
     )
+import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -73,6 +74,9 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
+import Kore.Domain.Builtin
+    ( Builtin (BuiltinMap, BuiltinSet)
+    )
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (..)
     , VerifiedModule
@@ -87,6 +91,9 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
+    )
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifier
     )
 
 {- | Verifiers for Kore builtin sorts.
@@ -122,10 +129,10 @@ koreVerifiers =
 koreEvaluators
     :: VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map AxiomIdentifier Builtin.Function
+    -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
 koreEvaluators = evaluators builtins
   where
-    builtins :: Map Text Builtin.Function
+    builtins :: Map Text BuiltinAndAxiomSimplifier
     builtins =
         Map.unions
             [ Bool.builtinFunctions
@@ -148,11 +155,11 @@ koreEvaluators = evaluators builtins
 
  -}
 evaluators
-    :: Map Text Builtin.Function
+    :: Map Text BuiltinAndAxiomSimplifier
     -- ^ Builtin functions indexed by name
     -> VerifiedModule StepperAttributes
     -- ^ Module under which evaluation takes place
-    -> Map AxiomIdentifier Builtin.Function
+    -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
 evaluators builtins indexedModule =
     Map.mapMaybe
         lookupBuiltins
@@ -178,7 +185,7 @@ evaluators builtins indexedModule =
         -> Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
-    lookupBuiltins :: StepperAttributes -> Maybe Builtin.Function
+    lookupBuiltins :: StepperAttributes -> Maybe BuiltinAndAxiomSimplifier
     lookupBuiltins Attribute.Symbol { Attribute.hook = Hook { getHook } } =
         do
             name <- getHook
@@ -209,14 +216,14 @@ internalize tools =
 renormalize
     :: InternalVariable variable
     => TermLike variable -> TermLike variable
-renormalize termLike =
-    case termLike of
-        BuiltinMap_ internalMap ->
+renormalize =
+    Recursive.fold $ \base@(attrs :< termLikeF) ->
+    let bottom' = mkBottom (Attribute.Pattern.patternSort attrs) in
+    case termLikeF of
+        BuiltinF (BuiltinMap internalMap) ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
             & maybe bottom' mkBuiltinMap
-        BuiltinSet_ internalSet ->
+        BuiltinF (BuiltinSet internalSet) ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
             & maybe bottom' mkBuiltinSet
-        _ -> termLike
-  where
-    bottom' = mkBottom (termLikeSort termLike)
+        _ -> Recursive.embed base

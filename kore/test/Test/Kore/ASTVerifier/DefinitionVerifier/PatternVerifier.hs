@@ -13,7 +13,6 @@ import Test.Tasty.HUnit
 import qualified Data.List as List
 import qualified Data.Text as Text
 
-import Kore.AST.AstWithLocation
 import Kore.ASTVerifier.Error
     ( sortNeedsDomainValueAttributeMessage
     )
@@ -435,7 +434,7 @@ test_patternVerifier =
             }
         )
         (NamePrefix "dummy")
-        (TestedPatternSort (updateAstLocation intSort AstLocationTest))
+        (TestedPatternSort intSort)
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort intSort)
         [ asSentence intSortSentence ]
@@ -504,7 +503,7 @@ test_patternVerifier =
             }
         )
         (NamePrefix "dummy")
-        (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
+        (TestedPatternSort boolSort)
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort boolSort)
         [ asSentence boolSortSentence ]
@@ -518,7 +517,7 @@ test_patternVerifier =
             }
         )
         (NamePrefix "dummy")
-        (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
+        (TestedPatternSort boolSort)
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort boolSort)
         [ asSentence boolSortSentence ]
@@ -532,7 +531,7 @@ test_patternVerifier =
             }
         )
         (NamePrefix "dummy")
-        (TestedPatternSort (updateAstLocation boolSort AstLocationTest))
+        (TestedPatternSort boolSort)
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort boolSort)
         [ asSentence boolSortSentence ]
@@ -554,7 +553,7 @@ test_patternVerifier =
             }
         )
         (NamePrefix "dummy")
-        (TestedPatternSort (updateAstLocation intSort AstLocationTest))
+        (TestedPatternSort intSort)
         (SortVariablesThatMustBeDeclared [])
         (DeclaredSort intSort)
         [ asSentence intSortSentenceWithoutDv ]

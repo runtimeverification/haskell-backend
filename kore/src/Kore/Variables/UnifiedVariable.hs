@@ -118,6 +118,10 @@ instance
     (FreshPartialOrd variable, SortedVariable variable)
     => FreshVariable (UnifiedVariable variable)
 
+instance From from to => From (UnifiedVariable from) (UnifiedVariable to) where
+    from (ElemVar var) = ElemVar (from var)
+    from (SetVar var) = SetVar (from var)
+
 isElemVar :: UnifiedVariable variable -> Bool
 isElemVar (ElemVar _) = True
 isElemVar _ = False

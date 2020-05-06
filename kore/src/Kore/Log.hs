@@ -77,11 +77,6 @@ import Data.Time.LocalTime
     )
 import qualified Pretty
 
-import Kore.Log.DebugAppliedRule
-import Kore.Log.DebugAxiomEvaluation
-    ( filterDebugAxiomEvaluation
-    , mapDebugAxiomEvaluation
-    )
 import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
     , solverTranscriptLogger
@@ -147,11 +142,9 @@ koreLogTransformer
 koreLogTransformer koreLogOptions baseLogger =
     Colog.cmap
         ( warningsToErrors warningSwitch
-        . mapDebugAxiomEvaluation debugAxiomEvaluationOptions
         )
         baseLogger
   where
-    KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
     KoreLogOptions { warningSwitch } = koreLogOptions
 
     warningsToErrors :: WarningSwitch -> ActualEntry -> ActualEntry
@@ -171,8 +164,6 @@ koreLogFilters koreLogOptions baseLogger =
         (\entry ->
             filterEntry logEntries entry
             || filterSeverity logLevel entry
-            || filterDebugAppliedRule debugAppliedRuleOptions entry
-            || filterDebugAxiomEvaluation debugAxiomEvaluationOptions entry
             || selectDebugApplyEquation debugApplyEquationOptions entry
             || selectDebugAttemptEquation debugAttemptEquationOptions entry
             || selectDebugEquation debugEquationOptions entry
@@ -180,8 +171,6 @@ koreLogFilters koreLogOptions baseLogger =
     baseLogger
   where
     KoreLogOptions { logLevel, logEntries } = koreLogOptions
-    KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
-    KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
     KoreLogOptions { debugApplyEquationOptions } = koreLogOptions
     KoreLogOptions { debugAttemptEquationOptions } = koreLogOptions
     KoreLogOptions { debugEquationOptions } = koreLogOptions
@@ -270,17 +259,24 @@ makeKoreLogger exeName timestampSwitch logToText =
             [ Just exeName'
             , timestamp
             , Just severity'
-            , Just (Pretty.parens type')
+            , Just (Pretty.parens $ type' actualEntry)
             ]
             <> Pretty.colon
         severity' = prettySeverity (entrySeverity actualEntry)
-        type' =
+        type' entry =
             Pretty.pretty
             $ lookupTextFromTypeWithError
-            $ typeOfSomeEntry actualEntry
+            $ typeOfSomeEntry entry
         context' =
-            mapMaybe (fmap (<> Pretty.colon) . shortDoc) entryContext
-            & toList
+            mapMaybe
+                addTypeToDoc
+                entryContext
+                & toList
+        addTypeToDoc se =
+            fmap (\doc ->
+                Pretty.hsep [Pretty.parens (type' se), doc <> Pretty.colon])
+            . shortDoc
+            $ se
     indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.

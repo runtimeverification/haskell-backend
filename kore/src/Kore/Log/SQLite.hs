@@ -29,20 +29,17 @@ import qualified Database.SQLite.Simple as SQLite
 import qualified Options.Applicative as Options
 import qualified System.Directory as Directory
 
-import Kore.Log.DebugAppliedRule
-    ( DebugAppliedRule
-    )
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
-    )
-import Kore.Log.DebugSkipSimplification
-    ( DebugSkipSimplification
     )
 import Kore.Log.WarnBottomHook
     ( WarnBottomHook
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
+    )
+import Kore.Log.WarnSymbolSMTRepresentation
+    ( WarnSymbolSMTRepresentation
     )
 import Log
     ( ActualEntry
@@ -125,11 +122,10 @@ foldMapEntries
     -> r
 foldMapEntries mapEntry =
     mconcat
-        [ mapEntry (Proxy @DebugAppliedRule)
-        , mapEntry (Proxy @DebugEvaluateCondition)
+        [ mapEntry (Proxy @DebugEvaluateCondition)
         , mapEntry (Proxy @WarnBottomHook)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
-        , mapEntry (Proxy @DebugSkipSimplification)
+        , mapEntry (Proxy @WarnSymbolSMTRepresentation)
         ]
 
 -- | Declare the SQL tables for all known 'SQL.Table' 'Entry' types.

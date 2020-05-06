@@ -78,7 +78,6 @@ import qualified SMT
     , DataTypeDeclaration (DataTypeDeclaration)
     , SExpr (Atom, List)
     , SortDeclaration (SortDeclaration)
-    , nameFromSExpr
     , showSExpr
     , tBool
     , tInt
@@ -202,7 +201,7 @@ builtinSortDeclaration
             { smtFromSortArgs = emptySortArgsToSmt smtRepresentation
             , declaration =
                 AST.SortDeclaredIndirectly
-                    (AST.AlreadyEncoded (SMT.nameFromSExpr smtRepresentation))
+                    (AST.AlreadyEncoded smtRepresentation)
             }
         )
   where
@@ -223,7 +222,7 @@ smtlibSortDeclaration
             { smtFromSortArgs = applyToArgs smtRepresentation
             , declaration = AST.SortDeclarationSort
                 SMT.SortDeclaration
-                    { name = AST.AlreadyEncoded smtName
+                    { name = AST.AlreadyEncoded $ SMT.Atom smtName
                     , arity = length sortArgs
                     }
             }
@@ -255,7 +254,7 @@ simpleSortDeclaration
         ( sentenceSortName
         , AST.Sort
             { smtFromSortArgs =
-                emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
+                emptySortArgsToSmt (AST.encode encodedName)
             , declaration = AST.SortDeclarationSort
                 SMT.SortDeclaration
                     { name = encodedName
@@ -293,7 +292,7 @@ sortWithConstructor sortConstructors sortId = do  -- Maybe
         ( sortId
         , AST.Sort
             { smtFromSortArgs =
-                emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
+                emptySortArgsToSmt (AST.encode encodedName)
             , declaration = AST.SortDeclarationDataType
                 SMT.DataTypeDeclaration
                     { name = encodedName
@@ -337,7 +336,9 @@ buildConstructorArgument
     index
     sort@(SortActualSort SortActual {sortActualSorts = []})
     = Just SMT.ConstructorArgument
-        { name = AST.Encodable $ constructorName <> (Text.pack . show) index
+        { name =
+            AST.Encodable $ SMT.Atom
+            $ constructorName <> (Text.pack . show) index
         , argType = AST.SortReference sort
         }
 buildConstructorArgument _ _ _ = Nothing

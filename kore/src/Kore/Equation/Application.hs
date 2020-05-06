@@ -43,11 +43,13 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Source as Attribute
 import Kore.Equation.Equation
     ( Equation (..)
     )
@@ -91,6 +93,10 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT
+import Kore.Syntax.Id
+    ( AstLocation (..)
+    , FileLocation (..)
+    )
 import Kore.Syntax.Variable
     ( Variable
     , toVariable
@@ -650,15 +656,13 @@ data DebugAttemptEquation
 instance Pretty DebugAttemptEquation where
     pretty (DebugAttemptEquation equation termLike) =
         Pretty.vsep
-        [ Pretty.hsep
-            [ "applying equation at"
-            , pretty srcLoc
-            , "to term:"
+        [ (Pretty.hsep . catMaybes)
+            [ Just "applying equation"
+            , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
+            , Just "to term:"
             ]
         , Pretty.indent 4 (unparse termLike)
         ]
-      where
-        srcLoc = Attribute.sourceLocation $ attributes equation
     pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
         Pretty.vsep
         [ "equation is not applicable:"
@@ -669,7 +673,13 @@ instance Pretty DebugAttemptEquation where
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
-    shortDoc _ = Just "while applying equation"
+    shortDoc (DebugAttemptEquation equation _) =
+        (Just . Pretty.hsep . catMaybes)
+            [ Just "while applying equation"
+            , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
+            ]
+    shortDoc _ = Nothing
+    helpDoc _ = "log equation application attempts"
 
 {- | Log the result of attempting to apply an 'Equation'.
 
@@ -728,18 +738,30 @@ data DebugApplyEquation
 instance Pretty DebugApplyEquation where
     pretty (DebugApplyEquation equation result) =
         Pretty.vsep
-        [ Pretty.hsep
-            [ "applied equation at"
-            , pretty srcLoc
-            , "with result:"
+        [ (Pretty.hsep . catMaybes)
+            [ Just "applied equation"
+            , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
+            , Just "with result:"
             ]
         , Pretty.indent 4 (unparse result)
         ]
-      where
-        srcLoc = Attribute.sourceLocation $ attributes equation
+
+srcLoc :: Equation Variable -> Maybe Attribute.SourceLocation
+srcLoc equation
+  | (not . isLocEmpty) kLoc = Just kLoc
+  | AstLocationFile fileLocation <- locationFromAst equation =
+    Just (from @FileLocation fileLocation)
+  | otherwise = Nothing
+  where
+    kLoc = Attribute.sourceLocation $ attributes equation
+
+isLocEmpty :: Attribute.SourceLocation -> Bool
+isLocEmpty Attribute.SourceLocation { source = Attribute.Source file } =
+    isNothing file
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
+    helpDoc _ = "log equation application successes"
 
 {- | Log when an 'Equation' is actually applied.
 

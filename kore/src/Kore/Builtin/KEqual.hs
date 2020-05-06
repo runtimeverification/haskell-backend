@@ -116,7 +116,7 @@ check whether they are equal or not, producing a builtin boolean value.
 sort) and return the first term if the expression is true, and the second
 otherwise.
  -}
-builtinFunctions :: Map Text Builtin.Function
+builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
     [ (eqKey, applicationAxiomSimplifier (evalKEq True))
@@ -147,7 +147,8 @@ evalKEq true (valid :< app) =
 
         defined1 <- Ceil.makeEvaluate sideCondition pattern1
         defined2 <- Ceil.makeEvaluate sideCondition pattern2
-        defined <- And.simplifyEvaluated sideCondition defined1 defined2
+        defined <-
+            And.simplifyEvaluated Not.notSimplifier sideCondition defined1 defined2
 
         equalTerms <-
             Equals.makeEvaluateTermsToPredicate
@@ -162,7 +163,8 @@ evalKEq true (valid :< app) =
             falsePatterns = Pattern.withCondition falseTerm <$> notEqualTerms
 
         let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
-        results <- And.simplifyEvaluated sideCondition defined undefinedResults
+        results <-
+            And.simplifyEvaluated Not.notSimplifier sideCondition defined undefinedResults
         pure $ Applied AttemptedAxiomResults
             { results
             , remainders = OrPattern.bottom

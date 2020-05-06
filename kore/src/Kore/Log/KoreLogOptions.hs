@@ -56,11 +56,6 @@ import Kore.Equation
     , DebugAttemptEquation (..)
     )
 import qualified Kore.Equation as Equation
-import Kore.Log.DebugAppliedRule
-import Kore.Log.DebugAxiomEvaluation
-    ( DebugAxiomEvaluationOptions
-    , parseDebugAxiomEvaluationOptions
-    )
 import Kore.Log.DebugSolver
     ( DebugSolverOptions
     , parseDebugSolverOptions
@@ -86,8 +81,6 @@ data KoreLogOptions = KoreLogOptions
     -- ^ enable or disable timestamps
     , logEntries :: !EntryTypes
     -- ^ extra entries to show, ignoring 'logLevel'
-    , debugAppliedRuleOptions :: !DebugAppliedRuleOptions
-    , debugAxiomEvaluationOptions :: !DebugAxiomEvaluationOptions
     , debugSolverOptions :: !DebugSolverOptions
     , exeName :: !ExeName
     , logSQLiteOptions :: !LogSQLiteOptions
@@ -105,8 +98,6 @@ instance Default KoreLogOptions where
             , logLevel = Warning
             , timestampsSwitch = def @TimestampsSwitch
             , logEntries = mempty
-            , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
-            , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
             , debugSolverOptions = def @DebugSolverOptions
             , exeName = ExeName mempty
             , logSQLiteOptions = def @LogSQLiteOptions
@@ -171,8 +162,6 @@ parseKoreLogOptions exeName =
     <*> (parseSeverity <|> pure Warning)
     <*> (parseTimestampsSwitch <|> pure TimestampsEnable)
     <*> (mconcat <$> many parseEntryTypes)
-    <*> parseDebugAppliedRuleOptions
-    <*> parseDebugAxiomEvaluationOptions
     <*> parseDebugSolverOptions
     <*> pure exeName
     <*> parseLogSQLiteOptions
@@ -196,7 +185,7 @@ parseEntryTypes =
             [ "Log entries: logs entries of supplied types"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text . Text.unpack <$> getEntryTypesAsText)
+                (OptPretty.text <$> getEntryTypesAsText)
             ]
 
     parseCommaSeparatedEntries =

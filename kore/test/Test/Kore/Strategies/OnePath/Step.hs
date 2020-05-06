@@ -45,6 +45,7 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -87,54 +88,31 @@ import Test.Tasty.HUnit.Ext
 makeOnePathRule
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRule term dest =
     OnePathRule $ rulePattern term dest
 
 makeOnePathRuleFromPatterns
     :: Pattern Variable
     -> Pattern Variable
-    -> OnePathRule Variable
+    -> OnePathRule
 makeOnePathRuleFromPatterns
     configuration
     destination
   =
-    let (left, Condition.toPredicate -> requires) =
+    let (left, Condition.toPredicate -> requires') =
             Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures) =
+        (right, Condition.toPredicate -> ensures') =
             Pattern.splitTerm destination
     in coerce RulePattern
         { left
         , antiLeft = Nothing
-        , requires
+        , requires = Predicate.coerceSort (TermLike.termLikeSort left) requires'
         , rhs = RHS
             { existentials = []
             , right
-            , ensures
-            }
-        , attributes = Default.def
-        }
-
-makeOnePathRuleFromPatternsWithCond
-    :: Pattern Variable
-    -> Pattern Variable
-    -> OnePathRule Variable
-makeOnePathRuleFromPatternsWithCond
-    configuration
-    destination
-  =
-    let (left, Condition.toPredicate -> requires) =
-            Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures) =
-            Pattern.splitTerm destination
-    in coerce RulePattern
-        { left
-        , antiLeft = Nothing
-        , requires
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures
+            , ensures =
+                Predicate.coerceSort (TermLike.termLikeSort right) ensures'
             }
         , attributes = Default.def
         }
@@ -142,7 +120,7 @@ makeOnePathRuleFromPatternsWithCond
 makeReachabilityOnePathRule
     :: TermLike Variable
     -> TermLike Variable
-    -> ReachabilityRule Variable
+    -> ReachabilityRule
 makeReachabilityOnePathRule term dest =
     OnePath (makeOnePathRule term dest)
 
@@ -771,11 +749,13 @@ test_onePathStrategy =
         -- Normal axiom: -
         -- Expected: stuck, since the terms unify but the conditions do not
         let goal =
-                makeOnePathRuleFromPatternsWithCond
+                makeOnePathRuleFromPatterns
                     ( Conditional
                         { term = TermLike.mkElemVar Mock.x
                         , predicate =
-                            makeEqualsPredicate_ (TermLike.mkElemVar Mock.x) Mock.a
+                            makeEqualsPredicate Mock.testSort
+                                (TermLike.mkElemVar Mock.x)
+                                Mock.a
                         , substitution = mempty
                         }
                     )
@@ -783,7 +763,7 @@ test_onePathStrategy =
                         { term = TermLike.mkElemVar Mock.x
                         , predicate =
                             makeNotPredicate
-                                $ makeEqualsPredicate_
+                                $ makeEqualsPredicate Mock.testSort
                                     (TermLike.mkElemVar Mock.x)
                                     Mock.a
                         , substitution = mempty
@@ -801,7 +781,7 @@ test_onePathStrategy =
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 simpleRewrite left right =
     OnePathRewriteRule
     $ RewriteRule RulePattern
@@ -815,7 +795,7 @@ simpleRewrite left right =
 simpleReachabilityRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (ReachabilityRule Variable)
+    -> Rule ReachabilityRule
 simpleReachabilityRewrite left right =
     coerce (simpleRewrite left right)
 
@@ -823,7 +803,7 @@ rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule OnePathRule
 rewriteWithPredicate left right predicate =
     OnePathRewriteRule
     $ RewriteRule RulePattern
@@ -838,7 +818,7 @@ rewriteReachabilityWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-    -> Rule (ReachabilityRule Variable)
+    -> Rule ReachabilityRule
 rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)
 
@@ -903,10 +883,9 @@ runOnePathSteps
     return (sort $ nub result)
 
 assertStuck
-    :: (Debug variable, Diff variable)
-    => OnePathRule variable
-    -> [ProofState.ProofState (OnePathRule variable)]
-    -> [ProofState.ProofState (ReachabilityRule variable)]
+    :: OnePathRule
+    -> [ProofState.ProofState OnePathRule]
+    -> [ProofState.ProofState ReachabilityRule]
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
     assertEqual "as one-path claim" [ ProofState.GoalStuck expectedGoal ] actual

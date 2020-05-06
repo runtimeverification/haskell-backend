@@ -22,6 +22,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -90,6 +91,10 @@ instance Synthetic ConstructorLike (Const Endianness) where
         -- Endianness symbols are constructors
         const (ConstructorLike (Just ConstructorLikeHead))
     {-# INLINE synthetic #-}
+
+instance AstWithLocation Endianness where
+    locationFromAst (BigEndian symbol) = locationFromAst symbol
+    locationFromAst (LittleEndian symbol) = locationFromAst symbol
 
 toSymbol :: Endianness -> Symbol
 toSymbol (BigEndian symbol) = symbol

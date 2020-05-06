@@ -159,9 +159,13 @@ class Ord variable => FreshVariable variable where
         -> variable
         -> Maybe variable
     refreshVariable avoiding original = do
-        largest <- assignSort <$> Set.lookupLT (supVariable original) avoiding
-        Monad.guard (largest >= infVariable original)
-        pure (nextVariable largest)
+        let sup = supVariable original
+        largest <- assignSort <$> Set.lookupLT sup avoiding
+        -- assignSort must not change the order with respect to sup.
+        assert (largest < sup) $ Monad.guard (largest >= infVariable original)
+        let next = nextVariable largest
+        -- nextVariable must yield a variable greater than largest.
+        assert (next > largest) $ pure next
       where
         originalSort = Lens.view lensVariableSort original
         assignSort = Lens.set lensVariableSort originalSort

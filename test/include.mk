@@ -22,6 +22,7 @@ DEF_KORE ?= $(DEF_KORE_DEFAULT)
 TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
 
 TESTS = \
+	$(wildcard $(DEF_DIR)/*.verify) \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
 	$(wildcard $(TEST_DIR)/*.merge) \
@@ -69,6 +70,10 @@ $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ 2>/dev/null
 	$(DIFF) $@.golden $@ || $(FAILED)
 
+%.verify.out: $(DEF_KORE_DEFAULT)
+	$(KORE_PARSER) $(DEF_KORE_DEFAULT) --verify >/dev/null 2>$@ || /bin/true
+	$(DIFF) $@.golden $@ || $(FAILED)
+
 ### SEARCH
 
 %.search.final.$(EXT).out: KRUN_OPTS += --search-final
@@ -96,7 +101,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	@echo ">>>" $(CURDIR) "kprove" $<
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
-	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) --output-file 2>/dev/null $@ || true
+	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) 2>/dev/null >$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
 
@@ -115,7 +120,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 %-repl-script-spec.k.out: %-repl-script-spec.k.repl
-%-repl-script-spec.k.out: KORE_REPL_OPTS = -r --repl-script $<.repl
+%-repl-script-spec.k.out: KORE_REPL_OPTS = -r --save-run-output --repl-script $<.repl
 %-repl-script-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 ### BMC

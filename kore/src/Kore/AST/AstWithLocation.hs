@@ -25,7 +25,6 @@ import Kore.Syntax.PatternF
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
-    , mapUnifiedVariable
     )
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
@@ -33,7 +32,6 @@ an 'AstLocation'.
 -}
 class AstWithLocation awl where
     locationFromAst :: awl -> AstLocation
-    updateAstLocation :: awl -> AstLocation -> awl
 
 prettyPrintLocationFromAst
     :: AstWithLocation astWithLocation
@@ -42,79 +40,49 @@ prettyPrintLocationFromAst = prettyPrintAstLocation . locationFromAst
 
 instance AstWithLocation AstLocation where
     locationFromAst = id
-    updateAstLocation _ loc = loc
 
 instance AstWithLocation Id where
     locationFromAst = idLocation
-    updateAstLocation id' loc = id' { idLocation = loc }
 
 instance AstWithLocation SortVariable where
     locationFromAst = locationFromAst . getSortVariable
-    updateAstLocation (SortVariable v) loc =
-        SortVariable (updateAstLocation v loc)
 
 instance AstWithLocation SortActual where
     locationFromAst = locationFromAst . sortActualName
-    updateAstLocation sa loc =
-        sa { sortActualName = updateAstLocation (sortActualName sa) loc }
 
 instance AstWithLocation Sort where
     locationFromAst (SortVariableSort sortVariable) =
         locationFromAst sortVariable
     locationFromAst (SortActualSort sortActual) =
         locationFromAst sortActual
-    updateAstLocation (SortVariableSort sortVariable) loc =
-        SortVariableSort (updateAstLocation sortVariable loc)
-    updateAstLocation (SortActualSort sortActual) loc =
-        SortActualSort (updateAstLocation sortActual loc)
 
 instance AstWithLocation Variable where
     locationFromAst = locationFromAst . variableName
-    updateAstLocation var loc =
-        var {variableName = updateAstLocation (variableName var) loc}
 
 instance
     AstWithLocation variable => AstWithLocation (ElementVariable variable)
   where
     locationFromAst = locationFromAst . getElementVariable
-    updateAstLocation (ElementVariable variable) loc =
-        ElementVariable (updateAstLocation variable loc)
 
 instance
     AstWithLocation variable => AstWithLocation (SetVariable variable)
   where
     locationFromAst = locationFromAst . getSetVariable
-    updateAstLocation (SetVariable variable) loc =
-        SetVariable (updateAstLocation variable loc)
 
 instance
     AstWithLocation variable => AstWithLocation (UnifiedVariable variable)
   where
     locationFromAst (ElemVar v) = locationFromAst v
     locationFromAst (SetVar v) = locationFromAst v
-    updateAstLocation var loc =
-        mapUnifiedVariable
-            (flip updateAstLocation loc)
-            (flip updateAstLocation loc)
-            var
 
 instance AstWithLocation Alias where
     locationFromAst = locationFromAst . aliasConstructor
-    updateAstLocation al loc =
-        al { aliasConstructor = updateAstLocation (aliasConstructor al) loc }
 
 instance AstWithLocation SymbolOrAlias where
     locationFromAst = locationFromAst . symbolOrAliasConstructor
-    updateAstLocation sal loc =
-        sal
-            { symbolOrAliasConstructor =
-                updateAstLocation (symbolOrAliasConstructor sal) loc
-            }
 
 instance AstWithLocation Symbol where
     locationFromAst = locationFromAst . symbolConstructor
-    updateAstLocation s loc =
-        s { symbolConstructor = updateAstLocation (symbolConstructor s) loc }
 
 instance
     AstWithLocation variable =>
@@ -152,5 +120,3 @@ instance
             TopF Top { topSort } -> locationFromAst topSort
             VariableF (Const variable) -> locationFromAst variable
             InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort
-
-    updateAstLocation = undefined
