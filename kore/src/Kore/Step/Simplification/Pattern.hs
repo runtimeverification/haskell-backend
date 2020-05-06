@@ -24,8 +24,10 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    , topTODO
+    ( topTODO
+    )
+import Kore.Internal.Substitution
+    ( toMap
     )
 import Kore.Internal.TermLike
     ( pattern Exists_
@@ -35,6 +37,9 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     , simplifyCondition
     , simplifyConditionalTermToOr
+    )
+import Kore.Substitute
+    ( substitute
     )
 
 {-| Simplifies the pattern without a side-condition (i.e. it's top)
@@ -68,9 +73,8 @@ simplify sideCondition pattern' =
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
-            termSideCondition =
-                sideCondition `SideCondition.andCondition` simplifiedCondition
-        orSimplifiedTerms <- simplifyConditionalTermToOr termSideCondition term
+            term' = substitute (toMap $ substitution simplifiedCondition) term
+        orSimplifiedTerms <- simplifyConditionalTermToOr sideCondition term'
         simplifiedTerm <- Branch.scatter orSimplifiedTerms
         simplifyCondition
             sideCondition

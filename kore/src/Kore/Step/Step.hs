@@ -67,8 +67,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    , mapVariables
+    ( mapVariables
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -151,19 +150,17 @@ unifyRule
     -- ^ Rule
     -> BranchT simplifier (UnifiedRule rule variable)
 unifyRule unificationProcedure sideCondition initial rule = do
-    let (initialTerm, initialCondition) = Pattern.splitTerm initial
-        mergedSideCondition =
-            sideCondition `SideCondition.andCondition` initialCondition
+    let (initialTerm, _) = Pattern.splitTerm initial
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
     unification <-
-        unifyTermLikes mergedSideCondition initialTerm ruleLeft
+        unifyTermLikes sideCondition initialTerm ruleLeft
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
-        simplifyPredicate mergedSideCondition Nothing (unification <> requires')
+        simplifyPredicate sideCondition Nothing (unification <> requires')
     return (rule `Conditional.withCondition` unification')
   where
     unifyTermLikes = runUnificationProcedure unificationProcedure
@@ -302,7 +299,7 @@ simplifyPredicate
 simplifyPredicate sideCondition (Just initialCondition) conditional = do
     partialResult <-
         Simplifier.simplifyCondition
-            (sideCondition `SideCondition.andCondition` initialCondition)
+            sideCondition
             conditional
     -- TODO (virgil): Consider using different simplifyPredicate implementations
     -- for rewrite rules and equational rules.
