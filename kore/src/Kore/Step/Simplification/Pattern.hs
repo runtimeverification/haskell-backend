@@ -24,8 +24,8 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    , andCondition
+    ( andCondition
+    , topTODO
     )
 import Kore.Internal.Substitution
     ( toMap
