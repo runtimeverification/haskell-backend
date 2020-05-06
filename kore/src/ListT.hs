@@ -11,6 +11,8 @@ This module implements the list monad transformer.
 
 {-# LANGUAGE UndecidableInstances #-}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module ListT
     ( ListT (..)
     , cons
