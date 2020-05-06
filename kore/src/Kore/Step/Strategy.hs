@@ -30,6 +30,7 @@ module Kore.Step.Strategy
     , stuck
     , continue
       -- * Running strategies
+    , unfoldM
     , GraphSearchOrder(..)
     , constructExecutionGraph
     , ExecutionGraph(..)
@@ -43,6 +44,7 @@ module Kore.Step.Strategy
     , pickStar
     , pickPlus
     , assert
+    , transitionRule
     , executionHistoryStep
     , emptyExecutionGraph
     , module Kore.Step.Transition
@@ -472,6 +474,34 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
             { config
             , parents = [(rules, node)]
             }
+
+unfoldM
+    :: forall m config instr
+    .  MonadProfiler m
+    => Alternative m
+    => Limit Natural
+    -> GraphSearchOrder
+    -> (instr -> config -> m [config])
+    -> [instr]
+    -> config
+    -> m config
+unfoldM _ searchOrder transit instrs0 config0 =
+    worker (Seq.singleton (config0, instrs0))
+  where
+    mkSeeds instrs configs = Seq.fromList (flip (,) instrs <$> configs)
+    worker Seq.Empty = empty
+    worker ((config, instrs) Seq.:<| rest) =
+        case instrs of
+            [] -> return config <|> worker rest
+            instr : instrs' -> do
+                configs' <- transit instr config
+                let seeds =
+                        case searchOrder of
+                            BreadthFirst -> rest <> mkSeeds instrs' configs'
+                            DepthFirst -> mkSeeds instrs' configs' <> rest
+                if null configs'
+                    then return config <|> worker rest
+                    else worker seeds
 
 {- | Transition rule for running a 'Strategy'.
 

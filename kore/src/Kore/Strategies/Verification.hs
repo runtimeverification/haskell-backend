@@ -60,7 +60,10 @@ import Kore.Step.RulePattern
     ( RHS
     )
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Strategy
+import Kore.Step.Strategy hiding
+    ( transitionRule
+    )
+import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
     ( runTransitionT
     )
@@ -74,6 +77,9 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Unparser
+import ListT
+    ( ListT (..)
+    )
 
 type CommonProofState  = ProofState.ProofState (Pattern Variable)
 
@@ -150,7 +156,6 @@ verify
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
-    => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
     -> AllClaims claim
@@ -201,7 +206,6 @@ verifyHelper
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
-    => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
     -> AllClaims claim
@@ -239,7 +243,6 @@ verifyClaim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
-    => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
     -> AllClaims claim
@@ -256,27 +259,48 @@ verifyClaim
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
-        destination = getDestination goal
         limitedStrategy =
-            Limit.takeWithin
-                depthLimit
-                (Foldable.toList $ strategy goal claims axioms)
-    executionGraph <-
-        runStrategyWithSearchOrder
-            breadthLimit
-            (modifiedTransitionRule destination)
-            limitedStrategy
-            searchOrder
-            startPattern
-    -- Throw the first unproven configuration as an error.
-    Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
+            strategy goal claims axioms
+            & Foldable.toList
+            & Limit.takeWithin depthLimit
+    unfoldM
+        breadthLimit
+        searchOrder
+        transit
+        limitedStrategy
+        startPattern
+        & throwUnproven
   where
+    destination = getDestination goal
+
+    throwUnproven
+        :: ListT (ExceptT (Pattern Variable) m) (ProofState.ProofState (Pattern Variable))
+        -> ExceptT (Pattern Variable) m ()
+    throwUnproven acts =
+        foldListT acts throwUnprovenOrElse done
+      where
+        done = return ()
+
+    throwUnprovenOrElse
+        :: ProofState.ProofState (Pattern Variable)
+        -> ExceptT (Pattern Variable) m ()
+        -> ExceptT (Pattern Variable) m ()
+    throwUnprovenOrElse proofState acts = do
+        ProofState.extractUnproven proofState
+            & Foldable.traverse_ Monad.Except.throwError
+        acts
+
+    transit instr config =
+        Strategy.transitionRule modifiedTransitionRule instr config
+        & runTransitionT
+        & fmap (fst . unzip)
+        & lift
+
     modifiedTransitionRule
-        :: RHS Variable
-        -> Prim claim
+        :: Prim claim
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
-    modifiedTransitionRule destination prim proofState' = do
+    modifiedTransitionRule prim proofState' = do
         transitions <-
             lift . lift . runTransitionT
             $ transitionRule' goal destination prim proofState'

@@ -55,7 +55,6 @@ runVerificationToPattern
     :: Verification.Claim claim
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
-    => Show (Rule claim)
     => Limit Natural
     -> Limit Natural
     -> [Rule claim]
@@ -81,7 +80,6 @@ runVerification
     :: Verification.Claim claim
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
-    => Show (Rule claim)
     => Limit Natural
     -> Limit Natural
     -> [Rule claim]
