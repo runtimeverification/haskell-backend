@@ -45,3 +45,5 @@ cabal.project.local
 /result*
 /local.nix
 /shell.local.nix
+/TAGS
+/.TAGS*
