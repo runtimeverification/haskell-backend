@@ -37,6 +37,10 @@ import Control.Monad.Trans.Except
 import Data.Coerce
     ( coerce
     )
+import Data.Foldable
+    ( find
+    , traverse_
+    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -91,6 +95,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
+import Kore.Log.ErrorRewriteLoop
+    ( errorRewriteLoop
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -123,6 +130,7 @@ import Kore.Step.RulePattern
     , RulePattern (RulePattern)
     , ToRulePattern (..)
     , getRewriteRule
+    , lhsEqualsRhs
     )
 import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
@@ -358,6 +366,8 @@ proveWithRepl
     -- ^ Optional script
     -> Repl.Data.ReplMode
     -- ^ Run in a specific repl mode
+    -> Repl.Data.ScriptModeOutput
+    -- ^ Optional flag for output in run-mode
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
     -> ModuleName
@@ -369,6 +379,7 @@ proveWithRepl
     mvar
     replScript
     replMode
+    scriptModeOutput
     outputFile
     mainModuleName
   =
@@ -385,6 +396,7 @@ proveWithRepl
             mvar
             replScript
             replMode
+            scriptModeOutput
             outputFile
             mainModuleName
 
@@ -622,6 +634,9 @@ initialize verifiedModule = do
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             return (MultiAnd.extractPatterns simplified)
+    traverse_
+        errorRewriteLoop
+        $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
     pure Initialized { rewriteRules = concat rewriteAxioms }
