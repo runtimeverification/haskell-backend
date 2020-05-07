@@ -172,6 +172,33 @@ applying the overloading axioms in a left-to-right fashion.
     information for the two overloaded constructors to directly derive the new
     goals (apply the overload axiom right-to-left on the right and retry)
   + otherwise, fail, as the constructors are incompatible
+- injection of (overloaded) constructor vs. injection of (overloaded) constructor
+  + If there exists a common overloaded constructor overloading both constructors, with its sort at most the top sort of the injection, then apply the overload axioms right-to-left to get both terms to use the common overloaded constructor and retry
+  + otherwise, fail, as the constructors are incompatible
+- overloading constructor `c1` vs. injection of variable `x2` from sort `s2`.
+
+  1. Find a constructor `c2` overloaded by `c1` whose sort `s2'` is at most `s2`.
+     - If there are more, pick the one overloading all the others.
+     - If cannot compute one overloading all the others, fail (ambiguity).
+  1. narrow `x` to `\inj{s'}{s}(c'(x1,...,xn)` where `x1`, ..., `xn` are fresh
+  1. apply the right-to-left overloading axiom to transform `c'` into `c`
+  1. hope that the new unification fails; if not build the conjunction of
+     the result with the equality for `x` and existentially quantify them using
+     `x1` ... `xn`
+- injection of overloaded constructor `c1` of sort `s1` into sort `s`
+  vs. injection of variable `x2` from  sort `s2` to sort `s`.
+
+  1. Find a constructor `c1'` overloading `c1` whose sort `s1'` is at most `s`.
+  1. Find a constructor `c2'` overloaded by `c1` whose sort `s2'` is at most `s2`.
+     - If there are more, pick the one overloading all the others.
+     - If cannot compute one overloading all the others, fail (ambiguity).
+  1. narrow `x` to `\inj{s2'}{s2}(c2'(x1,...,xn)` where `x1`, ..., `xn` are fresh
+  1. apply the right-to-left overloading axioms to transform `c1` into `c1'` and
+     `c2'` into `c1'`
+  1. hope that the new unification fails; if not build the conjunction of
+     the result with the equality for `x` and existentially quantify them using
+     `x1` ... `xn`
+   
 - otherwise, for now, throw an unsupported exception, as this
   would prevent increasing the number of variable and possible decompositions
 
