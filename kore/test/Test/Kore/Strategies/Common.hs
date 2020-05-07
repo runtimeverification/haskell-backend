@@ -9,6 +9,7 @@ import Prelude.Kore
 import Control.Monad.Trans.Except
     ( runExceptT
     )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Limit
     ( Limit (..)
     )
@@ -20,6 +21,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , rulePattern
@@ -33,7 +35,7 @@ import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
-    , StuckVerification (StuckVerification)
+    , Stuck (..)
     , ToProve (ToProve)
     )
 import qualified Kore.Strategies.Verification as Verification
@@ -47,19 +49,16 @@ import Test.Kore.Step.Simplification
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule Variable
+    -> RewriteRule RewritingVariable
 simpleRewrite left right =
-    RewriteRule $ rulePattern left right
+    mkRewritingRule $ RewriteRule $ rulePattern left right
 
 runVerificationToPattern
-    :: Verification.Claim claim
-    => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
-    => Show claim
-    => Limit Natural
+    :: Limit Natural
     -> Limit Natural
-    -> [Rule claim]
-    -> [claim]
-    -> [claim]
+    -> [Rule ReachabilityRule]
+    -> [ReachabilityRule]
+    -> [ReachabilityRule]
     -> IO (Either (Pattern Variable) ())
 runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
     do
@@ -71,21 +70,15 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
             alreadyProven
         return (toPattern stuck)
   where
-    toPattern (Left StuckVerification {stuckDescription}) =
-        Left stuckDescription
-    toPattern (Right a) = Right a
-
+    toPattern = Bifunctor.first stuckPattern
 
 runVerification
-    :: Verification.Claim claim
-    => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
-    => Show claim
-    => Limit Natural
+    :: Limit Natural
     -> Limit Natural
-    -> [Rule claim]
-    -> [claim]
-    -> [claim]
-    -> IO (Either (StuckVerification (Pattern Variable) claim) ())
+    -> [Rule ReachabilityRule]
+    -> [ReachabilityRule]
+    -> [ReachabilityRule]
+    -> IO (Either Stuck ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
     runSimplifier mockEnv $ do
         SMT.AST.declare Mock.smtDeclarations
