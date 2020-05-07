@@ -832,7 +832,7 @@ removeDestination lensRulePattern mkState goal =
                 & GoalStuck
                 & pure
         & run
-        & withConfiguration' configuration
+        & withConfiguration configuration
       where
         configuration = Lens.view RulePattern.leftPattern rulePattern
         configFreeVars = freeVariables configuration
@@ -853,7 +853,7 @@ simplify
     -> Strategy.TransitionT (Rule goal) m goal
 simplify lensRulePattern =
     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config ->
-    withConfiguration' config $ do
+    withConfiguration config $ do
         configs <-
             simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
             & lift
@@ -907,7 +907,7 @@ deriveWith
 deriveWith lensRulePattern mkRule takeStep rewrites goal =
     (\x -> getCompose $ x goal)
     $ Lens.traverseOf (lensRulePattern . RulePattern.leftPattern)
-    $ \config -> Compose $ withConfiguration' config $ do
+    $ \config -> Compose $ withConfiguration config $ do
         results <- takeStep rewrites config & assertInstantiated config
         deriveResults mkRule results
   where
@@ -958,8 +958,8 @@ deriveResults mkRule Results { results, remainders } =
 
     fromAppliedRule = mkRule . RewriteRule . Step.withoutUnification
 
-withConfiguration' :: MonadCatch m => Pattern Variable -> m a -> m a
-withConfiguration' configuration =
+withConfiguration :: MonadCatch m => Pattern Variable -> m a -> m a
+withConfiguration configuration =
     handle (throw . WithConfiguration configuration)
 
 {- | The predicate to remove the destination from the present configuration.

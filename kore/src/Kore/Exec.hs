@@ -341,7 +341,7 @@ prove
             (Axioms axioms)
             (AlreadyProven (map unparseToText2 alreadyProven))
             (ToProve
-                (map (\x -> (x, depthLimit))
+                (map (\x -> (x,depthLimit))
                     (extractUntrustedClaims' claims)
                 )
             )
