@@ -161,7 +161,7 @@ andCondition
     => SideCondition variable
     -> Condition variable
     -> SideCondition variable
-andCondition initial@SideCondition {assumedTrue} newCondition =
+andCondition SideCondition {assumedTrue} newCondition =
     assert (isNormalized result) result
   where
     result = SideCondition
