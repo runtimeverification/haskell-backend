@@ -227,15 +227,16 @@ verifyClaim
             strategy goal claims axioms
             & Foldable.toList
             & Limit.takeWithin depthLimit
-    Strategy.unfoldM
+    Strategy.leavesM
         breadthLimit
         searchOrder
-        transit
-        limitedStrategy
-        startPattern
+        (Strategy.unfoldTransition transit)
+        (limitedStrategy, startPattern)
+        & fmap discardStrategy
         & throwUnproven
   where
     destination = getDestination goal
+    discardStrategy = snd
 
     throwUnproven
         :: ListT (Verifier simplifier) CommonProofState

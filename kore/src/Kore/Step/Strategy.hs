@@ -30,7 +30,8 @@ module Kore.Step.Strategy
     , stuck
     , continue
       -- * Running strategies
-    , unfoldM
+    , leavesM
+    , unfoldTransition
     , GraphSearchOrder(..)
     , constructExecutionGraph
     , ExecutionGraph(..)
@@ -62,9 +63,13 @@ import Prelude.Kore hiding
     , some
     )
 
+import Control.Error
+    ( maybeT
+    )
 import qualified Control.Exception as Exception
 import Control.Monad
-    ( when
+    ( guard
+    , when
     , (>=>)
     )
 import Control.Monad.State.Strict
@@ -379,11 +384,10 @@ emptyExecutionGraph config =
 -}
 data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
-newtype LimitExceeded instr = LimitExceeded (Seq (Graph.Node, [instr]))
+newtype LimitExceeded a = LimitExceeded (Seq a)
     deriving (Show, Typeable)
 
-instance (Show instr, Typeable instr)
-    => Exception.Exception (LimitExceeded instr)
+instance (Show a, Typeable a) => Exception.Exception (LimitExceeded a)
 
 {- | Execute a 'Strategy'.
 
@@ -475,33 +479,60 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
             , parents = [(rules, node)]
             }
 
-unfoldM
-    :: forall m config instr
-    .  MonadProfiler m
+{- | Unfold the function from the initial vertex.
+
+@leavesM@ returns a disjunction of leaves (vertices without descendants) rather
+than constructing the entire graph.
+
+ -}
+leavesM
+    :: forall m a
+    .  Monad m
     => Alternative m
+    => (Show a, Typeable a)
     => Limit Natural
     -> GraphSearchOrder
-    -> (instr -> config -> m [config])
-    -> [instr]
-    -> config
-    -> m config
-unfoldM _ searchOrder transit instrs0 config0 =
-    worker (Seq.singleton (config0, instrs0))
+    -> (a -> m [a])  -- ^ unfolding function
+    -> a  -- ^ initial vertex
+    -> m a
+leavesM breadthLimit searchOrder next a0 =
+    worker (Seq.singleton a0)
   where
-    mkSeeds instrs configs = Seq.fromList (flip (,) instrs <$> configs)
+    mk :: Seq a -> [a] -> Seq a
+    mk as as' =
+        case searchOrder of
+            BreadthFirst -> as <> Seq.fromList as'
+            DepthFirst -> Seq.fromList as' <> as
+
+    exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
+
     worker Seq.Empty = empty
-    worker ((config, instrs) Seq.:<| rest) =
-        case instrs of
-            [] -> return config <|> worker rest
-            instr : instrs' -> do
-                configs' <- transit instr config
-                let seeds =
-                        case searchOrder of
-                            BreadthFirst -> rest <> mkSeeds instrs' configs'
-                            DepthFirst -> mkSeeds instrs' configs' <> rest
-                if null configs'
-                    then return config <|> worker rest
-                    else worker seeds
+    worker (a Seq.:<| as) =
+        do
+            when (exceedsLimit as) (Exception.throw $ LimitExceeded as)
+            as' <- lift (next a)
+            (guard . not) (null as')
+            pure (mk as as')
+        & maybeT (return a <|> worker as) worker
+
+{- | Turn a transition rule into an unfolding function.
+
+@unfoldTransition@ applies the transition rule to the first @instr@ and threads
+the tail of the list to the results. The result is @[]@ if the @[instr]@ is
+empty.
+
+ -}
+unfoldTransition
+    :: Monad m
+    => (instr -> config -> m [config])  -- ^ transition rule
+    -> ([instr], config)
+    -> m [([instr], config)]
+unfoldTransition transit (instrs, config) =
+    case instrs of
+        [] -> pure []
+        instr : instrs' -> do
+            configs' <- transit instr config
+            pure ((,) instrs' <$> configs')
 
 {- | Transition rule for running a 'Strategy'.
 
