@@ -41,6 +41,10 @@ import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( coerce
     )
+import Data.Foldable
+    ( find
+    , traverse_
+    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -95,6 +99,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
+import Kore.Log.ErrorRewriteLoop
+    ( errorRewriteLoop
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -127,6 +134,7 @@ import Kore.Step.RulePattern
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , getRewriteRule
+    , lhsEqualsRhs
     )
 import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
@@ -381,6 +389,8 @@ proveWithRepl
     -- ^ Optional script
     -> Repl.Data.ReplMode
     -- ^ Run in a specific repl mode
+    -> Repl.Data.ScriptModeOutput
+    -- ^ Optional flag for output in run-mode
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
     -> ModuleName
@@ -392,13 +402,22 @@ proveWithRepl
     mvar
     replScript
     replMode
+    scriptModeOutput
     outputFile
     mainModuleName
   =
     evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
-        Repl.runRepl axioms claims mvar replScript replMode outputFile mainModuleName
+        Repl.runRepl
+            axioms
+            claims
+            mvar
+            replScript
+            replMode
+            scriptModeOutput
+            outputFile
+            mainModuleName
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
@@ -647,6 +666,9 @@ initialize verifiedModule within = do
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             return (MultiAnd.extractPatterns simplified)
+    traverse_
+        errorRewriteLoop
+        $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
     --let axioms = coerce (concat simplifiedRewrite)

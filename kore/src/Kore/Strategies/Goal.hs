@@ -31,10 +31,15 @@ import Prelude.Kore
 import Control.Error
     ( ExceptT
     , runExceptT
+    , throwE
     )
 import Control.Exception
     ( throw
     )
+import Control.Lens
+    ( Lens'
+    )
+import qualified Control.Lens as Lens
 import Control.Monad.Catch
     ( Exception (..)
     , MonadCatch
@@ -47,6 +52,13 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import Data.Functor.Compose
+import Data.Generics.Product
+    ( field
+    )
+import Data.Generics.Wrapped
+    ( _Unwrapped
+    )
 import Data.Kind
     ( Type
     )
@@ -301,7 +313,7 @@ instance Goal OnePathRule where
         (withDebugProofState . transitionRuleTemplate)
         TransitionRuleTemplate
             { simplifyTemplate = simplify
-            , removeDestinationTemplate = removeDestination
+            , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid
             , deriveParTemplate = derivePar
             , deriveSeqTemplate = deriveSeq
@@ -337,7 +349,7 @@ instance Goal AllPathRule where
         (withDebugProofState . transitionRuleTemplate)
         TransitionRuleTemplate
             { simplifyTemplate = simplify
-            , removeDestinationTemplate = removeDestination
+            , removeDestinationTemplate = removeDestination _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid
             , deriveParTemplate = derivePar
             , deriveSeqTemplate = deriveSeq
@@ -758,48 +770,51 @@ allPathFollowupStep claims axiomGroups =
 
 -- | Remove the destination of the goal.
 removeDestination
-    :: MonadSimplify m
+    :: forall goal m
+    .  MonadSimplify m
     => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
-    => ToRulePattern goal
-    => FromRulePattern goal
-    => (forall x. x -> ProofState goal x)
+    => Lens' goal (RulePattern Variable)
+    -> (forall x. x -> ProofState goal x)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestination stateConstructor goal =
-    withConfiguration goal $ lift $ do
-        removal <- removalPredicate destination configuration
-        if isTop removal
-            then return . stateConstructor $ goal
-            else do
-                simplifiedRemoval <-
-                    SMT.Evaluator.filterMultiOr
-                    =<< simplifyTopConfiguration
-                        (Conditional.andPredicate configuration removal)
-                if not (isBottom simplifiedRemoval)
-                    then
-                        let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
-                            (left, requiresCondition) = Conditional.splitTerm stuckConfiguration
-                         in return . GoalStuck $ stuckGoal left requiresCondition
-                    else return Proven
+removeDestination lensRulePattern mkState goal =
+    goal
+    & Lens.traverseOf lensRulePattern (Compose . removeDestinationWorker)
+    & getCompose
+    & lift
   where
-    configuration = getConfiguration goal
-    configFreeVars = freeVariables configuration
+    removeDestinationWorker
+        :: RulePattern Variable
+        -> m (ProofState goal (RulePattern Variable))
+    removeDestinationWorker rulePattern =
+        do
+            removal <- removalPredicate destination configuration
+            when (isTop removal) (succeed . mkState $ rulePattern)
+            simplifiedRemoval <-
+                return (Conditional.andPredicate configuration removal)
+                >>= simplifyTopConfiguration
+                >>= SMT.Evaluator.filterMultiOr
+            when (isBottom simplifiedRemoval) (succeed Proven)
+            let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+            rulePattern
+                & Lens.set RulePattern.leftPattern stuckConfiguration
+                & GoalStuck
+                & pure
+        & run
+        & withConfiguration' configuration
+      where
+        configuration = Lens.view RulePattern.leftPattern rulePattern
+        configFreeVars = freeVariables configuration
+        destination =
+            Lens.view (field @"rhs") rulePattern
+            & topExistsToImplicitForall configFreeVars
 
-    RulePattern { rhs } = toRulePattern goal
+        succeed :: r -> ExceptT r m a
+        succeed = throwE
 
-    destination = topExistsToImplicitForall configFreeVars rhs
-
-    stuckGoal left requiresCondition =
-        fromRulePattern goal RulePattern
-            { left
-            , antiLeft = Nothing
-            , requires =
-                Condition.toPredicate requiresCondition
-                & Predicate.coerceSort (termLikeSort left)
-            , rhs = rhs
-            , attributes = attributes . toRulePattern $ goal
-            }
+        run :: ExceptT r m r -> m r
+        run acts = runExceptT acts >>= either pure pure
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
@@ -944,6 +959,10 @@ withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a
 withConfiguration goal = handle (throw . WithConfiguration configuration)
   where
     configuration = getConfiguration goal
+
+withConfiguration' :: MonadCatch m => Pattern Variable -> m a -> m a
+withConfiguration' configuration =
+    handle (throw . WithConfiguration configuration)
 
 {- | The predicate to remove the destination from the present configuration.
  -}
