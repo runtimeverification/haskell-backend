@@ -56,6 +56,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
     ( AllPathRule (..)
     , OnePathRule (..)
@@ -243,6 +244,11 @@ verifyClaim
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
         >=> Strategy.applyBreadthLimit breadthLimit
+        >=> profileQueueLength
+
+    profileQueueLength queue = do
+        Profile.executionQueueLength (length queue)
+        pure queue
 
     throwUnproven
         :: ListT (Verifier simplifier) CommonProofState
