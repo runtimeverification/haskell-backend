@@ -29,8 +29,8 @@ import Control.Monad.Reader
     )
 import qualified Control.Monad.State.Strict as Strict
 import Control.Monad.Trans.Accum
-    ( AccumT (AccumT)
-    , runAccumT
+    ( AccumT
+    , mapAccumT
     )
 import Control.Monad.Trans.Except
     ( ExceptT
@@ -59,12 +59,10 @@ import System.Clock
 import Control.Monad.Counter
 import ListT
     ( ListT (..)
-    )
-import qualified ListT
-    ( mapListT
+    , mapListT
     )
 
-{- Monad that can also handle profiling events.
+{- | Monad that can also handle profiling events.
 -}
 class Monad profiler => MonadProfiler profiler where
     profile
@@ -263,7 +261,7 @@ profileGhcEventsAnalyze event action = do
 
 instance (MonadProfiler m, Monoid w) => MonadProfiler (AccumT w m)
   where
-    profile a action = AccumT (profile a . runAccumT action)
+    profile a = mapAccumT (profile a)
     {-# INLINE profile #-}
 
 instance MonadProfiler m => MonadProfiler (CatchT m) where
@@ -277,8 +275,7 @@ instance MonadProfiler m => MonadProfiler (ExceptT e m)
 instance MonadProfiler m => MonadProfiler (IdentityT m)
 
 instance MonadProfiler m => MonadProfiler (ListT m) where
-    profile a action =
-        ListT.mapListT (profile a) action
+    profile a = mapListT (profile a)
     {-# INLINE profile #-}
 
 instance MonadProfiler m => MonadProfiler (MaybeT m)
