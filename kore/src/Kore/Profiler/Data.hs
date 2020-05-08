@@ -17,6 +17,10 @@ import Prelude.Kore
 import Control.Monad
     ( when
     )
+import Control.Monad.Catch.Pure
+    ( CatchT
+    , mapCatchT
+    )
 import Control.Monad.Morph
     ( MFunctor (..)
     )
@@ -257,24 +261,28 @@ profileGhcEventsAnalyze event action = do
     liftIO $ traceEventIO ("STOP " ++ List.intercalate "/" event)
     return a
 
-instance (MonadProfiler m) => MonadProfiler (ReaderT thing m )
+instance (MonadProfiler m, Monoid w) => MonadProfiler (AccumT w m)
+  where
+    profile a action = AccumT (profile a . runAccumT action)
+    {-# INLINE profile #-}
 
-instance MonadProfiler m => MonadProfiler (Strict.StateT s m)
+instance MonadProfiler m => MonadProfiler (CatchT m) where
+    profile a = mapCatchT (profile a)
+    {-# INLINE profile #-}
 
-instance MonadProfiler m => MonadProfiler (MaybeT m)
-
-instance MonadProfiler m => MonadProfiler (IdentityT m)
+instance MonadProfiler m => MonadProfiler (CounterT m)
 
 instance MonadProfiler m => MonadProfiler (ExceptT e m)
+
+instance MonadProfiler m => MonadProfiler (IdentityT m)
 
 instance MonadProfiler m => MonadProfiler (ListT m) where
     profile a action =
         ListT.mapListT (profile a) action
     {-# INLINE profile #-}
 
-instance (MonadProfiler m, Monoid w) => MonadProfiler (AccumT w m)
-  where
-    profile a action = AccumT (profile a . runAccumT action)
-    {-# INLINE profile #-}
+instance MonadProfiler m => MonadProfiler (MaybeT m)
 
-instance MonadProfiler m => MonadProfiler (CounterT m)
+instance MonadProfiler m => MonadProfiler (ReaderT thing m )
+
+instance MonadProfiler m => MonadProfiler (Strict.StateT s m)
