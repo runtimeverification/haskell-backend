@@ -28,10 +28,6 @@ import Numeric.Natural
     ( Natural
     )
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch
 import Data.Limit
     ( Limit (..)
     )
@@ -69,6 +65,10 @@ import Kore.Unification.Procedure
     ( unificationProcedureWorker
     )
 import qualified Kore.Unification.UnifierT as Unifier
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 
 {-| Which configurations are considered for matching?
 
@@ -148,11 +148,11 @@ matchWith sideCondition e1 e2 = do
             :: Condition variable
             -> m (OrCondition variable)
         mergeAndEvaluate predSubst = do
-            results <- Branch.gather $ mergeAndEvaluateBranches predSubst
+            results <- Logic.observeAllT $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
             :: Condition variable
-            -> BranchT m (Condition variable)
+            -> LogicT m (Condition variable)
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions

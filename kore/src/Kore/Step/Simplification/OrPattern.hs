@@ -9,10 +9,6 @@ module Kore.Step.Simplification.OrPattern
 
 import Prelude.Kore
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch as BranchT
 import Kore.Internal.Condition
     ( Condition
     )
@@ -28,14 +24,10 @@ import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-    ( gather
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-    ( gather
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -66,6 +58,10 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.TopBottom
     ( TopBottom (..)
     )
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 
 simplifyConditionsWithSmt
     ::  forall variable simplifier
@@ -74,12 +70,11 @@ simplifyConditionsWithSmt
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyConditionsWithSmt sideCondition unsimplified =
-    OrPattern.gather $ do
-        unsimplified1 <- BranchT.scatter unsimplified
+    OrPattern.observeAll $ do
+        unsimplified1 <- Logic.scatter unsimplified
         simplifyAndPrune unsimplified1
   where
-    simplifyAndPrune
-        :: Pattern variable -> BranchT simplifier (Pattern variable)
+    simplifyAndPrune :: Pattern variable -> LogicT simplifier (Pattern variable)
     simplifyAndPrune (Pattern.splitTerm -> (term, condition)) = do
         simplified <- simplifyCondition sideCondition condition
         filtered <-
@@ -130,15 +125,11 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     pruneCondition :: Condition variable -> simplifier (Maybe Bool)
     pruneCondition condition = do
         implicationNegation <-
-            OrCondition.gather
-            $ simplifyCondition
-                SideCondition.top
-                (Condition.fromPredicate
-                    (makeAndPredicate
-                        sidePredicate
-                        (makeNotPredicate $ Condition.toPredicate condition)
-                    )
-                )
+            makeAndPredicate sidePredicate
+                (makeNotPredicate $ Condition.toPredicate condition)
+            & Condition.fromPredicate
+            & simplifyCondition SideCondition.top
+            & OrCondition.observeAll
         filteredConditions <- SMT.Evaluator.filterMultiOr implicationNegation
         if isTop filteredConditions
             then return (Just False)
@@ -149,10 +140,8 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     rejectCondition :: Condition variable -> simplifier (Maybe Bool)
     rejectCondition condition = do
         simplifiedConditions <-
-            OrCondition.gather
-            $ simplifyCondition
-                    SideCondition.top
-                    (addPredicate condition)
+            simplifyCondition SideCondition.top (addPredicate condition)
+            & OrCondition.observeAll
         filteredConditions <- SMT.Evaluator.filterMultiOr simplifiedConditions
         if isBottom filteredConditions
             then return (Just False)

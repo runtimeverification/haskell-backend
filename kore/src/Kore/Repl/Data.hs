@@ -98,6 +98,7 @@ import Kore.Strategies.Goal
 import Kore.Strategies.Verification
     ( CommonProofState
     )
+import Logic
 
 import Kore.Syntax.Module
     ( ModuleName (..)
@@ -504,7 +505,14 @@ newtype UnifierWithExplanation m a =
         { getUnifierWithExplanation
             :: UnifierT (AccumT (First ReplOutput) m) a
         }
-  deriving (Alternative, Applicative, Functor, Monad)
+  deriving (Alternative, Applicative, Functor, Monad, MonadPlus)
+
+instance Monad m => MonadLogic (UnifierWithExplanation m) where
+    msplit act =
+        UnifierWithExplanation
+        $ msplit (getUnifierWithExplanation act) >>= return . wrapNext
+      where
+        wrapNext = (fmap . fmap) UnifierWithExplanation
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
@@ -532,10 +540,6 @@ instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     throwUnificationError =
         UnifierWithExplanation . Monad.Unify.throwUnificationError
-
-    gather =
-        UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
-    scatter = UnifierWithExplanation . Monad.Unify.scatter
 
     explainBottom info first second =
         UnifierWithExplanation

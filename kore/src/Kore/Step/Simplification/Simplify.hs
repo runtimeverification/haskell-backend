@@ -57,7 +57,6 @@ import Data.Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Branch
 import Control.Monad.Counter
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
@@ -110,11 +109,8 @@ import Kore.Step.Simplification.OverloadSimplifier
     )
 import Kore.Syntax.Application
 import Kore.Unparser
-import ListT
-    ( ListT (..)
-    , mapListT
-    )
 import Log
+import Logic
 import Pretty
     ( (<+>)
     )
@@ -157,7 +153,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         :: InternalVariable variable
         => SideCondition variable
         -> Conditional variable term
-        -> BranchT m (Conditional variable term)
+        -> LogicT m (Conditional variable term)
     default simplifyCondition
         ::  ( InternalVariable variable
             , MonadTrans trans
@@ -166,12 +162,12 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
             )
         =>  SideCondition variable
         ->  Conditional variable term
-        ->  BranchT m (Conditional variable term)
+        ->  LogicT m (Conditional variable term)
     simplifyCondition sideCondition conditional = do
         results <-
             lift . lift
-            $ Branch.gather $ simplifyCondition sideCondition conditional
-        Branch.scatter results
+            $ observeAllT $ simplifyCondition sideCondition conditional
+        scatter results
     {-# INLINE simplifyCondition #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
@@ -226,21 +222,19 @@ instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
         mapAccumT (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
 
-deriving instance MonadSimplify m => MonadSimplify (BranchT m)
-
 instance MonadSimplify m => MonadSimplify (CounterT m)
 
 instance MonadSimplify m => MonadSimplify (ExceptT e m)
 
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
-instance MonadSimplify m => MonadSimplify (ListT m) where
+instance MonadSimplify m => MonadSimplify (LogicT m) where
     localSimplifierTermLike locally =
-        mapListT (localSimplifierTermLike locally)
+        mapLogicT (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
 
     localSimplifierAxioms locally =
-        mapListT (localSimplifierAxioms locally)
+        mapLogicT (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
@@ -261,7 +255,7 @@ newtype TermLikeSimplifier =
         . (HasCallStack, InternalVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
-        -> BranchT m (Pattern variable)
+        -> LogicT m (Pattern variable)
         )
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
@@ -276,7 +270,7 @@ simplifyConditionalTermToOr
     -> TermLike variable
     -> simplifier (OrPattern variable)
 simplifyConditionalTermToOr sideCondition termLike = do
-    results <- gather $ simplifyConditionalTerm sideCondition termLike
+    results <- observeAllT $ simplifyConditionalTerm sideCondition termLike
     return (OrPattern.fromPatterns results)
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
@@ -289,7 +283,7 @@ simplifyConditionalTerm
         )
     => SideCondition variable
     -> TermLike variable
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 simplifyConditionalTerm sideCondition termLike = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
     simplify sideCondition termLike
@@ -316,13 +310,13 @@ termLikeSimplifier simplifier =
         .  (HasCallStack, InternalVariable variable, MonadSimplify m)
         => SideCondition variable
         -> TermLike variable
-        -> BranchT m (Pattern variable)
+        -> LogicT m (Pattern variable)
     termLikeSimplifierWorker
         sideCondition
         termLike
       = do
         results <- lift $ simplifier sideCondition termLike
-        scatter results
+        scatter (OrPattern.toPatterns results)
 
 -- * Predicate simplifiers
 
@@ -337,7 +331,7 @@ newtype ConditionSimplifier monad =
             .  InternalVariable variable
             => SideCondition variable
             -> Conditional variable term
-            -> BranchT monad (Conditional variable term)
+            -> LogicT monad (Conditional variable term)
         }
 
 emptyConditionSimplifier :: ConditionSimplifier monad
@@ -352,8 +346,8 @@ liftConditionSimplifier (ConditionSimplifier simplifier) =
     ConditionSimplifier $ \sideCondition predicate -> do
         results <-
             lift . lift
-            $ Branch.gather $ simplifier sideCondition predicate
-        Branch.scatter results
+            $ observeAllT $ simplifier sideCondition predicate
+        scatter results
 
 -- * Builtin and axiom simplifiers
 

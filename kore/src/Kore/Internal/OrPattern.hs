@@ -12,7 +12,6 @@ module Kore.Internal.OrPattern
     , toPatterns
     , fromPattern
     , fromTermLike
-    , gather
     , bottom
     , isFalse
     , isPredicate
@@ -23,15 +22,14 @@ module Kore.Internal.OrPattern
     , targetBinder
     , MultiOr.flatten
     , MultiOr.filterOr
+    , MultiOr.gather
+    , MultiOr.observeAll
     ) where
 
 import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
 
-import Branch
-    ( BranchT
-    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -199,11 +197,6 @@ coerceSort sort =
     fromPatterns
     . map (Pattern.coerceSort sort)
     . toPatterns
-
-gather
-    :: (InternalVariable variable, Monad m)
-    => BranchT m (Pattern variable) -> m (OrPattern variable)
-gather = MultiOr.gather
 
 targetBinder
     :: forall variable

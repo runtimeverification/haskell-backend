@@ -25,7 +25,6 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 
-import qualified Branch as BranchT
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , freeVariables
@@ -72,6 +71,7 @@ import qualified Kore.Step.SMT.Evaluator as SMT
 import Kore.Step.Step
     ( refreshRule
     )
+import qualified Logic
 
 {-
 Given a list of rules
@@ -153,7 +153,7 @@ mergeRules
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
-    BranchT.gather $ do
+    Logic.observeAllT $ do
         Conditional {term = (), predicate, substitution} <-
             simplifyCondition SideCondition.topTODO . Condition.fromPredicate
             $ makeAndPredicate firstRequires mergedPredicate
@@ -206,8 +206,8 @@ mergeRulesConsecutiveBatches
   | otherwise = do
     let (rulesBatch, remainder) = splitAt (batchSize - 1) rules
     mergedRulesList <- mergeRules (rule :| rulesBatch)
-    BranchT.gather $ do
-        mergedRule <- BranchT.scatter mergedRulesList
+    Logic.observeAllT $ do
+        mergedRule <- Logic.scatter mergedRulesList
         allMerged <-
             mergeRulesConsecutiveBatches batchSize (mergedRule :| remainder)
-        BranchT.scatter allMerged
+        Logic.scatter allMerged

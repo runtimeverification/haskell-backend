@@ -292,7 +292,7 @@ checkRequires sideCondition predicate requires =
     -- Collect the simplified results. If they are \bottom, then \and(predicate,
     -- requires) is valid; otherwise, the required pre-conditions are not met
     -- and the rule will not be applied.
-    & (OrCondition.gather >=> assertBottom)
+    & (OrCondition.observeAll >=> assertBottom)
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition'
 

@@ -13,7 +13,6 @@ module Kore.Step.Simplification.In
 
 import Prelude.Kore
 
-import qualified Branch
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -97,6 +96,5 @@ makeEvaluateIn sideCondition first second
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise =
     And.makeEvaluate Not.notSimplifier sideCondition first second
-        & Branch.gather
-        & fmap OrPattern.fromPatterns
+        & OrPattern.observeAll
     >>= Ceil.simplifyEvaluated sideCondition

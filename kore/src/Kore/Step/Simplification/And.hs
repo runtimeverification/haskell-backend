@@ -53,8 +53,6 @@ import Data.Traversable
     ( for
     )
 
-import Branch
-import qualified Branch as BranchT
 import Changed
 import Kore.Attribute.Synthetic
     ( synthesize
@@ -121,6 +119,7 @@ import Kore.Unification.UnifierT
 import Kore.Unparser
     ( unparse
     )
+import Logic
 import qualified Pretty
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.
@@ -199,13 +198,11 @@ simplifyEvaluated notSimplifier sideCondition first second
   | OrPattern.isFalse second = return OrPattern.bottom
   | OrPattern.isTrue first   = return second
   | OrPattern.isTrue second  = return first
-  | otherwise                = do
-    result <-
-        gather $ do
-            first1 <- scatter first
-            second1 <- scatter second
-            makeEvaluate notSimplifier sideCondition first1 second1
-    return (OrPattern.fromPatterns result)
+  | otherwise                =
+    OrPattern.observeAll $ do
+        first1 <- scatter first
+        second1 <- scatter second
+        makeEvaluate notSimplifier sideCondition first1 second1
 
 simplifyEvaluatedMultiple
     :: InternalVariable variable
@@ -231,7 +228,7 @@ makeEvaluate
     -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 makeEvaluate notSimplifier sideCondition first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
@@ -247,7 +244,7 @@ makeEvaluateNonBool
     -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 makeEvaluateNonBool
     notSimplifier
     sideCondition
@@ -444,9 +441,9 @@ termAnd
     => NotSimplifier (UnifierT simplifier)
     -> TermLike variable
     -> TermLike variable
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 termAnd notSimplifier p1 p2 =
-    either (const andTerm) BranchT.scatter
+    either (const andTerm) Logic.scatter
     =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)
   where
     andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)

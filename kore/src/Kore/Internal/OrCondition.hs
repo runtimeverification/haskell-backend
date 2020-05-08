@@ -10,7 +10,8 @@ module Kore.Internal.OrCondition
     , fromConditions
     , fromCondition
     , fromPredicate
-    , gather
+    , MultiOr.gather
+    , MultiOr.observeAll
     , bottom
     , top
     , isFalse
@@ -22,9 +23,6 @@ import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
 
-import Branch
-    ( BranchT
-    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -46,7 +44,6 @@ import Kore.Internal.TermLike hiding
 import Kore.TopBottom
     ( TopBottom (..)
     )
-
 
 {-| The disjunction of 'Condition'.
 -}
@@ -113,8 +110,3 @@ toPredicate
     => MultiOr (Predicate variable) -> Predicate variable
 toPredicate multiOr =
     Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
-
-gather
-    :: (InternalVariable variable, Monad m)
-    => BranchT m (Condition variable) -> m (OrCondition variable)
-gather = MultiOr.gather

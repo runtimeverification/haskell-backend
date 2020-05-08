@@ -23,10 +23,6 @@ import Data.List
     )
 import qualified Data.Map.Strict as Map
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -95,6 +91,10 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -178,14 +178,13 @@ makeEvaluate
     -> simplifier (OrPattern variable)
 makeEvaluate sideCondition variables original = do
     let sortedVariables = sortBy substVariablesFirst variables
-    fmap OrPattern.fromPatterns
-        . Branch.gather
-        $ foldM (flip makeEvaluateWorker) original sortedVariables
+    foldM (flip makeEvaluateWorker) original sortedVariables
+        & OrPattern.observeAll
   where
     makeEvaluateWorker
         :: ElementVariable variable
         -> Pattern variable
-        -> BranchT simplifier (Pattern variable)
+        -> LogicT simplifier (Pattern variable)
     makeEvaluateWorker variable original' = do
         normalized <- simplifyCondition sideCondition original'
         let Conditional { substitution = normalizedSubstitution } = normalized
@@ -296,7 +295,7 @@ makeEvaluateBoundLeft
     -> ElementVariable variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 makeEvaluateBoundLeft sideCondition variable boundTerm normalized
   = withoutFreeVariable someVariableName boundTerm $ do
         let
@@ -312,10 +311,9 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
                     }
         orPattern <-
             lift $ Pattern.simplify sideCondition substituted
-        Branch.scatter (MultiOr.extractPatterns orPattern)
+        Logic.scatter (MultiOr.extractPatterns orPattern)
   where
     someVariableName = inject (variableName variable)
-
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -334,7 +332,7 @@ makeEvaluateBoundRight
     -> ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     orCondition <- lift $ And.simplifyEvaluatedMultiPredicate
         sideCondition
@@ -344,7 +342,7 @@ makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
                     (Condition.fromSubstitution freeSubstitution)
             ]
         )
-    predicate <- Branch.scatter orCondition
+    predicate <- Logic.scatter orCondition
     let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern

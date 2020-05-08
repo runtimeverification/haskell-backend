@@ -17,7 +17,6 @@ import Prelude.Kore
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 
-import Branch
 import Kore.Internal.Condition
     ( Condition
     , Conditional (..)
@@ -38,6 +37,7 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import Logic
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
@@ -45,7 +45,7 @@ normalize
     .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Conditional variable term
-    -> BranchT simplifier (Conditional variable term)
+    -> LogicT simplifier (Conditional variable term)
 normalize sideCondition conditional@Conditional { substitution } = do
     results <- Monad.Trans.lift $
         simplifySubstitution sideCondition substitution
@@ -70,7 +70,7 @@ mergePredicatesAndSubstitutions
     => SideCondition variable
     -> [Predicate variable]
     -> [Substitution variable]
-    -> BranchT simplifier (Condition variable)
+    -> LogicT simplifier (Condition variable)
 mergePredicatesAndSubstitutions topCondition predicates substitutions =
     simplifyCondition
         topCondition

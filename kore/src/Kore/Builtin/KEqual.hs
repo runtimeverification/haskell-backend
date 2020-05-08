@@ -46,7 +46,6 @@ import Data.Text
     ( Text
     )
 
-import qualified Branch
 import Kore.Attribute.Hook
     ( Hook (..)
     )
@@ -78,6 +77,7 @@ import Kore.Unification.Unify as Unify
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import qualified Logic
 
 verifiers :: Builtin.Verifiers
 verifiers =
@@ -302,13 +302,11 @@ unifyIfThenElse unifyChildren a b =
             let branchCondition = takeCondition True condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
-                & Branch.gather
-                & (>>= Unify.scatter)
+                & Logic.lowerLogicT
         takeBranch2 IfThenElse { condition, branch2 } = do
             solution <- unifyChildren branch2 termLike2
             let branchCondition = takeCondition False condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
-                & Branch.gather
-                & (>>= Unify.scatter)
+                & Logic.lowerLogicT
     worker _ _ = empty

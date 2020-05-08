@@ -20,7 +20,6 @@ import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
 
-import Branch
 import Kore.Internal.Condition
     ( Condition
     )
@@ -67,6 +66,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
     ( TopBottom (..)
     )
+import Logic
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
@@ -109,7 +109,7 @@ simplifyEvaluated
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated sideCondition simplified =
-    fmap OrPattern.fromPatterns $ gather $ do
+    OrPattern.observeAll $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
         mkMultiAndPattern sideCondition andPattern
@@ -119,7 +119,7 @@ simplifyEvaluatedPredicate
     => OrCondition variable
     -> simplifier (OrCondition variable)
 simplifyEvaluatedPredicate notChild =
-    fmap OrCondition.fromConditions $ gather $ do
+    OrCondition.observeAll $ do
         let not' = Not { notChild = notChild, notSort = () }
         andPredicate <-
             scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
@@ -220,11 +220,11 @@ distributeAnd
     -> MultiOr (MultiAnd child)
 distributeAnd = sequenceA
 
-{- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'BranchT'.
+{- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
  -}
 scatterAnd
     :: MultiAnd (MultiOr child)
-    -> BranchT m (MultiAnd child)
+    -> LogicT m (MultiAnd child)
 scatterAnd = scatter . distributeAnd
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
@@ -233,7 +233,7 @@ mkMultiAndPattern
     :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> MultiAnd (Pattern variable)
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 mkMultiAndPattern sideCondition patterns =
     Foldable.foldrM
         (And.makeEvaluate notSimplifier sideCondition)
@@ -245,7 +245,7 @@ mkMultiAndPattern sideCondition patterns =
 mkMultiAndPredicate
     :: InternalVariable variable
     => MultiAnd (Condition variable)
-    -> BranchT simplifier (Condition variable)
+    -> LogicT simplifier (Condition variable)
 mkMultiAndPredicate predicates =
     -- Using Foldable.fold because the Monoid instance of Condition
     -- implements And semantics.

@@ -24,7 +24,6 @@ import Data.Function
     )
 import qualified Data.Set as Set
 
-import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -63,6 +62,7 @@ import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
     ( nextVariable
     )
+import qualified Logic
 
 import Test.Kore.Internal.Condition as Condition
 import Test.Kore.Internal.OrCondition
@@ -88,7 +88,7 @@ applyInitialConditions
     -> IO [OrTestCondition]
 applyInitialConditions initial unification =
     Step.applyInitialConditions initial unification
-    & runSimplifier Mock.env . Branch.gather
+    & runSimplifier Mock.env . Logic.observeAllT
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -146,7 +146,7 @@ unifyRule
     -> IO (Either UnificationError [Conditional' RulePattern'])
 unifyRule initial rule =
     Step.unifyRule Unification.unificationProcedure initial rule
-    & runExceptT . Branch.gather
+    & runExceptT . Logic.observeAllT
     & runSimplifier Mock.env
 
 test_renameRuleVariables :: [TestTree]
