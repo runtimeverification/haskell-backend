@@ -20,6 +20,7 @@ module Kore.Builtin.Map
     , internalize
     -- * Unification
     , unifyEquals
+    , unifyNotInKeys
     -- * Raw evaluators
     , evalConcat
     , evalElement
@@ -47,6 +48,9 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Builtin.Attributes
@@ -66,12 +70,18 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    , symbolHook
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -84,6 +94,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence
     ( SentenceSort (..)
@@ -91,6 +102,7 @@ import Kore.Syntax.Sentence
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import qualified Kore.Unification.Unify as Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Variables.Fresh
 
@@ -506,7 +518,7 @@ reject the definition.
 unifyEquals
     :: forall variable unifier
     .  (InternalVariable variable, MonadUnify unifier)
-    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -561,3 +573,55 @@ unifyEquals unifyEqualsChildren first second = do
             normalizedOrBottom
                 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
             normalizedOrBottom = Ac.toNormalized patt
+
+data InKeys term =
+    InKeys
+        { symbol :: !Symbol
+        , keyTerm, mapTerm :: !term
+        }
+
+matchInKeys :: TermLike variable -> Maybe (InKeys (TermLike variable))
+matchInKeys (App_ symbol [keyTerm, mapTerm]) = do
+    hook2 <- (getHook . symbolHook) symbol
+    Monad.guard (hook2 == Map.in_keysKey)
+    return InKeys { symbol, keyTerm, mapTerm }
+matchInKeys _ = Nothing
+
+unifyNotInKeys
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> NotSimplifier unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
+    worker a b <|> worker b a
+  where
+    normalizedOrBottom
+       :: TermLike variable
+       -> Ac.NormalizedOrBottom Domain.NormalizedMap variable
+    normalizedOrBottom = Ac.toNormalized
+    symbolicKeys :: [TermLike variable]
+    symbolicKeys = undefined
+    concreteKeys :: [TermLike variable]
+    concreteKeys = undefined
+    opaqueElements :: [TermLike variable]
+    opaqueElements = undefined
+    mapKeys = symbolicKeys <> concreteKeys
+    unifyAndNegate t1 t2 = do
+        x <- Unify.gather (unifyChildren t1 t2)
+        y <- notSimplifier SideCondition.top (OrPattern.fromPatterns x)
+        Unify.scatter y
+    worker termLike1 termLike2
+      | Just boolValue <- Bool.matchBool termLike1
+      , not boolValue
+      , Just InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
+      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
+      = lift $ do
+        x <- traverse (unifyAndNegate keyTerm) mapKeys
+        y <- traverse (unifyChildren termLike1) opaqueElements
+        let z = foldr (flip Pattern.andCondition) Pattern.top (fmap Pattern.withoutTerm $ x <> y)
+        return z
+    worker _ _ = empty

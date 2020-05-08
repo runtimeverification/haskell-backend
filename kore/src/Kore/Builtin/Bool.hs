@@ -14,6 +14,7 @@ module Kore.Builtin.Bool
     , extractBoolDomainValue
     , parse
     , termAndEquals
+    , matchBool
       -- * Keys
     , orKey
     , andKey
