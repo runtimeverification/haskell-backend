@@ -31,9 +31,9 @@ import Kore.Unparser
 import Log
 import qualified SQL
 
-data WarnBottomTotalFunction =
+newtype WarnBottomTotalFunction =
     WarnBottomTotalFunction
-        { term :: !(TermLike Variable)
+        { term :: (TermLike Variable)
         }
     deriving (GHC.Generic)
 
