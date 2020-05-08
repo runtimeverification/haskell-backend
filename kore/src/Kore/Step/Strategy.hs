@@ -31,6 +31,7 @@ module Kore.Step.Strategy
     , continue
       -- * Running strategies
     , leavesM
+    , applyBreadthLimit
     , unfoldTransition
     , GraphSearchOrder(..)
     , constructExecutionGraph
@@ -500,7 +501,7 @@ leavesM
     -> a  -- ^ initial vertex
     -> m a
 leavesM breadthLimit searchOrder next a0 =
-    worker (Seq.singleton a0)
+    worker0 (Seq.singleton a0)
   where
     mk :: Seq a -> [a] -> Seq a
     mk as as' =
@@ -508,16 +509,28 @@ leavesM breadthLimit searchOrder next a0 =
             BreadthFirst -> as <> Seq.fromList as'
             DepthFirst -> Seq.fromList as' <> as
 
-    exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
+    worker0 as = applyBreadthLimit breadthLimit as >>= worker1
 
-    worker Seq.Empty = empty
-    worker (a Seq.:<| as) =
+    worker1 Seq.Empty = empty
+    worker1 (a Seq.:<| as) =
         do
-            when (exceedsLimit as) (Exception.throwM $ LimitExceeded as)
             as' <- lift (next a)
             (guard . not) (null as')
             pure (mk as as')
-        & maybeT (return a <|> worker as) worker
+        & maybeT (return a <|> worker0 as) worker0
+
+applyBreadthLimit
+    :: Exception (LimitExceeded a)
+    => MonadThrow m
+    => Limit Natural
+    -> Seq a
+    -> m (Seq a)
+applyBreadthLimit breadthLimit as
+  | _ Seq.:<| as' <- as, exceedsLimit as' =
+    Exception.throwM (LimitExceeded as)
+  | otherwise = pure as
+  where
+    exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
 
 {- | Turn a transition rule into an unfolding function.
 
