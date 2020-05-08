@@ -282,12 +282,13 @@ test_searchExceedingBreadthLimit =
     unlimited = Unlimited
     makeTestCase searchType =
         testCase
-            ("Exceed bredth limit: " <> show searchType)
+            ("Exceed breadth limit: " <> show searchType)
             (assertion searchType)
 
     assertion searchType =
-        shouldExceedBreadthLimit searchType `catch`
-            \(_ :: LimitExceeded (Graph.Node, [Strategy (Prim Rewrite)])) -> pure ()
+        catch (shouldExceedBreadthLimit searchType)
+        $ \(_ :: LimitExceeded ([Strategy (Prim Rewrite)], Graph.Node)) ->
+            pure ()
 
     shouldExceedBreadthLimit :: SearchType -> IO ()
     shouldExceedBreadthLimit searchType = do

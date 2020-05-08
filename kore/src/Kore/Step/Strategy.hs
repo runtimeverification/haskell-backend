@@ -31,6 +31,7 @@ module Kore.Step.Strategy
     , continue
       -- * Running strategies
     , leavesM
+    , unfoldM_
     , applyBreadthLimit
     , unfoldBreadthFirst
     , unfoldDepthFirst
@@ -70,9 +71,9 @@ import Prelude.Kore hiding
 import Control.Error
     ( maybeT
     )
+import qualified Control.Lens as Lens
 import Control.Monad
     ( guard
-    , when
     , (>=>)
     )
 import Control.Monad.Catch
@@ -82,10 +83,12 @@ import Control.Monad.Catch
 import qualified Control.Monad.Catch as Exception
 import Control.Monad.State.Strict
     ( MonadState
-    , StateT
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
@@ -102,11 +105,9 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import qualified GHC.Generics as GHC
 import Kore.Profiler.Data
     ( MonadProfiler
-    )
-import qualified Kore.Profiler.Profile as Profile
-    ( executionQueueLength
     )
 
 import Kore.Step.Transition
@@ -266,7 +267,8 @@ data ExecutionGraph config rule = ExecutionGraph
     { root :: Graph.Node
     , graph :: Gr config (Seq rule)
     }
-    deriving(Eq, Show)
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
 
 -- | A temporary data structure used to construct the 'ExecutionGraph'.
 -- Well, it was intended to be temporary, but for the purpose of making
@@ -397,6 +399,39 @@ newtype LimitExceeded a = LimitExceeded (Seq a)
 
 instance (Show a, Typeable a) => Exception (LimitExceeded a)
 
+updateGraph
+    :: forall instr config rule m
+    .  MonadState (ExecutionGraph config rule) m
+    => (instr -> config -> TransitionT rule m config)
+    -> ([instr], Graph.Node) -> m [([instr], Graph.Node)]
+updateGraph _ ([], _) = return []
+updateGraph transit (instr : instrs, node) = do
+    config <- getConfig node
+    transitions <- runTransitionT (transit instr config)
+    nodes <- traverse (insTransition node) transitions
+    pure ((,) instrs <$> nodes)
+
+getConfig
+    :: MonadState (ExecutionGraph config rule) m
+    => Graph.Node
+    -> m config
+getConfig node = do
+    graph <- Lens.use (field @"graph")
+    pure $ fromMaybe (error "Node does not exist") (Graph.lab graph node)
+
+insTransition
+    :: MonadState (ExecutionGraph config rule) m
+    => Graph.Node  -- ^ parent node
+    -> (config, Seq rule)
+    -> m Graph.Node
+insTransition node (config, rules) = do
+    graph <- Lens.use (field @"graph")
+    let node' = (succ . snd) (Graph.nodeRange graph)
+    Lens.modifying (field @"graph") $ Graph.insNode (node', config)
+    Lens.modifying (field @"graph") $ Graph.insEdges [(node, node', rules)]
+    pure node'
+
+
 {- | Execute a 'Strategy'.
 
  The primitive strategy rule is used to execute the 'apply' strategy. The
@@ -424,68 +459,19 @@ constructExecutionGraph
     -> GraphSearchOrder
     -> config
     -> m (ExecutionGraph config rule)
-constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
-    finalGraph <- State.execStateT
-                    (unfoldWorker initialSeed searchOrder0)
-                    initialGraph
-    return exe { graph = finalGraph }
+constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
+    unfoldM_ mkQueue transit' (instrs0, root execGraph)
+    & flip State.execStateT execGraph
   where
-    exe@ExecutionGraph { root, graph = initialGraph } =
-        emptyExecutionGraph config0
-    initialSeed = Seq.singleton (root, instrs0)
+    execGraph = emptyExecutionGraph config0
 
-    transit' instr config = (lift . runTransitionT) (transit instr config)
+    mkQueue = \as ->
+        unfoldSearchOrder searchOrder0 as
+        >=> applyBreadthLimit breadthLimit
 
-    unfoldWorker
-        :: Seq (Graph.Node, [instr])
-        -> GraphSearchOrder
-        -> StateT (Gr config (Seq rule)) m ()
-    unfoldWorker Seq.Empty _ = return ()
-    unfoldWorker ((node, instrs) Seq.:<| rest) searchOrder
-      | []              <- instrs = unfoldWorker rest searchOrder
-      | instr : instrs' <- instrs
-      = Profile.executionQueueLength (Seq.length rest) $ do
-        when (exeedsLimit rest)
-            $ Exception.throwM $ LimitExceeded rest
-        nodes' <- applyInstr instr node
-        let seeds = map (withInstrs instrs') nodes'
-        case searchOrder of
-            -- The graph is unfolded breadth-first by appending the new seeds
-            -- to the end of the todo list. The next seed is always taken from
-            -- the beginning of the sequence, so that all the pending seeds
-            -- are unfolded once before the new seeds are unfolded.
-            BreadthFirst -> unfoldWorker
-                                (rest <> Seq.fromList seeds)
-                                searchOrder
-            -- The graph is unfolded depth-first by putting the new seeds to
-            -- the head of the todo list.
-            DepthFirst -> unfoldWorker
-                              (Seq.fromList seeds <> rest)
-                              searchOrder
-
-    exeedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
-
-    withInstrs instrs nodes = (nodes, instrs)
-
-    applyInstr instr node = do
-        config <- getNodeConfig node
-        configs' <- transit' instr config
-        traverse insChildNode (childOf node <$> configs')
-
-    getNodeConfig node =
-        fromMaybe (error "Node does not exist")
-        <$> State.gets (`Graph.lab` node)
-
-    childOf
-        :: Graph.Node
-        -> (config, Seq rule)
-        -- ^ Child node identifier and configuration
-        -> ChildNode config rule
-    childOf node (config, rules) =
-        ChildNode
-            { config
-            , parents = [(rules, node)]
-            }
+    transit' =
+        updateGraph $ \instr config ->
+            mapTransitionT lift $ transit instr config
 
 {- | Unfold the function from the initial vertex.
 
@@ -514,6 +500,32 @@ leavesM mkQueue next a0 =
             (guard . not) (null as')
             lift (mkQueue as' as)
         & maybeT (return a <|> worker as) worker
+
+{- | Unfold the function from the initial vertex.
+
+@unfoldM_@ visits every descendant in the graph, but unlike 'leavesM' does not
+return any values.
+
+The queue updating function should be 'unfoldBreadthFirst' or
+'unfoldDepthFirst', optionally composed with 'applyBreadthLimit'.
+
+See also: 'leavesM'
+
+ -}
+unfoldM_
+    :: forall m a
+    .  Monad m
+    => ([a] -> Seq a -> m (Seq a))  -- ^ queue updating function
+    -> (a -> m [a])  -- ^ unfolding function
+    -> a  -- ^ initial vertex
+    -> m ()
+unfoldM_ mkQueue next = \a ->
+    mkQueue [a] Seq.empty >>= worker
+  where
+    worker Seq.Empty = return ()
+    worker (a Seq.:<| as) = do
+        as' <- next a
+        mkQueue as' as >>= worker
 
 unfoldBreadthFirst :: Applicative f => [a] -> Seq a -> f (Seq a)
 unfoldBreadthFirst as' as = pure (as <> Seq.fromList as')
