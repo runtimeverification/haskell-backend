@@ -2,9 +2,11 @@
 
 ## Purpose
 
-The purpose of this document is to describe in detail how K function rules will be interpreted in Kore.
-We will also summarize the motivation for this decision, that is:
-what problems this decision solves.
+This document
+
+1. describes how function rules are currently interpreted in Kore,
+1. exposes some problems with the current approach, and
+1. explains how function rules will be interpreted in Kore in the future to solve these problems.
 
 ## Notation
 
@@ -17,13 +19,15 @@ what problems this decision solves.
 
 ## Background
 
-The family of K rules defining `fun`,
+This section will briefly describe how function rules are interpreted in Kore,
+before we continue in the next section to expose some problems with this interpretation.
+Consider a K function `fun` described by a family of rules,
 
 ```.k
 rule fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) => ψᵢ({Y}) requires Preᵢ({Y}) ensures Postᵢ({Y})
 ```
 
-is interpreted in Kore as
+Each rule is interpreted in Kore as an axiom,
 
 ```.kore
 axiom \implies(Preᵢ({Y}), (fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) = ψᵢ({Y})) ∧ Postᵢ({Y})).
@@ -66,27 +70,41 @@ sizeMap(\bottom) = +Int(1, 1)
 
 See also: [kframework/kore#1245](https://github.com/kframework/kore/issues/1245)
 
-The user may write an or-pattern rule such as
+Consider this family of rules defining function `fun`,
+
+```.k
+rule fun(A) => C
+rule fun(B) => C
+```
+
+which is interpreted in Kore as two axioms,
+
+```.kore
+axiom \implies(\top, (fun(A) = C) ∧ \top)
+axiom \implies(\top, (fun(B) = C) ∧ \top).
+```
+
+The K language offers a shorthand notation,
 
 ```.k
 rule fun(A #Or B) => C
 ```
 
-as shorthand for two rules,
-
-```.k
-rule fun(A) = C
-rule fun(B) = C
-```
-
-Under the current interpretation, this produces an axiom
+which is intended to be equivalent to the pair of rules above.
+Under the current interpretation, this rule produces an axiom,
 
 ```.kore
-axiom fun(A ∨ B) = C.
+axiom \implies(\top, (fun(A ∨ B) = C) ∧ \top)
 ```
 
-This axiom does not imply `fun(A) = C` or `fun(B) = C`,
-and therefore cannot be used to evaluate `fun`.
+which is **not** equivalent to the first interpretation.
+Specificalyl, the first interpretation is satisfied if and only if
+`fun(A) = C ∧ fun(B) = C`,
+but the second interpretation can be satisfied if
+`fun(A) = C ∧ fun(B) = \bottom`
+or if
+`fun(A) = \bottom ∧ fun(B) = C`.
+Therefore, the current interpretation of function rules is not faithful to the user's intent.
 
 ### Priority
 
@@ -96,7 +114,8 @@ work is duplicated by re-checking that the other rules in the family do not appl
 
 ## Solution
 
-The family of K rules defining `fun`,
+The interpretation of simplification rules will not change,
+but the family of K rules defining `fun`,
 
 ```.k
 rule fun(φ₁ᵢ({Y}), φ₂ᵢ({Y}), ...) => ψᵢ({Y}) requires Preᵢ({Y}) ensures Postᵢ({Y})
@@ -116,7 +135,10 @@ Prioᵢ({X}) = ∧ⱼ ¬ ∃ {Y}. Preⱼ({Y}) ∧ Argsⱼ({X}, {Y})
     for all j that priority(rule j) < priority(rule i).
 ```
 
-The interpretation of simplification rules will not change.
+The predicate `Argsᵢ` interprets the argument patterns `φ₁ᵢ` element-wise,
+matching the user's intent and (as we will see below) avoiding the problems described above.
+The predicate `Prioᵢ` encodes the `priority` attribute in the pre-condition of the rule,
+which is now possible only because we have moved argument matching into the `Argsᵢ` pre-condition.
 
 ### Partial heads
 
@@ -173,4 +195,4 @@ axiom \implies(X ∈ B, fun(X) = C).
 
 ### Priority
 
-Support for the `priority` attribute is built into this interpretation.
+The `priority` attribute is now encoded explicitly in the pre-condition of the axiom.
