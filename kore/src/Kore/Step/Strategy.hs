@@ -66,12 +66,16 @@ import Prelude.Kore hiding
 import Control.Error
     ( maybeT
     )
-import qualified Control.Exception as Exception
 import Control.Monad
     ( guard
     , when
     , (>=>)
     )
+import Control.Monad.Catch
+    ( Exception (..)
+    , MonadThrow
+    )
+import qualified Control.Monad.Catch as Exception
 import Control.Monad.State.Strict
     ( MonadState
     , StateT
@@ -387,7 +391,7 @@ data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 newtype LimitExceeded a = LimitExceeded (Seq a)
     deriving (Show, Typeable)
 
-instance (Show a, Typeable a) => Exception.Exception (LimitExceeded a)
+instance (Show a, Typeable a) => Exception (LimitExceeded a)
 
 {- | Execute a 'Strategy'.
 
@@ -407,7 +411,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  MonadProfiler m
+    .  (MonadProfiler m, MonadThrow m)
     => Show instr
     => Typeable instr
     => Limit Natural
@@ -438,7 +442,7 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
       | instr : instrs' <- instrs
       = Profile.executionQueueLength (Seq.length rest) $ do
         when (exeedsLimit rest)
-            $ Exception.throw $ LimitExceeded rest
+            $ Exception.throwM $ LimitExceeded rest
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         case searchOrder of
@@ -487,7 +491,7 @@ than constructing the entire graph.
  -}
 leavesM
     :: forall m a
-    .  Monad m
+    .  MonadThrow m
     => Alternative m
     => (Show a, Typeable a)
     => Limit Natural
@@ -509,7 +513,7 @@ leavesM breadthLimit searchOrder next a0 =
     worker Seq.Empty = empty
     worker (a Seq.:<| as) =
         do
-            when (exceedsLimit as) (Exception.throw $ LimitExceeded as)
+            when (exceedsLimit as) (Exception.throwM $ LimitExceeded as)
             as' <- lift (next a)
             (guard . not) (null as')
             pure (mk as as')
@@ -593,7 +597,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  MonadProfiler m
+    .  (MonadProfiler m, MonadThrow m)
     => Show prim
     => Typeable prim
     => Limit Natural
@@ -609,7 +613,7 @@ runStrategy breadthLimit applyPrim instrs0 config0 =
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
-    .  MonadProfiler m
+    .  (MonadProfiler m, MonadThrow m)
     => Show prim
     => Typeable prim
     => Limit Natural

@@ -30,6 +30,7 @@ import Control.Error.Util
     )
 import Control.Monad.Catch
     ( MonadCatch
+    , MonadThrow
     )
 import Control.Monad.Trans.Except
     ( runExceptT
@@ -167,6 +168,9 @@ import Kore.Unparser
     ( unparseToText
     , unparseToText2
     )
+import Log
+    ( MonadLog
+    )
 import qualified Log
 import SMT
     ( MonadSMT
@@ -197,10 +201,11 @@ data Execution =
 
 -- | Symbolic execution
 exec
-    ::  ( Log.WithLog Log.LogMessage smt
+    ::  ( MonadIO smt
+        , MonadLog smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadIO smt
+        , MonadThrow smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -234,10 +239,11 @@ exec breadthLimit verifiedModule strategy initialTerm =
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
-    ::  ( Log.WithLog Log.LogMessage smt
+    ::  ( MonadIO smt
+        , MonadLog smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadIO smt
+        , MonadThrow smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -262,10 +268,11 @@ execGetExitCode indexedModule strategy' finalTerm =
 
 -- | Symbolic search
 search
-    ::  ( Log.WithLog Log.LogMessage smt
+    ::  ( MonadIO smt
+        , MonadLog smt
         , MonadProfiler smt
         , MonadSMT smt
-        , MonadIO smt
+        , MonadThrow smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -404,6 +411,7 @@ boundedModelCheck
         , MonadProfiler smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadThrow smt
         )
     => Limit Natural
     -> Limit Natural
@@ -584,7 +592,7 @@ simplifyReachabilityRule rule = do
 
 -- | Construct an execution graph for the given input pattern.
 execute
-    :: MonadSimplify simplifier
+    :: (MonadSimplify simplifier, MonadThrow simplifier)
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module

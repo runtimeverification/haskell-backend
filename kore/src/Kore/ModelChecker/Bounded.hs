@@ -14,6 +14,9 @@ module Kore.ModelChecker.Bounded
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -100,7 +103,7 @@ bmcStrategy
 
 checkClaim
     :: forall m
-    .  MonadSimplify m
+    .  (MonadSimplify m, MonadThrow m)
     => Limit Natural
     ->  (  CommonModalPattern
         -> [Strategy (Prim CommonModalPattern (RewriteRule Variable))]
@@ -133,14 +136,14 @@ checkClaim
                         , predicate = Predicate.makeTruePredicate_
                         , substitution = mempty
                         }
-        executionGraph <- State.evalStateT
-                            (runStrategyWithSearchOrder
-                                breadthLimit
-                                transitionRule'
-                                strategy
-                                searchOrder
-                                startState)
-                            Nothing
+        executionGraph <-
+            runStrategyWithSearchOrder
+                breadthLimit
+                transitionRule'
+                strategy
+                searchOrder
+                startState
+            & flip State.evalStateT Nothing
 
         Log.logInfo . Text.pack
             $ ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
