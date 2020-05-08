@@ -466,8 +466,10 @@ proveSteps n = do
         (done, res) ->
             putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
--- | Executes 'n' prove steps, distributing over branches. It will perform less
--- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+{- | Executes 'n' prove steps, distributing over branches. It will perform less
+than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+-}
+
 proveStepsF
     :: MonadSimplify m
     => MonadIO m
@@ -477,6 +479,11 @@ proveStepsF
 proveStepsF n = do
     node   <- Lens.use (field @"node")
     recursiveForcedStep n node
+    graph <- getInnerGraph
+    let targetNode = getInterestingBranchingNode n graph node
+    case targetNode of
+        Nothing -> putStrLn' "Proof completed on all branches."
+        Just someNode -> selectNode someNode
 
 -- | Loads a script from a file.
 loadScript
