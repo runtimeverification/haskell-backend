@@ -27,6 +27,7 @@ import Prelude
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.IO.Class
 import Control.Monad.Morph
 import Control.Monad.RWS.Class
@@ -151,6 +152,10 @@ instance (Monad f, Foldable f) => Foldable (ListT f) where
     foldMap f as =
         fold $ foldListT as (\a r -> mappend (f a) <$> r) (pure mempty)
     {-# INLINE foldMap #-}
+
+instance MonadThrow m => MonadThrow (ListT m) where
+    throwM = lift . throwM
+    {-# INLINE throwM #-}
 
 cons :: a -> ListT m a -> ListT m a
 cons a as = ListT $ \yield -> yield a . foldListT as yield
