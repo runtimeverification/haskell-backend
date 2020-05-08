@@ -109,7 +109,7 @@ import qualified GHC.Generics as GHC
 import Kore.Profiler.Data
     ( MonadProfiler
     )
-
+import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.Transition
 import Numeric.Natural
 
@@ -468,6 +468,11 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
     mkQueue = \as ->
         unfoldSearchOrder searchOrder0 as
         >=> applyBreadthLimit breadthLimit
+        >=> profileQueueLength
+
+    profileQueueLength queue = do
+        Profile.executionQueueLength (Seq.length queue)
+        pure queue
 
     transit' =
         updateGraph $ \instr config ->

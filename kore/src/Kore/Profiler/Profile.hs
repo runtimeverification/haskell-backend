@@ -237,11 +237,7 @@ smtDecision (sexpr :| _) action = do
         then profile ["SMT", show $ length $ show sexpr] action
         else action
 
-executionQueueLength
-    :: MonadProfiler profiler
-    => Int -> profiler result -> profiler result
-executionQueueLength len action = do
-    Configuration {logStrategy} <- profileConfiguration
-    when logStrategy
-        (profileValue ["ExecutionQueueLength"] len)
-    action
+executionQueueLength :: MonadProfiler profiler => Int -> profiler ()
+executionQueueLength len = do
+    Configuration { logStrategy } <- profileConfiguration
+    when logStrategy (profileValue ["ExecutionQueueLength"] len)
