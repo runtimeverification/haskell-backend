@@ -503,11 +503,11 @@ leavesM
 leavesM breadthLimit searchOrder next a0 =
     worker0 (Seq.singleton a0)
   where
-    mk :: Seq a -> [a] -> Seq a
-    mk as as' =
+    mk :: [a] -> Seq a -> m (Seq a)
+    mk =
         case searchOrder of
-            BreadthFirst -> as <> Seq.fromList as'
-            DepthFirst -> Seq.fromList as' <> as
+            BreadthFirst -> unfoldBreadthFirst
+            DepthFirst -> unfoldDepthFirst
 
     worker0 as = applyBreadthLimit breadthLimit as >>= worker1
 
@@ -516,8 +516,14 @@ leavesM breadthLimit searchOrder next a0 =
         do
             as' <- lift (next a)
             (guard . not) (null as')
-            pure (mk as as')
+            lift (mk as' as)
         & maybeT (return a <|> worker0 as) worker0
+
+unfoldBreadthFirst :: Applicative f => [a] -> Seq a -> f (Seq a)
+unfoldBreadthFirst as' as = pure (as <> Seq.fromList as')
+
+unfoldDepthFirst :: Applicative f => [a] -> Seq a -> f (Seq a)
+unfoldDepthFirst as' as = pure (Seq.fromList as' <> as)
 
 applyBreadthLimit
     :: Exception (LimitExceeded a)
