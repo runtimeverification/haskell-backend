@@ -143,9 +143,7 @@ import Kore.Strategies.ProofState
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
-import Kore.Strategies.Verification hiding
-    ( Claim
-    )
+import Kore.Strategies.Verification
 import Kore.Syntax.Definition
     ( Definition (..)
     , Module (..)

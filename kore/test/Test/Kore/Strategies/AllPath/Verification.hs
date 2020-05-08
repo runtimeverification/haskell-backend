@@ -29,6 +29,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.RulePattern
     ( AllPathRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , injectTermIntoRHS
@@ -368,16 +369,33 @@ test_allPathVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule AllPathRule
+    -> Rule ReachabilityRule
 simpleAxiom left right =
-    AllPathRewriteRule $ simpleRewrite left right
+    ReachabilityRewriteRule $ simpleRewrite left right
+
+simplePriorityAxiom
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Integer
+    -> Rule ReachabilityRule
+simplePriorityAxiom left right priority =
+    ReachabilityRewriteRule . RewriteRule
+    $ RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , requires = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
+        , attributes = def
+            { Attribute.priority = Attribute.Priority (Just priority)
+            }
+        }
 
 simpleClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> AllPathRule
+    -> ReachabilityRule
 simpleClaim left right =
-    AllPathRule
+    (AllPath . AllPathRule)
     RulePattern
         { left = left
         , antiLeft = Nothing
@@ -389,9 +407,9 @@ simpleClaim left right =
 simpleTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> AllPathRule
+    -> ReachabilityRule
 simpleTrustedClaim left right =
-    AllPathRule
+    (AllPath . AllPathRule)
     RulePattern
         { left = left
         , antiLeft = Nothing
@@ -399,21 +417,4 @@ simpleTrustedClaim left right =
         , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.trusted = Attribute.Trusted True }
-        }
-
-simplePriorityAxiom
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Integer
-    -> Rule AllPathRule
-simplePriorityAxiom left right priority =
-    AllPathRewriteRule . RewriteRule
-    $ RulePattern
-        { left = left
-        , antiLeft = Nothing
-        , requires = makeTruePredicate_
-        , rhs = injectTermIntoRHS right
-        , attributes = def
-            { Attribute.priority = Attribute.Priority (Just priority)
-            }
         }

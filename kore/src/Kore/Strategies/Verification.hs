@@ -7,21 +7,20 @@ This should be imported qualified.
 -}
 
 module Kore.Strategies.Verification
-    ( Claim
-    , CommonProofState
-    , StuckVerification (..)
+    ( CommonProofState
+    , Stuck (..)
     , AllClaims (..)
     , Axioms (..)
     , ToProve (..)
     , AlreadyProven (..)
     , verify
     , verifyClaimStep
-    , toRulePattern
     , commonProofStateTransformer
     ) where
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
     ( foldM_
     )
@@ -54,15 +53,24 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Step.Rule.Expand
-import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
-    ( RHS
+    ( AllPathRule (..)
+    , OnePathRule (..)
+    , RHS
+    , ReachabilityRule (..)
+    , leftPattern
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
+    ( ExecutionGraph (..)
+    , GraphSearchOrder
+    , Strategy
+    , executionHistoryStep
+    , runStrategyWithSearchOrder
+    )
 import Kore.Step.Transition
-    ( runTransitionT
+    ( TransitionT
+    , runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
@@ -75,7 +83,8 @@ import Kore.Syntax.Variable
     )
 import Kore.Unparser
 
-type CommonProofState  = ProofState.ProofState (Pattern Variable)
+-- TODO (thomas.tuegel): (Pattern Variable) should be ReachabilityRule.
+type CommonProofState = ProofState.ProofState (Pattern Variable)
 
 commonProofStateTransformer :: ProofStateTransformer (Pattern Variable) (Pattern Variable)
 commonProofStateTransformer =
@@ -86,24 +95,6 @@ commonProofStateTransformer =
         , goalStuckTransformer = id
         , provenValue = Pattern.bottom
         }
-
-{- | Class type for claim-like rules
--}
-type Claim claim =
-    ( ToRulePattern claim
-    , ToRulePattern (Rule claim)
-    , FromRulePattern claim
-    , FromRulePattern (Rule claim)
-    , Unparse claim
-    , Unparse (Rule claim)
-    , Goal claim
-    , ClaimExtractor claim
-    , ExpandSingleConstructors claim
-    , SimplifyRuleLHS claim
-    , Typeable claim
-    , Prim claim ~ ProofState.Prim (Rule claim)
-    , ProofState claim claim ~ ProofState.ProofState claim
-    )
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
@@ -118,26 +109,24 @@ first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
 
 If the verification fails, returns an error containing a pattern that could
 not be rewritten (either because no axiom could be applied or because we
-didn't manage to verify a claim within the its maximum number of steps.
+didn't manage to verify a claim within the its maximum number of steps).
 
 If the verification succeeds, it returns ().
 -}
-
-data StuckVerification patt claim
-    = StuckVerification
-        { stuckDescription :: !patt
-        , provenClaims :: ![claim]
-        }
+data Stuck =
+    Stuck
+    { stuckPattern :: !(Pattern Variable)
+    , provenClaims :: ![ReachabilityRule]
+    }
     deriving (Eq, GHC.Generic, Show)
 
-instance SOP.Generic (StuckVerification patt claim)
+instance SOP.Generic Stuck
 
-instance SOP.HasDatatypeInfo (StuckVerification patt claim)
+instance SOP.HasDatatypeInfo Stuck
 
-instance (Debug patt, Debug claim) => Debug (StuckVerification patt claim)
+instance Debug Stuck
 
-instance (Debug patt, Debug claim, Diff patt, Diff claim)
-    => Diff (StuckVerification patt claim)
+instance Diff Stuck
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
@@ -145,21 +134,17 @@ newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
 newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
 
 verify
-    :: forall claim m
-    .  Claim claim
-    => ProofState claim (Pattern Variable) ~ CommonProofState
-    => Show claim
-    => (MonadCatch m, MonadSimplify m)
-    => Show (Rule claim)
+    :: forall simplifier
+    .  (MonadCatch simplifier, MonadSimplify simplifier)
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims claim
-    -> Axioms claim
+    -> AllClaims ReachabilityRule
+    -> Axioms ReachabilityRule
     -> AlreadyProven
-    -> ToProve claim
+    -> ToProve ReachabilityRule
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (StuckVerification (Pattern Variable) claim) m ()
+    -> ExceptT Stuck simplifier ()
 verify
     breadthLimit
     searchOrder
@@ -171,81 +156,60 @@ verify
     withExceptT addStillProven
     $ verifyHelper breadthLimit searchOrder claims axioms unproven
   where
-    unproven :: ToProve claim
-    stillProven :: [claim]
+    unproven :: ToProve ReachabilityRule
+    stillProven :: [ReachabilityRule]
     (unproven, stillProven) =
         (ToProve newToProve, newAlreadyProven)
       where
         (newToProve, newAlreadyProven) =
             partitionEithers (map lookupEither toProve)
         lookupEither
-            :: (claim, Limit Natural)
-            -> Either (claim, Limit Natural) claim
+            :: (ReachabilityRule, Limit Natural)
+            -> Either (ReachabilityRule, Limit Natural) ReachabilityRule
         lookupEither claim@(rule, _) =
             if unparseToText2 rule `elem` alreadyProven
                 then Right rule
                 else Left claim
 
-    addStillProven
-        :: StuckVerification (Pattern Variable) claim
-        -> StuckVerification (Pattern Variable) claim
-    addStillProven
-        StuckVerification { stuckDescription, provenClaims }
-      =
-        StuckVerification
-            { stuckDescription, provenClaims = stillProven ++ provenClaims }
+    addStillProven :: Stuck -> Stuck
+    addStillProven stuck@Stuck { provenClaims } =
+        stuck { provenClaims = stillProven ++ provenClaims }
 
 verifyHelper
-    :: forall claim m
-    .  Claim claim
-    => ProofState claim (Pattern Variable) ~ CommonProofState
-    => Show claim
-    => (MonadCatch m, MonadSimplify m)
-    => Show (Rule claim)
+    :: forall simplifier
+    .  (MonadCatch simplifier, MonadSimplify simplifier)
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims claim
-    -> Axioms claim
-    -> ToProve claim
+    -> AllClaims ReachabilityRule
+    -> Axioms ReachabilityRule
+    -> ToProve ReachabilityRule
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (StuckVerification (Pattern Variable) claim) m ()
-verifyHelper
-    breadthLimit
-    searchOrder
-    claims
-    axioms
-    (ToProve toProve)
-  =
+    -> ExceptT Stuck simplifier ()
+verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
     Monad.foldM_ verifyWorker [] toProve
   where
     verifyWorker
-        :: [claim]
-        -> (claim, Limit Natural)
-        -> ExceptT (StuckVerification (Pattern Variable) claim) m [claim]
+        :: [ReachabilityRule]
+        -> (ReachabilityRule, Limit Natural)
+        -> ExceptT Stuck simplifier [ReachabilityRule]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
             verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
-        wrapStuckPattern
-            :: Pattern Variable -> StuckVerification (Pattern Variable) claim
-        wrapStuckPattern stuckDescription =
-            StuckVerification { stuckDescription, provenClaims }
+        wrapStuckPattern :: Pattern Variable -> Stuck
+        wrapStuckPattern stuckPattern = Stuck { stuckPattern, provenClaims }
 
 verifyClaim
-    :: forall claim m
-    .  (MonadCatch m, MonadSimplify m)
-    => ProofState claim (Pattern Variable) ~ CommonProofState
-    => Claim claim
-    => Show claim
-    => Show (Rule claim)
+    :: forall simplifier
+    .  (MonadCatch simplifier, MonadSimplify simplifier)
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims claim
-    -> Axioms claim
-    -> (claim, Limit Natural)
-    -> ExceptT (Pattern Variable) m ()
+    -> AllClaims ReachabilityRule
+    -> Axioms ReachabilityRule
+    -> (ReachabilityRule, Limit Natural)
+    -> ExceptT (Pattern Variable) simplifier ()
 verifyClaim
     breadthLimit
     searchOrder
@@ -256,7 +220,6 @@ verifyClaim
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
-        destination = getDestination goal
         limitedStrategy =
             Limit.takeWithin
                 depthLimit
@@ -264,19 +227,20 @@ verifyClaim
     executionGraph <-
         runStrategyWithSearchOrder
             breadthLimit
-            (modifiedTransitionRule destination)
+            modifiedTransitionRule
             limitedStrategy
             searchOrder
             startPattern
     -- Throw the first unproven configuration as an error.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
+    destination = getDestination goal
     modifiedTransitionRule
-        :: RHS Variable
-        -> Prim claim
-        -> CommonProofState
-        -> TransitionT (Rule claim) (Verifier m) CommonProofState
-    modifiedTransitionRule destination prim proofState' = do
+        ::  Prim ReachabilityRule
+        ->  CommonProofState
+        ->  TransitionT (Rule ReachabilityRule) (Verifier simplifier)
+                CommonProofState
+    modifiedTransitionRule prim proofState' = do
         transitions <-
             lift . lift . runTransitionT
             $ transitionRule' goal destination prim proofState'
@@ -286,58 +250,62 @@ verifyClaim
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
 verifyClaimStep
-    :: forall claim m
-    .  (MonadCatch m, MonadSimplify m)
-    => Claim claim
-    => claim
+    :: forall simplifier
+    .  (MonadCatch simplifier, MonadSimplify simplifier)
+    => ReachabilityRule
     -- ^ claim that is being proven
-    -> [claim]
+    -> [ReachabilityRule]
     -- ^ list of claims in the spec module
-    -> [Rule claim]
+    -> [Rule ReachabilityRule]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonProofState (Rule claim)
+    -> ExecutionGraph CommonProofState (Rule ReachabilityRule)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> m (ExecutionGraph CommonProofState (Rule claim))
-verifyClaimStep
-    target
-    claims
-    axioms
-    eg@ExecutionGraph { root }
-    node
-  = do
-      let destination = getDestination target
-      executionHistoryStep
-        (transitionRule' target destination)
-        strategy'
-        eg
-        node
+    -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
+verifyClaimStep target claims axioms eg@ExecutionGraph { root } node =
+    executionHistoryStep (transitionRule' target destination) strategy' eg node
   where
-    strategy' :: Strategy (Prim claim)
+    destination = getDestination target
+
+    strategy' :: Strategy (Prim ReachabilityRule)
     strategy'
         | isRoot = firstStep
         | otherwise = followupStep
 
-    firstStep :: Strategy (Prim claim)
+    firstStep :: Strategy (Prim ReachabilityRule)
     firstStep = strategy target claims axioms Stream.!! 0
 
-    followupStep :: Strategy (Prim claim)
+    followupStep :: Strategy (Prim ReachabilityRule)
     followupStep = strategy target claims axioms Stream.!! 1
 
     isRoot :: Bool
     isRoot = node == root
 
 transitionRule'
-    :: forall claim m
-    .  (MonadCatch m, MonadSimplify m)
-    => Claim claim
-    => claim
+    :: forall simplifier
+    .  (MonadCatch simplifier, MonadSimplify simplifier)
+    => ReachabilityRule
     -> RHS Variable
-    -> Prim claim
+    -> Prim ReachabilityRule
     -> CommonProofState
-    -> TransitionT (Rule claim) m CommonProofState
-transitionRule' ruleType destination prim state = do
-    let goal = flip (configurationDestinationToRule ruleType) destination <$> state
-    next <- transitionRule prim goal
+    -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
+transitionRule' goal _ prim state = do
+    let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
+    next <- transitionRule prim goal'
     pure $ fmap getConfiguration next
+  where
+    lensReachabilityConfig =
+        Lens.lens
+            (\case
+                OnePath onePathRule ->
+                    Lens.view leftPattern (getOnePathRule onePathRule)
+                AllPath allPathRule ->
+                    Lens.view leftPattern (getAllPathRule allPathRule)
+            )
+            (\case
+                OnePath (OnePathRule rulePattern) -> \b ->
+                    (OnePath . OnePathRule) (Lens.set leftPattern b rulePattern)
+                AllPath (AllPathRule rulePattern) -> \b ->
+                    (AllPath . AllPathRule) (Lens.set leftPattern b rulePattern)
+            )

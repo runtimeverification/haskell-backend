@@ -29,16 +29,14 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.RulePattern
     ( OnePathRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , injectTermIntoRHS
     )
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
-    ( StuckVerification (StuckVerification)
-    )
-import qualified Kore.Strategies.Verification as Verification.DoNotUse
-    ( StuckVerification (..)
+    ( Stuck (..)
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -236,8 +234,8 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left StuckVerification
-                { stuckDescription = Pattern.fromTermLike Mock.c
+            (Left Stuck
+                { stuckPattern = Pattern.fromTermLike Mock.c
                 , provenClaims = []
                 }
             )
@@ -261,8 +259,8 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left StuckVerification
-                { stuckDescription = Pattern.fromTermLike Mock.e
+            (Left Stuck
+                { stuckPattern = Pattern.fromTermLike Mock.e
                 , provenClaims = [simpleClaim Mock.a Mock.c]
                 }
             )
@@ -468,16 +466,33 @@ test_onePathVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule OnePathRule
+    -> Rule ReachabilityRule
 simpleAxiom left right =
-    OnePathRewriteRule $ simpleRewrite left right
+    ReachabilityRewriteRule $ simpleRewrite left right
+
+simplePriorityAxiom
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Integer
+    -> Rule ReachabilityRule
+simplePriorityAxiom left right priority =
+    ReachabilityRewriteRule . RewriteRule
+    $ RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , requires = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
+        , attributes = def
+            { Attribute.priority = Attribute.Priority (Just priority)
+            }
+        }
 
 simpleClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule
+    -> ReachabilityRule
 simpleClaim left right =
-    OnePathRule
+    (OnePath . OnePathRule)
     RulePattern
         { left = left
         , antiLeft = Nothing
@@ -489,9 +504,9 @@ simpleClaim left right =
 simpleTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule
+    -> ReachabilityRule
 simpleTrustedClaim left right =
-    OnePathRule
+    (OnePath . OnePathRule)
     RulePattern
         { left = left
         , antiLeft = Nothing
@@ -499,21 +514,4 @@ simpleTrustedClaim left right =
         , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.trusted = Attribute.Trusted True }
-        }
-
-simplePriorityAxiom
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Integer
-    -> Rule OnePathRule
-simplePriorityAxiom left right priority =
-    OnePathRewriteRule . RewriteRule
-    $ RulePattern
-        { left = left
-        , antiLeft = Nothing
-        , requires = makeTruePredicate_
-        , rhs = injectTermIntoRHS right
-        , attributes = def
-            { Attribute.priority = Attribute.Priority (Just priority)
-            }
         }
