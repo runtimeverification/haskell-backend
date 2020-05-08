@@ -195,4 +195,67 @@ axiom \implies(X ∈ B, fun(X) = C).
 
 ### Priority
 
-The `priority` attribute is now encoded explicitly in the pre-condition of the axiom.
+The `priority` and `owise` attributes are now encoded explicitly in the
+pre-condition of the axiom.
+Consider a function,
+
+```.k
+rule L:Int <= X:Int < _     => false requires notBool L <=Int X
+rule _     <= X:Int < U:Int => false requires notBool X  <Int U [priority(51)]
+rule _     <= _     < _     => true                             [owise]
+```
+
+which will be interpreted in Kore as axioms
+
+```.kore
+axiom
+    \implies(
+        \and(
+            true = notBool(<=Int(L, X)),
+            (X₁ ∈ L) ∧ (X₂ ∈ X)
+        ),
+        \and(
+            _<=_<_(X₁, X₂, X₃) = false,
+            \top
+        )
+    )
+axiom
+    \implies(
+        \and(
+            true = notBool(<Int(X, U)),
+            (X₂ ∈ X) ∧ (X₃ ∈ U),
+            \not \exists L X.
+                \and(
+                    true = notBool(<=Int(L, X)),
+                    (X₁ ∈ L) ∧ (X₂ ∈ X)
+                )
+        ),
+        \and(
+            _<=_<_(X₁, X₂, X₃) = false,
+            \top
+        )
+    )
+axiom
+    \implies(
+        \and(
+            \top,
+            \top,
+            \and(
+                \not \exists L X.
+                    \and(
+                        true = notBool(<=Int(L, X)),
+                        (X₁ ∈ L) ∧ (X₂ ∈ X)
+                    ),
+                \not \exists X U.
+                    \and(
+                        true = notBool(<Int(X, U)),
+                        (X₂ ∈ X) ∧ (X₃ ∈ U)
+                    )
+            )
+        ),
+        \and(
+            _<=_<_(X₁, X₂, X₃) = true,
+            \top
+        )
+    )
+```
