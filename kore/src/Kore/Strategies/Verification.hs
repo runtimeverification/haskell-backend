@@ -21,6 +21,9 @@ module Kore.Strategies.Verification
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
+import Control.Monad
+    ( (>=>)
+    )
 import qualified Control.Monad as Monad
     ( foldM_
     )
@@ -228,8 +231,7 @@ verifyClaim
             & Foldable.toList
             & Limit.takeWithin depthLimit
     Strategy.leavesM
-        breadthLimit
-        searchOrder
+        updateQueue
         (Strategy.unfoldTransition transit)
         (limitedStrategy, startPattern)
         & fmap discardStrategy
@@ -237,6 +239,10 @@ verifyClaim
   where
     destination = getDestination goal
     discardStrategy = snd
+
+    updateQueue = \as ->
+        Strategy.unfoldSearchOrder searchOrder as
+        >=> Strategy.applyBreadthLimit breadthLimit
 
     throwUnproven
         :: ListT (Verifier simplifier) CommonProofState

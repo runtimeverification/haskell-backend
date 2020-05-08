@@ -32,6 +32,9 @@ module Kore.Step.Strategy
       -- * Running strategies
     , leavesM
     , applyBreadthLimit
+    , unfoldBreadthFirst
+    , unfoldDepthFirst
+    , unfoldSearchOrder
     , unfoldTransition
     , GraphSearchOrder(..)
     , constructExecutionGraph
@@ -489,41 +492,41 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
 @leavesM@ returns a disjunction of leaves (vertices without descendants) rather
 than constructing the entire graph.
 
+The queue updating function should be 'unfoldBreadthFirst' or
+'unfoldDepthFirst', optionally composed with 'applyBreadthLimit'.
+
  -}
 leavesM
     :: forall m a
-    .  MonadThrow m
+    .  Monad m
     => Alternative m
-    => (Show a, Typeable a)
-    => Limit Natural
-    -> GraphSearchOrder
+    => ([a] -> Seq a -> m (Seq a))  -- ^ queue updating function
     -> (a -> m [a])  -- ^ unfolding function
     -> a  -- ^ initial vertex
     -> m a
-leavesM breadthLimit searchOrder next a0 =
-    worker0 (Seq.singleton a0)
+leavesM mkQueue next a0 =
+    mkQueue [a0] Seq.empty >>= worker
   where
-    mk :: [a] -> Seq a -> m (Seq a)
-    mk =
-        case searchOrder of
-            BreadthFirst -> unfoldBreadthFirst
-            DepthFirst -> unfoldDepthFirst
-
-    worker0 as = applyBreadthLimit breadthLimit as >>= worker1
-
-    worker1 Seq.Empty = empty
-    worker1 (a Seq.:<| as) =
+    worker Seq.Empty = empty
+    worker (a Seq.:<| as) =
         do
             as' <- lift (next a)
             (guard . not) (null as')
-            lift (mk as' as)
-        & maybeT (return a <|> worker0 as) worker0
+            lift (mkQueue as' as)
+        & maybeT (return a <|> worker as) worker
 
 unfoldBreadthFirst :: Applicative f => [a] -> Seq a -> f (Seq a)
 unfoldBreadthFirst as' as = pure (as <> Seq.fromList as')
 
 unfoldDepthFirst :: Applicative f => [a] -> Seq a -> f (Seq a)
 unfoldDepthFirst as' as = pure (Seq.fromList as' <> as)
+
+unfoldSearchOrder
+    :: Applicative f
+    => GraphSearchOrder
+    -> [a] -> Seq a -> f (Seq a)
+unfoldSearchOrder DepthFirst = unfoldDepthFirst
+unfoldSearchOrder BreadthFirst = unfoldBreadthFirst
 
 applyBreadthLimit
     :: Exception (LimitExceeded a)
