@@ -10,7 +10,6 @@ module Kore.Internal.Predicate
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
-    , externalizeFreshVariables
     , isFalse
     , depth
     , makePredicate, NotPredicate (..)
@@ -103,7 +102,6 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike hiding
     ( depth
-    , externalizeFreshVariables
     , hasFreeVariable
     , isSimplified
     , mapVariables
@@ -152,7 +150,7 @@ instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isBottom (GenericPredicate patt) = isBottom patt
 
 instance
-    (Ord variable, From variable VariableName)
+    (Ord variable, Unparse variable)
     => Unparse (GenericPredicate (TermLike variable))
   where
     unparse predicate =
@@ -822,21 +820,6 @@ substitute
     -> Predicate variable
 substitute subst (GenericPredicate termLike) =
     GenericPredicate (TermLike.substitute subst termLike)
-
-{- | Transform arbitrary 'InternalVariable's into external 'Variable's.
-
-@externalizeFreshVariables@ ensures that bound variables are renamed to avoid
-capturing the resulting 'Variable's.
-
--}
-externalizeFreshVariables
-    :: InternalVariable variable
-    => Predicate variable
-    -> Predicate VariableName
-externalizeFreshVariables predicate =
-    TermLike.externalizeFreshVariables
-    . TermLike.mapVariables (pure toVariableName)
-    <$> predicate
 
 depth :: Predicate variable -> Int
 depth (GenericPredicate predicate) = TermLike.depth predicate
