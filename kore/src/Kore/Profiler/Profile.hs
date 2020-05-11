@@ -4,6 +4,8 @@ License     : NCSA
 
 This should be imported @qualified@.
 -}
+
+{-# OPTIONS_GHC -fno-prof-auto #-}
 module Kore.Profiler.Profile
     ( axiomBranching
     , axiomEvaluation
