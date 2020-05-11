@@ -9,6 +9,7 @@ Portability : portable
 -}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-prof-auto #-}
 
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..), InternalVariable
@@ -187,6 +188,7 @@ evalSimplifier verifiedModule simplifier = do
     runReaderT (runSimplifierT simplifier) env
   where
     !earlyEnv =
+        {-# SCC "evalSimplifier/earlyEnv" #-}
         Env
             { metadataTools = earlyMetadataTools
             , simplifierTermLike
@@ -196,25 +198,42 @@ evalSimplifier verifiedModule simplifier = do
             , injSimplifier
             , overloadSimplifier
             }
-    sortGraph = SortGraph.fromIndexedModule verifiedModule
-    injSimplifier = mkInjSimplifier sortGraph
+    sortGraph =
+        {-# SCC "evalSimplifier/sortGraph" #-}
+        SortGraph.fromIndexedModule verifiedModule
+    injSimplifier =
+        {-# SCC "evalSimplifier/injSimplifier" #-}
+        mkInjSimplifier sortGraph
     -- It's safe to build the MetadataTools using the external
     -- IndexedModule because MetadataTools doesn't retain any
     -- knowledge of the patterns which are internalized.
     earlyMetadataTools = MetadataTools.build verifiedModule
-    simplifierTermLike = Simplifier.create
-    substitutionSimplifier = SubstitutionSimplifier.substitutionSimplifier
-    simplifierCondition = Condition.create substitutionSimplifier
+    simplifierTermLike =
+        {-# SCC "evalSimplifier/simplifierTermLike" #-}
+        Simplifier.create
+    substitutionSimplifier =
+        {-# SCC "evalSimplifier/substitutionSimplifier" #-}
+        SubstitutionSimplifier.substitutionSimplifier
+    simplifierCondition =
+        {-# SCC "evalSimplifier/simplifierCondition" #-}
+        Condition.create substitutionSimplifier
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 
     verifiedModule' =
+        {-# SCC "evalSimplifier/verifiedModule'" #-}
         IndexedModule.mapPatterns
             (Builtin.internalize earlyMetadataTools)
             verifiedModule
-    metadataTools = MetadataTools.build verifiedModule'
-    overloadGraph = OverloadGraph.fromIndexedModule verifiedModule
-    overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
+    metadataTools =
+        {-# SCC "evalSimplifier/metadataTools" #-}
+        MetadataTools.build verifiedModule'
+    overloadGraph =
+        {-# SCC "evalSimplifier/overloadGraph" #-}
+        OverloadGraph.fromIndexedModule verifiedModule
+    overloadSimplifier =
+        {-# SCC "evalSimplifier/overloadSimplifier" #-}
+        mkOverloadSimplifier overloadGraph injSimplifier
 
     initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do
@@ -229,6 +248,7 @@ evalSimplifier verifiedModule simplifier = do
                 Axiom.EvaluationStrategy.builtinEvaluation
                 <$> Builtin.koreEvaluators verifiedModule'
             simplifierAxioms =
+                {-# SCC "evalSimplifier/simplifierAxioms" #-}
                 Map.unionWith
                     Axiom.EvaluationStrategy.simplifierWithFallback
                     builtinEvaluators

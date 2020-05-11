@@ -27,6 +27,7 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( AllPathRule (..)
     , ReachabilityRule (..)
@@ -379,7 +380,7 @@ simplePriorityAxiom
     -> Integer
     -> Rule ReachabilityRule
 simplePriorityAxiom left right priority =
-    ReachabilityRewriteRule . RewriteRule
+    ReachabilityRewriteRule . mkRewritingRule . RewriteRule
     $ RulePattern
         { left = left
         , antiLeft = Nothing
