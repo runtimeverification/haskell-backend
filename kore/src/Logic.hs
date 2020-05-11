@@ -19,7 +19,7 @@ gather acts =
 {-# INLINE gather #-}
 
 scatter :: (Foldable f, Alternative m) => f a -> m a
-scatter = foldr (\a -> (<|>) (pure a)) empty
+scatter = foldr ((<|>) . pure) empty
 {-# INLINE scatter #-}
 
 mapLogicT
