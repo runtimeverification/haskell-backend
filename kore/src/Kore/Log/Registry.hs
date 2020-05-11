@@ -59,6 +59,9 @@ import Kore.Log.DebugSolver
 import Kore.Log.ErrorException
     ( ErrorException
     )
+import Kore.Log.ErrorRewriteLoop
+    ( ErrorRewriteLoop
+    )
 import Kore.Log.ErrorRewritesInstantiation
     ( ErrorRewritesInstantiation
     )
@@ -126,6 +129,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
+    , mk $ Proxy @ErrorRewriteLoop
     , mk $ Proxy @LogMessage
     , mk $ Proxy @InfoAttemptUnification
     , mk $ Proxy @InfoReachability

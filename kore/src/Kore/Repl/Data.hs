@@ -33,6 +33,7 @@ module Kore.Repl.Data
     , LogType (..)
     , ReplScript (..)
     , ReplMode (..)
+    , ScriptModeOutput (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
     ) where
@@ -124,6 +125,9 @@ newtype ReplScript = ReplScript
     } deriving (Eq, Show)
 
 data ReplMode = Interactive | RunScript
+    deriving (Eq, Show)
+
+data ScriptModeOutput = EnableOutput | DisableOutput
     deriving (Eq, Show)
 
 newtype OutputFile = OutputFile
@@ -311,10 +315,12 @@ helpText =
     \                                         file extension is added automatically);\
                                               \ accepted formats: svg, jpeg, png, pdf;\n\
     \step [n]                                 attempts to run 'n' proof steps at\
-                                              \the current node (n=1 by default)\n\
+                                              \ the current node (n=1 by default)\n\
     \stepf [n]                                attempts to run 'n' proof steps at\
                                               \ the current node, stepping through\
-                                              \ branchings (n=1 by default)\n\
+                                              \ branchings (n=1 by default);\n\
+    \                                         current node is advanced to the first\
+                                              \ interesting branching node (***)\n\
     \select <n>                               select node id 'n' from the graph\n\
     \config [n]                               shows the config for node 'n'\
                                               \ (defaults to current node)\n\
@@ -387,7 +393,13 @@ helpText =
     \ was reached using the SMT solver or it was reached through the Remove \n\
     \ Destination step.\n\
     \(**) A green node represents the proof has completed on\
-    \ that respective branch. A red node represents a stuck configuration.\
+    \ that respective branch. \n\
+    \ A red node represents a stuck configuration.\n\
+    \(***) An interesting branching node has at least two children which\n\
+    \ contain non-bottom leaves in their subtrees. If no such node exists,\n\
+    \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
+    \ leaf exists (i.e the proof is complete), the current node remains the same\n\
+    \ and a message is emitted.\n\
     \\n\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\

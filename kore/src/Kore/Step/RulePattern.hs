@@ -26,9 +26,11 @@ module Kore.Step.RulePattern
     , topExistsToImplicitForall
     , isFreeOf
     , Kore.Step.RulePattern.substitute
+    , lhsEqualsRhs
     , rhsSubstitute
     , rhsForgetSimplified
     , rhsToTerm
+    , lhsToTerm
     , termToRHS
     , injectTermIntoRHS
     , rewriteRuleToTerm
@@ -84,6 +86,7 @@ import Kore.Internal.Alias
     ( Alias (..)
     )
 import Kore.Internal.ApplicationSorts
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -266,7 +269,7 @@ rulePattern left right =
     RulePattern
         { left
         , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate_
+        , requires = Predicate.makeTruePredicate (TermLike.termLikeSort left)
         , rhs = termToRHS right
         , attributes = Default.def
         }
@@ -282,15 +285,9 @@ leftPattern =
     get RulePattern { left, requires } =
         Pattern.withCondition left $ from @(Predicate _) requires
     set rule@(RulePattern _ _ _ _ _) pattern' =
-        applySubstitution
-            (Pattern.substitution pattern')
-            rule
-                { left = Pattern.term pattern'
-                , requires = coerceSort (Pattern.predicate pattern')
-                }
+        rule { left, requires = Condition.toPredicate condition }
       where
-        sort = TermLike.termLikeSort (Pattern.term pattern')
-        coerceSort = Predicate.coerceSort sort
+        (left, condition) = Pattern.splitTerm pattern'
 
 {- | Does the axiom pattern represent a heating rule?
  -}
@@ -329,13 +326,33 @@ rhsToTerm RHS { existentials, right, ensures } =
         _ -> TermLike.mkAnd (Predicate.fromPredicate sort ensures) right
     sort = TermLike.termLikeSort right
 
+-- | Converts the left-hand side to the term form
+lhsToTerm
+    :: InternalVariable variable
+    => TermLike variable
+    -> Maybe (TermLike variable)
+    -> Predicate variable
+    -> TermLike variable
+lhsToTerm left antiLeft requires
+  | Just antiLeftTerm <- antiLeft
+  = TermLike.mkAnd
+        (TermLike.mkNot antiLeftTerm)
+        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
+  | otherwise
+  = TermLike.mkAnd (Predicate.unwrapPredicate requires) left
+
+
 -- | Wraps a term as a RHS
 injectTermIntoRHS
     :: InternalVariable variable
     => TermLike.TermLike variable
     -> RHS variable
 injectTermIntoRHS right =
-    RHS { existentials = [], right, ensures = Predicate.makeTruePredicate_ }
+    RHS
+    { existentials = []
+    , right
+    , ensures = Predicate.makeTruePredicate (TermLike.termLikeSort right)
+    }
 
 -- | Parses a term representing a RHS into a RHS
 termToRHS
@@ -574,6 +591,9 @@ instance From OnePathRule Attribute.Label where
 instance From OnePathRule Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getOnePathRule
 
+instance From OnePathRule Attribute.Trusted where
+    from = Attribute.trusted . attributes . getOnePathRule
+
 {-  | Unified One-Path and All-Path Claim rule pattern.
 -}
 data ReachabilityRule
@@ -616,6 +636,10 @@ instance From ReachabilityRule Attribute.Label where
     from (AllPath allPathRule) = from allPathRule
 
 instance From ReachabilityRule Attribute.RuleIndex where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
@@ -674,6 +698,9 @@ instance From AllPathRule Attribute.Label where
 instance From AllPathRule Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getAllPathRule
 
+instance From AllPathRule Attribute.Trusted where
+    from = Attribute.trusted . attributes . getAllPathRule
+
 instance ToRulePattern (RewriteRule Variable)
 
 instance ToRulePattern OnePathRule
@@ -707,24 +734,11 @@ rewriteRuleToTerm
     -> TermLike.TermLike variable
 rewriteRuleToTerm
     (RewriteRule
-        (RulePattern
-            left (Just antiLeftTerm) requires rhs _
-        )
+        (RulePattern left antiLeft requires rhs _)
     )
   =
     TermLike.mkRewrites
-        (TermLike.mkAnd
-            (TermLike.mkNot antiLeftTerm)
-            (TermLike.mkAnd (Predicate.unwrapPredicate requires) left))
-        (rhsToTerm rhs)
-
-rewriteRuleToTerm
-    (RewriteRule
-        (RulePattern left Nothing requires rhs _)
-    )
-  =
-    TermLike.mkRewrites
-        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
+        (lhsToTerm left antiLeft requires)
         (rhsToTerm rhs)
 
 instance From OnePathRule (TermLike Variable) where
@@ -916,3 +930,12 @@ instance UnifyingRule RewriteRule where
     mapRuleVariables mapElemVar mapSetVar (RewriteRule rule) =
         RewriteRule (mapRuleVariables mapElemVar mapSetVar rule)
     {-# INLINE mapRuleVariables #-}
+
+lhsEqualsRhs
+    :: InternalVariable variable
+    => RulePattern variable
+    -> Bool
+lhsEqualsRhs rule =
+    lhsToTerm left antiLeft requires == rhsToTerm rhs
+  where
+    RulePattern { left, antiLeft, requires, rhs } = rule

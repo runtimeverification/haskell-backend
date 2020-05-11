@@ -181,8 +181,8 @@ import Kore.Repl.State
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
+    , ToRulePattern (..)
     )
-import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -466,8 +466,10 @@ proveSteps n = do
         (done, res) ->
             putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
--- | Executes 'n' prove steps, distributing over branches. It will perform less
--- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+{- | Executes 'n' prove steps, distributing over branches. It will perform less
+than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+-}
+
 proveStepsF
     :: MonadSimplify m
     => MonadIO m
@@ -477,6 +479,11 @@ proveStepsF
 proveStepsF n = do
     node   <- Lens.use (field @"node")
     recursiveForcedStep n node
+    graph <- getInnerGraph
+    let targetNode = getInterestingBranchingNode n graph node
+    case targetNode of
+        Nothing -> putStrLn' "Proof completed on all branches."
+        Just someNode -> selectNode someNode
 
 -- | Loads a script from a file.
 loadScript
@@ -486,7 +493,7 @@ loadScript
     => FilePath
     -- ^ path to file
     -> ReplM m ()
-loadScript file = parseEvalScript file
+loadScript file = parseEvalScript file DisableOutput
 
 handleLog
     :: MonadState ReplState m
@@ -623,13 +630,10 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex . toRulePattern $ rule
+            let ruleIndex = from @_ @Attribute.RuleIndex rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
-  where
-    getRuleIndex :: RulePattern Variable -> Attribute.RuleIndex
-    getRuleIndex = Attribute.identifier . Rule.attributes
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -1366,8 +1370,9 @@ parseEvalScript
     => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
     => FilePath
+    -> ScriptModeOutput
     -> t m ()
-parseEvalScript file = do
+parseEvalScript file scriptModeOutput = do
     exists <- lift . liftIO . doesFileExist $ file
     if exists
         then do
@@ -1397,9 +1402,30 @@ parseEvalScript file = do
            lift
                $ execStateReader config st
                $ Foldable.for_ cmds
-               $ replInterpreter0
-                    (PrintAuxOutput $ \_ -> return ())
-                    (PrintKoreOutput $ \_ -> return ())
+               $ if scriptModeOutput == EnableOutput
+                    then executeCommandWithOutput
+                    else executeCommand
+
+        executeCommand
+            :: ReplCommand
+            -> ReaderT (Config m) (StateT ReplState m) ReplStatus
+        executeCommand command =
+            replInterpreter0
+                (PrintAuxOutput $ \_ -> return ())
+                (PrintKoreOutput $ \_ -> return ())
+                command
+
+        executeCommandWithOutput
+            :: ReplCommand
+            -> ReaderT (Config m) (StateT ReplState m) ReplStatus
+        executeCommandWithOutput command = do
+            node <- Lens.use (field @"node")
+            liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
+            liftIO $ print command
+            replInterpreter0
+                    (PrintAuxOutput printIfNotEmpty)
+                    (PrintKoreOutput printIfNotEmpty)
+                    command
 
 formatUnificationMessage
     :: Either ReplOutput (NonEmpty (Condition Variable))

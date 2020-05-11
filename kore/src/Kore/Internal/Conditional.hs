@@ -6,6 +6,8 @@ Representation of conditional terms.
 
 -}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
@@ -203,7 +205,11 @@ instance
     => From (Conditional variable ()) (Predicate variable)
   where
     from Conditional { predicate, substitution } =
-        Predicate.makeAndPredicate predicate (from substitution)
+        Predicate.makeAndPredicate predicate
+        $ Predicate.coerceSort sort
+        $ from substitution
+      where
+        sort = (termLikeSort . Predicate.unwrapPredicate) predicate
 
 instance
     InternalVariable variable
