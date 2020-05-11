@@ -2,14 +2,14 @@
 
 let
   inherit (default) project pkgs;
+  local =
+    if builtins.pathExists ./shell.local.nix
+    then import ./shell.local.nix { inherit default; }
+    else x: x;
+  shellFor = args: project.shellFor (local args);
 in
 
-project.shellFor {
-  additional = hspkgs:
-    [
-      hspkgs.ghc-tags-plugin
-      hspkgs.terminfo
-    ];
+shellFor {
   buildInputs =
     with pkgs;
     [

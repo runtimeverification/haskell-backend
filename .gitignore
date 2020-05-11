@@ -43,5 +43,7 @@ cabal.project.local
 *.save-proofs.kore
 .envrc
 /result*
+/local.nix
+/shell.local.nix
 /TAGS
 /.TAGS*
