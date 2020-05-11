@@ -31,9 +31,6 @@ let
       src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
       modules = [
         {
-          packages.ghc.flags.ghci = pkgs.lib.mkForce true;
-          packages.ghci.flags.ghci = pkgs.lib.mkForce true;
-          reinstallableLibGhc = true;
           # package *
           enableLibraryProfiling = true;
           profilingDetail = "none";
@@ -47,15 +44,6 @@ let
             profilingDetail = "toplevel-functions";
           };
         }
-      ];
-      pkg-def-extras = [
-        (hackage: {
-          packages = {
-            ghc-tags-plugin = hackage.ghc-tags-plugin."0.1.6.0".revisions.default;
-            ghc-tags-core = hackage.ghc-tags-core."0.1.0.0".revisions.default;
-            pipes-text = hackage.pipes-text."0.0.2.5".revisions.default;
-          };
-        })
       ];
     };
   shell = import ./shell.nix { inherit default; };
