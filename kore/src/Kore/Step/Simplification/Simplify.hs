@@ -251,11 +251,13 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 -}
 newtype TermLikeSimplifier =
     TermLikeSimplifier
-        ( forall variable m
-        . (HasCallStack, InternalVariable variable, MonadSimplify m)
+        (  forall variable simplifier
+        .  HasCallStack
+        => InternalVariable variable
+        => (MonadLogic simplifier, MonadSimplify simplifier)
         => SideCondition variable
         -> TermLike variable
-        -> LogicT m (Pattern variable)
+        -> simplifier (Pattern variable)
         )
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
@@ -306,16 +308,15 @@ termLikeSimplifier simplifier =
     TermLikeSimplifier termLikeSimplifierWorker
   where
     termLikeSimplifierWorker
-        :: forall variable m
-        .  (HasCallStack, InternalVariable variable, MonadSimplify m)
+        :: forall variable simplifier
+        .  HasCallStack
+        => InternalVariable variable
+        => (MonadLogic simplifier, MonadSimplify simplifier)
         => SideCondition variable
         -> TermLike variable
-        -> LogicT m (Pattern variable)
-    termLikeSimplifierWorker
-        sideCondition
-        termLike
-      = do
-        results <- lift $ simplifier sideCondition termLike
+        -> simplifier (Pattern variable)
+    termLikeSimplifierWorker sideCondition termLike = do
+        results <- simplifier sideCondition termLike
         scatter (OrPattern.toPatterns results)
 
 -- * Predicate simplifiers
