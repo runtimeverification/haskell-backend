@@ -613,7 +613,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
     worker termLike1 termLike2
       | Just boolValue <- Bool.matchBool termLike1
       , not boolValue
-      , Just InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
+      , Just InKeys { symbol, keyTerm, mapTerm } <- matchInKeys termLike2
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
       = lift $ do
         let symbolicKeys = Domain.getSymbolicKeysOfAc normalizedMap
@@ -621,6 +621,9 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
                 TermLike.fromConcrete
                 <$> Domain.getConcreteKeysOfAc normalizedMap
             opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
+            inKeysOpaque =
+                (\term -> TermLike.mkApplySymbol symbol [keyTerm, term])
+                <$> opaqueElements
             mapKeys = symbolicKeys <> concreteKeys
             collectConditions terms1 terms2 =
                 foldr
@@ -628,6 +631,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
                     Pattern.top
                     (Pattern.withoutTerm <$> terms1 <> terms2)
         keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
-        opaqueConditions <- traverse (unifyChildren termLike1) opaqueElements
+        opaqueConditions <-
+            traverse (unifyChildren termLike1) inKeysOpaque
         return $ collectConditions keyConditions opaqueConditions
     worker _ _ = empty
