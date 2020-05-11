@@ -443,7 +443,7 @@ termEqualsAnd p1 p2 =
         scatterResults =
             maybe
                 (return equalsPredicate) -- default if no results
-                (Logic.lowerLogicT . Logic.scatter)
+                Logic.scatter
             . sequence
         equalsPredicate =
             Conditional
