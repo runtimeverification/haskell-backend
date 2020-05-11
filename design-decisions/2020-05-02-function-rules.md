@@ -98,7 +98,7 @@ axiom \implies(\top, (fun(A ∨ B) = C) ∧ \top)
 ```
 
 which is **not** equivalent to the first interpretation.
-Specificalyl, the first interpretation is satisfied if and only if
+Specifically, the first interpretation is satisfied if and only if
 `fun(A) = C ∧ fun(B) = C`,
 but the second interpretation can be satisfied if
 `fun(A) = C ∧ fun(B) = \bottom`
