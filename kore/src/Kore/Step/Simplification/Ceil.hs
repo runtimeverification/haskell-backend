@@ -301,17 +301,18 @@ makeEvaluateBuiltin
     => SideCondition variable
     -> Builtin (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
-makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
-    runCeilSimplifierWith
-        (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
-        sideCondition
-        Ceil
-            { ceilResultSort = Sort.predicateSort
-            , ceilOperandSort = builtinAcSort
-            , ceilChild = internalAc
-            }
-  where
-    Domain.InternalAc { builtinAcSort } = internalAc
+makeEvaluateBuiltin _ (Domain.BuiltinMap _) = return OrCondition.top
+-- makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
+--     runCeilSimplifierWith
+--         (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
+--         sideCondition
+--         Ceil
+--             { ceilResultSort = Sort.predicateSort
+--             , ceilOperandSort = builtinAcSort
+--             , ceilChild = internalAc
+--             }
+--   where
+--     Domain.InternalAc { builtinAcSort } = internalAc
 makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
     runCeilSimplifierWith
         (AssocComm.newSetCeilSimplifier ceilSimplifierTermLike)
