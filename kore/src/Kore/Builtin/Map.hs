@@ -603,25 +603,31 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
        :: TermLike variable
        -> Ac.NormalizedOrBottom Domain.NormalizedMap variable
     normalizedOrBottom = Ac.toNormalized
-    symbolicKeys :: [TermLike variable]
-    symbolicKeys = undefined
-    concreteKeys :: [TermLike variable]
-    concreteKeys = undefined
-    opaqueElements :: [TermLike variable]
-    opaqueElements = undefined
-    mapKeys = symbolicKeys <> concreteKeys
     unifyAndNegate t1 t2 = do
-        x <- Unify.gather (unifyChildren t1 t2)
-        y <- notSimplifier SideCondition.top (OrPattern.fromPatterns x)
-        Unify.scatter y
+        unificationSolutions <- Unify.gather (unifyChildren t1 t2)
+        negatedSolutions <-
+            notSimplifier
+                SideCondition.top
+                (OrPattern.fromPatterns unificationSolutions)
+        Unify.scatter negatedSolutions
     worker termLike1 termLike2
       | Just boolValue <- Bool.matchBool termLike1
       , not boolValue
       , Just InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
       = lift $ do
-        x <- traverse (unifyAndNegate keyTerm) mapKeys
-        y <- traverse (unifyChildren termLike1) opaqueElements
-        let z = foldr (flip Pattern.andCondition) Pattern.top (fmap Pattern.withoutTerm $ x <> y)
-        return z
+        let symbolicKeys = Domain.getSymbolicKeysOfAc normalizedMap
+            concreteKeys =
+                TermLike.fromConcrete
+                <$> Domain.getConcreteKeysOfAc normalizedMap
+            opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
+            mapKeys = symbolicKeys <> concreteKeys
+            collectConditions terms1 terms2 =
+                foldr
+                    (flip Pattern.andCondition)
+                    Pattern.top
+                    (Pattern.withoutTerm <$> terms1 <> terms2)
+        keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
+        opaqueConditions <- traverse (unifyChildren termLike1) opaqueElements
+        return $ collectConditions keyConditions opaqueConditions
     worker _ _ = empty
