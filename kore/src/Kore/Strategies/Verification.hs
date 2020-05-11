@@ -270,7 +270,7 @@ verifyClaim
     transit instr config =
         Strategy.transitionRule modifiedTransitionRule instr config
         & runTransitionT
-        & fmap (fst . unzip)
+        & fmap (map fst)
         & lift
 
     modifiedTransitionRule
