@@ -591,6 +591,9 @@ instance From OnePathRule Attribute.Label where
 instance From OnePathRule Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getOnePathRule
 
+instance From OnePathRule Attribute.Trusted where
+    from = Attribute.trusted . attributes . getOnePathRule
+
 {-  | Unified One-Path and All-Path Claim rule pattern.
 -}
 data ReachabilityRule
@@ -633,6 +636,10 @@ instance From ReachabilityRule Attribute.Label where
     from (AllPath allPathRule) = from allPathRule
 
 instance From ReachabilityRule Attribute.RuleIndex where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
@@ -690,6 +697,9 @@ instance From AllPathRule Attribute.Label where
 
 instance From AllPathRule Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getAllPathRule
+
+instance From AllPathRule Attribute.Trusted where
+    from = Attribute.trusted . attributes . getAllPathRule
 
 instance ToRulePattern (RewriteRule Variable)
 

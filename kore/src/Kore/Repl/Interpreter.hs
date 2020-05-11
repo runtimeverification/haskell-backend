@@ -181,8 +181,8 @@ import Kore.Repl.State
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
+    , ToRulePattern (..)
     )
-import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -630,13 +630,10 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex . toRulePattern $ rule
+            let ruleIndex = from @_ @Attribute.RuleIndex rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
-  where
-    getRuleIndex :: RulePattern Variable -> Attribute.RuleIndex
-    getRuleIndex = Attribute.identifier . Rule.attributes
 
 -- | Shows the previous branching point.
 showPrecBranch
