@@ -35,8 +35,7 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
-    ( first
-    , second
+    ( second
     )
 import Data.Coerce
     ( coerce
@@ -133,6 +132,7 @@ import Kore.Step.RulePattern
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
+    , ToRulePattern (..)
     , getRewriteRule
     , lhsEqualsRhs
     )
@@ -160,13 +160,9 @@ import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
-    , Claim
-    , StuckVerification (StuckVerification)
+    , Stuck (..)
     , ToProve (ToProve)
     , verify
-    )
-import qualified Kore.Strategies.Verification as StuckVerification
-    ( StuckVerification (..)
     )
 import Kore.Syntax.Module
     ( ModuleName
@@ -326,11 +322,7 @@ prove
     -- ^ The spec module
     -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
-    -> smt
-        (Either
-            (StuckVerification (TermLike Variable) ReachabilityRule)
-            ()
-        )
+    -> smt (Either Stuck ())
 prove
     searchOrder
     breadthLimit
@@ -342,38 +334,21 @@ prove
     evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims, alreadyProven } = initialized
-        result <-
-            runExceptT
-            $ verify
-                breadthLimit
-                searchOrder
-                (AllClaims claims)
-                (Axioms axioms)
-                (AlreadyProven (map unparseToText2 alreadyProven))
-                (ToProve
-                    (map (\x -> (x,depthLimit))
-                        (extractUntrustedClaims' claims)
-                    )
+        verify
+            breadthLimit
+            searchOrder
+            (AllClaims claims)
+            (Axioms axioms)
+            (AlreadyProven (map unparseToText2 alreadyProven))
+            (ToProve
+                (map (\x -> (x,depthLimit))
+                    (extractUntrustedClaims' claims)
                 )
-        return $ Bifunctor.first stuckVerificationPatternToTerm result
+            )
+            & runExceptT
   where
-    extractUntrustedClaims'
-        :: [ReachabilityRule]
-        -> [ReachabilityRule]
-    extractUntrustedClaims' =
-        filter (not . Goal.isTrusted)
-
-    stuckVerificationPatternToTerm
-        :: StuckVerification (Pattern Variable) claim
-        -> StuckVerification (TermLike Variable) claim
-    stuckVerificationPatternToTerm
-        stuck@StuckVerification {stuckDescription}
-      =
-        stuck
-            { StuckVerification.stuckDescription =
-                Pattern.toTermLike stuckDescription
-            }
-
+    extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
+    extractUntrustedClaims' = filter (not . Goal.isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -607,11 +582,11 @@ makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
 simplifyRuleOnSecond
-    :: (MonadSimplify simplifier, Claim claim)
-    => (Attribute.Axiom Symbol variable, claim)
-    -> simplifier (Attribute.Axiom Symbol variable, claim)
+    :: MonadSimplify simplifier
+    => (Attribute.Axiom Symbol variable, ReachabilityRule)
+    -> simplifier (Attribute.Axiom Symbol variable, ReachabilityRule)
 simplifyRuleOnSecond (atts, rule) = do
-    rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
+    rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
     return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Construct an execution graph for the given input pattern.

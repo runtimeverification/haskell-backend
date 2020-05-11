@@ -85,6 +85,7 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makePredicate
     )
@@ -134,9 +135,8 @@ import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
-    ( StuckVerification (StuckVerification)
+    ( Stuck (..)
     )
-import qualified Kore.Strategies.Verification as Verification.DoNotUse
 import Kore.Syntax.Definition
     ( Definition (Definition)
     , Module (Module)
@@ -508,12 +508,12 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
-        Left StuckVerification {stuckDescription, provenClaims} -> do
+        Left Stuck { stuckPattern, provenClaims } -> do
             maybe
                 (return ())
                 (lift . saveProven specModule provenClaims)
                 saveProofs
-            return (failure stuckDescription)
+            return (failure $ Pattern.toTermLike stuckPattern)
         Right () -> return success
 
     lift $ renderResult execOptions (unparse final)
