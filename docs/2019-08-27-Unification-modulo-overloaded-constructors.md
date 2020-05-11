@@ -188,8 +188,8 @@ applying the overloading axioms in a left-to-right fashion.
 - injection of overloaded constructor `c1` of sort `s1` into sort `s`
   vs. injection of variable `x2` of  sort `s2` into sort `s`.
 
-  1. Find a constructor `c1'` overloading `c1` whose sort `s1'` is at most `s`.
-  1. Find a constructor `c2'` overloaded by `c1` whose sort `s2'` is at most `s2`.
+  1. For each constructor `c1'` overloading `c1` whose sort `s1'` is at most `s`,
+  1. Find a constructor `c2'` overloaded by `c1'` whose sort `s2'` is at most `s2`.
      - If there are more, pick the one overloading all the others.
      - If cannot compute one overloading all the others, fail (ambiguity).
   1. narrow `x` to `\inj{s2'}{s2}(c2'(x1,...,xn))` where `x1`, ..., `xn` are fresh
