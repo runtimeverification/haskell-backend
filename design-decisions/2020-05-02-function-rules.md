@@ -60,7 +60,7 @@ Note that the first rule has a partial head;
 we can instantiate it at `M = elementMap(_1, _2)` to prove
 
 ```.kore
-sizeMap(concatMap(elementMap(_1, _2), elementMap(_1, _2))) = +Int(1, sizeMap(M))
+sizeMap(concatMap(elementMap(_1, _2), elementMap(_1, _2))) = +Int(1, sizeMap(elementMap(_1, _2)))
 sizeMap(\bottom) = +Int(1, sizeMap(elementMap(_1, _2)))
 sizeMap(\bottom) = +Int(1, 1)
 \bottom = 2.
