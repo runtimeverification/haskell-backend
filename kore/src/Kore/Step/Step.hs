@@ -249,10 +249,16 @@ applyInitialConditions initial unification = do
     -- requires clause is already included in the unification conditions.
     applied <-
         do
+            -- Simplify the unification solution under the initial
+            -- conditions. We must ensure that functions in the solution are
+            -- evaluated using the top-level side conditions because we will not
+            -- re-evaluate them after they are added to the top level.
             partial <-
                 Simplifier.simplifyCondition
-                    SideCondition.topTODO
+                    (SideCondition.fromCondition initial)
                     unification
+            -- Add the simplified unification solution to the initial
+            -- conditions. We must preserve the initial conditions here!
             Simplifier.simplifyCondition
                 SideCondition.topTODO
                 (initial <> partial)
