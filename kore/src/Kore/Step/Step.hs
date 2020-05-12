@@ -291,13 +291,13 @@ applyRemainder
     -- ^ Remainder
     -> BranchT simplifier (Pattern variable)
 applyRemainder initial remainder = do
-    let (initialTerm, initialCondition) = Pattern.splitTerm initial
-    normalizedCondition <-
-        simplifyPredicate
+    partial <-
+        Simplifier.simplifyCondition
             SideCondition.topTODO
-            (Just initialCondition)
             remainder
-    return normalizedCondition { Conditional.term = initialTerm }
+    Simplifier.simplifyCondition
+        SideCondition.topTODO
+        (Pattern.andCondition initial partial)
 
 -- | Simplifies the predicate obtained upon matching/unification.
 simplifyPredicate
