@@ -16,7 +16,6 @@ module Kore.Step.Step
     , unifyRule
     , applyInitialConditions
     , applyRemainder
-    , simplifyPredicate
     , toConfigurationVariablesCondition
     , assertFunctionLikeResults
     , checkFunctionLike
@@ -294,34 +293,3 @@ applyRemainder initial remainder =
     Simplifier.simplifyCondition
         SideCondition.topTODO
         (Pattern.andCondition initial remainder)
-
--- | Simplifies the predicate obtained upon matching/unification.
-simplifyPredicate
-    :: forall simplifier variable term
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Maybe (Condition variable)
-    -> Conditional variable term
-    -> BranchT simplifier (Conditional variable term)
-simplifyPredicate sideCondition (Just initialCondition) conditional = do
-    partialResult <-
-        Simplifier.simplifyCondition
-            (sideCondition `SideCondition.andCondition` initialCondition)
-            conditional
-    -- TODO (virgil): Consider using different simplifyPredicate implementations
-    -- for rewrite rules and equational rules.
-    -- Right now this double simplification both allows using the same code for
-    -- both kinds of rules, and allows using the strongest background condition
-    -- for simplifying the `conditional`. However, it's not obvious that
-    -- using the strongest background condition actually helps in our
-    -- use cases, so we may be able to do something better for equations.
-    Simplifier.simplifyCondition
-        sideCondition
-        ( partialResult
-        `Pattern.andCondition` initialCondition
-        )
-simplifyPredicate sideCondition Nothing conditional =
-    Simplifier.simplifyCondition
-        sideCondition
-        conditional
