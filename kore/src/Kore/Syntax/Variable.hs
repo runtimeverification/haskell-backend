@@ -14,7 +14,7 @@ module Kore.Syntax.Variable
     , illegalVariableCounter
     , externalizeFreshVariable
     -- * Variable names
-    , VariableName
+    , NamedVariable
     , toVariable
     , fromVariable
     -- * Variable sorts
@@ -95,7 +95,7 @@ instance From Variable Variable where
     from = id
     {-# INLINE from #-}
 
-instance VariableName Variable
+instance NamedVariable Variable
 
 {- | Is the variable original (as opposed to generated)?
  -}
@@ -131,9 +131,9 @@ externalizeFreshVariable variable@Variable { variableName, variableCounter } =
             , idLocation = AstLocationGeneratedVariable
             }
 
-{- | 'VariableName' is the name of a Kore variable.
+{- | 'NamedVariable' is the name of a Kore variable.
 
-A 'VariableName' has instances:
+A 'NamedVariable' has instances:
 
 * @'From' variable 'Variable'@
 * @'From' 'Variable' variable@
@@ -147,14 +147,14 @@ prop> (==) x y === (==) (toVariable x) (toVariable y)
  -}
 class
     (Ord variable, From variable Variable, From Variable variable)
-    => VariableName variable
+    => NamedVariable variable
 
--- | An injection from 'Variable' to any 'VariableName'.
-fromVariable :: forall variable. VariableName variable => Variable -> variable
+-- | An injection from 'Variable' to any 'NamedVariable'.
+fromVariable :: forall variable. NamedVariable variable => Variable -> variable
 fromVariable = from @Variable @variable
 
--- | An injection from any 'VariableName' to 'Variable'.
-toVariable :: forall variable. VariableName variable => variable -> Variable
+-- | An injection from any 'NamedVariable' to 'Variable'.
+toVariable :: forall variable. NamedVariable variable => variable -> Variable
 toVariable = from @variable @Variable
 
 {- | 'SortedVariable' is a Kore variable with a known sort.
@@ -217,7 +217,7 @@ instance SortedVariable Concrete where
     lensVariableSort _ = \case {}
     {-# INLINE lensVariableSort #-}
 
-instance VariableName Concrete
+instance NamedVariable Concrete
 
 instance From Variable Concrete where
     from = error "Cannot construct a variable in a concrete term!"

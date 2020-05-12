@@ -133,7 +133,7 @@ instance
             NonTarget variable -> Target <$> lensVariableSort f variable
     {-# INLINE lensVariableSort #-}
 
-instance VariableName variable => VariableName (Target variable)
+instance NamedVariable variable => NamedVariable (Target variable)
 
 instance From variable1 variable2 => From variable1 (Target variable2) where
     from = Target . from @variable1 @variable2
