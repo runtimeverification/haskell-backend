@@ -227,6 +227,10 @@ checkFunctionLike unifiedRules pat
 
 The rule is considered to apply if the result is not @\\bottom@.
 
+@applyInitialConditions@ assumes that the unification solution includes the
+@requires@ clause, and that their conjunction has already been simplified with
+respect to the initial condition.
+
  -}
 applyInitialConditions
     :: forall simplifier variable
@@ -241,22 +245,14 @@ applyInitialConditions
     -- an OrCondition.
 applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions. The axiom
-    -- requires clause is already included in the unification conditions.
+    -- requires clause is already included in the unification conditions, and
+    -- the conjunction has already been simplified with respect to the initial
+    -- conditions.
     applied <-
-        do
-            -- Simplify the unification solution under the initial
-            -- conditions. We must ensure that functions in the solution are
-            -- evaluated using the top-level side conditions because we will not
-            -- re-evaluate them after they are added to the top level.
-            partial <-
-                Simplifier.simplifyCondition
-                    (SideCondition.fromCondition initial)
-                    unification
-            -- Add the simplified unification solution to the initial
-            -- conditions. We must preserve the initial conditions here!
-            Simplifier.simplifyCondition
-                SideCondition.topTODO
-                (initial <> partial)
+        -- Add the simplified unification solution to the initial conditions. We
+        -- must preserve the initial conditions here, so it cannot be used as
+        -- the side condition!
+        Simplifier.simplifyCondition SideCondition.top (initial <> unification)
         & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
