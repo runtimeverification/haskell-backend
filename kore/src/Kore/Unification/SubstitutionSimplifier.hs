@@ -43,6 +43,9 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
+    )
 import Kore.Step.Simplification.NotSimplifier
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
@@ -64,8 +67,11 @@ substitutionSimplifier
     :: forall unifier
     .  MonadUnify unifier
     => NotSimplifier unifier
+    -> ( forall variable
+        . CeilSimplifier unifier (TermLike variable) (OrCondition variable)
+       )
     -> SubstitutionSimplifier unifier
-substitutionSimplifier notSimplifier =
+substitutionSimplifier notSimplifier ceilSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper
@@ -92,14 +98,17 @@ substitutionSimplifier notSimplifier =
         worker =
             simplifySubstitutionWorker
                 sideCondition
-                (unificationMakeAnd notSimplifier)
+                (unificationMakeAnd notSimplifier ceilSimplifier)
 
 unificationMakeAnd
     :: forall unifier
     .  MonadUnify unifier
     => NotSimplifier unifier
+    -> ( forall variable
+        . CeilSimplifier unifier (TermLike variable) (OrCondition variable)
+       )
     -> MakeAnd unifier
-unificationMakeAnd notSimplifier =
+unificationMakeAnd notSimplifier ceilSimplifier =
     MakeAnd { makeAnd }
   where
     makeAnd
@@ -110,6 +119,6 @@ unificationMakeAnd notSimplifier =
         -> SideCondition variable
         -> unifier (Pattern variable)
     makeAnd termLike1 termLike2 sideCondition = do
-        unified <- termUnification notSimplifier termLike1 termLike2
+        unified <- termUnification notSimplifier ceilSimplifier termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified
             & BranchT.alternate

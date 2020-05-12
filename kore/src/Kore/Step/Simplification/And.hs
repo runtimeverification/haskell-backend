@@ -63,6 +63,9 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -109,6 +112,9 @@ import qualified Kore.Internal.TermLike as TermLike
     )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
+    )
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
     )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
@@ -165,11 +171,22 @@ simplify
     :: InternalVariable variable
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
+    -> ( forall variable
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+       )
     -> SideCondition variable
     -> And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify notSimplifier sideCondition And { andFirst = first, andSecond = second } =
-    simplifyEvaluated notSimplifier sideCondition first second
+simplify
+    notSimplifier
+    ceilSimplifier
+    sideCondition
+    And { andFirst = first, andSecond = second }
+  =
+    simplifyEvaluated notSimplifier ceilSimplifier sideCondition first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -192,11 +209,17 @@ simplifyEvaluated
     :: InternalVariable variable
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
+    -> ( forall variable
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+       )
     -> SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated notSimplifier sideCondition first second
+simplifyEvaluated notSimplifier ceilSimplifier sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
   | OrPattern.isTrue first   = return second
@@ -206,19 +229,38 @@ simplifyEvaluated notSimplifier sideCondition first second
         gather $ do
             first1 <- scatter first
             second1 <- scatter second
-            makeEvaluate notSimplifier sideCondition first1 second1
+            makeEvaluate
+                notSimplifier
+                ceilSimplifier
+                sideCondition
+                first1
+                second1
     return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
     :: InternalVariable variable
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
+    -> ( forall variable
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+       )
     -> SideCondition variable
     -> [OrPattern variable]
     -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple _ _ [] = return OrPattern.top
-simplifyEvaluatedMultiple notSimplifier sideCondition (pat : patterns) =
-    foldM (simplifyEvaluated notSimplifier sideCondition) pat patterns
+simplifyEvaluatedMultiple _ _ _ [] = return OrPattern.top
+simplifyEvaluatedMultiple
+    notSimplifier
+    ceilSimplifier
+    sideCondition
+    (pat : patterns)
+  =
+    foldM
+        (simplifyEvaluated notSimplifier ceilSimplifier sideCondition)
+        pat
+        patterns
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
@@ -230,15 +272,27 @@ makeEvaluate
         , MonadSimplify simplifier
         )
     => NotSimplifier (UnifierT simplifier)
+    -> ( forall variable
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+       )
     -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluate notSimplifier sideCondition first second
+makeEvaluate notSimplifier ceilSimplifier sideCondition first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
-  | otherwise = makeEvaluateNonBool notSimplifier sideCondition first second
+  | otherwise =
+        makeEvaluateNonBool
+            notSimplifier
+            ceilSimplifier
+            sideCondition
+            first
+            second
 
 makeEvaluateNonBool
     ::  ( InternalVariable variable
@@ -246,17 +300,24 @@ makeEvaluateNonBool
         , MonadSimplify simplifier
         )
     => NotSimplifier (UnifierT simplifier)
+    -> ( forall variable
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+       )
     -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
 makeEvaluateNonBool
     notSimplifier
+    ceilSimplifier
     sideCondition
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    terms <- termAnd notSimplifier firstTerm secondTerm
+    terms <- termAnd notSimplifier ceilSimplifier firstTerm secondTerm
     let firstCondition = Conditional.withoutTerm first
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
@@ -444,12 +505,18 @@ termAnd
     => MonadSimplify simplifier
     => HasCallStack
     => NotSimplifier (UnifierT simplifier)
+    -> ( forall variable
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+       )
     -> TermLike variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
-termAnd notSimplifier p1 p2 =
+termAnd notSimplifier ceilSimplifier p1 p2 =
     either (const andTerm) BranchT.scatter
-    =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)
+    =<< (lift . runUnifierT notSimplifier ceilSimplifier) (termAndWorker p1 p2)
   where
     andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
     termAndWorker
@@ -457,7 +524,13 @@ termAnd notSimplifier p1 p2 =
         -> TermLike variable
         -> UnifierT simplifier (Pattern variable)
     termAndWorker first second = do
-        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker first second
+        let maybeTermAnd' =
+                maybeTermAnd
+                    notSimplifier
+                    ceilSimplifier
+                    termAndWorker
+                    first
+                    second
         patt <- runMaybeT maybeTermAnd'
         return $ fromMaybe andPattern patt
       where

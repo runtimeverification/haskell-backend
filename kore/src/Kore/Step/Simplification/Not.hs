@@ -62,6 +62,9 @@ import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
 import qualified Kore.Step.Simplification.And as And
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
+    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom

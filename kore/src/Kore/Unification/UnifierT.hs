@@ -40,8 +40,17 @@ import Branch
     ( BranchT
     )
 import qualified Branch as BranchT
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import Kore.Profiler.Data
     ( MonadProfiler
+    )
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
     )
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.NotSimplifier
@@ -130,33 +139,42 @@ lowerExceptT e = runExceptT e >>= either throwUnificationError pure
 runUnifierT
     :: MonadSimplify m
     => NotSimplifier (UnifierT m)
+    -> ( forall variable
+        . CeilSimplifier (UnifierT m) (TermLike variable) (OrCondition variable)
+       )
     -> UnifierT m a
     -> m (Either UnificationError [a])
-runUnifierT notSimplifier =
+runUnifierT notSimplifier ceilSimplifier =
     runExceptT
     . BranchT.gather
-    . evalEnvUnifierT notSimplifier
+    . evalEnvUnifierT notSimplifier ceilSimplifier
 
 {- | Run a 'Unifier', returning 'Nothing' upon error.
  -}
 maybeUnifierT
     :: MonadSimplify m
     => NotSimplifier (UnifierT m)
+    -> ( forall variable
+        . CeilSimplifier (UnifierT m) (TermLike variable) (OrCondition variable)
+       )
     -> UnifierT m a
     -> MaybeT m [a]
-maybeUnifierT notSimplifier =
+maybeUnifierT notSimplifier ceilSimplifier =
     hushT
     . BranchT.gather
-    . evalEnvUnifierT notSimplifier
+    . evalEnvUnifierT notSimplifier ceilSimplifier
 
 evalEnvUnifierT
     :: MonadSimplify m
     => NotSimplifier (UnifierT m)
+    -> ( forall variable
+        . CeilSimplifier (UnifierT m) (TermLike variable) (OrCondition variable)
+       )
     -> UnifierT m a
     -> BranchT (ExceptT UnificationError m) a
-evalEnvUnifierT notSimplifier =
+evalEnvUnifierT notSimplifier ceilSimplifier =
     flip runReaderT conditionSimplifier
     . getUnifierT
   where
     conditionSimplifier =
-        ConditionSimplifier.create (substitutionSimplifier notSimplifier)
+        ConditionSimplifier.create (substitutionSimplifier notSimplifier ceilSimplifier)

@@ -42,6 +42,9 @@ import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition (..)
+    )
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -63,6 +66,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.CeilSimplifier
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     )
@@ -116,10 +120,11 @@ termUnification
     => MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
+    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification notSimplifier =
+termUnification notSimplifier ceilSimplifier =
     termUnificationWorker
   where
     termUnificationWorker
@@ -130,7 +135,7 @@ termUnification notSimplifier =
         let
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
-                maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
+                maybeTermAnd notSimplifier ceilSimplifier termUnificationWorker pat1 pat2
             unsupportedPatternsError =
                 throwUnificationError
                     (unsupportedPatterns
@@ -145,26 +150,28 @@ maybeTermEquals
     => MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
+    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermEquals notSimplifier =
-    maybeTransformTerm (equalsFunctions notSimplifier)
+maybeTermEquals notSimplifier ceilSimplifier =
+    maybeTransformTerm (equalsFunctions notSimplifier ceilSimplifier)
 
 maybeTermAnd
     :: InternalVariable variable
     => MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
+    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermAnd notSimplifier =
-    maybeTransformTerm (andFunctions notSimplifier)
+maybeTermAnd notSimplifier ceilSimplifier =
+    maybeTransformTerm (andFunctions notSimplifier ceilSimplifier)
 
 andFunctions
     :: forall variable unifier
@@ -172,10 +179,11 @@ andFunctions
     => MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
+    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> [TermTransformationOld variable unifier]
-andFunctions notSimplifier =
+andFunctions notSimplifier ceilSimplifier =
     forAnd . snd
-    <$> filter appliesToAnd (andEqualsFunctions notSimplifier)
+    <$> filter appliesToAnd (andEqualsFunctions notSimplifier ceilSimplifier)
   where
     appliesToAnd :: (SimplificationTarget, a) -> Bool
     appliesToAnd (AndT, _) = True
@@ -193,10 +201,11 @@ equalsFunctions
     => MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
+    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> [TermTransformationOld variable unifier]
-equalsFunctions notSimplifier =
+equalsFunctions notSimplifier ceilSimplifier =
     forEquals . snd
-    <$> filter appliesToEquals (andEqualsFunctions notSimplifier)
+    <$> filter appliesToEquals (andEqualsFunctions notSimplifier ceilSimplifier)
   where
     appliesToEquals :: (SimplificationTarget, a) -> Bool
     appliesToEquals (AndT, _) = False
@@ -214,9 +223,10 @@ andEqualsFunctions
     => MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
+    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> [(SimplificationTarget, TermTransformation variable unifier)]
-andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s), "expandAlias")
+andEqualsFunctions notSimplifier ceilSimplifier = fmap mapEqualsFunctions
+    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier ceilSimplifier s), "expandAlias")
     , (AndT,    \_ _ _ -> boolAnd, "boolAnd")
     , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
     , (BothT,   \_ _ _ -> bytesDifferent, "bytesDifferent")
