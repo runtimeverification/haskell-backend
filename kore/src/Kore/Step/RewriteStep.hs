@@ -204,10 +204,9 @@ applyRulesWithFinalizer
     -- ^ Configuration being rewritten
     -> simplifier (Results RulePattern Variable)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
-    let sideCondition = SideCondition.topTODO
-        initialVariables = freeVariables sideCondition <> freeVariables initial
-    results <- unifyRules unificationProcedure sideCondition initial rules
+    results <- unifyRules unificationProcedure initial rules
     debugAppliedRewriteRules initial results
+    let initialVariables = freeVariables initial
     finalize initialVariables initial results
 {-# INLINE applyRulesWithFinalizer #-}
 

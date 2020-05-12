@@ -111,13 +111,12 @@ unifyRules
     :: MonadSimplify simplifier
     => UnifyingRule rule
     => UnificationProcedure simplifier
-    -> SideCondition RewritingVariable
     -> Pattern RewritingVariable
     -- ^ Initial configuration
     -> [rule RewritingVariable]
     -- ^ Rule
     -> simplifier [UnifiedRule rule RewritingVariable]
-unifyRules unificationProcedure _ initial rules =
+unifyRules unificationProcedure initial rules =
     Branch.gather $ do
         rule <- Branch.scatter rules
         unifyRule unificationProcedure initial rule
