@@ -80,7 +80,7 @@ instance FreshPartialOrd RewritingVariable where
             ConfigVariable var -> ConfigVariable (nextVariable var)
     {-# INLINE nextVariable #-}
 
-instance VariableName RewritingVariable
+instance NamedVariable RewritingVariable
 
 instance SubstitutionOrd RewritingVariable where
     compareSubstitution (RuleVariable _) (ConfigVariable _) = LT

@@ -54,7 +54,7 @@ instance From Variable W where
 instance From W Variable where
     from = error "Not implemented"
 
-instance VariableName W
+instance NamedVariable W
 
 instance FreshPartialOrd W where
     infVariable w = w { counter = Nothing }

@@ -276,12 +276,12 @@ traverseUnifiedVariable AdjUnifiedVariable { elemVar, setVar } =
             SetVar <$> sequenceA (setVar <*> setVariable)
 
 toUnifiedVariable
-    :: VariableName variable
+    :: NamedVariable variable
     => AdjUnifiedVariable (variable -> Variable)
 toUnifiedVariable = pure toVariable
 
 fromUnifiedVariable
-    :: VariableName variable
+    :: NamedVariable variable
     => AdjUnifiedVariable (Variable -> variable)
 fromUnifiedVariable = pure fromVariable
 
