@@ -237,7 +237,7 @@ applyInitialConditions
     :: forall simplifier variable
     .  InternalVariable variable
     => MonadSimplify simplifier
-    => Maybe (Condition variable)
+    => Condition variable
     -- ^ Initial conditions
     -> Condition variable
     -- ^ Unification conditions
@@ -248,7 +248,7 @@ applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
-        simplifyPredicate SideCondition.topTODO initial unification
+        simplifyPredicate SideCondition.topTODO (Just initial) unification
         & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
