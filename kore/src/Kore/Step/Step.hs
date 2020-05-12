@@ -155,7 +155,9 @@ unifyRule unificationProcedure initial rule = do
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
-        simplifyPredicate sideCondition Nothing (unification <> requires')
+        Simplifier.simplifyCondition
+            sideCondition
+            (unification <> requires')
     return (rule `Conditional.withCondition` unification')
   where
     unifyTermLikes = runUnificationProcedure unificationProcedure
