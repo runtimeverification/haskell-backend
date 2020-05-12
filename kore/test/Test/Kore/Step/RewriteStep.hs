@@ -91,7 +91,7 @@ applyInitialConditions
     -> Condition Variable
     -> IO [OrCondition Variable]
 applyInitialConditions initial unification =
-    Step.applyInitialConditions SideCondition.top (Just initial) unification
+    Step.applyInitialConditions (Just initial) unification
     & runSimplifier Mock.env . Branch.gather
 
 test_applyInitialConditions :: [TestTree]

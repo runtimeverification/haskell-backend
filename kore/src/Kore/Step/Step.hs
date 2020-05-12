@@ -67,9 +67,6 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    , mapVariables
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
@@ -240,20 +237,18 @@ applyInitialConditions
     :: forall simplifier variable
     .  InternalVariable variable
     => MonadSimplify simplifier
-    => SideCondition variable
-    -- ^ Top-level conditions
-    -> Maybe (Condition variable)
+    => Maybe (Condition variable)
     -- ^ Initial conditions
     -> Condition variable
     -- ^ Unification conditions
     -> BranchT simplifier (OrCondition variable)
     -- TODO(virgil): This should take advantage of the BranchT and not return
     -- an OrCondition.
-applyInitialConditions sideCondition initial unification = do
+applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
-        simplifyPredicate sideCondition initial unification
+        simplifyPredicate SideCondition.topTODO initial unification
         & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and

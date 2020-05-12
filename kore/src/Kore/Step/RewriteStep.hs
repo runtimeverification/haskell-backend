@@ -136,10 +136,10 @@ finalizeRule initialVariables initial unifiedRule =
     Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
-        applied <- applyInitialConditions
-            SideCondition.topTODO
-            (Just initialCondition)
-            unificationCondition
+        applied <-
+            applyInitialConditions
+                (Just initialCondition)
+                unificationCondition
         checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
