@@ -291,10 +291,16 @@ applyRemainder
     -- ^ Remainder
     -> BranchT simplifier (Pattern variable)
 applyRemainder initial remainder = do
+    -- Simplify the remainder predicate under the initial conditions. We must
+    -- ensure that functions in the remainder are evaluated using the top-level
+    -- side conditions because we will not re-evaluate them after they are added
+    -- to the top level.
     partial <-
         Simplifier.simplifyCondition
-            SideCondition.topTODO
+            (SideCondition.fromCondition $ Pattern.withoutTerm initial)
             remainder
+    -- Add the simplified remainder to the initial conditions. We must preserve
+    -- the initial conditions here!
     Simplifier.simplifyCondition
         SideCondition.topTODO
         (Pattern.andCondition initial partial)
