@@ -158,9 +158,7 @@ finalizeRulesParallel initialVariables initial unifiedRules = do
         & fmap Foldable.fold
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-    remainders' <-
-        applyRemainder SideCondition.topTODO initial remainder
-        & Branch.gather
+    remainders' <- applyRemainder initial remainder & Branch.gather
     return Step.Results
         { results = Seq.fromList results
         , remainders =
@@ -173,9 +171,7 @@ finalizeRulesSequence initialVariables initial unifiedRules = do
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <-
-        applyRemainder SideCondition.topTODO initial remainder
-        & Branch.gather
+    remainders' <- applyRemainder initial remainder & Branch.gather
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =

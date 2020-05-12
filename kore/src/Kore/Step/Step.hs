@@ -285,17 +285,18 @@ applyRemainder
     :: forall simplifier variable
     .  InternalVariable variable
     => MonadSimplify simplifier
-    => SideCondition variable
-    -- ^ Top level condition
-    -> Pattern variable
+    => Pattern variable
     -- ^ Initial configuration
     -> Condition variable
     -- ^ Remainder
     -> BranchT simplifier (Pattern variable)
-applyRemainder sideCondition initial remainder = do
+applyRemainder initial remainder = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
     normalizedCondition <-
-        simplifyPredicate sideCondition (Just initialCondition) remainder
+        simplifyPredicate
+            SideCondition.topTODO
+            (Just initialCondition)
+            remainder
     return normalizedCondition { Conditional.term = initialTerm }
 
 -- | Simplifies the predicate obtained upon matching/unification.
