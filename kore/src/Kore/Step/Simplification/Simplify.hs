@@ -279,13 +279,12 @@ simplifyConditionalTermToOr sideCondition termLike = do
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
-    .   ( HasCallStack
-        , InternalVariable variable
-        , MonadSimplify simplifier
-        )
+    .  HasCallStack
+    => InternalVariable variable
+    => (MonadLogic simplifier, MonadSimplify simplifier)
     => SideCondition variable
     -> TermLike variable
-    -> LogicT simplifier (Pattern variable)
+    -> simplifier (Pattern variable)
 simplifyConditionalTerm sideCondition termLike = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
     simplify sideCondition termLike
