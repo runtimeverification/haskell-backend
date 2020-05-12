@@ -38,8 +38,6 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules
@@ -59,6 +57,7 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
+    , simplifyCondition
     )
 import Kore.Step.Step
     ( Result
@@ -69,7 +68,6 @@ import Kore.Step.Step
     , applyRemainder
     , assertFunctionLikeResults
     , mkRewritingPattern
-    , simplifyPredicate
     , unifyRules
     )
 
@@ -112,8 +110,13 @@ finalizeAppliedRule renamedRule appliedConditions =
             Conditional { predicate = ensures } = finalPattern
             ensuresCondition = Condition.fromPredicate ensures
         finalCondition <-
-            simplifyPredicate
-                SideCondition.topTODO (Just appliedCondition) ensuresCondition
+            do
+                partial <-
+                    simplifyCondition
+                        (SideCondition.fromCondition appliedCondition)
+                        ensuresCondition
+                simplifyCondition SideCondition.top
+                    (appliedCondition <> partial)
             & Branch.alternate
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
