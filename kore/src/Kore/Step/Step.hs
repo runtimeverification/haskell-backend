@@ -245,10 +245,17 @@ applyInitialConditions
     -- TODO(virgil): This should take advantage of the BranchT and not return
     -- an OrCondition.
 applyInitialConditions initial unification = do
-    -- Combine the initial conditions and the unification conditions.
-    -- The axiom requires clause is included in the unification conditions.
+    -- Combine the initial conditions and the unification conditions. The axiom
+    -- requires clause is already included in the unification conditions.
     applied <-
-        simplifyPredicate SideCondition.topTODO (Just initial) unification
+        do
+            partial <-
+                Simplifier.simplifyCondition
+                    SideCondition.topTODO
+                    unification
+            Simplifier.simplifyCondition
+                SideCondition.topTODO
+                (initial <> partial)
         & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
