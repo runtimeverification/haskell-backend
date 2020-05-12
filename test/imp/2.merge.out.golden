@@ -2,58 +2,34 @@
 \rewrites{SortGeneratedTopCell{}}(
     /* Spc */
     \and{SortGeneratedTopCell{}}(
-        /* Created: Kore.Step.Simplification.And.makeAndPredicate */
         /* Sfc */
-        \and{SortGeneratedTopCell{}}(
-            /* Sfc */
-            \equals{SortMap{}, SortGeneratedTopCell{}}(
-                /* Fn Sfc */
-                /* builtin: */
-                Lbl'Unds'Map'Unds'{}(
-                    /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        /* Fl Fn D Sfc */
-                        /* Inj: */ inj{SortId{}, SortKItem{}}(
-                            /* Fl Fn D Sfa */ VarX:SortId{}
-                        ),
-                        /* Fl Fn D Sfc */
-                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                            /* Fl Fn D Sfa */ VarI:SortInt{}
-                        )
+        \equals{SortMap{}, SortGeneratedTopCell{}}(
+            /* Fn Sfc */
+            /* builtin: */
+            Lbl'Unds'Map'Unds'{}(
+                /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                    /* Fl Fn D Sfc */
+                    /* Inj: */ inj{SortId{}, SortKItem{}}(
+                        /* Fl Fn D Sfa */ VarX:SortId{}
                     ),
-                    /* opaque child: */ /* Fl Fn D Sfa */ VarDotVar3:SortMap{}
-                ),
-                /* Fn Sfc */
-                /* builtin: */
-                Lbl'Unds'Map'Unds'{}(
-                    /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        /* Fl Fn D Sfc */
-                        /* Inj: */ inj{SortId{}, SortKItem{}}(
-                            /* Fl Fn D Sfa */ VarX0:SortId{}
-                        ),
-                        /* Fl Fn D Sfa */ VarI0:SortKItem{}
-                    ),
-                    /* opaque child: */ /* Fl Fn D Sfa */ VarDotVar30:SortMap{}
-                )
-            ),
-            /* Sfc */
-            \forall{SortGeneratedTopCell{}}(
-                x:SortKItem{},
-                /* Sfc */
-                \ceil{SortMap{}, SortGeneratedTopCell{}}(
-                    /* Fn Spc */
-                    /* builtin: */
-                    Lbl'Unds'Map'Unds'{}(
-                        /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                            /* Fl Fn D Sfc */
-                            /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                /* Fl Fn D Sfa */ VarX:SortId{}
-                            ),
-                            /* Fl Fn D Sfa */ x:SortKItem{}
-                        ),
-                        /* opaque child: */ /* Fl Fn D Sfa */
-                        VarDotVar3:SortMap{}
+                    /* Fl Fn D Sfc */
+                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                        /* Fl Fn D Sfa */ VarI:SortInt{}
                     )
-                )
+                ),
+                /* opaque child: */ /* Fl Fn D Sfa */ VarDotVar3:SortMap{}
+            ),
+            /* Fn Sfc */
+            /* builtin: */
+            Lbl'Unds'Map'Unds'{}(
+                /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                    /* Fl Fn D Sfc */
+                    /* Inj: */ inj{SortId{}, SortKItem{}}(
+                        /* Fl Fn D Sfa */ VarX0:SortId{}
+                    ),
+                    /* Fl Fn D Sfa */ VarI0:SortKItem{}
+                ),
+                /* opaque child: */ /* Fl Fn D Sfa */ VarDotVar30:SortMap{}
             )
         ),
         /* Fn Spc */
