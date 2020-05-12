@@ -272,11 +272,6 @@ toConfigurationVariablesCondition =
 
 {- | Apply the remainder predicate to the given initial configuration.
 
-@applyRemainder@ assumes that the unification solution used to construct the
-remainders was simplified with respect to the initial conditions before the
-remainder was constructed, and therefore the remainder does not need to be
-re-simplified.
-
  -}
 applyRemainder
     :: forall simplifier variable
@@ -287,9 +282,17 @@ applyRemainder
     -> Condition variable
     -- ^ Remainder
     -> BranchT simplifier (Pattern variable)
-applyRemainder initial remainder =
+applyRemainder initial remainder = do
+    -- Simplify the remainder predicate under the initial conditions. We must
+    -- ensure that functions in the remainder are evaluated using the top-level
+    -- side conditions because we will not re-evaluate them after they are added
+    -- to the top level.
+    partial <-
+        Simplifier.simplifyCondition
+            (SideCondition.fromCondition $ Pattern.withoutTerm initial)
+            remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
-    -- the initial conditions here, so it cannot be used as the side condition!
+    -- the initial conditions here!
     Simplifier.simplifyCondition
         SideCondition.topTODO
-        (Pattern.andCondition initial remainder)
+        (Pattern.andCondition initial partial)
