@@ -54,9 +54,6 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
@@ -153,11 +150,7 @@ unifyRule
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    Step.unifyRule
-        Unification.unificationProcedure
-        SideCondition.top
-        initial
-        rule
+    Step.unifyRule Unification.unificationProcedure initial rule
     & runExceptT . Branch.gather
     & runSimplifier Mock.env
 

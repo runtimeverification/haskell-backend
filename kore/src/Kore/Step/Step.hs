@@ -117,10 +117,10 @@ unifyRules
     -> [rule RewritingVariable]
     -- ^ Rule
     -> simplifier [UnifiedRule rule RewritingVariable]
-unifyRules unificationProcedure sideCondition initial rules =
+unifyRules unificationProcedure _ initial rules =
     Branch.gather $ do
         rule <- Branch.scatter rules
-        unifyRule unificationProcedure sideCondition initial rule
+        unifyRule unificationProcedure initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -140,27 +140,23 @@ unifyRule
     => MonadSimplify simplifier
     => UnifyingRule rule
     => UnificationProcedure simplifier
-    -> SideCondition variable
-    -- ^ Top level condition.
     -> Pattern variable
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
     -> BranchT simplifier (UnifiedRule rule variable)
-unifyRule unificationProcedure sideCondition initial rule = do
+unifyRule unificationProcedure initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
-        mergedSideCondition =
-            sideCondition `SideCondition.andCondition` initialCondition
+        sideCondition = SideCondition.fromCondition initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <-
-        unifyTermLikes mergedSideCondition initialTerm ruleLeft
+    unification <- unifyTermLikes sideCondition initialTerm ruleLeft
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
-        simplifyPredicate mergedSideCondition Nothing (unification <> requires')
+        simplifyPredicate sideCondition Nothing (unification <> requires')
     return (rule `Conditional.withCondition` unification')
   where
     unifyTermLikes = runUnificationProcedure unificationProcedure
