@@ -170,6 +170,22 @@ unifyOverloading termPair = case termPair of
             secondVar
             (Attribute.freeVariables firstTerm)
             inj { injChild = () }
+    Pair
+        (Inj_ Inj { injChild = firstTerm@(App_ firstHead firstChildren) })
+        (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
+        -> unifyOverloadingInjVsVariable
+            (Application firstHead firstChildren)
+            secondVar
+            (Attribute.freeVariables firstTerm)
+            inj { injChild = () }
+    Pair -- it's ok to interchange them here, as this becomes error for matching
+        (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
+        (Inj_ Inj { injChild = firstTerm@(App_ firstHead firstChildren) })
+        -> unifyOverloadingInjVsVariable
+            (Application firstHead firstChildren)
+            secondVar
+            (Attribute.freeVariables firstTerm)
+            inj { injChild = () }
     Pair (App_ firstHead _) (Inj_ Inj { injChild }) ->
         notUnifiableTest firstHead injChild
     Pair (Inj_ Inj { injChild }) (App_ secondHead _) ->
@@ -219,9 +235,8 @@ unifyOverloadingCommonOverload
         Just (headUnion, maybeInjUnion) ->
             let first' = resolveOverloading injProto headUnion firstChildren
                 second' = resolveOverloading injProto headUnion secondChildren
-                mkInj' injChild inj' = (synthesize . InjF) inj' { injChild }
-                mkInj injChild = maybe injChild (mkInj' injChild) maybeInjUnion
-            in return $ Pair (mkInj first') (mkInj second')
+                inject = maybeMkInj maybeInjUnion
+            in return $ Pair (inject first') (inject second')
 
 {- Handles the case
     overloadingTerm@(overloadingHead(overloadingChildren))
@@ -261,7 +276,6 @@ unifyOverloadingVsOverloaded
         then return $ Pair overloadingTerm overloadedTerm'
         else throwBottom "different injected ctor"
 
-
 unifyOverloadingVsOverloadedVariable
     :: MonadSimplify unifier
     => InternalVariable variable
@@ -279,36 +293,92 @@ unifyOverloadingVsOverloadedVariable
     injProto@(Inj { injFrom })
   = do
     OverloadSimplifier
-        { isOverloaded, getOverloadedWithSort }
+        { isOverloaded, getOverloadedWithinSort, resolveOverloading }
             <- Simplifier.askOverloadSimplifier
     Monad.guard (isOverloaded overloadingHead)
-    case Set.toList (getOverloadedWithSort overloadingHead injFrom) of
-        [] -> throwBottom "No overloaded found"
-        [overloadedHead] -> do
-            let freshVs = freshVars overloadedHead
+    case getOverloadedWithinSort injProto overloadingHead injFrom of
+        Right Nothing -> throwBottom "No overloaded found"
+        Right (Just (overHead, maybeInj)) -> do
+            let freshVs = freshVars overHead
                 freshTerms = mkElemVar <$> freshVs
-                overloadedApp = Application overloadedHead freshTerms
                 overloadedTerm =
-                    mkApplySymbol overloadedHead freshTerms
-            narrowedPair <- unifyOverloadingVsOverloaded
-                overloadingHead
-                overloadingTerm
-                overloadedApp
-                injProto
+                    mkApplySymbol overHead freshTerms
+                overloadedTerm' =
+                    resolveOverloading injProto overloadingHead freshTerms
             return $ WithNarrowing Narrowing
                 { narrowedSubst = Predicate.markSimplified $
                     Predicate.makeEqualsPredicate_
                         (mkElemVar overloadedVar)
-                        overloadedTerm
+                        (maybeMkInj maybeInj overloadedTerm)
                 , narrowingVars = freshVs
-                , narrowedPair
+                , narrowedPair = Pair overloadingTerm overloadedTerm'
                 }
-        _ -> throwBottom "Ambiguous overloaded symbols"
+        Left err -> error err
   where
-    allVars = overloadedVar:Attribute.getFreeElementVariables freeVars
+    allVars = overloadedVar : Attribute.getFreeElementVariables freeVars
     freshVars s =
         Fresh.generateFreshVars (Set.fromList allVars) "x"
         $ applicationSortsOperands $ symbolSorts s
+
+unifyOverloadingInjVsVariable
+    :: MonadSimplify unifier
+    => InternalVariable variable
+    => Application Symbol (TermLike variable)
+    -> ElementVariable variable
+    -> Attribute.FreeVariables variable
+    -> Inj ()
+    -> UnifyOverloadingResult unifier variable
+unifyOverloadingInjVsVariable
+    (Application firstHead firstChildren)
+    overloadedVar
+    freeVars
+    injProto
+  = do
+    OverloadSimplifier
+        { isOverloaded, resolveOverloading, unifyOverloadWithSortWithinBound }
+        <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded firstHead)
+    case unifyOverloadWithSortWithinBound firstHead injProto of
+        Left err -> error err
+        Right Nothing -> throwBottom "overloaded constructors not unifiable"
+        Right (Just (Pair (headUnion, maybeInjUnion) (overHead, maybeRInj))) ->
+            let freshVs = freshVars overHead
+                freshTerms = mkElemVar <$> freshVs
+                overloadedTerm =
+                    mkApplySymbol overHead freshTerms
+                second' =
+                    resolveOverloading injProto headUnion freshTerms
+                first' = resolveOverloading injProto headUnion firstChildren
+                inject = maybeMkInj maybeInjUnion
+            in return $ WithNarrowing Narrowing
+                { narrowedSubst = Predicate.markSimplified $
+                    Predicate.makeEqualsPredicate_
+                        (mkElemVar overloadedVar)
+                        (maybeMkInj maybeRInj overloadedTerm)
+                , narrowingVars = freshVs
+                , narrowedPair = Pair (inject first') (inject second')
+                }
+  where
+    allVars = overloadedVar : Attribute.getFreeElementVariables freeVars
+    freshVars =
+        Fresh.generateFreshVars (Set.fromList allVars) "x"
+        . applicationSortsOperands . symbolSorts
+
+
+
+mkInj
+    :: InternalVariable variable
+    => Inj ()
+    -> TermLike variable
+    -> TermLike variable
+mkInj inj injChild = (synthesize . InjF) inj { injChild }
+
+maybeMkInj
+    :: InternalVariable variable
+    => Maybe (Inj ())
+    -> TermLike variable
+    -> TermLike variable
+maybeMkInj maybeInj injChild = maybe injChild (flip mkInj injChild) maybeInj
 
 notUnifiableError
     :: Monad unifier => TermLike variable -> OverloadingResult unifier a

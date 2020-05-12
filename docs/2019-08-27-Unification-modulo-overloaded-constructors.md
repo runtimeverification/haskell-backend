@@ -166,23 +166,24 @@ applying the overloading axioms in a left-to-right fashion.
 - overloaded constructor vs. same overloaded constructor: works the same as for
   other constructors, as overloaded constructors are injective
 - overloaded constructor vs. different (overloaded) constructor: 
-  fail, similarly to the other constructors
+  return bottom, similarly to the other constructors
 - overloaded constructor vs. injection of (overloaded) constructor 
   + If the two constructors form an `overload` pair, then use the sorting
     information for the two overloaded constructors to directly derive the new
     goals (apply the overload axiom right-to-left on the right and retry)
-  + otherwise, fail, as the constructors are incompatible
+  + otherwise, return bottom, as the constructors are incompatible
 - injection of (overloaded) constructor vs. injection of (overloaded) constructor
   + If there exists a common overloaded constructor overloading both constructors, with its sort at most the top sort of the injection, then apply the overload axioms right-to-left to get both terms to use the common overloaded constructor and retry
-  + otherwise, fail, as the constructors are incompatible
+  + otherwise, return bottom, as the constructors are incompatible
 - overloading constructor `c1` vs. injection of variable `x2` from sort `s2`.
 
   1. Find a constructor `c2'` overloaded by `c1` whose sort `s2'` is at most `s2`.
      - If there are more, pick the one overloading all the others.
-     - If cannot compute one overloading all the others, fail (ambiguity).
+     - If cannot compute one overloading all the others, we cannot decide which
+       to choose and decide not to handle the case (ambiguity).
   1. narrow `x2` to `\inj{s2'}{s2}(c2'(x1,...,xn))` where `x1`, ..., `xn` are fresh
   1. apply the right-to-left overloading axiom to transform `c2'` into `c1`
-  1. hope that the new unification fails; if not build the conjunction of
+  1. hope that the new unification returns bottom; if not build the conjunction of
      the result with the equality for `x` and existentially quantify them using
      `x1` ... `xn`
 - injection of overloaded constructor `c1` of sort `s1` into sort `s`
@@ -191,11 +192,12 @@ applying the overloading axioms in a left-to-right fashion.
   1. For each constructor `c1'` overloading `c1` whose sort `s1'` is at most `s`,
   1. Find a constructor `c2'` overloaded by `c1'` whose sort `s2'` is at most `s2`.
      - If there are more, pick the one overloading all the others.
-     - If cannot compute one overloading all the others, fail (ambiguity).
+     - If cannot compute one overloading all the others, we cannot decide which
+       to choose and decide not to handle the case (ambiguity).
   1. narrow `x` to `\inj{s2'}{s2}(c2'(x1,...,xn))` where `x1`, ..., `xn` are fresh
   1. apply the right-to-left overloading axioms to transform `c1` into `c1'` and
      `c2'` into `c1'`
-  1. hope that the new unification fails; if not build the conjunction of
+  1. hope that the new unification returns bottom; if not build the conjunction of
      the result with the equality for `x` and existentially quantify them using
      `x1` ... `xn`
    

@@ -1,20 +1,24 @@
 module SIMPLE-EXPS
   imports INT
-  syntax Val ::= Int
   syntax Exp ::= Val
   syntax Exp ::= Exp "+" Exp             [strict]
   syntax Exp ::= "[" Exps "]"            [strict]
-  syntax Exps ::= List{Exp,","}          [klabel(_,_)]  // automatically hybrid now
-  syntax Vals ::= List{Val,","}          [klabel(_,_)]
-  syntax Exps ::= Vals
-
-  syntax Val ::= vals(Vals)
-
-  rule [Vs:Vals] => vals(Vs)
+  syntax Exps ::= List{Exp,","}          [klabel(_,_), strict]  // automatically hybrid now
+  syntax Exp ::= length(Exp)             [strict]
 
   syntax KResult ::= Val | Vals
 
-  rule I1:Int + I2:Int => I1 +Int I2
+  syntax Val ::= Int
+  syntax Val ::= vals(Vals)
+  syntax Vals ::= List{Val,","}          [klabel(_,_), strict]
+  syntax Exps ::= Vals
 
   configuration <k> $PGM:Exp </k>
+
+  rule I1:Int + I2:Int => I1 +Int I2
+
+  rule [Vs:Vals] => vals(Vs)
+
+  rule length(vals(.Vals)) => 0
+  rule length(vals(V:Val,L:Vals)) => 1 + length(vals(L))
 endmodule

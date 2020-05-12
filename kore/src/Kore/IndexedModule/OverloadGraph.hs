@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
     , getOverloaded
+    , getOverloading
     , isOverloaded
     , isOverloading
     , commonOverloads
@@ -77,6 +78,11 @@ commonOverloads graph sym1 sym2 =
 getOverloaded :: OverloadGraph -> Symbol -> Set Symbol
 getOverloaded graph sym1 =
     fromMaybe Set.empty (overloadedSymbols graph Map.!? sym1)
+
+getOverloading :: OverloadGraph -> Symbol -> Set Symbol
+getOverloading graph sym1 =
+    fromMaybe Set.empty (overloadingSymbols graph Map.!? sym1)
+
 
 {- | Build a 'OverloadGraph' from a list of overloaded symbol pairs.
 
