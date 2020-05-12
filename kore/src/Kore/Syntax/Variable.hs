@@ -14,6 +14,10 @@ module Kore.Syntax.Variable
     , illegalVariableCounter
     , externalizeFreshVariable
     -- * Variable names
+    , VariableName (..)
+    , ElementVariableName (..)
+    , SetVariableName (..)
+    , SomeVariableName (..)
     , NamedVariable
     , toVariable
     , fromVariable
@@ -37,6 +41,9 @@ import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field
     )
+import Data.Generics.Sum
+    ( _Ctor
+    )
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -47,6 +54,96 @@ import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
+
+data VariableName =
+    VariableName
+    { base :: !Id
+    , counter :: !(Maybe (Sup Natural))
+    }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+
+instance Hashable VariableName
+
+instance NFData VariableName
+
+instance SOP.Generic VariableName
+
+instance SOP.HasDatatypeInfo VariableName
+
+instance Debug VariableName
+
+instance Diff VariableName
+
+newtype ElementVariableName variable =
+    ElementVariableName { unElementVariableName :: variable }
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic)
+
+instance Hashable variable => Hashable (ElementVariableName variable)
+
+instance NFData variable => NFData (ElementVariableName variable)
+
+instance SOP.Generic (ElementVariableName variable)
+
+instance SOP.HasDatatypeInfo (ElementVariableName variable)
+
+instance Debug variable => Debug (ElementVariableName variable)
+
+instance (Debug variable, Diff variable) => Diff (ElementVariableName variable)
+
+newtype SetVariableName variable =
+    SetVariableName { unSetVariableName :: variable }
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic)
+
+instance Hashable variable => Hashable (SetVariableName variable)
+
+instance NFData variable => NFData (SetVariableName variable)
+
+instance SOP.Generic (SetVariableName variable)
+
+instance SOP.HasDatatypeInfo (SetVariableName variable)
+
+instance Debug variable => Debug (SetVariableName variable)
+
+instance (Debug variable, Diff variable) => Diff (SetVariableName variable)
+
+data SomeVariableName variable
+    = SomeVariableNameElement !(ElementVariableName variable)
+    | SomeVariableNameSet     !(SetVariableName     variable)
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic)
+
+instance Hashable variable => Hashable (SomeVariableName variable)
+
+instance NFData variable => NFData (SomeVariableName variable)
+
+instance SOP.Generic (SomeVariableName variable)
+
+instance SOP.HasDatatypeInfo (SomeVariableName variable)
+
+instance Debug variable => Debug (SomeVariableName variable)
+
+instance (Debug variable, Diff variable) => Diff (SomeVariableName variable)
+
+instance
+    Injection (SomeVariableName variable) (ElementVariableName variable)
+  where
+    injection = _Ctor @"SomeVariableNameElement"
+    {-# INLINE injection #-}
+
+instance
+    Injection (SomeVariableName variable) (SetVariableName variable)
+  where
+    injection = _Ctor @"SomeVariableNameSet"
+    {-# INLINE injection #-}
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
 Semantics of K, Section 9.1.4 (Patterns).

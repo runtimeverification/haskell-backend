@@ -86,6 +86,7 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
 import Kore.Syntax hiding
     ( PatternF (..)
+    , VariableName (..)
     )
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
