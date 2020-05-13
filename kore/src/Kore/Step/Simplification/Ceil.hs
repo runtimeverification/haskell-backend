@@ -188,9 +188,9 @@ makeEvaluateTerm sideCondition ceilChild =
         [ newPredicateCeilSimplifier
         , newDefinedCeilSimplifier
         , newApplicationCeilSimplifier
-        , newBuiltinCeilSimplifier
         , newInjCeilSimplifier
         , newAxiomCeilSimplifier
+        , newBuiltinCeilSimplifier
         ]
 
 ceilSimplifierTermLike
@@ -301,18 +301,17 @@ makeEvaluateBuiltin
     => SideCondition variable
     -> Builtin (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
-makeEvaluateBuiltin _ (Domain.BuiltinMap _) = return OrCondition.top
--- makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
---     runCeilSimplifierWith
---         (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
---         sideCondition
---         Ceil
---             { ceilResultSort = Sort.predicateSort
---             , ceilOperandSort = builtinAcSort
---             , ceilChild = internalAc
---             }
---   where
---     Domain.InternalAc { builtinAcSort } = internalAc
+makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
+    runCeilSimplifierWith
+        (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
+        sideCondition
+        Ceil
+            { ceilResultSort = Sort.predicateSort
+            , ceilOperandSort = builtinAcSort
+            , ceilChild = internalAc
+            }
+  where
+    Domain.InternalAc { builtinAcSort } = internalAc
 makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
     runCeilSimplifierWith
         (AssocComm.newSetCeilSimplifier ceilSimplifierTermLike)
