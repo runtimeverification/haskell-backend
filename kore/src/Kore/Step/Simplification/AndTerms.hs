@@ -236,7 +236,7 @@ andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier undefined, "Builtin.Map.unifyNotInKeys")
+    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier ceilSimplifier, "Builtin.Map.unifyNotInKeys")
     , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
@@ -245,6 +245,11 @@ andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
     , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
+
+    ceilSimplifier =
+        CeilSimplifier $ \Ceil { ceilChild } ->
+            Ceil.makeEvaluateTerm SideCondition.topTODO ceilChild
+
     mapEqualsFunctions (target, termTransform, name) =
         (target, logTT name termTransform)
 
