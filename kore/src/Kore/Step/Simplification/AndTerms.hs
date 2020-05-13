@@ -555,6 +555,7 @@ noConfusionInjectionConstructor
     -> unifier a
 noConfusionInjectionConstructor =
     explainAndReturnBottom "No confusion: sort injections and constructors"
+
 {- |
  If the two constructors form an overload pair, apply the overloading axioms
  on the terms to make the constructors equal, then retry unification on them.

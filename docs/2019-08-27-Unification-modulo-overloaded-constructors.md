@@ -172,34 +172,43 @@ applying the overloading axioms in a left-to-right fashion.
     information for the two overloaded constructors to directly derive the new
     goals (apply the overload axiom right-to-left on the right and retry)
   + otherwise, return bottom, as the constructors are incompatible
-- injection of (overloaded) constructor vs. injection of (overloaded) constructor
-  + If there exists a common overloaded constructor overloading both constructors, with its sort at most the top sort of the injection, then apply the overload axioms right-to-left to get both terms to use the common overloaded constructor and retry
+- injection of (overloaded) constructor vs. injection of (overloaded)
+  constructor
+  + If there exists a common overloaded constructor overloading both
+    constructors, with its sort at most the top sort of the injection,
+    then apply the overload axioms right-to-left to get both terms to use
+    the common overloaded constructor and retry
   + otherwise, return bottom, as the constructors are incompatible
 - overloading constructor `c1` vs. injection of variable `x2` from sort `s2`.
 
-  1. Find a constructor `c2'` overloaded by `c1` whose sort `s2'` is at most `s2`.
+  1. Find a constructor `c2'` overloaded by `c1` whose sort `s2'` is at most
+     `s2`.
      - If there are more, pick the one overloading all the others.
      - If cannot compute one overloading all the others, we cannot decide which
        to choose and decide not to handle the case (ambiguity).
-  1. narrow `x2` to `\inj{s2'}{s2}(c2'(x1,...,xn))` where `x1`, ..., `xn` are fresh
+  1. narrow `x2` to `\inj{s2'}{s2}(c2'(x1,...,xn))` where `x1`, ..., `xn` are
+     fresh
   1. apply the right-to-left overloading axiom to transform `c2'` into `c1`
-  1. hope that the new unification returns bottom; if not build the conjunction of
-     the result with the equality for `x` and existentially quantify them using
-     `x1` ... `xn`
+  1. hope that the new unification returns bottom; if not build the conjunction
+     of the result with the equality for `x` and existentially quantify them
+     using `x1` ... `xn`
 - injection of overloaded constructor `c1` of sort `s1` into sort `s`
   vs. injection of variable `x2` of  sort `s2` into sort `s`.
 
-  1. For each constructor `c1'` overloading `c1` whose sort `s1'` is at most `s`,
-  1. Find a constructor `c2'` overloaded by `c1'` whose sort `s2'` is at most `s2`.
+  1. For each constructor `c1'` overloading `c1` whose sort `s1'` is
+     at most `s`
+  1. Find a constructor `c2'` overloaded by `c1'` whose sort `s2'` is
+     at most `s2`.
      - If there are more, pick the one overloading all the others.
      - If cannot compute one overloading all the others, we cannot decide which
        to choose and decide not to handle the case (ambiguity).
-  1. narrow `x` to `\inj{s2'}{s2}(c2'(x1,...,xn))` where `x1`, ..., `xn` are fresh
+  1. narrow `x` to `\inj{s2'}{s2}(c2'(x1,...,xn))` where `x1`, ..., `xn`
+     are fresh
   1. apply the right-to-left overloading axioms to transform `c1` into `c1'` and
      `c2'` into `c1'`
-  1. hope that the new unification returns bottom; if not build the conjunction of
-     the result with the equality for `x` and existentially quantify them using
-     `x1` ... `xn`
+  1. hope that the new unification returns bottom; if not build the conjunction
+     of the result with the equality for `x` and existentially quantify them
+     using `x1` ... `xn`
    
 - otherwise, for now, throw an unsupported exception, as this
   would prevent increasing the number of variable and possible decompositions
@@ -228,7 +237,8 @@ This reduces to matching `inj{Ints, Exps}(1,2,.Ints)` with the pattern
 pattern and the list constructor below the inj form an overload pair,
 we can transform the pattern to be matched to 
 `inj{Int,Exp}(1), inj{Ints, Exps}(2, .Ints)`, after which the matching becomes
-possible and generates the substitution 
+possible and generates the substitution In the Name of the Grandfather
+
 ```
 _:Exp = inj{int,Exp}(1)
 Es:Exps = inj{Ints, Exps}(2, .Ints)

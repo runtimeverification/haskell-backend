@@ -78,6 +78,21 @@ data OverloadSimplifier =
             :: Symbol
             -> Inj ()
             -> Either String (Maybe (Pair (Symbol, Maybe (Inj ()))))
+        {- Given symbol firstHead of sort S1 and an injection ind{S2, injTo}
+          If there exists a (unique) maximum overloaded symbol secondHead
+          with its result sort S2' within S2, such that there exists a common
+          overload headUnion of firstHead and secondHead
+          with its result sort S within injTo, then return a 'Pair' of the form
+
+            @((headUnion, inj{S, injTo}), (secondHead, inj{S2', S2}))@
+
+          where the injections can miss if they are identities.
+
+          If there are no overloaded symbols candidates, return @Right Nothing@
+
+          If there are candidates, but no maximum, throw an
+          'errorAmbiguousOverloads' with the candidates found
+        -}
         }
 
 {- | Builds an Overload Simplifier given a graph encoding the overload
@@ -143,7 +158,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
                 in case mm' of
                     Nothing -> Right Nothing
                     Just m' ->
-                        if checkMaxOverload third m' l' 
+                        if checkMaxOverload third m' l'
                             then Right (Just m')
                             else errorAmbiguousOverloads (map third l')
 
