@@ -585,7 +585,7 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
                 merged <- termMerger firstTerm' secondTerm'
                 boundPattern <-
                     Exists.makeEvaluate SideCondition.topTODO narrowingVars
-                        $ merged `Pattern.andCondition` (from narrowedSubst)
+                        $ merged `Pattern.andCondition` from narrowedSubst
                 case OrPattern.toPatterns boundPattern of
                     [result] -> return result
                     _ -> empty

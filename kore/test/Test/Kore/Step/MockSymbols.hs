@@ -519,6 +519,12 @@ sortInjectionSubOtherToOtherSymbol = sortInjectionSymbol subOthersort otherSort
 sortInjectionSubOtherToTopSymbol :: Symbol
 sortInjectionSubOtherToTopSymbol = sortInjectionSymbol subOthersort topSort
 
+sortInjectionSubToTestSymbol :: Symbol
+sortInjectionSubToTestSymbol = sortInjectionSymbol testSort topSort
+
+sortInjectionTestToTopSymbol :: Symbol
+sortInjectionTestToTopSymbol = sortInjectionSymbol subSort testSort
+
 sortInjectionOtherToTopSymbol :: Symbol
 sortInjectionOtherToTopSymbol = sortInjectionSymbol otherSort topSort
 
@@ -682,6 +688,11 @@ xSubSort = ElementVariable $ Variable (testId "xSubSort") mempty subSort
 xSubSubSort :: ElementVariable Variable
 xSubSubSort =
     ElementVariable $ Variable (testId "xSubSubSort") mempty subSubsort
+xSubOtherSort :: ElementVariable Variable
+xSubOtherSort =
+    ElementVariable $ Variable (testId "xSubOtherSort") mempty subOthersort
+xOtherSort :: ElementVariable Variable
+xOtherSort = ElementVariable $ Variable (testId "xOtherSort") mempty otherSort
 xTopSort :: ElementVariable Variable
 xTopSort = ElementVariable $ Variable (testId "xTopSort") mempty topSort
 
@@ -1109,6 +1120,18 @@ sortInjectionTopToOverTheTop
     -> TermLike variable
 sortInjectionTopToOverTheTop = sortInjection overTheTopSort
 
+sortInjectionSubToTest
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionSubToTest = sortInjection testSort
+
+sortInjectionTestToTop
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+sortInjectionTestToTop = sortInjection topSort
+
 sortInjectionOtherToTop
     :: InternalVariable variable
     => TermLike variable
@@ -1307,6 +1330,8 @@ symbols =
     , sortInjectionSubSubToOtherSymbol
     , sortInjectionSubOtherToOtherSymbol
     , sortInjectionSubOtherToTopSymbol
+    , sortInjectionSubToTestSymbol
+    , sortInjectionTestToTopSymbol
     , sortInjectionOtherToTopSymbol
     , sortInjectionOtherToOverTheTopSymbol
     , sortInjectionSubToOverTheTopSymbol

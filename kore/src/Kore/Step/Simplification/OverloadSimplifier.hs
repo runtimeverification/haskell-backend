@@ -100,6 +100,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
   where
     isOverloading = OverloadGraph.isOverloading overloadGraph
     isOverloaded = OverloadGraph.isOverloaded overloadGraph
+    isOverloadingOrEqual x y = x == y || x `isOverloading` y
 
     resolveOverloading
         :: forall variable
@@ -141,9 +142,10 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
                     mm' = findMaxOverload third l'
                 in case mm' of
                     Nothing -> Right Nothing
-                    Just m' -> case checkMaxOverload third m' l' of
-                        False -> errorAmbiguousOverloads (map third l')
-                        True -> Right (Just m')
+                    Just m' ->
+                        if checkMaxOverload third m' l' 
+                            then Right (Just m')
+                            else errorAmbiguousOverloads (map third l')
 
       where
         overloads =
@@ -175,10 +177,9 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
     updateMaxOverload :: (a -> Symbol) -> a -> Maybe a -> Maybe a
     updateMaxOverload _ x Nothing = Just x
     updateMaxOverload f x mm@(Just m)
-        | sx == sm = mm
-        | sm `isOverloading` sx = mm
+        | sm `isOverloadingOrEqual` sx = mm
         | sx `isOverloading` sm = Just x
-        | otherwise = Nothing
+        | otherwise = trace ("not comparable: " <> show [sx,sm]) Nothing
         where
             sx = f x
             sm = f m
@@ -187,7 +188,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
     findMaxOverload f = foldr (updateMaxOverload f) Nothing
 
     checkMaxOverload :: (a -> Symbol) -> a -> [a] -> Bool
-    checkMaxOverload f m = all (isOverloading (f m) .f)
+    checkMaxOverload f m = all (isOverloadingOrEqual (f m) .f)
 
     filterOverloads
       :: Inj ()
