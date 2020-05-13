@@ -65,6 +65,9 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
     , makeEvaluateTerm
     )
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
+    )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
     , simplifyEvaluated
@@ -82,7 +85,8 @@ import qualified Kore.Step.Simplification.Or as Or
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Unification.UnifierT
-    ( runUnifierT
+    ( UnifierT (..)
+    , runUnifierT
     )
 import Kore.Unification.Unify
     ( MonadUnify
@@ -185,7 +189,8 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
+    :: forall variable simplifier
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
@@ -206,7 +211,11 @@ simplifyEvaluated sideCondition first second
                 makeEvaluateFunctionalOr sideCondition secondP firstPatterns
         _
             | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                Iff.simplifyEvaluated sideCondition first second
+                Iff.simplifyEvaluated
+                    ceilSimplifier
+                    sideCondition
+                    first
+                    second
             | otherwise ->
                 makeEvaluate
                     (OrPattern.toPattern first)
@@ -215,6 +224,14 @@ simplifyEvaluated sideCondition first second
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
+    ceilSimplifier
+        :: CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike variable)
+            (OrCondition variable)
+    ceilSimplifier =
+        CeilSimplifier $ \Ceil { ceilChild } ->
+            Ceil.makeEvaluateTerm sideCondition ceilChild
 
 makeEvaluateFunctionalOr
     :: forall variable simplifier

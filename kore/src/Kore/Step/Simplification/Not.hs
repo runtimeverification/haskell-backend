@@ -64,11 +64,15 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.CeilSimplifier
     ( CeilSimplifier (..)
+    , hoistCeilSimplifier
     )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
     ( TopBottom (..)
+    )
+import Kore.Unification.UnifierT
+    ( UnifierT (..)
     )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
@@ -82,11 +86,12 @@ Right now this uses the following:
 -}
 simplify
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => (forall v . CeilSimplifier (UnifierT simplifier) (TermLike v) (OrCondition v))
+    -> SideCondition variable
     -> Not Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify sideCondition Not { notChild } =
-    simplifyEvaluated sideCondition notChild
+simplify ceilSimplifier sideCondition Not { notChild } =
+    simplifyEvaluated ceilSimplifier sideCondition notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -108,14 +113,15 @@ to carry around.
 -}
 simplifyEvaluated
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => (forall v . CeilSimplifier (UnifierT simplifier) (TermLike v) (OrCondition v))
+    -> SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated sideCondition simplified =
+simplifyEvaluated ceilSimplifier sideCondition simplified =
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
-        mkMultiAndPattern sideCondition andPattern
+        mkMultiAndPattern ceilSimplifier sideCondition andPattern
 
 simplifyEvaluatedPredicate
     :: (InternalVariable variable, MonadSimplify simplifier)
@@ -233,15 +239,29 @@ scatterAnd = scatter . distributeAnd
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}
 mkMultiAndPattern
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    :: forall variable simplifier
+    .  (InternalVariable variable, MonadSimplify simplifier)
+    => (forall v . CeilSimplifier (UnifierT simplifier) (TermLike v) (OrCondition v))
+    -> SideCondition variable
     -> MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
-mkMultiAndPattern sideCondition patterns =
+mkMultiAndPattern ceilSimplifier sideCondition patterns =
     Foldable.foldrM
-        (And.makeEvaluate notSimplifier sideCondition)
+        ( And.makeEvaluate
+            (notSimplifier ceilSimplifier')
+            ceilSimplifier
+            sideCondition
+        )
         Pattern.top
         patterns
+  where
+    ceilSimplifier'
+        :: forall v'
+        .  CeilSimplifier
+            (UnifierT (UnifierT simplifier))
+            (TermLike v')
+            (OrCondition v')
+    ceilSimplifier' = hoistCeilSimplifier lift ceilSimplifier
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
@@ -256,6 +276,7 @@ mkMultiAndPredicate predicates =
 
 notSimplifier
     :: MonadSimplify simplifier
-    => NotSimplifier simplifier
-notSimplifier =
-    NotSimplifier simplifyEvaluated
+    => (forall v . CeilSimplifier (UnifierT simplifier) (TermLike v) (OrCondition v))
+    -> NotSimplifier simplifier
+notSimplifier ceilSimplifier =
+    NotSimplifier (simplifyEvaluated ceilSimplifier)

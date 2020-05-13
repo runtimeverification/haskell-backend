@@ -15,6 +15,9 @@ module Kore.Step.Simplification.Implies
 import Prelude.Kore
 
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -29,12 +32,19 @@ import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluatedMultiple
     )
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
+    , hoistCeilSimplifier
+    )
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
     , notSimplifier
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
+import Kore.Unification.UnifierT
+    ( UnifierT (..)
+    )
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
@@ -51,14 +61,21 @@ and it has a special case for children with top terms.
 -}
 simplify
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => ( forall v
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike v)
+            (OrCondition v)
+       )
+    -> SideCondition variable
     -> Implies Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify
+    ceilSimplifier
     sideCondition
     Implies { impliesFirst = first, impliesSecond = second }
   =
-    simplifyEvaluated sideCondition first second
+    simplifyEvaluated ceilSimplifier sideCondition first second
 
 {-| simplifies an Implies given its two 'OrPattern' children.
 
@@ -80,50 +97,88 @@ carry around.
 -}
 simplifyEvaluated
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => ( forall v
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike v)
+            (OrCondition v)
+       )
+    -> SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated sideCondition first second
+simplifyEvaluated ceilSimplifier sideCondition first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
-  | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
+  | OrPattern.isFalse second =
+      Not.simplifyEvaluated ceilSimplifier sideCondition first
   | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies sideCondition first) second
+    results <-
+        traverse
+            (simplifyEvaluateHalfImplies ceilSimplifier sideCondition first)
+            second
     return (MultiOr.flatten results)
 
 simplifyEvaluateHalfImplies
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => ( forall v
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike v)
+            (OrCondition v)
+       )
+    -> SideCondition variable
     -> OrPattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
+    ceilSimplifier
     sideCondition
     first
     second
   | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])
   | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
   | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isBottom second = Not.simplifyEvaluated sideCondition first
+  | Pattern.isBottom second =
+      Not.simplifyEvaluated ceilSimplifier sideCondition first
   | otherwise =
     case MultiOr.extractPatterns first of
         [firstP] -> return $ makeEvaluateImplies firstP second
         firstPatterns ->
-            distributeEvaluateImplies sideCondition firstPatterns second
+            distributeEvaluateImplies
+                ceilSimplifier
+                sideCondition
+                firstPatterns
+                second
 
 distributeEvaluateImplies
-    :: (MonadSimplify simplifier, InternalVariable variable)
-    => SideCondition variable
+    :: forall variable simplifier
+    .  (MonadSimplify simplifier, InternalVariable variable)
+    => ( forall v
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike v)
+            (OrCondition v)
+       )
+    -> SideCondition variable
     -> [Pattern variable]
     -> Pattern variable
     -> simplifier (OrPattern variable)
-distributeEvaluateImplies sideCondition firsts second =
+distributeEvaluateImplies ceilSimplifier sideCondition firsts second =
     And.simplifyEvaluatedMultiple
-        Not.notSimplifier
+        (Not.notSimplifier ceilSimplifier')
+        ceilSimplifier
         sideCondition
         (map (\first -> makeEvaluateImplies first second) firsts)
+  where
+    ceilSimplifier'
+        :: forall v'
+        .  CeilSimplifier
+            (UnifierT (UnifierT simplifier))
+            (TermLike v')
+            (OrCondition v')
+    ceilSimplifier' = hoistCeilSimplifier lift ceilSimplifier
 
 makeEvaluateImplies
     :: InternalVariable variable

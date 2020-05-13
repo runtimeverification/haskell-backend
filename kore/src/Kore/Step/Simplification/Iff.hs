@@ -16,6 +16,9 @@ module Kore.Step.Simplification.Iff
 import Prelude.Kore
 
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -30,11 +33,17 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
+    )
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
+import Kore.Unification.UnifierT
+    ( UnifierT (..)
+    )
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
@@ -44,11 +53,21 @@ and for children with top terms.
 -}
 simplify
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => ( forall v
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike v)
+            (OrCondition v)
+       )
+    -> SideCondition variable
     -> Iff Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify sideCondition Iff { iffFirst = first, iffSecond = second } =
-    simplifyEvaluated sideCondition first second
+simplify
+    ceilSimplifier
+    sideCondition
+    Iff { iffFirst = first, iffSecond = second }
+  =
+    simplifyEvaluated ceilSimplifier sideCondition first second
 
 {-| evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -69,18 +88,27 @@ carry around.
 -}
 simplifyEvaluated
     :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    => ( forall v
+        . CeilSimplifier
+            (UnifierT simplifier)
+            (TermLike v)
+            (OrCondition v)
+       )
+    -> SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated
+    ceilSimplifier
     sideCondition
     first
     second
   | OrPattern.isTrue first   = return second
-  | OrPattern.isFalse first  = Not.simplifyEvaluated sideCondition second
+  | OrPattern.isFalse first  =
+      Not.simplifyEvaluated ceilSimplifier sideCondition second
   | OrPattern.isTrue second  = return first
-  | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
+  | OrPattern.isFalse second =
+      Not.simplifyEvaluated ceilSimplifier sideCondition first
   | otherwise =
     return $ case ( firstPatterns, secondPatterns ) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
