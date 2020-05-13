@@ -56,6 +56,7 @@ import Options.Applicative
     , readerError
     , str
     , strOption
+    , switch
     , value
     )
 import qualified Options.Applicative as Options
@@ -174,6 +175,7 @@ data KoreSearchOptions =
         , searchType :: !SearchType
         -- ^ The type of search to perform
         }
+    deriving Show
 
 parseKoreSearchOptions :: Parser KoreSearchOptions
 parseKoreSearchOptions =
@@ -232,7 +234,7 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         { koreSearchOptions
         , strategy =
             -- Search relies on exploring the entire space of states.
-            priorityAllStrategy
+            ("priorityAllStrategy", priorityAllStrategy)
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
@@ -260,6 +262,17 @@ parseSolver =
     knownOptions = intercalate ", " (map fst options)
     options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
 
+newtype BugReport = BugReport { toReport :: Bool }
+    deriving Show
+
+parseBugReportSwitch :: Parser BugReport
+parseBugReportSwitch =
+    BugReport
+        <$> switch
+            ( long "bug-report"
+            <> help "Whether to report a bug"
+            )
+
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
     { definitionFileName  :: !FilePath
@@ -275,12 +288,13 @@ data KoreExecOptions = KoreExecOptions
     , smtSolver           :: !Solver
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
-    , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
+    , strategy            :: !(String, [Rewrite] -> Strategy (Prim Rewrite))
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
     , koreMergeOptions    :: !(Maybe KoreMergeOptions)
     , rtsStatistics       :: !(Maybe FilePath)
+    , bugReport           :: !BugReport
     }
 
 -- | Command Line Argument Parser
@@ -334,6 +348,7 @@ parseKoreExecOptions =
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
         <*> optional parseRtsStatistics
+        <*> parseBugReportSwitch
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
@@ -348,15 +363,19 @@ parseKoreExecOptions =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value priorityAnyStrategy
+            <> value ("any", priorityAnyStrategy)
             <> help "Select rewrites using STRATEGY."
             )
       where
         strategies =
-            [ ("any", priorityAnyStrategy)
-            , ("all", priorityAllStrategy)
-            , ("any-heating-cooling", heatingCooling priorityAnyStrategy)
-            , ("all-heating-cooling", heatingCooling priorityAllStrategy)
+            [ ("any", ("any", priorityAnyStrategy))
+            , ("all", ("all", priorityAllStrategy))
+            ,   ( "any-heating-cooling"
+                , ("any-heating-cooling", heatingCooling priorityAnyStrategy)
+                )
+            ,   ( "all-heating-cooling"
+                , ("all-heating-cooling", heatingCooling priorityAllStrategy)
+                )
             ]
     breadth =
         option auto
@@ -392,13 +411,59 @@ parserInfoModifiers =
                 \in PATTERN_FILE."
     <> header "kore-exec - an interpreter for Kore definitions"
 
+showKoreExecOptions :: KoreExecOptions -> String
+showKoreExecOptions
+    ( KoreExecOptions
+        definitionFileName
+        patternFileName
+        outputFileName
+        mainModuleName
+        smtTimeOut
+        smtPrelude
+        smtSolver
+        breadthLimit
+        depthLimit
+        strategy
+        koreLogOptions
+        koreSearchOptions
+        koreProveOptions
+        koreMergeOptions
+        rtsStatistics
+        _
+    )
+  =
+    unlines
+        [ "KoreExecOptions:"
+        , "definitionFileName = " <> show definitionFileName
+        , "patternFileName = " <> show patternFileName
+        , "outputFileName = " <> show outputFileName
+        , "mainModuleName = " <> show mainModuleName
+        , "smtTimeOut = " <> show smtTimeOut
+        , "smtPrelude = " <> show smtPrelude
+        , "smtSolver = " <> show smtSolver
+        , "breadthLimit = " <> show breadthLimit
+        , "depthLimit = " <> show depthLimit
+        , "strategy = " <> show (fst strategy)
+        , "koreLogOptions = " <> show koreLogOptions
+        , "koreSearchOptions = " <> show koreSearchOptions
+        , "koreProveOptions = " <> show koreProveOptions
+        , "koreMergeOptions = " <> show koreMergeOptions
+        , "rtsStatistics = " <> show rtsStatistics
+        ]
+
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
     options <-
         mainGlobal (ExeName "kore-exec") parseKoreExecOptions parserInfoModifiers
-    Foldable.forM_ (localOptions options) mainWithOptions
+    let maybeKoreLogOptions = localOptions options
+    Foldable.forM_
+        maybeKoreLogOptions
+        ( when . toReport . bugReport
+            <*> writeFile "KoreExecOptions" . showKoreExecOptions
+        )
+    Foldable.forM_ maybeKoreLogOptions mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
@@ -465,7 +530,7 @@ koreSearch execOptions searchOptions = do
     KoreSearchOptions { bound, searchType } = searchOptions
     config = Search.Config { bound, searchType }
     KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . strategy
+    strategy' = Limit.replicate depthLimit . snd strategy
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
@@ -483,7 +548,7 @@ koreRun execOptions = do
     return exitCode
   where
     KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . strategy
+    strategy' = Limit.replicate depthLimit . snd strategy
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
