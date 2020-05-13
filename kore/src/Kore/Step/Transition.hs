@@ -6,6 +6,8 @@ License     : NCSA
 
 {-# LANGUAGE UndecidableInstances #-}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Step.Transition
     ( TransitionT (..)
     , runTransitionT
@@ -131,10 +133,10 @@ tryTransitionT
 tryTransitionT = lift . runTransitionT
 
 mapTransitionT
-    :: Monad m
-    => (forall x. m x -> m x)
+    :: (Monad m, Monad n)
+    => (forall x. m x -> n x)
     -> TransitionT rule m a
-    -> TransitionT rule m a
+    -> TransitionT rule n a
 mapTransitionT mapping =
     TransitionT . mapAccumT (mapListT mapping) . getTransitionT
 

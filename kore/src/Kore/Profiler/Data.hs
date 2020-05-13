@@ -2,6 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# OPTIONS_GHC -fno-prof-auto #-}
 module Kore.Profiler.Data
     ( MonadProfiler (..)
     , profileEvent
@@ -16,6 +17,10 @@ import Prelude.Kore
 import Control.Monad
     ( when
     )
+import Control.Monad.Catch.Pure
+    ( CatchT
+    , mapCatchT
+    )
 import Control.Monad.Morph
     ( MFunctor (..)
     )
@@ -24,8 +29,8 @@ import Control.Monad.Reader
     )
 import qualified Control.Monad.State.Strict as Strict
 import Control.Monad.Trans.Accum
-    ( AccumT (AccumT)
-    , runAccumT
+    ( AccumT
+    , mapAccumT
     )
 import Control.Monad.Trans.Except
     ( ExceptT
@@ -54,12 +59,10 @@ import System.Clock
 import Control.Monad.Counter
 import ListT
     ( ListT (..)
-    )
-import qualified ListT
-    ( mapListT
+    , mapListT
     )
 
-{- Monad that can also handle profiling events.
+{- | Monad that can also handle profiling events.
 -}
 class Monad profiler => MonadProfiler profiler where
     profile
@@ -256,24 +259,27 @@ profileGhcEventsAnalyze event action = do
     liftIO $ traceEventIO ("STOP " ++ List.intercalate "/" event)
     return a
 
-instance (MonadProfiler m) => MonadProfiler (ReaderT thing m )
-
-instance MonadProfiler m => MonadProfiler (Strict.StateT s m)
-
-instance MonadProfiler m => MonadProfiler (MaybeT m)
-
-instance MonadProfiler m => MonadProfiler (IdentityT m)
-
-instance MonadProfiler m => MonadProfiler (ExceptT e m)
-
-instance MonadProfiler m => MonadProfiler (ListT m) where
-    profile a action =
-        ListT.mapListT (profile a) action
-    {-# INLINE profile #-}
-
 instance (MonadProfiler m, Monoid w) => MonadProfiler (AccumT w m)
   where
-    profile a action = AccumT (profile a . runAccumT action)
+    profile a = mapAccumT (profile a)
+    {-# INLINE profile #-}
+
+instance MonadProfiler m => MonadProfiler (CatchT m) where
+    profile a = mapCatchT (profile a)
     {-# INLINE profile #-}
 
 instance MonadProfiler m => MonadProfiler (CounterT m)
+
+instance MonadProfiler m => MonadProfiler (ExceptT e m)
+
+instance MonadProfiler m => MonadProfiler (IdentityT m)
+
+instance MonadProfiler m => MonadProfiler (ListT m) where
+    profile a = mapListT (profile a)
+    {-# INLINE profile #-}
+
+instance MonadProfiler m => MonadProfiler (MaybeT m)
+
+instance MonadProfiler m => MonadProfiler (ReaderT thing m )
+
+instance MonadProfiler m => MonadProfiler (Strict.StateT s m)

@@ -42,6 +42,9 @@ pipeline {
           }
         }
         stage('Unit Tests') {
+          options {
+            timeout(time: 24, unit: 'MINUTES')
+          }
           steps {
             sh '''
               ./scripts/unit-test.sh
@@ -55,7 +58,7 @@ pipeline {
         }
         stage('Integration Tests') {
           options {
-            timeout(time: 32, unit: 'MINUTES')
+            timeout(time: 24, unit: 'MINUTES')
           }
           steps {
             sh '''

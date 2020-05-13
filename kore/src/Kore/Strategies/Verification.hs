@@ -21,6 +21,9 @@ module Kore.Strategies.Verification
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
+import Control.Monad
+    ( (>=>)
+    )
 import qualified Control.Monad as Monad
     ( foldM_
     )
@@ -53,6 +56,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
     ( AllPathRule (..)
     , OnePathRule (..)
@@ -66,8 +70,8 @@ import Kore.Step.Strategy
     , GraphSearchOrder
     , Strategy
     , executionHistoryStep
-    , runStrategyWithSearchOrder
     )
+import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
     ( TransitionT
     , runTransitionT
@@ -82,6 +86,9 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Unparser
+import ListT
+    ( ListT (..)
+    )
 
 -- TODO (thomas.tuegel): (Pattern Variable) should be ReachabilityRule.
 type CommonProofState = ProofState.ProofState (Pattern Variable)
@@ -221,20 +228,51 @@ verifyClaim
     let
         startPattern = ProofState.Goal $ getConfiguration goal
         limitedStrategy =
-            Limit.takeWithin
-                depthLimit
-                (Foldable.toList $ strategy goal claims axioms)
-    executionGraph <-
-        runStrategyWithSearchOrder
-            breadthLimit
-            modifiedTransitionRule
-            limitedStrategy
-            searchOrder
-            startPattern
-    -- Throw the first unproven configuration as an error.
-    Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
+            strategy goal claims axioms
+            & Foldable.toList
+            & Limit.takeWithin depthLimit
+    Strategy.leavesM
+        updateQueue
+        (Strategy.unfoldTransition transit)
+        (limitedStrategy, startPattern)
+        & fmap discardStrategy
+        & throwUnproven
   where
     destination = getDestination goal
+    discardStrategy = snd
+
+    updateQueue = \as ->
+        Strategy.unfoldSearchOrder searchOrder as
+        >=> Strategy.applyBreadthLimit breadthLimit
+        >=> profileQueueLength
+
+    profileQueueLength queue = do
+        Profile.executionQueueLength (length queue)
+        pure queue
+
+    throwUnproven
+        :: ListT (Verifier simplifier) CommonProofState
+        -> Verifier simplifier ()
+    throwUnproven acts =
+        foldListT acts throwUnprovenOrElse done
+      where
+        done = return ()
+
+    throwUnprovenOrElse
+        :: ProofState.ProofState (Pattern Variable)
+        -> Verifier simplifier ()
+        -> Verifier simplifier ()
+    throwUnprovenOrElse proofState acts = do
+        ProofState.extractUnproven proofState
+            & Foldable.traverse_ Monad.Except.throwError
+        acts
+
+    transit instr config =
+        Strategy.transitionRule modifiedTransitionRule instr config
+        & runTransitionT
+        & fmap (map fst)
+        & lift
+
     modifiedTransitionRule
         ::  Prim ReachabilityRule
         ->  CommonProofState

@@ -21,6 +21,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , rulePattern
@@ -48,9 +49,9 @@ import Test.Kore.Step.Simplification
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule Variable
+    -> RewriteRule RewritingVariable
 simpleRewrite left right =
-    RewriteRule $ rulePattern left right
+    mkRewritingRule $ RewriteRule $ rulePattern left right
 
 runVerificationToPattern
     :: Limit Natural
