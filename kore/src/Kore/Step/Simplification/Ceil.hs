@@ -188,9 +188,10 @@ makeEvaluateTerm sideCondition ceilChild =
         [ newPredicateCeilSimplifier
         , newDefinedCeilSimplifier
         , newApplicationCeilSimplifier
+        , newBuiltinCeilSimplifier
         , newInjCeilSimplifier
         , newAxiomCeilSimplifier
-        , newBuiltinCeilSimplifier
+        , newConcatMapCeilSimplifier
         ]
 
 ceilSimplifierTermLike
@@ -267,6 +268,18 @@ newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
             makeEvaluateBuiltin sideCondition builtin
         _ -> empty
 
+newConcatMapCeilSimplifier
+    :: MonadReader (SideCondition variable) simplifier
+    => MonadSimplify simplifier
+    => InternalVariable variable
+    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newConcatMapCeilSimplifier = CeilSimplifier $ \input ->
+    case ceilChild input of
+        Builtin_ builtin -> do
+            sideCondition <- Reader.ask
+            makeEvaluateConcatMap sideCondition builtin
+        _ -> empty
+
 newAxiomCeilSimplifier
     :: MonadReader (SideCondition variable) simplifier
     => MonadSimplify simplifier
@@ -292,16 +305,14 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             ++ "and programming errors."
             )
 
-{-| Evaluates the ceil of a domain value.
--}
-makeEvaluateBuiltin
+makeEvaluateConcatMap
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Builtin (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
-makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
+makeEvaluateConcatMap sideCondition (Domain.BuiltinMap internalAc) =
     runCeilSimplifierWith
         (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
         sideCondition
@@ -312,6 +323,28 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinMap internalAc) =
             }
   where
     Domain.InternalAc { builtinAcSort } = internalAc
+makeEvaluateConcatMap _ _ = empty
+
+{-| Evaluates the ceil of a domain value.
+-}
+makeEvaluateBuiltin
+    :: forall variable simplifier
+    .  InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> Builtin (TermLike variable)
+    -> MaybeT simplifier (OrCondition variable)
+makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
+--     runCeilSimplifierWith
+--         (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
+--         sideCondition
+--         Ceil
+--             { ceilResultSort = Sort.predicateSort
+--             , ceilOperandSort = builtinAcSort
+--             , ceilChild = internalAc
+--             }
+--  where
+--    Domain.InternalAc { builtinAcSort } = internalAc
 makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
     runCeilSimplifierWith
         (AssocComm.newSetCeilSimplifier ceilSimplifierTermLike)

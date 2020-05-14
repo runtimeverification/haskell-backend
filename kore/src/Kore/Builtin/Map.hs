@@ -668,6 +668,7 @@ unifyNotInKeys
                 (\term -> TermLike.mkApplySymbol symbol [keyTerm, term])
                 <$> opaqueElements
 
+        Monad.guard . not . null $ mapKeys
         -- Concrete keys are constructor-like, therefore they are defined
         TermLike.assertConstructorLikeKeys concreteKeys $ return ()
         definedKeys <- traverse defineTerm symbolicKeys
