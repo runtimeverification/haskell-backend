@@ -13,7 +13,7 @@ RUN    apt update                                                               
            pkg-config python3 python-pygments python-recommonmark python-sphinx  \
            time zlib1g-dev
 
-RUN    git clone 'https://github.com/z3prover/z3' --branch=z3-4.8.8 \
+RUN    git clone 'https://github.com/z3prover/z3' --branch=z3-4.6.0 \
     && cd z3                                                        \
     && python scripts/mk_make.py                                    \
     && cd build                                                     \
