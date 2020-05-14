@@ -40,6 +40,10 @@ import Kore.Internal.Substitution
 import Kore.Internal.TermLike
     ( TermLike
     )
+
+import Kore.Log.DebugSubstitutionSimplifier
+    ( debugSubstitutionSimplifier
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -82,6 +86,7 @@ substitutionSimplifier notSimplifier =
         let condition' = Condition.fromPredicate predicate <> condition
             conditions = OrCondition.fromCondition condition'
         TopBottom.guardAgainstBottom conditions
+        debugSubstitutionSimplifierResult conditions
         return conditions
       where
         worker
