@@ -105,11 +105,12 @@ withLogger
     -> IO a
 withLogger koreLogOptions = runContT $ do
     mainLogger <- ContT $ withMainLogger koreLogOptions
+    mainReport <- ContT $ withMainReport koreLogOptions
     let KoreLogOptions { debugSolverOptions } = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
     let KoreLogOptions { logSQLiteOptions } = koreLogOptions
     logSQLite <- ContT $ withLogSQLite logSQLiteOptions
-    return $ mainLogger <> smtSolverLogger <> logSQLite
+    return $ mainLogger <> mainReport <> smtSolverLogger <> logSQLite
 
 withMainLogger
     :: KoreLogOptions
@@ -118,7 +119,7 @@ withMainLogger
 withMainLogger
     koreLogOptions@KoreLogOptions { logType, timestampsSwitch, exeName }
     continue
-  = do
+  =
     case logType of
         LogStdErr -> continue
             $ koreLogTransformer koreLogOptions
@@ -130,6 +131,15 @@ withMainLogger
             . koreLogTransformer koreLogOptions
             . koreLogFilters koreLogOptions
             . makeKoreLogger exeName timestampsSwitch
+
+withMainReport
+    :: KoreLogOptions
+    -> (LogAction IO ActualEntry -> IO a)
+    -> IO a
+withMainReport
+    koreLogOptions@KoreLogOptions { timestampsSwitch, exeName }
+    continue
+  =
     Colog.withLogTextFile "./report/LoggedErrors.txt"
         $ continue
         . koreLogTransformer koreLogOptions { logLevel = Error}
