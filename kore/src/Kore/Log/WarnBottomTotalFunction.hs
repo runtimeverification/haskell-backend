@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 -}
@@ -11,13 +11,6 @@ module Kore.Log.WarnBottomTotalFunction
 
 import Prelude.Kore
 
---import Data.Text
---    ( Text
---    )
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
@@ -28,6 +21,11 @@ import Kore.Step.Simplification.Simplify
 import Kore.Unparser
     ( unparse
     )
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
+
 import Log
 import qualified SQL
 
@@ -51,7 +49,7 @@ instance Pretty WarnBottomTotalFunction where
 
 instance Entry WarnBottomTotalFunction where
     entrySeverity _ = Warning
-    helpDoc _ = "warn when a total function returns undefined"
+    helpDoc _ = "warn when a total function is undefined"
 
 instance SQL.Table WarnBottomTotalFunction
 
