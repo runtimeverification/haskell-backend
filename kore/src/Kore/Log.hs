@@ -15,12 +15,15 @@ module Kore.Log
     , Colog.logTextStderr
     , Colog.logTextHandle
     , runKoreLog
+    , createTarGz
     , module Log
     , module KoreLogOptions
     ) where
 
 import Prelude.Kore
 
+import qualified Codec.Archive.Tar as Tar
+import qualified Codec.Compression.GZip as GZip
 import Colog
     ( LogAction (..)
     )
@@ -50,6 +53,7 @@ import Control.Monad.Cont
     ( ContT (..)
     , runContT
     )
+import qualified Data.ByteString.Lazy as BS
 import Data.Foldable
     ( toList
     )
@@ -114,7 +118,7 @@ withMainLogger
 withMainLogger
     koreLogOptions@KoreLogOptions { logType, timestampsSwitch, exeName }
     continue
-  =
+  = do
     case logType of
         LogStdErr -> continue
             $ koreLogTransformer koreLogOptions
@@ -126,6 +130,11 @@ withMainLogger
             . koreLogTransformer koreLogOptions
             . koreLogFilters koreLogOptions
             . makeKoreLogger exeName timestampsSwitch
+    Colog.withLogTextFile "./report/LoggedErrors.txt"
+        $ continue
+        . koreLogTransformer koreLogOptions { logLevel = Error}
+        . koreLogFilters koreLogOptions { logLevel = Error}
+        . makeKoreLogger exeName timestampsSwitch
 
 withSmtSolverLogger
     :: DebugSolverOptions -> (LogAction IO ActualEntry -> IO a) -> IO a
@@ -319,3 +328,11 @@ swappableLogger mvar =
     acquire = liftIO $ takeMVar mvar
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
+
+createTarGz
+    :: FilePath   -- ^ Path of the \".tar.gz\" file to write.
+    -> FilePath   -- ^ Base directory
+    -> [FilePath] -- ^ Files and directories to archive, relative to base dir
+    -> IO ()
+createTarGz tar base dir =
+    BS.writeFile tar . GZip.compress . Tar.write =<< Tar.pack base dir

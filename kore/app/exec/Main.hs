@@ -5,6 +5,7 @@ import Prelude.Kore
 import Control.Monad.Catch
     ( MonadCatch
     , SomeException
+    , displayException
     , handle
     , throwM
     )
@@ -61,7 +62,10 @@ import Options.Applicative
     )
 import qualified Options.Applicative as Options
 import System.Directory
-    ( doesFileExist
+    ( copyFile
+    , createDirectory
+    , doesFileExist
+    , removePathForcibly
     )
 import System.Exit
     ( ExitCode (..)
@@ -106,6 +110,7 @@ import Kore.Log
     , KoreLogOptions (..)
     , LogMessage
     , WithLog
+    , createTarGz
     , parseKoreLogOptions
     , runKoreLog
     )
@@ -451,18 +456,30 @@ showKoreExecOptions
         , "rtsStatistics = " <> show rtsStatistics
         ]
 
+writeOptionsAndKoreFiles :: KoreExecOptions -> IO ()
+writeOptionsAndKoreFiles
+    opts@KoreExecOptions { definitionFileName , patternFileName, outputFileName}
+  = do
+    writeFile "./report/KoreExecOptions.txt" . showKoreExecOptions $ opts
+    copyFile definitionFileName "./report/definitionFile.kore"
+    Foldable.forM_ patternFileName
+        $ flip copyFile "./report/patternFile.kore"
+    Foldable.forM_ outputFileName
+        $ flip copyFile "./report/outputFile.kore"
+
+createEmptyReportDirectory :: IO ()
+createEmptyReportDirectory = do
+    removePathForcibly "./report"
+    createDirectory "./report"
+
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
+    createEmptyReportDirectory
     options <-
         mainGlobal (ExeName "kore-exec") parseKoreExecOptions parserInfoModifiers
     let maybeKoreLogOptions = localOptions options
-    Foldable.forM_
-        maybeKoreLogOptions
-        ( when . toReport . bugReport
-            <*> writeFile "KoreExecOptions" . showKoreExecOptions
-        )
     Foldable.forM_ maybeKoreLogOptions mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
@@ -475,6 +492,9 @@ mainWithOptions execOptions = do
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
+    when . toReport . bugReport <*> writeOptionsAndKoreFiles $ execOptions
+    createTarGz "./report.tar.gz" "." ["report"]
+    removePathForcibly "./report"
     exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
@@ -484,6 +504,7 @@ mainWithOptions execOptions = do
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do
         errorException someException
+        lift $ writeFile "./report/Errors.txt" (displayException someException)
         return $ ExitFailure 1
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
