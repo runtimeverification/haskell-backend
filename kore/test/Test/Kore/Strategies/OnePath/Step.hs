@@ -29,6 +29,7 @@ import Data.Limit
     ( Limit (..)
     )
 import qualified Data.Limit as Limit
+import Kore.Rewriting.RewritingVariable
 
 import Kore.IndexedModule.IndexedModule
     ( indexedModuleWithDefaultImports
@@ -783,7 +784,7 @@ simpleRewrite
     -> TermLike Variable
     -> Rule OnePathRule
 simpleRewrite left right =
-    OnePathRewriteRule
+    OnePathRewriteRule . mkRewritingRule
     $ RewriteRule RulePattern
         { left = left
         , antiLeft = Nothing
@@ -805,7 +806,7 @@ rewriteWithPredicate
     -> Predicate Variable
     -> Rule OnePathRule
 rewriteWithPredicate left right predicate =
-    OnePathRewriteRule
+    OnePathRewriteRule . mkRewritingRule
     $ RewriteRule RulePattern
         { left = left
         , antiLeft = Nothing

@@ -181,8 +181,8 @@ import Kore.Repl.State
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
+    , ToRulePattern (..)
     )
-import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -466,8 +466,10 @@ proveSteps n = do
         (done, res) ->
             putStrLn' $ showStepStoppedMessage (n - done - 1) res
 
--- | Executes 'n' prove steps, distributing over branches. It will perform less
--- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+{- | Executes 'n' prove steps, distributing over branches. It will perform less
+than 'n' steps if the proof is stuck or completed in less than 'n' steps.
+-}
+
 proveStepsF
     :: MonadSimplify m
     => MonadIO m
@@ -477,6 +479,11 @@ proveStepsF
 proveStepsF n = do
     node   <- Lens.use (field @"node")
     recursiveForcedStep n node
+    graph <- getInnerGraph
+    let targetNode = getInterestingBranchingNode n graph node
+    case targetNode of
+        Nothing -> putStrLn' "Proof completed on all branches."
+        Just someNode -> selectNode someNode
 
 -- | Loads a script from a file.
 loadScript
@@ -623,13 +630,10 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex . toRulePattern $ rule
+            let ruleIndex = from @_ @Attribute.RuleIndex rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
-  where
-    getRuleIndex :: RulePattern Variable -> Attribute.RuleIndex
-    getRuleIndex = Attribute.identifier . Rule.attributes
 
 -- | Shows the previous branching point.
 showPrecBranch

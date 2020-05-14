@@ -71,7 +71,7 @@ $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	$(DIFF) $@.golden $@ || $(FAILED)
 
 %.verify.out: $(DEF_KORE_DEFAULT)
-	$(KORE_PARSER) $(DEF_KORE_DEFAULT) --verify >/dev/null 2>$@ || /bin/true
+	$(KORE_PARSER) $(DEF_KORE_DEFAULT) --verify >/dev/null 2>$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### SEARCH

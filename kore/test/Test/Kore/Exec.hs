@@ -3,7 +3,7 @@ module Test.Kore.Exec
     , test_execPriority
     , test_search
     , test_searchPriority
-    , test_searchExeedingBreadthLimit
+    , test_searchExceedingBreadthLimit
     , test_execGetExitCode
     ) where
 
@@ -18,10 +18,7 @@ import Control.Exception as Exception
 import Data.Default
     ( def
     )
-import Data.Limit
-    ( Limit (..)
-    )
-import qualified Data.Limit as Limit
+import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -34,6 +31,10 @@ import System.Exit
     ( ExitCode (..)
     )
 
+import Data.Limit
+    ( Limit (..)
+    )
+import qualified Data.Limit as Limit
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
@@ -273,23 +274,24 @@ test_search =
                 PLUS -> Set.fromList [b, c, d]
                 FINAL -> Set.fromList [b, d]
 
-test_searchExeedingBreadthLimit :: [TestTree]
-test_searchExeedingBreadthLimit =
+test_searchExceedingBreadthLimit :: [TestTree]
+test_searchExceedingBreadthLimit =
     [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
     unlimited :: Limit Integer
     unlimited = Unlimited
     makeTestCase searchType =
         testCase
-            ("Exceed bredth limit: " <> show searchType)
+            ("Exceed breadth limit: " <> show searchType)
             (assertion searchType)
 
     assertion searchType =
-        shouldExeedBreadthLimit searchType `catch`
-            \(_ :: LimitExceeded (Strategy (Prim Rewrite))) -> pure ()
+        catch (shouldExceedBreadthLimit searchType)
+        $ \(_ :: LimitExceeded ([Strategy (Prim Rewrite)], Graph.Node)) ->
+            pure ()
 
-    shouldExeedBreadthLimit :: SearchType -> IO ()
-    shouldExeedBreadthLimit searchType = do
+    shouldExceedBreadthLimit :: SearchType -> IO ()
+    shouldExceedBreadthLimit searchType = do
         a <- actual searchType
         when (a == expected searchType)
             $ assertFailure "Did not exceed breadth limit"
