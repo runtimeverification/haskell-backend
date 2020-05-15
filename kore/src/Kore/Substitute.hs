@@ -67,8 +67,7 @@ substitute =
     substituteWorker . Map.map Left
   where
     extractFreeVariables :: patternType -> Set (UnifiedVariable variable)
-    extractFreeVariables =
-        FreeVariables.getFreeVariables . freeVariables
+    extractFreeVariables = FreeVariables.toSet . freeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming

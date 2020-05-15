@@ -183,7 +183,7 @@ test_renameRuleVariables =
             actualFreeVariables = freeVariables actual
         assertEqual "Expected no common free variables"
             Set.empty
-            $ on Set.intersection FreeVariables.getFreeVariables
+            $ on Set.intersection FreeVariables.toSet
                 initialFreeVariables
                 actualFreeVariables
 
