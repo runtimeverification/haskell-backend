@@ -54,6 +54,7 @@ instance Pretty ErrorRewriteLoop where
             , Pretty.pretty
                 . sourceLocation . attributes . getRewriteRule $ rule
             , "Execution would not terminate when the rule applies."
+            , "Aborting execution."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
 

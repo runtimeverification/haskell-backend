@@ -77,7 +77,7 @@ data ErrorRewritesInstantiation =
         , configuration :: !(Pattern RewritingVariable)
         , errorCallStack :: !CallStack
         }
-    deriving (GHC.Generic, Show)
+    deriving (Show, GHC.Generic)
 
 data SubstitutionCoverageError =
     SubstitutionCoverageError
@@ -112,6 +112,7 @@ instance Pretty ErrorRewritesInstantiation where
             , Pretty.indent 2
                 "The unification error above prevented instantiation of \
                 \a semantic rule, so execution cannot continue."
+            , "Aborting execution."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
     pretty
@@ -132,6 +133,7 @@ instance Pretty ErrorRewritesInstantiation where
                 (unparse <$> Set.toAscList missingVariables)
             , "The unification solution was:"
             , unparse $ fmap rewriteRuleToTerm solution
+            , "Error! Please report this."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
       where
