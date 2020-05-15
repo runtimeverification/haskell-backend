@@ -146,7 +146,6 @@ withMainReport
     koreLogOptions@KoreLogOptions { timestampsSwitch, exeName }
     continue
   = do
-    --traceM "Here"
     createDirectoryIfMissing False "./report"
     Colog.withLogTextFile "./report/LoggedErrors.txt"
         $ continue

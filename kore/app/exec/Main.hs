@@ -65,8 +65,8 @@ import System.Directory
     ( copyFile
     , createDirectoryIfMissing
     , doesFileExist
-    , removePathForcibly
     , listDirectory
+    , removePathForcibly
     )
 import System.Exit
     ( ExitCode (..)
@@ -502,7 +502,6 @@ mainWithOptions execOptions = do
 
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do
-        --traceM "Here2"
         lift $ createDirectoryIfMissing False "./report"
         errorException someException
         lift $ writeFile "./report/Errors.txt" (displayException someException)
