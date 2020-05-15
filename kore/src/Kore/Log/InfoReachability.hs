@@ -22,6 +22,7 @@ data InfoReachability
     | InfoRemoveDestination !ReachabilityRule
     | InfoDeriveSeq ![Rule ReachabilityRule] !ReachabilityRule
     | InfoDerivePar ![Rule ReachabilityRule] !ReachabilityRule
+    deriving (Show)
 
 prettyInfoReachabilityGoal
     :: Pretty.Pretty goal
