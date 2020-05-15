@@ -104,6 +104,7 @@ import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
     , LogMessage
+    , SomeEntry (..)
     , WithLog
     , logEntry
     , parseKoreLogOptions
@@ -111,12 +112,6 @@ import Kore.Log
     )
 import Kore.Log.ErrorException
     ( errorException
-    )
-import Kore.Log.ErrorRewriteLoop
-    ( ErrorRewriteLoop
-    )
-import Kore.Log.ErrorRewritesInstantiation
-    ( ErrorRewritesInstantiation
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
@@ -413,8 +408,7 @@ mainWithOptions execOptions = do
     exitCode <-
         runKoreLog koreLogOptions
         $ handle handleSomeException
-        $ handle handleErrorRewriteLoop
-        $ handle handleErrorRewritesInstantiation
+        $ handle handleSomeEntry
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
@@ -428,12 +422,6 @@ mainWithOptions execOptions = do
     handleSomeEntry
         :: SomeEntry -> Main ExitCode
     handleSomeEntry (SomeEntry entry) = do
-        logEntry entry
-        return $ ExitFailure 1
-
-    handleErrorRewritesInstantiation
-        :: ErrorRewritesInstantiation -> Main ExitCode
-    handleErrorRewritesInstantiation entry = do
         logEntry entry
         return $ ExitFailure 1
 
