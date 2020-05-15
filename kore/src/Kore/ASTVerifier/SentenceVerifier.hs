@@ -39,7 +39,6 @@ import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
-    , isSubsetOf
     )
 import qualified Data.Set as Set
 import Data.Text
@@ -62,9 +61,9 @@ import Kore.Attribute.Parser
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    , getFreeVariables
+    ( FreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
     ( Sort
@@ -96,6 +95,9 @@ import Kore.Step.RulePattern
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
     ( Variable (..)
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
     )
 import qualified Kore.Verified as Verified
 
@@ -416,6 +418,7 @@ verifyClaimSentence sentence =
             Right (AllPathClaimPattern (AllPathRule rulePattern))
               | rejectRulePattern rulePattern -> True
             _ -> False
+    rejectRulePattern :: RulePattern Variable -> Bool
     rejectRulePattern
         RulePattern
             { left
@@ -424,12 +427,12 @@ verifyClaimSentence sentence =
             , rhs
             }
       =
-        not $ isSubsetOf (getFreeVariables $ freeVariables rhs) freeVariablesLhs
+        not $ Set.isSubsetOf rightVars leftVars
           where
+            rightVars, leftVars :: Set (UnifiedVariable Variable)
+            rightVars = freeVariables rhs & FreeVariables.toSet
             lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
-            freeVariablesLhs
-                = getFreeVariables
-                    (foldMap freeVariables lhs :: FreeVariables Variable)
+            leftVars = foldMap freeVariables lhs & FreeVariables.toSet
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project

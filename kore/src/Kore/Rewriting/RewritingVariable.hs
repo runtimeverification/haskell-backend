@@ -32,8 +32,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
+    ( FreeVariables
     , HasFreeVariables (..)
     )
 import Kore.Internal.Conditional
@@ -183,7 +184,7 @@ getPattern pattern' =
     getPatternAux pattern'
     & assert (all isUnifiedConfigVariable freeVars)
   where
-    FreeVariables freeVars = freeVariables pattern'
+    freeVars = freeVariables pattern' & FreeVariables.toList
 
 getPatternAux
     :: Pattern RewritingVariable
@@ -224,13 +225,14 @@ getResultPattern initial config@Conditional { substitution } =
             substitution
     filtered = config { Pattern.substitution = substitution' }
     avoiding =
-        Set.map (from @_ @(UnifiedVariable Variable))
-        $ getFreeVariables initial
+        initial
+        & FreeVariables.toSet
+        & Set.map (from @_ @(UnifiedVariable Variable))
     introduced =
         Set.fromAscList
         . mapMaybe getUnifiedRuleVariable
         . Set.toAscList
-        . getFreeVariables
+        . FreeVariables.toSet
         $ freeVariables filtered
     renaming =
         Map.mapKeys mkUnifiedRuleVariable
@@ -278,7 +280,7 @@ getRemainderPredicate predicate =
         predicate
     & assert (all isUnifiedConfigVariable freeVars)
   where
-    FreeVariables freeVars = freeVariables predicate
+    freeVars = freeVariables predicate & FreeVariables.toList
 
 getRemainderPattern
     :: HasCallStack

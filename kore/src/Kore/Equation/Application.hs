@@ -38,6 +38,9 @@ import Data.List.NonEmpty
     ( NonEmpty (..)
     )
 import qualified Data.Map.Strict as Map
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -231,10 +234,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
             & Equation.mapVariables Target.unTargetElement Target.unTargetSet
     return (equation', predicate')
   where
-    equationVariables =
-        freeVariables equation
-        & FreeVariables.getFreeVariables
-        & Set.toList
+    equationVariables = freeVariables equation & FreeVariables.toList
 
     errors = concatMap checkVariable equationVariables
 
@@ -262,12 +262,12 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
     Equation { attributes } = equation
     concretes =
         attributes
-        & Attribute.concrete & Attribute.unConcrete
-        & FreeVariables.getFreeVariables
+        & Attribute.concrete
+        & from @_ @(Set _)
     symbolics =
         attributes
-        & Attribute.symbolic & Attribute.unSymbolic
-        & FreeVariables.getFreeVariables
+        & Attribute.symbolic
+        & from @_ @(Set _)
 
 {- | Check that the requires from matching and the 'Equation' hold.
 

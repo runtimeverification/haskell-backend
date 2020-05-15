@@ -5,8 +5,9 @@ License     : NCSA
  -}
 
 module Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    , HasFreeVariables (..)
+    ( FreeVariables
+    , toList
+    , toSet
     , nullFreeVariables
     , freeVariable
     , isFreeVariable
@@ -14,6 +15,7 @@ module Kore.Attribute.Pattern.FreeVariables
     , mapFreeVariables
     , traverseFreeVariables
     , getFreeElementVariables
+    , HasFreeVariables (..)
     ) where
 
 import Prelude.Kore
@@ -58,6 +60,22 @@ instance Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
+
+instance From (FreeVariables variable) [UnifiedVariable variable] where
+    from = toList
+    {-# INLINE from #-}
+
+instance From (FreeVariables variable) (Set (UnifiedVariable variable)) where
+    from = toSet
+    {-# INLINE from #-}
+
+toList :: FreeVariables variable -> [UnifiedVariable variable]
+toList = Set.toList . getFreeVariables
+{-# INLINE toList #-}
+
+toSet :: FreeVariables variable -> Set (UnifiedVariable variable)
+toSet = getFreeVariables
+{-# INLINE toSet #-}
 
 nullFreeVariables :: FreeVariables variable -> Bool
 nullFreeVariables = Set.null . getFreeVariables
