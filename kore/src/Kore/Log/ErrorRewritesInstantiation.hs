@@ -12,6 +12,10 @@ module Kore.Log.ErrorRewritesInstantiation
 
 import Prelude.Kore
 
+import Control.Exception
+    ( Exception (..)
+    , throw
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Set
@@ -19,7 +23,14 @@ import Data.Set
     )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
+import GHC.Exception
+    ( prettyCallStackLines
+    )
 import qualified GHC.Generics as GHC
+import GHC.Stack
+    ( CallStack
+    , callStack
+    )
 
 import Kore.Attribute.Axiom
     ( Axiom (..)
@@ -64,18 +75,22 @@ data ErrorRewritesInstantiation =
     ErrorRewritesInstantiation
         { problem :: !(Either UnificationError SubstitutionCoverageError)
         , configuration :: !(Pattern RewritingVariable)
+        , errorCallStack :: !CallStack
         }
-    deriving (GHC.Generic)
+    deriving (GHC.Generic, Show)
 
 data SubstitutionCoverageError =
     SubstitutionCoverageError
         { solution :: !(UnifiedRule RewriteRule RewritingVariable)
         , missingVariables :: !(Set (UnifiedVariable RewritingVariable))
         }
+    deriving (Show)
 
 instance SOP.Generic ErrorRewritesInstantiation
 
 instance SOP.HasDatatypeInfo ErrorRewritesInstantiation
+
+instance Exception ErrorRewritesInstantiation
 
 instance Entry ErrorRewritesInstantiation where
     entrySeverity _ = Error
@@ -84,9 +99,12 @@ instance Entry ErrorRewritesInstantiation where
 instance Pretty ErrorRewritesInstantiation where
     pretty
         ErrorRewritesInstantiation
-            { problem = Left unificationError, configuration }
+            { problem = Left unificationError
+            , configuration
+            , errorCallStack
+            }
       =
-        Pretty.vsep
+        Pretty.vsep $
             [ "While rewriting the configuration:"
             , Pretty.indent 4 (unparse configuration)
             , Pretty.indent 2 "unification error:"
@@ -95,14 +113,16 @@ instance Pretty ErrorRewritesInstantiation where
                 "The unification error above prevented instantiation of \
                 \a semantic rule, so execution cannot continue."
             ]
+            <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
     pretty
         ErrorRewritesInstantiation
             { problem =
                 Right SubstitutionCoverageError { solution, missingVariables }
             , configuration
+            , errorCallStack
             }
       =
-        Pretty.vsep
+        Pretty.vsep $
             [ "While rewriting the configuration:"
             , Pretty.indent 4 (unparse configuration)
             , "Unable to instantiate semantic rule at "
@@ -113,21 +133,23 @@ instance Pretty ErrorRewritesInstantiation where
             , "The unification solution was:"
             , unparse $ fmap rewriteRuleToTerm solution
             ]
+            <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
       where
         location = sourceLocation . attributes . getRewriteRule . term $ solution
 
 errorRewritesInstantiation
     :: HasCallStack
-    => MonadLog log
     => InternalVariable variable
     => Pattern variable
     -> UnificationError
     -> log a
-errorRewritesInstantiation configuration' unificationError = do
-    logEntry
+errorRewritesInstantiation configuration' unificationError =
+    throw
         ErrorRewritesInstantiation
-        { problem = Left unificationError, configuration }
-    error "Aborting execution"
+        { problem = Left unificationError
+        , configuration
+        , errorCallStack = callStack
+        }
   where
     mapVariables = Pattern.mapVariables (fmap toVariable) (fmap toVariable)
     configuration = mkRewritingPattern $ mapVariables configuration'
@@ -151,6 +173,7 @@ the axiom variables from the substitution and unwrap all the 'Target's.
 checkSubstitutionCoverage
     :: forall monadLog
     .  MonadLog monadLog
+    => HasCallStack
     => Pattern RewritingVariable
     -- ^ Initial configuration
     -> UnifiedRule RewriteRule RewritingVariable
@@ -158,15 +181,17 @@ checkSubstitutionCoverage
     -> monadLog ()
 checkSubstitutionCoverage configuration solution
   | isCoveringSubstitution || isSymbolic = return ()
-  | otherwise = do
+  | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
     -- initial configuration. This is a fatal error because it indicates
     -- something has gone horribly wrong.
-    logEntry
+    throw
         ErrorRewritesInstantiation
-        { problem = Right substitutionCoverageError, configuration }
-    error "Error! Please report this."
+        { problem = Right substitutionCoverageError
+        , configuration
+        , errorCallStack = callStack
+        }
   where
     substitutionCoverageError =
         SubstitutionCoverageError { solution, missingVariables }
