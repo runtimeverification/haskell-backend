@@ -334,17 +334,6 @@ makeEvaluateBuiltin
     => SideCondition variable
     -> Builtin (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
-makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
---     runCeilSimplifierWith
---         (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
---         sideCondition
---         Ceil
---             { ceilResultSort = Sort.predicateSort
---             , ceilOperandSort = builtinAcSort
---             , ceilChild = internalAc
---             }
---  where
---    Domain.InternalAc { builtinAcSort } = internalAc
 makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
     runCeilSimplifierWith
         (AssocComm.newSetCeilSimplifier ceilSimplifierTermLike)
@@ -362,6 +351,7 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
         ceils :: [OrCondition variable]
         ceils = children
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
+makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
 makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top
 makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrCondition.top
 makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrCondition.top
