@@ -52,6 +52,7 @@ data DebugAppliedRewriteRules =
         { configuration :: Pattern Variable
         , appliedRewriteRules :: [UnifiedRule RewriteRule Variable]
         }
+    deriving (Show)
 
 instance Pretty DebugAppliedRewriteRules where
     pretty DebugAppliedRewriteRules { configuration, appliedRewriteRules } =
