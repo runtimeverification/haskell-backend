@@ -105,7 +105,10 @@ withLogger
     -> IO a
 withLogger koreLogOptions = runContT $ do
     mainLogger <- ContT $ withMainLogger koreLogOptions
-    mainReport <- ContT $ withMainReport koreLogOptions
+    mainReport <-
+        case exeName koreLogOptions of
+            ExeName "kore-exec" -> ContT $ withMainReport koreLogOptions
+            _ -> pure mempty
     let KoreLogOptions { debugSolverOptions } = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
     let KoreLogOptions { logSQLiteOptions } = koreLogOptions
