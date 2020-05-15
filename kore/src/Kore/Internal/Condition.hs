@@ -32,6 +32,7 @@ module Kore.Internal.Condition
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
+    , externalizeFreshVariables
     ) where
 
 import Prelude.Kore
@@ -213,3 +214,14 @@ coerceSort
         , predicate = Predicate.coerceSort sort predicate
         , substitution
         }
+
+externalizeFreshVariables 
+    :: (InternalVariable variable)
+    => Condition variable
+    -> Condition Variable
+externalizeFreshVariables Conditional {term = (), predicate, substitution} =
+    Conditional 
+        { term = ()
+        , predicate = Predicate.externalizeFreshVariables predicate
+        , substitution = Substitution.externalizeFreshVariables substitution
+        }   

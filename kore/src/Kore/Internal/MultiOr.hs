@@ -52,6 +52,7 @@ import Kore.Debug
 import Kore.TopBottom
     ( TopBottom (..)
     )
+import qualified SQL
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -113,6 +114,12 @@ instance (Ord child, TopBottom child) => From [child] (MultiOr child) where
 
 instance From (MultiOr child) [child] where
     from = getMultiOr
+
+instance InternalVariable variable => SQL.Column (MultiOr (Condition variable)) where
+    defineColumn tableName _ = 
+        SQL.defineColumn tableName (SQL.Proxy @(TermLike variable))
+    toColumn (MultiOr termLike) = SQL.toColumn termLike
+
 
 {-| 'OrBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiOr'.

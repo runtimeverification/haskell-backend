@@ -5,22 +5,19 @@ License     : NCSA
 -}
 module Kore.Log.DebugSubstitutionSimplifier
     ( DebugSubstitutionSimplifier (..)
-    , whileDebugSubstitutionSimplifier
-    , debugEvaluateConditionResult
+    --, whileDebugSubstitutionSimplifier
+    , debugSubstitutionSimplifierResult
     ) where
 
 import Prelude.Kore
 
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Internal.OrCondition
-    ( OrCondition (..)
+    ( OrCondition 
     )
-import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Step.Simplification.SubstitutionSimplifier
 import Kore.Internal.TermLike
 import Kore.Unparser
@@ -63,7 +60,7 @@ instance Entry DebugSubstitutionSimplifier where
     shortDoc _ = Just "while simplifying substitution"
     helpDoc _ = "log substitutions that we attempt to simplify"
 
---instance SQL.Table DebugSubstitutionSimplifier
+instance SQL.Table DebugSubstitutionSimplifier
 {-
 whileDebugSubstitutionSimplifier
     :: MonadLog log
@@ -80,4 +77,4 @@ debugSubstitutionSimplifierResult
     => InternalVariable variable 
     => OrCondition variable 
     -> log ()
-debugSubstitutionSimplifierResult = logEntry . SubstitutionSimplifierResult . fmap TermLike.externalizeFreshVariables
+debugSubstitutionSimplifierResult = logEntry . SubstitutionSimplifierResult . OrCondition.externalizeFreshVariables

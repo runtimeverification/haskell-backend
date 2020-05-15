@@ -42,7 +42,7 @@ import Kore.Internal.TermLike
     )
 
 import Kore.Log.DebugSubstitutionSimplifier
-    ( debugSubstitutionSimplifier
+    ( debugSubstitutionSimplifierResult
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
