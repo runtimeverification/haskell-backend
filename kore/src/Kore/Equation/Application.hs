@@ -358,7 +358,7 @@ data AttemptEquationError variable
     = WhileMatch !(MatchError (Target variable))
     | WhileApplyMatchResult !(ApplyMatchResultErrors (Target variable))
     | WhileCheckRequires !(CheckRequiresError variable)
-    deriving (Eq, Ord)
+    deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
 mapAttemptEquationErrorVariables
@@ -438,7 +438,7 @@ data MatchError variable =
     { matchTerm :: !(TermLike variable)
     , matchEquation :: !(Equation variable)
     }
-    deriving (Eq, Ord)
+    deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
 instance SOP.Generic (MatchError variable)
@@ -477,7 +477,7 @@ data ApplyMatchResultErrors variable =
     { matchResult :: !(MatchResult variable)
     , applyMatchErrors :: !(NonEmpty (ApplyMatchResultError variable))
     }
-    deriving (Eq, Ord)
+    deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
 instance SOP.Generic (ApplyMatchResultErrors variable)
@@ -545,7 +545,7 @@ data ApplyMatchResultError variable
     -- term was required.
     | NotMatched (UnifiedVariable variable)
     -- ^ The variable was not matched.
-    deriving (Eq, Ord)
+    deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
 instance SOP.Generic (ApplyMatchResultError variable)
@@ -605,7 +605,7 @@ data CheckRequiresError variable =
     { matchPredicate :: !(Predicate variable)
     , equationRequires :: !(Predicate variable)
     }
-    deriving (Eq, Ord)
+    deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
 instance SOP.Generic (CheckRequiresError variable)
@@ -651,6 +651,7 @@ data DebugAttemptEquation
         (Equation Variable)
         (AttemptEquationResult Variable)
     -- ^ Entered into the log when an equation is applicable.
+    deriving (Show)
     deriving (GHC.Generic)
 
 instance Pretty DebugAttemptEquation where
@@ -733,6 +734,7 @@ whileDebugAttemptEquation termLike equation =
 data DebugApplyEquation
     = DebugApplyEquation (Equation Variable) (Pattern Variable)
     -- ^ Entered into the log when an equation's result is actually used.
+    deriving (Show)
     deriving (GHC.Generic)
 
 instance Pretty DebugApplyEquation where

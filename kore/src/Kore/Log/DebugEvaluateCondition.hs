@@ -37,6 +37,7 @@ import qualified SQL
 data DebugEvaluateCondition
     = DebugEvaluateCondition (NonEmpty (Predicate Variable))
     | DebugEvaluateConditionResult Result
+    deriving (Show)
     deriving (GHC.Generic)
 
 instance SOP.Generic DebugEvaluateCondition
