@@ -71,8 +71,8 @@ import Kore.Log.InfoAttemptUnification
 import Kore.Log.InfoReachability
     ( InfoReachability
     )
-import Kore.Log.WarnBottomHook
-    ( WarnBottomHook
+import Kore.Log.WarnBottomTotalFunction
+    ( WarnBottomTotalFunction
     )
 import Kore.Log.WarnDecidePredicateUnknown
     ( WarnDecidePredicateUnknown
@@ -123,7 +123,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugSolverRecv
     , mk $ Proxy @DebugProofState
     , mk $ Proxy @DebugAppliedRewriteRules
-    , mk $ Proxy @WarnBottomHook
+    , mk $ Proxy @WarnBottomTotalFunction
     , mk $ Proxy @WarnDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
