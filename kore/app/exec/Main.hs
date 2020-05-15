@@ -65,7 +65,6 @@ import System.Directory
     ( copyFile
     , createDirectoryIfMissing
     , doesFileExist
-    , listDirectory
     , removePathForcibly
     )
 import System.Exit
@@ -475,8 +474,7 @@ main :: IO ()
 main = do
     options <-
         mainGlobal (ExeName "kore-exec") parseKoreExecOptions parserInfoModifiers
-    let maybeKoreLogOptions = localOptions options
-    Foldable.forM_ maybeKoreLogOptions mainWithOptions
+    Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
@@ -490,11 +488,9 @@ mainWithOptions execOptions = do
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     when . toReport . bugReport <*> writeOptionsAndKoreFiles $ execOptions
-    ls <- listDirectory "."
-    when ("report" `elem` ls) $ do --doesDirectoryExist
-        createTarGz "./report.tar.gz" "." ["report"]
-        removePathForcibly "./report"
-        exitWith exitCode
+    createTarGz "./report.tar.gz" "." ["report"]
+    removePathForcibly "./report"
+    exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
