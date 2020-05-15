@@ -425,9 +425,9 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
 
-    handleErrorRewriteLoop
-        :: ErrorRewriteLoop -> Main ExitCode
-    handleErrorRewriteLoop entry = do
+    handleSomeEntry
+        :: SomeEntry -> Main ExitCode
+    handleSomeEntry (SomeEntry entry) = do
         logEntry entry
         return $ ExitFailure 1
 

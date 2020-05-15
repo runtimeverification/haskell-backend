@@ -45,7 +45,9 @@ data ErrorRewriteLoop =
         }
     deriving (Show)
 
-instance Exception ErrorRewriteLoop
+instance Exception ErrorRewriteLoop where
+    toException = toException . SomeEntry
+    fromException exn = fromException exn >>= \(SomeEntry entry) -> pure entry
 
 instance Pretty ErrorRewriteLoop where
     pretty ErrorRewriteLoop { rule, errorCallStack } =
@@ -54,7 +56,6 @@ instance Pretty ErrorRewriteLoop where
             , Pretty.pretty
                 . sourceLocation . attributes . getRewriteRule $ rule
             , "Execution would not terminate when the rule applies."
-            , "Aborting execution."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
 
