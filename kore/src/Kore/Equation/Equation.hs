@@ -27,6 +27,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Set
+    ( Set
+    )
 import Data.Text
     ( Text
     )
@@ -214,12 +217,13 @@ mapVariables mapElemVar mapSetVar equation@(Equation _ _ _ _ _) =
     mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
 
 refreshVariables
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => FreeVariables variable
     -> Equation variable
     -> (Renaming variable, Equation variable)
 refreshVariables
-    (FreeVariables.getFreeVariables -> avoid)
+    (from @_ @(Set (UnifiedVariable _)) -> avoid)
     equation@(Equation _ _ _ _ _)
   =
     let rename = Fresh.refreshVariables avoid originalFreeVariables
@@ -249,8 +253,7 @@ refreshVariables
     in (rename, equation')
   where
     Equation { left, requires, right, ensures, attributes } = equation
-    originalFreeVariables =
-        FreeVariables.getFreeVariables $ freeVariables equation
+    originalFreeVariables = freeVariables equation & FreeVariables.toSet
 
 isSimplificationRule :: Equation variable -> Bool
 isSimplificationRule Equation { attributes } =

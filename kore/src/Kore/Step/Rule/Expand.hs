@@ -17,13 +17,16 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 import qualified Data.Map.Strict as Map
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 
 import qualified Debug
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (getFreeVariables)
-    , freeVariables
+    ( freeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors
     ( Constructor (Constructor)
     , ConstructorLike (ConstructorLikeConstructor)
@@ -97,13 +100,12 @@ instance ExpandSingleConstructors (RulePattern Variable) where
             let leftVariables :: [ElementVariable Variable]
                 leftVariables =
                     mapMaybe extractElementVariable
-                    $ Set.toList
-                    $ getFreeVariables
+                    $ FreeVariables.toList
                     $ freeVariables left
-                allUnifiedVariables :: Set.Set (UnifiedVariable Variable)
+                allUnifiedVariables :: Set (UnifiedVariable Variable)
                 allUnifiedVariables =
-                    getFreeVariables (freeVariables rule)
-                allElementVariables :: Set.Set (ElementVariable Variable)
+                    FreeVariables.toSet (freeVariables rule)
+                allElementVariables :: Set (ElementVariable Variable)
                 allElementVariables = Set.fromList
                     $ [ v | ElemVar v <- Set.toList allUnifiedVariables]
                         ++ existentials
