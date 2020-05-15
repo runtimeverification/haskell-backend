@@ -63,9 +63,10 @@ import Options.Applicative
 import qualified Options.Applicative as Options
 import System.Directory
     ( copyFile
-    , createDirectory
+    , createDirectoryIfMissing
     , doesFileExist
     , removePathForcibly
+    , listDirectory
     )
 import System.Exit
     ( ExitCode (..)
@@ -460,6 +461,7 @@ writeOptionsAndKoreFiles :: KoreExecOptions -> IO ()
 writeOptionsAndKoreFiles
     opts@KoreExecOptions { definitionFileName , patternFileName, outputFileName}
   = do
+    createDirectoryIfMissing False "./report"
     writeFile "./report/KoreExecOptions.txt" . showKoreExecOptions $ opts
     copyFile definitionFileName "./report/definitionFile.kore"
     Foldable.forM_ patternFileName
@@ -467,16 +469,11 @@ writeOptionsAndKoreFiles
     Foldable.forM_ outputFileName
         $ flip copyFile "./report/outputFile.kore"
 
-createEmptyReportDirectory :: IO ()
-createEmptyReportDirectory = do
-    removePathForcibly "./report"
-    createDirectory "./report"
-
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    createEmptyReportDirectory
+    removePathForcibly "./report.tar.gz"
     options <-
         mainGlobal (ExeName "kore-exec") parseKoreExecOptions parserInfoModifiers
     let maybeKoreLogOptions = localOptions options
@@ -493,9 +490,11 @@ mainWithOptions execOptions = do
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     when . toReport . bugReport <*> writeOptionsAndKoreFiles $ execOptions
-    createTarGz "./report.tar.gz" "." ["report"]
-    removePathForcibly "./report"
-    exitWith exitCode
+    ls <- listDirectory "."
+    when ("report" `elem` ls) $ do --doesDirectoryExist
+        createTarGz "./report.tar.gz" "." ["report"]
+        removePathForcibly "./report"
+        exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
@@ -503,6 +502,8 @@ mainWithOptions execOptions = do
 
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do
+        --traceM "Here2"
+        lift $ createDirectoryIfMissing False "./report"
         errorException someException
         lift $ writeFile "./report/Errors.txt" (displayException someException)
         return $ ExitFailure 1

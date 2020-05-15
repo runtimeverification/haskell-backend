@@ -80,6 +80,9 @@ import Data.Time.LocalTime
     , utcToLocalTime
     )
 import qualified Pretty
+import System.Directory
+    ( createDirectoryIfMissing
+    )
 
 import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
@@ -142,7 +145,9 @@ withMainReport
 withMainReport
     koreLogOptions@KoreLogOptions { timestampsSwitch, exeName }
     continue
-  =
+  = do
+    --traceM "Here"
+    createDirectoryIfMissing False "./report"
     Colog.withLogTextFile "./report/LoggedErrors.txt"
         $ continue
         . koreLogTransformer koreLogOptions { logLevel = Error}
