@@ -473,7 +473,6 @@ writeOptionsAndKoreFiles
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    removePathForcibly "./report.tar.gz"
     options <-
         mainGlobal (ExeName "kore-exec") parseKoreExecOptions parserInfoModifiers
     let maybeKoreLogOptions = localOptions options
@@ -482,6 +481,7 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
+    removePathForcibly "./report"
     exitCode <-
         runKoreLog koreLogOptions
         $ handle handleSomeException
