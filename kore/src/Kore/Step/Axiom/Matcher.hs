@@ -59,10 +59,10 @@ import Data.These
     )
 import qualified GHC.Generics as GHC
 
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin

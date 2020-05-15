@@ -27,10 +27,10 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Domain.Builtin
     ( AcWrapper

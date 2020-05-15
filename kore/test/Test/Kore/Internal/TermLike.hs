@@ -36,6 +36,7 @@ import Kore.Domain.Builtin
     ( Builtin (..)
     , InternalInt (..)
     )
+import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshVariable
@@ -43,7 +44,6 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import Kore.Internal.ApplicationSorts
 
 import Test.Kore hiding
     ( symbolGen

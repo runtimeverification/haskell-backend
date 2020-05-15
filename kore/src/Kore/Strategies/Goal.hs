@@ -71,10 +71,10 @@ import qualified Data.Stream.Infinite as Stream
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)

@@ -26,8 +26,10 @@ import Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Maybe as Maybe
 
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Attribute.Pattern.FreeVariables ( FreeVariables)
 import Kore.Internal.Variable
 import Kore.Variables.UnifiedVariable
 

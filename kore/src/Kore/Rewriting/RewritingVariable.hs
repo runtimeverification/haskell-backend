@@ -32,11 +32,11 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , HasFreeVariables (..)
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )

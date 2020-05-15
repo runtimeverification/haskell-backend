@@ -26,13 +26,13 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , freeVariable
     , isFreeVariable
     , mapFreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Error
 import Kore.Syntax.ElementVariable

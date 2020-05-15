@@ -23,10 +23,10 @@ import Data.Set
 import qualified Data.Set as Set
 
 import qualified Debug
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors
     ( Constructor (Constructor)
     , ConstructorLike (ConstructorLikeConstructor)
