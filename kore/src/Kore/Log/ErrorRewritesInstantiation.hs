@@ -90,7 +90,10 @@ instance SOP.Generic ErrorRewritesInstantiation
 
 instance SOP.HasDatatypeInfo ErrorRewritesInstantiation
 
-instance Exception ErrorRewritesInstantiation
+instance Exception ErrorRewritesInstantiation where
+    toException = toException . SomeEntry
+    fromException exn =
+        fromException exn >>= \entry -> fromEntry entry
 
 instance Entry ErrorRewritesInstantiation where
     entrySeverity _ = Error
@@ -112,7 +115,6 @@ instance Pretty ErrorRewritesInstantiation where
             , Pretty.indent 2
                 "The unification error above prevented instantiation of \
                 \a semantic rule, so execution cannot continue."
-            , "Aborting execution."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
     pretty

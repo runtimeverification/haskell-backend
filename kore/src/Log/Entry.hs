@@ -21,6 +21,9 @@ import Prelude.Kore
 import Colog
     ( Severity (..)
     )
+import Control.Exception
+    ( Exception (..)
+    )
 import qualified Control.Lens as Lens
 import Control.Lens.Prism
     ( Prism
@@ -45,7 +48,7 @@ import qualified Data.Typeable
     )
 import qualified Type.Reflection as Reflection
 
-class Typeable entry => Entry entry where
+class (Show entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry
     toEntry = SomeEntry
 
@@ -66,6 +69,10 @@ class Typeable entry => Entry entry where
 
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
+
+instance Show SomeEntry where
+    show (SomeEntry entry) = show entry
+instance Exception SomeEntry
 
 instance Entry SomeEntry where
     toEntry = id

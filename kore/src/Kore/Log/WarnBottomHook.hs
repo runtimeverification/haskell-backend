@@ -36,6 +36,7 @@ data WarnBottomHook =
         { hook :: !Text
         , term :: !(TermLike Variable)
         }
+    deriving (Show)
     deriving (GHC.Generic)
 
 instance SOP.Generic WarnBottomHook

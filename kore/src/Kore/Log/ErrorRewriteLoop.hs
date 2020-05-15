@@ -40,14 +40,15 @@ import Log
 
 data ErrorRewriteLoop =
     ErrorRewriteLoop
-        { rule :: RewriteRule Variable
-        , errorCallStack :: CallStack
+        { rule :: !(RewriteRule Variable)
+        , errorCallStack :: !CallStack
         }
     deriving (Show)
 
 instance Exception ErrorRewriteLoop where
     toException = toException . SomeEntry
-    fromException exn = fromException exn >>= \(SomeEntry entry) -> pure entry
+    fromException exn =
+        fromException exn >>= \entry -> fromEntry entry
 
 instance Pretty ErrorRewriteLoop where
     pretty ErrorRewriteLoop { rule, errorCallStack } =
