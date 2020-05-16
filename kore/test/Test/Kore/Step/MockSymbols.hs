@@ -1502,11 +1502,10 @@ smtUnresolvedDeclarations = SMT.Declarations
     }
 
 sortConstructors :: Map.Map Id Attribute.Constructors
-sortConstructors = Map.fromList
-    [
+sortConstructors =
     -- TODO(virgil): testSort has constructors, it should have a
     -- constructor-based definition. The same for others.
-    ]
+    Map.empty
 
 testSortId :: Id
 testSortId = testId "testSort"

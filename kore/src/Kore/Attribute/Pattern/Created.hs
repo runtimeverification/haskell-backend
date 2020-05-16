@@ -71,4 +71,4 @@ instance Functor pat => Synthetic Created pat where
 
 getCallStackHead :: Created -> Maybe (String, SrcLoc)
 getCallStackHead Created { getCreated } =
-    GHC.getCallStack <$> getCreated >>= headMay
+    getCreated >>= headMay . GHC.getCallStack

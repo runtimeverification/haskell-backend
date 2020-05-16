@@ -912,7 +912,7 @@ clear
     -> m ()
 clear =
     \case
-        Nothing -> Just <$> Lens.use (field @"node") >>= clear
+        Nothing -> Lens.use (field @"node") >>= clear . Just
         Just node
           | unReplNode node == 0 -> putStrLn' "Cannot clear initial node (0)."
           | otherwise -> clear0 node

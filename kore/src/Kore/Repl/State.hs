@@ -452,7 +452,7 @@ getRuleFor
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
-    pure $ fmap unReplNode targetNode >>= getRewriteRule . Graph.inn graph'
+    pure $ targetNode >>= getRewriteRule . Graph.inn graph' . unReplNode
   where
     getRewriteRule
         :: [(a, b, Seq axiom)]
@@ -607,9 +607,9 @@ addOrUpdateAlias alias@AliasDefinition { name, command } = do
     field @"aliases" Lens.%= Map.insert name alias
   where
     checkNameIsNotUsed :: m ()
-    checkNameIsNotUsed =
-        not . Set.member name <$> existingCommands
-            >>= falseToError NameAlreadyDefined
+    checkNameIsNotUsed = do
+        commands <- existingCommands
+        falseToError NameAlreadyDefined $ not $ Set.member name commands
 
     checkCommandExists :: m ()
     checkCommandExists = do

@@ -15,6 +15,9 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
+import Control.Category
+    ( (>>>)
+    )
 import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
@@ -93,23 +96,25 @@ definitionEvaluation equations =
                 >>= return . Bifunctor.second apply
               where
                 apply = Equation.applyEquation condition equation
-        fmap partitionEithers (traverse attemptEquation equations') >>= \case
-            (_, applied : _) -> do
-                results <- applied
-                (return . Applied) AttemptedAxiomResults
-                    { results
-                    , remainders = OrPattern.bottom
-                    }
-            (errors, []) ->
-                case minError of
-                    Just (Equation.WhileCheckRequires _) ->
-                        (return . NotApplicableUntilConditionChanges)
-                            (SideCondition.toRepresentation condition)
-                    _ -> return NotApplicable
-              where
-                minError =
-                    (fmap getMin . getOption)
-                    (foldMap (Option . Just . Min) errors)
+        traverse attemptEquation equations' >>=
+            (partitionEithers >>> \case
+                (_, applied : _) -> do
+                    results <- applied
+                    (return . Applied) AttemptedAxiomResults
+                        { results
+                        , remainders = OrPattern.bottom
+                        }
+                (errors, []) ->
+                    case minError of
+                        Just (Equation.WhileCheckRequires _) ->
+                            (return . NotApplicableUntilConditionChanges)
+                                (SideCondition.toRepresentation condition)
+                        _ -> return NotApplicable
+                  where
+                    minError =
+                        (fmap getMin . getOption)
+                        (foldMap (Option . Just . Min) errors)
+            )
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation

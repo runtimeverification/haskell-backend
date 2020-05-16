@@ -64,6 +64,7 @@
 - ignore: {name: "Use record patterns"}
 - ignore: {name: "Use String"}
 - ignore: {name: "Redundant id"}
+- ignore: {name: "Use Just"}
 
 # Ignore suggestions that may affect readability
 - ignore: {name: "Eta reduce"}
