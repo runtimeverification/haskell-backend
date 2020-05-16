@@ -57,11 +57,13 @@ newtype DebugSolverSend =
     DebugSolverSend
         { getSendSExpr :: SExpr
         }
+    deriving (Show)
 
 newtype DebugSolverRecv =
     DebugSolverRecv
         { getRecvSExpr :: Text
         }
+    deriving (Show)
 
 instance Pretty DebugSolverSend where
     pretty DebugSolverSend { getSendSExpr } =

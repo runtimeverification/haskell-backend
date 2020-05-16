@@ -96,7 +96,7 @@ import qualified Kore.Attribute.Pattern as Attribute
     , Simplified
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
-import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -804,7 +804,7 @@ isFreeOf
     -> Set (UnifiedVariable variable)
     -> Bool
 isFreeOf predicate =
-    Set.disjoint (getFreeVariables $ freeVariables predicate)
+    Set.disjoint (FreeVariables.toSet $ freeVariables predicate)
 
 freeElementVariables :: Predicate variable -> [ElementVariable variable]
 freeElementVariables = getFreeElementVariables . freeVariables

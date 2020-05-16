@@ -288,14 +288,11 @@ refreshVariables
     => FreeVariables variable
     -> TermLike variable
     -> TermLike variable
-refreshVariables
-    (FreeVariables.getFreeVariables -> avoid)
-    term
-  =
+refreshVariables (FreeVariables.toSet -> avoid) term =
     Substitute.substitute subst term
   where
     rename = Fresh.refreshVariables avoid originalFreeVariables
-    originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
+    originalFreeVariables = FreeVariables.toSet (freeVariables term)
     subst = mkVar <$> rename
 
 {- | Is the 'TermLike' a function pattern?
@@ -1891,7 +1888,7 @@ refreshBinder
     -> FreeVariables variable
     -> Binder bound (TermLike variable)
     -> Binder bound (TermLike variable)
-refreshBinder refreshBound mkUnified (getFreeVariables -> avoiding) binder =
+refreshBinder refreshBound mkUnified (FreeVariables.toSet -> avoiding) binder =
     do
         binderVariable' <- refreshBound avoiding binderVariable
         let renaming =

@@ -31,6 +31,7 @@ data DebugProofState =
         , transition :: Prim (RewriteRule RewritingVariable)
         , result :: Maybe (ProofState ReachabilityRule)
         }
+    deriving (Show)
 
 instance Pretty DebugProofState where
     pretty
