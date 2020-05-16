@@ -29,8 +29,8 @@ import qualified Data.Map.Strict as Map
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
-    , getFreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Domain.Builtin
     ( AcWrapper
@@ -172,7 +172,9 @@ generalizeMapElement freeVariables' element =
   where
     (key, MapValue value) = Domain.unwrapElement element
     element' = Domain.wrapElement (key, MapValue $ TermLike.mkElemVar variable)
-    avoiding = getFreeVariables (TermLike.freeVariables key <> freeVariables')
+    avoiding =
+        TermLike.freeVariables key <> freeVariables'
+        & FreeVariables.toSet
     x =
         (ElementVariable . from @Variable @variable) Variable
             { variableName = "x"

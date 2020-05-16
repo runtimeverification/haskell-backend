@@ -32,7 +32,7 @@ import qualified SQL
 
 newtype WarnSymbolSMTRepresentation =
     WarnSymbolSMTRepresentation { symbol :: Symbol }
-    deriving (Eq, Typeable)
+    deriving (Show, Eq, Typeable)
     deriving (GHC.Generic)
 
 instance SOP.Generic WarnSymbolSMTRepresentation
