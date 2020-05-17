@@ -74,8 +74,8 @@ import qualified Kore.Attribute.Null as Attribute
     ( Null (..)
     )
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    , HasFreeVariables (..)
+    ( HasFreeVariables (..)
+    , freeVariable
     )
 import Kore.Debug
 import Kore.Sort
@@ -475,7 +475,10 @@ instance
     Ord variable
     => HasFreeVariables (SentenceAxiom (Pattern variable annotation)) variable
   where
-    freeVariables = FreeVariables . freePureVariables . sentenceAxiomPattern
+    freeVariables =
+        foldMap freeVariable
+        . freePureVariables
+        . sentenceAxiomPattern
 
 unparseAxiom
     :: Unparse patternType

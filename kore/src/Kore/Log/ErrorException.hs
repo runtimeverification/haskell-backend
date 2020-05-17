@@ -21,7 +21,9 @@ import Data.Text.Prettyprint.Doc
 
 import Log
 
-newtype ErrorException = ErrorException { getException :: SomeException }
+newtype ErrorException =
+    ErrorException { getException :: SomeException }
+    deriving (Show)
 
 instance Pretty ErrorException where
     pretty = pretty . displayException . getException

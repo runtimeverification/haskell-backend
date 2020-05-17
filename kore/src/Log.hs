@@ -103,6 +103,7 @@ data LogMessage = LogMessage
     , callstack :: !GHC.CallStack
     -- ^ call stack of the message, when available
     }
+    deriving (Show)
 
 instance Entry LogMessage where
     entrySeverity LogMessage { severity } = severity
