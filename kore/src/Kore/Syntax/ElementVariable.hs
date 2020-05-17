@@ -15,14 +15,13 @@ import Control.DeepSeq
     )
 import Data.Generics.Wrapped
     ( _Unwrapped
+    , _Wrapped
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    )
 import Kore.Unparser
 
 -- | Element (singleton) Kore variables
@@ -68,3 +67,20 @@ instance
   where
     from = fmap (from @variable1 @variable2)
     {-# INLINE from #-}
+
+instance
+    From variable Variable => From (ElementVariable variable) Variable
+  where
+    from = from . getElementVariable
+
+instance
+    From Variable variable => From Variable (ElementVariable variable)
+  where
+    from = ElementVariable . from
+
+instance
+    NamedVariable variable => NamedVariable (ElementVariable variable)
+  where
+    type VariableNameOf (ElementVariable variable) =
+        ElementVariableName (VariableNameOf variable)
+    lensVariableName = _Unwrapped . lensVariableName . _Wrapped

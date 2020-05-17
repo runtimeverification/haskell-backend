@@ -54,7 +54,10 @@ instance From Variable W where
 instance From W Variable where
     from = error "Not implemented"
 
-instance NamedVariable W
+instance NamedVariable W where
+    type VariableNameOf W = W
+    lensVariableName f = f
+    {-# INLINE lensVariableName #-}
 
 instance FreshPartialOrd W where
     infVariable w = w { counter = Nothing }
@@ -72,6 +75,8 @@ instance FreshVariable W
 
 instance SubstitutionOrd W where
     compareSubstitution = compare
+
+instance VariableBase W
 
 showVar :: V -> W
 showVar (V i n) = W (show i) n

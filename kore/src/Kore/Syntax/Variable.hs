@@ -18,7 +18,8 @@ module Kore.Syntax.Variable
     , ElementVariableName (..)
     , SetVariableName (..)
     , SomeVariableName (..)
-    , NamedVariable
+    , NamedVariable (..)
+    , VariableBase
     , toVariable
     , fromVariable
     -- * Variable sorts
@@ -45,6 +46,7 @@ import Data.Generics.Sum
     ( _Ctor
     )
 import qualified Data.Text as Text
+import Data.Void
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -192,7 +194,24 @@ instance From Variable Variable where
     from = id
     {-# INLINE from #-}
 
-instance NamedVariable Variable
+instance NamedVariable Variable where
+    type VariableNameOf Variable = VariableName
+    lensVariableName =
+        Lens.lens get set
+      where
+        get Variable { variableName, variableCounter } =
+            VariableName
+            { base = variableName
+            , counter = variableCounter
+            }
+        set Variable { variableSort } VariableName { base, counter } =
+            Variable
+            { variableName = base
+            , variableCounter = counter
+            , variableSort
+            }
+
+instance VariableBase Variable
 
 {- | Is the variable original (as opposed to generated)?
  -}
@@ -243,15 +262,21 @@ prop> (==) x y === (==) (toVariable x) (toVariable y)
 
  -}
 class
-    (Ord variable, From variable Variable, From Variable variable)
+    (Ord variable, From variable Variable)
     => NamedVariable variable
+  where
+    type VariableNameOf variable
+    lensVariableName :: Lens' variable (VariableNameOf variable)
+
+class
+    (From Variable variable, From variable Variable) => VariableBase variable
 
 -- | An injection from 'Variable' to any 'NamedVariable'.
-fromVariable :: forall variable. NamedVariable variable => Variable -> variable
+fromVariable :: forall variable. From Variable variable => Variable -> variable
 fromVariable = from @Variable @variable
 
 -- | An injection from any 'NamedVariable' to 'Variable'.
-toVariable :: forall variable. NamedVariable variable => variable -> Variable
+toVariable :: forall variable. From variable Variable => variable -> Variable
 toVariable = from @variable @Variable
 
 {- | 'SortedVariable' is a Kore variable with a known sort.
@@ -314,7 +339,11 @@ instance SortedVariable Concrete where
     lensVariableSort _ = \case {}
     {-# INLINE lensVariableSort #-}
 
-instance NamedVariable Concrete
+instance NamedVariable Concrete where
+    type VariableNameOf Concrete = Void
+    lensVariableName = Lens.lens (\case {}) (\case {})
+
+instance VariableBase Concrete
 
 instance From Variable Concrete where
     from = error "Cannot construct a variable in a concrete term!"

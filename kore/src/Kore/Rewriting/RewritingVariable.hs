@@ -24,6 +24,7 @@ module Kore.Rewriting.RewritingVariable
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -80,7 +81,33 @@ instance FreshPartialOrd RewritingVariable where
             ConfigVariable var -> ConfigVariable (nextVariable var)
     {-# INLINE nextVariable #-}
 
-instance NamedVariable RewritingVariable
+data RewritingVariableName
+    = ConfigVariableName !VariableName
+    | RuleVariableName   !VariableName
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+
+instance NamedVariable RewritingVariable where
+    type VariableNameOf RewritingVariable = RewritingVariableName
+    lensVariableName =
+        Lens.lens get set
+      where
+        get (ConfigVariable variable) =
+            ConfigVariableName (Lens.view lensVariableName variable)
+        get (RuleVariable variable) =
+            RuleVariableName (Lens.view lensVariableName variable)
+        set rewritingVariable rewritingVariableName =
+            case rewritingVariableName of
+                ConfigVariableName variableName ->
+                    Lens.set lensVariableName variableName variable
+                    & ConfigVariable
+                RuleVariableName variableName ->
+                    Lens.set lensVariableName variableName variable
+                    & RuleVariable
+          where
+            variable = from @_ @Variable rewritingVariable
+
+instance VariableBase RewritingVariable
 
 instance SubstitutionOrd RewritingVariable where
     compareSubstitution (RuleVariable _) (ConfigVariable _) = LT

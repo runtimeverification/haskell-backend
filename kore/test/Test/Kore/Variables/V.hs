@@ -51,7 +51,10 @@ instance From Variable V where
 instance From V Variable where
     from = error "Not implemented"
 
-instance NamedVariable V
+instance NamedVariable V where
+    type VariableNameOf V = V
+    lensVariableName f = f
+    {-# INLINE lensVariableName #-}
 
 instance FreshPartialOrd V where
     infVariable v = v { counter = Nothing }
@@ -69,6 +72,8 @@ instance FreshVariable V
 
 instance SubstitutionOrd V where
     compareSubstitution = compare
+
+instance VariableBase V
 
 var' :: Integer -> TermLike V
 var' = mkElemVar . ElementVariable . mkV

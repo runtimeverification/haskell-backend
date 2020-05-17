@@ -64,9 +64,6 @@ import Kore.Sort
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    , sortedVariableSort
-    )
 import Kore.Unparser
 import Kore.Variables.Fresh
 
@@ -76,7 +73,8 @@ from element variables (introduced by 'ElemVar').
 data UnifiedVariable variable
     = ElemVar !(ElementVariable variable)
     | SetVar  !(SetVariable variable)
-    deriving (Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (Generic)
 
 instance NFData variable => NFData (UnifiedVariable variable)
 
@@ -103,6 +101,43 @@ instance
             ElemVar elemVar -> ElemVar <$> lensVariableSort f elemVar
             SetVar setVar -> SetVar <$> lensVariableSort f setVar
     {-# INLINE lensVariableSort #-}
+
+instance From (UnifiedVariable variable) variable where
+    from (ElemVar elementVariable) = getElementVariable elementVariable
+    from (SetVar setVariable) = getSetVariable setVariable
+    {-# INLINE from #-}
+
+instance
+    From variable Variable => From (UnifiedVariable variable) Variable
+  where
+    from (ElemVar elementVariable) = from elementVariable
+    from (SetVar setVariable) = from setVariable
+    {-# INLINE from #-}
+
+instance
+    NamedVariable variable => NamedVariable (UnifiedVariable variable)
+  where
+    type VariableNameOf (UnifiedVariable variable) =
+        SomeVariableName (VariableNameOf variable)
+    lensVariableName =
+        Lens.lens get set
+      where
+        get (ElemVar elementVariable) =
+            SomeVariableNameElement (Lens.view lensVariableName elementVariable)
+        get (SetVar setVariable) =
+            SomeVariableNameSet (Lens.view lensVariableName setVariable)
+        set unifiedVariable someVariableName =
+            case someVariableName of
+                SomeVariableNameElement elementVariableName ->
+                    ElementVariable variable
+                    & Lens.set lensVariableName elementVariableName
+                    & ElemVar
+                SomeVariableNameSet setVariableName ->
+                    SetVariable variable
+                    & Lens.set lensVariableName setVariableName
+                    & SetVar
+          where
+            variable = from @_ @variable unifiedVariable
 
 instance
     FreshPartialOrd variable => FreshPartialOrd (UnifiedVariable variable)
@@ -281,7 +316,7 @@ toUnifiedVariable
 toUnifiedVariable = pure toVariable
 
 fromUnifiedVariable
-    :: NamedVariable variable
+    :: From Variable variable
     => AdjUnifiedVariable (Variable -> variable)
 fromUnifiedVariable = pure fromVariable
 

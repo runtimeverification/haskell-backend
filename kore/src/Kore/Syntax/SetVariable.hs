@@ -15,14 +15,13 @@ import Control.DeepSeq
     )
 import Data.Generics.Wrapped
     ( _Unwrapped
+    , _Wrapped
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    )
 import Kore.Unparser
 
 -- | Applicative-Kore set variables
@@ -68,3 +67,14 @@ instance
   where
     from = fmap (from @variable1 @variable2)
     {-# INLINE from #-}
+
+instance From variable Variable => From (SetVariable variable) Variable where
+    from = from . getSetVariable
+
+instance From Variable variable => From Variable (SetVariable variable) where
+    from = SetVariable . from
+
+instance NamedVariable variable => NamedVariable (SetVariable variable) where
+    type VariableNameOf (SetVariable variable) =
+        SetVariableName (VariableNameOf variable)
+    lensVariableName = _Unwrapped . lensVariableName . _Wrapped
