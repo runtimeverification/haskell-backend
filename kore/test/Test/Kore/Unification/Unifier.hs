@@ -22,7 +22,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -60,6 +59,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Pretty
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock

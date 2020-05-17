@@ -104,10 +104,6 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( hPutDoc
-    )
 import qualified Data.Typeable as Typeable
 import GHC.Exts
     ( toList
@@ -209,6 +205,7 @@ import Kore.Unparser
     , unparse
     , unparseToString
     )
+import qualified Pretty
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -996,7 +993,7 @@ savePartialProof maybeNatural file = do
         $ withFile
             (file <.> "kore")
             WriteMode
-            (`hPutDoc` definition)
+            (`Pretty.hPutDoc` definition)
 
     maybeNode :: Maybe ReplNode
     maybeNode =

@@ -38,7 +38,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as T
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
@@ -46,6 +45,7 @@ import Kore.Internal.Pattern
 import Kore.Internal.TermLike hiding
     ( bytesSort
     )
+import qualified Pretty
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition

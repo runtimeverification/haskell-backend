@@ -42,7 +42,6 @@ import qualified Data.Sequence as Seq
 import Data.Text
     ( pack
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
@@ -88,6 +87,7 @@ import Kore.Unification.Unify
 import Kore.Unparser
     ( unparseToString
     )
+import qualified Pretty
 import qualified SMT
 
 import Test.Kore.Builtin.Builtin

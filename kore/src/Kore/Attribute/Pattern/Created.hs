@@ -12,10 +12,6 @@ module Kore.Attribute.Pattern.Created
 import Prelude.Kore
 
 import Control.DeepSeq
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import GHC.Generics
 import GHC.Stack
@@ -25,6 +21,10 @@ import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 -- | 'Created' is used for debugging patterns, specifically for finding out
 -- where a pattern was created. This is a field in the attributes of a pattern,

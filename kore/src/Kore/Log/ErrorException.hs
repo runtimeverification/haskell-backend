@@ -15,11 +15,11 @@ import Control.Monad.Catch
     ( SomeException
     , displayException
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
 
 import Log
+import Pretty
+    ( Pretty (..)
+    )
 
 newtype ErrorException =
     ErrorException { getException :: SomeException }

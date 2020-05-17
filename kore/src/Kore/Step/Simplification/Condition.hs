@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Condition
 
 import Prelude.Kore
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
-
 import Branch
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
@@ -37,6 +35,7 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
+import qualified Pretty
 
 {- | Create a 'ConditionSimplifier' using 'simplify'.
 -}

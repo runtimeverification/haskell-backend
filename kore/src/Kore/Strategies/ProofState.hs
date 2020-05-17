@@ -13,10 +13,6 @@ module Kore.Strategies.ProofState
 
 import Prelude.Kore
 
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -24,6 +20,10 @@ import Kore.Debug
 import Kore.Unparser
     ( Unparse (..)
     )
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 {- | The primitive transitions of the reachability proof strategy.
  -}

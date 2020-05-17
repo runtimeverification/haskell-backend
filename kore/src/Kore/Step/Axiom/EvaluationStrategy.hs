@@ -27,7 +27,6 @@ import Data.Semigroup
     , Option (..)
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation
@@ -55,6 +54,7 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Variables.Target as Target
+import qualified Pretty
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}

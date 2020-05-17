@@ -38,10 +38,6 @@ import Control.DeepSeq
 import Data.Monoid
     ( (<>)
     )
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -79,6 +75,10 @@ import Kore.Variables.UnifiedVariable
     ( MapVariables
     , UnifiedVariable
     )
+import Pretty
+    ( Doc
+    )
+import qualified Pretty
 import qualified SQL
 
 {- | @Conditional@ represents a value conditioned on a predicate.

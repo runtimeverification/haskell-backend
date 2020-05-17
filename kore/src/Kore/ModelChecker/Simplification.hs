@@ -11,7 +11,6 @@ import Prelude.Kore
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
@@ -49,6 +48,7 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Pretty
 
 checkImplicationIsTop
     :: MonadSimplify m

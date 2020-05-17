@@ -9,10 +9,9 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.String as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Pretty
 
 import Debug
 import Kore.Sort

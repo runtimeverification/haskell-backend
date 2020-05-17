@@ -31,6 +31,12 @@
 
 - modules:
   - {name: [Data.Map], within: []}
+  - name:
+      - Data.Text.Prettyprint.Doc
+      - Data.Text.Prettyprint.Doc.Render.Text
+      - Data.Text.Prettyprint.Doc.String
+    within:
+      - Pretty
 
 
 # Add custom hints for this project

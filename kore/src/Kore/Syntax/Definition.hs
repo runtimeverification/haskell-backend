@@ -17,7 +17,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -26,6 +25,7 @@ import Kore.Debug
 import Kore.Syntax.Module
 import Kore.Syntax.Sentence
 import Kore.Unparser
+import qualified Pretty
 
 
 {- | Currently, a 'Definition' consists of some 'Attributes' and a 'Module'

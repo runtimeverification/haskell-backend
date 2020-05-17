@@ -68,7 +68,6 @@ import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
@@ -186,6 +185,7 @@ import qualified Kore.Verified as Verified
 import Log
     ( MonadLog (..)
     )
+import qualified Pretty
 
 {- | The final nodes of an execution graph which were not proven.
 
