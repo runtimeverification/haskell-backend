@@ -64,8 +64,8 @@ import qualified Options.Applicative as Options
 import System.Directory
     ( copyFile
     , createDirectoryIfMissing
-    , doesFileExist
     , doesDirectoryExist
+    , doesFileExist
     , removePathForcibly
     )
 import System.Exit
