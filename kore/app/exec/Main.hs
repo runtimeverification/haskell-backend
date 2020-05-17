@@ -65,6 +65,7 @@ import System.Directory
     ( copyFile
     , createDirectoryIfMissing
     , doesFileExist
+    , doesDirectoryExist
     , removePathForcibly
     )
 import System.Exit
@@ -491,8 +492,10 @@ mainWithOptions execOptions = do
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     when . toReport . bugReport <*> writeOptionsAndKoreFiles $ execOptions
-    createTarGz "./report.tar.gz" "." ["report"]
-    removePathForcibly "./report"
+    directoryReportExists <- doesDirectoryExist "report"
+    when directoryReportExists $ do
+        createTarGz "./report.tar.gz" "." ["report"]
+        removePathForcibly "./report"
     exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
