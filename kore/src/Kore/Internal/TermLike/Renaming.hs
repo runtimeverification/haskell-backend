@@ -27,6 +27,9 @@ import qualified Control.Monad.Reader as Reader
 import qualified Data.Maybe as Maybe
 
 import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Variable
 import Kore.Variables.UnifiedVariable
 
@@ -37,14 +40,15 @@ type Renaming variable1 variable2 =
     Env (UnifiedVariableMap variable1 variable2)
 
 renameFreeVariables
-    :: Ord variable1
+    :: forall m variable1 variable2
+    .  Ord variable1
     => Monad m
     => (ElementVariable variable1 -> m (ElementVariable variable2))
     -> (SetVariable variable1 -> m (SetVariable variable2))
     -> FreeVariables variable1
     -> m (UnifiedVariableMap variable1 variable2)
 renameFreeVariables trElemVar trSetVar =
-    Monad.foldM worker mempty . getFreeVariables
+    Monad.foldM worker mempty . FreeVariables.toSet
   where
     worker renaming =
         \case

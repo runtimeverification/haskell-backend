@@ -178,7 +178,6 @@ unifyOverloading termPair = case termPair of
             firstHead
             firstTerm
             secondVar
-            (Attribute.freeVariables firstTerm)
             inj { injChild = () }
     Pair -- it's ok to interchange them here, as this becomes error for matching
         (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
@@ -187,7 +186,6 @@ unifyOverloading termPair = case termPair of
             firstHead
             firstTerm
             secondVar
-            (Attribute.freeVariables firstTerm)
             inj { injChild = () }
     Pair
         (Inj_ Inj { injChild = firstTerm@(App_ firstHead firstChildren) })
@@ -318,14 +316,12 @@ unifyOverloadingVsOverloadedVariable
     => Symbol
     -> TermLike variable
     -> ElementVariable variable
-    -> Attribute.FreeVariables variable
     -> Inj ()
     -> UnifyOverloadingResult unifier variable
 unifyOverloadingVsOverloadedVariable
     overloadingHead
     overloadingTerm
     overloadedVar
-    freeVars
     injProto@Inj { injFrom }
   = do
     OverloadSimplifier { isOverloaded, getOverloadedWithinSort }
@@ -345,6 +341,8 @@ unifyOverloadingVsOverloadedVariable
             return $ WithNarrowing narrowing
                 { narrowedPair = Pair overloadingTerm overloadedTerm' }
         Left err -> error err
+  where
+    freeVars = freeVariables overloadingTerm
 
 {- Handles the case
     inj{S1,injTo}(firstHead(firstChildren))

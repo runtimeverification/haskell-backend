@@ -13,7 +13,9 @@ module Kore.Attribute.Axiom.Symbolic
 
 import Prelude.Kore
 
-import qualified Data.Set as Set
+import Data.Set
+    ( Set
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -23,10 +25,10 @@ import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Parser as Parser
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
-    , getFreeVariables
     , isFreeVariable
     , mapFreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
@@ -56,6 +58,10 @@ instance NFData variable => NFData (Symbolic variable)
 instance Ord variable => Default (Symbolic variable) where
     def = Symbolic mempty
 
+instance From (Symbolic variable) (Set (UnifiedVariable variable)) where
+    from = from @(FreeVariables _) . unSymbolic
+    {-# INLINE from #-}
+
 -- | Kore identifier representing the @symbolic@ attribute symbol.
 symbolicId :: Id
 symbolicId = "symbolic"
@@ -84,7 +90,11 @@ parseSymbolicAttribute freeVariables =
         Symbolic <$> parseFreeVariables freeVariables params args concreteVars
 
 instance From (Symbolic Variable) Attributes where
-    from = from . symbolicAttribute . Set.toList . getFreeVariables . unSymbolic
+    from =
+        from @AttributePattern @Attributes
+        . symbolicAttribute
+        . FreeVariables.toList
+        . unSymbolic
 
 mapSymbolicVariables
     :: Ord variable2

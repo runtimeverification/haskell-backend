@@ -30,7 +30,7 @@ test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
         let expect =
-                FreeVariables . Set.fromList
+                foldMap freeVariable
                 $ ElemVar <$> [Mock.x, Mock.z, Mock.t, Mock.u]
             actual = freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
@@ -38,22 +38,24 @@ test_freeVariables =
 test_refreshRulePattern :: TestTree
 test_refreshRulePattern =
     testCase "Rename target variables" $ do
-        let avoiding = freeVariables testRulePattern
+        let avoiding :: FreeVariables Variable
+            avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
                 refreshRule avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
+            free' :: FreeVariables Variable
             free' = freeVariables rulePattern'
             notAvoided x = not (FreeVariables.isFreeVariable x avoiding)
         assertEqual
             "Expected to rename all free variables of original RulePattern"
-            (getFreeVariables avoiding)
-            (Map.keysSet renaming)
+            (FreeVariables.toList avoiding)
+            (Map.keys renaming)
         assertBool
             "Expected to renamed variables distinct from original variables"
             (all notAvoided renamed)
         assertBool
             "Expected no free variables in common with original RulePattern"
-            (all notAvoided (FreeVariables.getFreeVariables free'))
+            (all notAvoided (FreeVariables.toList free'))
 
 testRulePattern :: RulePattern Variable
 testRulePattern =

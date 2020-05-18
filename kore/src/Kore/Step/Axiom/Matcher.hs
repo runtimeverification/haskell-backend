@@ -62,8 +62,9 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
+    ( FreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
@@ -211,8 +212,8 @@ matchIncremental termLike1 termLike2 =
             , targets = free1
             , avoiding = free1 <> free2
             }
-    free1 = (getFreeVariables . freeVariables) termLike1
-    free2 = (getFreeVariables . freeVariables) termLike2
+    free1 = (FreeVariables.toSet . freeVariables) termLike1
+    free2 = (FreeVariables.toSet . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
     done :: MatcherT variable simplifier (Maybe (MatchResult variable))
@@ -648,11 +649,12 @@ escape.
 
  -}
 escapeCheck
-    :: (MatchingVariable variable, Monad simplifier)
+    :: forall simplifier variable
+    .  (MatchingVariable variable, Monad simplifier)
     => TermLike variable
     -> MaybeT (MatcherT variable simplifier) ()
 escapeCheck termLike = do
-    let free = getFreeVariables (freeVariables termLike)
+    let free = from @(FreeVariables variable) @(Set _) (freeVariables termLike)
     MatcherState { bound } <- Monad.State.get
     Monad.guard (Set.disjoint bound free)
 

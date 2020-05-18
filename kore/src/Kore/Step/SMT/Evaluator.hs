@@ -38,9 +38,7 @@ import Branch
     ( BranchT
     )
 import qualified Control.Monad.Counter as Counter
-import Kore.Attribute.Pattern.FreeVariables
-    ( getFreeVariables
-    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -211,7 +209,8 @@ translatePredicate tools predicate =
     give tools $ translatePredicateWith translateTerm predicate
 
 translateTerm
-    :: InternalVariable variable
+    :: forall m variable
+    .  InternalVariable variable
     => SMT.MonadSMT m
     => MonadLog m
     => SExpr  -- ^ type name
@@ -233,7 +232,7 @@ translateTerm t (UninterpretedTerm (TermLike.ElemVar_ var)) =
     lookupVariable var <|> declareVariable t var
 translateTerm t (UninterpretedTerm pat) = do
     TranslatorState { quantifiedVars, terms } <- State.get
-    let freeVars = getFreeVariables $ TermLike.freeVariables pat
+    let freeVars = TermLike.freeVariables pat & FreeVariables.toSet
         boundVarsMap =
             Map.filterWithKey
                 (\k _ -> ElemVar k `Set.member` freeVars)

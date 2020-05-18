@@ -38,7 +38,7 @@ HS_TOP = $(TOP)/kore
 HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
 STACK_BUILD = build --pedantic $(STACK_BUILD_OPTS)
 
-STACK = stack
+STACK = stack --allow-different-user
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
