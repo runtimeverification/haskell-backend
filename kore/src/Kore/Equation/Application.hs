@@ -21,6 +21,7 @@ module Kore.Equation.Application
 
 import Prelude.Kore
 
+import qualified Branch
 import Control.Error
     ( ExceptT
     , MaybeT (..)
@@ -157,13 +158,15 @@ attemptEquation
     -> simplifier (AttemptEquationResult variable)
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
-        let Equation { left } = equationRenamed
-        matchResult <- match left termLike & whileMatch
-        (equation', predicate) <-
+        let Equation { left, argument } = equationRenamed
+        (predicate, substitution) <- match left termLike & whileMatch
+        argument' <- simplifyArgument argument & lift
+        let matchResult = (makeAndPredicate argument' predicate, substitution)
+        (equation', predicate') <-
             applyMatchResult equationRenamed matchResult
             & whileApplyMatchResult
         let Equation { requires } = equation'
-        checkRequires sideCondition predicate requires & whileCheckRequires
+        checkRequires sideCondition predicate' requires & whileCheckRequires
         let Equation { right, ensures } = equation'
         return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
@@ -184,6 +187,21 @@ attemptEquation sideCondition termLike equation =
         result <- whileDebugAttemptEquation termLike equationRenamed action
         debugAttemptEquationResult equation result
         return result
+
+    simplifyArgument
+        :: Predicate (Target variable)
+        -> simplifier (Predicate (Target variable))
+    simplifyArgument argument =
+        let argumentPattern =
+                Pattern.fromCondition . Condition.fromPredicate $ argument
+            toPredicate =
+                Condition.toPredicate
+                . Pattern.withoutTerm
+                . OrPattern.toPattern
+                . OrPattern.fromPatterns
+         in Simplifier.simplifyCondition sideCondition argumentPattern
+            & Branch.gather
+            & fmap toPredicate
 
 applyEquation
     :: forall simplifier variable
