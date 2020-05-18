@@ -12,9 +12,6 @@ import Prelude.Kore
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    )
 
 import Kore.Internal.TermLike
     ( InternalVariable
@@ -24,6 +21,9 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
     )
 import Kore.Unification.Error
+import Pretty
+    ( Doc
+    )
 
 -- | @MonadUnify@ is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationError'

@@ -940,15 +940,17 @@ externalizeFreshVariables termLike =
         :: ElementVariable Variable
         -> Reader (UnifiedVariableMap Variable Variable) (ElementVariable Variable)
     lookupElementVariable elementVariable =
-        fromMaybe elementVariable
-        <$> Reader.asks (lookupRenamedElementVariable elementVariable)
+        Reader.asks
+        $ fromMaybe elementVariable
+        . lookupRenamedElementVariable elementVariable
 
     lookupSetVariable
         :: SetVariable Variable
         -> Reader (UnifiedVariableMap Variable Variable) (SetVariable Variable)
     lookupSetVariable setVariable =
-        fromMaybe setVariable
-        <$> Reader.asks (lookupRenamedSetVariable setVariable)
+        Reader.asks
+        $ fromMaybe setVariable
+        . lookupRenamedSetVariable setVariable
 
     {- | Externalize a variable safely.
 

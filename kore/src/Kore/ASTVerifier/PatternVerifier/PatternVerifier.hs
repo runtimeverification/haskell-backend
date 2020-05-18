@@ -46,13 +46,6 @@ import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
-import Data.Text.Prettyprint.Doc
-    ( (<+>)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( renderStrict
-    )
 import qualified GHC.Generics as GHC
 
 import Kore.AST.Error
@@ -71,6 +64,10 @@ import Kore.Syntax.Definition
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
+import Pretty
+    ( (<+>)
+    )
+import qualified Pretty
 
 newtype DeclaredVariables =
     DeclaredVariables
@@ -286,7 +283,7 @@ assertSameSort expectedSort actualSort =
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-    $ renderStrict . Pretty.layoutCompact
+    $ Pretty.renderText . Pretty.layoutCompact
     $ "Expecting sort"
         <+> Pretty.squotes (unparse expectedSort)
         <+> "but got"

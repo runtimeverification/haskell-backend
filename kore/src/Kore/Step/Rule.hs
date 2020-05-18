@@ -36,7 +36,6 @@ import Data.List.Extra
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor
     ( isConstructor
@@ -91,6 +90,7 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Verified as Verified
+import qualified Pretty
 
 {-| Error encountered when parsing patterns
 -}

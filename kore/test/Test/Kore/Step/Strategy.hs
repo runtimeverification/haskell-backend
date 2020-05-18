@@ -80,15 +80,15 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
             Strategy.Seq a b ->
                 [a, b]
                 ++ (Strategy.Seq <$> shrink a <*> pure b)
-                ++ (Strategy.Seq <$> pure a <*> shrink b)
+                ++ (Strategy.Seq            a <$> shrink b)
             Strategy.And a b ->
                 [a, b]
                 ++ (Strategy.And <$> shrink a <*> pure b)
-                ++ (Strategy.And <$> pure a <*> shrink b)
+                ++ (Strategy.And            a <$> shrink b)
             Strategy.Or a b ->
                 [a, b]
                 ++ (Strategy.Or <$> shrink a <*> pure b)
-                ++ (Strategy.Or <$> pure a <*> shrink b)
+                ++ (Strategy.Or            a <$> shrink b)
             Strategy.Apply _ -> []
             Strategy.Stuck -> []
             Strategy.Continue -> []

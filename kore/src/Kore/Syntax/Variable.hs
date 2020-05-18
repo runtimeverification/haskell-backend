@@ -38,7 +38,6 @@ import Data.Generics.Product
     ( field
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -47,6 +46,7 @@ import Data.Sup
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import qualified Pretty
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
 Semantics of K, Section 9.1.4 (Patterns).

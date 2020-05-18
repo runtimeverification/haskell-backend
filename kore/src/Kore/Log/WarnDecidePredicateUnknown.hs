@@ -35,12 +35,12 @@ newtype WarnDecidePredicateUnknown =
 
 instance Pretty WarnDecidePredicateUnknown where
     pretty WarnDecidePredicateUnknown { predicates } =
-        (Pretty.vsep . concat)
-        [ ["Failed to decide predicate:", Pretty.indent 4 (unparse predicate)]
-        , do
+        Pretty.vsep
+        ( ["Failed to decide predicate:", Pretty.indent 4 (unparse predicate)]
+        ++ do
             sideCondition <- sideConditions
             ["with side condition:", Pretty.indent 4 (unparse sideCondition)]
-        ]
+        )
       where
        predicate :| sideConditions = predicates
 

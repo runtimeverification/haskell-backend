@@ -14,10 +14,6 @@ module Kore.Unification.Error
 
 import Prelude.Kore
 
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -31,6 +27,10 @@ import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 -- | 'UnificationError' specifies various error cases encountered during
 -- unification

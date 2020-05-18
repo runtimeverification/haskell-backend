@@ -15,7 +15,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import Data.Text.Prettyprint.Doc as Pretty
 import GHC.Exception
     ( prettyCallStackLines
     )
@@ -35,6 +34,7 @@ import Kore.Step.RulePattern
 import Kore.Syntax.Variable
     ( Variable
     )
+import Pretty
 
 import Log
 
