@@ -32,7 +32,6 @@ import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Branch
     ( BranchT
@@ -85,6 +84,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 import Log
+import qualified Pretty
 import SMT
     ( Result (..)
     , SExpr (..)

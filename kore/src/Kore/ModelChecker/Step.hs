@@ -31,7 +31,6 @@ import qualified Data.Foldable as Foldable
 import Data.Text
     ( Text
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import GHC.Generics
 
 import Kore.Internal.Pattern
@@ -73,6 +72,7 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import qualified Kore.Unification.Procedure as Unification
+import qualified Pretty
 
 data Prim patt rewrite =
       CheckProofState

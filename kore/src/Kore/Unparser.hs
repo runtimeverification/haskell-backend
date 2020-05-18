@@ -50,15 +50,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import Data.Text.Prettyprint.Doc hiding
-    ( list
-    )
-import Data.Text.Prettyprint.Doc.Render.String
-    ( renderString
-    )
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( renderStrict
-    )
 import Data.Void
 import Generics.SOP
     ( All2
@@ -68,6 +59,10 @@ import Generics.SOP
     )
 import qualified Generics.SOP as SOP
 import qualified Numeric
+
+import Pretty hiding
+    ( list
+    )
 
 {- | Class of types that can be rendered in concrete Kore syntax.
 
@@ -140,10 +135,10 @@ unparseGenericWith helper =
 
 -- | Serialize an object to 'Text'.
 unparseToText :: Unparse p => p -> Text
-unparseToText = renderStrict . layoutPretty defaultLayoutOptions . unparse
+unparseToText = renderText . layoutPretty defaultLayoutOptions . unparse
 
 unparseToText2 :: Unparse p => p -> Text
-unparseToText2 = renderStrict . layoutPretty defaultLayoutOptions . unparse2
+unparseToText2 = renderText . layoutPretty defaultLayoutOptions . unparse2
 
 -- | Serialize an object to 'String'.
 unparseToString :: Unparse p => p -> String

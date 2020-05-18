@@ -23,10 +23,6 @@ import Control.Monad
     )
 import Data.Default
 import Data.Generics.Product
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -45,6 +41,10 @@ import Kore.Debug
 import Kore.Syntax
     ( FileLocation (..)
     )
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 data SourceLocation = SourceLocation
     { location :: !Location

@@ -39,7 +39,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Branch
     ( BranchT
@@ -92,6 +91,7 @@ import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
+import qualified Pretty
 
 type UnifiedRule rule variable = Conditional variable (rule variable)
 

@@ -13,7 +13,6 @@ let
         overlays =
           (nixpkgsArgs.overlays or [])
           ++ [ (import ./nix/ghcide.nix { inherit sources; }) ]
-          ++ [ (import ./nix/stylish-haskell.nix { inherit sources; }) ]
           ;
         config =
           (nixpkgsArgs.config or {})

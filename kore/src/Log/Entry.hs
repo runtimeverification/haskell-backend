@@ -39,14 +39,15 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Typeable
     ( cast
     )
 import qualified Type.Reflection as Reflection
+
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 class (Show entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry

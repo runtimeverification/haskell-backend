@@ -15,9 +15,6 @@ import Data.Semigroup
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( putDoc
-    )
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -60,6 +57,9 @@ import Kore.Parser
     )
 import Kore.Syntax.Definition
 import Kore.Unparser as Unparser
+import Pretty
+    ( putDoc
+    )
 
 import System.Exit
 
