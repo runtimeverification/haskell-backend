@@ -75,7 +75,6 @@ instance Debug variable => Debug (OverloadingResolution variable)
 
 instance (Diff variable, Debug variable) => Diff (OverloadingResolution variable)
 
-
 -- | Describes the possible errors encountered during unification.
 data UnifyOverloadingError
     = NotApplicable
@@ -307,8 +306,6 @@ unifyOverloadingVsOverloaded
     overloadingTerm@(overloadingHead(overloadingChildren))
    vs
     overloadingHead(inj2(freshVars))
-
-  Note that most instances of inj above are distinct.
 -}
 unifyOverloadingVsOverloadedVariable
     :: MonadSimplify unifier

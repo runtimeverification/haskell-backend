@@ -78,7 +78,7 @@ data OverloadSimplifier =
             :: Symbol
             -> Inj ()
             -> Either String (Maybe (Pair (Symbol, Maybe (Inj ()))))
-        {- Given symbol firstHead of sort S1 and an injection ind{S2, injTo}
+        {- Given symbol firstHead of sort S1 and an injection inj{S2, injTo}
           If there exists a (unique) maximum overloaded symbol secondHead
           with its result sort S2' within S2, such that there exists a common
           overload headUnion of firstHead and secondHead
@@ -194,7 +194,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
     updateMaxOverload f x mm@(Just m)
         | sm `isOverloadingOrEqual` sx = mm
         | sx `isOverloading` sm = Just x
-        | otherwise = trace ("not comparable: " <> show [sx,sm]) Nothing
+        | otherwise = Nothing
         where
             sx = f x
             sm = f m
@@ -224,7 +224,6 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
 
     resultSort :: Symbol -> Sort
     resultSort = applicationSortsResult  . symbolSorts
-
 
 errorAmbiguousOverloads :: [Symbol] -> Either String a
 errorAmbiguousOverloads overloads =
