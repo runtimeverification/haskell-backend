@@ -104,7 +104,9 @@ import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
     , LogMessage
+    , SomeEntry (..)
     , WithLog
+    , logEntry
     , parseKoreLogOptions
     , runKoreLog
     )
@@ -406,6 +408,7 @@ mainWithOptions execOptions = do
     exitCode <-
         runKoreLog koreLogOptions
         $ handle handleSomeException
+        $ handle handleSomeEntry
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
@@ -415,6 +418,12 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
+
+    handleSomeEntry
+        :: SomeEntry -> Main ExitCode
+    handleSomeEntry (SomeEntry entry) = do
+        logEntry entry
+        return $ ExitFailure 1
 
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do

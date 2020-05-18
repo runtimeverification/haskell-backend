@@ -31,6 +31,7 @@ newtype WarnDecidePredicateUnknown =
     WarnDecidePredicateUnknown
         { predicates :: NonEmpty (Predicate Variable)
         }
+    deriving (Show)
 
 instance Pretty WarnDecidePredicateUnknown where
     pretty WarnDecidePredicateUnknown { predicates } =

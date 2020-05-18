@@ -19,7 +19,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
+    ( FreeVariables
     )
 import Kore.Internal.Predicate
     ( Predicate

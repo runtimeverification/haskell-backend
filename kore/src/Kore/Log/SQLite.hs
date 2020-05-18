@@ -32,8 +32,8 @@ import qualified System.Directory as Directory
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
     )
-import Kore.Log.WarnBottomHook
-    ( WarnBottomHook
+import Kore.Log.WarnBottomTotalFunction
+    ( WarnBottomTotalFunction
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
@@ -123,7 +123,7 @@ foldMapEntries
 foldMapEntries mapEntry =
     mconcat
         [ mapEntry (Proxy @DebugEvaluateCondition)
-        , mapEntry (Proxy @WarnBottomHook)
+        , mapEntry (Proxy @WarnBottomTotalFunction)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
         , mapEntry (Proxy @WarnSymbolSMTRepresentation)
         ]

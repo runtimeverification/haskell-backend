@@ -165,15 +165,15 @@ unifyRule unificationProcedure initial rule = do
  -}
 -- TODO (thomas.tuegel): Unit tests
 wouldNarrowWith
-    :: Ord variable
+    :: forall rule variable
+    .  Ord variable
     => UnifyingRule rule
     => UnifiedRule rule variable
     -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where
-    leftAxiomVariables =
-        FreeVariables.getFreeVariables $ TermLike.freeVariables leftAxiom
+    leftAxiomVariables = TermLike.freeVariables leftAxiom & FreeVariables.toSet
       where
         Conditional { term = axiom } = unified
         leftAxiom = matchingPattern axiom
