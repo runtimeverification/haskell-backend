@@ -60,9 +60,12 @@ instance Debug variable => Debug (Narrowing variable)
 
 instance (Diff variable, Debug variable) => Diff (Narrowing variable)
 
+-- | Result of applying the 'unifyOverloading' resolution procedure
 data OverloadingResolution variable
     = Simple !(Pair (TermLike variable))
+    -- ^The overloading resolves yielding the transformed pair of terms
     | WithNarrowing !(Narrowing variable)
+    -- ^Overloading resolves, but additional narrowing is needed for solution
   deriving (GHC.Generic, Show)
 
 instance SOP.Generic (OverloadingResolution variable)
@@ -71,7 +74,8 @@ instance SOP.HasDatatypeInfo (OverloadingResolution variable)
 
 instance Debug variable => Debug (OverloadingResolution variable)
 
-instance (Diff variable, Debug variable) => Diff (OverloadingResolution variable)
+instance
+    (Diff variable, Debug variable) => Diff (OverloadingResolution variable)
 
 -- | Describes the possible errors encountered during unification.
 data UnifyOverloadingError

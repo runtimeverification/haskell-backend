@@ -115,7 +115,6 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
   where
     isOverloading = OverloadGraph.isOverloading overloadGraph
     isOverloaded = OverloadGraph.isOverloaded overloadGraph
-    isOverloadingOrEqual x y = x == y || x `isOverloading` y
 
     resolveOverloading
         :: forall variable
@@ -191,19 +190,23 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
 
     updateMaxOverload :: (a -> Symbol) -> a -> Maybe a -> Maybe a
     updateMaxOverload _ x Nothing = Just x
-    updateMaxOverload f x mm@(Just m)
-        | sm `isOverloadingOrEqual` sx = mm
-        | sx `isOverloading` sm = Just x
-        | otherwise = Nothing
-        where
-            sx = f x
-            sm = f m
+    updateMaxOverload f x (Just m)
+      = do
+        ord <- compareOverloading sm sx
+        case ord of
+            LT -> return x
+            _ -> return m
+      where
+        sx = f x
+        sm = f m
 
     findMaxOverload :: (a -> Symbol) -> [a] -> Maybe a
     findMaxOverload f = foldr (updateMaxOverload f) Nothing
 
     checkMaxOverload :: (a -> Symbol) -> a -> [a] -> Bool
     checkMaxOverload f m = all (isOverloadingOrEqual (f m) .f)
+
+    isOverloadingOrEqual x y = maybe False (LT /=) (compareOverloading x y)
 
     filterOverloads
       :: Inj ()
@@ -224,6 +227,13 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
 
     resultSort :: Symbol -> Sort
     resultSort = applicationSortsResult  . symbolSorts
+    
+    compareOverloading :: Symbol -> Symbol -> Maybe Ordering
+    compareOverloading x y
+        | x == y = Just EQ
+        | x `isOverloading` y = Just GT
+        | y `isOverloading` x = Just LT
+        | otherwise = Nothing
 
 errorAmbiguousOverloads :: [Symbol] -> Either String a
 errorAmbiguousOverloads overloads =
