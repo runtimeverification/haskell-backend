@@ -9,6 +9,7 @@ module Pretty
     , layoutOneLine
     , renderText
     , renderString
+    , renderIO
     , hPutDoc, putDoc
     ) where
 
@@ -24,6 +25,7 @@ import Data.Text.Prettyprint.Doc.Render.String
 import Data.Text.Prettyprint.Doc.Render.Text
     ( hPutDoc
     , putDoc
+    , renderIO
     , renderStrict
     )
 
