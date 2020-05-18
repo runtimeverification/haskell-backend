@@ -85,6 +85,8 @@ import qualified SQL
 
 data Equation variable = Equation
     { requires :: !(Predicate variable)
+    , argument :: !(Predicate variable)
+    , antiLeft :: !(Predicate variable)
     , left  :: !(TermLike variable)
     , right :: !(TermLike variable)
     , ensures :: !(Predicate variable)
@@ -106,6 +108,8 @@ mkEquation sort left right =
     Equation
         { left
         , requires = Predicate.makeTruePredicate sort
+        , argument = Predicate.makeTruePredicate sort
+        , antiLeft = Predicate.makeTruePredicate sort
         , right
         , ensures = Predicate.makeTruePredicate sort
         , attributes = Default.def
@@ -122,10 +126,14 @@ instance Debug variable => Debug (Equation variable)
 instance (Debug variable, Diff variable) => Diff (Equation variable)
 
 instance InternalVariable variable => Pretty (Equation variable) where
-    pretty equation@(Equation _ _ _ _ _) =
+    pretty equation@(Equation _ _ _ _ _ _ _) =
         Pretty.vsep
             [ "requires:"
             , Pretty.indent 4 (unparse requires)
+            , "argument:"
+            , Pretty.indent 4 (unparse argument)
+            , "antiLeft:"
+            , Pretty.indent 4 (unparse antiLeft)
             , "left:"
             , Pretty.indent 4 (unparse left)
             , "right:"
@@ -136,6 +144,8 @@ instance InternalVariable variable => Pretty (Equation variable) where
       where
         Equation
             { requires
+            , argument
+            , antiLeft
             , left
             , right
             , ensures
@@ -187,10 +197,13 @@ instance
     InternalVariable variable
     => HasFreeVariables (Equation variable) variable
   where
-    freeVariables rule@(Equation _ _ _ _ _) = case rule of
-        Equation { left, requires, right, ensures } ->
+    -- TODO: is this correct?
+    freeVariables rule@(Equation _ _ _ _ _ _ _) = case rule of
+        Equation { left, argument, antiLeft, requires, right, ensures } ->
             freeVariables left
             <> freeVariables requires
+            <> freeVariables argument
+            <> freeVariables antiLeft
             <> freeVariables right
             <> freeVariables ensures
 
@@ -202,9 +215,11 @@ mapVariables
     => (ElementVariable variable1 -> ElementVariable variable2)
     -> (SetVariable variable1 -> SetVariable variable2)
     -> Equation variable1 -> Equation variable2
-mapVariables mapElemVar mapSetVar equation@(Equation _ _ _ _ _) =
+mapVariables mapElemVar mapSetVar equation@(Equation _ _ _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
+        , argument = mapPredicateVariables argument
+        , antiLeft = mapPredicateVariables antiLeft
         , left = mapTermLikeVariables left
         , right = mapTermLikeVariables right
         , ensures = mapPredicateVariables ensures
@@ -212,7 +227,15 @@ mapVariables mapElemVar mapSetVar equation@(Equation _ _ _ _ _) =
             Attribute.mapAxiomVariables mapElemVar mapSetVar attributes
         }
   where
-    Equation { requires, left, right, ensures, attributes } = equation
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        , attributes
+        } = equation
     mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
     mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
 
@@ -224,7 +247,7 @@ refreshVariables
     -> (Renaming variable, Equation variable)
 refreshVariables
     (from @_ @(Set (UnifiedVariable _)) -> avoid)
-    equation@(Equation _ _ _ _ _)
+    equation@(Equation _ _ _ _ _ _ _)
   =
     let rename = Fresh.refreshVariables avoid originalFreeVariables
         mapElemVars elemVar =
@@ -238,6 +261,8 @@ refreshVariables
         subst = TermLike.mkVar <$> rename
         left' = TermLike.substitute subst left
         requires' = Predicate.substitute subst requires
+        argument' = Predicate.substitute subst argument
+        antiLeft' = Predicate.substitute subst antiLeft
         right' = TermLike.substitute subst right
         ensures' = Predicate.substitute subst ensures
         attributes' =
@@ -246,13 +271,23 @@ refreshVariables
             equation
                 { left = left'
                 , requires = requires'
+                , argument = argument'
+                , antiLeft = antiLeft'
                 , right = right'
                 , ensures = ensures'
                 , attributes = attributes'
                 }
     in (rename, equation')
   where
-    Equation { left, requires, right, ensures, attributes } = equation
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        , attributes
+        } = equation
     originalFreeVariables = freeVariables equation & FreeVariables.toSet
 
 isSimplificationRule :: Equation variable -> Bool
@@ -273,13 +308,23 @@ substitute
 substitute assignments equation =
     Equation
         { requires = Predicate.substitute assignments requires
+        , argument = Predicate.substitute assignments argument
+        , antiLeft = Predicate.substitute assignments antiLeft
         , left = TermLike.substitute assignments left
         , right = TermLike.substitute assignments right
         , ensures = Predicate.substitute assignments ensures
         , attributes
         }
   where
-    Equation { requires, left, right, ensures, attributes } = equation
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        , attributes
+        } = equation
 
 {- | The list of identifiers for an 'Equation'.
 

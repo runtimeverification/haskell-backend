@@ -68,20 +68,31 @@ simplifyEquation
     :: (InternalVariable variable, MonadSimplify simplifier)
     => Equation variable
     -> simplifier (Equation variable)
-simplifyEquation equation@(Equation _ _ _ _ _) =
+simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
-        let Equation { requires, left, right, ensures, attributes } = equation
+        let Equation
+                { requires
+                , argument
+                , antiLeft
+                , left
+                , right
+                , ensures
+                , attributes } = equation
         simplified <- simplifyTermLike left >>= expectSingleResult
         let Conditional { term, predicate, substitution } = simplified
         Monad.guard (isTop predicate)
         let subst = Substitution.toMap substitution
             left' = TermLike.substitute subst term
             requires' = TermLike.substitute subst <$> requires
+            argument' = TermLike.substitute subst <$> argument
+            antiLeft' = TermLike.substitute subst <$> antiLeft
             right' = TermLike.substitute subst right
             ensures' = TermLike.substitute subst <$> ensures
         return Equation
             { left = TermLike.forgetSimplified left'
             , requires = Predicate.forgetSimplified requires'
+            , argument = Predicate.forgetSimplified argument'
+            , antiLeft = Predicate.forgetSimplified antiLeft'
             , right = TermLike.forgetSimplified right'
             , ensures = Predicate.forgetSimplified ensures'
             , attributes = attributes
