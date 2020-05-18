@@ -3,6 +3,9 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
+
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Unification.UnifierT
     ( UnifierT (..)
     , lowerExceptT

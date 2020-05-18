@@ -61,7 +61,9 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
 import qualified Kore.Step.Step as Step
-import Kore.Step.Strategy
+import Kore.Step.Strategy hiding
+    ( transitionRule
+    )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
