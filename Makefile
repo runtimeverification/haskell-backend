@@ -38,7 +38,7 @@ test: test-kore test-k
 
 test-kore:
 	$(STACK_TEST) $(STACK_BUILD) \
-		--coverage \
+		--coverage --fast \
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 
