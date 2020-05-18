@@ -847,7 +847,11 @@ runSteps breadthLimit graphFilter picker configuration strategy' =
         give metadataTools
             $ declareSMTLemmas
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-        runStrategy breadthLimit transitionRule strategy' (ProofState.Goal configuration)
+        runStrategy
+            breadthLimit
+            transitionRule
+            strategy'
+            (ProofState.Goal configuration)
   where
     mockEnv = Mock.env
     Env {metadataTools} = mockEnv
