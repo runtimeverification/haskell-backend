@@ -6,7 +6,6 @@ module Kore.Variables.Fresh
     ( FreshPartialOrd (..)
     , FreshVariable (..)
     , refreshVariables
-    , generateFreshVars
     -- * Re-exports
     , module Kore.Syntax.Variable
     ) where
@@ -30,7 +29,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Text as Text
 
 import Data.Sup
 import Kore.Sort
@@ -225,37 +223,3 @@ refreshVariables avoid0 =
         -- The variable does not collide with any others, so renaming is not
         -- necessary.
         (Set.insert var avoid, rename)
-
-generateFreshVars
-    :: forall variable
-     . FreshVariable variable
-    => FreshPartialOrd variable
-    => SortedVariable variable
-    => From Variable variable
-    => Set (ElementVariable variable)
-    -- ^ variables to avoid
-    -> Text.Text
-    -- ^ base name for variables to be generated
-    -> [Sort]
-    -- ^ sorts for the variables to be generated
-    -> [ElementVariable variable]
-generateFreshVars avoid0 base sorts =
-    snd $ foldr worker (avoid0, []) indexedSorts
-  where
-    indexedSorts = zip [1..] sorts
-    worker
-        :: (Integer, Sort)
-        -> (Set (ElementVariable variable), [ElementVariable variable])
-        -> (Set (ElementVariable variable), [ElementVariable variable])
-    worker (vIdx, vSort) (avoid, freshVars) =
-        let v = (ElementVariable . from @Variable @variable) Variable
-                    { variableName = Id
-                        { getId = base <> Text.pack (show vIdx)
-                        , idLocation = AstLocationGeneratedVariable
-                        }
-                    , variableCounter = mempty
-                    , variableSort = vSort
-                    }
-            freshVar = refreshVariable avoid v & fromMaybe v
-            avoid' = Set.insert freshVar avoid
-        in (avoid', freshVar : freshVars)

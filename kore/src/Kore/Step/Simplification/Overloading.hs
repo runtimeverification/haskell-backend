@@ -22,7 +22,6 @@ import Control.Monad.Trans.Except
     ( ExceptT
     , throwE
     )
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Kore.Step.Simplification.Simplify as Simplifier
@@ -36,14 +35,13 @@ import Kore.Attribute.Synthetic
     ( synthesize
     )
 import Kore.Debug
-import Kore.Internal.ApplicationSorts
-    ( applicationSortsOperands
-    )
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.OverloadSimplifier
-import qualified Kore.Variables.Fresh as Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable(ElemVar)
+    )
 import Pair
 
 data Narrowing variable
@@ -406,6 +404,7 @@ computeNarrowing
     -> Maybe (Inj ()) -- ^injection into the variable's sort (if needed)
     -> ExceptT UnifyOverloadingError unifier (Narrowing variable)
 computeNarrowing headUnion injUnion freeVars overloadedVar overHead maybeInj
+  | App_ _ freshTerms <- overloadedTerm
   = do
     OverloadSimplifier { resolveOverloading }
         <- Simplifier.askOverloadSimplifier
@@ -419,14 +418,11 @@ computeNarrowing headUnion injUnion freeVars overloadedVar overHead maybeInj
         , narrowingVars = freshVs
         , narrowedPair = Pair second' second'
         }
+  | otherwise = error "This should not happen"
   where
-    allVars = overloadedVar : Attribute.getFreeElementVariables freeVars
-    freshVars =
-        Fresh.generateFreshVars (Set.fromList allVars) "x"
-        . applicationSortsOperands . symbolSorts
-    freshVs = freshVars overHead
-    freshTerms = mkElemVar <$> freshVs
-    overloadedTerm = mkApplySymbol overHead freshTerms
+    allVars = Attribute.freeVariable (ElemVar overloadedVar) <> freeVars
+    overloadedTerm = freshSymbolInstance allVars overHead "x"
+    freshVs = Attribute.getFreeElementVariables (freeVariables overloadedTerm)
 
 mkInj
     :: InternalVariable variable
