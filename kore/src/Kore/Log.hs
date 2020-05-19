@@ -80,9 +80,6 @@ import Data.Time.LocalTime
     , utcToLocalTime
     )
 import qualified Pretty
-import System.Directory
-    ( createDirectoryIfMissing
-    )
 
 import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
@@ -103,15 +100,18 @@ data WithTimestamp = WithTimestamp ActualEntry LocalTime
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
 -- the CPS style because some outputters require cleanup (e.g. files).
 withLogger
-    :: KoreLogOptions
+    :: FilePath
+    -> KoreLogOptions
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
-withLogger koreLogOptions = runContT $ do
+withLogger reportDirectory koreLogOptions = runContT $ do
     mainLogger <- ContT $ withMainLogger koreLogOptions
     mainReport <-
         case exeName koreLogOptions of
-            ExeName "kore-exec" -> ContT $ withMainReport koreLogOptions
-            _ -> pure mempty
+            ExeName "kore-exec" ->
+                ContT $ withMainReport reportDirectory koreLogOptions
+            _ ->
+                pure mempty
     let KoreLogOptions { debugSolverOptions } = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
     let KoreLogOptions { logSQLiteOptions } = koreLogOptions
@@ -139,15 +139,16 @@ withMainLogger
             . makeKoreLogger exeName timestampsSwitch
 
 withMainReport
-    :: KoreLogOptions
+    :: FilePath
+    -> KoreLogOptions
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
 withMainReport
+    reportDirectory
     koreLogOptions@KoreLogOptions { timestampsSwitch, exeName }
     continue
-  = do
-    createDirectoryIfMissing False "./report"
-    Colog.withLogTextFile "./report/LoggedErrors.txt"
+  = 
+    Colog.withLogTextFile ("./" <> reportDirectory <> "/LoggedErrors.txt")
         $ continue
         . koreLogTransformer koreLogOptions { logLevel = Error}
         . koreLogFilters koreLogOptions { logLevel = Error}
@@ -220,9 +221,9 @@ filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
-runKoreLog :: KoreLogOptions -> LoggerT IO a -> IO a
-runKoreLog options loggerT =
-    withLogger options $ \logAction ->
+runKoreLog :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLog reportDirectory options loggerT =
+    withLogger reportDirectory options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
         runLoggerT loggerT asyncLogAction
 

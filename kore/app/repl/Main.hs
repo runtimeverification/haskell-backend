@@ -203,7 +203,7 @@ mainWithOptions
         , outputFile
         , koreLogOptions
         }
-  = withLogger koreLogOptions $ \actualLogAction -> do
+  = withLogger mempty koreLogOptions $ \actualLogAction -> do
     mvarLogAction <- newMVar actualLogAction
     let swapLogAction = swappableLogger mvarLogAction
     flip runLoggerT swapLogAction $ do

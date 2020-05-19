@@ -164,6 +164,7 @@ import SMT
     )
 import qualified SMT
 import Stats
+import System.IO.Temp
 
 import GlobalMain
 
@@ -457,17 +458,19 @@ showKoreExecOptions
         , "rtsStatistics = " <> show rtsStatistics
         ]
 
-writeOptionsAndKoreFiles :: KoreExecOptions -> IO ()
+writeOptionsAndKoreFiles :: FilePath -> KoreExecOptions -> IO ()
 writeOptionsAndKoreFiles
+    reportFile
     opts@KoreExecOptions { definitionFileName , patternFileName, outputFileName}
   = do
-    createDirectoryIfMissing False "./report"
-    writeFile "./report/KoreExecOptions.txt" . showKoreExecOptions $ opts
-    copyFile definitionFileName "./report/definitionFile.kore"
+    writeFile ("./" <> reportFile <> "/KoreExecOptions.txt")
+        . showKoreExecOptions
+        $ opts
+    copyFile definitionFileName ("./" <> reportFile <> "/definitionFile.kore")
     Foldable.forM_ patternFileName
-        $ flip copyFile "./report/patternFile.kore"
+        $ flip copyFile ("./" <> reportFile <> "/patternFile.kore")
     Foldable.forM_ outputFileName
-        $ flip copyFile "./report/outputFile.kore"
+        $ flip copyFile ("./" <> reportFile <> "/outputFile.kore")
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
@@ -480,20 +483,21 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    removePathForcibly "./report"
+    tempDirectory <- createTempDirectory "." "report"
     exitCode <-
-        runKoreLog koreLogOptions
+        runKoreLog tempDirectory koreLogOptions
         $ handle handleSomeException
         $ handle handleSomeEntry
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
-    when . toReport . bugReport <*> writeOptionsAndKoreFiles $ execOptions
-    directoryReportExists <- doesDirectoryExist "report"
+    when . toReport . bugReport
+        <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
+    directoryReportExists <- doesDirectoryExist tempDirectory
     when directoryReportExists $ do
-        createTarGz "./report.tar.gz" "." ["report"]
-        removePathForcibly "./report"
+        createTarGz ("./" <> tempDirectory <> ".tar.gz") "." [tempDirectory]
+        removePathForcibly $ "./" <> tempDirectory
     exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
