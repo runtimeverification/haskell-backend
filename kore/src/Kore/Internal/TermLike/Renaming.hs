@@ -80,8 +80,7 @@ askElementVariable
     -> RenamingT variable1 variable2 m (ElementVariable variable2)
 askElementVariable elementVariable =
     -- fromJust is safe because the variable must be renamed
-    fmap Maybe.fromJust
-    $ Reader.asks (lookupRenamedElementVariable elementVariable)
+    Reader.asks $ Maybe.fromJust . lookupRenamedElementVariable elementVariable
 {-# INLINE askElementVariable #-}
 
 askSetVariable
@@ -91,5 +90,5 @@ askSetVariable
     -> RenamingT variable1 variable2 m (SetVariable variable2)
 askSetVariable setVariable =
     -- fromJust is safe because the variable must be renamed
-    fmap Maybe.fromJust $ Reader.asks (lookupRenamedSetVariable setVariable)
+    Reader.asks $ Maybe.fromJust . lookupRenamedSetVariable setVariable
 {-# INLINE askSetVariable #-}

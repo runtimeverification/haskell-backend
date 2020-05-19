@@ -7,8 +7,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -43,6 +41,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Pretty
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification

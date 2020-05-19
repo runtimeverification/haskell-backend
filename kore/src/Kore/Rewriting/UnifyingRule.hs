@@ -16,7 +16,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
@@ -38,6 +37,7 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
+import qualified Pretty
 
 type Renaming variable =
     Map (UnifiedVariable variable) (UnifiedVariable variable)

@@ -17,11 +17,24 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "17f1f636743d6c79421a7584c845ba839753cc05",
-        "sha256": "1i8qvflfxdr0qyhbv11gbax9mnin9bzf9236jidqcmxzlprsdawg",
+        "rev": "79b5458138b5411499191910fe77b789a4661239",
+        "sha256": "0v4zrwy0dqr6j7s08nbla570gf5x68xf6ncmwgghdp0ak5p2shdl",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/17f1f636743d6c79421a7584c845ba839753cc05.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/79b5458138b5411499191910fe77b789a4661239.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "hlint": {
+        "branch": "master",
+        "description": "Haskell source code suggestions",
+        "homepage": null,
+        "owner": "ndmitchell",
+        "repo": "hlint",
+        "rev": "b43c4c32b8c57abdbf0ecfabf81854379a5aa5b6",
+        "sha256": "0adfsn4can9qnybnjd9nhz2crg4n5xqhwca2rh137kwav9d84g5s",
+        "type": "tarball",
+        "url": "https://github.com/ndmitchell/hlint/archive/b43c4c32b8c57abdbf0ecfabf81854379a5aa5b6.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
+        "version": "v3.1"
     },
     "niv": {
         "branch": "master",
@@ -46,18 +59,5 @@
         "type": "tarball",
         "url": "https://github.com/NixOS/nixpkgs-channels/archive/b780aefc621d0cd6131c68907ec0c9fb28e65650.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "stylish-haskell": {
-        "branch": "master",
-        "description": "Haskell code prettifier",
-        "homepage": "",
-        "owner": "jaspervdj",
-        "repo": "stylish-haskell",
-        "rev": "3621bf3aa5312fef61220e1760d9988307209c6a",
-        "sha256": "0rnzghsk3r28j3lcjb0s2mx1kdjrad0ynmsbx9b91158bq3vq09q",
-        "type": "tarball",
-        "url": "https://github.com/jaspervdj/stylish-haskell/archive/3621bf3aa5312fef61220e1760d9988307209c6a.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
-        "version": "v0.11.0.0"
     }
 }
