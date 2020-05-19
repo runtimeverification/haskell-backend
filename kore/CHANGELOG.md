@@ -16,6 +16,26 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.21.0.0] - 2020-05-13
+
+### Added
+
+- Injections into hooked sorts are forbidden.
+- Semantic rules with the same left- and right-hand sides will be rejected.
+  Such rules will always cause the backend to loop endlessly.
+- `kore-repl` prints output in script mode with the option `--save-run-output`.
+
+### Changed
+
+- kore-repl: `stepf` command advances the current configuration.
+- `kore-exec` does not retain the interior of the execution graph.
+  Only the leaf nodes of the execution graph are retained during
+  execution. Memory use is bounded by the size of the largest configuration and
+  does not increase with the length of the proof.
+- Applying semantic (rewrite) rules is more efficient.
+  Run time is improved 10-15% by avoiding duplicate work when refreshing the
+  free variables of semantic rules.
+
 ## [0.20.0.0] - 2020-04-29
 
 ### Added

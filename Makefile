@@ -4,11 +4,13 @@ include include.mk
         test test-kore test-k \
         kore-exec kore-repl
 
-kore: kore-exec kore-repl
+kore: kore-exec kore-repl kore-parser
 
 kore-exec: $(KORE_EXEC)
 
 kore-repl: $(KORE_REPL)
+
+kore-parser: $(KORE_PARSER)
 
 k-frontend: $(K)
 
@@ -36,7 +38,7 @@ test: test-kore test-k
 
 test-kore:
 	$(STACK_TEST) $(STACK_BUILD) \
-		--coverage \
+		--coverage --fast \
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 

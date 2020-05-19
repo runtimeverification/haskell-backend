@@ -19,7 +19,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -38,6 +37,7 @@ import Kore.Syntax.Application
     ( Application (..)
     )
 import Kore.Unparser
+import qualified Pretty
 
 data Inj a =
     Inj

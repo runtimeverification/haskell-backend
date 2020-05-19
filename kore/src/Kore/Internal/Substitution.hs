@@ -67,11 +67,10 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified (..)
     )
@@ -97,6 +96,7 @@ import Kore.Unparser
     ( unparseToString
     )
 import Kore.Variables.UnifiedVariable
+import qualified Pretty
 import qualified SQL
 
 data Assignment variable =
@@ -603,7 +603,7 @@ assertNoneAreFreeVarsInRhs lhsVariables =
       where
         commonVars =
             Set.intersection lhsVariables
-            $ getFreeVariables
+            $ FreeVariables.toSet
             $ freeVariables patt
 
 instance InternalVariable variable

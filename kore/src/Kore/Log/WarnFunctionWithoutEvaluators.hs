@@ -11,10 +11,6 @@ module Kore.Log.WarnFunctionWithoutEvaluators
 
 import Prelude.Kore
 
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -31,11 +27,15 @@ import Log
     , Severity (Warning)
     , logEntry
     )
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 import qualified SQL
 
 newtype WarnFunctionWithoutEvaluators =
     WarnFunctionWithoutEvaluators { symbol :: Symbol }
-    deriving (Eq, Typeable)
+    deriving (Show, Eq, Typeable)
     deriving (GHC.Generic)
 
 instance SOP.Generic WarnFunctionWithoutEvaluators

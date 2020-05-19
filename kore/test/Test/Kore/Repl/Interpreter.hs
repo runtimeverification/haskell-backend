@@ -37,13 +37,12 @@ import Data.List.NonEmpty
     ( NonEmpty (..)
     )
 import qualified Data.Map.Strict as Map
+import qualified Data.Map.Strict as StrictMap
 import qualified Data.Sequence as Seq
 import Data.Text
     ( pack
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Condition
@@ -51,8 +50,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
+    ( TermLike
     , elemVarS
     , mkAnd
     , mkBottom_
@@ -64,6 +62,7 @@ import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
@@ -88,14 +87,12 @@ import Kore.Unification.Unify
 import Kore.Unparser
     ( unparseToString
     )
+import qualified Pretty
 import qualified SMT
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Simplification
-
-type Claim = OnePathRule Variable
-type Axiom = Rule (OnePathRule Variable)
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
@@ -103,6 +100,8 @@ test_replInterpreter =
     , help                        `tests` "Showing the help message"
     , step5                       `tests` "Performing 5 steps"
     , step100                     `tests` "Stepping over proof completion"
+    , stepf5noBranching           `tests` "Performing 5 foced steps in non-branching proof"
+    , stepf100noBranching         `tests` "Stepping over proof completion"
     , makeSimpleAlias             `tests` "Creating an alias with no arguments"
     , trySimpleAlias              `tests` "Executing an existing alias with no arguments"
     , makeAlias                   `tests` "Creating an alias with arguments"
@@ -176,6 +175,32 @@ step100 =
         output     `equalsOutput`   expectedOutput
         continue   `equals`         Continue
         state      `hasCurrentNode` ReplNode 10
+
+stepf5noBranching :: IO ()
+stepf5noBranching =
+    let
+        axioms = [ add1 ]
+        claim  = zeroToTen
+        command = ProveStepsF 5
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        output     `equalsOutput`   mempty
+        continue   `equals`         Continue
+        state      `hasCurrentNode` ReplNode 5
+
+stepf100noBranching :: IO ()
+stepf100noBranching =
+    let
+        axioms = [ add1 ]
+        claim  = zeroToTen
+        command = ProveStepsF 100
+    in do
+        Result { output, continue, state } <- run command axioms [claim] claim
+        let expectedOutput =
+                makeAuxReplOutput "Proof completed on all branches."
+        output     `equalsOutput`   expectedOutput
+        continue   `equals`         Continue
+        state      `hasCurrentNode` ReplNode 0
 
 makeSimpleAlias :: IO ()
 makeSimpleAlias =
@@ -300,7 +325,7 @@ unificationFailure =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePattern one one
+        impossibleAxiom = mkAxiom one one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
@@ -317,7 +342,7 @@ unificationFailureWithName =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePatternWithName one one "impossible"
+        impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = Try . ByName . RuleName $ "impossible"
@@ -334,7 +359,7 @@ unificationSuccess = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePattern zero one
+        axiom = mkAxiom zero one
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
@@ -350,7 +375,7 @@ unificationSuccessWithName = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePatternWithName zero one "0to1"
+        axiom = mkNamedAxiom zero one "0to1"
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByName . RuleName $ "0to1"
@@ -366,7 +391,7 @@ forceFailure =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePattern one one
+        impossibleAxiom = mkAxiom one one
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
@@ -383,7 +408,7 @@ forceFailureWithName =
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        impossibleAxiom = coerce $ rulePatternWithName one one "impossible"
+        impossibleAxiom = mkNamedAxiom one one "impossible"
         axioms = [ impossibleAxiom ]
         claim = zeroToTen
         command = TryF . ByName . RuleName $ "impossible"
@@ -400,7 +425,7 @@ forceSuccess = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePattern zero one
+        axiom = mkAxiom zero one
         axioms = [ axiom ]
         claim = zeroToTen
         command = TryF . ByIndex . Left $ AxiomIndex 0
@@ -416,7 +441,7 @@ forceSuccessWithName = do
     let
         zero = Int.asInternal intSort 0
         one = Int.asInternal intSort 1
-        axiom = coerce $ rulePatternWithName zero one "0to1"
+        axiom = mkNamedAxiom zero one "0to1"
         axioms = [ axiom ]
         claim = zeroToTen
         command = TryF . ByName . RuleName $ "0to1"
@@ -556,7 +581,7 @@ proveSecondClaimByName =
 
 add1 :: Axiom
 add1 =
-    coerce $ rulePatternWithName n plusOne "add1Axiom"
+    mkNamedAxiom n plusOne "add1Axiom"
   where
     one     = Int.asInternal intSort 1
     n       = mkElemVar $ elemVarS "x" intSort
@@ -564,27 +589,52 @@ add1 =
 
 zeroToTen :: Claim
 zeroToTen =
-    coerce $ rulePatternWithName zero (mkAnd mkTop_ ten) "0to10Claim"
+    OnePath . coerce
+    $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
 
 emptyClaim :: Claim
 emptyClaim =
-    coerce
-    $ rulePatternWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
+    OnePath . coerce
+    $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
-rulePatternWithName
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+mkNamedAxiom
+    :: TermLike Variable
+    -> TermLike Variable
     -> String
-    -> RulePattern variable
-rulePatternWithName left right name =
+    -> Axiom
+mkNamedAxiom left right name =
     rulePattern left right
     & Lens.set (field @"attributes" . typed @Attribute.Label) label
+    & RewriteRule
+    & mkRewritingRule
+    & coerce
   where
     label = Attribute.Label . pure $ pack name
+
+claimWithName
+    :: TermLike Variable
+    -> TermLike Variable
+    -> String
+    -> RewriteRule Variable
+claimWithName left right name =
+    rulePattern left right
+    & Lens.set (field @"attributes" . typed @Attribute.Label) label
+    & RewriteRule
+  where
+    label = Attribute.Label . pure $ pack name
+
+mkAxiom
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Axiom
+mkAxiom left right =
+    rulePattern left right
+    & RewriteRule
+    & mkRewritingRule
+    & coerce
 
 run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
 run command axioms claims claim =
@@ -595,7 +645,7 @@ runWithState
     -> [Axiom]
     -> [Claim]
     -> Claim
-    -> (ReplState Claim -> ReplState Claim)
+    -> (ReplState -> ReplState)
     -> IO Result
 runWithState command axioms claims claim stateTransformer = do
     let logger = mempty
@@ -626,7 +676,7 @@ runWithState command axioms claims claim stateTransformer = do
 data Result = Result
     { output   :: ReplOutput
     , continue :: ReplStatus
-    , state    :: ReplState Claim
+    , state    :: ReplState
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -636,7 +686,7 @@ equalsOutput :: ReplOutput -> ReplOutput -> Assertion
 equalsOutput actual expected =
     actual @?= expected
 
-hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
+hasCurrentNode :: ReplState -> ReplNode -> IO ()
 hasCurrentNode st n = do
     node st `equals` n
     graphNode <- evalStateT (getTargetNode justNode) st
@@ -644,7 +694,7 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
+hasAlias :: ReplState -> AliasDefinition -> IO ()
 hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
@@ -653,7 +703,7 @@ hasAlias st alias@AliasDefinition { name } =
         actual `equals` Just alias
 
 hasLogging
-    :: ReplState Claim
+    :: ReplState
     -> Log.KoreLogOptions
     -> IO ()
 hasLogging st expectedLogging =
@@ -662,7 +712,7 @@ hasLogging st expectedLogging =
     in
         actualLogging `equals` expectedLogging
 
-hasCurrentClaimIndex :: ReplState Claim -> ClaimIndex -> IO ()
+hasCurrentClaimIndex :: ReplState -> ClaimIndex -> IO ()
 hasCurrentClaimIndex st expectedClaimIndex =
     let
         actualClaimIndex = claimIndex st
@@ -676,7 +726,7 @@ mkState
     :: [Axiom]
     -> [Claim]
     -> Claim
-    -> ReplState Claim
+    -> ReplState
 mkState axioms claims claim =
     ReplState
         { axioms         = axioms
@@ -696,7 +746,7 @@ mkState axioms claims claim =
 
 mkConfig
     :: MVar (Log.LogAction IO Log.ActualEntry)
-    -> Config Claim Simplifier
+    -> Config Simplifier
 mkConfig logger =
     Config
         { stepper     = stepper0

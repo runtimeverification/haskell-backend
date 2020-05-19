@@ -36,7 +36,6 @@ import Data.List.Extra
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor
     ( isConstructor
@@ -91,6 +90,7 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Verified as Verified
+import qualified Pretty
 
 {-| Error encountered when parsing patterns
 -}
@@ -101,7 +101,7 @@ instance NFData AxiomPatternError
 
 qualifiedAxiomOpToConstructor
     :: Alias (TermLike.TermLike Variable)
-    -> Maybe (RulePattern variable -> QualifiedAxiomPattern variable)
+    -> Maybe (RulePattern Variable -> QualifiedAxiomPattern Variable)
 qualifiedAxiomOpToConstructor patternHead
     | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
     | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
@@ -114,8 +114,8 @@ from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
-    | OnePathClaimPattern (OnePathRule variable)
-    | AllPathClaimPattern (AllPathRule variable)
+    | OnePathClaimPattern OnePathRule
+    | AllPathClaimPattern AllPathRule
     | ImplicationAxiomPattern (ImplicationRule variable)
     deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
@@ -285,10 +285,9 @@ complexRewriteTermToRule attributes pat =
 not encode a normal rewrite or function axiom.
 -}
 termToAxiomPattern
-    :: InternalVariable variable
-    => Attribute.Axiom Internal.Symbol.Symbol variable
-    -> TermLike.TermLike variable
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
+    :: Attribute.Axiom Internal.Symbol.Symbol Variable
+    -> TermLike.TermLike Variable
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 termToAxiomPattern attributes pat =
     case pat of
         -- Reachability claims
@@ -338,9 +337,8 @@ termToAxiomPattern attributes pat =
 -}
 
 axiomPatternToTerm
-    :: InternalVariable variable
-    => QualifiedAxiomPattern variable
-    -> TermLike.TermLike variable
+    :: QualifiedAxiomPattern Variable
+    -> TermLike.TermLike Variable
 axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
     OnePathClaimPattern rule -> onePathRuleToTerm rule

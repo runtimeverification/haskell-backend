@@ -8,7 +8,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Internal.Condition
     ( Condition
@@ -35,6 +34,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Implies as Implies
+import qualified Pretty
 
 import Kore.Unparser
 

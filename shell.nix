@@ -2,12 +2,22 @@
 
 let
   inherit (default) project pkgs;
+  local =
+    if builtins.pathExists ./shell.local.nix
+    then import ./shell.local.nix { inherit default; }
+    else x: x;
+  shellFor = args: project.shellFor (local args);
 in
 
-project.shellFor {
+shellFor {
   buildInputs =
     with pkgs;
     [
-      ghcid ghcide gnumake hlint stylish-haskell yq z3
+      ghcid ghcide gnumake yq z3
     ];
+  tools = {
+    cabal = "3.2.0.0";
+    hlint = "3.1";
+    stylish-haskell = "0.11.0.0";
+  };
 }

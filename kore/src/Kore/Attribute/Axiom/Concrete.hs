@@ -1,11 +1,9 @@
-{-|
-Module      : Kore.Attribute.Axiom.Concrete
-Description : Concrete axiom attribute
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : phillip.harris@runtimeverification.com
 
 -}
+
 module Kore.Attribute.Axiom.Concrete
     ( Concrete (..), isConcrete
     , concreteId, concreteSymbol, concreteAttribute
@@ -21,17 +19,20 @@ import Prelude.Kore
 import qualified Control.Error as Safe
 import qualified Control.Monad as Monad
 import qualified Data.List as List
-import qualified Data.Set as Set
+import Data.Set
+    ( Set
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    , getFreeVariables
+    ( FreeVariables
+    , freeVariable
     , isFreeVariable
     , mapFreeVariables
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Error
 import Kore.Syntax.ElementVariable
@@ -61,6 +62,10 @@ instance NFData variable => NFData (Concrete variable)
 
 instance Ord variable => Default (Concrete variable) where
     def = Concrete mempty
+
+instance From (Concrete variable) (Set (UnifiedVariable variable)) where
+    from = from @(FreeVariables _) . unConcrete
+    {-# INLINE from #-}
 
 -- | Kore identifier representing the @concrete@ attribute symbol.
 concreteId :: Id
@@ -101,9 +106,9 @@ parseFreeVariables freeVariables params args concreteVars = do
     mapM_ checkFree vars
     let newVars = -- if no arguments are provides, assume all free variables
             if null vars
-                then Set.toList (getFreeVariables freeVariables)
+                then FreeVariables.toList freeVariables
                 else vars
-        allVars = newVars ++ Set.toList (getFreeVariables concreteVars)
+        allVars = newVars ++ FreeVariables.toList concreteVars
         groupedVars = List.group . List.sort $ allVars
         nubVars = mapMaybe Safe.headMay groupedVars
         duplicateVars =
@@ -112,7 +117,7 @@ parseFreeVariables freeVariables params args concreteVars = do
         $ Kore.Error.koreFail
             ("duplicate concrete/symbolic variable annotations for "
             ++ show duplicateVars)
-    return (FreeVariables . Set.fromAscList $ nubVars)
+    return (foldMap freeVariable nubVars)
   where
     checkFree :: UnifiedVariable Variable -> Parser ()
     checkFree variable =
@@ -121,7 +126,11 @@ parseFreeVariables freeVariables params args concreteVars = do
             ("expected free variable, found " ++ show variable)
 
 instance From (Concrete Variable) Attributes where
-    from = from . concreteAttribute . Set.toList . getFreeVariables . unConcrete
+    from =
+        from @AttributePattern
+        . concreteAttribute
+        . FreeVariables.toList
+        . unConcrete
 
 mapConcreteVariables
     :: Ord variable2

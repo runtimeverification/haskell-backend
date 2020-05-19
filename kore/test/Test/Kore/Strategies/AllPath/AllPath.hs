@@ -30,9 +30,6 @@ import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -55,6 +52,9 @@ import qualified Kore.Strategies.Goal as Goal
 import qualified Kore.Strategies.ProofState as ProofState
 import Log
     ( MonadLog (..)
+    )
+import Pretty
+    ( Pretty (..)
     )
 import SMT
     ( MonadSMT (..)
@@ -320,7 +320,7 @@ newtype instance Goal.Rule Goal =
 instance Goal.Goal Goal where
     type Prim Goal = ProofState.Prim (Goal.Rule Goal)
 
-    type ProofState Goal a = ProofState.ProofState a
+    type ProofState Goal = ProofState.ProofState
 
     strategy _ goals rules =
         firstStep :> Stream.iterate id nextStep

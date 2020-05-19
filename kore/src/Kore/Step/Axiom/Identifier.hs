@@ -27,13 +27,6 @@ module Kore.Step.Axiom.Identifier
 import Prelude.Kore
 
 import qualified Data.Functor.Foldable as Recursive
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
-import qualified Data.Text.Prettyprint.Doc as Doc
-    ( parens
-    , (<+>)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -55,6 +48,10 @@ import Kore.Syntax.PatternF
 import Kore.Unparser
     ( unparse
     )
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
@@ -86,13 +83,13 @@ instance Diff AxiomIdentifier
 instance Pretty AxiomIdentifier where
     pretty (Application name) = unparse name
     pretty (Ceil axiomIdentifier) =
-        "ceil" Doc.<+> Doc.parens (pretty axiomIdentifier)
+        "ceil" Pretty.<+> Pretty.parens (pretty axiomIdentifier)
     pretty (Equals first second) =
         "equals"
-        Doc.<+> Doc.parens
-            (pretty first Doc.<+> "," Doc.<+> pretty second)
+        Pretty.<+> Pretty.parens
+            (pretty first Pretty.<+> "," Pretty.<+> pretty second)
     pretty (Exists axiomIdentifier) =
-        "exists" Doc.<+> Doc.parens (pretty axiomIdentifier)
+        "exists" Pretty.<+> Pretty.parens (pretty axiomIdentifier)
     pretty Variable = "variable"
 
 {- | Match 'TermLike' pattern to determine its 'AxiomIdentifier'.

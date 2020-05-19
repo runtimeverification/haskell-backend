@@ -16,10 +16,6 @@ import Control.Comonad
 import Data.Coerce
     ( coerce
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Axiom
     ( Axiom (..)
@@ -33,6 +29,7 @@ import Kore.Internal.Variable
     ( Variable (..)
     , toVariable
     )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern (..)
@@ -41,22 +38,21 @@ import Kore.Step.Step
     ( UnifiedRule
     , mapRuleVariables
     )
-import Kore.Unification.Unify
-    ( InternalVariable
-    )
 import Kore.Unparser
     ( unparse
     )
-import Kore.Variables.Target
-    ( Target
-    )
 import Log
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 data DebugAppliedRewriteRules =
     DebugAppliedRewriteRules
         { configuration :: Pattern Variable
-        , appliedRewriteRules :: [UnifiedRule Variable (RewriteRule Variable)]
+        , appliedRewriteRules :: [UnifiedRule RewriteRule Variable]
         }
+    deriving (Show)
 
 instance Pretty DebugAppliedRewriteRules where
     pretty DebugAppliedRewriteRules { configuration, appliedRewriteRules } =
@@ -84,9 +80,8 @@ instance Entry DebugAppliedRewriteRules where
 
 debugAppliedRewriteRules
     :: MonadLog log
-    => InternalVariable variable
-    => Pattern (Target variable)
-    -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
+    => Pattern RewritingVariable
+    -> [UnifiedRule RulePattern RewritingVariable]
     -> log ()
 debugAppliedRewriteRules initial rules =
     logEntry DebugAppliedRewriteRules

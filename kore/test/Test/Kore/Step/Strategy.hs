@@ -30,7 +30,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import Data.Functor.Identity
+import qualified Control.Exception as Exception
+import Control.Monad.Catch.Pure
+    ( Catch
+    , runCatch
+    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Sequence as Seq
 import Numeric.Natural
@@ -76,20 +80,20 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
             Strategy.Seq a b ->
                 [a, b]
                 ++ (Strategy.Seq <$> shrink a <*> pure b)
-                ++ (Strategy.Seq <$> pure a <*> shrink b)
+                ++ (Strategy.Seq            a <$> shrink b)
             Strategy.And a b ->
                 [a, b]
                 ++ (Strategy.And <$> shrink a <*> pure b)
-                ++ (Strategy.And <$> pure a <*> shrink b)
+                ++ (Strategy.And            a <$> shrink b)
             Strategy.Or a b ->
                 [a, b]
                 ++ (Strategy.Or <$> shrink a <*> pure b)
-                ++ (Strategy.Or <$> pure a <*> shrink b)
+                ++ (Strategy.Or            a <$> shrink b)
             Strategy.Apply _ -> []
             Strategy.Stuck -> []
             Strategy.Continue -> []
 
-transitionPrim :: Prim -> Natural -> TransitionT Prim Identity Natural
+transitionPrim :: Prim -> Natural -> TransitionT Prim Catch Natural
 transitionPrim rule n = do
     Transition.addRule rule
     case rule of
@@ -129,10 +133,9 @@ runStrategy
     -> Natural
     -> ExecutionGraph Natural Prim
 runStrategy strategy z =
-    let
-        Identity rs = Strategy.runStrategy Unlimited transitionPrim strategy z
-    in
-        rs
+    Strategy.runStrategy Unlimited transitionPrim strategy z
+    & runCatch
+    & either Exception.throw id
 
 prop_SeqContinueIdentity :: Strategy Prim -> Natural -> Property
 prop_SeqContinueIdentity a n =

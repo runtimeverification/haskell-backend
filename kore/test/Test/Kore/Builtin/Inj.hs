@@ -6,7 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.ASTVerifier.PatternVerifier
     ( verifyStandalonePattern
@@ -23,6 +22,7 @@ import Kore.Internal.TermLike
 import Kore.Unparser
     ( unparse
     )
+import qualified Pretty
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition

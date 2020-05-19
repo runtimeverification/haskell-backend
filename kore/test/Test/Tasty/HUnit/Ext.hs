@@ -21,9 +21,9 @@ import qualified Control.Exception as Exception
 import Data.List
     ( isInfixOf
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Debug
+import qualified Pretty
 
 assertEqual
     :: (Diff a, MonadIO io, HasCallStack)

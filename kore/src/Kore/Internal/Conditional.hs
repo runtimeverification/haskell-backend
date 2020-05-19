@@ -6,6 +6,8 @@ Representation of conditional terms.
 
 -}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
@@ -36,10 +38,6 @@ import Control.DeepSeq
 import Data.Monoid
     ( (<>)
     )
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -77,6 +75,10 @@ import Kore.Variables.UnifiedVariable
     ( MapVariables
     , UnifiedVariable
     )
+import Pretty
+    ( Doc
+    )
+import qualified Pretty
 import qualified SQL
 
 {- | @Conditional@ represents a value conditioned on a predicate.
@@ -203,7 +205,11 @@ instance
     => From (Conditional variable ()) (Predicate variable)
   where
     from Conditional { predicate, substitution } =
-        Predicate.makeAndPredicate predicate (from substitution)
+        Predicate.makeAndPredicate predicate
+        $ Predicate.coerceSort sort
+        $ from substitution
+      where
+        sort = (termLikeSort . Predicate.unwrapPredicate) predicate
 
 instance
     InternalVariable variable

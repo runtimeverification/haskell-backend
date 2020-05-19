@@ -31,7 +31,6 @@ import qualified Control.Error as Error
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
@@ -92,6 +91,7 @@ import Kore.Variables.UnifiedVariable
     )
 import qualified Log
 import Pair
+import qualified Pretty
 
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm

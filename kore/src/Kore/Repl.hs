@@ -39,6 +39,7 @@ import Control.Monad.State.Strict
     )
 import qualified Data.Default as Default
 import Data.Generics.Product
+import Data.Generics.Wrapped
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List
     ( findIndex
@@ -54,10 +55,6 @@ import Text.Megaparsec
     ( parseMaybe
     )
 
-import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkSortVariable
@@ -68,7 +65,9 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import qualified Kore.Step.RulePattern as Rule
+import Kore.Step.RulePattern
+    ( ReachabilityRule (..)
+    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -91,37 +90,45 @@ import Kore.Unparser
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall claim axiom m
+    :: forall m
     .  MonadSimplify m
     => MonadIO m
     => MonadCatch m
-    => Claim claim
-    => From claim (TermLike Variable)
-    => axiom ~ Rule claim
-    => [axiom]
+    => [Axiom]
     -- ^ list of axioms to used in the proof
-    -> [claim]
+    -> [ReachabilityRule]
     -- ^ list of claims to be proven
     -> MVar (Log.LogAction IO Log.ActualEntry)
     -> ReplScript
     -- ^ optional script
     -> ReplMode
     -- ^ mode to run in
+    -> ScriptModeOutput
+    -- ^ optional flag for output in run mode
     -> OutputFile
     -- ^ optional output file
     -> ModuleName
     -> m ()
-runRepl _ [] _ _ _ outputFile _ =
+runRepl _ [] _ _ _ _ outputFile _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
     in liftIO . printTerm . unparseToString $ topTerm
   where
     topTerm :: TermLike Variable
     topTerm = mkTop $ mkSortVariable "R"
 
-runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = do
+runRepl
+    axioms'
+    claims'
+    logger
+    replScript
+    replMode
+    scriptModeOutput
+    outputFile
+    mainModuleName
+    = do
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
-            $ evaluateScript replScript
+            $ evaluateScript replScript scriptModeOutput
     case replMode of
         Interactive -> do
             replGreeting
@@ -133,24 +140,28 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState claim -> m ()
+    runReplCommand :: ReplCommand -> ReplState -> m ()
     runReplCommand cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> RWST (Config claim m) String (ReplState claim) m ()
-    evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
+    evaluateScript
+        :: ReplScript
+        -> ScriptModeOutput
+        -> RWST (Config m) String ReplState m ()
+    evaluateScript script outputFlag =
+        maybe (pure ()) (flip parseEvalScript outputFlag) (unReplScript script)
 
-    repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
+    repl0 :: ReaderT (Config m) (StateT ReplState m) ()
     repl0 = do
         str <- prompt
         let command = fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState claim
+    state :: ReplState
     state =
         ReplState
             { axioms         = addIndexesToAxioms axioms'
@@ -170,7 +181,7 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
                     { Log.exeName = Log.ExeName "kore-repl" }
             }
 
-    config :: Config claim m
+    config :: Config m
     config =
         Config
             { stepper    = stepper0
@@ -187,66 +198,64 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
         $ findIndex (not . isTrusted) claims'
 
     addIndexesToAxioms
-        :: [axiom]
-        -> [axiom]
+        :: [Axiom]
+        -> [Axiom]
     addIndexesToAxioms axs =
         fmap addIndex (zip axs [0..])
 
     addIndexesToClaims
         :: Int
-        -> [claim]
-        -> [claim]
+        -> [ReachabilityRule]
+        -> [ReachabilityRule]
     addIndexesToClaims len claims'' =
-        let toAxiomAndBack claim' index =
-                ruleToGoal
-                    claim'
-                    $ addIndex (goalToRule claim', index)
-        in zipWith toAxiomAndBack claims'' [len..]
+        zipWith addIndexToClaim [len..] claims''
+      where
+        addIndexToClaim n =
+            Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n)
+
+        lensAttribute =
+            Lens.lens
+                (\case
+                    OnePath onePathRule ->
+                        Lens.view (_Unwrapped . field @"attributes") onePathRule
+                    AllPath allPathRule ->
+                        Lens.view (_Unwrapped . field @"attributes") allPathRule
+                )
+                (\case
+                    OnePath onePathRule -> \attrs ->
+                        onePathRule
+                        & Lens.set (_Unwrapped . field @"attributes") attrs
+                        & OnePath
+                    AllPath allPathRule -> \attrs ->
+                        allPathRule
+                        & Lens.set (_Unwrapped . field @"attributes") attrs
+                        & AllPath
+                )
 
     addIndex
-        :: (axiom, Int)
-        -> axiom
+        :: (Axiom, Int)
+        -> Axiom
     addIndex (rw, n) =
-        modifyAttribute (mapAttribute n (getAttribute rw)) rw
-
-    modifyAttribute
-        :: Attribute.Axiom Symbol Variable
-        -> axiom
-        -> axiom
-    modifyAttribute att rule =
-        let rp = axiomToRulePatt rule in
-            fromRulePattern rule
-                $ rp { Rule.attributes = att }
-
-    axiomToRulePatt :: axiom -> Rule.RulePattern Variable
-    axiomToRulePatt = toRulePattern
-
-    getAttribute :: axiom -> Attribute.Axiom Symbol Variable
-    getAttribute = Rule.attributes . axiomToRulePatt
-
-    mapAttribute
-        :: Int
-        -> Attribute.Axiom Symbol variable
-        -> Attribute.Axiom Symbol variable
-    mapAttribute n attr =
-        Lens.over (field @"identifier") (makeRuleIndex n) attr
+        Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n) rw
+      where
+        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
 
-    firstClaim :: claim
+    firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
-    firstClaimExecutionGraph :: ExecutionGraph axiom
+    firstClaimExecutionGraph :: ExecutionGraph Axiom
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: claim
-        -> [claim]
-        -> [axiom]
-        -> ExecutionGraph axiom
+        :: ReachabilityRule
+        -> [ReachabilityRule]
+        -> [Axiom]
+        -> ExecutionGraph Axiom
         -> ReplNode
-        -> m (ExecutionGraph axiom)
+        -> m (ExecutionGraph Axiom)
     stepper0 claim claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
@@ -276,7 +285,7 @@ runRepl axioms' claims' logger replScript replMode outputFile mainModuleName = d
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
+    prompt :: MonadIO n => MonadState ReplState n => n String
     prompt = do
         node <- Lens.use (field @"node")
         liftIO $ do

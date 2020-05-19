@@ -295,7 +295,7 @@ test_predicate =
                     , ElemVar $ b Mock.testSort
                     ]
                 )
-                (FreeVariables.getFreeVariables $ freeVariables pr1)
+                (freeVariables pr1 & FreeVariables.toSet)
             assertBool "quantified variables are not included"
                 $ not . FreeVariables.isFreeVariable (ElemVar $ a Mock.testSort)
                 $ freeVariables

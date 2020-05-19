@@ -22,7 +22,6 @@ import Control.Error
     , throwE
     )
 import qualified Data.Foldable as Foldable
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
@@ -49,6 +48,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.WarnBottomTotalFunction
+    ( warnBottomTotalFunction
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -70,6 +72,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     )
 import Kore.TopBottom
 import Kore.Unparser
+import qualified Pretty
 
 {-| Evaluates functions on an application pattern.
 -}
@@ -105,6 +108,8 @@ evaluateApplication
         & maybeT (unevaluated Nothing) return
         & lift
     Foldable.for_ canMemoize (recordOrPattern results)
+    when (Symbol.isFunctional symbol && isBottom results) $
+        lift $ warnBottomTotalFunction termLike
     return results
   where
     finishT :: ExceptT r simplifier r -> simplifier r

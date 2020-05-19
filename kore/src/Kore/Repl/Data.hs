@@ -13,6 +13,8 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , RuleName (..), RuleReference(..)
     , ReplNode (..)
+    , Claim
+    , Axiom
     , ReplState (..)
     , ReplOutput (..)
     , ReplOut (..)
@@ -31,6 +33,7 @@ module Kore.Repl.Data
     , LogType (..)
     , ReplScript (..)
     , ReplMode (..)
+    , ScriptModeOutput (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
     ) where
@@ -68,9 +71,9 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
+import qualified Pretty
 
 import Kore.Internal.Condition
     ( Condition
@@ -122,6 +125,9 @@ newtype ReplScript = ReplScript
     } deriving (Eq, Show)
 
 data ReplMode = Interactive | RunScript
+    deriving (Eq, Show)
+
+data ScriptModeOutput = EnableOutput | DisableOutput
     deriving (Eq, Show)
 
 newtype OutputFile = OutputFile
@@ -309,10 +315,12 @@ helpText =
     \                                         file extension is added automatically);\
                                               \ accepted formats: svg, jpeg, png, pdf;\n\
     \step [n]                                 attempts to run 'n' proof steps at\
-                                              \the current node (n=1 by default)\n\
+                                              \ the current node (n=1 by default)\n\
     \stepf [n]                                attempts to run 'n' proof steps at\
                                               \ the current node, stepping through\
-                                              \ branchings (n=1 by default)\n\
+                                              \ branchings (n=1 by default);\n\
+    \                                         current node is advanced to the first\
+                                              \ interesting branching node (***)\n\
     \select <n>                               select node id 'n' from the graph\n\
     \config [n]                               shows the config for node 'n'\
                                               \ (defaults to current node)\n\
@@ -385,7 +393,13 @@ helpText =
     \ was reached using the SMT solver or it was reached through the Remove \n\
     \ Destination step.\n\
     \(**) A green node represents the proof has completed on\
-    \ that respective branch. A red node represents a stuck configuration.\
+    \ that respective branch. \n\
+    \ A red node represents a stuck configuration.\n\
+    \(***) An interesting branching node has at least two children which\n\
+    \ contain non-bottom leaves in their subtrees. If no such node exists,\n\
+    \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
+    \ leaf exists (i.e the proof is complete), the current node remains the same\n\
+    \ and a message is emitted.\n\
     \\n\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\
@@ -428,17 +442,20 @@ type ExecutionGraph rule =
 type InnerGraph rule =
     Gr CommonProofState (Seq rule)
 
+type Claim = ReachabilityRule
+type Axiom = Rule Claim
+
 -- | State for the repl.
-data ReplState claim = ReplState
-    { axioms     :: [Rule claim]
+data ReplState = ReplState
+    { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims     :: [claim]
+    , claims     :: [Claim]
     -- ^ List of claims to be proven
-    , claim      :: claim
+    , claim      :: Claim
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph (Rule claim))
+    , graphs     :: Map ClaimIndex (ExecutionGraph Axiom)
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -451,19 +468,20 @@ data ReplState claim = ReplState
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     , koreLogOptions :: !KoreLogOptions
-    -- ^ The log level, log scopes and log type decide what gets logged and where.
+    -- ^ The log level, log scopes and log type decide what gets logged and
+    -- where.
     }
     deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config claim m = Config
+data Config m = Config
     { stepper
-        :: claim
-        -> [claim]
-        -> [Rule claim]
-        -> ExecutionGraph (Rule claim)
+        :: Claim
+        -> [Claim]
+        -> [Axiom]
+        -> ExecutionGraph Axiom
         -> ReplNode
-        -> m (ExecutionGraph (Rule claim))
+        -> m (ExecutionGraph Axiom)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: SideCondition Variable

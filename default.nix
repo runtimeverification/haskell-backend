@@ -13,7 +13,6 @@ let
         overlays =
           (nixpkgsArgs.overlays or [])
           ++ [ (import ./nix/ghcide.nix { inherit sources; }) ]
-          ++ [ (import ./nix/stylish-haskell.nix { inherit sources; }) ]
           ;
         config =
           (nixpkgsArgs.config or {})
@@ -21,8 +20,13 @@ let
       };
     in import haskell-nix.sources.nixpkgs-1909 args;
   pkgs = nixpkgs;
+  local =
+    if builtins.pathExists ./local.nix
+    then import ./local.nix { inherit default; }
+    else x: x;
+  stackProject = args: pkgs.haskell-nix.stackProject (local args);
   project =
-    pkgs.haskell-nix.stackProject {
+    stackProject {
       src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
       modules = [
         {

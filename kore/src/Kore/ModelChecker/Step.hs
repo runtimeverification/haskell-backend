@@ -31,7 +31,6 @@ import qualified Data.Foldable as Foldable
 import Data.Text
     ( Text
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import GHC.Generics
 
 import Kore.Internal.Pattern
@@ -47,6 +46,7 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     )
+import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Result as StepResult
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
@@ -72,6 +72,7 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import qualified Kore.Unification.Procedure as Unification
+import qualified Pretty
 
 data Prim patt rewrite =
       CheckProofState
@@ -224,7 +225,7 @@ transitionRule
         eitherResults <-
             Step.applyRewriteRulesParallel
                 unificationProcedure
-                rules
+                (mkRewritingRule <$> rules)
                 config
             & lift . lift . runExceptT
         case eitherResults of
@@ -235,7 +236,7 @@ transitionRule
                     mapRules =
                         StepResult.mapRules
                         $ RewriteRule
-                        . Step.unTargetRule
+                        . Step.unRewritingRule
                         . Step.withoutUnification
                     mapConfigs =
                         StepResult.mapConfigs

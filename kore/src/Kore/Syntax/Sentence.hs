@@ -65,7 +65,6 @@ import Data.Coerce
 import Data.Generics.Sum.Typed
     ( projectTyped
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -74,8 +73,8 @@ import qualified Kore.Attribute.Null as Attribute
     ( Null (..)
     )
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    , HasFreeVariables (..)
+    ( HasFreeVariables (..)
+    , freeVariable
     )
 import Kore.Debug
 import Kore.Sort
@@ -90,6 +89,7 @@ import Kore.Variables.Free
     ( freePureVariables
     )
 import Kore.Variables.UnifiedVariable
+import qualified Pretty
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
 @symbol-declaration@ syntactic category from the Semantics of K, Section 9.1.6
@@ -475,7 +475,10 @@ instance
     Ord variable
     => HasFreeVariables (SentenceAxiom (Pattern variable annotation)) variable
   where
-    freeVariables = FreeVariables . freePureVariables . sentenceAxiomPattern
+    freeVariables =
+        foldMap freeVariable
+        . freePureVariables
+        . sentenceAxiomPattern
 
 unparseAxiom
     :: Unparse patternType
