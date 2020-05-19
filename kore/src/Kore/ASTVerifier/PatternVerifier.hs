@@ -26,13 +26,6 @@ import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc
-    ( (<+>)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( renderStrict
-    )
 
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
@@ -66,6 +59,10 @@ import Kore.Unparser
 import qualified Kore.Variables.Free as Variables
 import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
+import Pretty
+    ( (<+>)
+    )
+import qualified Pretty
 
 withBuiltinVerifiers :: Builtin.Verifiers -> Context -> Context
 withBuiltinVerifiers verifiers context =
@@ -560,7 +557,7 @@ checkVariable var vars =
   where
     inconsistent v =
         koreFailWithLocations [v, var]
-        $ renderStrict $ Pretty.layoutCompact
+        $ Pretty.renderText $ Pretty.layoutCompact
         $ "Inconsistent free variable usage:"
             <+> unparse v
             <+> "and"

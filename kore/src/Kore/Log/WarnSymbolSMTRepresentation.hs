@@ -11,10 +11,6 @@ module Kore.Log.WarnSymbolSMTRepresentation
 
 import Prelude.Kore
 
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
@@ -28,6 +24,10 @@ import Kore.Unparser
     ( unparse
     )
 import Log
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 import qualified SQL
 
 newtype WarnSymbolSMTRepresentation =

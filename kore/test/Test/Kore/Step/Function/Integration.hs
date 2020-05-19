@@ -23,7 +23,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Data.Sup
 import Kore.ASTVerifier.DefinitionVerifier
@@ -99,6 +98,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Pretty
 
 import Test.Kore
 import qualified Test.Kore.Builtin.Bool as Bool

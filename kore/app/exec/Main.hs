@@ -38,10 +38,6 @@ import qualified Data.Text.IO as Text
     ( putStrLn
     , readFile
     )
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( hPutDoc
-    , putDoc
-    )
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -159,6 +155,8 @@ import Kore.Unparser
 import Pretty
     ( Doc
     , Pretty (..)
+    , hPutDoc
+    , putDoc
     , vsep
     )
 import SMT

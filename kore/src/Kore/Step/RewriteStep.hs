@@ -38,8 +38,6 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules
@@ -59,6 +57,7 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
+    , simplifyCondition
     )
 import Kore.Step.Step
     ( Result
@@ -69,7 +68,6 @@ import Kore.Step.Step
     , applyRemainder
     , assertFunctionLikeResults
     , mkRewritingPattern
-    , simplifyPredicate
     , unifyRules
     )
 
@@ -112,8 +110,13 @@ finalizeAppliedRule renamedRule appliedConditions =
             Conditional { predicate = ensures } = finalPattern
             ensuresCondition = Condition.fromPredicate ensures
         finalCondition <-
-            simplifyPredicate
-                SideCondition.topTODO (Just appliedCondition) ensuresCondition
+            do
+                partial <-
+                    simplifyCondition
+                        (SideCondition.fromCondition appliedCondition)
+                        ensuresCondition
+                simplifyCondition SideCondition.top
+                    (appliedCondition <> partial)
             & Branch.alternate
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
@@ -136,10 +139,7 @@ finalizeRule initialVariables initial unifiedRule =
     Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
-        applied <- applyInitialConditions
-            SideCondition.topTODO
-            (Just initialCondition)
-            unificationCondition
+        applied <- applyInitialConditions initialCondition unificationCondition
         checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
@@ -161,9 +161,7 @@ finalizeRulesParallel initialVariables initial unifiedRules = do
         & fmap Foldable.fold
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-    remainders' <-
-        applyRemainder SideCondition.topTODO initial remainder
-        & Branch.gather
+    remainders' <- applyRemainder initial remainder & Branch.gather
     return Step.Results
         { results = Seq.fromList results
         , remainders =
@@ -176,9 +174,7 @@ finalizeRulesSequence initialVariables initial unifiedRules = do
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <-
-        applyRemainder SideCondition.topTODO initial remainder
-        & Branch.gather
+    remainders' <- applyRemainder initial remainder & Branch.gather
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -211,10 +207,9 @@ applyRulesWithFinalizer
     -- ^ Configuration being rewritten
     -> simplifier (Results RulePattern Variable)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
-    let sideCondition = SideCondition.topTODO
-        initialVariables = freeVariables sideCondition <> freeVariables initial
-    results <- unifyRules unificationProcedure sideCondition initial rules
+    results <- unifyRules unificationProcedure initial rules
     debugAppliedRewriteRules initial results
+    let initialVariables = freeVariables initial
     finalize initialVariables initial results
 {-# INLINE applyRulesWithFinalizer #-}
 

@@ -13,6 +13,11 @@ shellFor {
   buildInputs =
     with pkgs;
     [
-      ghcid ghcide gnumake hlint stylish-haskell yq z3
+      ghcid ghcide gnumake yq z3
     ];
+  tools = {
+    cabal = "3.2.0.0";
+    hlint = "3.1";
+    stylish-haskell = "0.11.0.0";
+  };
 }

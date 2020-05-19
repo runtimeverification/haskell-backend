@@ -71,10 +71,6 @@ import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -140,6 +136,10 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 import qualified Kore.Verified as Verified
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 {-| Defines the right-hand-side of a rewrite rule / claim
 -}

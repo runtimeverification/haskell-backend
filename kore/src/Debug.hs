@@ -60,11 +60,6 @@ import Data.Text
 import qualified Data.Text as Text
     ( unpack
     )
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    , (<+>)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( typeOf
     )
@@ -101,6 +96,11 @@ import System.Exit
     )
 
 import Data.Sup
+import Pretty
+    ( Doc
+    , (<+>)
+    )
+import qualified Pretty
 
 {- | Insert a separator between the items and enclose them with the delimiters.
 

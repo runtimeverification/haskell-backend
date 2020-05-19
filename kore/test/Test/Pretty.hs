@@ -7,9 +7,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Data.Text as Text
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( renderStrict
-    )
 
 import Pretty
 
@@ -23,11 +20,11 @@ test_layoutOneLine =
         -- unless this test passes, the test doesn't make sense
         do
             let expect = Text.intercalate "\n" input
-                actual = renderStrict . layoutCompact $ vsep (pretty <$> input)
+                actual = renderText . layoutCompact $ vsep (pretty <$> input)
             assertEqual "" expect actual
         -- the test itself:
         do
             let expect = Text.intercalate " " input
-                actual = renderStrict . layoutOneLine $ vsep (pretty <$> input)
+                actual = renderText . layoutOneLine $ vsep (pretty <$> input)
             assertEqual "" expect actual
     ]
