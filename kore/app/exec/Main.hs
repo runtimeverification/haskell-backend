@@ -59,7 +59,6 @@ import Options.Applicative
 import qualified Options.Applicative as Options
 import System.Directory
     ( copyFile
-    , createDirectoryIfMissing
     , doesDirectoryExist
     , doesFileExist
     , removePathForcibly
@@ -520,7 +519,7 @@ mainWithOptions execOptions = do
     tempDirectory <- createTempDirectory "." "report"
     exitCode <-
         runKoreLog tempDirectory koreLogOptions
-        $ handle handleSomeException
+        $ handle (handleSomeException tempDirectory)
         $ handle handleSomeEntry
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
@@ -546,11 +545,10 @@ mainWithOptions execOptions = do
         logEntry entry
         return $ ExitFailure 1
 
-    handleSomeException :: SomeException -> Main ExitCode
-    handleSomeException someException = do
-        lift $ createDirectoryIfMissing False "./report"
+    handleSomeException :: FilePath -> SomeException -> Main ExitCode
+    handleSomeException tempDirectory someException = do
         errorException someException
-        lift $ writeFile "./report/Errors.txt" (displayException someException)
+        lift $ writeFile (tempDirectory <> "/Errors.txt") (displayException someException)
         return $ ExitFailure 1
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
