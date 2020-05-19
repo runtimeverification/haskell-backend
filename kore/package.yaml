@@ -81,7 +81,7 @@ dependencies:
   - sqlite-simple >=0.4
   - streams
   - stm >=2.5
-  - tar
+  - tar >= 0.5
   - template-haskell >=2.14
   - text >=1.2
   - these >=1.0
@@ -90,7 +90,7 @@ dependencies:
   - unordered-containers >=0.2
   - vector >= 0.12
   - witherable >=0.3
-  - zlib
+  - zlib >= 0.6
 
 build-tools:
   - tasty-discover:tasty-discover >=4.2
