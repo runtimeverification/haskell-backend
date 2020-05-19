@@ -458,24 +458,53 @@ showKoreExecOptions
         , "rtsStatistics = " <> show rtsStatistics
         ]
 
+writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
+writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
+    copyFile searchFileName $ reportFile <> "/searchFile.kore"
+
+writeKoreMergeFiles :: FilePath -> KoreMergeOptions -> IO ()
+writeKoreMergeFiles reportFile KoreMergeOptions { rulesFileName } =
+    copyFile rulesFileName $ reportFile <> "/mergeRules.kore"
+
+writeKoreProveFiles :: FilePath -> KoreProveOptions -> IO ()
+writeKoreProveFiles reportFile KoreProveOptions { specFileName, saveProofs } = do
+    copyFile specFileName $ reportFile <> "/spec.kore"
+    Foldable.forM_ saveProofs $ flip copyFile (reportFile <> "/saveProofs.kore")
+
 writeOptionsAndKoreFiles :: FilePath -> KoreExecOptions -> IO ()
 writeOptionsAndKoreFiles
-    reportFile
+    reportDirectory
     opts@KoreExecOptions
-        { definitionFileName , patternFileName, koreProveOptions}
+        { definitionFileName
+        , patternFileName
+        , koreSearchOptions
+        , koreProveOptions
+        , koreMergeOptions
+        }
   = do
-    writeFile ("./" <> reportFile <> "/KoreExecOptions.txt")
+    let outputFile = reportDirectory <> "/KoreExecOptions.txt"
+    writeFile outputFile
         . showKoreExecOptions
         $ opts
     copyFile
         definitionFileName
-        (  "./" <> reportFile
+        (  reportDirectory
         <> if isJust koreProveOptions
             then "/vdefinition.kore"
             else "/definition.kore"
         )
     Foldable.forM_ patternFileName
-        $ flip copyFile ("./" <> reportFile <> "/pgm.kore")
+        $ flip copyFile (reportDirectory <> "/pgm.kore")
+    Foldable.forM_
+        koreSearchOptions
+        (writeKoreSearchFiles reportDirectory)
+    Foldable.forM_
+        koreMergeOptions
+        (writeKoreMergeFiles reportDirectory)
+    Foldable.forM_
+        koreProveOptions
+        (writeKoreProveFiles reportDirectory)
+    appendFile outputFile "last line"
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
