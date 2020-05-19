@@ -17,7 +17,6 @@ import Data.Text
 import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.String.String as String
-import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Overloading
 import Pair
@@ -408,11 +407,12 @@ narrows comment (term1, term2) ((v, term), (term1', term2')) =
     checkNarrowing :: UnificationResult -> Assertion
     checkNarrowing
         (Right (WithNarrowing
-            Narrowing { narrowedSubst, narrowedPair}
+            Narrowing { narrowedVar, narrowingTerm, overloadPair}
         ))
       = do
-        assertEqual "" (Pair term1' term2') narrowedPair
-        assertEqual "" (makeEqualsPredicate_ (mkElemVar v) term) narrowedSubst
+        assertEqual "" (Pair term1' term2') overloadPair
+        assertEqual "" v narrowedVar
+        assertEqual "" term narrowingTerm
     checkNarrowing _ = assertFailure "Expected narrowing solution"
 
 
@@ -521,8 +521,8 @@ withUnificationTwice check comment termPair =
             Right (Simple termPair') -> do
                 actual' <- unify termPair'
                 check actual'
-            Right (WithNarrowing Narrowing { narrowedPair }) -> do
-                actual' <- unify narrowedPair
+            Right (WithNarrowing Narrowing { overloadPair }) -> do
+                actual' <- unify overloadPair
                 check actual'
 
 x1 :: TermLike Variable

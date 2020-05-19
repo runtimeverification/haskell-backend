@@ -35,6 +35,9 @@ import Data.String
     )
 import qualified Data.Text as Text
 
+import Kore.Attribute.Pattern.FreeVariables
+    ( getFreeElementVariables
+    )
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.List as Builtin.List
@@ -578,11 +581,18 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
             termMerger firstTerm' secondTerm'
         Right
             (WithNarrowing Narrowing
-                { narrowedSubst
-                , narrowingVars
-                , narrowedPair = Pair firstTerm' secondTerm'
+                { narrowedVar
+                , narrowingTerm
+                , overloadPair = Pair firstTerm' secondTerm'
                 }
             ) -> lift $ do
+                let narrowingVars =
+                        getFreeElementVariables $ freeVariables narrowingTerm
+                let narrowedSubst =
+                        Predicate.markSimplified
+                        $ Predicate.makeEqualsPredicate_
+                            (mkElemVar narrowedVar)
+                            narrowingTerm
                 merged <- termMerger firstTerm' secondTerm'
                 boundPattern <-
                     Exists.makeEvaluate SideCondition.topTODO narrowingVars

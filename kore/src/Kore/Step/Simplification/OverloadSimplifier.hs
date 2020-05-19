@@ -5,6 +5,8 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.OverloadSimplifier
     ( OverloadSimplifier (..)
+    , InjectedOverloadPair (..)
+    , InjectedOverload (..)
     , mkOverloadSimplifier
     ) where
 
@@ -24,7 +26,23 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier (..)
     )
-import Pair
+
+-- | Consists of an overload symbol and an injection from the sort
+-- of the symbol; the injection can miss (@Nothing@) if not needed.
+data InjectedOverload = InjectedOverload
+    { overload :: !Symbol
+    , injection :: !(Maybe (Inj ()))
+    }
+
+-- | Two overload symbols and injections.
+--  @overloadingSymbol = (OS, \inj{sOS, stop})@
+--  @overloadedSymbol =  (os, \inj{sos, sinter})@
+-- such that @OS@ is overloading @os@ and @sinter < stop@
+data InjectedOverloadPair = InjectedOverloadPair
+    { overloadingSymbol :: !InjectedOverload
+    , overloadedSymbol :: !InjectedOverload
+    }
+
 
 {- | Data structure encapsulating functionality for handling overloaded
 symbols during unification.
@@ -60,7 +78,7 @@ data OverloadSimplifier =
             -> Symbol
             -> Symbol
             -> Sort
-            -> Maybe (Symbol, Maybe (Inj ()))
+            -> Maybe InjectedOverload
         {- ^ Find a common overload with the result sort being a subsort of the
         argument, if such an overload exists. Also returns the appropriate
         injection, if necessary.
@@ -69,16 +87,16 @@ data OverloadSimplifier =
             :: Inj ()
             -> Symbol
             -> Sort
-            -> Either String (Maybe (Symbol, Maybe (Inj ())))
+            -> Either String (Maybe InjectedOverload)
         {- ^Find a symbol overloaded by the argument with the result sort being
         a subsort of the argument, if a maximum (w.r.t. overloading) such
         symbol exists. Also returns the appropriate injection, if necessary.
         -}
         , unifyOverloadWithSortWithinBound
-            :: Symbol
-            -> Inj ()
-            -> Either String (Maybe (Pair (Symbol, Maybe (Inj ()))))
-        {- Given symbol firstHead of sort S1 and an injection inj{S2, injTo}
+            :: Symbol -- top symbol on the LHS (wrapepd in an \inj{S1, injTo})
+            -> Inj () -- injection \inj{S2, injTo} wrapping the var on the RHS
+            -> Either String (Maybe InjectedOverloadPair)
+        {- ^Given symbol firstHead of sort S1 and an injection inj{S2, injTo}
           If there exists a (unique) maximum overloaded symbol secondHead
           with its result sort S2' within S2, such that there exists a common
           overload headUnion of firstHead and secondHead
@@ -133,6 +151,8 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
         overloadedChildrenSorts =
             Symbol.applicationSortsOperands (symbolSorts overloadedHead)
 
+    unifyOverloadWithinBound
+      :: Inj () -> Symbol -> Symbol -> Sort -> Maybe InjectedOverload
     unifyOverloadWithinBound injProto s1 s2 topSort =
         headMay withinBound
       where
@@ -141,31 +161,25 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
             $ OverloadGraph.commonOverloads overloadGraph s1 s2
 
     unifyOverloadWithSortWithinBound
-        :: Symbol
-        -> Inj ()
-        -> Either String (Maybe (Pair (Symbol, Maybe (Inj ()))))
-    unifyOverloadWithSortWithinBound sym injProto@Inj { injFrom, injTo } =
-        case overloads of
-            Left err -> Left err
-            Right l ->
-                let l' =
-                        [ Pair (s, inj) (s', inj')
-                        | (s, inj, Just (s', inj')) <- l
-                        ]
-                    third (Pair _ (s, _)) = s
-                    mm' = findMaxOverload third l'
-                in case mm' of
-                    Nothing -> Right Nothing
-                    Just m' ->
-                        if checkMaxOverload third m' l'
-                            then Right (Just m')
-                            else errorAmbiguousOverloads (map third l')
-
+        :: Symbol -> Inj () -> Either String (Maybe InjectedOverloadPair)
+    unifyOverloadWithSortWithinBound sym injProto@Inj { injFrom, injTo }
+      = do
+        l <- overloads
+        let l' =
+                [ InjectedOverloadPair { overloadingSymbol, overloadedSymbol }
+                | (overloadingSymbol, Just overloadedSymbol) <- l
+                ]
+            rightSymbol = overload . overloadedSymbol
+        case findMaxOverload rightSymbol l' of
+            Nothing -> return Nothing
+            Just m' -> if checkMaxOverload rightSymbol m' l'
+                then return (Just m')
+                else errorAmbiguousOverloads (map rightSymbol l')
       where
         overloads =
-            traverse ( \(s,inj) ->
-                getOverloadedWithinSort injProto s injFrom >>=
-                  \r -> return (s, inj, r)
+            traverse ( \s ->
+                getOverloadedWithinSort injProto (overload s) injFrom >>=
+                  \r -> return (s, r)
                 )
                 overloadings
         overloadings =
@@ -176,13 +190,13 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
         :: Inj ()
         -> Symbol
         -> Sort
-        -> Either String (Maybe (Symbol, Maybe (Inj ())))
+        -> Either String (Maybe InjectedOverload)
     getOverloadedWithinSort injProto sym topSort
         | null overloads = Right Nothing
-        | Just m <- findMaxOverload fst overloads
-        , checkMaxOverload fst m overloads
+        | Just m <- findMaxOverload overload overloads
+        , checkMaxOverload overload m overloads
         = Right (Just m)
-        | otherwise = errorAmbiguousOverloads (map fst overloads)
+        | otherwise = errorAmbiguousOverloads (map overload overloads)
       where
         overloads =
             filterOverloads injProto topSort . Set.toList
@@ -208,26 +222,21 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
 
     isOverloadingOrEqual x y = maybe False (LT /=) (compareOverloading x y)
 
-    filterOverloads
-      :: Inj ()
-      -> Sort
-      -> [Symbol]
-      -> [(Symbol, Maybe (Inj ()))]
+    filterOverloads :: Inj () -> Sort -> [Symbol] -> [InjectedOverload]
     filterOverloads injProto topSort overloads =
         overloads
         & map (\x -> (x, injProtoTop { injFrom = resultSort x }))
         & filter (isOrderedInj . snd)
-        & map (fmap
-                (\inj ->
-                    if injFrom inj == injTo inj then Nothing else Just inj
-                )
-            )
+        & map (uncurry InjectedOverload . fmap removeEmptyInjection)
       where
         injProtoTop = injProto { injTo = topSort }
+        removeEmptyInjection inj
+            | injFrom inj == injTo inj = Nothing
+            | otherwise = Just inj
 
     resultSort :: Symbol -> Sort
     resultSort = applicationSortsResult  . symbolSorts
-    
+
     compareOverloading :: Symbol -> Symbol -> Maybe Ordering
     compareOverloading x y
         | x == y = Just EQ

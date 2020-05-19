@@ -312,9 +312,9 @@ freshSymbolInstance freeVars sym base =
     & refreshVariables freeVars
   where
     sorts = applicationSortsOperands $ symbolSorts sym
-    varTerms = map (mkElemVar . uncurry variable) $ zip [1..] sorts
-    variable :: Integer -> Sort -> ElementVariable variable
-    variable vIdx vSort = ElementVariable . from @Variable @variable
+    varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
+    mkVariable :: Integer -> Sort -> ElementVariable variable
+    mkVariable vIdx vSort = ElementVariable . from @Variable @variable
         $ Variable
             { variableName = Id
                 { getId = base <> Text.pack (show vIdx)

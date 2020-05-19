@@ -38,12 +38,14 @@ import Kore.IndexedModule.IndexedModule
     )
 import Kore.Internal.Symbol
 
-{- | 'OverloadGraph' maps symbols to symbols overloading them
+{- | 'OverloadGraph' maps symbols to symbols overloading them and the reverse
  -}
 data OverloadGraph =
     OverloadGraph
         { overloadingSymbols :: !(Map Symbol (Set Symbol))
+        -- ^maps a symbol to the symbols overloading it
         , overloadedSymbols :: !(Map Symbol (Set Symbol))
+        -- ^maps a symbol to the symbols overloaded by it
         }
     deriving (GHC.Generic, Typeable)
 
