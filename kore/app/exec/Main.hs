@@ -461,7 +461,7 @@ showKoreExecOptions
 writeOptionsAndKoreFiles :: FilePath -> KoreExecOptions -> IO ()
 writeOptionsAndKoreFiles
     reportFile
-    opts@KoreExecOptions { definitionFileName , patternFileName, outputFileName}
+    opts@KoreExecOptions { definitionFileName , patternFileName}
   = do
     writeFile ("./" <> reportFile <> "/KoreExecOptions.txt")
         . showKoreExecOptions
@@ -469,8 +469,6 @@ writeOptionsAndKoreFiles
     copyFile definitionFileName ("./" <> reportFile <> "/definitionFile.kore")
     Foldable.forM_ patternFileName
         $ flip copyFile ("./" <> reportFile <> "/patternFile.kore")
-    Foldable.forM_ outputFileName
-        $ flip copyFile ("./" <> reportFile <> "/outputFile.kore")
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
@@ -482,7 +480,7 @@ main = do
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions } = execOptions
+    let KoreExecOptions { koreLogOptions, outputFileName } = execOptions
     tempDirectory <- createTempDirectory "." "report"
     exitCode <-
         runKoreLog tempDirectory koreLogOptions
@@ -494,6 +492,8 @@ mainWithOptions execOptions = do
         writeStats filePath =<< getStats
     when . toReport . bugReport
         <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
+    Foldable.forM_ outputFileName
+        $ flip copyFile ("./" <> tempDirectory <> "/outputFile.kore")
     directoryReportExists <- doesDirectoryExist tempDirectory
     when directoryReportExists $ do
         createTarGz ("./" <> tempDirectory <> ".tar.gz") "." [tempDirectory]
