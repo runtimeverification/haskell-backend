@@ -147,7 +147,7 @@ withMainReport
     reportDirectory
     koreLogOptions@KoreLogOptions { timestampsSwitch, exeName }
     continue
-  = 
+  =
     Colog.withLogTextFile ("./" <> reportDirectory <> "/LoggedErrors.txt")
         $ continue
         . koreLogTransformer koreLogOptions { logLevel = Error}
