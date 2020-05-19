@@ -13,9 +13,9 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
+import qualified Control.Lens as Lens
 import Data.Generics.Wrapped
     ( _Unwrapped
-    , _Wrapped
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -77,4 +77,15 @@ instance From Variable variable => From Variable (SetVariable variable) where
 instance NamedVariable variable => NamedVariable (SetVariable variable) where
     type VariableNameOf (SetVariable variable) =
         SetVariableName (VariableNameOf variable)
-    lensVariableName = _Unwrapped . lensVariableName . _Wrapped
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to =
+            getSetVariable
+            >>> Lens.view isoVariable1
+            >>> fmap SetVariableName
+        fr =
+            fmap unSetVariableName
+            >>> Lens.review isoVariable1
+            >>> SetVariable

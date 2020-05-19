@@ -58,6 +58,12 @@ instance NamedVariable W where
     type VariableNameOf W = W
     lensVariableName f = f
     {-# INLINE lensVariableName #-}
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to variableName1 =
+            Variable1 { variableName1, variableSort1 = sortVariable }
+        fr Variable1 { variableName1 } = variableName1
 
 instance FreshPartialOrd W where
     infVariable w = w { counter = Nothing }

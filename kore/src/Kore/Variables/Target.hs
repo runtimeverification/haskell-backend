@@ -25,13 +25,15 @@ module Kore.Variables.Target
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Internal.Variable
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
+    ( NamedVariable (..)
+    , SortedVariable (..)
     )
 import Kore.Unparser
     ( Unparse (..)
@@ -143,11 +145,28 @@ instance
     {-# INLINE lensVariableSort #-}
 
 instance NamedVariable variable => NamedVariable (Target variable) where
-    type VariableNameOf (Target variable) = VariableNameOf variable
-    lensVariableName f =
-        \case
-            Target variable -> Target <$> lensVariableName f variable
-            NonTarget variable -> NonTarget <$> lensVariableName f variable
+    type VariableNameOf (Target variable) = Target (VariableNameOf variable)
+
+    lensVariableName =
+        Lens.lens get set
+      where
+        get = fmap (Lens.view lensVariableName)
+        set (unTarget -> variable) =
+            fmap $ \variableName ->
+                Lens.set lensVariableName variableName variable
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to (Target variable) = Target <$> Lens.view isoVariable1 variable
+        to (NonTarget variable) = NonTarget <$> Lens.view isoVariable1 variable
+        fr Variable1 { variableName1, variableSort1 } =
+            flip fmap variableName1 $ \variableName1' ->
+                Variable1
+                { variableName1 = variableName1'
+                , variableSort1
+                }
+                & Lens.review isoVariable1
 
 instance VariableBase variable => VariableBase (Target variable)
 

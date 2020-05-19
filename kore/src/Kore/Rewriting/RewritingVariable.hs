@@ -89,23 +89,30 @@ data RewritingVariableName
 
 instance NamedVariable RewritingVariable where
     type VariableNameOf RewritingVariable = RewritingVariableName
-    lensVariableName =
-        Lens.lens get set
+
+    isoVariable1 =
+        Lens.iso to fr
       where
-        get (ConfigVariable variable) =
-            ConfigVariableName (Lens.view lensVariableName variable)
-        get (RuleVariable variable) =
-            RuleVariableName (Lens.view lensVariableName variable)
-        set rewritingVariable rewritingVariableName =
-            case rewritingVariableName of
-                ConfigVariableName variableName ->
-                    Lens.set lensVariableName variableName variable
+        to (ConfigVariable variable) =
+            ConfigVariableName <$> Lens.view isoVariable1 variable
+        to (RuleVariable variable) =
+            RuleVariableName <$> Lens.view isoVariable1 variable
+        fr Variable1 { variableName1, variableSort1 } =
+            case variableName1 of
+                ConfigVariableName variableName1' ->
+                    Variable1
+                    { variableName1 = variableName1'
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
                     & ConfigVariable
-                RuleVariableName variableName ->
-                    Lens.set lensVariableName variableName variable
+                RuleVariableName variableName1' ->
+                    Variable1
+                    { variableName1 = variableName1'
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
                     & RuleVariable
-          where
-            variable = from @_ @Variable rewritingVariable
 
 instance VariableBase RewritingVariable
 

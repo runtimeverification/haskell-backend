@@ -13,6 +13,9 @@ module Kore.Syntax.Variable
     , isOriginalVariable
     , illegalVariableCounter
     , externalizeFreshVariable
+    , Variable1 (..)
+    , fromVariable1
+    , toVariable1
     -- * Variable names
     , VariableName (..)
     , ElementVariableName (..)
@@ -36,7 +39,8 @@ import Control.DeepSeq
     ( NFData (..)
     )
 import Control.Lens
-    ( Lens'
+    ( Iso'
+    , Lens'
     )
 import qualified Control.Lens as Lens
 import Data.Generics.Product
@@ -196,20 +200,27 @@ instance From Variable Variable where
 
 instance NamedVariable Variable where
     type VariableNameOf Variable = VariableName
-    lensVariableName =
-        Lens.lens get set
+
+    isoVariable1 =
+        Lens.iso to fr
       where
-        get Variable { variableName, variableCounter } =
-            VariableName
-            { base = variableName
-            , counter = variableCounter
+        to Variable { variableName, variableCounter, variableSort } =
+            Variable1
+            { variableName1 =
+                VariableName
+                { base = variableName
+                , counter = variableCounter
+                }
+            , variableSort1 = variableSort
             }
-        set Variable { variableSort } VariableName { base, counter } =
+        fr Variable1 { variableName1, variableSort1 } =
             Variable
             { variableName = base
             , variableCounter = counter
-            , variableSort
+            , variableSort = variableSort1
             }
+          where
+            VariableName { base, counter } = variableName1
 
 instance VariableBase Variable
 
@@ -266,7 +277,23 @@ class
     => NamedVariable variable
   where
     type VariableNameOf variable
+
     lensVariableName :: Lens' variable (VariableNameOf variable)
+    lensVariableName = isoVariable1 . field @"variableName1"
+
+    isoVariable1 :: Iso' variable (Variable1 (VariableNameOf variable))
+
+fromVariable1
+    :: NamedVariable variable
+    => Variable1 (VariableNameOf variable)
+    -> variable
+fromVariable1 = Lens.review isoVariable1
+
+toVariable1
+    :: NamedVariable variable
+    => variable
+    -> Variable1 (VariableNameOf variable)
+toVariable1 = Lens.view isoVariable1
 
 class
     (From Variable variable, From variable Variable) => VariableBase variable
@@ -341,7 +368,10 @@ instance SortedVariable Concrete where
 
 instance NamedVariable Concrete where
     type VariableNameOf Concrete = Void
-    lensVariableName = Lens.lens (\case {}) (\case {})
+    isoVariable1 =
+        Lens.iso
+            (\case {})
+            (\Variable1 { variableName1 } -> case variableName1 of {})
 
 instance VariableBase Concrete
 
@@ -359,6 +389,8 @@ data Variable1 variable =
     , variableSort1 :: !Sort
     }
     deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
     deriving (GHC.Generic)
 
 instance Hashable variable => Hashable (Variable1 variable)

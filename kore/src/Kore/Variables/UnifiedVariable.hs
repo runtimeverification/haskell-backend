@@ -119,6 +119,7 @@ instance
   where
     type VariableNameOf (UnifiedVariable variable) =
         SomeVariableName (VariableNameOf variable)
+
     lensVariableName =
         Lens.lens get set
       where
@@ -138,6 +139,30 @@ instance
                     & SetVar
           where
             variable = from @_ @variable unifiedVariable
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to (ElemVar elementVariable) =
+            SomeVariableNameElement <$> Lens.view isoVariable1 elementVariable
+        to (SetVar setVariable) =
+            SomeVariableNameSet <$> Lens.view isoVariable1 setVariable
+        fr Variable1 { variableName1, variableSort1 } =
+            case variableName1 of
+                SomeVariableNameElement elementVariableName ->
+                    Variable1
+                    { variableName1 = elementVariableName
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
+                    & ElemVar
+                SomeVariableNameSet setVariableName ->
+                    Variable1
+                    { variableName1 = setVariableName
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
+                    & SetVar
 
 instance
     FreshPartialOrd variable => FreshPartialOrd (UnifiedVariable variable)
