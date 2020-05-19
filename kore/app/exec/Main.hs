@@ -13,12 +13,16 @@ import Control.Monad.Trans
     ( lift
     )
 import qualified Data.Char as Char
+import Data.Bool
+    ( bool
+    )
 import Data.Default
     ( def
     )
 import qualified Data.Foldable as Foldable
 import Data.Limit
     ( Limit (..)
+    , maybeLimit
     )
 import Data.List
     ( intercalate
@@ -29,6 +33,7 @@ import Data.Semigroup
     )
 import Data.Text
     ( Text
+    , unpack
     )
 import qualified Data.Text as Text
     ( null
@@ -144,7 +149,7 @@ import Kore.Strategies.Verification
 import Kore.Syntax.Definition
     ( Definition (Definition)
     , Module (Module)
-    , ModuleName (ModuleName)
+    , ModuleName (..)
     , Sentence (..)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
@@ -160,6 +165,7 @@ import Pretty
     )
 import SMT
     ( MonadSMT
+    , TimeOut (..)
     )
 import qualified SMT
 import Stats
@@ -439,22 +445,24 @@ showKoreExecOptions
     )
   =
     unlines
-        [ "KoreExecOptions:"
-        , "definitionFileName = " <> show definitionFileName
-        , "patternFileName = " <> show patternFileName
-        , "outputFileName = " <> show outputFileName
-        , "mainModuleName = " <> show mainModuleName
-        , "smtTimeOut = " <> show smtTimeOut
-        , "smtPrelude = " <> show smtPrelude
-        , "smtSolver = " <> show smtSolver
-        , "breadthLimit = " <> show breadthLimit
-        , "depthLimit = " <> show depthLimit
-        , "strategy = " <> show (fst strategy)
-        , "koreLogOptions = " <> show koreLogOptions
-        , "koreSearchOptions = " <> show koreSearchOptions
-        , "koreProveOptions = " <> show koreProveOptions
-        , "koreMergeOptions = " <> show koreMergeOptions
-        , "rtsStatistics = " <> show rtsStatistics
+        [ "#!/bin/bash"
+        , "PATH_KORE_EXEC=\"$(stack path --local-bin)\""
+        , "$PATH_KORE_EXEC/kore-exec \\"
+        , bool
+            "definition.kore \\"
+            "vdefinition.kore \\"
+            (isJust koreProveOptions)
+        , bool "# pattern" "--pattern pgm.kore \\" (isJust patternFileName)
+        , bool "# output" "--output result.kore \\" (isJust outputFileName)
+        , unpack $ getModuleName mainModuleName <> " \\"
+        , "--smt-timeout " <> show (getTimeOut smtTimeOut) <> " \\"
+        , maybe
+            "# smt-prelude"
+            (("--smt-prelude " <>) . (<> " \\")) smtPrelude
+        , "--smt " <> fmap Char.toLower (show smtSolver)
+        , maybeLimit "# breadth" (("--breadth " <>) . (<> " \\") . show) breadthLimit
+        , maybeLimit "# depth" (("--depth " <>) . (<> " \\") . show) depthLimit
+        , "--strategy " <> fst strategy
         ]
 
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
@@ -481,7 +489,7 @@ writeOptionsAndKoreFiles
         , koreMergeOptions
         }
   = do
-    let outputFile = reportDirectory <> "/KoreExecOptions.txt"
+    let outputFile = reportDirectory <> "/kore-exec.sh"
     writeFile outputFile
         . showKoreExecOptions
         $ opts
@@ -503,7 +511,6 @@ writeOptionsAndKoreFiles
     Foldable.forM_
         koreProveOptions
         (writeKoreProveFiles reportDirectory)
-    appendFile outputFile "last line"
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs

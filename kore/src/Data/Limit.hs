@@ -14,6 +14,7 @@ import qualified Data.Limit as Limit
 module Data.Limit
     ( Limit (..)
     , enumFromLimit
+    , maybeLimit
     , replicate
     , takeWithin
     , withinLimit
@@ -82,3 +83,7 @@ takeWithin :: (Enum a, Ord a) => Limit a -> [b] -> [b]
 takeWithin limit bs = zipWith const bs limiting
   where
     limiting = enumFromLimit limit (toEnum 1)
+
+maybeLimit :: b -> (a -> b) -> Limit a -> b
+maybeLimit b _ Unlimited = b
+maybeLimit _ f (Limit a) = f a
