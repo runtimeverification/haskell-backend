@@ -461,14 +461,21 @@ showKoreExecOptions
 writeOptionsAndKoreFiles :: FilePath -> KoreExecOptions -> IO ()
 writeOptionsAndKoreFiles
     reportFile
-    opts@KoreExecOptions { definitionFileName , patternFileName}
+    opts@KoreExecOptions
+        { definitionFileName , patternFileName, koreProveOptions}
   = do
     writeFile ("./" <> reportFile <> "/KoreExecOptions.txt")
         . showKoreExecOptions
         $ opts
-    copyFile definitionFileName ("./" <> reportFile <> "/definitionFile.kore")
+    copyFile
+        definitionFileName
+        (  "./" <> reportFile
+        <> if isJust koreProveOptions
+            then "/vdefinition.kore"
+            else "/definition.kore"
+        )
     Foldable.forM_ patternFileName
-        $ flip copyFile ("./" <> reportFile <> "/patternFile.kore")
+        $ flip copyFile ("./" <> reportFile <> "/pgm.kore")
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
