@@ -108,6 +108,7 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
+    , unparseToString
     )
 import Kore.Variables.Target
     ( Target
@@ -192,7 +193,7 @@ attemptEquation sideCondition termLike equation =
         :: Predicate (Target variable)
         -> Predicate (Target variable)
         -> simplifier (Predicate (Target variable))
-    simplifyArgumentWithResult argument result =
+    simplifyArgumentWithResult argument result = do
         let argumentPattern =
                 Pattern.fromCondition . Condition.fromPredicate $ argument
             resultCondition = Condition.fromPredicate result
@@ -203,9 +204,15 @@ attemptEquation sideCondition termLike equation =
                 . Pattern.withoutTerm
                 . OrPattern.toPattern
                 . OrPattern.fromPatterns
-         in Simplifier.simplifyCondition sideCondition argumentWithResult
-            & Branch.gather
-            & fmap toPredicate
+        x <-
+            Simplifier.simplifyCondition sideCondition argumentWithResult
+                & Branch.gather
+                & fmap toPredicate
+        traceM
+            $ "\n\nPredicate\n:" <> unparseToString result
+            <> "\n\nArgument\n:" <> unparseToString argument
+            <> "\n\nResult\n:" <> unparseToString x
+        return x
 
 applyEquation
     :: forall simplifier variable
