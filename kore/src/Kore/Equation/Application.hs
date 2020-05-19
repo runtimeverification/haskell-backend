@@ -160,8 +160,8 @@ attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument } = equationRenamed
         (predicate, substitution) <- match left termLike & whileMatch
-        argument' <- simplifyArgument argument & lift
-        let matchResult = (makeAndPredicate argument' predicate, substitution)
+        argument' <- simplifyArgumentWithResult argument predicate & lift
+        let matchResult = (argument', substitution)
         (equation', predicate') <-
             applyMatchResult equationRenamed matchResult
             & whileApplyMatchResult
@@ -188,18 +188,22 @@ attemptEquation sideCondition termLike equation =
         debugAttemptEquationResult equation result
         return result
 
-    simplifyArgument
+    simplifyArgumentWithResult
         :: Predicate (Target variable)
+        -> Predicate (Target variable)
         -> simplifier (Predicate (Target variable))
-    simplifyArgument argument =
+    simplifyArgumentWithResult argument result =
         let argumentPattern =
                 Pattern.fromCondition . Condition.fromPredicate $ argument
+            resultCondition = Condition.fromPredicate result
+            argumentWithResult =
+                Pattern.andCondition argumentPattern resultCondition
             toPredicate =
                 Condition.toPredicate
                 . Pattern.withoutTerm
                 . OrPattern.toPattern
                 . OrPattern.fromPatterns
-         in Simplifier.simplifyCondition sideCondition argumentPattern
+         in Simplifier.simplifyCondition sideCondition argumentWithResult
             & Branch.gather
             & fmap toPredicate
 
