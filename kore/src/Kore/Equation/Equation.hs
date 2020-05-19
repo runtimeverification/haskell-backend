@@ -180,18 +180,45 @@ instance
       = TermLike.mkEquals sort left right
 
       -- conditional equation
-      | otherwise =
+      -- TODO: old version, should be removed
+      | not (isTop requires)
+      , not (isTop ensures)
+      , isTop argument
+      , isTop antiLeft
+      =
         TermLike.mkImplies
             requires'
             (TermLike.mkAnd
                 (TermLike.mkEquals sort left right)
                 ensures'
             )
+
+      -- conditional equation
+      | otherwise =
+        TermLike.mkImplies
+            (TermLike.mkAnd
+                requires'
+                (TermLike.mkAnd argument' antiLeft')
+            )
+            (TermLike.mkAnd
+                (TermLike.mkEquals sort left right)
+                ensures'
+            )
+
       where
         requires' = from @(Predicate variable) requires
+        argument' = from @(Predicate variable) argument
+        antiLeft' = from @(Predicate variable) antiLeft
         ensures' = from @(Predicate variable) ensures
         sort = termLikeSort requires'
-        Equation { left, requires, right, ensures } = equation
+        Equation
+            { requires
+            , argument
+            , antiLeft
+            , left
+            , right
+            , ensures
+            } = equation
 
 instance
     InternalVariable variable
