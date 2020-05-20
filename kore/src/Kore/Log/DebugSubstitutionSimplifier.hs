@@ -24,6 +24,7 @@ import qualified SQL
 data DebugSubstitutionSimplifier
     = WhileSimplifySubstitution
     | SubstitutionSimplifierResult
+    deriving (Show)
     deriving (GHC.Generic)
 
 instance SOP.Generic DebugSubstitutionSimplifier
@@ -31,7 +32,7 @@ instance SOP.Generic DebugSubstitutionSimplifier
 instance SOP.HasDatatypeInfo DebugSubstitutionSimplifier
 
 instance Pretty DebugSubstitutionSimplifier where
-    pretty WhileSimplifySubstitution = "Simplifying substitution.";
+    pretty WhileSimplifySubstitution = "Simplifying substitution."
     pretty SubstitutionSimplifierResult = "Non-bottom result."
 
 instance Entry DebugSubstitutionSimplifier where
