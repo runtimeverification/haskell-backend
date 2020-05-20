@@ -74,8 +74,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    , toRepresentation
+    ( toRepresentation
     , topTODO
     )
 import Kore.Internal.Substitution
@@ -195,9 +194,7 @@ simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
             AndF And { andFirst, andSecond } ->
                 foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
-                let sideCondition =
-                        SideCondition.topTODO
-                        `SideCondition.andCondition` intermediateCondition
+                let sideCondition = SideCondition.topTODO
                 simplified <-
                     makeAnd
                         intermediateTerm
