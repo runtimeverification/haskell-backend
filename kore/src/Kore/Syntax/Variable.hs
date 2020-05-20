@@ -226,3 +226,31 @@ instance From Variable Concrete where
 instance From Concrete variable where
     from = \case {}
     {-# INLINE from #-}
+
+data Variable1 variable =
+    Variable1
+    { variableName1 :: !variable
+    , variableSort1 :: !Sort
+    }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+
+instance Hashable variable => Hashable (Variable1 variable)
+
+instance NFData variable => NFData (Variable1 variable)
+
+instance SOP.Generic (Variable1 variable)
+
+instance SOP.HasDatatypeInfo (Variable1 variable)
+
+instance Debug variable => Debug (Variable1 variable)
+
+instance (Debug variable, Diff variable) => Diff (Variable1 variable)
+
+instance Unparse variable => Unparse (Variable1 variable) where
+    unparse Variable1 { variableName1, variableSort1 } =
+        unparse variableName1
+        <> Pretty.colon
+        <> unparse variableSort1
+
+    unparse2 Variable1 { variableName1 } = unparse2 variableName1
