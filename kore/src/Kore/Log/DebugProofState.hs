@@ -9,11 +9,6 @@ module Kore.Log.DebugProofState
 
 import Prelude.Kore
 
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
@@ -24,6 +19,10 @@ import Kore.Strategies.ProofState
     , ProofState (..)
     )
 import Log
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 data DebugProofState =
     DebugProofState
@@ -31,6 +30,7 @@ data DebugProofState =
         , transition :: Prim (RewriteRule RewritingVariable)
         , result :: Maybe (ProofState ReachabilityRule)
         }
+    deriving (Show)
 
 instance Pretty DebugProofState where
     pretty

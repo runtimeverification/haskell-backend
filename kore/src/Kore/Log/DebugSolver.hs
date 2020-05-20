@@ -23,22 +23,16 @@ import Data.Default
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-    ( defaultLayoutOptions
-    , layoutPretty
-    )
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
-    ( renderStrict
-    )
 import Options.Applicative
     ( Parser
     , help
     , long
     , strOption
     )
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 import Log
     ( ActualEntry (..)
@@ -57,11 +51,13 @@ newtype DebugSolverSend =
     DebugSolverSend
         { getSendSExpr :: SExpr
         }
+    deriving (Show)
 
 newtype DebugSolverRecv =
     DebugSolverRecv
         { getRecvSExpr :: Text
         }
+    deriving (Show)
 
 instance Pretty DebugSolverSend where
     pretty DebugSolverSend { getSendSExpr } =
@@ -107,7 +103,7 @@ solverTranscriptLogger textLogger =
   where
     messageToText :: DebugSolverSend -> Text
     messageToText =
-        Pretty.renderStrict
+        Pretty.renderText
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         . pretty
 

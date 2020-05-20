@@ -35,8 +35,8 @@ import Kore.Log.DebugEvaluateCondition
 import Kore.Log.DebugSubstitutionSimplifier
     ( DebugSubstitutionSimplifier
     )
-import Kore.Log.WarnBottomHook
-    ( WarnBottomHook
+import Kore.Log.WarnBottomTotalFunction
+    ( WarnBottomTotalFunction
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
@@ -126,8 +126,12 @@ foldMapEntries
 foldMapEntries mapEntry =
     mconcat
         [ mapEntry (Proxy @DebugEvaluateCondition)
+<<<<<<< HEAD
         , mapEntry (Proxy @DebugSubstitutionSimplifier)
         , mapEntry (Proxy @WarnBottomHook)
+=======
+        , mapEntry (Proxy @WarnBottomTotalFunction)
+>>>>>>> master
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
         , mapEntry (Proxy @WarnSymbolSMTRepresentation)
         ]

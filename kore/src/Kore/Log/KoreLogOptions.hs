@@ -38,7 +38,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Options.Applicative
     ( Parser
     , option
@@ -69,6 +68,7 @@ import Kore.Log.SQLite
     , parseLogSQLiteOptions
     )
 import Log
+import qualified Pretty
 
 {- | Command line options for logging.
  -}

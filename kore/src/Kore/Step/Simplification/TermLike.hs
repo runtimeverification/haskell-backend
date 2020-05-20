@@ -14,7 +14,6 @@ import Prelude.Kore
 import qualified Control.Lens.Combinators as Lens
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
     ( gather
@@ -152,6 +151,7 @@ import Kore.Variables.Target
     , unTargetElement
     , unTargetSet
     )
+import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.

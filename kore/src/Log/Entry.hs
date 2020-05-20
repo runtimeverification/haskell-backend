@@ -21,6 +21,9 @@ import Prelude.Kore
 import Colog
     ( Severity (..)
     )
+import Control.Exception
+    ( Exception (..)
+    )
 import qualified Control.Lens as Lens
 import Control.Lens.Prism
     ( Prism
@@ -36,16 +39,17 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Typeable
     ( cast
     )
 import qualified Type.Reflection as Reflection
 
-class Typeable entry => Entry entry where
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
+
+class (Show entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry
     toEntry = SomeEntry
 
@@ -66,6 +70,10 @@ class Typeable entry => Entry entry where
 
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
+
+instance Show SomeEntry where
+    show (SomeEntry entry) = show entry
+instance Exception SomeEntry
 
 instance Entry SomeEntry where
     toEntry = id

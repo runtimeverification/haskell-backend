@@ -26,7 +26,8 @@ import qualified Data.Set as Set
 
 import Data.Sup
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (FreeVariables)
+    ( FreeVariables
+    , freeVariable
     )
 import Kore.Attribute.Synthetic
     ( resynthesize
@@ -35,6 +36,7 @@ import Kore.Domain.Builtin
     ( Builtin (..)
     , InternalInt (..)
     )
+import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshVariable
@@ -43,7 +45,6 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Kore.Internal.ApplicationSorts
 import Test.Kore hiding
     ( symbolGen
     )
@@ -298,12 +299,14 @@ test_refreshVariables =
     ]
   where
     xTerm = mkElemVar Mock.x
+    becomes
+        :: (TermLike Variable, [ElementVariable Variable])
+        -> TermLike Variable
+        -> TestName
+        -> TestTree
     becomes (term, vars) expected =
         equals
-            (refreshVariables
-                (FreeVariables (Set.fromList (map ElemVar vars)))
-                term
-            )
+            (refreshVariables (foldMap (freeVariable . ElemVar) vars) term)
             expected
 
 test_hasConstructorLikeTop :: [TestTree]

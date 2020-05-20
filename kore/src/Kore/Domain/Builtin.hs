@@ -62,10 +62,6 @@ import Data.Sequence
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc
-    ( (<+>)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -75,6 +71,10 @@ import Kore.Debug
 import Kore.Internal.Symbol
 import Kore.Syntax
 import Kore.Unparser
+import Pretty
+    ( (<+>)
+    )
+import qualified Pretty
 
 -- * Helpers
 

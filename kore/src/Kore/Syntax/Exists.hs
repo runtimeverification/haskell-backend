@@ -13,7 +13,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -25,6 +24,7 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
+import qualified Pretty
 
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,

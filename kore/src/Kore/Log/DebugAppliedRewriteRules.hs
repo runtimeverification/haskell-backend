@@ -16,10 +16,6 @@ import Control.Comonad
 import Data.Coerce
     ( coerce
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Attribute.Axiom
     ( Axiom (..)
@@ -46,12 +42,17 @@ import Kore.Unparser
     ( unparse
     )
 import Log
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 
 data DebugAppliedRewriteRules =
     DebugAppliedRewriteRules
         { configuration :: Pattern Variable
         , appliedRewriteRules :: [UnifiedRule RewriteRule Variable]
         }
+    deriving (Show)
 
 instance Pretty DebugAppliedRewriteRules where
     pretty DebugAppliedRewriteRules { configuration, appliedRewriteRules } =

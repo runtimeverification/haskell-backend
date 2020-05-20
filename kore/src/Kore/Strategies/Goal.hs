@@ -68,13 +68,12 @@ import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
-import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
@@ -186,6 +185,7 @@ import qualified Kore.Verified as Verified
 import Log
     ( MonadLog (..)
     )
+import qualified Pretty
 
 {- | The final nodes of an execution graph which were not proven.
 
@@ -1037,12 +1037,8 @@ removalPredicate
                     : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
             else remainderElementVariables config dest
     configVariables :: Pattern variable -> Set.Set (UnifiedVariable variable)
-    configVariables config =
-        Attribute.FreeVariables.getFreeVariables
-        $ freeVariables config
-    destVariables dest =
-        Attribute.FreeVariables.getFreeVariables
-        $ freeVariables dest
+    configVariables = FreeVariables.toSet . freeVariables
+    destVariables = FreeVariables.toSet . freeVariables
     remainderVariables config dest =
         Set.toList
         $ Set.difference
