@@ -25,7 +25,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
     ( InternalVariable
-    , SortedVariable
+    , NamedVariable
     , TermLike
     )
 import Kore.Unparser
@@ -96,7 +96,7 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
+        :: (Ord variable1, FreshPartialOrd variable2, NamedVariable variable2)
         => AdjUnifiedVariable (variable1 -> variable2)
         -> rule variable1
         -> rule variable2

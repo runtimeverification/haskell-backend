@@ -504,7 +504,7 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance
-    (FreshPartialOrd variable, SortedVariable variable)
+    (FreshPartialOrd variable, NamedVariable variable)
     => From (TermLike Concrete) (TermLike variable)
   where
     from = mapVariables fromConcreteUnifiedVariable
@@ -660,7 +660,7 @@ See also: 'traverseVariables'
  -}
 mapVariables
     :: forall variable1 variable2
-    .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
+    .  (Ord variable1, FreshPartialOrd variable2, NamedVariable variable2)
     => AdjUnifiedVariable (variable1 -> variable2)
     -> TermLike variable1
     -> TermLike variable2
@@ -741,7 +741,7 @@ See also: 'mapVariables'
  -}
 traverseVariables
     :: forall variable1 variable2 m
-    .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
+    .  (Ord variable1, FreshPartialOrd variable2, NamedVariable variable2)
     => Monad m
     => AdjUnifiedVariable (variable1 -> m variable2)
     -> TermLike variable1

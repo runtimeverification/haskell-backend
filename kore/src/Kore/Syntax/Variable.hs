@@ -273,7 +273,7 @@ prop> (==) x y === (==) (toVariable x) (toVariable y)
 
  -}
 class
-    (Ord variable, From variable Variable)
+    (Ord variable, From variable Variable, SortedVariable variable)
     => NamedVariable variable
   where
     type VariableNameOf variable

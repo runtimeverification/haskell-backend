@@ -417,7 +417,7 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcrete
-    :: (FreshPartialOrd variable, SortedVariable variable)
+    :: (FreshPartialOrd variable, NamedVariable variable)
     => TermLike Concrete
     -> TermLike variable
 fromConcrete = mapVariables fromConcreteUnifiedVariable

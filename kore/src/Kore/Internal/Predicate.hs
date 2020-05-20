@@ -732,11 +732,11 @@ isPredicate = Either.isRight . makePredicate
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
 mapVariables
-    :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
+    :: (Ord variable1, FreshPartialOrd variable2, NamedVariable variable2)
     => AdjUnifiedVariable (variable1 -> variable2)
     -> Predicate variable1
     -> Predicate variable2
-mapVariables mapping = fmap (TermLike.mapVariables mapping)
+mapVariables adj = fmap (TermLike.mapVariables adj)
 
 instance HasFreeVariables (Predicate variable) variable where
     freeVariables = freeVariables . unwrapPredicate
