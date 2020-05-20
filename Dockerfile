@@ -38,8 +38,15 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
 
 ENV LC_ALL=C.UTF-8
 
-ADD --chown=user:user global-stack.yaml /home/user/.stack/global-project/stack.yaml
-RUN cd /home/user && stack install hlint stylish-haskell
+RUN    cd /home/user \
+    && curl https://github.com/ndmitchell/hlint/releases/download/v3.1/hlint-3.1-x86_64-linux.tar.gz -sSfL | tar xzf - \
+    && mv hlint-3.1 hlint
+ENV PATH=/home/user/hlint:$PATH
+
+RUN    cd /home/user \
+    && curl https://github.com/jaspervdj/stylish-haskell/releases/download/v0.11.0.0/stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz -sSfL | tar xzf - \
+    && mv stylish-haskell-v0.11.0.0-linux-x86_64 stylish-haskell
+ENV PATH=/home/user/stylish-haskell:$PATH
 
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user kore/package.yaml /home/user/.tmp-haskell/kore/

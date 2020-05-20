@@ -45,7 +45,6 @@ import Kore.Internal.Predicate
     , makeIffPredicate
     , makeImpliesPredicate
     , makeInPredicate
-    , makeInPredicate_
     , makeNotPredicate
     , makeOrPredicate
     , makeTruePredicate
@@ -521,14 +520,11 @@ test_simplificationIntegration =
                     { term = mkTop Mock.boolSort
                     , predicate = makeIffPredicate
                         (makeOrPredicate
-                            (makeInPredicate Mock.boolSort
-                                (mkCeil Mock.setSort Mock.cf)
-                                (mkCeil Mock.setSort Mock.cg)
+                            (makeAndPredicate
+                                (makeCeilPredicate Mock.boolSort Mock.cf)
+                                (makeCeilPredicate Mock.boolSort Mock.cg)
                             )
-                            (makeInPredicate_
-                                (mkCeil Mock.setSort Mock.cf)
-                                (asInternal (Set.fromList []))
-                            )
+                            (makeCeilPredicate Mock.boolSort Mock.cf)
                         )
                         (makeCeilPredicate_ Mock.ch)
                     , substitution = mempty
@@ -557,12 +553,26 @@ test_simplificationIntegration =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop Mock.otherSort
-                    , predicate = makeInPredicate Mock.otherSort
-                        (mkNu iz (Mock.builtinInt 595))
-                        (mkAnd
-                            (Mock.tdivInt mkTop_ mkTop_)
-                            (mkAnd
-                                (mkCeil_
+                    , predicate =
+                        makeAndPredicate
+                            (makeAndPredicate
+                                (makeCeilPredicate Mock.otherSort
+                                    (mkAnd
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                        (mkNu iz (Mock.builtinInt 595))
+                                    )
+                                )
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.otherSort
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                    )
+                                    (makeCeilPredicate Mock.otherSort
+                                        (mkNu iz (Mock.builtinInt 595))
+                                    )
+                                )
+                            )
+                            (makeAndPredicate
+                                (makeCeilPredicate Mock.otherSort
                                     (mkNot
                                         (mkNu mx
                                             (mkRewrites
@@ -572,7 +582,7 @@ test_simplificationIntegration =
                                         )
                                     )
                                 )
-                                (mkEquals_
+                                (makeEqualsPredicate_
                                     (Mock.g
                                         (Mock.functionalConstr30
                                             (Mock.functionalTopConstr21
@@ -586,17 +596,30 @@ test_simplificationIntegration =
                                     Mock.functionalInjective00
                                 )
                             )
-                        )
                     , substitution = mempty
                     }
                 , Conditional
                     { term = mkTop Mock.otherSort
-                    , predicate = makeInPredicate Mock.otherSort
-                        (mkNu iz (Mock.builtinInt 595))
-                        (mkAnd
-                            (Mock.tdivInt mkTop_ mkTop_)
-                            (mkAnd
-                                (mkEquals_
+                    , predicate =
+                        makeAndPredicate
+                            (makeAndPredicate
+                                (makeCeilPredicate Mock.otherSort
+                                    (mkAnd
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                        (mkNu iz (Mock.builtinInt 595))
+                                    )
+                                )
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.otherSort
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                    )
+                                    (makeCeilPredicate Mock.otherSort
+                                        (mkNu iz (Mock.builtinInt 595))
+                                    )
+                                )
+                            )
+                            (makeAndPredicate
+                                (makeEqualsPredicate_
                                     (Mock.g
                                         (Mock.functionalConstr30
                                             (Mock.functionalTopConstr21
@@ -609,9 +632,10 @@ test_simplificationIntegration =
                                     )
                                     Mock.functionalInjective00
                                 )
-                                (mkNot (mkFloor_ (Mock.builtinList [])))
+                                (makeNotPredicate
+                                    (makeFloorPredicate_ (Mock.builtinList []))
+                                )
                             )
-                        )
                     , substitution = mempty
                     }
                 ]
@@ -721,11 +745,25 @@ test_simplificationIntegration =
                     { term = mkTop Mock.stringSort
                     , predicate = makeAndPredicate
                         (makeImpliesPredicate
-                            (makeInPredicate Mock.stringSort
-                                (mkMu k
-                                    (asInternal (Set.fromList [Mock.a]))
+                            (makeAndPredicate
+                                (makeCeilPredicate Mock.stringSort
+                                    (mkAnd
+                                        (Mock.fSet mkTop_)
+                                        (mkMu k
+                                            (asInternal (Set.fromList [Mock.a]))
+                                        )
+                                    )
                                 )
-                                (Mock.fSet mkTop_)
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.stringSort
+                                        (Mock.fSet mkTop_)
+                                    )
+                                    (makeCeilPredicate Mock.stringSort
+                                        (mkMu k
+                                            (asInternal (Set.fromList [Mock.a]))
+                                        )
+                                    )
+                                )
                             )
                             (makeIffPredicate
                                 (makeFloorPredicate_
@@ -735,11 +773,25 @@ test_simplificationIntegration =
                             )
                         )
                         (makeImpliesPredicate
-                            (makeInPredicate_
-                                (mkMu k
-                                    (mkEvaluated Mock.unitSet)
+                            (makeAndPredicate
+                                (makeCeilPredicate_
+                                    (mkAnd
+                                        (Mock.fSet mkTop_)
+                                        (mkMu k
+                                            (mkEvaluated Mock.unitSet)
+                                        )
+                                    )
                                 )
-                                (Mock.fSet mkTop_)
+                                (makeAndPredicate
+                                    (makeCeilPredicate_
+                                        (Mock.fSet mkTop_)
+                                    )
+                                    (makeCeilPredicate_
+                                        (mkMu k
+                                            (mkEvaluated Mock.unitSet)
+                                        )
+                                    )
+                                )
                             )
                             (makeIffPredicate
                                 (makeFloorPredicate_
@@ -875,8 +927,16 @@ test_simplificationIntegration =
                 , predicate = makeInPredicate Mock.listSort Mock.cf Mock.cg
                 , substitution = mempty
                 }
+            expected = Conditional
+                { term = mkTop Mock.listSort
+                , predicate =
+                    makeAndPredicate
+                        (makeCeilPredicate Mock.listSort Mock.cf)
+                        (makeEqualsPredicate Mock.listSort Mock.cf Mock.cg)
+                , substitution = mempty
+                }
         actual <- evaluate patt
-        assertEqual "" (OrPattern.fromPattern patt) actual
+        assertEqual "" (OrPattern.fromPattern expected) actual
     , testCase "Not-iff-evaluated simplification" $ do
         let patt = Conditional
                 { term =

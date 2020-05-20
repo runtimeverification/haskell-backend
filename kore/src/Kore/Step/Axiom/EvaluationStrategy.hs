@@ -15,6 +15,9 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
+import Control.Category
+    ( (>>>)
+    )
 import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
@@ -24,7 +27,6 @@ import Data.Semigroup
     , Option (..)
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation
@@ -52,6 +54,7 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Variables.Target as Target
+import qualified Pretty
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -93,23 +96,25 @@ definitionEvaluation equations =
                 >>= return . Bifunctor.second apply
               where
                 apply = Equation.applyEquation condition equation
-        fmap partitionEithers (traverse attemptEquation equations') >>= \case
-            (_, applied : _) -> do
-                results <- applied
-                (return . Applied) AttemptedAxiomResults
-                    { results
-                    , remainders = OrPattern.bottom
-                    }
-            (errors, []) ->
-                case minError of
-                    Just (Equation.WhileCheckRequires _) ->
-                        (return . NotApplicableUntilConditionChanges)
-                            (SideCondition.toRepresentation condition)
-                    _ -> return NotApplicable
-              where
-                minError =
-                    (fmap getMin . getOption)
-                    (foldMap (Option . Just . Min) errors)
+        traverse attemptEquation equations' >>=
+            (partitionEithers >>> \case
+                (_, applied : _) -> do
+                    results <- applied
+                    (return . Applied) AttemptedAxiomResults
+                        { results
+                        , remainders = OrPattern.bottom
+                        }
+                (errors, []) ->
+                    case minError of
+                        Just (Equation.WhileCheckRequires _) ->
+                            (return . NotApplicableUntilConditionChanges)
+                                (SideCondition.toRepresentation condition)
+                        _ -> return NotApplicable
+                  where
+                    minError =
+                        (fmap getMin . getOption)
+                        (foldMap (Option . Just . Min) errors)
+            )
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation

@@ -203,7 +203,6 @@ import Data.Set
 import Data.Text
     ( Text
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.These
 
 import qualified Kore.Attribute.Pattern as Attribute
@@ -275,6 +274,7 @@ import Kore.Variables.Fresh
     )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
+import qualified Pretty
 
 hasFreeVariable
     :: Ord variable

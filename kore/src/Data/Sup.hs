@@ -19,11 +19,12 @@ import Control.DeepSeq
 import Data.Data
     ( Data
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+
+import Pretty
+    ( Pretty (..)
+    )
 
 {- | @Sup a@ is an extension of @a@ with a least upper bound.
 
