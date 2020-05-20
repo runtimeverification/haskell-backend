@@ -13,9 +13,6 @@ import Control.Monad.Trans
     ( lift
     )
 import qualified Data.Char as Char
-import Data.Bool
-    ( bool
-    )
 import Data.Default
     ( def
     )
@@ -31,6 +28,7 @@ import Data.Reflection
 import Data.Semigroup
     ( (<>)
     )
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     , unpack
@@ -66,7 +64,13 @@ import System.Directory
     ( copyFile
     , doesDirectoryExist
     , doesFileExist
+    , emptyPermissions
     , removePathForcibly
+    , setOwnerExecutable
+    , setOwnerReadable
+    , setOwnerSearchable
+    , setOwnerWritable
+    , setPermissions
     )
 import System.Exit
     ( ExitCode (..)
@@ -109,16 +113,30 @@ import Kore.Internal.TermLike
 import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
+    , KoreLogType (..)
     , LogMessage
     , SomeEntry (..)
+    , TimestampsSwitch (..)
     , WithLog
     , createTarGz
     , logEntry
     , parseKoreLogOptions
     , runKoreLog
     )
+import Kore.Log.DebugSolver
+    ( DebugSolverOptions (..)
+    )
 import Kore.Log.ErrorException
     ( errorException
+    )
+import Kore.Log.KoreLogOptions
+    ( DebugApplyEquationOptions (..)
+    , DebugAttemptEquationOptions (..)
+    , DebugEquationOptions (..)
+    , WarningSwitch (..)
+    )
+import Kore.Log.SQLite
+    ( LogSQLiteOptions (..)
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
@@ -142,6 +160,9 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Stuck (..)
@@ -423,14 +444,104 @@ parserInfoModifiers =
                 \in PATTERN_FILE."
     <> header "kore-exec - an interpreter for Kore definitions"
 
+unparseKoreLogOptions :: KoreLogOptions -> [String]
+unparseKoreLogOptions
+    ( KoreLogOptions
+        logType
+        logLevel
+        timestampsSwitch
+        logEntries
+        debugSolverOptions
+        _
+        logSQLiteOptions
+        warningSwitch
+        debugApplyEquationOptions
+        debugAttemptEquationOptions
+        debugEquationOptions
+    )
+  =
+    [ koreLogTypeFlag logType
+    , "--log-level " <> fmap Char.toLower (show logLevel)
+    , timestampsSwitchFlag timestampsSwitch
+    , logEntriesFlag logEntries
+    , debugSolverOptionsFlag debugSolverOptions
+    , logSQLiteOptionsFlag logSQLiteOptions
+    , if warningSwitch == AsError then "--warnings-to-errors" else ""
+    , debugApplyEquationOptionsFlag debugApplyEquationOptions
+    , debugAttemptEquationOptionsFlag debugAttemptEquationOptions
+    , debugEquationOptionsFlag debugEquationOptions
+    ]
+  where
+    koreLogTypeFlag LogStdErr = ""
+    koreLogTypeFlag (LogFileText file) = "--log " <> file
+
+    timestampsSwitchFlag TimestampsEnable = "--enable-log-timestamps"
+    timestampsSwitchFlag TimestampsDisable = "--disable-log-timestamps"
+
+    logEntriesFlag entries
+      | Set.null entries = ""
+      | otherwise
+        = "--log-entries "
+        <> intercalate "," (fmap show (Foldable.toList entries))
+
+    debugSolverOptionsFlag (DebugSolverOptions Nothing) = ""
+    debugSolverOptionsFlag (DebugSolverOptions (Just file)) =
+        "--solver-transcript " <> file
+
+    logSQLiteOptionsFlag (LogSQLiteOptions Nothing) = ""
+    logSQLiteOptionsFlag (LogSQLiteOptions (Just file)) =
+        "--sqlog " <> file
+
+    debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) =
+        unwords $
+            ("--debug-apply-equation " <>) . unpack <$> Foldable.toList set
+
+    debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) =
+        unwords $
+            ("--debug-attempt-equation " <>) . unpack <$> Foldable.toList set
+
+    debugEquationOptionsFlag (DebugEquationOptions set) =
+        unwords $
+            ("--debug-equation" <>) . unpack <$> Foldable.toList set
+
+unparseKoreSearchOptions :: KoreSearchOptions -> [String]
+unparseKoreSearchOptions (KoreSearchOptions _ bound searchType) =
+    [ "--search searchFile.kore"
+    , maybeLimit "" (\limit -> "--bound " <> show limit) bound
+    , "--searchType " <> show searchType
+    ]
+
+unparseKoreMergeOptions :: KoreMergeOptions -> [String]
+unparseKoreMergeOptions (KoreMergeOptions _ maybeBatchSize) =
+    [ "--merge-rules mergeRules.kore"]
+    <> maybe mempty ((:[]) . ("--merge-batch-size " <>) . show) maybeBatchSize
+
+unparseKoreProveOptions :: KoreProveOptions -> [String]
+unparseKoreProveOptions
+    ( KoreProveOptions
+        _
+        (ModuleName moduleName)
+        graphSearch
+        bmc
+        saveProofs
+    )
+  =
+    [ "--prove spec.kore"
+    , "--spec-module " <> unpack moduleName
+    , "--graph-search "
+        <> if graphSearch == DepthFirst then "depth-first" else "breadth-first"
+    , if bmc then "--bmc" else ""
+    , maybe "" (<> "--save-proofs") saveProofs
+    ]
+
 showKoreExecOptions :: KoreExecOptions -> String
 showKoreExecOptions
     ( KoreExecOptions
-        definitionFileName
+        _
         patternFileName
         outputFileName
         mainModuleName
-        smtTimeOut
+        (TimeOut timeout)
         smtPrelude
         smtSolver
         breadthLimit
@@ -444,26 +555,31 @@ showKoreExecOptions
         _
     )
   =
-    unlines
+    unlines $
         [ "#!/bin/bash"
         , "PATH_KORE_EXEC=\"$(stack path --local-bin)\""
         , "$PATH_KORE_EXEC/kore-exec \\"
-        , bool
-            "definition.kore \\"
-            "vdefinition.kore \\"
-            (isJust koreProveOptions)
-        , bool "# pattern" "--pattern pgm.kore \\" (isJust patternFileName)
-        , bool "# output" "--output result.kore \\" (isJust outputFileName)
-        , unpack $ getModuleName mainModuleName <> " \\"
-        , "--smt-timeout " <> show (getTimeOut smtTimeOut) <> " \\"
-        , maybe
-            "# smt-prelude"
-            (("--smt-prelude " <>) . (<> " \\")) smtPrelude
+        ]
+        <> (fmap (<> " \\") . filter (not . null)) flags
+  where
+    flags =
+        [ if isJust koreProveOptions then "vdefinition.kore"
+            else "definition.kore"
+        , if isJust patternFileName then "--pattern pgm.kore" else ""
+        , if isJust outputFileName then "--output result.kore" else ""
+        , "--module " <> unpack (getModuleName mainModuleName)
+        , maybeLimit "" (("--smt-timeout " <>) . show) timeout
+        , maybe "" ("--smt-prelude " <>) smtPrelude
         , "--smt " <> fmap Char.toLower (show smtSolver)
-        , maybeLimit "# breadth" (("--breadth " <>) . (<> " \\") . show) breadthLimit
-        , maybeLimit "# depth" (("--depth " <>) . (<> " \\") . show) depthLimit
+        , maybeLimit "" (("--breadth " <>) . show) breadthLimit
+        , maybeLimit "" (("--depth " <>) . show) depthLimit
         , "--strategy " <> fst strategy
         ]
+        <> unparseKoreLogOptions koreLogOptions
+        <> maybe mempty unparseKoreSearchOptions koreSearchOptions
+        <> maybe mempty unparseKoreProveOptions koreProveOptions
+        <> maybe mempty unparseKoreMergeOptions koreMergeOptions
+        <> maybe mempty ((:[]) . ("--rts-statistics " <>)) rtsStatistics
 
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
@@ -489,10 +605,16 @@ writeOptionsAndKoreFiles
         , koreMergeOptions
         }
   = do
-    let outputFile = reportDirectory <> "/kore-exec.sh"
-    writeFile outputFile
+    let shellScript = reportDirectory <> "/kore-exec.sh"
+    writeFile shellScript
         . showKoreExecOptions
         $ opts
+    let allPermissions =
+            setOwnerReadable True
+            . setOwnerWritable True
+            . setOwnerExecutable True
+            . setOwnerSearchable True
+    setPermissions shellScript $ allPermissions emptyPermissions
     copyFile
         definitionFileName
         (  reportDirectory
