@@ -88,7 +88,7 @@ substitutionSimplifier notSimplifier =
             let condition' = Condition.fromPredicate predicate <> condition
                 conditions = OrCondition.fromCondition condition'
             TopBottom.guardAgainstBottom conditions
-            debugSubstitutionSimplifierResult "True"
+            debugSubstitutionSimplifierResult "Non-bottom result."
             return conditions
           where
             worker
