@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Execution does not branch when evaluating the hooked `KEQUAL.eq` function.
+
 ### Deprecated
 
 ### Removed
