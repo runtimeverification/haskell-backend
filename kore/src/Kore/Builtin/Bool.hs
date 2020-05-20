@@ -14,6 +14,8 @@ module Kore.Builtin.Bool
     , extractBoolDomainValue
     , parse
     , termAndEquals
+    , termNotBool
+    , matchBool
       -- * Keys
     , orKey
     , andKey
@@ -208,7 +210,26 @@ termAndEquals unifyChildren a b =
         unification2 <- unifyChildren' termLike1 operand2
         let conditions = unification1 <> unification2
         pure (Pattern.withCondition termLike1 conditions)
+    worker _ _ = empty
 
+termNotBool
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termNotBool unifyChildren a b =
+    worker a b <|> worker b a
+  where
+    worker termLike1 boolTerm
+      | Just BoolNot { operand } <- matchBoolNot termLike1
+      , isFunctionPattern termLike1
+      , Just value <- matchBool boolTerm
+      = lift $ do
+        let notValue = asInternal (termLikeSort boolTerm) (not value)
+        unifyChildren notValue operand
     worker _ _ = empty
 
 {- | Match a @BOOL.Bool@ builtin value.
@@ -234,3 +255,20 @@ matchBoolAnd (App_ symbol [operand1, operand2]) = do
     Monad.guard (hook2 == andKey)
     return BoolAnd { symbol, operand1, operand2 }
 matchBoolAnd _ = Nothing
+
+{- | The @BOOL.not@ hooked symbol applied to a @term@-type argument.
+ -}
+data BoolNot term =
+    BoolNot
+        { symbol  :: !Symbol
+        , operand :: !term
+        }
+
+{- | Match the @BOOL.not@ hooked symbol.
+ -}
+matchBoolNot :: TermLike variable -> Maybe (BoolNot (TermLike variable))
+matchBoolNot (App_ symbol [operand]) = do
+    hook2 <- (getHook . symbolHook) symbol
+    Monad.guard (hook2 == notKey)
+    return BoolNot { symbol, operand }
+matchBoolNot _ = Nothing
