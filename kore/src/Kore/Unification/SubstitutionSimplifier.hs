@@ -79,7 +79,7 @@ substitutionSimplifier notSimplifier =
         => SideCondition variable
         -> Substitution variable
         -> unifier (OrCondition variable)
-    wrapper sideCondition substitution = 
+    wrapper sideCondition substitution =
         whileDebugSubstitutionSimplifier $ do
             (predicate, result) <-
                 worker substitution

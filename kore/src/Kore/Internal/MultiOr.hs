@@ -52,6 +52,7 @@ import Kore.Debug
 import Kore.TopBottom
     ( TopBottom (..)
     )
+
 {-| 'MultiOr' is a Matching logic or of its children
 
 -}

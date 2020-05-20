@@ -16,7 +16,6 @@ module Kore.Internal.OrCondition
     , isFalse
     , isTrue
     , toPredicate
-    , externalizeFreshVariables
     ) where
 
 import Prelude.Kore
@@ -42,8 +41,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike hiding
-    ( isSimplified,
-      externalizeFreshVariables
+    ( externalizeFreshVariables
+    , isSimplified
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -120,10 +119,3 @@ gather
     :: (InternalVariable variable, Monad m)
     => BranchT m (Condition variable) -> m (OrCondition variable)
 gather = MultiOr.gather
-
-externalizeFreshVariables
-    :: InternalVariable variable
-    => OrCondition variable
-    -> OrCondition Variable
-externalizeFreshVariables condition =
-    Condition.externalizeFreshVariables <$> condition

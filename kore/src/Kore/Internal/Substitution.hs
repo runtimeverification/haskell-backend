@@ -45,7 +45,6 @@ module Kore.Internal.Substitution
     , wrapNormalization
     , mkNormalization
     , applyNormalized
-    , externalizeFreshVariables
     ) where
 
 import Prelude.Kore hiding
@@ -702,17 +701,3 @@ singleSubstitutionToPredicate
     => Assignment variable
     -> Predicate variable
 singleSubstitutionToPredicate = from
-
-externalizeFreshVariables
-    :: InternalVariable variable
-    => Substitution variable
-    -> Substitution Variable
-externalizeFreshVariables substitution =
-    mapVariables (fmap toVariable) (fmap toVariable) substitution
-
-{-
-externalizeFreshVariables (NormalizedSubstitution mmap) =
-    mapKeys UnifiedVariable.externalizeFreshVariables
-    <$> map TermLike.externalizeFreshVariables
-    <$> mmap
--}

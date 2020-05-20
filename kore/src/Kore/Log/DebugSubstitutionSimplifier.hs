@@ -24,7 +24,7 @@ import Pretty
 import qualified SQL
 
 data DebugSubstitutionSimplifier
-    = WhileSimplifySubstitution 
+    = WhileSimplifySubstitution
     | SubstitutionSimplifierResult Text
     deriving (GHC.Generic)
 
@@ -33,18 +33,9 @@ instance SOP.Generic DebugSubstitutionSimplifier
 instance SOP.HasDatatypeInfo DebugSubstitutionSimplifier
 
 instance Pretty DebugSubstitutionSimplifier where
-    pretty (WhileSimplifySubstitution) = "Simplifying substitution.";
-    {-
-        (Pretty.vsep . concat)
-        [ [ "evaluating predicate:" , Pretty.indent 4 (unparse predicate) ]
-        , do
-            sideCondition <- sideConditions
-            [ "with side condition:", Pretty.indent 4 (unparse sideCondition) ]
-        ]
-      where
-       predicate :| sideConditions = predicates
-    -}
+    pretty WhileSimplifySubstitution = "Simplifying substitution.";
     pretty (SubstitutionSimplifierResult result) = pretty result;
+
 instance Entry DebugSubstitutionSimplifier where
     entrySeverity _ = Debug
     shortDoc _ = Just "while simplifying substitution"
@@ -57,10 +48,10 @@ whileDebugSubstitutionSimplifier
     => log a
     -> log a
 whileDebugSubstitutionSimplifier =
-    logWhile WhileSimplifySubstitution 
+    logWhile WhileSimplifySubstitution
 
-debugSubstitutionSimplifierResult 
-    :: MonadLog log 
+debugSubstitutionSimplifierResult
+    :: MonadLog log
     => Text
     -> log ()
-debugSubstitutionSimplifierResult = logEntry . SubstitutionSimplifierResult  
+debugSubstitutionSimplifierResult = logEntry . SubstitutionSimplifierResult
