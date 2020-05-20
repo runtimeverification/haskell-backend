@@ -17,8 +17,12 @@ import Data.Text
 import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.String.String as String
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Overloading
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (ElemVar)
+    )
 import Pair
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -407,13 +411,13 @@ narrows comment (term1, term2) ((v, term), (term1', term2')) =
     checkNarrowing :: UnificationResult -> Assertion
     checkNarrowing
         (Right (WithNarrowing
-            Narrowing { narrowedVar, narrowingTerm, overloadPair}
+            Narrowing { narrowingSubst, overloadPair}
         ))
       = do
         assertEqual "" (Pair term1' term2') overloadPair
-        assertEqual "" v narrowedVar
-        assertEqual "" term narrowingTerm
+        assertEqual "" expectedSubst narrowingSubst
     checkNarrowing _ = assertFailure "Expected narrowing solution"
+    expectedSubst = Condition.assign (ElemVar v) term
 
 
 doesn'tUnify

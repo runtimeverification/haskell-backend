@@ -35,9 +35,6 @@ import Data.String
     )
 import qualified Data.Text as Text
 
-import Kore.Attribute.Pattern.FreeVariables
-    ( getFreeElementVariables
-    )
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.List as Builtin.List
@@ -581,24 +578,24 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
             termMerger firstTerm' secondTerm'
         Right
             (WithNarrowing Narrowing
-                { narrowedVar
-                , narrowingTerm
+                { narrowingSubst
+                , narrowingVars
                 , overloadPair = Pair firstTerm' secondTerm'
                 }
-            ) -> lift $ do
-                let narrowingVars =
-                        getFreeElementVariables $ freeVariables narrowingTerm
-                let narrowedSubst =
-                        Predicate.markSimplified
-                        $ Predicate.makeEqualsPredicate_
-                            (mkElemVar narrowedVar)
-                            narrowingTerm
-                merged <- termMerger firstTerm' secondTerm'
-                boundPattern <-
+            ) -> do
+                boundPattern <- lift $ do
+                    merged <- termMerger firstTerm' secondTerm'
                     Exists.makeEvaluate SideCondition.topTODO narrowingVars
-                        $ merged `Pattern.andCondition` from narrowedSubst
+                        $ merged `Pattern.andCondition` narrowingSubst
                 case OrPattern.toPatterns boundPattern of
                     [result] -> return result
+                    [] -> lift $
+                        explainAndReturnBottom
+                            (  "exists simplification for overloaded"
+                            <> " constructors returned no pattern"
+                            )
+                            firstTerm
+                            secondTerm
                     _ -> empty
         Left (Clash message) -> lift $
             explainAndReturnBottom (fromString message) firstTerm secondTerm

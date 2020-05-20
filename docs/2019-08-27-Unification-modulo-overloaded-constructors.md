@@ -209,31 +209,31 @@ applying the overloading axioms in a left-to-right fashion.
          c1(overloadingChildren)  ∧ c1(inj2(freshVars))
 
   1. hope that the new unification returns bottom; if not build the conjunction
-     of the result with the equality for `x` and existentially quantify them
+     of the result with the equality for `x2` and existentially quantify them
      using `freshVars`
 - `\inj{s1,s}(c1(children1)) ∧ \inj{s2,s}(x2)`
 
   1. For each constructor `c1'` overloading `c1` whose sort `s1'` is
-     at most `s`, find a constructor `c2'` overloaded by `c1'` whose sort `s2'` is
-     at most `s2` with overloading equations
+     at most `s`, find a constructor `c2'` overloaded by `c1'` whose sort `s2'`
+     is at most `s2` with overloading equations
      
          \inj{s1,s}(c1(children1)) = \inj{s1',s}(c1'(inj1(children1)))
      
      and
 
-         \inj{s2',s}(c2'(freshVars)) = \inj{s1', s}(s1'(inj2(freshVars)))
+         \inj{s2',s}(c2'(freshVars)) = \inj{s1', s}(c1'(inj2(freshVars)))
 
      - If there are more such `c2'`, pick the one overloading all the others.
      - If cannot compute one overloading all the others, we cannot decide which
        to choose and decide not to handle the case (ambiguity).
-  1. narrow `x` to `\inj{s2',s2}(c2'(freshVars))` where `freshVars` are fresh
+  1. narrow `x2` to `\inj{s2',s2}(c2'(freshVars))` where `freshVars` are fresh
   1. apply the right-to-left overloading axioms to transform `c1` into `c1'` and
      `c2'` into `c1'`, reducing the unification problem to
 
          \inj{s1',s}(c1'(inj1(children1))) ∧ \inj{s1',s}(c1'(inj2(freshVars)))
 
   1. hope that the new unification returns bottom; if not build the conjunction
-     of the result with the equality for `x` and existentially quantify them
+     of the result with the equality for `x2` and existentially quantify them
      using `freshVars`
    
 - otherwise, for now, throw an unsupported exception, as this
@@ -301,11 +301,24 @@ Its representation in KORE is of the form
 
 In order to apply the `owise` rule for `KResult`, one must compute 
 
-`\not(\ceil(\inj{Exps, KItem}(ExpsCons(\inj{Val, Exp}(1), ExpsCons(1 + 1, \inj{Vals, Exps}(.Vals)))) ∧ \inj{KResult, KItem}(R:KResult)))`
+`\not(\ceil(\inj{Exps, KItem}(ExpsCons(\inj{Int, Exp}(1), ExpsCons(1 + 1, \inj{Vals, Exps}(.Vals)))) ∧ \inj{KResult, KItem}(R:KResult)))`
 
-At this moment, the narrowing kicks in (`unifyOverloadingVsOverloadedVariable`), and it could narrow `R:KResult` to `inj{Vals, KResult}(ValsCons(V:Val, Vs:Vals))`, then reattempt unification between `inj{Exps, KItem}(ExpsCons(inj{Val, Exp}(1), ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))))` and  `inj{Vals, KItem}(ValsCons(V:Val, Vs:Vals))`, where the latter can be transformed to `inj{Exps, KItem}(ExpCons(inj{Val,Exp}(V:Val), inj{Vals, Exps}(Vs:Vals)))`, which reduces to `V =  1` and with `ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))` unified to ` inj{Vals, Exps}(Vs:Vals)`
+At this moment, the narrowing kicks in (`unifyOverloadingVsOverloadedVariable`),
+and it could narrow `R:KResult` to `inj{Vals, KResult}(ValsCons(V:Val, Vs:Vals))`,
+then reattempt unification between
+  `inj{Exps, KItem}(ExpsCons(inj{Int, Exp}(1), ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))))` and
+  `inj{Vals, KItem}(ValsCons(V:Val, Vs:Vals))`,
+where the latter can be transformed to 
+  `inj{Exps, KItem}(ExpCons(inj{Val,Exp}(V:Val), inj{Vals, Exps}(Vs:Vals)))`
+This unification reduces to `V =  \inj{Int, Val}(1)` and with
+`ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))` unified to ` inj{Vals, Exps}(Vs:Vals)`
 
-Applying again narrowing (this time `unifyOverloadingInjVsVariable`) we narrow `Vs:Vals` to `ValsCons(V':Val, Vs':Vals)` and use overloading to attempt unification  between `ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))` and `inj{Vals, Exps}(ValsCons(V':Val, Vs':Vals))`, which gets to `1 + 1` being unified with `\inj{Val, Exp}(V':Val)`, which fails, returning `\bottom`.
+Applying again narrowing (this time `unifyOverloadingInjVsVariable`) we narrow
+`Vs:Vals` to `ValsCons(V':Val, Vs':Vals)` and use overloading to attempt
+unification  between `ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))` and
+`inj{Vals, Exps}(ValsCons(V':Val, Vs':Vals))`, which gets to `1 + 1` being
+unified with `\inj{Val, Exp}(V':Val)`, which fails, returning `\bottom`.
 
-Thus, `\not(\ceil(\inj{Exps, KItem}(ExpsCons(\inj{Val, Exp}(1), ExpsCons(1 + 1, \inj{Vals, Exps}(.Vals)))) ∧ \inj{KResult, KItem}(R:KResult)))` simplifies
-to `\not(\ceil(\bottom))`, which is `\top`, thus making `isKresult` evaluate to `false`.
+Thus, `\not(\ceil(\inj{Exps, KItem}(ExpsCons(\inj{Val, Exp}(1), ExpsCons(1 + 1, \inj{Vals, Exps}(.Vals)))) ∧ \inj{KResult, KItem}(R:KResult)))`
+simplifies to `\not(\ceil(\bottom))`, which is `\top`, thus making `isKresult`
+evaluate to `false`.
