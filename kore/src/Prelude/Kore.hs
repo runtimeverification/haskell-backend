@@ -49,6 +49,10 @@ module Prelude.Kore
     , when
     -- * Typeable
     , Typeable
+    -- * Category
+    , Category (..)
+    , (<<<)
+    , (>>>)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -58,6 +62,11 @@ import Control.Applicative
     ( Alternative (..)
     , Applicative (..)
     , optional
+    )
+import Control.Category
+    ( Category (..)
+    , (<<<)
+    , (>>>)
     )
 import Control.Comonad
 import Control.Comonad.Trans.Cofree
@@ -117,7 +126,9 @@ import Prelude hiding
     , Monad (..)
     , either
     , filter
+    , id
     , log
+    , (.)
     )
 
 {- | Simultaneously compute the (@min@, @max@) of two values.
