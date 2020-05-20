@@ -41,8 +41,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike hiding
-    ( externalizeFreshVariables
-    , isSimplified
+    ( isSimplified
     )
 import Kore.TopBottom
     ( TopBottom (..)

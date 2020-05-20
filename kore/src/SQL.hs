@@ -99,11 +99,6 @@ instance Column Text where
     defineColumn _ _ = return (columnNotNull $ columnDef typeText)
     toColumn = return . SQLite.SQLText
 
-{-instance Column Bool where
-    defineColumn _ _ = return (columnNotNull $ columnDef typeInteger)
-    toColumn = return . SQLite.SQLInteger
--}
-
 instance (Column a, Typeable a) => Column [a] where
     defineColumn = defineForeignKeyColumn
     {-# INLINE defineColumn #-}

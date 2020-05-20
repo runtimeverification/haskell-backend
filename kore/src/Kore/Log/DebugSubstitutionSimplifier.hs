@@ -14,8 +14,6 @@ import Prelude.Kore
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
---import Kore.Unparser
-import Data.Text
 import Log
 
 import Pretty
@@ -25,7 +23,7 @@ import qualified SQL
 
 data DebugSubstitutionSimplifier
     = WhileSimplifySubstitution
-    | SubstitutionSimplifierResult Text
+    | SubstitutionSimplifierResult
     deriving (GHC.Generic)
 
 instance SOP.Generic DebugSubstitutionSimplifier
@@ -34,12 +32,12 @@ instance SOP.HasDatatypeInfo DebugSubstitutionSimplifier
 
 instance Pretty DebugSubstitutionSimplifier where
     pretty WhileSimplifySubstitution = "Simplifying substitution.";
-    pretty (SubstitutionSimplifierResult result) = pretty result;
+    pretty SubstitutionSimplifierResult = "Non-bottom result."
 
 instance Entry DebugSubstitutionSimplifier where
     entrySeverity _ = Debug
     shortDoc _ = Just "while simplifying substitution"
-    helpDoc _ = "log substitutions that we attempt to simplify"
+    helpDoc _ = "log non-bottom results in calls to substitutionSimplifier"
 
 instance SQL.Table DebugSubstitutionSimplifier
 
@@ -52,6 +50,5 @@ whileDebugSubstitutionSimplifier =
 
 debugSubstitutionSimplifierResult
     :: MonadLog log
-    => Text
-    -> log ()
-debugSubstitutionSimplifierResult = logEntry . SubstitutionSimplifierResult
+    => log ()
+debugSubstitutionSimplifierResult = logEntry SubstitutionSimplifierResult
