@@ -23,6 +23,8 @@ module Prelude.Kore
     , partitionEithers
     -- * Filterable
     , Filterable (..)
+    -- * Witherable
+    , Witherable (..)
     -- * Errors
     , HasCallStack
     , assert
@@ -103,6 +105,7 @@ import Data.Typeable
     )
 import Data.Witherable
     ( Filterable (..)
+    , Witherable (..)
     )
 import Debug.Trace
 import From
