@@ -26,9 +26,6 @@ import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( andCondition
-    )
 import Kore.Internal.TermLike
 import Kore.Log.InfoAttemptUnification
     ( infoAttemptUnification
@@ -75,9 +72,7 @@ unificationProcedureWorker sideCondition p1 p2
     pat <- termUnification Not.notSimplifier p1 p2
     TopBottom.guardAgainstBottom pat
     let (term, conditions) = Conditional.splitTerm pat
-        mergedSideCondition =
-            sideCondition `SideCondition.andCondition` conditions
-    orCeil <- Ceil.makeEvaluateTerm mergedSideCondition term
+    orCeil <- Ceil.makeEvaluateTerm sideCondition term
     ceil' <- Monad.Unify.scatter orCeil
     BranchT.alternate . simplifyCondition sideCondition
         $ Conditional.andCondition ceil' conditions
