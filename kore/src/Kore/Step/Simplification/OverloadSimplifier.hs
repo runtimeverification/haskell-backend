@@ -179,7 +179,7 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
         overloads =
             traverse ( \s ->
                 getOverloadedWithinSort injProto (overload s) injFrom >>=
-                  \r -> return (s, r)
+                    \r -> return (s, r)
                 )
                 overloadings
         overloadings =

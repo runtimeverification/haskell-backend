@@ -85,7 +85,6 @@ getOverloading :: OverloadGraph -> Symbol -> Set Symbol
 getOverloading graph sym1 =
     fromMaybe Set.empty (overloadingSymbols graph Map.!? sym1)
 
-
 {- | Build a 'OverloadGraph' from a list of overloaded symbol pairs.
 
   The list of overloaded symbol pairs given as an argument is assumed

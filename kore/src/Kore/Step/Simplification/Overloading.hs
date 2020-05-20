@@ -382,7 +382,6 @@ unifyOverloadingInjVsVariable
         Left err -> error err
         Right Nothing -> notUnifiableOverloads
         Right (Just InjectedOverloadPair { overloadingSymbol, overloadedSymbol }
-        --(Pair (headUnion, maybeInjUnion) (overHead, maybeRInj))
             ) ->
             do
             let (InjectedOverload headUnion maybeInjUnion) = overloadingSymbol
