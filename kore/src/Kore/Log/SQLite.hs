@@ -126,12 +126,8 @@ foldMapEntries
 foldMapEntries mapEntry =
     mconcat
         [ mapEntry (Proxy @DebugEvaluateCondition)
-<<<<<<< HEAD
         , mapEntry (Proxy @DebugSubstitutionSimplifier)
-        , mapEntry (Proxy @WarnBottomHook)
-=======
         , mapEntry (Proxy @WarnBottomTotalFunction)
->>>>>>> master
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
         , mapEntry (Proxy @WarnSymbolSMTRepresentation)
         ]
