@@ -5,7 +5,7 @@ License     : NCSA
 -}
 module Kore.Log.DebugSubstitutionSimplifier
     ( DebugSubstitutionSimplifier (..)
-    --, whileDebugSubstitutionSimplifier
+    , whileDebugSubstitutionSimplifier
     , debugSubstitutionSimplifierResult
     ) where
 
@@ -14,35 +14,26 @@ import Prelude.Kore
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Internal.OrCondition
-    ( OrCondition 
-    )
-import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Step.Simplification.SubstitutionSimplifier
-import Kore.Internal.TermLike
-import Kore.Unparser
+--import Kore.Unparser
+import Data.Text
 import Log
+
 import Pretty
     ( Pretty (..)
-    )
-import qualified Pretty
-import SMT.SimpleSMT
-    ( Result (..)
     )
 import qualified SQL
 
 data DebugSubstitutionSimplifier
     = WhileSimplifySubstitution 
-    | SubstitutionSimplifierResult (OrCondition Variable)
+    | SubstitutionSimplifierResult Text
     deriving (GHC.Generic)
 
 instance SOP.Generic DebugSubstitutionSimplifier
 
 instance SOP.HasDatatypeInfo DebugSubstitutionSimplifier
 
-
 instance Pretty DebugSubstitutionSimplifier where
-    pretty (WhileSimplifySubstitution) = "so pretty";
+    pretty (WhileSimplifySubstitution) = "Simplifying substitution.";
     {-
         (Pretty.vsep . concat)
         [ [ "evaluating predicate:" , Pretty.indent 4 (unparse predicate) ]
@@ -53,28 +44,23 @@ instance Pretty DebugSubstitutionSimplifier where
       where
        predicate :| sideConditions = predicates
     -}
-    pretty (SubstitutionSimplifierResult result) =
-        "so pretty";
+    pretty (SubstitutionSimplifierResult result) = pretty result;
 instance Entry DebugSubstitutionSimplifier where
     entrySeverity _ = Debug
     shortDoc _ = Just "while simplifying substitution"
     helpDoc _ = "log substitutions that we attempt to simplify"
 
 instance SQL.Table DebugSubstitutionSimplifier
-{-
+
 whileDebugSubstitutionSimplifier
     :: MonadLog log
-    => InternalVariable variable
-    => NonEmpty (Predicate variable)
-    -> log a
+    => log a
     -> log a
 whileDebugSubstitutionSimplifier =
-    logWhile . DebugSubstitutionSimplifier . fmap Predicate.externalizeFreshVariables
--}
+    logWhile WhileSimplifySubstitution 
 
 debugSubstitutionSimplifierResult 
     :: MonadLog log 
-    => InternalVariable variable 
-    => OrCondition variable 
+    => Text
     -> log ()
-debugSubstitutionSimplifierResult = logEntry . SubstitutionSimplifierResult . OrCondition.externalizeFreshVariables
+debugSubstitutionSimplifierResult = logEntry . SubstitutionSimplifierResult  

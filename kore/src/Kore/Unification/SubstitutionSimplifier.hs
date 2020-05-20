@@ -43,6 +43,7 @@ import Kore.Internal.TermLike
 
 import Kore.Log.DebugSubstitutionSimplifier
     ( debugSubstitutionSimplifierResult
+    , whileDebugSubstitutionSimplifier
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -78,26 +79,27 @@ substitutionSimplifier notSimplifier =
         => SideCondition variable
         -> Substitution variable
         -> unifier (OrCondition variable)
-    wrapper sideCondition substitution = do
-        (predicate, result) <-
-            worker substitution
-            & maybeT empty return
-        let condition = Condition.fromNormalizationSimplified result
-        let condition' = Condition.fromPredicate predicate <> condition
-            conditions = OrCondition.fromCondition condition'
-        TopBottom.guardAgainstBottom conditions
-        debugSubstitutionSimplifierResult conditions
-        return conditions
-      where
-        worker
-            :: Substitution variable
-            -> MaybeT
-                unifier
-                (Predicate variable, Normalization variable)
-        worker =
-            simplifySubstitutionWorker
-                sideCondition
-                (unificationMakeAnd notSimplifier)
+    wrapper sideCondition substitution = 
+        whileDebugSubstitutionSimplifier $ do
+            (predicate, result) <-
+                worker substitution
+                & maybeT empty return
+            let condition = Condition.fromNormalizationSimplified result
+            let condition' = Condition.fromPredicate predicate <> condition
+                conditions = OrCondition.fromCondition condition'
+            TopBottom.guardAgainstBottom conditions
+            debugSubstitutionSimplifierResult "True"
+            return conditions
+          where
+            worker
+                :: Substitution variable
+                -> MaybeT
+                    unifier
+                    (Predicate variable, Normalization variable)
+            worker =
+                simplifySubstitutionWorker
+                    sideCondition
+                    (unificationMakeAnd notSimplifier)
 
 unificationMakeAnd
     :: forall unifier
