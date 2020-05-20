@@ -5,9 +5,6 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
@@ -16,7 +13,6 @@ import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Test.Tasty
-import qualified Test.Tasty.HUnit as Tasty
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Builtin as Builtin
@@ -549,7 +545,7 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
-    , testCase "TESTING Sort matching" $ do
+    , testCase "Sort matching" $ do
         let mx = SetVariable $ Variable (testId "mx") mempty Mock.subOthersort
             iz = SetVariable $ Variable (testId "iz") mempty Mock.intSort
             ub = ElementVariable $ Variable (testId "ub") mempty Mock.boolSort
