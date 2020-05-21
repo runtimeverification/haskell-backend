@@ -603,7 +603,6 @@ writeOptionsAndKoreFiles
         , koreMergeOptions
         }
   = do
-    traceM "\nHERE1\n"
     let shellScript = reportDirectory <> "/kore-exec.sh"
     writeFile shellScript
         . showKoreExecOptions
@@ -704,7 +703,6 @@ mainWithOptions execOptions = do
 
     writeInReportDirectory :: FilePath -> IO ()
     writeInReportDirectory tempDirectory = do
-        traceM "\nHere0\n"
         when . toReport . bugReport
             <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
         Foldable.forM_ (outputFileName execOptions)
