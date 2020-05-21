@@ -532,8 +532,8 @@ unparseKoreProveOptions
     , maybe "" ("--save-proofs " <>) saveProofs
     ]
 
-showKoreExecOptions :: KoreExecOptions -> String
-showKoreExecOptions
+koreExecSh :: KoreExecOptions -> String
+koreExecSh
     ( KoreExecOptions
         _
         patternFileName
@@ -558,9 +558,9 @@ showKoreExecOptions
         , "PATH_KORE_EXEC=\"$(stack path --local-bin)\""
         , "$PATH_KORE_EXEC/kore-exec \\"
         ]
-        <> (fmap (<> " \\") . filter (not . null)) flags
+        <> (fmap (<> " \\") . filter (not . null)) options
   where
-    flags =
+    options =
         [ if isJust koreProveOptions then "vdefinition.kore"
             else "definition.kore"
         , if isJust patternFileName then "--pattern pgm.kore" else ""
@@ -605,7 +605,7 @@ writeOptionsAndKoreFiles
   = do
     let shellScript = reportDirectory <> "/kore-exec.sh"
     writeFile shellScript
-        . showKoreExecOptions
+        . koreExecSh
         $ opts
     let allPermissions =
             setOwnerReadable True
