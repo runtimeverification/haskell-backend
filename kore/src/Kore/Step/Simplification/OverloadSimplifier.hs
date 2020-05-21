@@ -5,10 +5,14 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.OverloadSimplifier
     ( OverloadSimplifier (..)
+    , InjectedOverloadPair (..)
+    , InjectedOverload (..)
     , mkOverloadSimplifier
     ) where
 
 import Prelude.Kore
+
+import qualified Data.Set as Set
 
 import Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
@@ -22,6 +26,23 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier (..)
     )
+
+-- | Consists of an overload symbol and an injection from the sort
+-- of the symbol; the injection can miss (@Nothing@) if not needed.
+data InjectedOverload = InjectedOverload
+    { overload :: !Symbol
+    , injection :: !(Maybe (Inj ()))
+    }
+
+-- | Two overload symbols and injections.
+--  @overloadingSymbol = (OS, \inj{sOS, stop})@
+--  @overloadedSymbol =  (os, \inj{sos, sinter})@
+-- such that @OS@ is overloading @os@ and @sinter < stop@
+data InjectedOverloadPair = InjectedOverloadPair
+    { overloadingSymbol :: !InjectedOverload
+    , overloadedSymbol :: !InjectedOverload
+    }
+
 
 {- | Data structure encapsulating functionality for handling overloaded
 symbols during unification.
@@ -57,10 +78,38 @@ data OverloadSimplifier =
             -> Symbol
             -> Symbol
             -> Sort
-            -> Maybe (Symbol, Maybe (Inj ()))
+            -> Maybe InjectedOverload
         {- ^ Find a common overload with the result sort being a subsort of the
         argument, if such an overload exists. Also returns the appropriate
         injection, if necessary.
+        -}
+        , getOverloadedWithinSort
+            :: Inj ()
+            -> Symbol
+            -> Sort
+            -> Either String (Maybe InjectedOverload)
+        {- ^Find a symbol overloaded by the argument with the result sort being
+        a subsort of the argument, if a maximum (w.r.t. overloading) such
+        symbol exists. Also returns the appropriate injection, if necessary.
+        -}
+        , unifyOverloadWithSortWithinBound
+            :: Symbol -- top symbol on the LHS (wrapepd in an \inj{S1, injTo})
+            -> Inj () -- injection \inj{S2, injTo} wrapping the var on the RHS
+            -> Either String (Maybe InjectedOverloadPair)
+        {- ^Given symbol firstHead of sort S1 and an injection inj{S2, injTo}
+          If there exists a (unique) maximum overloaded symbol secondHead
+          with its result sort S2' within S2, such that there exists a common
+          overload headUnion of firstHead and secondHead
+          with its result sort S within injTo, then return a 'Pair' of the form
+
+            @((headUnion, inj{S, injTo}), (secondHead, inj{S2', S2}))@
+
+          where the injections can miss if they are identities.
+
+          If there are no overloaded symbols candidates, return @Right Nothing@
+
+          If there are candidates, but no maximum, throw an
+          'errorAmbiguousOverloads' with the candidates found
         -}
         }
 
@@ -76,8 +125,10 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
     OverloadSimplifier
         { isOverloading
         , isOverloaded
+        , getOverloadedWithinSort
         , resolveOverloading
         , unifyOverloadWithinBound
+        , unifyOverloadWithSortWithinBound
         }
   where
     isOverloading = OverloadGraph.isOverloading overloadGraph
@@ -100,19 +151,102 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
         overloadedChildrenSorts =
             Symbol.applicationSortsOperands (symbolSorts overloadedHead)
 
+    unifyOverloadWithinBound
+      :: Inj () -> Symbol -> Symbol -> Sort -> Maybe InjectedOverload
     unifyOverloadWithinBound injProto s1 s2 topSort =
         headMay withinBound
       where
-        injProtoTop = injProto { injTo = topSort }
         withinBound =
-            map (fmap
-                    (\inj ->
-                        if injFrom inj == injTo inj then Nothing else Just inj
-                    )
-                )
-            . filter (isOrderedInj . snd)
-            . map (\x -> (x, injProtoTop { injFrom = resultSort x }))
+            filterOverloads injProto topSort
             $ OverloadGraph.commonOverloads overloadGraph s1 s2
+
+    unifyOverloadWithSortWithinBound
+        :: Symbol -> Inj () -> Either String (Maybe InjectedOverloadPair)
+    unifyOverloadWithSortWithinBound sym injProto@Inj { injFrom, injTo }
+      = do
+        l <- overloads
+        let l' =
+                [ InjectedOverloadPair { overloadingSymbol, overloadedSymbol }
+                | (overloadingSymbol, Just overloadedSymbol) <- l
+                ]
+            rightSymbol = overload . overloadedSymbol
+        case findMaxOverload rightSymbol l' of
+            Nothing -> return Nothing
+            Just m' -> if checkMaxOverload rightSymbol m' l'
+                then return (Just m')
+                else errorAmbiguousOverloads (map rightSymbol l')
+      where
+        overloads =
+            traverse ( \s ->
+                getOverloadedWithinSort injProto (overload s) injFrom >>=
+                    \r -> return (s, r)
+                )
+                overloadings
+        overloadings =
+            filterOverloads injProto injTo . Set.toList
+            $ OverloadGraph.getOverloading overloadGraph sym
+
+    getOverloadedWithinSort
+        :: Inj ()
+        -> Symbol
+        -> Sort
+        -> Either String (Maybe InjectedOverload)
+    getOverloadedWithinSort injProto sym topSort
+        | null overloads = Right Nothing
+        | Just m <- findMaxOverload overload overloads
+        , checkMaxOverload overload m overloads
+        = Right (Just m)
+        | otherwise = errorAmbiguousOverloads (map overload overloads)
+      where
+        overloads =
+            filterOverloads injProto topSort . Set.toList
+            $ OverloadGraph.getOverloaded overloadGraph sym
+
+    updateMaxOverload :: (a -> Symbol) -> a -> Maybe a -> Maybe a
+    updateMaxOverload _ x Nothing = Just x
+    updateMaxOverload f x (Just m)
+      = do
+        ord <- compareOverloading sm sx
+        case ord of
+            LT -> return x
+            _ -> return m
+      where
+        sx = f x
+        sm = f m
+
+    findMaxOverload :: (a -> Symbol) -> [a] -> Maybe a
+    findMaxOverload f = foldr (updateMaxOverload f) Nothing
+
+    checkMaxOverload :: (a -> Symbol) -> a -> [a] -> Bool
+    checkMaxOverload f m = all (isOverloadingOrEqual (f m) .f)
+
+    isOverloadingOrEqual x y = maybe False (LT /=) (compareOverloading x y)
+
+    filterOverloads :: Inj () -> Sort -> [Symbol] -> [InjectedOverload]
+    filterOverloads injProto topSort overloads =
+        overloads
+        & map (\x -> (x, injProtoTop { injFrom = resultSort x }))
+        & filter (isOrderedInj . snd)
+        & map (uncurry InjectedOverload . fmap removeEmptyInjection)
+      where
+        injProtoTop = injProto { injTo = topSort }
+        removeEmptyInjection inj
+            | injFrom inj == injTo inj = Nothing
+            | otherwise = Just inj
 
     resultSort :: Symbol -> Sort
     resultSort = applicationSortsResult  . symbolSorts
+
+    compareOverloading :: Symbol -> Symbol -> Maybe Ordering
+    compareOverloading x y
+        | x == y = Just EQ
+        | x `isOverloading` y = Just GT
+        | y `isOverloading` x = Just LT
+        | otherwise = Nothing
+
+errorAmbiguousOverloads :: [Symbol] -> Either String a
+errorAmbiguousOverloads overloads =
+    Left
+        ( "Overloaded symbols -> cannot compute maximum: "
+        <> show overloads
+        )

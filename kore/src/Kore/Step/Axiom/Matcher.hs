@@ -37,6 +37,7 @@ import qualified Data.Align as Align
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.List
     ( foldl'
@@ -59,11 +60,12 @@ import Data.These
     )
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Builtin as Builtin
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
 import Kore.Internal.MultiAnd
@@ -82,7 +84,7 @@ import Kore.Internal.TermLike hiding
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Overloading
-    ( unifyOverloading
+    ( matchOverloading
     )
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
@@ -415,7 +417,7 @@ matchOverload
     :: (MatchingVariable variable, MonadSimplify simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchOverload termPair = Error.hushT (unifyOverloading termPair) >>= push
+matchOverload termPair = Error.hushT (matchOverloading termPair) >>= push
 
 -- * Implementation
 
@@ -544,7 +546,7 @@ substitute eVariable termLike = do
             -- Injected Map and Set keys must be properly normalized before
             -- calling Builtin.renormalize.
             & InjSimplifier.normalize injSimplifier
-            & Builtin.renormalize
+            & renormalizeBuiltins
             & return
 
 {- | Record a set substitution in the matching solution.
@@ -604,7 +606,7 @@ substituteTermLike
     => Map (UnifiedVariable variable) (TermLike variable)
     -> TermLike variable
     -> TermLike variable
-substituteTermLike subst = Builtin.renormalize . TermLike.substitute subst
+substituteTermLike subst = renormalizeBuiltins . TermLike.substitute subst
 
 occursCheck
     :: (MatchingVariable variable, Monad simplifier)
@@ -897,3 +899,20 @@ keyBasedIntersectionDifference merger firsts seconds =
         result@IntersectionDifference{intersection}
         (These first second)
       = result {intersection = merger first second : intersection}
+
+{- | Renormalize builtin types after substitution.
+ -}
+renormalizeBuiltins
+    :: InternalVariable variable
+    => TermLike variable -> TermLike variable
+renormalizeBuiltins =
+    Recursive.fold $ \base@(attrs :< termLikeF) ->
+    let bottom' = mkBottom (Attribute.Pattern.patternSort attrs) in
+    case termLikeF of
+        BuiltinF (Builtin.BuiltinMap internalMap) ->
+            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
+            & maybe bottom' mkBuiltinMap
+        BuiltinF (Builtin.BuiltinSet internalSet) ->
+            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
+            & maybe bottom' mkBuiltinSet
+        _ -> Recursive.embed base

@@ -3,49 +3,90 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 module Kore.Step.Simplification.Overloading
-    ( overloadedConstructorSortInjectionAndEquals
-    , unifyOverloading
+    ( matchOverloading
     -- for testing purposes
-    , UnifyOverloading
+    , unifyOverloading
+    , UnifyOverloadingResult
+    , MatchOverloadingResult
     , UnifyOverloadingError (..)
+    , Narrowing (..)
+    , OverloadingResolution (..)
     ) where
 
 import Prelude.Kore hiding
     ( concat
     )
 
-import Control.Error
-    ( MaybeT (..)
-    )
 import qualified Control.Monad as Monad
 import Control.Monad.Trans.Except
     ( ExceptT
-    , runExceptT
+    , catchE
     , throwE
-    )
-import Data.String
-    ( fromString
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import Kore.Step.Simplification.Simplify as Simplifier
+    ( MonadSimplify (..)
+    , isConstructorOrOverloaded
+    )
+import Kore.Unification.Unify as Unify
 
+import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import Kore.Attribute.Synthetic
     ( synthesize
     )
 import Kore.Debug
-import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.Pattern
-    ( Pattern
+import Kore.Internal.Condition
+    ( Condition
     )
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Step.Simplification.Simplify as Simplifier
-    ( MonadSimplify (..)
-    , TermSimplifier
-    , isConstructorOrOverloaded
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (ElemVar)
     )
-import Kore.Unification.Unify as Unify
 import Pair
+
+-- | Overload solution requiring narrowing
+data Narrowing variable
+    = Narrowing
+        { narrowingSubst :: !(Condition variable)
+        -- ^narrowing substitution represented as a 'Condition'
+        , narrowingVars :: ![ElementVariable variable]
+        -- ^the fresh variables within the narrowingSubst
+        , overloadPair  :: !(Pair (TermLike variable))
+        -- overload solution
+        }
+  deriving (GHC.Generic, Show)
+
+instance SOP.Generic (Narrowing variable)
+
+instance SOP.HasDatatypeInfo (Narrowing variable)
+
+instance Debug variable => Debug (Narrowing variable)
+
+instance
+    (Diff variable, InternalVariable variable) => Diff (Narrowing variable)
+
+-- | Result of applying the 'unifyOverloading' resolution procedure
+data OverloadingResolution variable
+    = Simple !(Pair (TermLike variable))
+    -- ^The overloading resolves yielding the transformed pair of terms
+    | WithNarrowing !(Narrowing variable)
+    -- ^Overloading resolves, but additional narrowing is needed for solution
+  deriving (GHC.Generic, Show)
+
+instance SOP.Generic (OverloadingResolution variable)
+
+instance SOP.HasDatatypeInfo (OverloadingResolution variable)
+
+instance Debug variable => Debug (OverloadingResolution variable)
+
+instance
+    ( Diff variable
+    , InternalVariable variable
+    ) => Diff (OverloadingResolution variable)
 
 -- | Describes the possible errors encountered during unification.
 data UnifyOverloadingError
@@ -73,37 +114,31 @@ instance Diff UnifyOverloadingError
 instance Monoid UnifyOverloadingError where
     mempty = NotApplicable
 
-type UnifyOverloading unifier a = ExceptT UnifyOverloadingError unifier (Pair a)
+type UnifyOverloadingResult unifier variable =
+    ExceptT UnifyOverloadingError unifier (OverloadingResolution variable)
 
-notApplicable :: Monad unifier => UnifyOverloading unifier a
+type MatchOverloadingResult unifier variable =
+    ExceptT UnifyOverloadingError unifier (Pair (TermLike variable))
+
+type OverloadingResult unifier a = ExceptT UnifyOverloadingError unifier a
+
+notApplicable :: Monad unifier => OverloadingResult unifier a
 notApplicable = empty
 
-throwBottom :: Monad unifier => String -> UnifyOverloading unifier a
+throwBottom :: Monad unifier => String -> OverloadingResult unifier a
 throwBottom = throwE . Clash
 
-{- |
- If the two constructors form an overload pair, apply the overloading axioms
- on the terms to make the constructors equal, then retry unification on them.
-
-See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
-
- -}
-overloadedConstructorSortInjectionAndEquals
-    :: (InternalVariable variable, MonadUnify unifier)
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
+matchOverloading
+    :: MonadSimplify unifier
+    => InternalVariable variable
+    => Pair (TermLike variable)
+    -> MatchOverloadingResult unifier variable
+matchOverloading termPair
   = do
-    eunifier <- lift . runExceptT
-        $ unifyOverloading (Pair firstTerm secondTerm)
-    case eunifier of
-        Right (Pair firstTerm' secondTerm') -> lift $
-            termMerger firstTerm' secondTerm'
-        Left (Clash message) -> lift $
-            explainAndReturnBottom (fromString message) firstTerm secondTerm
-        Left NotApplicable -> empty
+    unifyResult <- unifyOverloading termPair
+    case unifyResult of
+        Simple pair -> return pair
+        _ -> notApplicable
 
 {- |
  Tests whether the pair of terms can be coerced to have the same constructors
@@ -119,15 +154,16 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
  the first and second terms in a pair are not interchangeable.
 -}
 unifyOverloading
-    :: MonadSimplify unifier
+    :: forall unifier variable
+     . MonadSimplify unifier
     => InternalVariable variable
     => Pair (TermLike variable)
-    -> UnifyOverloading unifier (TermLike variable)
+    -> UnifyOverloadingResult unifier variable
 unifyOverloading termPair = case termPair of
     Pair
         (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
         secondTerm@(App_ secondHead _)
-        -> flipPairBack <$> unifyOverloadingVsOverloaded
+        -> Simple . flipPairBack <$> unifyOverloadingVsOverloaded
             secondHead
             secondTerm
             (Application firstHead firstChildren)
@@ -135,7 +171,7 @@ unifyOverloading termPair = case termPair of
     Pair
         firstTerm@(App_ firstHead _)
         (Inj_ inj@Inj { injChild = App_ secondHead secondChildren })
-        -> unifyOverloadingVsOverloaded
+        -> Simple <$> unifyOverloadingVsOverloaded
             firstHead
             firstTerm
             (Application secondHead secondChildren)
@@ -144,16 +180,43 @@ unifyOverloading termPair = case termPair of
         (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
         (Inj_ inj'@Inj { injChild = App_ secondHead secondChildren })
       | injFrom inj /= injFrom inj' -- this case should have been handled by now
-        -> unifyOverloadingCommonOverload
+        -> Simple <$> unifyOverloadingCommonOverload
             (Application firstHead firstChildren)
             (Application secondHead secondChildren)
             inj { injChild = () }
-    (Pair (App_ firstHead _) (Inj_ Inj { injChild })) ->
-        notUnifiableTest firstHead injChild
-    (Pair (Inj_ Inj { injChild }) (App_ secondHead _)) ->
-        notUnifiableTest secondHead injChild
-    _ -> notApplicable
+    Pair firstTerm secondTerm ->
+        catchE (worker firstTerm secondTerm)
+            (\case
+                NotApplicable -> worker secondTerm firstTerm
+                clash -> throwE clash
+            )
   where
+    worker
+      :: TermLike variable
+      -> TermLike variable
+      -> UnifyOverloadingResult unifier variable
+    worker
+        firstTerm@(App_ firstHead _)
+        (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
+      =
+        unifyOverloadingVsOverloadedVariable
+            firstHead
+            firstTerm
+            secondVar
+            inj { injChild = () }
+    worker
+        (Inj_ Inj { injChild = firstTerm@(App_ firstHead firstChildren) })
+        (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
+      =
+        unifyOverloadingInjVsVariable
+            (Application firstHead firstChildren)
+            secondVar
+            (Attribute.freeVariables firstTerm)
+            inj { injChild = () }
+    worker (App_ firstHead _) (Inj_ Inj { injChild }) =
+        notUnifiableTest firstHead injChild
+    worker _ _ = notApplicable
+
     flipPairBack (Pair x y) = Pair y x
     notUnifiableTest termHead child = do
         OverloadSimplifier { isOverloaded } <- Simplifier.askOverloadSimplifier
@@ -182,7 +245,7 @@ unifyOverloadingCommonOverload
     => Application Symbol (TermLike variable)
     -> Application Symbol (TermLike variable)
     -> Inj ()
-    -> UnifyOverloading unifier (TermLike variable)
+    -> MatchOverloadingResult unifier variable
 unifyOverloadingCommonOverload
     (Application firstHead firstChildren)
     (Application secondHead secondChildren)
@@ -193,13 +256,12 @@ unifyOverloadingCommonOverload
         <- Simplifier.askOverloadSimplifier
     Monad.guard (isOverloaded firstHead && isOverloaded secondHead)
     case unifyOverloadWithinBound injProto firstHead secondHead injTo of
-        Nothing -> throwBottom "overloaded constructors not unifiable"
-        Just (headUnion, maybeInjUnion) ->
-            let first' = resolveOverloading injProto headUnion firstChildren
-                second' = resolveOverloading injProto headUnion secondChildren
-                mkInj' injChild inj' = (synthesize . InjF) inj' { injChild }
-                mkInj injChild = maybe injChild (mkInj' injChild) maybeInjUnion
-            in return $ Pair (mkInj first') (mkInj second')
+        Nothing -> notUnifiableOverloads
+        Just InjectedOverload { overload, injection } ->
+            let first' = resolveOverloading injProto overload firstChildren
+                second' = resolveOverloading injProto overload secondChildren
+                inject = maybeMkInj injection
+            in return $ Pair (inject first') (inject second')
 
 {- Handles the case
     overloadingTerm@(overloadingHead(overloadingChildren))
@@ -221,7 +283,7 @@ unifyOverloadingVsOverloaded
     -> TermLike variable
     -> Application Symbol (TermLike variable)
     -> Inj ()
-    -> UnifyOverloading unifier (TermLike variable)
+    -> MatchOverloadingResult unifier variable
 unifyOverloadingVsOverloaded
     overloadingHead
     overloadingTerm
@@ -239,8 +301,157 @@ unifyOverloadingVsOverloaded
         then return $ Pair overloadingTerm overloadedTerm'
         else throwBottom "different injected ctor"
 
+{- Handles the case
+    overloadingTerm@(overloadingHead(overloadingChildren))
+    vs.
+    inj{S2,injTo}(overloadedVariable)
+  If there exists a (unique) maximum overloadedHead with its result sort S2'
+  within S2 such that
+    inj{S2',injTo}(overloadedHead(freshVars)) =
+        overloadingHead(inj2(freshVars))
+
+  Then it narrows overloadedVariable to inj{S2',S2}(overloadedHead(freshVars))
+  and reduces the initial problem to
+    overloadingTerm@(overloadingHead(overloadingChildren))
+   vs
+    overloadingHead(inj2(freshVars))
+-}
+unifyOverloadingVsOverloadedVariable
+    :: MonadSimplify unifier
+    => InternalVariable variable
+    => Symbol
+    -> TermLike variable
+    -> ElementVariable variable
+    -> Inj ()
+    -> UnifyOverloadingResult unifier variable
+unifyOverloadingVsOverloadedVariable
+    overloadingHead
+    overloadingTerm
+    overloadedVar
+    injProto@Inj { injFrom }
+  = do
+    OverloadSimplifier { isOverloaded, getOverloadedWithinSort }
+            <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded overloadingHead)
+    case getOverloadedWithinSort injProto overloadingHead injFrom of
+        Right Nothing -> notUnifiableOverloads
+        Right (Just overHead) ->
+            WithNarrowing <$> computeNarrowing
+                overloadingTerm
+                Nothing
+                overloadingHead
+                injProto
+                freeVars
+                overloadedVar
+                overHead
+        Left err -> error err
+  where
+    freeVars = freeVariables overloadingTerm
+
+{- Handles the case
+    inj{S1,injTo}(firstHead(firstChildren))
+    vs.
+    inj{S2,injTo}(secondVariable)
+  If there exists a (unique) maximum overloadedHead' with its result sort
+  S2' within S2, such that there exists a common overload headUnion such that
+    inj{S1,injTo}(firstHead(firstChildren)) =
+        inj{S,injTo}(headUnion(inj1(firstChildren)))
+  and
+    inj{S2',injTo}(secondHead(freshVars)) =
+        inj{S,injTo}(headUnion(inj2(freshVars)))
+
+  Then it narrows overloadedVariable to inj{S2',S2}(secondHead(freshVars))
+  and reduces the problem to
+    inj{S,injTo}(headUnion(inj1(firstChildren)))
+   vs
+    inj{S,injTo}(headUnion(inj2(freshVars)))
+-}
+unifyOverloadingInjVsVariable
+    :: MonadSimplify unifier
+    => InternalVariable variable
+    => Application Symbol (TermLike variable)
+    -> ElementVariable variable
+    -> Attribute.FreeVariables variable
+    -> Inj ()
+    -> UnifyOverloadingResult unifier variable
+unifyOverloadingInjVsVariable
+    (Application firstHead firstChildren)
+    overloadedVar
+    freeVars
+    injProto
+  = do
+    OverloadSimplifier
+        { isOverloaded, resolveOverloading, unifyOverloadWithSortWithinBound }
+        <- Simplifier.askOverloadSimplifier
+    Monad.guard (isOverloaded firstHead)
+    case unifyOverloadWithSortWithinBound firstHead injProto of
+        Left err -> error err
+        Right Nothing -> notUnifiableOverloads
+        Right (Just InjectedOverloadPair { overloadingSymbol, overloadedSymbol }
+            ) ->
+            do
+            let (InjectedOverload headUnion maybeInjUnion) = overloadingSymbol
+                first' = resolveOverloading injProto headUnion firstChildren
+            WithNarrowing <$> computeNarrowing
+                first'
+                maybeInjUnion
+                headUnion
+                injProto
+                freeVars
+                overloadedVar
+                overloadedSymbol
+
+computeNarrowing
+    :: HasCallStack
+    => MonadSimplify unifier
+    => InternalVariable variable
+    => TermLike variable -- ^overloading pair LHS
+    -> Maybe (Inj ()) -- ^optional injection
+    -> Symbol -- ^overloading symbol
+    -> Inj () -- ^injection to overloading symbol
+    -> Attribute.FreeVariables variable -- ^free vars in the unification pair
+    -> ElementVariable variable -- ^injected variable (to be narrowed)
+    -> InjectedOverload -- ^overloaded symbol injected into the variable's sort
+    -> ExceptT UnifyOverloadingError unifier (Narrowing variable)
+computeNarrowing
+    first' injection' headUnion injUnion freeVars overloadedVar overloaded
+  | App_ _ freshTerms <- overloadedTerm
+  = do
+    OverloadSimplifier { resolveOverloading }
+        <- Simplifier.askOverloadSimplifier
+    let second' =
+            resolveOverloading injUnion headUnion freshTerms
+    return Narrowing
+        { narrowingSubst =
+            Condition.assign (ElemVar overloadedVar) narrowingTerm
+        , narrowingVars =
+            Attribute.getFreeElementVariables $ freeVariables narrowingTerm
+        , overloadPair = Pair (inject first') (inject second')
+        }
+  | otherwise = error "This should not happen"
+  where
+    InjectedOverload { overload, injection } = overloaded
+    allVars = Attribute.freeVariable (ElemVar overloadedVar) <> freeVars
+    overloadedTerm = freshSymbolInstance allVars overload "x"
+    inject = maybeMkInj injection'
+    narrowingTerm = maybeMkInj injection overloadedTerm
+
+mkInj
+    :: InternalVariable variable
+    => Inj ()
+    -> TermLike variable
+    -> TermLike variable
+mkInj inj injChild = (synthesize . InjF) inj { injChild }
+
+maybeMkInj
+    :: InternalVariable variable
+    => Maybe (Inj ())
+    -> TermLike variable
+    -> TermLike variable
+maybeMkInj maybeInj injChild = maybe injChild (flip mkInj injChild) maybeInj
+
 notUnifiableError
-    :: Monad unifier => TermLike variable -> UnifyOverloading unifier a
+    :: Monad unifier => TermLike variable -> OverloadingResult unifier a
 notUnifiableError (DV_ _ _) = throwBottom "injected domain value"
 notUnifiableError (BuiltinBool_ _) = throwBottom "injected builtin bool"
 notUnifiableError (BuiltinInt_ _) = throwBottom "injected builtin int"
@@ -249,3 +460,6 @@ notUnifiableError (BuiltinMap_ _) = throwBottom "injected builtin map"
 notUnifiableError (BuiltinSet_ _) = throwBottom "injected builtin set"
 notUnifiableError (BuiltinString_ _) = throwBottom "injected builtin string"
 notUnifiableError _ = notApplicable
+
+notUnifiableOverloads :: Monad unifier => OverloadingResult unifier a
+notUnifiableOverloads = throwBottom "overloaded constructors not unifiable"

@@ -20,7 +20,7 @@ ghci:
 	$(stack) ghci $(package)
 
 test:
-	$(stack) test $(package) --test-arguments "--hide-successes"
+	$(stack) test $(package)
 
 testp:
 	$(stack) test --test-arguments '-p "$(pattern)"'
