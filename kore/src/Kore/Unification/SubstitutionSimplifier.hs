@@ -90,16 +90,16 @@ substitutionSimplifier notSimplifier =
             TopBottom.guardAgainstBottom conditions
             debugSubstitutionSimplifierResult
             return conditions
-          where
-            worker
-                :: Substitution variable
-                -> MaybeT
-                    unifier
-                    (Predicate variable, Normalization variable)
-            worker =
-                simplifySubstitutionWorker
-                    sideCondition
-                    (unificationMakeAnd notSimplifier)
+      where
+        worker
+            :: Substitution variable
+            -> MaybeT
+                unifier
+                (Predicate variable, Normalization variable)
+        worker =
+            simplifySubstitutionWorker
+                sideCondition
+                (unificationMakeAnd notSimplifier)
 
 unificationMakeAnd
     :: forall unifier
