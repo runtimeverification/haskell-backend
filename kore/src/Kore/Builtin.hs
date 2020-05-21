@@ -31,14 +31,11 @@ module Kore.Builtin
     , evaluators
     , externalize
     , internalize
-    , renormalize
     ) where
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
 import qualified Data.Functor.Foldable as Recursive
-import Data.Generics.Product
 import Data.Map.Strict
     ( Map
     )
@@ -53,12 +50,10 @@ import Data.Text
 import Kore.Attribute.Hook
     ( Hook (..)
     )
-import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
 import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
@@ -74,9 +69,6 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
-import Kore.Domain.Builtin
-    ( Builtin (BuiltinMap, BuiltinSet)
-    )
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (..)
     , VerifiedModule
@@ -210,20 +202,3 @@ internalize tools =
         .   Map.internalize tools
         .   Set.internalize tools
         .   InternalBytes.internalize
-
-{- | Renormalize builtin types after substitution.
- -}
-renormalize
-    :: InternalVariable variable
-    => TermLike variable -> TermLike variable
-renormalize =
-    Recursive.fold $ \base@(attrs :< termLikeF) ->
-    let bottom' = mkBottom (Attribute.Pattern.patternSort attrs) in
-    case termLikeF of
-        BuiltinF (BuiltinMap internalMap) ->
-            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
-            & maybe bottom' mkBuiltinMap
-        BuiltinF (BuiltinSet internalSet) ->
-            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
-            & maybe bottom' mkBuiltinSet
-        _ -> Recursive.embed base
