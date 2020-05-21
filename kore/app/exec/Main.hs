@@ -267,7 +267,7 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         { koreSearchOptions
         , strategy =
             -- Search relies on exploring the entire space of states.
-            ("priorityAllStrategy", priorityAllStrategy)
+            ("all", priorityAllStrategy)
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
@@ -467,10 +467,10 @@ unparseKoreLogOptions
     , debugSolverOptionsFlag debugSolverOptions
     , logSQLiteOptionsFlag logSQLiteOptions
     , if warningSwitch == AsError then "--warnings-to-errors" else ""
-    , debugApplyEquationOptionsFlag debugApplyEquationOptions
-    , debugAttemptEquationOptionsFlag debugAttemptEquationOptions
-    , debugEquationOptionsFlag debugEquationOptions
-    ]
+    ] 
+    <> debugApplyEquationOptionsFlag debugApplyEquationOptions
+    <> debugAttemptEquationOptionsFlag debugAttemptEquationOptions
+    <> debugEquationOptionsFlag debugEquationOptions
   where
     koreLogTypeFlag LogStdErr = ""
     koreLogTypeFlag (LogFileText file) = "--log " <> file
@@ -493,16 +493,13 @@ unparseKoreLogOptions
         "--sqlog " <> file
 
     debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) =
-        unwords $
-            ("--debug-apply-equation " <>) . unpack <$> Foldable.toList set
+        ("--debug-apply-equation " <>) . unpack <$> Foldable.toList set
 
     debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) =
-        unwords $
-            ("--debug-attempt-equation " <>) . unpack <$> Foldable.toList set
+        ("--debug-attempt-equation " <>) . unpack <$> Foldable.toList set
 
     debugEquationOptionsFlag (DebugEquationOptions set) =
-        unwords $
-            ("--debug-equation" <>) . unpack <$> Foldable.toList set
+        ("--debug-equation " <>) . unpack <$> Foldable.toList set
 
 unparseKoreSearchOptions :: KoreSearchOptions -> [String]
 unparseKoreSearchOptions (KoreSearchOptions _ bound searchType) =
@@ -531,7 +528,7 @@ unparseKoreProveOptions
     , "--graph-search "
         <> if graphSearch == DepthFirst then "depth-first" else "breadth-first"
     , if bmc then "--bmc" else ""
-    , maybe "" (<> "--save-proofs") saveProofs
+    , maybe "" ("--save-proofs " <>) saveProofs
     ]
 
 showKoreExecOptions :: KoreExecOptions -> String
@@ -644,20 +641,17 @@ main = do
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions, outputFileName } = execOptions
+    let KoreExecOptions { koreLogOptions } = execOptions
     tempDirectory <- createTempDirectory "." "report"
     exitCode <-
         runKoreLog tempDirectory koreLogOptions
         $ handle (handleSomeException tempDirectory)
         $ handle handleSomeEntry
-        $ handle handleWithConfiguration go
+        $ handle handleWithConfiguration
+        $ writeInReportDirectory tempDirectory >> go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
-    when . toReport . bugReport
-        <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
-    Foldable.forM_ outputFileName
-        $ flip copyFile ("./" <> tempDirectory <> "/outputFile.kore")
     directoryReportExists <- doesDirectoryExist tempDirectory
     when directoryReportExists $ do
         createTarGz ("./" <> tempDirectory <> ".tar.gz") "." [tempDirectory]
@@ -677,7 +671,10 @@ mainWithOptions execOptions = do
     handleSomeException :: FilePath -> SomeException -> Main ExitCode
     handleSomeException tempDirectory someException = do
         errorException someException
-        lift $ writeFile (tempDirectory <> "/Errors.txt") (displayException someException)
+        lift
+            $ writeFile
+                (tempDirectory <> "/Errors.txt")
+                (displayException someException)
         return $ ExitFailure 1
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
@@ -704,6 +701,13 @@ mainWithOptions execOptions = do
 
       | otherwise =
         koreRun execOptions
+
+    writeInReportDirectory :: FilePath -> Main ()
+    writeInReportDirectory tempDirectory = lift $ do
+        when . toReport . bugReport
+            <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
+        Foldable.forM_ (outputFileName execOptions)
+            $ flip copyFile ("./" <> tempDirectory <> "/outputFile.kore")        
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
