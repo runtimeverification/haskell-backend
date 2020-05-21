@@ -47,4 +47,3 @@ cabal.project.local
 /shell.local.nix
 /TAGS
 /.TAGS*
-report-*/
