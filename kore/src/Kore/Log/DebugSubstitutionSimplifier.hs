@@ -32,8 +32,8 @@ instance SOP.Generic DebugSubstitutionSimplifier
 instance SOP.HasDatatypeInfo DebugSubstitutionSimplifier
 
 instance Pretty DebugSubstitutionSimplifier where
-    pretty WhileSimplifySubstitution = "Simplifying substitution."
-    pretty SubstitutionSimplifierResult = "Non-bottom result."
+    pretty WhileSimplifySubstitution = "Simplifying substitution"
+    pretty SubstitutionSimplifierResult = "Non-\\bottom result"
 
 instance Entry DebugSubstitutionSimplifier where
     entrySeverity _ = Debug
