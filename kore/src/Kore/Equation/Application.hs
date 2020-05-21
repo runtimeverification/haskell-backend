@@ -111,7 +111,6 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
-    , unparseToString
     )
 import Kore.Variables.Target
     ( Target
@@ -164,7 +163,8 @@ attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument } = equationRenamed
         matchResult <- match left termLike & whileMatch
-        simplifiedResult <- simplifyArgumentWithResult argument matchResult & lift
+        simplifiedResult <-
+            simplifyArgumentWithResult argument matchResult & lift
         (equation', predicate') <-
             applyMatchResult equationRenamed simplifiedResult
             & whileApplyMatchResult
@@ -249,12 +249,6 @@ applyMatchResult
     ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) = do
-    traceM
-        $ "\n\nSubstitution:\n"
-        <> unparseToString
-            ((Substitution.toPredicate . Substitution.fromMap)
-            substitution
-            )
     case errors of
         x : xs ->
             throwE ApplyMatchResultErrors
