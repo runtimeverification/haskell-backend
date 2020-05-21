@@ -80,6 +80,7 @@ import Kore.Syntax.Module
 import Kore.Syntax.Variable
     ( Variable (..)
     )
+import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -749,34 +750,37 @@ test_onePathStrategy =
         -- Coinductive axiom: -
         -- Normal axiom: -
         -- Expected: stuck, since the terms unify but the conditions do not
-        let goal =
-                makeOnePathRuleFromPatterns
-                    ( Conditional
-                        { term = TermLike.mkElemVar Mock.x
-                        , predicate =
-                            makeEqualsPredicate Mock.testSort
-                                (TermLike.mkElemVar Mock.x)
-                                Mock.a
-                        , substitution = mempty
-                        }
+        let left =
+                Pattern.withCondition
+                    (TermLike.mkElemVar Mock.x)
+                    (Condition.fromPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (TermLike.mkElemVar Mock.x)
+                            Mock.a
+                        )
                     )
-                    ( Conditional
-                        { term = TermLike.mkElemVar Mock.x
-                        , predicate =
-                            makeNotPredicate
-                                $ makeEqualsPredicate Mock.testSort
-                                    (TermLike.mkElemVar Mock.x)
-                                    Mock.a
-                        , substitution = mempty
-                        }
+            left' =
+                Pattern.withCondition
+                    Mock.a
+                    (Condition.assign (ElemVar Mock.x) Mock.a)
+            right =
+                Pattern.withCondition
+                    (TermLike.mkElemVar Mock.x)
+                    (Condition.fromPredicate $ makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (TermLike.mkElemVar Mock.x)
+                            Mock.a
+                        )
                     )
+            original = makeOnePathRuleFromPatterns left right
+            expect = makeOnePathRuleFromPatterns left' right
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            goal
+            original
             []
             []
-        assertEqual "" (ProofState.GoalStuck goal) _actual
+        assertEqual "" (ProofState.GoalStuck expect) _actual
     ]
 
 simpleRewrite
@@ -847,7 +851,11 @@ runSteps breadthLimit graphFilter picker configuration strategy' =
         give metadataTools
             $ declareSMTLemmas
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-        runStrategy breadthLimit transitionRule strategy' (ProofState.Goal configuration)
+        runStrategy
+            breadthLimit
+            transitionRule
+            strategy'
+            (ProofState.Goal configuration)
   where
     mockEnv = Mock.env
     Env {metadataTools} = mockEnv
