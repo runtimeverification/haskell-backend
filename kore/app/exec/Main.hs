@@ -5,10 +5,10 @@ import Prelude.Kore
 import Control.Monad.Catch
     ( MonadCatch
     , SomeException
+    , catch
     , displayException
     , handle
     , throwM
-    , catch
     )
 import Control.Monad.Trans
     ( lift
@@ -468,7 +468,7 @@ unparseKoreLogOptions
     , debugSolverOptionsFlag debugSolverOptions
     , logSQLiteOptionsFlag logSQLiteOptions
     , if warningSwitch == AsError then "--warnings-to-errors" else ""
-    ] 
+    ]
     <> debugApplyEquationOptionsFlag debugApplyEquationOptions
     <> debugAttemptEquationOptionsFlag debugAttemptEquationOptions
     <> debugEquationOptionsFlag debugEquationOptions
@@ -712,7 +712,7 @@ mainWithOptions execOptions = do
         directoryReportExists <- doesDirectoryExist tempDirectory
         when directoryReportExists $ do
             createTarGz ("./" <> tempDirectory <> ".tar.gz") "." [tempDirectory]
-            removePathForcibly $ "./" <> tempDirectory  
+            removePathForcibly $ "./" <> tempDirectory
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
