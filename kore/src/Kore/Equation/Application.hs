@@ -68,7 +68,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional (..)
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -81,6 +82,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable (..)
     , InternalVariable
@@ -97,6 +99,7 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT
+import qualified Kore.Step.Substitution as Substitution
 import Kore.Syntax.Id
     ( AstLocation (..)
     , FileLocation (..)
@@ -160,11 +163,10 @@ attemptEquation
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument } = equationRenamed
-        (predicate, substitution) <- match left termLike & whileMatch
-        argument' <- simplifyArgumentWithResult argument predicate & lift
-        let matchResult = (argument', substitution)
+        matchResult <- match left termLike & whileMatch
+        simplifiedResult <- simplifyArgumentWithResult argument matchResult & lift
         (equation', predicate') <-
-            applyMatchResult equationRenamed matchResult
+            applyMatchResult equationRenamed simplifiedResult
             & whileApplyMatchResult
         let Equation { requires } = equation'
         checkRequires sideCondition predicate' requires & whileCheckRequires
@@ -191,28 +193,27 @@ attemptEquation sideCondition termLike equation =
 
     simplifyArgumentWithResult
         :: Predicate (Target variable)
-        -> Predicate (Target variable)
-        -> simplifier (Predicate (Target variable))
-    simplifyArgumentWithResult argument result = do
-        let argumentPattern =
-                Pattern.fromCondition . Condition.fromPredicate $ argument
-            resultCondition = Condition.fromPredicate result
-            argumentWithResult =
-                Pattern.andCondition argumentPattern resultCondition
-            toPredicate =
-                Condition.toPredicate
-                . Pattern.withoutTerm
-                . OrPattern.toPattern
+        -> MatchResult (Target variable)
+        -> simplifier (MatchResult (Target variable))
+    simplifyArgumentWithResult
+        argument
+        (matchPredicate, matchSubstitution)
+      = do
+        let toPattern =
+                OrPattern.toPattern
                 . OrPattern.fromPatterns
-        x <-
-            Simplifier.simplifyCondition sideCondition argumentWithResult
-                & Branch.gather
-                & fmap toPredicate
-        traceM
-            $ "\n\nPredicate\n:" <> unparseToString result
-            <> "\n\nArgument\n:" <> unparseToString argument
-            <> "\n\nResult\n:" <> unparseToString x
-        return x
+                . fmap Pattern.fromCondition
+        Conditional { predicate, substitution } <-
+            Substitution.mergePredicatesAndSubstitutions
+                sideCondition
+                [argument, matchPredicate]
+                [Substitution.fromMap matchSubstitution]
+            & Branch.gather
+            & fmap toPattern
+        -- TODO: toMap is unsafe;
+        -- is it impossible to happen (if the frontend generates equations
+        -- correctly), or should we add a new AttemptEquationError case?
+        return (predicate, Substitution.toMap substitution)
 
 applyEquation
     :: forall simplifier variable
@@ -248,6 +249,12 @@ applyMatchResult
     ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) = do
+    traceM
+        $ "\n\nSubstitution:\n"
+        <> unparseToString
+            ((Substitution.toPredicate . Substitution.fromMap)
+            substitution
+            )
     case errors of
         x : xs ->
             throwE ApplyMatchResultErrors
