@@ -12,7 +12,7 @@ UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
 K_RELEASE_TAR = $(BUILD_DIR)/k-nightly.tar.gz
-K_RELEASE_TAR_URL = https://github.com/kframework/k/releases/download/$(shell cat deps/k_release)/k-nightly.tar.gz
+K_RELEASE_TAR_URL = https://github.com/kframework/k/releases/download/$(shell cat $(TOP)/deps/k_release)/k-nightly.tar.gz
 K_RELEASE_DEFAULT = $(BUILD_DIR)/k
 K_RELEASE ?= $(K_RELEASE_DEFAULT)
 K_RELEASE_BIN = $(K_RELEASE)/bin
