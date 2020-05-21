@@ -6,6 +6,8 @@ License     : NCSA
 
 module Kore.IndexedModule.OverloadGraph
     ( OverloadGraph
+    , getOverloaded
+    , getOverloading
     , isOverloaded
     , isOverloading
     , commonOverloads
@@ -36,9 +38,15 @@ import Kore.IndexedModule.IndexedModule
     )
 import Kore.Internal.Symbol
 
-{- | 'OverloadGraph' maps symbols to symbols overloading them
+{- | 'OverloadGraph' maps symbols to symbols overloading them and the reverse
  -}
-newtype OverloadGraph = OverloadGraph { unOverloadGraph :: Map Symbol (Set Symbol) }
+data OverloadGraph =
+    OverloadGraph
+        { overloadingSymbols :: !(Map Symbol (Set Symbol))
+        -- ^maps a symbol to the symbols overloading it
+        , overloadedSymbols :: !(Map Symbol (Set Symbol))
+        -- ^maps a symbol to the symbols overloaded by it
+        }
     deriving (GHC.Generic, Typeable)
 
 instance SOP.Generic OverloadGraph
@@ -51,12 +59,12 @@ instance Diff OverloadGraph
 
 -- | Whether the symbol is an overloading symbol
 isOverloaded :: OverloadGraph -> Symbol -> Bool
-isOverloaded graph s =  s ` Map.member` unOverloadGraph graph
+isOverloaded graph s =  s ` Map.member` overloadingSymbols graph
 
 -- | Whether the first symbol overloads the second
 isOverloading :: OverloadGraph -> Symbol -> Symbol -> Bool
 isOverloading graph s1 s2
-     | Just ss <- unOverloadGraph graph Map.!? s2
+     | Just ss <- overloadingSymbols graph Map.!? s2
      = s1 `Set.member` ss
      | otherwise = False
 
@@ -65,9 +73,17 @@ commonOverloads :: OverloadGraph -> Symbol -> Symbol -> [Symbol]
 commonOverloads graph sym1 sym2 =
     maybe [] Set.toList
         (Set.intersection
-            <$> (unOverloadGraph graph Map.!? sym1)
-            <*> (unOverloadGraph graph Map.!? sym2)
+            <$> (overloadingSymbols graph Map.!? sym1)
+            <*> (overloadingSymbols graph Map.!? sym2)
         )
+
+getOverloaded :: OverloadGraph -> Symbol -> Set Symbol
+getOverloaded graph sym1 =
+    fromMaybe Set.empty (overloadedSymbols graph Map.!? sym1)
+
+getOverloading :: OverloadGraph -> Symbol -> Set Symbol
+getOverloading graph sym1 =
+    fromMaybe Set.empty (overloadingSymbols graph Map.!? sym1)
 
 {- | Build a 'OverloadGraph' from a list of overloaded symbol pairs.
 
@@ -80,10 +96,15 @@ fromOverloads
 fromOverloads overloadPairsList =
     let allOverloadsList = concatMap (\(o1, o2) -> [o1,o2]) overloadPairsList
         allOverloadsSet = Set.fromList allOverloadsList
-    in OverloadGraph $ Map.fromSet superOverloading allOverloadsSet
+    in OverloadGraph
+        { overloadingSymbols = Map.fromSet superOverloading allOverloadsSet
+        , overloadedSymbols = Map.fromSet subOverloading allOverloadsSet
+        }
   where
-    superOverloading subOverloading =
-        Set.fromList [x | (x, y) <- overloadPairsList, y == subOverloading]
+    superOverloading subOverload =
+        Set.fromList [x | (x, y) <- overloadPairsList, y == subOverload]
+    subOverloading superOverload =
+        Set.fromList [y | (x, y) <- overloadPairsList, x == superOverload]
 
 {- | Builds an overload graph from the @overload@ attribute annotations
 associated to overloading equations in a verified module.
