@@ -13,25 +13,22 @@ module Kore.Step.Simplification.In
 
 import Prelude.Kore
 
+import qualified Branch
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeInPredicate_
-    )
-import qualified Kore.Internal.Predicate as Predicate
-    ( markSimplified
-    )
 import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
+import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
     , simplifyEvaluated
     )
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
@@ -98,21 +95,8 @@ makeEvaluateIn sideCondition first second
   | Pattern.isTop first = Ceil.makeEvaluate sideCondition second
   | Pattern.isTop second = Ceil.makeEvaluate sideCondition first
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
-  | otherwise = return $ makeEvaluateNonBoolIn first second
-
-makeEvaluateNonBoolIn
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
-makeEvaluateNonBoolIn patt1 patt2 =
-    OrPattern.fromPattern Conditional
-        { term = mkTop_
-        , predicate =
-            Predicate.markSimplified
-            $ makeInPredicate_
-                -- TODO: Wrap in 'contained' and 'container'.
-                (Pattern.toTermLike patt1)
-                (Pattern.toTermLike patt2)
-        , substitution = mempty
-        }
+  | otherwise =
+    And.makeEvaluate Not.notSimplifier sideCondition first second
+        & Branch.gather
+        & fmap OrPattern.fromPatterns
+    >>= Ceil.simplifyEvaluated sideCondition

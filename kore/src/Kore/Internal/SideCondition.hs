@@ -162,11 +162,12 @@ andCondition
     -> Condition variable
     -> SideCondition variable
 andCondition SideCondition {assumedTrue} newCondition =
-    SideCondition
+    assert (isNormalized result) result
+  where
+    result = SideCondition
         { representation = toRepresentationCondition merged
         , assumedTrue = merged
         }
-  where
     merged = assumedTrue `Condition.andCondition` newCondition
 
 assumeTrueCondition
