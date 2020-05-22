@@ -49,6 +49,8 @@ module Prelude.Kore
     , when
     -- * Typeable
     , Typeable
+    -- * Injection
+    , module Injection
     -- * Category
     , Category (..)
     , (<<<)
@@ -117,7 +119,6 @@ import Data.Witherable
     , Witherable (..)
     )
 import Debug.Trace
-import From
 import GHC.Stack
     ( HasCallStack
     )
@@ -130,6 +131,9 @@ import Prelude hiding
     , log
     , (.)
     )
+
+import From
+import Injection
 
 {- | Simultaneously compute the (@min@, @max@) of two values.
  -}

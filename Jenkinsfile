@@ -57,8 +57,11 @@ pipeline {
           }
         }
         stage('Integration Tests') {
+          environment {
+            JOBS = 2
+          }
           options {
-            timeout(time: 24, unit: 'MINUTES')
+            timeout(time: 48, unit: 'MINUTES')
           }
           steps {
             sh '''
