@@ -17,6 +17,8 @@ module Kore.Variables.Target
     , mkElementNonTarget
     , mkSetNonTarget
     , isNonTarget
+    , isUnifiedTarget
+    , isUnifiedNonTarget
     , targetIfEqual
     ) where
 
@@ -40,6 +42,7 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( ElementVariable
     , SetVariable
+    , UnifiedVariable (..)
     )
 
 {- | Distinguish variables by their source.
@@ -110,6 +113,11 @@ isTarget :: Target variable -> Bool
 isTarget (Target _) = True
 isTarget (NonTarget _) = False
 
+isUnifiedTarget :: UnifiedVariable (Target variable) -> Bool
+isUnifiedTarget (ElemVar (ElementVariable (Target _))) = True
+isUnifiedTarget (SetVar (SetVariable (Target _))) = True
+isUnifiedTarget _ = False
+
 mkElementNonTarget
     :: ElementVariable variable
     -> ElementVariable (Target variable)
@@ -122,6 +130,9 @@ mkSetNonTarget = fmap NonTarget
 
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
+
+isUnifiedNonTarget :: UnifiedVariable (Target variable) -> Bool
+isUnifiedNonTarget = not . isUnifiedTarget
 
 instance
     SortedVariable variable

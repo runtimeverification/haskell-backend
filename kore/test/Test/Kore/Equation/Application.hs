@@ -378,10 +378,7 @@ test_attemptEquationNEW =
         SideCondition.top
         (sigma (f y) (f z))
 
-    -- TODO: is this right?
-    -- I think it is, because I think now we're doing unification
-    -- when applying functions
-    , applies "merge multiple variables"
+    , notInstantiated "merge multiple variables"
         (axiom_NEW
             (sigma t u)
             (sigma x y)
@@ -389,16 +386,12 @@ test_attemptEquationNEW =
         )
         SideCondition.top
         (sigma (sigma x y) (sigma y x))
-        (Pattern.fromTermLike $ sigma y y)
 
     , notMatched "symbol clash"
         (axiom_NEW (sigma y y) x [(y, x)])
         SideCondition.top
         (sigma (f x) (g x))
 
-    -- TODO: is this right?
-    -- I think it is, because matching now succeeds but
-    -- applying the match result fails
     , notInstantiated "impossible substitution"
         (axiom_NEW
             (sigma t u)
@@ -423,23 +416,7 @@ test_attemptEquationNEW =
         SideCondition.top
         (sigma (sigma x x) (sigma (sigma y z) (sigma y y)))
 
-    -- TODO: is this right?
-    -- I think it is, because I think now we're doing unification
-    -- when applying functions
-    , applies "normalize substitution"
-        (axiom_NEW
-            (sigma z t)
-            (sigma x y)
-            [(z, sigma x x), (t, y)]
-        )
-        SideCondition.top
-        (sigma (sigma x (f b)) x)
-        (Pattern.fromTermLike $ sigma (f b) (f b))
-
-    -- TODO: is this right?
-    -- I think it is, because I think now we're doing unification
-    -- when applying functions
-    , applies "merge substitution with initial"
+    , notInstantiated "merge substitution with initial"
         (axiom_NEW
             (sigma z t)
             (sigma x y)
@@ -447,7 +424,6 @@ test_attemptEquationNEW =
         )
         SideCondition.top
         (sigma (sigma (f z) (f y)) (f z))
-        (Pattern.fromTermLike $ sigma (f z) (f z))
 
     , applies "F(x) => G(x) applies to F(x)"
         (axiom_NEW (f y) (g x) [(y, x)])

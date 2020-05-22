@@ -266,7 +266,9 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
   where
     equationVariables = freeVariables equation & FreeVariables.toList
 
-    errors = concatMap checkVariable equationVariables
+    errors =
+        concatMap checkVariable equationVariables
+        <> checkNonTargetVariables
 
     checkVariable variable =
         case Map.lookup variable substitution of
@@ -288,6 +290,13 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
       = [NotSymbolic variable termLike]
       | otherwise
       = empty
+
+    checkNonTargetVariables
+      | Just variable <-
+          Foldable.find Target.isUnifiedNonTarget (Map.keys substitution)
+      = [NonTargetSubstitution variable]
+      | otherwise
+      = mempty
 
     Equation { attributes } = equation
     concretes =
@@ -575,6 +584,8 @@ data ApplyMatchResultError variable
     -- term was required.
     | NotMatched (UnifiedVariable variable)
     -- ^ The variable was not matched.
+    | NonTargetSubstitution (UnifiedVariable variable)
+    -- ^ The variable should not be substituted.
     deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
@@ -606,6 +617,12 @@ instance
         ]
     pretty (NotMatched variable) =
         Pretty.hsep ["variable", unparse variable, "was not matched"]
+    pretty (NonTargetSubstitution variable) =
+        Pretty.hsep
+        [ "variable"
+        , unparse variable
+        , "should not be substituted"
+        ]
 
 mapApplyMatchResultErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
@@ -624,6 +641,8 @@ mapApplyMatchResultErrorVariables mapElemVar mapSetVar applyMatchResultError =
                 (mapUnifiedVariable' variable)
                 (mapTermLikeVariables termLike)
         NotMatched variable -> NotMatched (mapUnifiedVariable' variable)
+        NonTargetSubstitution variable ->
+            NonTargetSubstitution (mapUnifiedVariable' variable)
   where
     mapUnifiedVariable' = mapUnifiedVariable mapElemVar mapSetVar
     mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
