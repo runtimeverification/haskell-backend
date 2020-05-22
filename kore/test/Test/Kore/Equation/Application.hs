@@ -5,6 +5,8 @@ module Test.Kore.Equation.Application
     , symbolic
     , axiom
     , axiom_
+    , axiomNEW
+    , axiom_NEW
     ) where
 
 import Prelude.Kore
@@ -18,8 +20,14 @@ import Control.Monad
 import Data.Generics.Product
     ( field
     )
+import Data.Sup
+    ( Sup (..)
+    )
 import Data.Text
     ( Text
+    )
+import GHC.Natural
+    ( intToNatural
     )
 
 import Kore.Attribute.Axiom.Concrete
@@ -363,129 +371,130 @@ test_attemptEquation =
 test_attemptEquationNEW :: [TestTree]
 test_attemptEquationNEW =
     [ applies "Σ(X, X) => X applies to Σ(f(X), f(X))"
-        (axiom_NEW (sigma y y) x [(y, x)])
+        (functionAxiom_NEW sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f x) (f x))
         (Pattern.fromTermLike $ f x)
 
-    , notMatched "merge configuration patterns"
-        (axiom_NEW (sigma y y) x [(y, x)])
+    , notInstantiated "merge configuration patterns"
+        (functionAxiom_NEW sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
 
-    , notMatched "substitution with symbol matching"
-        (axiom_NEW (sigma y y) x [(y, x)])
+    , notInstantiated "substitution with symbol matching"
+        (functionAxiom_NEW sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f y) (f z))
 
     , notInstantiated "merge multiple variables"
-        (axiom_NEW
-            (sigma t u)
-            (sigma x y)
-            [(t, sigma x x), (u, sigma y y)]
-        )
+        (functionAxiom_NEW sigmaSymbol [sigma x x, sigma y y] (sigma x y))
         SideCondition.top
         (sigma (sigma x y) (sigma y x))
 
-    , notMatched "symbol clash"
-        (axiom_NEW (sigma y y) x [(y, x)])
+    , notInstantiated "symbol clash"
+        (functionAxiom_NEW sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f x) (g x))
 
     , notInstantiated "impossible substitution"
-        (axiom_NEW
-            (sigma t u)
-            (sigma x y)
-            [(t, sigma x x), (u, sigma y y)]
-        )
+        (functionAxiom_NEW sigmaSymbol [sigma x x, sigma y y] (sigma x y))
         SideCondition.top
         (sigma (sigma x (f y)) (sigma x y))
 
-    , notMatched "circular dependency error"
-        (axiom_NEW (sigma y y) x [(y, x)])
+    , notInstantiated "circular dependency error"
+        (functionAxiom_NEW sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
 
-    , notMatched "non-function substitution error"
-        (axiom_NEW (sigma y y) x [(y, x)])
+    , notInstantiated "non-function substitution error"
+        (functionAxiom_NEW sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f y))
 
-    , notMatched "unify all children"
-        (axiom_NEW (sigma y y) x [(y, x)])
+    , notInstantiated "unify all children"
+        (functionAxiom_NEW sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (sigma x x) (sigma (sigma y z) (sigma y y)))
 
+    , notInstantiated "normalize substitution"
+        (functionAxiom_NEW sigmaSymbol [sigma x x, y] (sigma x y))
+        SideCondition.top
+        (sigma (sigma x (f b)) x)
+
     , notInstantiated "merge substitution with initial"
-        (axiom_NEW
-            (sigma z t)
-            (sigma x y)
-            [(z, sigma x x), (t, y)]
-        )
+        (functionAxiom_NEW sigmaSymbol [sigma x x, y] (sigma x y))
         SideCondition.top
         (sigma (sigma (f z) (f y)) (f z))
 
+    , testCase "rule a => \\bottom" $ do
+        let expect =
+                Pattern.withCondition (mkBottom Mock.testSort)
+                $ Condition.topOf Mock.testSort
+            initial = Mock.a
+        attemptEquation SideCondition.top initial equationBottom
+            >>= expectRight >>= assertEqual "" expect
+
     , applies "F(x) => G(x) applies to F(x)"
-        (axiom_NEW (f y) (g x) [(y, x)])
+        (functionAxiom_NEW fSymbol [x] (g x))
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
     , applies "F(x) => G(x) [symbolic(x)] applies to F(x)"
-        (axiom_NEW (f y) (g x) [(y, x)] & symbolic [x])
+        (functionAxiom_NEW fSymbol [x] (g x) & symbolic [x])
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
     , notInstantiated "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
-        (axiom_NEW (f x) (g x) [(y, x)] & concrete [x])
+        (functionAxiom_NEW fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f x)
     , notInstantiated "F(x) => G(x) [concrete] doesn't apply to f(cf)"
-        (axiom_NEW (f y) (g x) [(y, x)] & concrete [x])
+        (functionAxiom_NEW fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f cf)
     , notMatched "F(x) => G(x) doesn't apply to F(top)"
-        (axiom_NEW (f x) (g x) [(y, x)])
+        (functionAxiom_NEW fSymbol [x] (g x))
         SideCondition.top
         (f mkTop_)
     , applies "F(x) => G(x) [concrete] applies to F(a)"
-        (axiom_NEW (f y) (g x) [(y, x)] & concrete [x])
+        (functionAxiom_NEW fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f a)
         (Pattern.fromTermLike $ g a)
     , applies
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (axiom_NEW (sigma t u) a [(t, x), (u, y)] & symbolic [x] & concrete [y])
+        (functionAxiom_NEW sigmaSymbol [x, y] a & symbolic [x] & concrete [y])
         SideCondition.top
         (sigma x a)
         (Pattern.fromTermLike a)
     , notInstantiated
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (axiom_NEW (sigma t u) a [(t, x), (u, y)] & symbolic [x] & concrete [y])
+        (functionAxiom_NEW sigmaSymbol [x, y] a & symbolic [x] & concrete [y])
         SideCondition.top
         (sigma a a)
     , notInstantiated
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (axiom_NEW (sigma t u) a [(t, x), (u, y)] & symbolic [x] & concrete [y])
+        (functionAxiom_NEW sigmaSymbol [x, y] a & symbolic [x] & concrete [y])
         SideCondition.top
         (sigma x x)
     , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
-        (axiomNEW (f y) (g x) (makeFalsePredicate sortR) [(y, x)])
+        (functionAxiomNEW fSymbol [x] (g x) (makeFalsePredicate sortR))
         SideCondition.top
         (f x)
-    , notMatched "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
-        (axiom_NEW (sigma y y) (g x) [(y, x)])
+    , notInstantiated "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
+        (functionAxiom_NEW sigmaSymbol [x, x] (g x))
         SideCondition.top
         (sigma y z)
     , requiresNotMet
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 and not Y > 0) doesn't apply to Σ(Z, Z)"
-        (axiomNEW (sigma t u) a (positive x `andNot` positive y) [(t, x), (u, y)])
+        (functionAxiomNEW sigmaSymbol [x, y] a (positive x `andNot` positive y))
         SideCondition.top
         (sigma z z)
     , applies
         -- using SMT
-        "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
-        (axiomNEW (sigma t u) a (positive x `orNot` positive y) [(t, x), (u, y)])
+        "TESTING Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
+        (functionAxiomNEW sigmaSymbol [x, y] a (positive x `orNot` positive y))
         (SideCondition.fromPredicate $ positive a)
         (sigma a a)
         -- SMT not used to simplify trivial constraints
@@ -493,18 +502,18 @@ test_attemptEquationNEW =
     , requiresNotMet
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
-        (axiomNEW (f y) a (positive x) [(y, x)])
+        (functionAxiomNEW fSymbol [x] a (positive x))
         (SideCondition.fromPredicate $ makeNotPredicate (positive z))
         (f z)
     , applies
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
-        (axiomNEW (f y) a (positive x) [(y, x)])
+        (functionAxiomNEW fSymbol [x] a (positive x))
         (SideCondition.fromPredicate $ positive z)
         (f z)
         (Pattern.fromTermLike a)
     , notInstantiated "does not introduce variables"
-        (axiom_NEW (f y) (g x) [(y, a)])
+        (functionAxiom_NEW fSymbol [a] (g x))
         SideCondition.top
         (f a)
     ]
@@ -535,23 +544,27 @@ f, g :: TermLike Variable -> TermLike Variable
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
 
+fSymbol :: Symbol
+fSymbol = Mock.functionalConstr10Symbol
+
 cf :: TermLike Variable
 cf = Mock.cf
 
 sigma :: TermLike Variable -> TermLike Variable -> TermLike Variable
 sigma = Mock.functionalConstr20
 
+sigmaSymbol :: Symbol
+sigmaSymbol = Mock.functionalConstr20Symbol
+
 string :: Text -> TermLike Variable
 string = Mock.builtinString
 
-x, xString, xInt, y, z, t, u :: TermLike Variable
+x, xString, xInt, y, z :: TermLike Variable
 x = mkElemVar Mock.x
 xInt = mkElemVar Mock.xInt
 xString = mkElemVar Mock.xString
 y = mkElemVar Mock.y
 z = mkElemVar Mock.z
-t = mkElemVar Mock.t
-u = mkElemVar Mock.u
 
 a, b :: TermLike Variable
 a = Mock.a
@@ -612,6 +625,38 @@ axiom_NEW
     -> Equation Variable
 axiom_NEW left right args =
     axiomNEW left right (makeTruePredicate sortR) args
+
+functionAxiomNEW
+    :: Symbol
+    -> [TermLike Variable]
+    -> TermLike Variable
+    -> Predicate Variable
+    -> Equation Variable
+functionAxiomNEW symbol args right requires =
+    case args of
+        [] -> (mkEquation sortR (mkApplySymbol symbol []) right) { requires }
+        _  -> (mkEquation sortR left right) { requires, argument }
+  where
+    left = mkApplySymbol symbol variables
+    variables = generateVariables (intToNatural (length args))
+    generateVariables n =
+        fmap makeElementVariable [0..n - 1]
+    argument =
+        foldr1 makeAndPredicate
+        $ fmap (uncurry (makeInPredicate sortR))
+        $ zip variables args
+    makeElementVariable num =
+        Variable (testId "funcVar") (Just (Element num)) Mock.testSort
+        & ElementVariable
+        & mkElemVar
+
+functionAxiom_NEW
+    :: Symbol
+    -> [TermLike Variable]
+    -> TermLike Variable
+    -> Equation Variable
+functionAxiom_NEW symbol args right =
+    functionAxiomNEW symbol args right (makeTruePredicate sortR)
 
 concrete :: [TermLike Variable] -> Equation Variable -> Equation Variable
 concrete vars =
