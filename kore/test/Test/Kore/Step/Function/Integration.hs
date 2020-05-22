@@ -113,7 +113,6 @@ import Test.Kore.Equation.Application
     ( axiom
     , axiom_
     , functionAxiomNEW
-    , functionAxiomWithSort_NEW
     , functionAxiom_NEW
     )
 import Test.Kore.Step.Axiom.Matcher
@@ -1260,10 +1259,9 @@ natSimplifiers =
 
 plusZeroRuleNEW, plusSuccRuleNEW :: Equation Variable
 plusZeroRuleNEW =
-    functionAxiomWithSort_NEW natSort plusSymbol [zero, varN] varN
+    functionAxiom_NEW plusSymbol [zero, varN] varN
 plusSuccRuleNEW =
-    functionAxiomWithSort_NEW
-        natSort
+    functionAxiom_NEW
         plusSymbol
         [succ varM, varN]
         (succ (plus varM varN))
@@ -1278,9 +1276,8 @@ plusEvaluatorNEW = functionEvaluator plusSymbol plusRulesNEW
 timesEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 timesEvaluatorNEW =
     functionEvaluator timesSymbol
-        [ functionAxiomWithSort_NEW natSort timesSymbol [zero, varN] zero
-        , functionAxiomWithSort_NEW
-            natSort
+        [ functionAxiom_NEW timesSymbol [zero, varN] zero
+        , functionAxiom_NEW
             timesSymbol
             [succ varM, varN]
             (plus varN (times varM varN))
@@ -1289,10 +1286,9 @@ timesEvaluatorNEW =
 fibonacciEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 fibonacciEvaluatorNEW =
     functionEvaluator fibonacciSymbol
-        [ functionAxiomWithSort_NEW natSort fibonacciSymbol [zero] one
-        , functionAxiomWithSort_NEW natSort fibonacciSymbol [one]  one
-        , functionAxiomWithSort_NEW
-            natSort
+        [ functionAxiom_NEW fibonacciSymbol [zero] one
+        , functionAxiom_NEW fibonacciSymbol [one]  one
+        , functionAxiom_NEW
             fibonacciSymbol [succ (succ varN)]
             (plus (fibonacci (succ varN)) (fibonacci varN))
         ]
@@ -1300,13 +1296,11 @@ fibonacciEvaluatorNEW =
 factorialEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 factorialEvaluatorNEW =
     functionEvaluator factorialSymbol
-        [ functionAxiomWithSort_NEW
-            natSort
+        [ functionAxiom_NEW
             factorialSymbol
             [zero]
             (succ zero)
-        , functionAxiomWithSort_NEW
-            natSort
+        , functionAxiom_NEW
             factorialSymbol
             [succ varN]
             (times (succ varN) (factorial varN))

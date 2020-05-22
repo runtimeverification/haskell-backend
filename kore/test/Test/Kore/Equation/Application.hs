@@ -9,8 +9,6 @@ module Test.Kore.Equation.Application
     , axiom_NEW
     , functionAxiomNEW
     , functionAxiom_NEW
-    , functionAxiomWithSortNEW
-    , functionAxiomWithSort_NEW
     ) where
 
 import Prelude.Kore
@@ -630,54 +628,38 @@ axiom_NEW
 axiom_NEW left right args =
     axiomNEW left right (makeTruePredicate sortR) args
 
-functionAxiomWithSortNEW
-    :: Sort
-    -> Symbol
-    -> [TermLike Variable]
-    -> TermLike Variable
-    -> Predicate Variable
-    -> Equation Variable
-functionAxiomWithSortNEW sort symbol args right requires =
-    case args of
-        [] -> (mkEquation sortR (mkApplySymbol symbol []) right) { requires }
-        _  -> (mkEquation sortR left right) { requires, argument }
-  where
-    left = mkApplySymbol symbol variables
-    variables = generateVariables (intToNatural (length args))
-    generateVariables n =
-        fmap makeElementVariable [0..n - 1]
-    argument =
-        foldr1 makeAndPredicate
-        $ fmap (uncurry (makeInPredicate sortR))
-        $ zip variables args
-    makeElementVariable num =
-        Variable (testId "funcVar") (Just (Element num)) sort
-        & ElementVariable
-        & mkElemVar
-
 functionAxiomNEW
     :: Symbol
     -> [TermLike Variable]
     -> TermLike Variable
     -> Predicate Variable
     -> Equation Variable
-functionAxiomNEW = functionAxiomWithSortNEW Mock.testSort
-
-functionAxiomWithSort_NEW
-    :: Sort
-    -> Symbol
-    -> [TermLike Variable]
-    -> TermLike Variable
-    -> Equation Variable
-functionAxiomWithSort_NEW sort symbol args right =
-    functionAxiomWithSortNEW sort symbol args right (makeTruePredicate sortR)
+functionAxiomNEW symbol args right requires =
+    case args of
+        [] -> (mkEquation sortR (mkApplySymbol symbol []) right) { requires }
+        _  -> (mkEquation sortR left right) { requires, argument }
+  where
+    left = mkApplySymbol symbol variables
+    sorts = fmap termLikeSort args
+    variables = generateVariables (intToNatural (length args)) sorts
+    generateVariables n sorts' =
+        fmap makeElementVariable (zip [0..n - 1] sorts')
+    argument =
+        foldr1 makeAndPredicate
+        $ fmap (uncurry (makeInPredicate sortR))
+        $ zip variables args
+    makeElementVariable (num, sort) =
+        Variable (testId "funcVar") (Just (Element num)) sort
+        & ElementVariable
+        & mkElemVar
 
 functionAxiom_NEW
     :: Symbol
     -> [TermLike Variable]
     -> TermLike Variable
     -> Equation Variable
-functionAxiom_NEW = functionAxiomWithSort_NEW Mock.testSort
+functionAxiom_NEW symbol args right =
+    functionAxiomNEW symbol args right (makeTruePredicate sortR)
 
 concrete :: [TermLike Variable] -> Equation Variable -> Equation Variable
 concrete vars =
