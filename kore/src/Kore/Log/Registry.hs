@@ -55,6 +55,9 @@ import Kore.Log.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
     )
+import Kore.Log.DebugSubstitutionSimplifier
+    ( DebugSubstitutionSimplifier
+    )
 import Kore.Log.ErrorException
     ( ErrorException
     )
@@ -123,6 +126,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugSolverRecv
     , mk $ Proxy @DebugProofState
     , mk $ Proxy @DebugAppliedRewriteRules
+    , mk $ Proxy @DebugSubstitutionSimplifier
     , mk $ Proxy @WarnBottomTotalFunction
     , mk $ Proxy @WarnDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators

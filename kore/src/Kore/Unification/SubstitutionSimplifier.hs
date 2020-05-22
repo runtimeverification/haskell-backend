@@ -40,6 +40,11 @@ import Kore.Internal.Substitution
 import Kore.Internal.TermLike
     ( TermLike
     )
+
+import Kore.Log.DebugSubstitutionSimplifier
+    ( debugSubstitutionSimplifierResult
+    , whileDebugSubstitutionSimplifier
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -74,15 +79,17 @@ substitutionSimplifier notSimplifier =
         => SideCondition variable
         -> Substitution variable
         -> unifier (OrCondition variable)
-    wrapper sideCondition substitution = do
-        (predicate, result) <-
-            worker substitution
-            & maybeT empty return
-        let condition = Condition.fromNormalizationSimplified result
-        let condition' = Condition.fromPredicate predicate <> condition
-            conditions = OrCondition.fromCondition condition'
-        TopBottom.guardAgainstBottom conditions
-        return conditions
+    wrapper sideCondition substitution =
+        whileDebugSubstitutionSimplifier $ do
+            (predicate, result) <-
+                worker substitution
+                & maybeT empty return
+            let condition = Condition.fromNormalizationSimplified result
+            let condition' = Condition.fromPredicate predicate <> condition
+                conditions = OrCondition.fromCondition condition'
+            TopBottom.guardAgainstBottom conditions
+            debugSubstitutionSimplifierResult
+            return conditions
       where
         worker
             :: Substitution variable
