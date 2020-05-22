@@ -178,11 +178,11 @@ simplifyAnds
     .   ( InternalVariable variable
         , Monad monad
         )
-    => SideCondition variable
-    -> MakeAnd monad
+    => MakeAnd monad
+    -> SideCondition variable
     -> NonEmpty (TermLike variable)
     -> monad (Pattern variable)
-simplifyAnds sideCondition MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
+simplifyAnds MakeAnd { makeAnd } sideCondition (NonEmpty.sort -> patterns) =
     foldM simplifyAnds' Pattern.top patterns
   where
     simplifyAnds'
@@ -209,8 +209,8 @@ deduplicateSubstitution
     .   ( InternalVariable variable
         , Monad monad
         )
-    =>  SideCondition variable
-    ->  MakeAnd monad
+    =>  MakeAnd monad
+    ->  SideCondition variable
     ->  Substitution variable
     ->  monad
             ( Predicate variable
@@ -373,7 +373,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
                 (Map (UnifiedVariable variable) (TermLike variable))
     deduplicate substitution = do
         (predicate, substitution') <-
-            deduplicateSubstitution sideCondition makeAnd' substitution
+            deduplicateSubstitution makeAnd' sideCondition substitution
             & lift . lift
         addPredicate predicate
         return substitution'
