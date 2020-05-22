@@ -4,6 +4,7 @@ module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
     , test_functionIntegrationNEW
     , test_Nat
+    , test_NatNEW
     , test_short_circuit
     , test_List
     , test_lookupMap
@@ -112,6 +113,7 @@ import Test.Kore.Equation.Application
     ( axiom
     , axiom_
     , functionAxiomNEW
+    , functionAxiomWithSort_NEW
     , functionAxiom_NEW
     )
 import Test.Kore.Step.Axiom.Matcher
@@ -991,6 +993,51 @@ test_Nat =
     , equals "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
     ]
 
+test_NatNEW :: [TestTree]
+test_NatNEW =
+    [ matches "plus(0, N) matches plus(0, 1)"
+        (plus zero varN)
+        (plus zero one)
+        [(ElemVar natN, one)]
+    , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
+        (plus (succ varM) varN)
+        (plus zero one)
+    , matches "plus(succ(M), N) matches plus(1, 1)"
+        (plus (succ varM) varN)
+        (plus one one)
+        [(ElemVar natM, zero), (ElemVar natN, one)]
+    , appliesNEW            "plus(0, N) => ... ~ plus (0, 1)"
+        [plusZeroRule]
+        (plus zero one)
+    , notAppliesNEW         "plus(0, N) => ... ~ plus (1, 1)"
+        [plusZeroRule]
+        (plus one one)
+    , notAppliesNEW         "plus(Succ(M), N) => ... ~ plus (0, 1)"
+        [plusSuccRule]
+        (plus zero one)
+    , appliesNEW            "plus(Succ(M), N) => ... ~ plus (1, 1)"
+        [plusSuccRule]
+        (plus one one)
+    , appliesNEW            "plus(0, 1) => ..."
+        plusRules
+        (plus zero one)
+    , appliesNEW            "plus(1, 1) => ..."
+        plusRules
+        (plus one one)
+    , equalsNEW "0 + 1 = 1 : Nat" (plus zero one) [one]
+    , equalsNEW "0 + 1 = 1 : Nat" (plus one one) [two]
+    , equalsNEW "0 * 1 = 0 : Nat" (times zero one) [zero]
+    , equalsNEW "1 * 1 = 1 : Nat" (times one one) [one]
+    , equalsNEW "1 * 2 = 2 : Nat" (times one two) [two]
+    , equalsNEW "2 * 1 = 2 : Nat" (times two one) [two]
+    , equalsNEW "0! = 1 : Nat" (factorial zero) [one]
+    , equalsNEW "1! = 1 : Nat" (factorial one) [one]
+    , equalsNEW "2! = 2 : Nat" (factorial two) [two]
+    , equalsNEW "fibonacci(0) = 1 : Nat" (fibonacci zero) [one]
+    , equalsNEW "fibonacci(1) = 1 : Nat" (fibonacci one) [one]
+    , equalsNEW "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
+    ]
+
 -- Evaluation tests: check the result of evaluating the term
 equals
     :: HasCallStack
@@ -1004,8 +1051,23 @@ equals comment term results =
         let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
         assertEqual "" expect actual
 
+equalsNEW
+    :: HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> [TermLike Variable]
+    -> TestTree
+equalsNEW comment term results =
+    testCase comment $ do
+        actual <- simplifyNEW term
+        let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
+        assertEqual "" expect actual
+
 simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
+
+simplifyNEW :: TermLike Variable -> IO (OrPattern Variable)
+simplifyNEW = runSimplifier testEnvNEW . TermLike.simplifyToOr SideCondition.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -1013,6 +1075,14 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
+    $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
+
+evaluateWithNEW
+    :: BuiltinAndAxiomSimplifier
+    -> TermLike Variable
+    -> IO CommonAttemptedAxiom
+evaluateWithNEW simplifier patt =
+    runSimplifier testEnvNEW
     $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
@@ -1027,7 +1097,18 @@ withApplied check comment rules term =
         actual <- evaluateWith (definitionEvaluation rules) term
         check actual
 
-applies, notApplies
+withAppliedNEW
+    :: (CommonAttemptedAxiom -> Assertion)
+    -> TestName
+    -> [Equation Variable]
+    -> TermLike Variable
+    -> TestTree
+withAppliedNEW check comment rules term =
+    testCase comment $ do
+        actual <- evaluateWithNEW (definitionEvaluation rules) term
+        check actual
+
+applies, notApplies, appliesNEW, notAppliesNEW
     :: TestName
     -> [Equation Variable]
     -> TermLike Variable
@@ -1047,6 +1128,23 @@ applies =
         . Lens.view (field @"remainders")
 notApplies =
     withApplied $ \r ->
+        assertBool "Expected NotApplicable"
+        $ isNotApplicable r || isNotApplicableUntilConditionChanges r
+appliesNEW =
+    withAppliedNEW $ \attempted -> do
+        results <- expectApplied attempted
+        expectNoRemainders results
+  where
+    expectApplied NotApplicable = assertFailure "Expected Applied"
+    expectApplied (NotApplicableUntilConditionChanges _) =
+        assertFailure "Expected Applied"
+    expectApplied (Applied results) = return results
+    expectNoRemainders =
+        assertBool "Expected no remainders"
+        . isBottom
+        . Lens.view (field @"remainders")
+notAppliesNEW =
+    withAppliedNEW $ \r ->
         assertBool "Expected NotApplicable"
         $ isNotApplicable r || isNotApplicableUntilConditionChanges r
 
@@ -1158,6 +1256,69 @@ natSimplifiers =
         , timesEvaluator
         , fibonacciEvaluator
         , factorialEvaluator
+        ]
+
+plusZeroRuleNEW, plusSuccRuleNEW :: Equation Variable
+plusZeroRuleNEW =
+    functionAxiomWithSort_NEW natSort plusSymbol [zero, varN] varN
+plusSuccRuleNEW =
+    functionAxiomWithSort_NEW
+        natSort
+        plusSymbol
+        [succ varM, varN]
+        (succ (plus varM varN))
+
+
+plusRulesNEW :: [Equation Variable]
+plusRulesNEW = [plusZeroRuleNEW, plusSuccRuleNEW]
+
+plusEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+plusEvaluatorNEW = functionEvaluator plusSymbol plusRulesNEW
+
+timesEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+timesEvaluatorNEW =
+    functionEvaluator timesSymbol
+        [ functionAxiomWithSort_NEW natSort timesSymbol [zero, varN] zero
+        , functionAxiomWithSort_NEW
+            natSort
+            timesSymbol
+            [succ varM, varN]
+            (plus varN (times varM varN))
+        ]
+
+fibonacciEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+fibonacciEvaluatorNEW =
+    functionEvaluator fibonacciSymbol
+        [ functionAxiomWithSort_NEW natSort fibonacciSymbol [zero] one
+        , functionAxiomWithSort_NEW natSort fibonacciSymbol [one]  one
+        , functionAxiomWithSort_NEW
+            natSort
+            fibonacciSymbol [succ (succ varN)]
+            (plus (fibonacci (succ varN)) (fibonacci varN))
+        ]
+
+factorialEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+factorialEvaluatorNEW =
+    functionEvaluator factorialSymbol
+        [ functionAxiomWithSort_NEW
+            natSort
+            factorialSymbol
+            [zero]
+            (succ zero)
+        , functionAxiomWithSort_NEW
+            natSort
+            factorialSymbol
+            [succ varN]
+            (times (succ varN) (factorial varN))
+        ]
+
+natSimplifiersNEW :: BuiltinAndAxiomSimplifierMap
+natSimplifiersNEW =
+    Map.fromList
+        [ plusEvaluatorNEW
+        , timesEvaluatorNEW
+        , fibonacciEvaluatorNEW
+        , factorialEvaluatorNEW
         ]
 
 -- | Add an unsatisfiable requirement to the 'Equation'.
@@ -1799,4 +1960,17 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = Mock.overloadSimplifier
+        }
+
+testEnvNEW :: Env Simplifier
+testEnvNEW =
+    testEnv
+        { simplifierAxioms =
+            mconcat
+                [ testEvaluators
+                , natSimplifiersNEW
+                , listSimplifiers
+                , mapSimplifiers
+                , fatalSimplifiers
+                ]
         }
