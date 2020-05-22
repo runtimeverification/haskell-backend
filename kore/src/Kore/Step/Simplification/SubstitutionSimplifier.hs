@@ -209,7 +209,7 @@ deduplicateSubstitution
     .   ( InternalVariable variable
         , Monad monad
         )
-    =>  SideCondition variable 
+    =>  SideCondition variable
     ->  MakeAnd monad
     ->  Substitution variable
     ->  monad
