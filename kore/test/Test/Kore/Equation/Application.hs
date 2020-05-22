@@ -5,8 +5,6 @@ module Test.Kore.Equation.Application
     , symbolic
     , axiom
     , axiom_
-    , axiomNEW
-    , axiom_NEW
     , functionAxiomNEW
     , functionAxiom_NEW
     ) where
@@ -601,32 +599,11 @@ axiom
 axiom left right requires =
     (mkEquation sortR left right) { requires }
 
-axiomNEW
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
-    -> [(TermLike Variable, TermLike Variable)]
-    -> Equation Variable
-axiomNEW left right requires args =
-    let argument =
-            foldr1 makeAndPredicate
-            $ uncurry (makeInPredicate sortR)
-            <$> args
-     in (mkEquation sortR left right) { requires, argument }
-
 axiom_
     :: TermLike Variable
     -> TermLike Variable
     -> Equation Variable
 axiom_ left right = axiom left right (makeTruePredicate sortR)
-
-axiom_NEW
-    :: TermLike Variable
-    -> TermLike Variable
-    -> [(TermLike Variable, TermLike Variable)]
-    -> Equation Variable
-axiom_NEW left right args =
-    axiomNEW left right (makeTruePredicate sortR) args
 
 functionAxiomNEW
     :: Symbol
