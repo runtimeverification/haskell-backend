@@ -74,3 +74,4 @@ $(K_RELEASE_DEFAULT)/lib/kframework/java/kernel-1.0-SNAPSHOT.jar:
 	tar --extract --file $(K_RELEASE_TAR) --strip-components 1 --directory $(K_RELEASE_DEFAULT)
 	cp $(TOP)/src/main/kore/prelude.kore $(K_RELEASE_DEFAULT)/include/kore
 	$(KRUN) --version
+	test -f $@
