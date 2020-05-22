@@ -5,15 +5,6 @@ import Prelude.Kore
 import Data.Semigroup
     ( (<>)
     )
-import Data.Text.Prettyprint.Doc
-    ( LayoutOptions (..)
-    , PageWidth (..)
-    , defaultLayoutOptions
-    , layoutPretty
-    )
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( renderIO
-    )
 import Options.Applicative
 import System.IO
     ( stdout
@@ -26,6 +17,13 @@ import Kore.Syntax.Definition
     ( ParsedDefinition
     )
 import Kore.Unparser
+import Pretty
+    ( LayoutOptions (..)
+    , PageWidth (..)
+    , defaultLayoutOptions
+    , layoutPretty
+    , renderIO
+    )
 
 import GlobalMain
 

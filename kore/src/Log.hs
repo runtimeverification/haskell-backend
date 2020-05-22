@@ -4,6 +4,8 @@ License     : NCSA
 
 -}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Log
     (
     -- * Entries
@@ -79,10 +81,6 @@ import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
@@ -90,6 +88,10 @@ import Control.Monad.Counter
     ( CounterT
     )
 import Log.Entry
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
@@ -101,6 +103,7 @@ data LogMessage = LogMessage
     , callstack :: !GHC.CallStack
     -- ^ call stack of the message, when available
     }
+    deriving (Show)
 
 instance Entry LogMessage where
     entrySeverity LogMessage { severity } = severity

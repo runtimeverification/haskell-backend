@@ -104,10 +104,6 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( hPutDoc
-    )
 import qualified Data.Typeable as Typeable
 import GHC.Exts
     ( toList
@@ -181,8 +177,8 @@ import Kore.Repl.State
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
+    , ToRulePattern (..)
     )
-import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -209,6 +205,7 @@ import Kore.Unparser
     , unparse
     , unparseToString
     )
+import qualified Pretty
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -630,13 +627,10 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex . toRulePattern $ rule
+            let ruleIndex = from @_ @Attribute.RuleIndex rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
-  where
-    getRuleIndex :: RulePattern Variable -> Attribute.RuleIndex
-    getRuleIndex = Attribute.identifier . Rule.attributes
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -915,7 +909,7 @@ clear
     -> m ()
 clear =
     \case
-        Nothing -> Just <$> Lens.use (field @"node") >>= clear
+        Nothing -> Lens.use (field @"node") >>= clear . Just
         Just node
           | unReplNode node == 0 -> putStrLn' "Cannot clear initial node (0)."
           | otherwise -> clear0 node
@@ -999,7 +993,7 @@ savePartialProof maybeNatural file = do
         $ withFile
             (file <.> "kore")
             WriteMode
-            (`hPutDoc` definition)
+            (`Pretty.hPutDoc` definition)
 
     maybeNode :: Maybe ReplNode
     maybeNode =

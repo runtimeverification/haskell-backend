@@ -1,5 +1,5 @@
 {-|
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2019-2020
 License     : NCSA
 
 -}
@@ -76,7 +76,7 @@ import Kore.Attribute.Pattern.ConstructorLike
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
-import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
@@ -705,7 +705,7 @@ mapVariables mapElemVar mapSetVar termLike =
         let attrs :< termLikeF = Recursive.project (extract env)
             renaming = Env.ask env
             attrs' = renameAttrs renaming attrs
-            avoiding = getFreeVariables $ freeVariables attrs'
+            avoiding = FreeVariables.toSet $ freeVariables attrs'
             termLikeF' =
                 case termLikeF of
                     VariableF (Const unifiedVariable1) ->
@@ -767,7 +767,7 @@ traverseVariables trElemVar trSetVar termLike =
                 askElementVariable
                 askSetVariable
                 attrs
-        let avoiding = getFreeVariables $ freeVariables attrs'
+        let avoiding = FreeVariables.toSet $ freeVariables attrs'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
                 unifiedVariable' <- askUnifiedVariable unifiedVariable
@@ -899,7 +899,7 @@ externalizeFreshVariables termLike =
         :: Set.Set (UnifiedVariable Variable)
     (originalFreeVariables, generatedFreeVariables) =
         Set.partition (foldMapVariable Variable.isOriginalVariable)
-        $ getFreeVariables $ freeVariables termLike
+        $ FreeVariables.toSet $ freeVariables termLike
 
     -- | The map of generated free variables, renamed to be unique from the
     -- original free variables.
@@ -907,7 +907,7 @@ externalizeFreshVariables termLike =
     (renamedFreeVariables, _) =
         Foldable.foldl' rename initial generatedFreeVariables
       where
-        initial = (mempty, FreeVariables originalFreeVariables)
+        initial = (mempty, foldMap freeVariable originalFreeVariables)
         rename (renaming, avoiding) variable =
             let
                 (variable', renaming') =
@@ -940,15 +940,17 @@ externalizeFreshVariables termLike =
         :: ElementVariable Variable
         -> Reader (UnifiedVariableMap Variable Variable) (ElementVariable Variable)
     lookupElementVariable elementVariable =
-        fromMaybe elementVariable
-        <$> Reader.asks (lookupRenamedElementVariable elementVariable)
+        Reader.asks
+        $ fromMaybe elementVariable
+        . lookupRenamedElementVariable elementVariable
 
     lookupSetVariable
         :: SetVariable Variable
         -> Reader (UnifiedVariableMap Variable Variable) (SetVariable Variable)
     lookupSetVariable setVariable =
-        fromMaybe setVariable
-        <$> Reader.asks (lookupRenamedSetVariable setVariable)
+        Reader.asks
+        $ fromMaybe setVariable
+        . lookupRenamedSetVariable setVariable
 
     {- | Externalize a variable safely.
 

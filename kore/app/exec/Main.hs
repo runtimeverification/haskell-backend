@@ -37,10 +37,6 @@ import qualified Data.Text.IO as Text
     ( putStrLn
     , readFile
     )
-import Data.Text.Prettyprint.Doc.Render.Text
-    ( hPutDoc
-    , putDoc
-    )
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -85,6 +81,7 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makePredicate
     )
@@ -103,7 +100,9 @@ import Kore.Log
     ( ExeName (..)
     , KoreLogOptions (..)
     , LogMessage
+    , SomeEntry (..)
     , WithLog
+    , logEntry
     , parseKoreLogOptions
     , runKoreLog
     )
@@ -134,9 +133,8 @@ import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
-    ( StuckVerification (StuckVerification)
+    ( Stuck (..)
     )
-import qualified Kore.Strategies.Verification as Verification.DoNotUse
 import Kore.Syntax.Definition
     ( Definition (Definition)
     , Module (Module)
@@ -150,6 +148,8 @@ import Kore.Unparser
 import Pretty
     ( Doc
     , Pretty (..)
+    , hPutDoc
+    , putDoc
     , vsep
     )
 import SMT
@@ -406,6 +406,7 @@ mainWithOptions execOptions = do
     exitCode <-
         runKoreLog koreLogOptions
         $ handle handleSomeException
+        $ handle handleSomeEntry
         $ handle handleWithConfiguration go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
@@ -415,6 +416,12 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
+
+    handleSomeEntry
+        :: SomeEntry -> Main ExitCode
+    handleSomeEntry (SomeEntry entry) = do
+        logEntry entry
+        return $ ExitFailure 1
 
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do
@@ -508,12 +515,12 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
-        Left StuckVerification {stuckDescription, provenClaims} -> do
+        Left Stuck { stuckPattern, provenClaims } -> do
             maybe
                 (return ())
                 (lift . saveProven specModule provenClaims)
                 saveProofs
-            return (failure stuckDescription)
+            return (failure $ Pattern.toTermLike stuckPattern)
         Right () -> return success
 
     lift $ renderResult execOptions (unparse final)

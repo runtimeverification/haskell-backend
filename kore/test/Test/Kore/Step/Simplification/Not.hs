@@ -9,7 +9,6 @@ import Test.Tasty
     )
 
 import qualified Data.Foldable as Foldable
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -37,6 +36,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Pretty
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification

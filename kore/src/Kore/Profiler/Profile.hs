@@ -4,6 +4,8 @@ License     : NCSA
 
 This should be imported @qualified@.
 -}
+
+{-# OPTIONS_GHC -fno-prof-auto #-}
 module Kore.Profiler.Profile
     ( axiomBranching
     , axiomEvaluation
@@ -26,18 +28,6 @@ import Control.Monad
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
-    )
-import qualified Data.Text.Prettyprint.Doc as Doc
-    ( LayoutOptions (LayoutOptions)
-    , PageWidth (Unbounded)
-    , group
-    , layoutSmart
-    )
-import qualified Data.Text.Prettyprint.Doc.Render.String as Doc
-    ( renderString
-    )
 
 import Kore.Profiler.Data
     ( Configuration (Configuration)
@@ -52,13 +42,17 @@ import Kore.Unparser
     ( Unparse
     , unparseToString
     )
+import Pretty
+    ( Pretty (..)
+    )
+import qualified Pretty
 import SMT
 
 oneLiner :: Pretty a => a -> String
 oneLiner =
-    Doc.renderString
-    . Doc.layoutSmart (Doc.LayoutOptions Doc.Unbounded)
-    . Doc.group
+    Pretty.renderString
+    . Pretty.layoutSmart (Pretty.LayoutOptions Pretty.Unbounded)
+    . Pretty.group
     . pretty
 
 equalitySimplification
@@ -235,11 +229,7 @@ smtDecision (sexpr :| _) action = do
         then profile ["SMT", show $ length $ show sexpr] action
         else action
 
-executionQueueLength
-    :: MonadProfiler profiler
-    => Int -> profiler result -> profiler result
-executionQueueLength len action = do
-    Configuration {logStrategy} <- profileConfiguration
-    when logStrategy
-        (profileValue ["ExecutionQueueLength"] len)
-    action
+executionQueueLength :: MonadProfiler profiler => Int -> profiler ()
+executionQueueLength len = do
+    Configuration { logStrategy } <- profileConfiguration
+    when logStrategy (profileValue ["ExecutionQueueLength"] len)

@@ -15,13 +15,15 @@ import Control.Monad.Catch
     ( SomeException
     , displayException
     )
-import Data.Text.Prettyprint.Doc
+
+import Log
+import Pretty
     ( Pretty (..)
     )
 
-import Log
-
-newtype ErrorException = ErrorException { getException :: SomeException }
+newtype ErrorException =
+    ErrorException { getException :: SomeException }
+    deriving (Show)
 
 instance Pretty ErrorException where
     pretty = pretty . displayException . getException

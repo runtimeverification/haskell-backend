@@ -39,6 +39,7 @@ import Control.Monad.State.Strict
     )
 import qualified Data.Default as Default
 import Data.Generics.Product
+import Data.Generics.Wrapped
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List
     ( findIndex
@@ -54,10 +55,6 @@ import Text.Megaparsec
     ( parseMaybe
     )
 
-import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkSortVariable
@@ -68,7 +65,9 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import qualified Kore.Step.RulePattern as Rule
+import Kore.Step.RulePattern
+    ( ReachabilityRule (..)
+    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -209,39 +208,37 @@ runRepl
         -> [ReachabilityRule]
         -> [ReachabilityRule]
     addIndexesToClaims len claims'' =
-        let toAxiomAndBack claim' index =
-                ruleToGoal
-                    claim'
-                    $ addIndex (goalToRule claim', index)
-        in zipWith toAxiomAndBack claims'' [len..]
+        zipWith addIndexToClaim [len..] claims''
+      where
+        addIndexToClaim n =
+            Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n)
+
+        lensAttribute =
+            Lens.lens
+                (\case
+                    OnePath onePathRule ->
+                        Lens.view (_Unwrapped . field @"attributes") onePathRule
+                    AllPath allPathRule ->
+                        Lens.view (_Unwrapped . field @"attributes") allPathRule
+                )
+                (\case
+                    OnePath onePathRule -> \attrs ->
+                        onePathRule
+                        & Lens.set (_Unwrapped . field @"attributes") attrs
+                        & OnePath
+                    AllPath allPathRule -> \attrs ->
+                        allPathRule
+                        & Lens.set (_Unwrapped . field @"attributes") attrs
+                        & AllPath
+                )
 
     addIndex
         :: (Axiom, Int)
         -> Axiom
     addIndex (rw, n) =
-        modifyAttribute (mapAttribute n (getAttribute rw)) rw
-
-    modifyAttribute
-        :: Attribute.Axiom Symbol Variable
-        -> Axiom
-        -> Axiom
-    modifyAttribute att rule =
-        let rp = axiomToRulePatt rule in
-            fromRulePattern rule
-                $ rp { Rule.attributes = att }
-
-    axiomToRulePatt :: Axiom -> Rule.RulePattern Variable
-    axiomToRulePatt = toRulePattern
-
-    getAttribute :: Axiom -> Attribute.Axiom Symbol Variable
-    getAttribute = Rule.attributes . axiomToRulePatt
-
-    mapAttribute
-        :: Int
-        -> Attribute.Axiom Symbol variable
-        -> Attribute.Axiom Symbol variable
-    mapAttribute n attr =
-        Lens.over (field @"identifier") (makeRuleIndex n) attr
+        Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n) rw
+      where
+        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)

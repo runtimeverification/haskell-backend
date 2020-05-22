@@ -8,6 +8,9 @@ module Pretty
     ( module Data.Text.Prettyprint.Doc
     , layoutOneLine
     , renderText
+    , renderString
+    , renderIO
+    , hPutDoc, putDoc
     ) where
 
 import Prelude.Kore
@@ -16,8 +19,14 @@ import Data.Text
     ( Text
     )
 import Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc.Render.String
+    ( renderString
+    )
 import Data.Text.Prettyprint.Doc.Render.Text
-    ( renderStrict
+    ( hPutDoc
+    , putDoc
+    , renderIO
+    , renderStrict
     )
 
 {- | Lay out the document with no (automatic) line breaks.

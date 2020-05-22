@@ -64,20 +64,19 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc
-    ( Pretty
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
+    ( FreeVariables
     , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -137,6 +136,10 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 import qualified Kore.Verified as Verified
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 {-| Defines the right-hand-side of a rewrite rule / claim
 -}
@@ -172,23 +175,18 @@ topExistsToImplicitForall
     => FreeVariables variable
     -> RHS variable
     -> Pattern variable
-topExistsToImplicitForall
-    (FreeVariables.getFreeVariables -> avoid)
-    RHS { existentials, right, ensures }
-  =
+topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
     Conditional
         { term = TermLike.substitute subst right
         , predicate = Predicate.substitute subst ensures
         , substitution = mempty
         }
   where
-    rightFreeVariables =
-        FreeVariables.getFreeVariables (freeVariables right)
-    ensuresFreeVariables =
-        FreeVariables.getFreeVariables (freeVariables ensures)
-    originalFreeVariables = rightFreeVariables <> ensuresFreeVariables
+    avoid = FreeVariables.toSet avoid'
     bindExistsFreeVariables =
-        foldr Set.delete originalFreeVariables (ElemVar <$> existentials)
+        freeVariables right <> freeVariables ensures
+        & FreeVariables.bindVariables (ElemVar <$> existentials)
+        & FreeVariables.toSet
     rename :: Map (UnifiedVariable variable) (UnifiedVariable variable)
     rename =
         refreshVariables
@@ -380,18 +378,21 @@ instance
     freeVariables rule@(RulePattern _ _ _ _ _) = case rule of
         RulePattern { left, antiLeft, requires, rhs } ->
             freeVariables left
-            <> maybe (FreeVariables Set.empty) freeVariables antiLeft
+            <> maybe mempty freeVariables antiLeft
             <> freeVariables requires
             <> freeVariables rhs
 
 -- |Is the rule free of the given variables?
 isFreeOf
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => RulePattern variable
     -> Set.Set (UnifiedVariable variable)
     -> Bool
 isFreeOf rule =
-    Set.disjoint (getFreeVariables $ freeVariables rule)
+    Set.disjoint
+    $ from @(FreeVariables variable) @(Set (UnifiedVariable _))
+    $ freeVariables rule
 
 {- | Apply the substitution to the right-hand-side of a rule.
  -}
@@ -591,6 +592,9 @@ instance From OnePathRule Attribute.Label where
 instance From OnePathRule Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getOnePathRule
 
+instance From OnePathRule Attribute.Trusted where
+    from = Attribute.trusted . attributes . getOnePathRule
+
 {-  | Unified One-Path and All-Path Claim rule pattern.
 -}
 data ReachabilityRule
@@ -633,6 +637,10 @@ instance From ReachabilityRule Attribute.Label where
     from (AllPath allPathRule) = from allPathRule
 
 instance From ReachabilityRule Attribute.RuleIndex where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
@@ -690,6 +698,9 @@ instance From AllPathRule Attribute.Label where
 
 instance From AllPathRule Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getAllPathRule
+
+instance From AllPathRule Attribute.Trusted where
+    from = Attribute.trusted . attributes . getAllPathRule
 
 instance ToRulePattern (RewriteRule Variable)
 
@@ -860,11 +871,9 @@ instance UnifyingRule RulePattern where
 
     precondition = requires
 
-    refreshRule
-        (FreeVariables.getFreeVariables -> avoid)
-        rule1@(RulePattern _ _ _ _ _)
-      =
-        let rename = refreshVariables (avoid <> exVars) originalFreeVariables
+    refreshRule avoid' rule1@(RulePattern _ _ _ _ _) =
+        let avoid = FreeVariables.toSet avoid'
+            rename = refreshVariables (avoid <> exVars) originalFreeVariables
             subst = TermLike.mkVar <$> rename
             left' = TermLike.substitute subst left
             antiLeft' = TermLike.substitute subst <$> antiLeft
@@ -881,8 +890,7 @@ instance UnifyingRule RulePattern where
       where
         RulePattern { left, antiLeft, requires, rhs } = rule1
         exVars = Set.fromList $ ElemVar <$> existentials rhs
-        originalFreeVariables =
-            FreeVariables.getFreeVariables $ freeVariables rule1
+        originalFreeVariables = freeVariables rule1 & FreeVariables.toSet
 
     mapRuleVariables mapElemVar mapSetVar rule1@(RulePattern _ _ _ _ _) =
         rule1

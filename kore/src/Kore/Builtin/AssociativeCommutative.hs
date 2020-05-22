@@ -57,9 +57,6 @@ import Data.Reflection
     ( Given
     )
 import qualified Data.Reflection as Reflection
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    )
 
 import Branch
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
@@ -128,6 +125,9 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Kore.Unparser as Unparser
+import Pretty
+    ( Doc
+    )
 
 {- | Class for things that can fill the @builtinAcChild@ value of a
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.

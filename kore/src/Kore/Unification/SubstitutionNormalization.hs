@@ -226,7 +226,8 @@ isSatisfiableSubstitution (Assignment variable termLike) =
     pattern.
  -}
 getDependencies
-    :: Ord variable
+    :: forall variable
+    .  Ord variable
     => Set (UnifiedVariable variable)  -- ^ interesting variables
     -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
@@ -236,7 +237,7 @@ getDependencies interesting var termLike =
         Var_ v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
-    freeVars = FreeVariables.getFreeVariables $ freeVariables termLike
+    freeVars = freeVariables termLike & FreeVariables.toSet
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.

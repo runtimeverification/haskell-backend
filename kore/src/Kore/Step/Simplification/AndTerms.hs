@@ -30,11 +30,14 @@ import Control.Error
 import qualified Control.Error as Error
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
+import Data.String
+    ( fromString
+    )
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
+import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
@@ -43,6 +46,7 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -66,13 +70,14 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.CeilSimplifier
     ( CeilSimplifier (..)
     )
+import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     )
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.Overloading
+import Kore.Step.Simplification.Overloading as Overloading
 import Kore.Step.Simplification.SimplificationType
     ( SimplificationType
     )
@@ -94,6 +99,7 @@ import Kore.Variables.UnifiedVariable
     )
 import qualified Log
 import Pair
+import qualified Pretty
 
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
@@ -233,6 +239,9 @@ andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
     , (BothT,   \_ _ s -> Builtin.Bool.termAndEquals s, "Builtin.Bool.termAndEquals")
+    , (BothT,   \_ _ s -> Builtin.Bool.termNotBool s, "Builtin.Bool.termNotBool")
+    , (EqualsT, \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier, "Builtin.KEqual.termKEquals")
+    , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s, "Builtin.KEqual.unifyIfThenElse")
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
@@ -559,6 +568,51 @@ noConfusionInjectionConstructor
     -> unifier a
 noConfusionInjectionConstructor =
     explainAndReturnBottom "No confusion: sort injections and constructors"
+
+{- |
+ If the two constructors form an overload pair, apply the overloading axioms
+ on the terms to make the constructors equal, then retry unification on them.
+
+See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md>
+
+ -}
+overloadedConstructorSortInjectionAndEquals
+    :: (InternalVariable variable, MonadUnify unifier)
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
+  = do
+    eunifier <- lift . Error.runExceptT
+        $ unifyOverloading (Pair firstTerm secondTerm)
+    case eunifier of
+        Right (Simple (Pair firstTerm' secondTerm')) -> lift $
+            termMerger firstTerm' secondTerm'
+        Right
+            (WithNarrowing Narrowing
+                { narrowingSubst
+                , narrowingVars
+                , overloadPair = Pair firstTerm' secondTerm'
+                }
+            ) -> do
+                boundPattern <- lift $ do
+                    merged <- termMerger firstTerm' secondTerm'
+                    Exists.makeEvaluate SideCondition.topTODO narrowingVars
+                        $ merged `Pattern.andCondition` narrowingSubst
+                case OrPattern.toPatterns boundPattern of
+                    [result] -> return result
+                    [] -> lift $
+                        explainAndReturnBottom
+                            (  "exists simplification for overloaded"
+                            <> " constructors returned no pattern"
+                            )
+                            firstTerm
+                            secondTerm
+                    _ -> empty
+        Left (Clash message) -> lift $
+            explainAndReturnBottom (fromString message) firstTerm secondTerm
+        Left Overloading.NotApplicable -> empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.

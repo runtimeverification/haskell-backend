@@ -27,6 +27,7 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
+    , freshSymbolInstance
     , removeEvaluated
     , termLikeSort
     , hasFreeVariable
@@ -181,6 +182,8 @@ module Kore.Internal.TermLike
 import Prelude.Kore
 
 import Data.Align
+    ( alignWith
+    )
 import Data.ByteString
     ( ByteString
     )
@@ -203,7 +206,7 @@ import Data.Set
 import Data.Text
     ( Text
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Text as Text
 import Data.These
 
 import qualified Kore.Attribute.Pattern as Attribute
@@ -275,6 +278,7 @@ import Kore.Variables.Fresh
     )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
+import qualified Pretty
 
 hasFreeVariable
     :: Ord variable
@@ -288,15 +292,37 @@ refreshVariables
     => FreeVariables variable
     -> TermLike variable
     -> TermLike variable
-refreshVariables
-    (FreeVariables.getFreeVariables -> avoid)
-    term
-  =
+refreshVariables (FreeVariables.toSet -> avoid) term =
     Substitute.substitute subst term
   where
     rename = Fresh.refreshVariables avoid originalFreeVariables
-    originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
+    originalFreeVariables = FreeVariables.toSet (freeVariables term)
     subst = mkVar <$> rename
+
+-- | Generates fresh variables as arguments for a symbol to create a pattern.
+freshSymbolInstance
+    :: forall variable
+     . InternalVariable variable
+    => FreeVariables variable
+    -> Symbol
+    -> Text
+    -> TermLike variable
+freshSymbolInstance freeVars sym base =
+    mkApplySymbol sym varTerms
+    & refreshVariables freeVars
+  where
+    sorts = applicationSortsOperands $ symbolSorts sym
+    varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
+    mkVariable :: Integer -> Sort -> ElementVariable variable
+    mkVariable vIdx vSort = ElementVariable . from @Variable @variable
+        $ Variable
+            { variableName = Id
+                { getId = base <> Text.pack (show vIdx)
+                , idLocation = AstLocationGeneratedVariable
+                }
+            , variableCounter = mempty
+            , variableSort = vSort
+            }
 
 {- | Is the 'TermLike' a function pattern?
  -}
@@ -1891,7 +1917,7 @@ refreshBinder
     -> FreeVariables variable
     -> Binder bound (TermLike variable)
     -> Binder bound (TermLike variable)
-refreshBinder refreshBound mkUnified (getFreeVariables -> avoiding) binder =
+refreshBinder refreshBound mkUnified (FreeVariables.toSet -> avoiding) binder =
     do
         binderVariable' <- refreshBound avoiding binderVariable
         let renaming =

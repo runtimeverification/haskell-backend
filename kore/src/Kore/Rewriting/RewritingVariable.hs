@@ -24,8 +24,6 @@ module Kore.Rewriting.RewritingVariable
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
-import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -33,9 +31,10 @@ import qualified GHC.Generics as GHC
 
 import Debug
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
+    ( FreeVariables
     , HasFreeVariables (..)
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -123,17 +122,7 @@ instance SortedVariable RewritingVariable where
                 RuleVariable <$> lensVariableSort f variable
     {-# INLINE lensVariableSort #-}
 
-instance FreshVariable RewritingVariable where
-    refreshVariable avoiding original = do
-        largest <- assignSort <$> Set.lookupLT (supVariable original) avoiding
-        Monad.guard (largest >= infVariable original)
-        let next = nextVariable largest
-        assert (sameName original next) pure next
-      where
-        originalSort = Lens.view lensVariableSort original
-        assignSort = Lens.set lensVariableSort originalSort
-        sameName = on (==) (variableName . from @_ @Variable)
-    {-# INLINE refreshVariable #-}
+instance FreshVariable RewritingVariable
 
 mkElementConfigVariable
     :: ElementVariable Variable
@@ -183,7 +172,7 @@ getPattern pattern' =
     getPatternAux pattern'
     & assert (all isUnifiedConfigVariable freeVars)
   where
-    FreeVariables freeVars = freeVariables pattern'
+    freeVars = freeVariables pattern' & FreeVariables.toList
 
 getPatternAux
     :: Pattern RewritingVariable
@@ -224,13 +213,14 @@ getResultPattern initial config@Conditional { substitution } =
             substitution
     filtered = config { Pattern.substitution = substitution' }
     avoiding =
-        Set.map (from @_ @(UnifiedVariable Variable))
-        $ getFreeVariables initial
+        initial
+        & FreeVariables.toSet
+        & Set.map (from @_ @(UnifiedVariable Variable))
     introduced =
         Set.fromAscList
         . mapMaybe getUnifiedRuleVariable
         . Set.toAscList
-        . getFreeVariables
+        . FreeVariables.toSet
         $ freeVariables filtered
     renaming =
         Map.mapKeys mkUnifiedRuleVariable
@@ -278,7 +268,7 @@ getRemainderPredicate predicate =
         predicate
     & assert (all isUnifiedConfigVariable freeVars)
   where
-    FreeVariables freeVars = freeVariables predicate
+    freeVars = freeVariables predicate & FreeVariables.toList
 
 getRemainderPattern
     :: HasCallStack

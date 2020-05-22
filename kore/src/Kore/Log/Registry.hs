@@ -28,7 +28,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Tuple
     ( swap
     )
@@ -56,6 +55,9 @@ import Kore.Log.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
     )
+import Kore.Log.DebugSubstitutionSimplifier
+    ( DebugSubstitutionSimplifier
+    )
 import Kore.Log.ErrorException
     ( ErrorException
     )
@@ -71,8 +73,8 @@ import Kore.Log.InfoAttemptUnification
 import Kore.Log.InfoReachability
     ( InfoReachability
     )
-import Kore.Log.WarnBottomHook
-    ( WarnBottomHook
+import Kore.Log.WarnBottomTotalFunction
+    ( WarnBottomTotalFunction
     )
 import Kore.Log.WarnDecidePredicateUnknown
     ( WarnDecidePredicateUnknown
@@ -88,6 +90,7 @@ import Log
     , LogMessage
     , SomeEntry (..)
     )
+import qualified Pretty
 
 data Registry =
     Registry
@@ -123,7 +126,8 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugSolverRecv
     , mk $ Proxy @DebugProofState
     , mk $ Proxy @DebugAppliedRewriteRules
-    , mk $ Proxy @WarnBottomHook
+    , mk $ Proxy @DebugSubstitutionSimplifier
+    , mk $ Proxy @WarnBottomTotalFunction
     , mk $ Proxy @WarnDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation

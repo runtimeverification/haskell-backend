@@ -16,7 +16,6 @@ import qualified Data.List as List
 import Data.Text
     ( Text
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -42,6 +41,7 @@ import qualified Kore.Unparser as Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Pretty
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Terse

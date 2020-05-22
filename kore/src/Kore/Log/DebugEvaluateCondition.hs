@@ -37,6 +37,7 @@ import qualified SQL
 data DebugEvaluateCondition
     = DebugEvaluateCondition (NonEmpty (Predicate Variable))
     | DebugEvaluateConditionResult Result
+    deriving (Show)
     deriving (GHC.Generic)
 
 instance SOP.Generic DebugEvaluateCondition
@@ -45,12 +46,12 @@ instance SOP.HasDatatypeInfo DebugEvaluateCondition
 
 instance Pretty DebugEvaluateCondition where
     pretty (DebugEvaluateCondition predicates) =
-        (Pretty.vsep . concat)
-        [ [ "evaluating predicate:" , Pretty.indent 4 (unparse predicate) ]
-        , do
+        Pretty.vsep
+        ( [ "evaluating predicate:" , Pretty.indent 4 (unparse predicate) ]
+        ++ do
             sideCondition <- sideConditions
             [ "with side condition:", Pretty.indent 4 (unparse sideCondition) ]
-        ]
+        )
       where
        predicate :| sideConditions = predicates
 

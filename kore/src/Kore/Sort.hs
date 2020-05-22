@@ -51,7 +51,6 @@ import Control.Exception
 import Data.Align
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.These
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -59,6 +58,7 @@ import qualified GHC.Generics as GHC
 import Kore.Debug
 import Kore.Syntax.Id
 import Kore.Unparser
+import qualified Pretty
 
 {- | @SortVariable@ is a Kore sort variable.
 

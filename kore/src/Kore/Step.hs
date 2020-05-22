@@ -35,7 +35,6 @@ import Data.List.Extra
     ( groupSortOn
     , sortOn
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Numeric.Natural
     ( Natural
     )
@@ -61,12 +60,15 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
 import qualified Kore.Step.Step as Step
-import Kore.Step.Strategy
+import Kore.Step.Strategy hiding
+    ( transitionRule
+    )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
+import qualified Pretty
 
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.

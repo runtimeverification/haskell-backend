@@ -71,9 +71,9 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
+import qualified Pretty
 
 import Kore.Internal.Condition
     ( Condition
