@@ -19,7 +19,7 @@ K_RELEASE_BIN = $(K_RELEASE)/bin
 K_RELEASE_LIB = $(K_RELEASE)/lib
 
 # The kernel JAR is used as a build timestamp.
-K = $(K_RELEASE_LIB)/java/kernel-1.0-SNAPSHOT.jar
+K = $(K_RELEASE_LIB)/kframework/java/kernel-1.0-SNAPSHOT.jar
 KOMPILE = $(K_RELEASE_BIN)/kompile
 KRUN = $(K_RELEASE_BIN)/krun
 export KRUN
@@ -66,7 +66,7 @@ $(KORE_REPL):
 $(KORE_PARSER):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
 
-$(K_RELEASE_DEFAULT)/lib/java/kernel-1.0-SNAPSHOT.jar:
+$(K_RELEASE_DEFAULT)/lib/kframework/java/kernel-1.0-SNAPSHOT.jar:
 	mkdir -p $(BUILD_DIR)
 	rm -rf $(K_RELEASE_DEFAULT) $(K_RELEASE_TAR)
 	curl --location --output $(K_RELEASE_TAR) $(K_RELEASE_TAR_URL)
