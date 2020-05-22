@@ -64,8 +64,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 -- | A predicate and substitution without an accompanying term.
 type Condition variable = Conditional variable ()
@@ -162,11 +160,10 @@ toPredicate = from
 
 mapVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> Condition variable1
     -> Condition variable2
-mapVariables = Conditional.mapVariables (\_ _ () -> ())
+mapVariables = Conditional.mapVariables (\_ () -> ())
 
 {- | Create a new 'Condition' from the 'Normalization' of a substitution.
 

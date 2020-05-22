@@ -37,7 +37,6 @@ import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.DomainValue
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
 import Kore.Syntax.Floor
@@ -52,7 +51,6 @@ import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Rewrites
-import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
@@ -117,13 +115,13 @@ not injective!
 
 -}
 mapVariables
-    :: (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    :: AdjUnifiedVariable (variable1 -> variable2)
     -> PatternF variable1 child
     -> PatternF variable2 child
-mapVariables mapElemVar mapSetVar =
-    runIdentity
-    . traverseVariables (Identity . mapElemVar) (Identity . mapSetVar)
+mapVariables adj =
+    runIdentity . traverseVariables adj'
+  where
+    adj' = (Identity .) <$> adj
 {-# INLINE mapVariables #-}
 
 {- | Use the provided traversal to replace all variables in a 'PatternF' head.
@@ -134,11 +132,9 @@ traversal is not injective!
 -}
 traverseVariables
     :: Applicative f
-    => (ElementVariable variable1 -> f (ElementVariable variable2))
-    -> (SetVariable variable1 -> f (SetVariable variable2))
-    -> PatternF variable1 child
-    -> f (PatternF variable2 child)
-traverseVariables trElemVar trSetVar =
+    => AdjUnifiedVariable (variable1 -> f variable2)
+    -> PatternF variable1 child -> f (PatternF variable2 child)
+traverseVariables adj =
     \case
         -- Non-trivial cases
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
@@ -165,9 +161,10 @@ traverseVariables trElemVar trSetVar =
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
   where
+    trElemVar = sequenceA . (<*>) (elemVar adj)
+    trSetVar = sequenceA . (<*>) (setVar adj)
     traverseVariable (Const variable) =
-        VariableF . Const
-        <$> traverseUnifiedVariable trElemVar trSetVar variable
+        VariableF . Const <$> traverseUnifiedVariable adj variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
         <$> trElemVar existsVariable

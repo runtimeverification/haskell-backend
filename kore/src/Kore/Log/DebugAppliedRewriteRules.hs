@@ -27,7 +27,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( Variable (..)
-    , toVariable
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
@@ -41,6 +40,7 @@ import Kore.Step.Step
 import Kore.Unparser
     ( unparse
     )
+import Kore.Variables.UnifiedVariable
 import Log
 import Pretty
     ( Pretty (..)
@@ -93,7 +93,4 @@ debugAppliedRewriteRules initial rules =
     appliedRewriteRules =
         coerce (mapConditionalVariables mapRuleVariables <$> rules)
     mapConditionalVariables mapTermVariables =
-        Conditional.mapVariables
-            mapTermVariables
-            (fmap toVariable)
-            (fmap toVariable)
+        Conditional.mapVariables mapTermVariables toUnifiedVariable

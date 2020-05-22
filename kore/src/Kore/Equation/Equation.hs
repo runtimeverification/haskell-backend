@@ -20,9 +20,13 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Wrapped
+    ( _Wrapped
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -53,10 +57,8 @@ import Kore.Internal.Symbol
     ( Symbol (..)
     )
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , Id (..)
+    ( Id (..)
     , InternalVariable
-    , SetVariable
     , Sort
     , TermLike
     , Variable
@@ -75,8 +77,6 @@ import Kore.Unparser
     )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import Pretty
     ( Pretty (..)
     )
@@ -199,22 +199,20 @@ instance AstWithLocation variable => AstWithLocation (Equation variable) where
 
 mapVariables
     :: (Ord variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> Equation variable1 -> Equation variable2
-mapVariables mapElemVar mapSetVar equation@(Equation _ _ _ _ _) =
+mapVariables mapping equation@(Equation _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
         , left = mapTermLikeVariables left
         , right = mapTermLikeVariables right
         , ensures = mapPredicateVariables ensures
-        , attributes =
-            Attribute.mapAxiomVariables mapElemVar mapSetVar attributes
+        , attributes = Attribute.mapAxiomVariables mapping attributes
         }
   where
     Equation { requires, left, right, ensures, attributes } = equation
-    mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
-    mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
+    mapTermLikeVariables = TermLike.mapVariables mapping
+    mapPredicateVariables = Predicate.mapVariables mapping
 
 refreshVariables
     :: forall variable
@@ -227,21 +225,25 @@ refreshVariables
     equation@(Equation _ _ _ _ _)
   =
     let rename = Fresh.refreshVariables avoid originalFreeVariables
-        mapElemVars elemVar =
-            case Map.lookup (ElemVar elemVar) rename of
-                Just (ElemVar elemVar') -> elemVar'
-                _ -> elemVar
-        mapSetVars setVar =
-            case Map.lookup (SetVar setVar) rename of
-                Just (SetVar setVar') -> setVar'
-                _ -> setVar
+        adj =
+            AdjUnifiedVariable
+            { elemVar =
+                ElementVariable . Lens.over _Wrapped $ \var ->
+                    case Map.lookup (ElemVar var) rename of
+                        Just (ElemVar var') -> var'
+                        _ -> var
+            , setVar =
+                SetVariable . Lens.over _Wrapped $ \var ->
+                    case Map.lookup (SetVar var) rename of
+                        Just (SetVar var') -> var'
+                        _ -> var
+            }
         subst = TermLike.mkVar <$> rename
         left' = TermLike.substitute subst left
         requires' = Predicate.substitute subst requires
         right' = TermLike.substitute subst right
         ensures' = Predicate.substitute subst ensures
-        attributes' =
-            Attribute.mapAxiomVariables mapElemVars mapSetVars attributes
+        attributes' = Attribute.mapAxiomVariables adj attributes
         equation' =
             equation
                 { left = left'

@@ -11,11 +11,14 @@ module Kore.Variables.Target
     , unTarget
     , unTargetElement
     , unTargetSet
+    , unTargetUnified
     , mkElementTarget
     , mkSetTarget
+    , mkUnifiedTarget
     , isTarget
     , mkElementNonTarget
     , mkSetNonTarget
+    , mkUnifiedNonTarget
     , isNonTarget
     , targetIfEqual
     ) where
@@ -38,9 +41,6 @@ import Kore.Variables.Fresh
     , FreshVariable (..)
     )
 import Kore.Variables.UnifiedVariable
-    ( ElementVariable
-    , SetVariable
-    )
 
 {- | Distinguish variables by their source.
 
@@ -96,6 +96,9 @@ unTargetElement = fmap unTarget
 unTargetSet :: SetVariable (Target variable) -> SetVariable variable
 unTargetSet = fmap unTarget
 
+unTargetUnified :: AdjUnifiedVariable (Target variable -> variable)
+unTargetUnified = pure unTarget
+
 mkElementTarget
     :: ElementVariable variable
     -> ElementVariable (Target variable)
@@ -105,6 +108,9 @@ mkSetTarget
     :: SetVariable variable
     -> SetVariable (Target variable)
 mkSetTarget = fmap Target
+
+mkUnifiedTarget :: AdjUnifiedVariable (variable -> Target variable)
+mkUnifiedTarget = pure Target
 
 isTarget :: Target variable -> Bool
 isTarget (Target _) = True
@@ -119,6 +125,9 @@ mkSetNonTarget
     :: SetVariable variable
     -> SetVariable (Target variable)
 mkSetNonTarget = fmap NonTarget
+
+mkUnifiedNonTarget :: AdjUnifiedVariable (variable -> Target variable)
+mkUnifiedNonTarget = pure NonTarget
 
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget

@@ -27,6 +27,7 @@ import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 import Pretty
     ( Pretty
     )
@@ -54,7 +55,7 @@ unsupportedPatterns
     => String -> TermLike variable -> TermLike variable -> UnificationError
 unsupportedPatterns message =
     on (UnsupportedPatterns message)
-    $ mapVariables (fmap toVariable) (fmap toVariable)
+    $ mapVariables toUnifiedVariable
 
 instance Pretty UnificationError where
     pretty UnsupportedPatterns { message, first, second } =

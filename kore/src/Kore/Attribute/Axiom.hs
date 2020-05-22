@@ -86,11 +86,10 @@ import Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
     )
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
     ( Variable (..)
     )
+import Kore.Variables.UnifiedVariable
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.
@@ -267,13 +266,12 @@ parseAxiomAttributes freeVariables (Attributes attrs) =
 
 mapAxiomVariables
     :: Ord variable2
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> Axiom symbol variable1 -> Axiom symbol variable2
-mapAxiomVariables e s axiom@Axiom { concrete, symbolic } =
+mapAxiomVariables mapping axiom@Axiom { concrete, symbolic } =
     axiom
-        { concrete = mapConcreteVariables e s concrete
-        , symbolic = mapSymbolicVariables e s symbolic
+        { concrete = mapConcreteVariables mapping concrete
+        , symbolic = mapSymbolicVariables mapping symbolic
         }
 
 getPriorityOfAxiom

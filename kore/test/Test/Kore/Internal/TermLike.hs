@@ -42,8 +42,6 @@ import Kore.Variables.Fresh
     ( refreshVariable
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore hiding
     ( symbolGen
@@ -375,13 +373,19 @@ test_renaming =
     , testSet "\\nu" mkNu
     ]
   where
-    mapElementVariables' v = mapVariables (const v) id
-    mapSetVariables' v = mapVariables id (const v)
+    mapElementVariables' (getElementVariable -> v) =
+        mapVariables (pure id) { elemVar = ElementVariable (const v) }
+    mapSetVariables' (getSetVariable -> v) =
+        mapVariables (pure id) { setVar = SetVariable (const v) }
 
-    traverseElementVariables' v =
-        runIdentity . traverseVariables (const $ return v) pure
-    traverseSetVariables' v =
-        runIdentity . traverseVariables pure (const $ return v)
+    traverseElementVariables' (getElementVariable -> v) =
+        runIdentity
+        . traverseVariables (pure return)
+            { elemVar = ElementVariable (const $ return v) }
+    traverseSetVariables' (getSetVariable -> v) =
+        runIdentity
+        . traverseVariables (pure return)
+            { setVar = SetVariable (const $ return v) }
 
     doesNotCapture
         :: HasCallStack

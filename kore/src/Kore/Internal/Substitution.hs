@@ -440,29 +440,25 @@ modify
 modify f = wrap . f . unwrap
 
 mapAssignmentVariables
-    :: (InternalVariable variableFrom, InternalVariable variableTo)
-    => (ElementVariable variableFrom -> ElementVariable variableTo)
-    -> (SetVariable variableFrom -> SetVariable variableTo)
-    -> Assignment variableFrom
-    -> Assignment variableTo
-mapAssignmentVariables mapElemVar mapSetVar (Assignment variable term) =
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
+    -> Assignment variable1
+    -> Assignment variable2
+mapAssignmentVariables adj (Assignment variable term) =
     assign mappedVariable mappedTerm
   where
-    mappedVariable = mapUnifiedVariable mapElemVar mapSetVar variable
-    mappedTerm = TermLike.mapVariables mapElemVar mapSetVar term
+    mappedVariable = mapUnifiedVariable adj variable
+    mappedTerm = TermLike.mapVariables adj term
 
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
-    :: forall variableFrom variableTo
-    .  (InternalVariable variableFrom, InternalVariable variableTo)
-    => (ElementVariable variableFrom -> ElementVariable variableTo)
-    -> (SetVariable variableFrom -> SetVariable variableTo)
-    -> Substitution variableFrom
-    -> Substitution variableTo
-mapVariables mapElemVar mapSetVar  =
-    modify . fmap
-    $ mapAssignmentVariables mapElemVar mapSetVar
+    :: forall variable1 variable2
+    .  (InternalVariable variable1, InternalVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
+    -> Substitution variable1
+    -> Substitution variable2
+mapVariables adj = modify . fmap $ mapAssignmentVariables adj
 
 mapTerms
     :: InternalVariable variable

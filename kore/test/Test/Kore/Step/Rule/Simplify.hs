@@ -64,8 +64,8 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import Kore.Syntax.Variable
     ( Variable
-    , fromVariable
     )
+import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
@@ -332,15 +332,13 @@ test_simplifyClaimRule =
             :: InternalVariable variable
             => Predicate Variable
             -> Predicate variable
-        liftPredicate =
-            Predicate.mapVariables (fmap fromVariable) (fmap fromVariable)
+        liftPredicate = Predicate.mapVariables fromUnifiedVariable
 
         liftTermLike
             :: InternalVariable variable
             => TermLike Variable
             -> TermLike variable
-        liftTermLike =
-            TermLike.mapVariables (fmap fromVariable) (fmap fromVariable)
+        liftTermLike = TermLike.mapVariables fromUnifiedVariable
 
         liftReplacement
             :: InternalVariable variable

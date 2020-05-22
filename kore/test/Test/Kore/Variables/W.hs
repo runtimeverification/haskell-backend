@@ -1,6 +1,7 @@
 module Test.Kore.Variables.W
     ( W, mkW, war'
     , showVar
+    , showUnifiedVar
     ) where
 
 import Prelude.Kore
@@ -18,6 +19,7 @@ import Debug
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
 import Pretty
 
 import Test.Kore.Variables.V
@@ -73,6 +75,9 @@ instance SubstitutionOrd W where
 
 showVar :: V -> W
 showVar (V i n) = W (show i) n
+
+showUnifiedVar :: AdjUnifiedVariable (V -> W)
+showUnifiedVar = pure showVar
 
 war' :: String -> TermLike W
 war' = mkElemVar . ElementVariable . mkW

@@ -43,13 +43,14 @@ renameFreeVariables
     :: forall m variable1 variable2
     .  Ord variable1
     => Monad m
-    => (ElementVariable variable1 -> m (ElementVariable variable2))
-    -> (SetVariable variable1 -> m (SetVariable variable2))
+    => AdjUnifiedVariable (variable1 -> m variable2)
     -> FreeVariables variable1
     -> m (UnifiedVariableMap variable1 variable2)
-renameFreeVariables trElemVar trSetVar =
+renameFreeVariables adj =
     Monad.foldM worker mempty . FreeVariables.toSet
   where
+    trElemVar = sequenceA . (<*>) (elemVar adj)
+    trSetVar = sequenceA . (<*>) (setVar adj)
     worker renaming =
         \case
             ElemVar elemVar ->

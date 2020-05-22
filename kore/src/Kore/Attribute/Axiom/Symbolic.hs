@@ -30,14 +30,10 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 {- | @Symbolic@ represents the @symbolic@ attribute for axioms.
  -}
@@ -98,11 +94,10 @@ instance From (Symbolic Variable) Attributes where
 
 mapSymbolicVariables
     :: Ord variable2
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
-    ->  Symbolic variable1 -> Symbolic variable2
-mapSymbolicVariables mapElemVar mapSetVar (Symbolic freeVariables) =
-    Symbolic (mapFreeVariables mapElemVar mapSetVar freeVariables)
+    => AdjUnifiedVariable (variable1 -> variable2)
+    -> Symbolic variable1 -> Symbolic variable2
+mapSymbolicVariables morphism (Symbolic freeVariables) =
+    Symbolic (mapFreeVariables morphism freeVariables)
 
 isSymbolic
     :: Ord variable => Symbolic variable -> UnifiedVariable variable -> Bool

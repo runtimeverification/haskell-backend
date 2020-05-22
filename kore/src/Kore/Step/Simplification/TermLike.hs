@@ -14,6 +14,9 @@ import Prelude.Kore
 import qualified Control.Lens.Combinators as Lens
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Wrapped
+    ( _Wrapped
+    )
 
 import qualified Branch as BranchT
     ( gather
@@ -146,11 +149,10 @@ import Kore.Unparser
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
     ( Target (..)
-    , mkSetNonTarget
     , targetIfEqual
-    , unTargetElement
-    , unTargetSet
+    , unTargetUnified
     )
+import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -404,7 +406,7 @@ simplifyInternal term sideCondition = do
                         (targetSideCondition sideCondition)
                         (targetSimplifiedChildren simplifiedChildren)
                 let unTargetedResults =
-                        Pattern.mapVariables unTargetElement unTargetSet
+                        Pattern.mapVariables unTargetUnified
                         <$> targetedResults
                 return unTargetedResults
               where
@@ -414,8 +416,12 @@ simplifyInternal term sideCondition = do
                     -> SideCondition (Target variable)
                 targetSideCondition =
                     SideCondition.mapVariables
-                        (targetIfEqual . ElementVariable $ boundVar)
-                        mkSetNonTarget
+                        AdjUnifiedVariable
+                        { elemVar =
+                            (ElementVariable . Lens.over _Wrapped)
+                            (targetIfEqual (ElementVariable boundVar))
+                        , setVar = SetVariable NonTarget
+                        }
                 targetSimplifiedChildren
                     :: TermLike.Exists
                         TermLike.Sort

@@ -402,7 +402,7 @@ asConcrete
     :: Ord variable
     => TermLike variable
     -> Maybe (TermLike Concrete)
-asConcrete = traverseVariables (\case { _ -> Nothing }) (\case { _ -> Nothing })
+asConcrete = traverseVariables asConcreteUnifiedVariable
 
 isConcrete :: Ord variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
@@ -420,7 +420,7 @@ fromConcrete
     :: (FreshPartialOrd variable, SortedVariable variable)
     => TermLike Concrete
     -> TermLike variable
-fromConcrete = mapVariables (\case {}) (\case {})
+fromConcrete = mapVariables fromConcreteUnifiedVariable
 
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =

@@ -126,8 +126,6 @@ import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import Pretty
     ( Pretty (..)
     )
@@ -734,13 +732,11 @@ isPredicate = Either.isRight . makePredicate
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
 mapVariables
-    :: (Ord from, FreshPartialOrd to, SortedVariable to)
-    => (ElementVariable from -> ElementVariable to)
-    -> (SetVariable from -> SetVariable to)
-    -> Predicate from
-    -> Predicate to
-mapVariables mapElemVar mapSetVar =
-    fmap (TermLike.mapVariables mapElemVar mapSetVar)
+    :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
+    -> Predicate variable1
+    -> Predicate variable2
+mapVariables mapping = fmap (TermLike.mapVariables mapping)
 
 instance HasFreeVariables (Predicate variable) variable where
     freeVariables = freeVariables . unwrapPredicate
@@ -842,7 +838,7 @@ externalizeFreshVariables
     -> Predicate Variable
 externalizeFreshVariables predicate =
     TermLike.externalizeFreshVariables
-    . TermLike.mapVariables (fmap toVariable) (fmap toVariable)
+    . TermLike.mapVariables toUnifiedVariable
     <$> predicate
 
 depth :: Predicate variable -> Int

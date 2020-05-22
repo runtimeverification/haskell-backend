@@ -64,10 +64,6 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Variables.UnifiedVariable
-    ( ElementVariable
-    , SetVariable
-    , UnifiedVariable (..)
-    )
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
  -}
@@ -177,12 +173,11 @@ See also: 'traverseVariables'
  -}
 mapVariables
     :: Ord variable2
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> Pattern variable1 -> Pattern variable2
-mapVariables mapElemVar mapSetVar =
+mapVariables morphism =
     Lens.over (field @"freeVariables")
-        (mapFreeVariables mapElemVar mapSetVar)
+        (mapFreeVariables morphism)
 
 {- | Use the provided traversal to replace the free variables in a 'Pattern'.
 
@@ -190,14 +185,13 @@ See also: 'mapVariables'
 
  -}
 traverseVariables
-    ::  forall m variable1 variable2.
-        (Monad m, Ord variable2)
-    => (ElementVariable variable1 -> m (ElementVariable variable2))
-    -> (SetVariable variable1 -> m (SetVariable variable2))
+    :: forall m variable1 variable2
+    .  (Monad m, Ord variable2)
+    => AdjUnifiedVariable (variable1 -> m variable2)
     -> Pattern variable1
     -> m (Pattern variable2)
-traverseVariables trElemVar trSetVar =
-    field @"freeVariables" (traverseFreeVariables trElemVar trSetVar)
+traverseVariables morphism =
+    field @"freeVariables" (traverseFreeVariables morphism)
 
 {- | Delete the given variable from the set of free variables.
  -}

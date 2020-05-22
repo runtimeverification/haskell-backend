@@ -21,6 +21,7 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Variable
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 import Log
 import Pretty
     ( Pretty (..)
@@ -56,8 +57,4 @@ warnDecidePredicateUnknown
 warnDecidePredicateUnknown predicates' =
     logEntry WarnDecidePredicateUnknown { predicates }
   where
-    predicates =
-        Predicate.mapVariables
-            (fmap toVariable)
-            (fmap toVariable)
-        <$> predicates'
+    predicates = Predicate.mapVariables toUnifiedVariable <$> predicates'

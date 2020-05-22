@@ -52,9 +52,6 @@ import Kore.Rewriting.UnifyingRule
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    , foldMapVariable
-    )
 
 data RewritingVariable
     = ConfigVariable !Variable
@@ -156,14 +153,6 @@ getUnifiedRuleVariable
 getUnifiedRuleVariable (ElemVar var) = ElemVar <$> traverse getRuleVariable var
 getUnifiedRuleVariable (SetVar var) = SetVar <$> traverse getRuleVariable var
 
-getElementRewritingVariable
-    :: ElementVariable RewritingVariable -> ElementVariable Variable
-getElementRewritingVariable = fmap (from @_ @Variable)
-
-getSetRewritingVariable
-    :: SetVariable RewritingVariable -> SetVariable Variable
-getSetRewritingVariable = fmap (from @_ @Variable)
-
 getPattern
     :: HasCallStack
     => Pattern RewritingVariable
@@ -174,14 +163,11 @@ getPattern pattern' =
   where
     freeVars = freeVariables pattern' & FreeVariables.toList
 
-getPatternAux
-    :: Pattern RewritingVariable
-    -> Pattern Variable
-getPatternAux pattern' =
-    Pattern.mapVariables
-        getElementRewritingVariable
-        getSetRewritingVariable
-        pattern'
+getRewritingVariable :: AdjUnifiedVariable (RewritingVariable -> Variable)
+getRewritingVariable = pure (from @RewritingVariable @Variable)
+
+getPatternAux :: Pattern RewritingVariable -> Pattern Variable
+getPatternAux = Pattern.mapVariables getRewritingVariable
 
 mkConfigVariable :: Variable -> RewritingVariable
 mkConfigVariable = ConfigVariable
@@ -245,27 +231,20 @@ mkRewritingRule
     :: UnifyingRule rule
     => rule Variable
     -> rule RewritingVariable
-mkRewritingRule = mapRuleVariables (fmap RuleVariable) (fmap RuleVariable)
+mkRewritingRule = mapRuleVariables (pure RuleVariable)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
 unRewritingRule :: UnifyingRule rule => rule RewritingVariable -> rule Variable
-unRewritingRule =
-    mapRuleVariables getElementRewritingVariable getSetRewritingVariable
+unRewritingRule = mapRuleVariables getRewritingVariable
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern Variable -> Pattern RewritingVariable
-mkRewritingPattern =
-    Pattern.mapVariables
-        (fmap ConfigVariable)
-        (fmap ConfigVariable)
+mkRewritingPattern = Pattern.mapVariables (pure ConfigVariable)
 
 getRemainderPredicate :: Predicate RewritingVariable -> Predicate Variable
 getRemainderPredicate predicate =
-    Predicate.mapVariables
-        getElementRewritingVariable
-        getSetRewritingVariable
-        predicate
+    Predicate.mapVariables getRewritingVariable predicate
     & assert (all isUnifiedConfigVariable freeVars)
   where
     freeVars = freeVariables predicate & FreeVariables.toList

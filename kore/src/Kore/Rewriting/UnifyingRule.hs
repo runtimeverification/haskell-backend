@@ -24,9 +24,7 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , InternalVariable
-    , SetVariable
+    ( InternalVariable
     , SortedVariable
     , TermLike
     )
@@ -35,8 +33,6 @@ import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import qualified Pretty
 
 type Renaming variable =
@@ -101,8 +97,7 @@ class UnifyingRule rule where
     -}
     mapRuleVariables
         :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
-        => (ElementVariable variable1 -> ElementVariable variable2)
-        -> (SetVariable variable1 -> SetVariable variable2)
+        => AdjUnifiedVariable (variable1 -> variable2)
         -> rule variable1
         -> rule variable2
 

@@ -28,7 +28,17 @@ import Kore.Unparser
 -- | Element (singleton) Kore variables
 newtype ElementVariable variable
     = ElementVariable { getElementVariable :: variable }
-    deriving (Eq, GHC.Generic, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic)
+
+instance Applicative ElementVariable where
+    pure = ElementVariable
+    {-# INLINE pure #-}
+
+    (<*>) (ElementVariable f) (ElementVariable a) = ElementVariable (f a)
+    {-# INLINE (<*>) #-}
 
 instance Hashable variable => Hashable (ElementVariable variable)
 

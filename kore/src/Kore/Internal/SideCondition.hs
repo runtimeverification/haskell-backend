@@ -45,11 +45,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.Variable
-    ( ElementVariable
-    , InternalVariable
-    , SetVariable
+    ( InternalVariable
     , Variable
-    , toVariable
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -57,6 +54,7 @@ import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
     )
+import Kore.Variables.UnifiedVariable
 import qualified Pretty
 import qualified SQL
 
@@ -193,12 +191,11 @@ toRepresentation SideCondition { representation } = representation
 
 mapVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables mapElemVar mapSetVar condition@(SideCondition _ _) =
-    fromCondition (Condition.mapVariables mapElemVar mapSetVar assumedTrue)
+mapVariables mapping condition@(SideCondition _ _) =
+    fromCondition (Condition.mapVariables mapping assumedTrue)
   where
     SideCondition { assumedTrue } = condition
 
@@ -216,7 +213,7 @@ toRepresentationCondition
     -> SideCondition.Representation
 toRepresentationCondition condition =
     from @(Condition Variable)
-    $ Condition.mapVariables (fmap toVariable) (fmap toVariable) condition
+    $ Condition.mapVariables toUnifiedVariable condition
 
 isNormalized :: forall variable. Ord variable => SideCondition variable -> Bool
 isNormalized = Conditional.isNormalized . from @_ @(Condition variable)

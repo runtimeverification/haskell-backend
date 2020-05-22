@@ -59,6 +59,9 @@ import Data.Functor.Identity
     ( Identity (..)
     )
 import qualified Data.Generics.Product as Lens.Product
+import Data.Generics.Wrapped
+    ( _Wrapped
+    )
 import Data.List
     ( foldl'
     )
@@ -348,7 +351,7 @@ instance InternalVariable variable => Unparse (TermLike variable) where
       where
         freshVarTerm =
             externalizeFreshVariables
-            $ mapVariables (fmap toVariable) (fmap toVariable) term
+            $ mapVariables toUnifiedVariable term
 
     unparse2 term =
         case Recursive.project freshVarTerm of
@@ -356,7 +359,7 @@ instance InternalVariable variable => Unparse (TermLike variable) where
       where
         freshVarTerm =
             externalizeFreshVariables
-            $ mapVariables (fmap toVariable) (fmap toVariable) term
+            $ mapVariables toUnifiedVariable term
 
 type instance Base (TermLike variable) =
     CofreeF (TermLikeF variable) (Attribute.Pattern variable)
@@ -504,10 +507,7 @@ instance
     (FreshPartialOrd variable, SortedVariable variable)
     => From (TermLike Concrete) (TermLike variable)
   where
-    from =
-        mapVariables
-            (from @(ElementVariable Concrete))
-            (from @(SetVariable     Concrete))
+    from = mapVariables fromConcreteUnifiedVariable
     {-# INLINE from #-}
 
 -- | The type of internal domain values.
@@ -573,15 +573,13 @@ not injective!
 
 -}
 mapVariablesF
-    :: (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    :: AdjUnifiedVariable (variable1 -> variable2)
     -> TermLikeF variable1 child
     -> TermLikeF variable2 child
-mapVariablesF mapElemVar mapSetVar =
-    runIdentity . traverseVariablesF trElemVar trSetVar
+mapVariablesF adj =
+    runIdentity . traverseVariablesF adj'
   where
-    trElemVar = Identity . mapElemVar
-    trSetVar = Identity . mapSetVar
+    adj' = (\f x -> Identity (f x)) <$> adj
 
 {- | Use the provided traversal to replace all variables in a 'TermLikeF' head.
 
@@ -591,11 +589,10 @@ traversal is not injective!
 -}
 traverseVariablesF
     :: Applicative f
-    => (ElementVariable variable1 -> f (ElementVariable variable2))
-    -> (SetVariable variable1 -> f (SetVariable variable2))
+    => AdjUnifiedVariable (variable1 -> f variable2)
     ->    TermLikeF variable1 child
     -> f (TermLikeF variable2 child)
-traverseVariablesF trElemVar trSetVar =
+traverseVariablesF adj =
     \case
         -- Non-trivial cases
         ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
@@ -629,8 +626,10 @@ traverseVariablesF trElemVar trSetVar =
         SignednessF signedness -> pure (SignednessF signedness)
         InjF inj -> pure (InjF inj)
   where
+    trElemVar = sequenceA . (<*>) (elemVar adj)
+    trSetVar = sequenceA . (<*>) (setVar adj)
     traverseConstVariable (Const variable) =
-        Const <$> traverseUnifiedVariable trElemVar trSetVar variable
+        Const <$> traverseUnifiedVariable adj variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
         <$> trElemVar existsVariable
@@ -662,21 +661,21 @@ See also: 'traverseVariables'
 mapVariables
     :: forall variable1 variable2
     .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> TermLike variable1
     -> TermLike variable2
-mapVariables mapElemVar mapSetVar termLike =
+mapVariables adj termLike =
     Recursive.unfold worker (Env.env freeVariables0 termLike)
   where
-    trElemVar = Identity . mapElemVar
-    trSetVar = Identity . mapSetVar
+    adj' = (\f x -> Identity (f x)) <$> adj
+    trElemVar
+        :: ElementVariable variable1
+        -> Identity (ElementVariable variable2)
+    trElemVar = sequenceA . (<*>) (elemVar adj')
+    trSetVar = sequenceA . (<*>) (setVar adj')
 
     Identity freeVariables0 =
-        renameFreeVariables
-            trElemVar
-            trSetVar
-            (freeVariables termLike)
+        renameFreeVariables adj' (freeVariables termLike)
 
     mapExists avoiding =
         sequenceAdjunct $ existsBinder $ renameElementBinder trElemVar avoiding
@@ -693,8 +692,14 @@ mapVariables mapElemVar mapSetVar termLike =
 
     renameAttrs renaming =
         Attribute.mapVariables
+        AdjUnifiedVariable
+        { elemVar =
+            (ElementVariable . Lens.over _Wrapped)
             (askElementVariable' . Env.env renaming)
+        , setVar =
+            (SetVariable . Lens.over _Wrapped)
             (askSetVariable' . Env.env renaming)
+        }
 
     worker
         ::  Renaming variable1 variable2 (TermLike variable1)
@@ -721,8 +726,7 @@ mapVariables mapElemVar mapSetVar termLike =
                         -- mapVariablesF will not actually call the mapping
                         -- function because all the cases with variables are
                         -- handled above.
-                        mapVariablesF mapElemVar mapSetVar
-                        $ Env.env renaming <$> termLikeF
+                        mapVariablesF adj $ Env.env renaming <$> termLikeF
         in attrs' :< termLikeF'
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
@@ -739,14 +743,15 @@ traverseVariables
     :: forall variable1 variable2 m
     .  (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
     => Monad m
-    => (ElementVariable variable1 -> m (ElementVariable variable2))
-    -> (SetVariable variable1 -> m (SetVariable variable2))
+    => AdjUnifiedVariable (variable1 -> m variable2)
     -> TermLike variable1
     -> m (TermLike variable2)
-traverseVariables trElemVar trSetVar termLike =
-    renameFreeVariables trElemVar trSetVar (freeVariables termLike)
+traverseVariables adj termLike =
+    renameFreeVariables adj (freeVariables termLike)
     >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
+    trElemVar = sequenceA . (<*>) (elemVar adj)
+    trSetVar = sequenceA . (<*>) (setVar adj)
     traverseExists avoiding =
         existsBinder (renameElementBinder trElemVar avoiding)
     traverseForall avoiding =
@@ -756,17 +761,19 @@ traverseVariables trElemVar trSetVar termLike =
     traverseNu avoiding =
         nuBinder (renameSetBinder trSetVar avoiding)
 
+    askVariable =
+        AdjUnifiedVariable
+        { elemVar = ElementVariable (_Wrapped askElementVariable)
+        , setVar = SetVariable (_Wrapped askSetVariable)
+        }
+
     worker
         ::  Base
                 (TermLike variable1)
                 (RenamingT variable1 variable2 m (TermLike variable2))
         ->  RenamingT variable1 variable2 m (TermLike variable2)
     worker (attrs :< termLikeF) = do
-        attrs' <-
-            Attribute.traverseVariables
-                askElementVariable
-                askSetVariable
-                attrs
+        attrs' <- Attribute.traverseVariables askVariable attrs
         let avoiding = FreeVariables.toSet $ freeVariables attrs'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
@@ -780,7 +787,7 @@ traverseVariables trElemVar trSetVar termLike =
                 sequence termLikeF >>=
                 -- traverseVariablesF will not actually call the traversals
                 -- because all the cases with variables are handled above.
-                traverseVariablesF askElementVariable askSetVariable
+                traverseVariablesF askVariable
         (pure . Recursive.embed) (attrs' :< termLikeF')
 
 {- | Transform a 'sequence'-like function into its dual with an 'Adjunction'.
@@ -952,6 +959,12 @@ externalizeFreshVariables termLike =
         $ fromMaybe setVariable
         . lookupRenamedSetVariable setVariable
 
+    lookupVariable =
+        AdjUnifiedVariable
+        { elemVar = ElementVariable (_Wrapped lookupElementVariable)
+        , setVar = SetVariable (_Wrapped lookupSetVariable)
+        }
+
     {- | Externalize a variable safely.
 
     The variable's counter is incremented until its externalized form is unique
@@ -1006,11 +1019,7 @@ externalizeFreshVariables termLike =
                 (UnifiedVariableMap Variable Variable)
                 (TermLike Variable)
     externalizeFreshVariablesWorker (attrs :< patt) = do
-        attrs' <-
-            Attribute.traverseVariables
-                lookupElementVariable
-                lookupSetVariable
-                attrs
+        attrs' <- Attribute.traverseVariables lookupVariable attrs
         let freeVariables' = Attribute.freeVariables attrs'
         patt' <-
             case patt of
@@ -1066,12 +1075,7 @@ externalizeFreshVariables termLike =
                                 , nuChild = nuChild'
                                 }
                     return (NuF nu')
-                _ ->
-                    traverseVariablesF
-                        lookupElementVariable
-                        lookupSetVariable
-                        patt
-                    >>= sequence
+                _ -> traverseVariablesF lookupVariable patt >>= sequence
         (return . Recursive.embed) (attrs' :< patt')
 
 updateCallStack

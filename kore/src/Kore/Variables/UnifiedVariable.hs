@@ -15,7 +15,13 @@ module Kore.Variables.UnifiedVariable
     , unifiedVariableSort
     , refreshElementVariable
     , refreshSetVariable
+    -- * AdjUnifiedVariable
     , MapVariables
+    , AdjUnifiedVariable (..)
+    , asConcreteUnifiedVariable
+    , fromConcreteUnifiedVariable
+    , toUnifiedVariable
+    , fromUnifiedVariable
     , mapUnifiedVariable
     , traverseUnifiedVariable
     -- * UnifiedVariableMap
@@ -23,10 +29,15 @@ module Kore.Variables.UnifiedVariable
     , UnifiedVariableMap
     , renameElementVariable, renameSetVariable
     , lookupRenamedElementVariable, lookupRenamedSetVariable
+    -- * Re-exports
+    , Kleisli (..)
     ) where
 
 import Prelude.Kore
 
+import Control.Arrow
+    ( Kleisli (..)
+    )
 import Control.DeepSeq
     ( NFData
     )
@@ -207,28 +218,72 @@ refreshSetVariable avoiding =
     fmap expectSetVar . refreshVariable avoiding . SetVar
 
 type MapVariables variable1 variable2 term1 term2 =
-        (ElementVariable variable1 -> ElementVariable variable2)
-    ->  (SetVariable     variable1 -> SetVariable     variable2)
-    ->  term1 -> term2
+    AdjUnifiedVariable (variable1 -> variable2) -> term1 -> term2
+
+{- | 'AdjUnifiedVariable' is the right adjoint of 'UnifiedVariable'.
+
+Where 'UnifiedVariable' is a sum type, 'AdjUnifiedVariable' is a product type
+with one field for each constructor. A 'UnifiedVariable' can be used to select
+one field from the 'AdjUnifiedVariable'.
+
+In practice, 'AdjUnifiedVariable' are used to represent morphisms that transform
+'ElementVariable' and 'SetVariable' separately while preserving each kind of
+variable; that is, the type @'AdjUnifiedVariable' (a -> b)@ is a restriction of
+the type @'UnifiedVariable' a -> 'UnifiedVariable' b@
+
+ -}
+data AdjUnifiedVariable a =
+    AdjUnifiedVariable
+    { elemVar :: ElementVariable a
+    , setVar  :: SetVariable     a
+    }
+    deriving (Functor)
+
+instance Applicative AdjUnifiedVariable where
+    pure a = AdjUnifiedVariable (ElementVariable a) (SetVariable a)
+    {-# INLINE pure #-}
+
+    (<*>) fs as =
+        AdjUnifiedVariable
+        { elemVar = elemVar fs <*> elemVar as
+        , setVar = setVar fs <*> setVar as
+        }
+    {-# INLINE (<*>) #-}
+
+asConcreteUnifiedVariable :: AdjUnifiedVariable (variable -> Maybe Concrete)
+asConcreteUnifiedVariable = pure (const Nothing)
+
+fromConcreteUnifiedVariable :: AdjUnifiedVariable (Concrete -> variable)
+fromConcreteUnifiedVariable = pure (\case {})
 
 mapUnifiedVariable
-    ::  MapVariables variable1 variable2
-            (UnifiedVariable variable1)
-            (UnifiedVariable variable2)
-mapUnifiedVariable mapElemVar mapSetVar =
+    :: AdjUnifiedVariable (variable1 -> variable2)
+    -> UnifiedVariable variable1 -> UnifiedVariable variable2
+mapUnifiedVariable AdjUnifiedVariable { elemVar, setVar } =
     \case
-        ElemVar elemVar -> ElemVar (mapElemVar elemVar)
-        SetVar  setVar  -> SetVar (mapSetVar setVar)
+        ElemVar elementVariable -> ElemVar $ elemVar <*> elementVariable
+        SetVar setVariable -> SetVar $ setVar <*> setVariable
 
 traverseUnifiedVariable
-    :: Functor f
-    => (ElementVariable variable1 -> f (ElementVariable variable2))
-    -> (SetVariable variable1 -> f (SetVariable variable2))
+    :: Applicative f
+    => AdjUnifiedVariable (variable1 -> f variable2)
     -> UnifiedVariable variable1 -> f (UnifiedVariable variable2)
-traverseUnifiedVariable traverseElemVar traverseSetVar =
+traverseUnifiedVariable AdjUnifiedVariable { elemVar, setVar } =
     \case
-        ElemVar elemVar -> ElemVar <$> traverseElemVar elemVar
-        SetVar  setVar  -> SetVar <$> traverseSetVar setVar
+        ElemVar elementVariable ->
+            ElemVar <$> sequenceA (elemVar <*> elementVariable)
+        SetVar setVariable ->
+            SetVar <$> sequenceA (setVar <*> setVariable)
+
+toUnifiedVariable
+    :: VariableName variable
+    => AdjUnifiedVariable (variable -> Variable)
+toUnifiedVariable = pure toVariable
+
+fromUnifiedVariable
+    :: VariableName variable
+    => AdjUnifiedVariable (Variable -> variable)
+fromUnifiedVariable = pure fromVariable
 
 type VariableMap meta variable1 variable2 =
     Map (meta variable1) (meta variable2)

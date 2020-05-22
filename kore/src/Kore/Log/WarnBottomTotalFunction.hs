@@ -21,6 +21,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Unparser
     ( unparse
     )
+import Kore.Variables.UnifiedVariable
 import Pretty
     ( Pretty
     )
@@ -59,5 +60,5 @@ warnBottomTotalFunction
     => InternalVariable variable
     => TermLike variable
     -> logger ()
-warnBottomTotalFunction (mapVariables (fmap toVariable) (fmap toVariable) -> term) =
+warnBottomTotalFunction (mapVariables toUnifiedVariable -> term) =
     logEntry WarnBottomTotalFunction { term }

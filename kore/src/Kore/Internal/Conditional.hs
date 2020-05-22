@@ -436,15 +436,13 @@ mapVariables
             (Conditional variableTo   termTo)
 mapVariables
     mapTermVariables
-    mapElemVar
-    mapSetVar
+    mapping
     Conditional { term, predicate, substitution }
   =
     Conditional
-        { term = mapTermVariables mapElemVar mapSetVar term
-        , predicate = Predicate.mapVariables mapElemVar mapSetVar predicate
-        , substitution =
-            Substitution.mapVariables mapElemVar mapSetVar substitution
+        { term = mapTermVariables mapping term
+        , predicate = Predicate.mapVariables mapping predicate
+        , substitution = Substitution.mapVariables mapping substitution
         }
 
 splitTerm :: Conditional variable term -> (term, Conditional variable ())

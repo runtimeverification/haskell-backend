@@ -81,9 +81,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-    ( ElementVariable (..)
-    , InternalVariable
-    , SetVariable (..)
+    ( InternalVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -102,7 +100,6 @@ import Kore.Syntax.Id
     )
 import Kore.Syntax.Variable
     ( Variable
-    , toVariable
     )
 import Kore.TopBottom
 import Kore.Unparser
@@ -113,9 +110,6 @@ import Kore.Variables.Target
     )
 import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    , mapUnifiedVariable
-    )
 import Log
     ( Entry (..)
     , MonadLog
@@ -228,10 +222,10 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         _      -> return ()
     let predicate' =
             Predicate.substitute substitution predicate
-            & Predicate.mapVariables Target.unTargetElement Target.unTargetSet
+            & Predicate.mapVariables Target.unTargetUnified
         equation' =
             Equation.substitute substitution equation
-            & Equation.mapVariables Target.unTargetElement Target.unTargetSet
+            & Equation.mapVariables Target.unTargetUnified
     return (equation', predicate')
   where
     equationVariables = freeVariables equation & FreeVariables.toList
@@ -308,8 +302,7 @@ checkRequires sideCondition predicate requires =
     -- TODO (thomas.tuegel): Do not unwrap sideCondition.
     sideCondition' =
         SideCondition.mapVariables
-            Target.unTargetElement
-            Target.unTargetSet
+            Target.unTargetUnified
             sideCondition
 
     assertBottom orCondition
@@ -346,7 +339,7 @@ targetEquationVariables
 targetEquationVariables sideCondition initial =
     snd
     . Equation.refreshVariables avoiding
-    . Equation.mapVariables Target.mkElementTarget Target.mkSetTarget
+    . Equation.mapVariables Target.mkUnifiedTarget
   where
     avoiding = freeVariables sideCondition <> freeVariables initial
 
@@ -363,36 +356,23 @@ data AttemptEquationError variable
 
 mapAttemptEquationErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> AttemptEquationError variable1
     -> AttemptEquationError variable2
-mapAttemptEquationErrorVariables mapElemVar mapSetVar =
+mapAttemptEquationErrorVariables adj =
     \case
         WhileMatch matchError ->
-            WhileMatch
-            $ mapMatchErrorVariables
-                mapElemTargetVar mapSetTargetVar
-                matchError
+            WhileMatch $ mapMatchErrorVariables adjTarget matchError
         WhileApplyMatchResult applyMatchResultErrors ->
             WhileApplyMatchResult
             $ mapApplyMatchResultErrorsVariables
-                mapElemTargetVar mapSetTargetVar
+                adjTarget
                 applyMatchResultErrors
         WhileCheckRequires checkRequiresError ->
             WhileCheckRequires
-            $ mapCheckRequiresErrorVariables
-                mapElemVar mapSetVar
-                checkRequiresError
+            $ mapCheckRequiresErrorVariables adj checkRequiresError
   where
-    mapElemTargetVar =
-        ElementVariable
-        . fmap (getElementVariable . mapElemVar . ElementVariable)
-        . getElementVariable
-    mapSetTargetVar =
-        SetVariable
-        . fmap (getSetVariable . mapSetVar . SetVariable)
-        . getSetVariable
+    adjTarget = fmap <$> adj
 
 whileMatch
     :: Functor monad
@@ -454,16 +434,14 @@ instance InternalVariable variable => Pretty (MatchError variable) where
 
 mapMatchErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> MatchError variable1
     -> MatchError variable2
-mapMatchErrorVariables mapElemVar mapSetVar =
+mapMatchErrorVariables mapping =
     \MatchError { matchTerm, matchEquation } ->
         MatchError
-        { matchTerm = TermLike.mapVariables mapElemVar mapSetVar matchTerm
-        , matchEquation =
-            Equation.mapVariables mapElemVar mapSetVar matchEquation
+        { matchTerm = TermLike.mapVariables mapping matchTerm
+        , matchEquation = Equation.mapVariables mapping matchEquation
         }
 
 {- | Errors that can occur during 'applyMatchResult'.
@@ -503,17 +481,14 @@ instance
 
 mapApplyMatchResultErrorsVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> ApplyMatchResultErrors variable1
     -> ApplyMatchResultErrors variable2
-mapApplyMatchResultErrorsVariables mapElemVar mapSetVar applyMatchResultErrors =
+mapApplyMatchResultErrorsVariables mapping applyMatchResultErrors =
     ApplyMatchResultErrors
-    { matchResult = mapMatchResultVariables mapElemVar mapSetVar matchResult
+    { matchResult = mapMatchResultVariables mapping matchResult
     , applyMatchErrors =
-        fmap
-            (mapApplyMatchResultErrorVariables mapElemVar mapSetVar)
-            applyMatchErrors
+        mapApplyMatchResultErrorVariables mapping <$> applyMatchErrors
     }
   where
     ApplyMatchResultErrors { matchResult, applyMatchErrors } =
@@ -521,18 +496,17 @@ mapApplyMatchResultErrorsVariables mapElemVar mapSetVar applyMatchResultErrors =
 
 mapMatchResultVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> MatchResult variable1
     -> MatchResult variable2
-mapMatchResultVariables mapElemVar mapSetVar (predicate, substitution) =
-    ( Predicate.mapVariables mapElemVar mapSetVar predicate
+mapMatchResultVariables mapping (predicate, substitution) =
+    ( Predicate.mapVariables mapping predicate
     , mapSubstitutionVariables substitution
     )
   where
     mapSubstitutionVariables =
-       Map.mapKeys (mapUnifiedVariable mapElemVar mapSetVar)
-       . Map.map (TermLike.mapVariables mapElemVar mapSetVar)
+       Map.mapKeys (mapUnifiedVariable mapping)
+       . Map.map (TermLike.mapVariables mapping)
 
 {- | @ApplyMatchResultError@ represents a reason the match could not be applied.
  -}
@@ -579,11 +553,10 @@ instance
 
 mapApplyMatchResultErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> ApplyMatchResultError variable1
     -> ApplyMatchResultError variable2
-mapApplyMatchResultErrorVariables mapElemVar mapSetVar applyMatchResultError =
+mapApplyMatchResultErrorVariables mapping applyMatchResultError =
     case applyMatchResultError of
         NotConcrete variable termLike ->
             NotConcrete
@@ -595,8 +568,8 @@ mapApplyMatchResultErrorVariables mapElemVar mapSetVar applyMatchResultError =
                 (mapTermLikeVariables termLike)
         NotMatched variable -> NotMatched (mapUnifiedVariable' variable)
   where
-    mapUnifiedVariable' = mapUnifiedVariable mapElemVar mapSetVar
-    mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
+    mapUnifiedVariable' = mapUnifiedVariable mapping
+    mapTermLikeVariables = TermLike.mapVariables mapping
 
 {- | Errors that can occur during 'checkRequires'.
  -}
@@ -627,17 +600,16 @@ instance InternalVariable variable => Pretty (CheckRequiresError variable) where
 
 mapCheckRequiresErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> CheckRequiresError variable1
     -> CheckRequiresError variable2
-mapCheckRequiresErrorVariables mapElemVar mapSetVar checkRequiresError =
+mapCheckRequiresErrorVariables mapping checkRequiresError =
     CheckRequiresError
     { matchPredicate = mapPredicateVariables matchPredicate
     , equationRequires = mapPredicateVariables equationRequires
     }
   where
-    mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
+    mapPredicateVariables = Predicate.mapVariables mapping
     CheckRequiresError { matchPredicate, equationRequires } = checkRequiresError
 
 -- * Logging
@@ -693,26 +665,18 @@ debugAttemptEquationResult
     -> log ()
 debugAttemptEquationResult equation result =
     logEntry $ DebugAttemptEquationResult
-        (Equation.mapVariables toElementVariable toSetVariable equation)
-        (mapAttemptEquationResultVariables
-            toElementVariable
-            toSetVariable
-            result
-        )
-  where
-    toElementVariable = fmap toVariable
-    toSetVariable = fmap toVariable
+        (Equation.mapVariables toUnifiedVariable equation)
+        (mapAttemptEquationResultVariables toUnifiedVariable result)
 
 mapAttemptEquationResultVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable     variable1 -> SetVariable     variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> AttemptEquationResult variable1
     -> AttemptEquationResult variable2
-mapAttemptEquationResultVariables mapElemVar mapSetVar =
+mapAttemptEquationResultVariables mapping =
     Bifunctor.bimap
-        (mapAttemptEquationErrorVariables mapElemVar mapSetVar)
-        (Pattern.mapVariables mapElemVar mapSetVar)
+        (mapAttemptEquationErrorVariables mapping)
+        (Pattern.mapVariables mapping)
 
 whileDebugAttemptEquation
     :: MonadLog log
@@ -724,10 +688,8 @@ whileDebugAttemptEquation
 whileDebugAttemptEquation termLike equation =
     logWhile (DebugAttemptEquation equation' termLike')
   where
-    toElementVariable = fmap toVariable
-    toSetVariable = fmap toVariable
-    termLike' = TermLike.mapVariables toElementVariable toSetVariable termLike
-    equation' = Equation.mapVariables toElementVariable toSetVariable equation
+    termLike' = TermLike.mapVariables toUnifiedVariable termLike
+    equation' = Equation.mapVariables toUnifiedVariable equation
 
 {- | Log when an 'Equation' is actually applied.
  -}
@@ -783,7 +745,5 @@ debugApplyEquation
 debugApplyEquation equation result =
     logEntry $ DebugApplyEquation equation' result'
   where
-    toElementVariable = fmap toVariable
-    toSetVariable = fmap toVariable
-    equation' = Equation.mapVariables toElementVariable toSetVariable equation
-    result' = Pattern.mapVariables toElementVariable toSetVariable result
+    equation' = Equation.mapVariables toUnifiedVariable equation
+    result' = Pattern.mapVariables toUnifiedVariable result

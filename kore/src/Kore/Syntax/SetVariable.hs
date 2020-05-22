@@ -28,7 +28,17 @@ import Kore.Unparser
 -- | Applicative-Kore set variables
 newtype SetVariable variable
     = SetVariable { getSetVariable :: variable }
-    deriving (Eq, GHC.Generic, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic)
+
+instance Applicative SetVariable where
+    pure = SetVariable
+    {-# INLINE pure #-}
+
+    (<*>) (SetVariable f) (SetVariable a) = SetVariable (f a)
+    {-# INLINE (<*>) #-}
 
 instance Hashable variable => Hashable (SetVariable variable)
 

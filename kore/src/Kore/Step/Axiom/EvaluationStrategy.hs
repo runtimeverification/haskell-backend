@@ -54,6 +54,7 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Variables.Target as Target
+import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
@@ -75,20 +76,11 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let equations' =
-                Equation.mapVariables
-                    (fmap $ from @Variable)
-                    (fmap $ from @Variable)
-                <$> equations
-            term' =
-                TermLike.mapVariables
-                    Target.mkElementNonTarget
-                    Target.mkSetNonTarget
-                    term
+        let equations' = Equation.mapVariables fromUnifiedVariable <$> equations
+            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
             condition' =
                 SideCondition.mapVariables
-                    Target.mkElementNonTarget
-                    Target.mkSetNonTarget
+                    Target.mkUnifiedNonTarget
                     condition
         let -- Attempt an equation, pairing it with its result, if applicable.
             attemptEquation equation =
@@ -122,20 +114,11 @@ simplificationEvaluation
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let equation' =
-                Equation.mapVariables
-                    (fmap $ from @Variable)
-                    (fmap $ from @Variable)
-                    equation
-            term' =
-                TermLike.mapVariables
-                    Target.mkElementNonTarget
-                    Target.mkSetNonTarget
-                    term
+        let equation' = Equation.mapVariables fromUnifiedVariable equation
+            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
             condition' =
                 SideCondition.mapVariables
-                    Target.mkElementNonTarget
-                    Target.mkSetNonTarget
+                    Target.mkUnifiedNonTarget
                     condition
         result <- Equation.attemptEquation condition' term' equation'
         let apply = Equation.applyEquation condition equation'

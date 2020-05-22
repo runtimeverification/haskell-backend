@@ -35,7 +35,6 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Variables.UnifiedVariable
 
 newtype FreeVariables variable =
@@ -115,23 +114,21 @@ freeVariable variable = FreeVariables (Set.singleton variable)
 
 mapFreeVariables
     :: Ord variable2
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    => AdjUnifiedVariable (variable1 -> variable2)
     -> FreeVariables variable1 -> FreeVariables variable2
-mapFreeVariables mapElemVar mapSetVar (FreeVariables freeVars) =
-    FreeVariables (Set.map (mapUnifiedVariable mapElemVar mapSetVar) freeVars)
+mapFreeVariables morphism (FreeVariables freeVars) =
+    FreeVariables (Set.map (mapUnifiedVariable morphism) freeVars)
 {-# INLINE mapFreeVariables #-}
 
 traverseFreeVariables
     :: (Applicative f, Ord variable2)
-    => (ElementVariable variable1 -> f (ElementVariable variable2))
-    -> (SetVariable variable1 -> f (SetVariable variable2))
+    => AdjUnifiedVariable (variable1 -> f variable2)
     -> FreeVariables variable1 -> f (FreeVariables variable2)
-traverseFreeVariables traverseElemVar traverseSetVar (FreeVariables freeVars) =
+traverseFreeVariables morphism (FreeVariables freeVars) =
     FreeVariables . Set.fromList
     <$> Traversable.traverse traversal (Set.toList freeVars)
   where
-    traversal = traverseUnifiedVariable traverseElemVar traverseSetVar
+    traversal = traverseUnifiedVariable morphism
 {-# INLINE traverseFreeVariables #-}
 
 {- | Extracts the list of free element variables

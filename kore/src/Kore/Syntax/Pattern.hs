@@ -51,18 +51,17 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.PatternF
     ( Const (..)
     , PatternF (..)
     )
 import qualified Kore.Syntax.PatternF as PatternF
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 import qualified Pretty
 import qualified SQL
 
@@ -287,16 +286,15 @@ See also: 'mapVariables'
 
  -}
 traverseVariables
-    ::  forall m variable1 variable2 annotation.
-        Monad m
-    => (ElementVariable variable1 -> m (ElementVariable variable2))
-    -> (SetVariable variable1 -> m (SetVariable variable2))
+    :: forall m variable1 variable2 annotation
+    .  Monad m
+    => AdjUnifiedVariable (variable1 -> m variable2)
     -> Pattern variable1 annotation
     -> m (Pattern variable2 annotation)
-traverseVariables trElemVar trSetVar =
+traverseVariables morphism =
     Recursive.fold traverseVariablesWorker
   where
-    traverseF = PatternF.traverseVariables trElemVar trSetVar
+    traverseF = PatternF.traverseVariables morphism
 
     traverseVariablesWorker
         :: Base
@@ -318,14 +316,13 @@ See also: 'traverseVariables'
 
  -}
 mapVariables
-    :: (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
+    :: AdjUnifiedVariable (variable1 -> variable2)
     -> Pattern variable1 annotation
     -> Pattern variable2 annotation
-mapVariables mapElemVar mapSetVar =
+mapVariables morphism =
     Recursive.ana (mapVariablesWorker . Recursive.project)
   where
-    mapF = PatternF.mapVariables mapElemVar mapSetVar
+    mapF = PatternF.mapVariables morphism
     mapVariablesWorker (a :< pat) = a :< mapF pat
 
 {- | Construct a 'ConcretePattern' from a 'Pattern'.
@@ -342,8 +339,7 @@ deciding if the result is @Nothing@ or @Just _@.
 asConcretePattern
     :: Pattern variable annotation
     -> Maybe (Pattern Concrete annotation)
-asConcretePattern =
-    traverseVariables (\case { _ -> Nothing }) (\case { _ -> Nothing })
+asConcretePattern = traverseVariables asConcreteUnifiedVariable
 
 isConcrete :: Pattern variable annotation -> Bool
 isConcrete = isJust . asConcretePattern
@@ -360,4 +356,4 @@ composes with other tree transformations without allocating intermediates.
 fromConcretePattern
     :: Pattern Concrete annotation
     -> Pattern variable annotation
-fromConcretePattern = mapVariables (\case {}) (\case {})
+fromConcretePattern = mapVariables fromConcreteUnifiedVariable
