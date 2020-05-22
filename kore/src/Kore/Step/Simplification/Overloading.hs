@@ -257,11 +257,11 @@ unifyOverloadingCommonOverload
     Monad.guard (isOverloaded firstHead && isOverloaded secondHead)
     case unifyOverloadWithinBound injProto firstHead secondHead injTo of
         Nothing -> notUnifiableOverloads
-        Just InjectedOverload { overload, injection } ->
+        Just InjectedOverload { overload, injectionHead } ->
             let first' = resolveOverloading injProto overload firstChildren
                 second' = resolveOverloading injProto overload secondChildren
-                inject = maybeMkInj injection
-            in return $ Pair (inject first') (inject second')
+                mkInj' = maybeMkInj injectionHead
+            in return $ Pair (mkInj' first') (mkInj' second')
 
 {- Handles the case
     overloadingTerm@(overloadingHead(overloadingChildren))
@@ -426,15 +426,15 @@ computeNarrowing
             Condition.assign (ElemVar overloadedVar) narrowingTerm
         , narrowingVars =
             Attribute.getFreeElementVariables $ freeVariables narrowingTerm
-        , overloadPair = Pair (inject first') (inject second')
+        , overloadPair = Pair (mkInj' first') (mkInj' second')
         }
   | otherwise = error "This should not happen"
   where
-    InjectedOverload { overload, injection } = overloaded
+    InjectedOverload { overload, injectionHead } = overloaded
     allVars = Attribute.freeVariable (ElemVar overloadedVar) <> freeVars
     overloadedTerm = freshSymbolInstance allVars overload "x"
-    inject = maybeMkInj injection'
-    narrowingTerm = maybeMkInj injection overloadedTerm
+    mkInj' = maybeMkInj injection'
+    narrowingTerm = maybeMkInj injectionHead overloadedTerm
 
 mkInj
     :: InternalVariable variable

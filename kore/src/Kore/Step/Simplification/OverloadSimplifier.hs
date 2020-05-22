@@ -31,7 +31,7 @@ import Kore.Step.Simplification.InjSimplifier
 -- of the symbol; the injection can miss (@Nothing@) if not needed.
 data InjectedOverload = InjectedOverload
     { overload :: !Symbol
-    , injection :: !(Maybe (Inj ()))
+    , injectionHead :: !(Maybe (Inj ()))
     }
 
 -- | Two overload symbols and injections.
