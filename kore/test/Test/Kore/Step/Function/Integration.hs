@@ -2,6 +2,7 @@
 
 module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
+    , test_functionIntegrationNEW
     , test_Nat
     , test_short_circuit
     , test_List
@@ -110,6 +111,8 @@ import qualified Test.Kore.Builtin.Map as Map
 import Test.Kore.Equation.Application
     ( axiom
     , axiom_
+    , functionAxiomNEW
+    , functionAxiom_NEW
     )
 import Test.Kore.Step.Axiom.Matcher
     ( doesn'tMatch
@@ -593,6 +596,346 @@ test_functionIntegration =
                 )
                 (Mock.f (mkElemVar Mock.x))
         assertEqual "" expect actual-}
+    ]
+  where
+    evaluate
+        :: BuiltinAndAxiomSimplifierMap
+        -> TermLike Variable
+        -> IO (Pattern Variable)
+    evaluate functionIdToEvaluator patt =
+        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
+        $ TermLike.simplify patt SideCondition.top
+
+test_functionIntegrationNEW :: [TestTree]
+test_functionIntegrationNEW =
+    [ testCase "Simple evaluation" $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (axiomEvaluatorNEW
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.g (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Simple evaluation (builtin branch)" $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (builtinEvaluation $ axiomEvaluatorNEW
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.g (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
+      $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (simplifierWithFallback
+                        (builtinEvaluation $ axiomEvaluatorNEW
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (Mock.g (mkElemVar Mock.x))
+                        )
+                        ( axiomEvaluatorNEW
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (mkElemVar Mock.x)
+                        )
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
+      $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (simplifierWithFallback
+                        (builtinEvaluation $ BuiltinAndAxiomSimplifier $ \_ _ ->
+                            notApplicableAxiomEvaluator
+                        )
+                        ( axiomEvaluatorNEW
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (Mock.g (mkElemVar Mock.x))
+                        )
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Evaluates inside functions" $ do
+        let expect =
+                Conditional
+                    { term = Mock.functional11 (Mock.functional11 Mock.c)
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    ( axiomEvaluatorNEW
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.functional11 (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10 (Mock.functional10 Mock.c))
+        assertEqual "" expect actual
+
+    , testCase "Evaluates 'or'" $ do
+        let expect =
+                Conditional
+                    { term =
+                        mkOr
+                            (Mock.functional11 (Mock.functional11 Mock.c))
+                            (Mock.functional11 (Mock.functional11 Mock.d))
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    ( axiomEvaluatorNEW
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.functional11 (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10
+                    (mkOr
+                        (Mock.functional10 Mock.c)
+                        (Mock.functional10 Mock.d)
+                    )
+                )
+        assertEqual "" expect actual
+
+    , testCase "Evaluates on multiple branches" $ do
+        let expect =
+                Conditional
+                    { term =
+                        Mock.functional11
+                            (Mock.functional20
+                                (Mock.functional11 Mock.c)
+                                (Mock.functional11 Mock.c)
+                            )
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    ( axiomEvaluatorNEW
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.functional11 (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10
+                    (Mock.functional20
+                        (Mock.functional10 Mock.c)
+                        (Mock.functional10 Mock.c)
+                    )
+                )
+        assertEqual "" expect actual
+
+    , testCase "Merges conditions" $ do
+        let expect =
+                Conditional
+                    { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate Mock.testSort (Mock.f Mock.a))
+                            (makeCeilPredicate_ (Mock.g Mock.a))
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.cfId
+                        , appliedMockEvaluator Conditional
+                            { term = Mock.e
+                            , predicate = makeCeilPredicate_ (Mock.g Mock.a)
+                            , substitution = mempty
+                            }
+                        )
+                    ,   ( AxiomIdentifier.Application Mock.cgId
+                        , appliedMockEvaluator Conditional
+                            { term = Mock.e
+                            , predicate = makeCeilPredicate_ (Mock.f Mock.a)
+                            , substitution = mempty
+                            }
+                        )
+                    ,   ( AxiomIdentifier.Application Mock.functional10Id
+                        , axiomEvaluatorNEW
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (Mock.functional11 (mkElemVar Mock.x))
+                        )
+                    ]
+                )
+                (Mock.functional10 (Mock.functional20 Mock.cf Mock.cg))
+        assertEqual "" expect actual
+
+    , testCase "Reevaluates user-defined function results." $ do
+        let expect =
+                Conditional
+                    { term = Mock.f Mock.e
+                    , predicate = makeEqualsPredicate Mock.testSort
+                        (Mock.f Mock.e) Mock.e
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.cfId
+                        , axiomEvaluatorNEW Mock.cfSymbol [] Mock.cg
+                        )
+                    ,   ( AxiomIdentifier.Application Mock.cgId
+                        , appliedMockEvaluator Conditional
+                            { term = Mock.e
+                            , predicate =
+                                makeEqualsPredicate_ (Mock.f Mock.e) Mock.e
+                            , substitution = mempty
+                            }
+                        )
+                    ]
+                )
+                (Mock.f Mock.cf)
+        assertEqual "" expect actual
+
+    , testCase "Evaluates only simplifications." $ do
+        let expect =
+                Conditional
+                    { term = Mock.b
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.fId
+                        , simplifierWithFallback
+                            (appliedMockEvaluator (Pattern.fromTermLike Mock.b))
+                            (definitionEvaluation
+                                [functionAxiom_NEW Mock.fSymbol [mkElemVar Mock.y] Mock.a]
+                            )
+                        )
+                    ]
+                )
+                (Mock.f (mkElemVar Mock.x))
+        assertEqual "" expect actual
+
+    , testCase "Picks first matching simplification." $ do
+        let expect =
+                Conditional
+                    { term = Mock.b
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.fId
+                        , simplifierWithFallback
+                            (firstFullEvaluation
+                                [ axiomEvaluatorNEW
+                                    Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
+                                    Mock.c
+                                ,  appliedMockEvaluator Conditional
+                                    { term = Mock.b
+                                    , predicate = makeTruePredicate_
+                                    , substitution = mempty
+                                    }
+                                ,  appliedMockEvaluator Conditional
+                                    { term = Mock.c
+                                    , predicate = makeTruePredicate_
+                                    , substitution = mempty
+                                    }
+                                ]
+                            )
+                            (definitionEvaluation
+                                [ functionAxiomNEW
+                                    Mock.fSymbol [mkElemVar Mock.y]
+                                    Mock.a
+                                    makeTruePredicate_
+                                ]
+                            )
+                        )
+                    ]
+                )
+                (Mock.f (mkElemVar Mock.x))
+        assertEqual "" expect actual
+
+    , testCase "Falls back to evaluating the definition." $ do
+        let expect =
+                Conditional
+                    { term = Mock.a
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.fId
+                        , simplifierWithFallback
+                            (axiomEvaluatorNEW
+                                Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
+                                Mock.b
+                            )
+                            (definitionEvaluation
+                                [ functionAxiomNEW
+                                    Mock.fSymbol [mkElemVar Mock.y]
+                                    Mock.a
+                                    makeTruePredicate_
+                                ]
+                            )
+                        )
+                    ]
+                )
+                (Mock.f (mkElemVar Mock.x))
+        assertEqual "" expect actual
     ]
   where
     evaluate
@@ -1312,6 +1655,15 @@ axiomEvaluator
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate_)
+
+axiomEvaluatorNEW
+    :: Symbol
+    -> [TermLike Variable]
+    -> TermLike Variable
+    -> BuiltinAndAxiomSimplifier
+axiomEvaluatorNEW symbol args right =
+    simplificationEvaluation
+        (functionAxiomNEW symbol args right makeTruePredicate_)
 
 appliedMockEvaluator
     :: Pattern Variable -> BuiltinAndAxiomSimplifier

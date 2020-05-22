@@ -7,6 +7,8 @@ module Test.Kore.Equation.Application
     , axiom_
     , axiomNEW
     , axiom_NEW
+    , functionAxiomNEW
+    , functionAxiom_NEW
     ) where
 
 import Prelude.Kore
