@@ -75,7 +75,6 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( toRepresentation
-    , topTODO
     )
 import Kore.Internal.Substitution
     ( Assignment
@@ -179,10 +178,11 @@ simplifyAnds
     .   ( InternalVariable variable
         , Monad monad
         )
-    => MakeAnd monad
+    => SideCondition variable
+    -> MakeAnd monad
     -> NonEmpty (TermLike variable)
     -> monad (Pattern variable)
-simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
+simplifyAnds sideCondition MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
     foldM simplifyAnds' Pattern.top patterns
   where
     simplifyAnds'
@@ -194,7 +194,6 @@ simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
             AndF And { andFirst, andSecond } ->
                 foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
-                let sideCondition = SideCondition.topTODO
                 simplified <-
                     makeAnd
                         intermediateTerm
@@ -210,13 +209,14 @@ deduplicateSubstitution
     .   ( InternalVariable variable
         , Monad monad
         )
-    =>  MakeAnd monad
+    =>  SideCondition variable 
+    ->  MakeAnd monad
     ->  Substitution variable
     ->  monad
             ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
-deduplicateSubstitution makeAnd' =
+deduplicateSubstitution sideCondition makeAnd' =
     worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
   where
     checkSetVars m
@@ -228,7 +228,7 @@ deduplicateSubstitution makeAnd' =
                 (\k v -> Any $ isSetVar k && isNotSingleton v)
             isNotSingleton = isNothing . getSingleton
 
-    simplifyAnds' = simplifyAnds makeAnd'
+    simplifyAnds' = simplifyAnds sideCondition makeAnd'
 
     worker
         ::  Predicate variable
@@ -373,7 +373,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
                 (Map (UnifiedVariable variable) (TermLike variable))
     deduplicate substitution = do
         (predicate, substitution') <-
-            deduplicateSubstitution makeAnd' substitution
+            deduplicateSubstitution sideCondition makeAnd' substitution
             & lift . lift
         addPredicate predicate
         return substitution'

@@ -193,7 +193,7 @@ simplifyAnds
     => NonEmpty (TermLike Variable)
     -> unifier (Pattern Variable)
 simplifyAnds =
-    SubstitutionSimplifier.simplifyAnds
+    SubstitutionSimplifier.simplifyAnds SideCondition.top
         (Unification.unificationMakeAnd Not.notSimplifier)
 
 andSimplifySuccess
