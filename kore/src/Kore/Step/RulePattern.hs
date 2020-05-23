@@ -183,11 +183,10 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
         }
   where
     avoid = FreeVariables.toSet avoid'
-    rightFreeVariables = freeVariables right & FreeVariables.toSet
-    ensuresFreeVariables = freeVariables ensures & FreeVariables.toSet
-    originalFreeVariables = rightFreeVariables <> ensuresFreeVariables
     bindExistsFreeVariables =
-        foldr Set.delete originalFreeVariables (ElemVar <$> existentials)
+        freeVariables right <> freeVariables ensures
+        & FreeVariables.bindVariables (ElemVar <$> existentials)
+        & FreeVariables.toSet
     rename :: Map (UnifiedVariable variable) (UnifiedVariable variable)
     rename =
         refreshVariables
