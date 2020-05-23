@@ -120,26 +120,6 @@ instance
     type VariableNameOf (UnifiedVariable variable) =
         SomeVariableName (VariableNameOf variable)
 
-    lensVariableName =
-        Lens.lens get set
-      where
-        get (ElemVar elementVariable) =
-            SomeVariableNameElement (Lens.view lensVariableName elementVariable)
-        get (SetVar setVariable) =
-            SomeVariableNameSet (Lens.view lensVariableName setVariable)
-        set unifiedVariable someVariableName =
-            case someVariableName of
-                SomeVariableNameElement elementVariableName ->
-                    ElementVariable variable
-                    & Lens.set lensVariableName elementVariableName
-                    & ElemVar
-                SomeVariableNameSet setVariableName ->
-                    SetVariable variable
-                    & Lens.set lensVariableName setVariableName
-                    & SetVar
-          where
-            variable = from @_ @variable unifiedVariable
-
     isoVariable1 =
         Lens.iso to fr
       where

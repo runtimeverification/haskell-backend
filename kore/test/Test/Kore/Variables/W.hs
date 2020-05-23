@@ -56,8 +56,7 @@ instance From W Variable where
 
 instance NamedVariable W where
     type VariableNameOf W = W
-    lensVariableName f = f
-    {-# INLINE lensVariableName #-}
+
     isoVariable1 =
         Lens.iso to fr
       where

@@ -147,14 +147,6 @@ instance
 instance NamedVariable variable => NamedVariable (Target variable) where
     type VariableNameOf (Target variable) = Target (VariableNameOf variable)
 
-    lensVariableName =
-        Lens.lens get set
-      where
-        get = fmap (Lens.view lensVariableName)
-        set (unTarget -> variable) =
-            fmap $ \variableName ->
-                Lens.set lensVariableName variableName variable
-
     isoVariable1 =
         Lens.iso to fr
       where

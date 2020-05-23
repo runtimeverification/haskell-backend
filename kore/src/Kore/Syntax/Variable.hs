@@ -14,14 +14,15 @@ module Kore.Syntax.Variable
     , illegalVariableCounter
     , externalizeFreshVariable
     , Variable1 (..)
-    , fromVariable1
-    , toVariable1
     -- * Variable names
     , VariableName (..)
     , ElementVariableName (..)
     , SetVariableName (..)
     , SomeVariableName (..)
     , NamedVariable (..)
+    , lensVariableName
+    , fromVariable1
+    , toVariable1
     , VariableBase
     , toVariable
     , fromVariable
@@ -40,6 +41,7 @@ import Control.DeepSeq
     )
 import Control.Lens
     ( Iso'
+    , Lens
     , Lens'
     )
 import qualified Control.Lens as Lens
@@ -278,10 +280,15 @@ class
   where
     type VariableNameOf variable
 
-    lensVariableName :: Lens' variable (VariableNameOf variable)
-    lensVariableName = isoVariable1 . field @"variableName1"
-
     isoVariable1 :: Iso' variable (Variable1 (VariableNameOf variable))
+
+lensVariableName
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  Lens
+                            variable1                  variable2
+            (VariableNameOf variable1) (VariableNameOf variable2)
+lensVariableName f =
+    fmap fromVariable1 . field @"variableName1" f . toVariable1
 
 fromVariable1
     :: NamedVariable variable
