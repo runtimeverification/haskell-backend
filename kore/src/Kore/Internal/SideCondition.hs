@@ -41,12 +41,9 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
+import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Variable
     ( InternalVariable
-    , Variable
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -211,9 +208,8 @@ toRepresentationCondition
     :: InternalVariable variable
     => Condition variable
     -> SideCondition.Representation
-toRepresentationCondition condition =
-    from @(Condition Variable)
-    $ Condition.mapVariables toUnifiedVariable condition
+toRepresentationCondition =
+    mkRepresentation . Condition.mapVariables toUnifiedVariable
 
 isNormalized :: forall variable. Ord variable => SideCondition variable -> Bool
 isNormalized = Conditional.isNormalized . from @_ @(Condition variable)
