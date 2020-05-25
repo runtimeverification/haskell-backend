@@ -28,9 +28,6 @@ module Kore.Builtin.Map
     , evalInKeys
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Control.Error
@@ -79,13 +76,11 @@ import Kore.Internal.OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition
-    , Conditional (..)
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
-    , makeNotPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
@@ -634,20 +629,17 @@ unifyNotInKeys
                 }
         >>= lift . Unify.scatter
 
+    eraseTerm =
+        Pattern.fromCondition . Pattern.withoutTerm
+
     unifyAndNegate t1 t2 = do
-        y <- unifyChildren t1 t2
-        return y { predicate = makeNotPredicate (predicate y) }
-        -- unificationSolutions <- Unify.gather (unifyChildren t1 t2)
-        -- traceM
-        --     $ "\n\nUnify key conditions:\n\n"
-        --     <> foldl (\s t -> s <> "\n" <> unparseToString t) "" unificationSolutions
-        -- y <- notSimplifier
-        --     SideCondition.top
-        --     (OrPattern.fromPatterns unificationSolutions)
-        -- traceM
-        --     $ "\n\nUnify notSimplifier key conditions:\n\n"
-        --     <> foldl (\s t -> s <> "\n" <> unparseToString t) "" y
-        -- Unify.scatter y
+        unificationSolutions <-
+            fmap eraseTerm
+            <$> Unify.gather (unifyChildren t1 t2)
+        notSimplifier
+            SideCondition.top
+            (OrPattern.fromPatterns unificationSolutions)
+        >>= Unify.scatter
 
     collectConditions terms =
         foldr
@@ -665,9 +657,6 @@ unifyNotInKeys
       , Just InKeys { symbol, keyTerm, mapTerm } <- matchInKeys termLike2
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
       = do
-        traceM
-            $ "\n\nTermLike1:\n\n" <> unparseToString termLike1
-            <> "\n\nTermLike2:\n\n" <> unparseToString termLike2
         let symbolicKeys = Domain.getSymbolicKeysOfAc normalizedMap
             concreteKeys =
                 TermLike.fromConcrete
@@ -687,7 +676,7 @@ unifyNotInKeys
         Monad.guard . not . null $ mapKeys
         -- Concrete keys are constructor-like, therefore they are defined
         TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-        definedKeys <- traverse defineTerm symbolicKeys
+        definedKeys <- traverse defineTerm (keyTerm : symbolicKeys)
         definedValues <- traverse defineTerm mapValues
         keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
         opaqueConditions <-
@@ -695,11 +684,6 @@ unifyNotInKeys
         let conditions =
                 fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
                 <> definedKeys <> definedValues
-            x = collectConditions conditions
-        traceM
-            $ "\n\nKey conditions:\n\n"
-            <> foldl (\s t -> s <> "\n" <> unparseToString t) "" keyConditions
-            <> "\n\nConditions:\n\n" <> unparseToString x
-        return x
+        return $ collectConditions conditions
 
     worker _ _ = empty

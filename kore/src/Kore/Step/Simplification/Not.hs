@@ -145,10 +145,10 @@ makeEvaluateNot Not { notChild } =
         (Pattern.fromTermLike <$> makeTermNot term)
         (MultiOr.singleton $ Pattern.fromConditionSorted
             (termLikeSort term)
-            (makeEvaluatePredicate predicate)
+            (makeEvaluatePredicate condition)
         )
   where
-    (term, predicate) = Conditional.splitTerm notChild
+    (term, condition) = Conditional.splitTerm notChild
 
 {- | Given a not's @Internal.Condition@ argument, simplifies the @not@.
 
