@@ -1330,7 +1330,7 @@ mapVariables
 mapVariables =
     Pattern.mapVariables (pure worker)
   where
-    worker :: VariableName -> (VariableNameOf variable)
+    worker :: VariableName -> VariableNameOf variable
     worker v = fromVariableName v { counter = Just (Element 1) }
 
 mockEvaluator

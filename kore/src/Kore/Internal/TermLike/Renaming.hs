@@ -43,6 +43,7 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
@@ -98,18 +99,23 @@ renameFreeVariables adj =
             idx :: SomeVariableName ()
             (variable1, idx) = splitL someVariableName1
         renaming1 <- index adj' idx variable1
-        let renaming' = tabulate $ \idx' -> if idx == idx' then renaming1 else mempty
+        let renaming' =
+                tabulate renamer
+              where
+                renamer idx'
+                  | idx' == idx = renaming1
+                  | otherwise   = mempty
         pure (renaming <> renaming')
 {-# INLINE renameFreeVariables #-}
 
 askSomeVariableName
-    :: HasCallStack
-    => Ord variable1
+    :: Ord variable1
     => MonadReader (VariableNameMap' variable1 variable2) m
     => AdjSomeVariableName (variable1 -> m variable2)
 askSomeVariableName =
-    tabulate $ \idx -> \variable1 ->
-        Reader.asks $ maybe (error "undefined") id . Map.lookup variable1 . flip index idx
+    tabulate $ \idx variable1 ->
+        -- Maybe.fromJust is safe because the variable must be renamed
+        Reader.asks $ Maybe.fromJust . Map.lookup variable1 . flip index idx
 {-# INLINE askSomeVariableName #-}
 
 askElementVariableName
@@ -152,7 +158,7 @@ renameElementBinder
     -> Binder (ElementVariable variable1) (m any)
     -> m (Binder (ElementVariable variable2) any)
 renameElementBinder trElemVar avoiding binder = do
-    let Binder { binderVariable, binderChild } = binder
+    let Binder { binderVariable } = binder
     elementVariable2 <- trElemVar binderVariable
     let binderVariable' =
             refreshElementVariable
@@ -160,17 +166,14 @@ renameElementBinder trElemVar avoiding binder = do
                 elementVariable2
             & fromMaybe elementVariable2
         withRenaming =
-            renameElementVariable
+            (renameSomeVariable . inject)
                 ((,)
                     <$> Lens.view lensVariableName binderVariable
                     <*> Lens.view lensVariableName binderVariable'
                 )
-    binderChild' <- Reader.local withRenaming binderChild
-    let binder' = Binder
-            { binderVariable = binderVariable'
-            , binderChild = binderChild'
-            }
-    pure binder'
+    binder { binderVariable = binderVariable' }
+        & sequenceA
+        & Reader.local withRenaming
 {-# INLINE renameElementBinder #-}
 
 renameSomeVariable
@@ -210,7 +213,7 @@ renameSetBinder
     -> Binder (SetVariable variable1) (m any)
     -> m (Binder (SetVariable variable2) any)
 renameSetBinder trSetVar avoiding binder = do
-    let Binder { binderVariable, binderChild } = binder
+    let Binder { binderVariable } = binder
     setVariable2 <- trSetVar binderVariable
     let binderVariable' =
             refreshSetVariable
@@ -218,15 +221,12 @@ renameSetBinder trSetVar avoiding binder = do
                 setVariable2
             & fromMaybe setVariable2
         withRenaming =
-            renameSetVariable
+            (renameSomeVariable . inject)
                 ((,)
                     <$> Lens.view lensVariableName binderVariable
                     <*> Lens.view lensVariableName binderVariable'
                 )
-    binderChild' <- Reader.local withRenaming binderChild
-    let binder' = Binder
-            { binderVariable = binderVariable'
-            , binderChild = binderChild'
-            }
-    pure binder'
+    binder { binderVariable = binderVariable' }
+        & sequenceA
+        & Reader.local withRenaming
 {-# INLINE renameSetBinder #-}
