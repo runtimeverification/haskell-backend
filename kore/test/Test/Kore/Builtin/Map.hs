@@ -1627,8 +1627,6 @@ runNotInKeysSimplification term1 term2 =
     $ Map.unifyNotInKeys
         (termUnification Not.notSimplifier)
         Not.notSimplifier
-        (CeilSimplifier $ \Ceil { ceilChild } -> 
-            Ceil.makeEvaluateTerm SideCondition.top ceilChild
-        )
+        (CeilSimplifier $ \Ceil { ceilChild } -> Ceil.makeEvaluateTerm SideCondition.top ceilChild)
         term1
         term2
