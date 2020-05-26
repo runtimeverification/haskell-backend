@@ -57,7 +57,9 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt (FreeVariables freeVars) =
         hashWithSalt salt (Set.toList freeVars)
 
-instance Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
+instance
+    NamedVariable variable
+    => Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
@@ -74,7 +76,10 @@ toList :: FreeVariables variable -> [UnifiedVariable variable]
 toList = Set.toList . getFreeVariables
 {-# INLINE toList #-}
 
-fromList :: Ord variable => [UnifiedVariable variable] -> FreeVariables variable
+fromList
+    :: NamedVariable variable
+    => [UnifiedVariable variable]
+    -> FreeVariables variable
 fromList = foldMap freeVariable
 {-# INLINE fromList #-}
 
@@ -112,8 +117,12 @@ isFreeVariable variable (FreeVariables freeVars) =
     Set.member variable freeVars
 {-# INLINE isFreeVariable #-}
 
-freeVariable :: UnifiedVariable variable -> FreeVariables variable
-freeVariable variable = FreeVariables (Set.singleton variable)
+freeVariable
+    :: NamedVariable variable
+    => UnifiedVariable variable
+    -> FreeVariables variable
+freeVariable variable =
+    seq (toVariable1 variable) $ FreeVariables (Set.singleton variable)
 {-# INLINE freeVariable #-}
 
 mapFreeVariables

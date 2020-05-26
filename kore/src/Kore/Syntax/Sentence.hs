@@ -472,7 +472,7 @@ instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse2 = unparseAxiom2 "axiom"
 
 instance
-    Ord variable
+    NamedVariable variable
     => HasFreeVariables (SentenceAxiom (Pattern variable annotation)) variable
   where
     freeVariables =
@@ -547,7 +547,7 @@ instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse2 = unparseAxiom2 "claim" . getSentenceClaim
 
 instance
-    Ord variable
+    NamedVariable variable
     => HasFreeVariables (SentenceClaim (Pattern variable annotation)) variable
   where
     freeVariables = freeVariables . getSentenceClaim
