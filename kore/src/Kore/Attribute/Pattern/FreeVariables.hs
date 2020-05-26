@@ -24,21 +24,25 @@ import Prelude.Kore
 import Control.DeepSeq
 import qualified Data.Foldable as Foldable
 import Data.Functor.Const
+import Data.Map.Strict
+    ( Map
+    )
+import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Kore.Sort
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 
 newtype FreeVariables variable =
-    FreeVariables { getFreeVariables :: Set (UnifiedVariable variable) }
+    FreeVariables { getFreeVariables :: Map (UnifiedVariable variable) Sort }
     deriving GHC.Generic
     deriving (Eq, Ord, Show)
     deriving (Semigroup, Monoid)
@@ -54,8 +58,8 @@ instance (Debug variable, Diff variable) => Diff (FreeVariables variable)
 instance NFData variable => NFData (FreeVariables variable)
 
 instance Hashable variable => Hashable (FreeVariables variable) where
-    hashWithSalt salt (FreeVariables freeVars) =
-        hashWithSalt salt (Set.toList freeVars)
+    hashWithSalt salt = hashWithSalt salt . toList
+    {-# INLINE hashWithSalt #-}
 
 instance
     NamedVariable variable
@@ -73,7 +77,7 @@ instance From (FreeVariables variable) (Set (UnifiedVariable variable)) where
     {-# INLINE from #-}
 
 toList :: FreeVariables variable -> [UnifiedVariable variable]
-toList = Set.toList . getFreeVariables
+toList = Map.keys . getFreeVariables
 {-# INLINE toList #-}
 
 fromList
@@ -84,11 +88,11 @@ fromList = foldMap freeVariable
 {-# INLINE fromList #-}
 
 toSet :: FreeVariables variable -> Set (UnifiedVariable variable)
-toSet = getFreeVariables
+toSet = Map.keysSet . getFreeVariables
 {-# INLINE toSet #-}
 
 nullFreeVariables :: FreeVariables variable -> Bool
-nullFreeVariables = Set.null . getFreeVariables
+nullFreeVariables = Map.null . getFreeVariables
 {-# INLINE nullFreeVariables #-}
 
 bindVariable
@@ -97,7 +101,7 @@ bindVariable
     -> FreeVariables variable
     -> FreeVariables variable
 bindVariable variable (FreeVariables freeVars) =
-    FreeVariables (Set.delete variable freeVars)
+    FreeVariables (Map.delete variable freeVars)
 {-# INLINE bindVariable #-}
 
 bindVariables
@@ -114,7 +118,7 @@ isFreeVariable
     :: Ord variable
     => UnifiedVariable variable -> FreeVariables variable -> Bool
 isFreeVariable variable (FreeVariables freeVars) =
-    Set.member variable freeVars
+    Map.member variable freeVars
 {-# INLINE isFreeVariable #-}
 
 freeVariable
@@ -122,7 +126,9 @@ freeVariable
     => UnifiedVariable variable
     -> FreeVariables variable
 freeVariable variable =
-    seq (toVariable1 variable) $ FreeVariables (Set.singleton variable)
+    FreeVariables (Map.singleton variable variableSort1)
+  where
+    Variable1 { variableSort1 } = toVariable1 variable
 {-# INLINE freeVariable #-}
 
 mapFreeVariables
@@ -146,8 +152,7 @@ traverseFreeVariables adj =
 {- | Extracts the list of free element variables
 -}
 getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
-getFreeElementVariables =
-    mapMaybe extractElementVariable . Set.toList . getFreeVariables
+getFreeElementVariables = mapMaybe extractElementVariable . toList
 
 -- TODO (thomas.tuegel): Use an associated type family with HasFreeVariables to
 -- fix type inference.
