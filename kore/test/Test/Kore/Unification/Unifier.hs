@@ -195,6 +195,7 @@ simplifyAnds
 simplifyAnds =
     SubstitutionSimplifier.simplifyAnds
         (Unification.unificationMakeAnd Not.notSimplifier)
+        SideCondition.top
 
 andSimplifySuccess
     :: HasCallStack
