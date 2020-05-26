@@ -137,10 +137,7 @@ import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
 import qualified Kore.Variables.Fresh as Fresh
-import Kore.Variables.UnifiedVariable hiding
-    ( renameElementVariable
-    , renameSetVariable
-    )
+import Kore.Variables.UnifiedVariable
 import qualified Pretty
 import qualified SQL
 
