@@ -43,6 +43,8 @@ let b = let a :: A = _ in from @_ @B a
 class From from to where
     from :: from -> to
 
+{- | This instance implements the principle /ex falso quodlibet/.
+ -}
 instance From Void any where
     from = absurd
     {-# INLINE from #-}
