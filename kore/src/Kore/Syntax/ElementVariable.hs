@@ -32,13 +32,6 @@ newtype ElementVariable variable
     deriving (Foldable, Traversable)
     deriving (GHC.Generic)
 
-instance Applicative ElementVariable where
-    pure = ElementVariable
-    {-# INLINE pure #-}
-
-    (<*>) (ElementVariable f) (ElementVariable a) = ElementVariable (f a)
-    {-# INLINE (<*>) #-}
-
 instance Hashable variable => Hashable (ElementVariable variable)
 
 instance NFData variable => NFData (ElementVariable variable)

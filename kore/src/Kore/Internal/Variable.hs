@@ -85,6 +85,6 @@ type InternalVariable variable =
     ( Hashable variable, Ord variable, SubstitutionOrd variable
     , Debug variable, Show variable, Unparse variable
     , NamedVariable variable, SortedVariable variable
-    , VariableBase variable
+    , VariableBase variable, From VariableName (VariableNameOf variable)
     , FreshPartialOrd variable, FreshVariable variable
     )

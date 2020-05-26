@@ -15,13 +15,10 @@ module Kore.Variables.UnifiedVariable
     , unifiedVariableSort
     , refreshElementVariable
     , refreshSetVariable
-    -- * AdjUnifiedVariable
+    -- * AdjSomeVariableName
     , MapVariables
-    , AdjUnifiedVariable (..)
     , asConcreteUnifiedVariable
     , fromConcreteUnifiedVariable
-    , toUnifiedVariable
-    , fromUnifiedVariable
     , mapUnifiedVariable
     , traverseUnifiedVariable
     -- * UnifiedVariableMap
@@ -258,72 +255,33 @@ refreshSetVariable avoiding =
     fmap expectSetVar . refreshVariable avoiding . SetVar
 
 type MapVariables variable1 variable2 term1 term2 =
-    AdjUnifiedVariable (variable1 -> variable2) -> term1 -> term2
+    AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
+    -> term1 -> term2
 
-{- | 'AdjUnifiedVariable' is the right adjoint of 'UnifiedVariable'.
-
-Where 'UnifiedVariable' is a sum type, 'AdjUnifiedVariable' is a product type
-with one field for each constructor. A 'UnifiedVariable' can be used to select
-one field from the 'AdjUnifiedVariable'.
-
-In practice, 'AdjUnifiedVariable' are used to represent morphisms that transform
-'ElementVariable' and 'SetVariable' separately while preserving each kind of
-variable; that is, the type @'AdjUnifiedVariable' (a -> b)@ is a restriction of
-the type @'UnifiedVariable' a -> 'UnifiedVariable' b@
-
- -}
-data AdjUnifiedVariable a =
-    AdjUnifiedVariable
-    { elemVar :: ElementVariable a
-    , setVar  :: SetVariable     a
-    }
-    deriving (Functor)
-
-instance Applicative AdjUnifiedVariable where
-    pure a = AdjUnifiedVariable (ElementVariable a) (SetVariable a)
-    {-# INLINE pure #-}
-
-    (<*>) fs as =
-        AdjUnifiedVariable
-        { elemVar = elemVar fs <*> elemVar as
-        , setVar = setVar fs <*> setVar as
-        }
-    {-# INLINE (<*>) #-}
-
-asConcreteUnifiedVariable :: AdjUnifiedVariable (variable -> Maybe Concrete)
+asConcreteUnifiedVariable
+    :: AdjSomeVariableName (any -> Maybe Void)
 asConcreteUnifiedVariable = pure (const Nothing)
 
-fromConcreteUnifiedVariable :: AdjUnifiedVariable (Concrete -> variable)
+fromConcreteUnifiedVariable
+    :: AdjSomeVariableName (Void -> any)
 fromConcreteUnifiedVariable = pure (\case {})
 
 mapUnifiedVariable
-    :: AdjUnifiedVariable (variable1 -> variable2)
-    -> UnifiedVariable variable1 -> UnifiedVariable variable2
-mapUnifiedVariable AdjUnifiedVariable { elemVar, setVar } =
-    \case
-        ElemVar elementVariable -> ElemVar $ elemVar <*> elementVariable
-        SetVar setVariable -> SetVar $ setVar <*> setVariable
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  UnifiedVariable variable1 -> UnifiedVariable variable2
+mapUnifiedVariable adj =
+    Lens.over lensVariableName (mapSomeVariableName adj)
 
 traverseUnifiedVariable
-    :: Applicative f
-    => AdjUnifiedVariable (variable1 -> f variable2)
-    -> UnifiedVariable variable1 -> f (UnifiedVariable variable2)
-traverseUnifiedVariable AdjUnifiedVariable { elemVar, setVar } =
-    \case
-        ElemVar elementVariable ->
-            ElemVar <$> sequenceA (elemVar <*> elementVariable)
-        SetVar setVariable ->
-            SetVar <$> sequenceA (setVar <*> setVariable)
-
-toUnifiedVariable
-    :: NamedVariable variable
-    => AdjUnifiedVariable (variable -> Variable)
-toUnifiedVariable = pure toVariable
-
-fromUnifiedVariable
-    :: From Variable variable
-    => AdjUnifiedVariable (Variable -> variable)
-fromUnifiedVariable = pure fromVariable
+    ::  Applicative f
+    =>  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> f (VariableNameOf variable2))
+    ->  UnifiedVariable variable1 -> f (UnifiedVariable variable2)
+traverseUnifiedVariable adj =
+    Lens.traverseOf lensVariableName (traverseSomeVariableName adj)
 
 type VariableMap meta variable1 variable2 =
     Map (meta variable1) (meta variable2)

@@ -45,6 +45,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Variable
     ( InternalVariable
+    , toVariableName
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
@@ -151,7 +152,7 @@ errorRewritesInstantiation configuration' unificationError =
         , errorCallStack = callStack
         }
   where
-    mapVariables = Pattern.mapVariables toUnifiedVariable
+    mapVariables = Pattern.mapVariables (pure toVariableName)
     configuration = mkRewritingPattern $ mapVariables configuration'
 
 {- | Check that the final substitution covers the applied rule appropriately.

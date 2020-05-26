@@ -159,10 +159,11 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> Condition variable1
-    -> Condition variable2
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Condition variable1
+    ->  Condition variable2
 mapVariables = Conditional.mapVariables (\_ () -> ())
 
 {- | Create a new 'Condition' from the 'Normalization' of a substitution.

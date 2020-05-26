@@ -42,7 +42,6 @@ import Kore.Variables.Fresh
     ( FreshPartialOrd (..)
     , FreshVariable (..)
     )
-import Kore.Variables.UnifiedVariable
 
 {- | Distinguish variables by their source.
 
@@ -98,7 +97,7 @@ unTargetElement = fmap unTarget
 unTargetSet :: SetVariable (Target variable) -> SetVariable variable
 unTargetSet = fmap unTarget
 
-unTargetUnified :: AdjUnifiedVariable (Target variable -> variable)
+unTargetUnified :: AdjSomeVariableName (Target variable -> variable)
 unTargetUnified = pure unTarget
 
 mkElementTarget
@@ -111,7 +110,7 @@ mkSetTarget
     -> SetVariable (Target variable)
 mkSetTarget = fmap Target
 
-mkUnifiedTarget :: AdjUnifiedVariable (variable -> Target variable)
+mkUnifiedTarget :: AdjSomeVariableName (variable -> Target variable)
 mkUnifiedTarget = pure Target
 
 isTarget :: Target variable -> Bool
@@ -128,7 +127,7 @@ mkSetNonTarget
     -> SetVariable (Target variable)
 mkSetNonTarget = fmap NonTarget
 
-mkUnifiedNonTarget :: AdjUnifiedVariable (variable -> Target variable)
+mkUnifiedNonTarget :: AdjSomeVariableName (variable -> Target variable)
 mkUnifiedNonTarget = pure NonTarget
 
 isNonTarget :: Target variable -> Bool
@@ -205,11 +204,15 @@ instance
     unparse2 (NonTarget var) = unparse2 var
 
 targetIfEqual
-    :: Eq variable
+    :: NamedVariable variable
     => ElementVariable variable
-    -> ElementVariable variable
-    -> ElementVariable (Target variable)
-targetIfEqual boundVariable variable =
-    if boundVariable == variable
-        then mkElementTarget variable
-        else mkElementNonTarget variable
+    -> VariableNameOf variable
+    -> VariableNameOf (Target variable)
+targetIfEqual boundVariable variableName =
+    if boundVariableName == variableName
+        then Target variableName
+        else NonTarget variableName
+  where
+    boundVariableName =
+        Lens.view lensVariableName boundVariable
+        & unElementVariableName

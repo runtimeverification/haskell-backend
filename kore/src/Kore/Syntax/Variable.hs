@@ -19,6 +19,13 @@ module Kore.Syntax.Variable
     , ElementVariableName (..)
     , SetVariableName (..)
     , SomeVariableName (..)
+    , AdjSomeVariableName (..)
+    , mapSomeVariableName
+    , mapElementVariableName
+    , mapSetVariableName
+    , traverseSomeVariableName
+    , traverseElementVariableName
+    , traverseSetVariableName
     , NamedVariable (..)
     , lensVariableName
     , fromVariable1
@@ -26,12 +33,16 @@ module Kore.Syntax.Variable
     , VariableBase
     , toVariable
     , fromVariable
+    , toVariableName
+    , fromVariableName
     -- * Variable sorts
     , SortedVariable (..)
     , sortedVariableSort
     , unparse2SortedVariable
     -- * Concrete
     , Concrete
+    , Void
+    , toVoid
     ) where
 
 import Prelude.Kore
@@ -45,6 +56,18 @@ import Control.Lens
     , Lens'
     )
 import qualified Control.Lens as Lens
+import Data.Distributive
+    ( Distributive (..)
+    )
+import Data.Functor.Adjunction
+    ( Adjunction (..)
+    , extractL
+    , indexAdjunction
+    , tabulateAdjunction
+    )
+import Data.Functor.Rep
+    ( Representable (..)
+    )
 import Data.Generics.Product
     ( field
     )
@@ -62,96 +85,6 @@ import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
-
-data VariableName =
-    VariableName
-    { base :: !Id
-    , counter :: !(Maybe (Sup Natural))
-    }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
-
-instance Hashable VariableName
-
-instance NFData VariableName
-
-instance SOP.Generic VariableName
-
-instance SOP.HasDatatypeInfo VariableName
-
-instance Debug VariableName
-
-instance Diff VariableName
-
-newtype ElementVariableName variable =
-    ElementVariableName { unElementVariableName :: variable }
-    deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (Foldable, Traversable)
-    deriving (GHC.Generic)
-
-instance Hashable variable => Hashable (ElementVariableName variable)
-
-instance NFData variable => NFData (ElementVariableName variable)
-
-instance SOP.Generic (ElementVariableName variable)
-
-instance SOP.HasDatatypeInfo (ElementVariableName variable)
-
-instance Debug variable => Debug (ElementVariableName variable)
-
-instance (Debug variable, Diff variable) => Diff (ElementVariableName variable)
-
-newtype SetVariableName variable =
-    SetVariableName { unSetVariableName :: variable }
-    deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (Foldable, Traversable)
-    deriving (GHC.Generic)
-
-instance Hashable variable => Hashable (SetVariableName variable)
-
-instance NFData variable => NFData (SetVariableName variable)
-
-instance SOP.Generic (SetVariableName variable)
-
-instance SOP.HasDatatypeInfo (SetVariableName variable)
-
-instance Debug variable => Debug (SetVariableName variable)
-
-instance (Debug variable, Diff variable) => Diff (SetVariableName variable)
-
-data SomeVariableName variable
-    = SomeVariableNameElement !(ElementVariableName variable)
-    | SomeVariableNameSet     !(SetVariableName     variable)
-    deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (Foldable, Traversable)
-    deriving (GHC.Generic)
-
-instance Hashable variable => Hashable (SomeVariableName variable)
-
-instance NFData variable => NFData (SomeVariableName variable)
-
-instance SOP.Generic (SomeVariableName variable)
-
-instance SOP.HasDatatypeInfo (SomeVariableName variable)
-
-instance Debug variable => Debug (SomeVariableName variable)
-
-instance (Debug variable, Diff variable) => Diff (SomeVariableName variable)
-
-instance
-    Injection (SomeVariableName variable) (ElementVariableName variable)
-  where
-    injection = _Ctor @"SomeVariableNameElement"
-    {-# INLINE injection #-}
-
-instance
-    Injection (SomeVariableName variable) (SetVariableName variable)
-  where
-    injection = _Ctor @"SomeVariableNameSet"
-    {-# INLINE injection #-}
 
 {-|'Variable' corresponds to the @variable@ syntactic category from the
 Semantics of K, Section 9.1.4 (Patterns).
@@ -197,6 +130,10 @@ instance Unparse Variable where
         <> Pretty.pretty variableCounter
 
 instance From Variable Variable where
+    from = id
+    {-# INLINE from #-}
+
+instance From VariableName VariableName where
     from = id
     {-# INLINE from #-}
 
@@ -275,7 +212,7 @@ prop> (==) x y === (==) (toVariable x) (toVariable y)
 
  -}
 class
-    (Ord variable, From variable Variable, SortedVariable variable)
+    (Ord variable, Ord (VariableNameOf variable), From (VariableNameOf variable) VariableName, From variable Variable, SortedVariable variable)
     => NamedVariable variable
   where
     type VariableNameOf variable
@@ -283,7 +220,8 @@ class
     isoVariable1 :: Iso' variable (Variable1 (VariableNameOf variable))
 
 lensVariableName
-    ::  (NamedVariable variable1, NamedVariable variable2)
+    ::  forall variable1 variable2
+    .   (NamedVariable variable1, NamedVariable variable2)
     =>  Lens
                             variable1                  variable2
             (VariableNameOf variable1) (VariableNameOf variable2)
@@ -312,6 +250,14 @@ fromVariable = from @Variable @variable
 -- | An injection from any 'NamedVariable' to 'Variable'.
 toVariable :: forall variable. From variable Variable => variable -> Variable
 toVariable = from @variable @Variable
+
+fromVariableName
+    :: forall variable. From VariableName variable => VariableName -> variable
+fromVariableName = from @VariableName @variable
+
+toVariableName
+    :: forall variable. From variable VariableName => variable -> VariableName
+toVariableName = from @variable @VariableName
 
 {- | 'SortedVariable' is a Kore variable with a known sort.
 
@@ -382,6 +328,10 @@ instance NamedVariable Concrete where
 
 instance VariableBase Concrete
 
+instance From VariableName Void where
+    from = error "Cannot construct a variable in a concrete term!"
+    {-# INLINE from #-}
+
 instance From Variable Concrete where
     from = error "Cannot construct a variable in a concrete term!"
     {-# INLINE from #-}
@@ -390,6 +340,129 @@ instance From Concrete variable where
     from = \case {}
     {-# INLINE from #-}
 
+-- * Variable names
+
+data VariableName =
+    VariableName
+    { base :: !Id
+    , counter :: !(Maybe (Sup Natural))
+    }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+
+instance Hashable VariableName
+
+instance NFData VariableName
+
+instance SOP.Generic VariableName
+
+instance SOP.HasDatatypeInfo VariableName
+
+instance Debug VariableName
+
+instance Diff VariableName
+
+-- * Element variables
+
+newtype ElementVariableName variable =
+    ElementVariableName { unElementVariableName :: variable }
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Semigroup a => Semigroup (ElementVariableName a) where
+    (<>) a b = ElementVariableName (on (<>) unElementVariableName a b)
+    {-# INLINE (<>) #-}
+
+instance Monoid a => Monoid (ElementVariableName a) where
+    mempty = ElementVariableName mempty
+    {-# INLINE mempty #-}
+
+instance Applicative ElementVariableName where
+    pure = ElementVariableName
+    {-# INLINE pure #-}
+
+    (<*>) (ElementVariableName f) (ElementVariableName a) =
+        ElementVariableName (f a)
+    {-# INLINE (<*>) #-}
+
+instance Distributive ElementVariableName where
+    distribute = ElementVariableName . fmap unElementVariableName
+    {-# INLINE distribute #-}
+
+instance Hashable variable => Hashable (ElementVariableName variable)
+
+instance NFData variable => NFData (ElementVariableName variable)
+
+instance SOP.Generic (ElementVariableName variable)
+
+instance SOP.HasDatatypeInfo (ElementVariableName variable)
+
+instance Debug variable => Debug (ElementVariableName variable)
+
+instance (Debug variable, Diff variable) => Diff (ElementVariableName variable)
+
+-- * Set variables
+
+instance
+    From variable VariableName
+    => From (ElementVariableName variable) VariableName
+  where
+    from = from . unElementVariableName
+
+newtype SetVariableName variable =
+    SetVariableName { unSetVariableName :: variable }
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Semigroup a => Semigroup (SetVariableName a) where
+    (<>) a b = SetVariableName (on (<>) unSetVariableName a b)
+
+instance Monoid a => Monoid (SetVariableName a) where
+    mempty = SetVariableName mempty
+    {-# INLINE mempty #-}
+
+instance Applicative SetVariableName where
+    pure = SetVariableName
+    {-# INLINE pure #-}
+
+    (<*>) (SetVariableName f) (SetVariableName a) =
+        SetVariableName (f a)
+    {-# INLINE (<*>) #-}
+
+instance Distributive SetVariableName where
+    distribute = SetVariableName . fmap unSetVariableName
+    {-# INLINE distribute #-}
+
+instance Hashable variable => Hashable (SetVariableName variable)
+
+instance NFData variable => NFData (SetVariableName variable)
+
+instance SOP.Generic (SetVariableName variable)
+
+instance SOP.HasDatatypeInfo (SetVariableName variable)
+
+instance Debug variable => Debug (SetVariableName variable)
+
+instance (Debug variable, Diff variable) => Diff (SetVariableName variable)
+
+instance
+    From variable VariableName => From (SetVariableName variable) VariableName
+  where
+    from = from . unSetVariableName
+
+-- * Variable occurrences
+
+{- | @Variable1@ is an occurrence of a variable in a Kore pattern.
+
+The @variable@ parameter is the type of variable names.
+
+Every occurrence of a variable carries the 'Sort' of the variable.
+
+ -}
 data Variable1 variable =
     Variable1
     { variableName1 :: !variable
@@ -419,3 +492,191 @@ instance Unparse variable => Unparse (Variable1 variable) where
         <> unparse variableSort1
 
     unparse2 Variable1 { variableName1 } = unparse2 variableName1
+
+{- | @SomeVariableName@ is the name of a variable in a pattern.
+
+@SomeVariableName@ may be an 'ElementVariableName' or a 'SetVariableName'.
+
+ -}
+data SomeVariableName variable
+    = SomeVariableNameElement !(ElementVariableName variable)
+    | SomeVariableNameSet     !(SetVariableName     variable)
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic)
+
+instance Hashable variable => Hashable (SomeVariableName variable)
+
+instance NFData variable => NFData (SomeVariableName variable)
+
+instance SOP.Generic (SomeVariableName variable)
+
+instance SOP.HasDatatypeInfo (SomeVariableName variable)
+
+instance Debug variable => Debug (SomeVariableName variable)
+
+instance (Debug variable, Diff variable) => Diff (SomeVariableName variable)
+
+instance
+    Injection (SomeVariableName variable) (ElementVariableName variable)
+  where
+    injection = _Ctor @"SomeVariableNameElement"
+    {-# INLINE injection #-}
+
+instance
+    Injection (SomeVariableName variable) (SetVariableName variable)
+  where
+    injection = _Ctor @"SomeVariableNameSet"
+    {-# INLINE injection #-}
+
+instance
+    From variable VariableName => From (SomeVariableName variable) VariableName
+  where
+    from = extractL . fmap from
+
+{- | 'AdjSomeVariableName' is the right adjoint of 'SomeVariableName'.
+
+The fields of product type 'AdjSomeVariableName' align with the constructors of
+sum type 'SomeVariableName'.
+
+In practice, 'AdjSomeVariableName' are used to represent mappings that
+transform 'ElementVariableName' and 'SetVariableName' separately while
+preserving each kind of variable. For example, the type
+@
+    'AdjSomeVariableName' (a -> b)
+@
+is a restriction of the type
+@
+    'SomeVariableName' a -> 'SomeVariableName' b
+@
+where the former ensures that (element, set) variables are mapped to (element,
+set) variables respectively.
+
+'AdjSomeVariableName' may be constructed and composed through its 'Applicative'
+instance. @'pure' x@ constructs an 'AdjSomeVariableName' with the same value @x@
+in both fields. @f '<*>' a@ composes two 'AdjSomeVariableName' by applying the
+function in each field of @f@ to the value in the corresponding field of @a@.
+
+ -}
+data AdjSomeVariableName a =
+    AdjSomeVariableName
+    { adjSomeVariableNameElement :: ElementVariableName a
+    -- ^ compare to: 'SomeVariableNameElement'
+    , adjSomeVariableNameSet     :: SetVariableName     a
+    -- ^ compare to: 'SomeVariableNameSet'
+    }
+    deriving (Functor)
+    deriving (GHC.Generic1)
+
+instance Semigroup a => Semigroup (AdjSomeVariableName a) where
+    (<>) a b =
+        AdjSomeVariableName
+        { adjSomeVariableNameElement = on (<>) adjSomeVariableNameElement a b
+        , adjSomeVariableNameSet = on (<>) adjSomeVariableNameSet a b
+        }
+    {-# INLINE (<>) #-}
+
+instance Monoid a => Monoid (AdjSomeVariableName a) where
+    mempty =
+        AdjSomeVariableName
+        { adjSomeVariableNameElement = mempty
+        , adjSomeVariableNameSet = mempty
+        }
+    {-# INLINE mempty #-}
+
+instance Applicative AdjSomeVariableName where
+    pure a = AdjSomeVariableName (ElementVariableName a) (SetVariableName a)
+    {-# INLINE pure #-}
+
+    (<*>) fs as =
+        AdjSomeVariableName
+        { adjSomeVariableNameElement =
+            adjSomeVariableNameElement fs <*> adjSomeVariableNameElement as
+        , adjSomeVariableNameSet =
+            adjSomeVariableNameSet fs <*> adjSomeVariableNameSet as
+        }
+    {-# INLINE (<*>) #-}
+
+instance Distributive AdjSomeVariableName where
+    distribute f =
+        AdjSomeVariableName
+        { adjSomeVariableNameElement = collect adjSomeVariableNameElement f
+        , adjSomeVariableNameSet = collect adjSomeVariableNameSet f
+        }
+    {-# INLINE distribute #-}
+
+instance Representable AdjSomeVariableName where
+    type Rep AdjSomeVariableName = SomeVariableName ()
+    tabulate = tabulateAdjunction
+    index = indexAdjunction
+
+instance Adjunction SomeVariableName AdjSomeVariableName where
+    unit a =
+        AdjSomeVariableName
+            (pure . SomeVariableNameElement . pure $ a)
+            (pure . SomeVariableNameSet . pure $ a)
+    {-# INLINE unit #-}
+
+    counit (SomeVariableNameElement adj) =
+        unElementVariableName
+        . adjSomeVariableNameElement
+        . unElementVariableName
+        $ adj
+    counit (SomeVariableNameSet adj) =
+        unSetVariableName
+        . adjSomeVariableNameSet
+        . unSetVariableName
+        $ adj
+    {-# INLINE counit #-}
+
+mapSomeVariableName
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> SomeVariableName variable1 -> SomeVariableName variable2
+mapSomeVariableName adj variable1 =
+    fmap (index adj idx) variable1
+  where
+    idx = () <$ variable1
+
+mapElementVariableName
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> ElementVariableName variable1
+    -> ElementVariableName variable2
+mapElementVariableName adj =
+    (<*>) (adjSomeVariableNameElement adj)
+
+mapSetVariableName
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> SetVariableName variable1
+    -> SetVariableName variable2
+mapSetVariableName adj =
+    (<*>) (adjSomeVariableNameSet adj)
+
+traverseSomeVariableName
+    :: Applicative f
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> SomeVariableName variable1 -> f (SomeVariableName variable2)
+traverseSomeVariableName adj variable1 =
+    traverse (index adj idx) variable1
+  where
+    idx = () <$ variable1
+
+traverseElementVariableName
+    :: forall variable1 variable2 f
+    .  Applicative f
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> ElementVariableName variable1
+    -> f (ElementVariableName variable2)
+traverseElementVariableName adj =
+    sequenceA . (<*>) (adjSomeVariableNameElement adj)
+
+traverseSetVariableName
+    :: Applicative f
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> SetVariableName variable1
+    -> f (SetVariableName variable2)
+traverseSetVariableName adj =
+    sequenceA . (<*>) (adjSomeVariableNameSet adj)
+
+toVoid :: any -> Maybe Void
+toVoid = const Nothing

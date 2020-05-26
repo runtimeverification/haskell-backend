@@ -373,19 +373,41 @@ test_renaming =
     , testSet "\\nu" mkNu
     ]
   where
-    mapElementVariables' (getElementVariable -> v) =
-        mapVariables (pure id) { elemVar = ElementVariable (const v) }
-    mapSetVariables' (getSetVariable -> v) =
-        mapVariables (pure id) { setVar = SetVariable (const v) }
+    mapElementVariables' variable =
+        mapVariables (pure id)
+            { adjSomeVariableNameElement =
+                ElementVariableName . const
+                $ unElementVariableName variableName1
+            }
+      where
+        Variable1 { variableName1 } = toVariable1 variable
+    mapSetVariables' variable =
+        mapVariables (pure id)
+            { adjSomeVariableNameSet =
+                SetVariableName . const
+                $ unSetVariableName variableName1
+            }
+      where
+        Variable1 { variableName1 } = toVariable1 variable
 
-    traverseElementVariables' (getElementVariable -> v) =
+    traverseElementVariables' variable =
         runIdentity
         . traverseVariables (pure return)
-            { elemVar = ElementVariable (const $ return v) }
-    traverseSetVariables' (getSetVariable -> v) =
+            { adjSomeVariableNameElement =
+                ElementVariableName . const
+                $ return $ unElementVariableName variableName1
+            }
+      where
+        Variable1 { variableName1 } = toVariable1 variable
+    traverseSetVariables' variable =
         runIdentity
         . traverseVariables (pure return)
-            { setVar = SetVariable (const $ return v) }
+            { adjSomeVariableNameSet =
+                SetVariableName . const
+                $ return $ unSetVariableName variableName1
+            }
+      where
+        Variable1 { variableName1 } = toVariable1 variable
 
     doesNotCapture
         :: HasCallStack

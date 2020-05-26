@@ -35,8 +35,8 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Error
-import Kore.Syntax.Variable
-    ( Variable
+import Kore.Syntax.Variable hiding
+    ( Concrete
     )
 import Kore.Variables.UnifiedVariable
 
@@ -129,11 +129,13 @@ instance From (Concrete Variable) Attributes where
         . unConcrete
 
 mapConcreteVariables
-    :: Ord variable2
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> Concrete variable1 -> Concrete variable2
-mapConcreteVariables morphism (Concrete freeVariables) =
-    Concrete (mapFreeVariables morphism freeVariables)
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Concrete variable1
+    ->  Concrete variable2
+mapConcreteVariables adj (Concrete freeVariables) =
+    Concrete (mapFreeVariables adj freeVariables)
 
 isConcrete
     :: Ord variable => Concrete variable -> UnifiedVariable variable -> Bool

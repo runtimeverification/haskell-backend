@@ -14,9 +14,6 @@ import Prelude.Kore
 import qualified Control.Lens.Combinators as Lens
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import Data.Generics.Wrapped
-    ( _Wrapped
-    )
 
 import qualified Branch as BranchT
     ( gather
@@ -139,6 +136,11 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
+import Kore.Syntax.Variable
+    ( AdjSomeVariableName (..)
+    , ElementVariableName (..)
+    , SetVariableName (..)
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -152,7 +154,6 @@ import Kore.Variables.Target
     , targetIfEqual
     , unTargetUnified
     )
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -416,11 +417,11 @@ simplifyInternal term sideCondition = do
                     -> SideCondition (Target variable)
                 targetSideCondition =
                     SideCondition.mapVariables
-                        AdjUnifiedVariable
-                        { elemVar =
-                            (ElementVariable . Lens.over _Wrapped)
+                        AdjSomeVariableName
+                        { adjSomeVariableNameElement =
+                            ElementVariableName
                             (targetIfEqual (ElementVariable boundVar))
-                        , setVar = SetVariable NonTarget
+                        , adjSomeVariableNameSet = SetVariableName NonTarget
                         }
                 targetSimplifiedChildren
                     :: TermLike.Exists

@@ -48,7 +48,13 @@ instance SortedVariable V where
 instance From Variable V where
     from = error "Not implemented"
 
+instance From VariableName V where
+    from = error "Not implemented"
+
 instance From V Variable where
+    from = error "Not implemented"
+
+instance From V VariableName where
     from = error "Not implemented"
 
 instance NamedVariable V where

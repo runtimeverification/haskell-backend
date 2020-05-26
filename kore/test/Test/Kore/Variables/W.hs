@@ -19,7 +19,6 @@ import Debug
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Kore.Variables.Fresh
-import Kore.Variables.UnifiedVariable
 import Pretty
 
 import Test.Kore.Variables.V
@@ -51,7 +50,13 @@ instance SortedVariable W where
 instance From Variable W where
     from = error "Not implemented"
 
+instance From VariableName W where
+    from = error "Not implemented"
+
 instance From W Variable where
+    from = error "Not implemented"
+
+instance From W VariableName where
     from = error "Not implemented"
 
 instance NamedVariable W where
@@ -86,7 +91,7 @@ instance VariableBase W
 showVar :: V -> W
 showVar (V i n) = W (show i) n
 
-showUnifiedVar :: AdjUnifiedVariable (V -> W)
+showUnifiedVar :: AdjSomeVariableName (V -> W)
 showUnifiedVar = pure showVar
 
 war' :: String -> TermLike W

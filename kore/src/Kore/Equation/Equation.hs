@@ -34,6 +34,7 @@ import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -71,6 +72,7 @@ import Kore.Step.Step
 import Kore.Syntax.Application
     ( Application (..)
     )
+import Kore.Syntax.Variable
 import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
@@ -198,9 +200,11 @@ instance AstWithLocation variable => AstWithLocation (Equation variable) where
     locationFromAst = locationFromAst . left
 
 mapVariables
-    :: (Ord variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> Equation variable1 -> Equation variable2
+    ::  (NamedVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Equation variable1
+    ->  Equation variable2
 mapVariables mapping equation@(Equation _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
@@ -224,21 +228,32 @@ refreshVariables
     (from @_ @(Set (UnifiedVariable _)) -> avoid)
     equation@(Equation _ _ _ _ _)
   =
-    let rename = Fresh.refreshVariables avoid originalFreeVariables
+    let rename =
+            Fresh.refreshVariables avoid originalFreeVariables
+        rename' =
+            rename
+            & Map.map (Lens.view lensVariableName)
+            & Map.mapKeys (Lens.view lensVariableName)
         adj =
-            AdjUnifiedVariable
-            { elemVar =
-                ElementVariable . Lens.over _Wrapped $ \var ->
-                    case Map.lookup (ElemVar var) rename of
-                        Just (ElemVar var') -> var'
-                        _ -> var
-            , setVar =
-                SetVariable . Lens.over _Wrapped $ \var ->
-                    case Map.lookup (SetVar var) rename of
-                        Just (SetVar var') -> var'
-                        _ -> var
+            AdjSomeVariableName
+            { adjSomeVariableNameElement =
+                ElementVariableName . Lens.over _Wrapped $ \variable ->
+                    case Map.lookup (inject @(SomeVariableName _) variable) rename' of
+                        Just (SomeVariableNameElement variable') -> variable'
+                        _ -> variable
+            , adjSomeVariableNameSet =
+                SetVariableName . Lens.over _Wrapped $ \variable ->
+                    case Map.lookup (inject @(SomeVariableName _) variable) rename' of
+                        Just (SomeVariableNameSet variable') -> variable'
+                        _ -> variable
+
             }
-        subst = TermLike.mkVar <$> rename
+        subst =
+            Set.toList originalFreeVariables
+            & map mkSubst
+            & Map.fromList
+        mkSubst variable =
+            (variable, TermLike.mkVar (mapUnifiedVariable adj variable))
         left' = TermLike.substitute subst left
         requires' = Predicate.substitute subst requires
         right' = TermLike.substitute subst right

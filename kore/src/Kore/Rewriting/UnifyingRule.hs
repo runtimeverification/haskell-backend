@@ -28,6 +28,7 @@ import Kore.Internal.TermLike
     , NamedVariable
     , TermLike
     )
+import Kore.Syntax.Variable
 import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshPartialOrd
@@ -96,10 +97,12 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        :: (Ord variable1, FreshPartialOrd variable2, NamedVariable variable2)
-        => AdjUnifiedVariable (variable1 -> variable2)
-        -> rule variable1
-        -> rule variable2
+        ::  (NamedVariable variable1, NamedVariable variable2)
+        =>  FreshPartialOrd variable2
+        =>  AdjSomeVariableName
+                (VariableNameOf variable1 -> VariableNameOf variable2)
+        ->  rule variable1
+        ->  rule variable2
 
     -- | Checks whether a given substitution is acceptable for a rule
     checkInstantiation

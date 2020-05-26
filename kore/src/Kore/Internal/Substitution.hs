@@ -124,7 +124,7 @@ instance Hashable variable => Hashable (Assignment variable)
 -- that for variable renaming, the smaller variable will be on the
 -- left of the substitution.
 assign
-    :: InternalVariable variable
+    :: (NamedVariable variable, SubstitutionOrd variable)
     => UnifiedVariable variable
     -> TermLike variable
     -> Assignment variable
@@ -154,7 +154,7 @@ mapAssignedTerm f (Assignment variable term) =
     assign variable (f term)
 
 mkUnwrappedSubstitution
-    :: InternalVariable variable
+    :: (NamedVariable variable, SubstitutionOrd variable)
     => [(UnifiedVariable variable, TermLike variable)]
     -> [Assignment variable]
 mkUnwrappedSubstitution = fmap (uncurry assign)
@@ -183,11 +183,17 @@ data Substitution variable
     deriving GHC.Generic
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
-instance InternalVariable variable => Eq (Substitution variable) where
+instance
+    (NamedVariable variable, SubstitutionOrd variable)
+    => Eq (Substitution variable)
+  where
     (==) = on (==) unwrap
 
 -- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
-instance InternalVariable variable => Ord (Substitution variable) where
+instance
+    (NamedVariable variable, SubstitutionOrd variable)
+    => Ord (Substitution variable)
+  where
     compare = on compare unwrap
 
 instance SOP.Generic (Substitution variable)
@@ -285,7 +291,7 @@ type UnwrappedSubstitution variable = [Assignment variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
-    :: InternalVariable variable
+    :: (NamedVariable variable, SubstitutionOrd variable)
     => Substitution variable
     -> [Assignment variable]
 unwrap (Substitution xs) =
@@ -352,7 +358,7 @@ cycles.
 
  -}
 normalOrder
-    :: InternalVariable variable
+    :: (NamedVariable variable, SubstitutionOrd variable)
     => (UnifiedVariable variable, TermLike variable)
     -> (UnifiedVariable variable, TermLike variable)
 normalOrder (uVar1, Var_ uVar2)
@@ -440,10 +446,11 @@ modify
 modify f = wrap . f . unwrap
 
 mapAssignmentVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> Assignment variable1
-    -> Assignment variable2
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Assignment variable1
+    ->  Assignment variable2
 mapAssignmentVariables adj (Assignment variable term) =
     assign mappedVariable mappedTerm
   where
@@ -453,11 +460,12 @@ mapAssignmentVariables adj (Assignment variable term) =
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
-    :: forall variable1 variable2
-    .  (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> Substitution variable1
-    -> Substitution variable2
+    ::  forall variable1 variable2
+    .   (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Substitution variable1
+    ->  Substitution variable2
 mapVariables adj = modify . fmap $ mapAssignmentVariables adj
 
 mapTerms

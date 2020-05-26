@@ -896,7 +896,10 @@ instance UnifyingRule RulePattern where
             , antiLeft = mapTermLikeVariables <$> antiLeft
             , requires = mapPredicateVariables requires
             , rhs = RHS
-                { existentials = (<*>) (elemVar adj) <$> existentials
+                { existentials =
+                    Lens.over lensVariableName
+                        (mapElementVariableName adj)
+                    <$> existentials
                 , right = mapTermLikeVariables right
                 , ensures = mapPredicateVariables ensures
                 }

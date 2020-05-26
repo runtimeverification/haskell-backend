@@ -32,13 +32,6 @@ newtype SetVariable variable
     deriving (Foldable, Traversable)
     deriving (GHC.Generic)
 
-instance Applicative SetVariable where
-    pure = SetVariable
-    {-# INLINE pure #-}
-
-    (<*>) (SetVariable f) (SetVariable a) = SetVariable (f a)
-    {-# INLINE (<*>) #-}
-
 instance Hashable variable => Hashable (SetVariable variable)
 
 instance NFData variable => NFData (SetVariable variable)

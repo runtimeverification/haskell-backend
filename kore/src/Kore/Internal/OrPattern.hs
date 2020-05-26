@@ -27,11 +27,7 @@ module Kore.Internal.OrPattern
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
-import Data.Generics.Wrapped
-    ( _Wrapped
-    )
 
 import Branch
     ( BranchT
@@ -64,6 +60,7 @@ import Kore.Internal.TermLike
     , mkBottom_
     , mkOr
     )
+import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -75,7 +72,6 @@ import Kore.Variables.Target
     , mkElementTarget
     , targetIfEqual
     )
-import Kore.Variables.UnifiedVariable
 
 {-| The disjunction of 'Pattern'.
 -}
@@ -216,14 +212,13 @@ targetBinder
     -> Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
 targetBinder Binder { binderVariable, binderChild } =
     let newVar = mkElementTarget binderVariable
-        targetBoundVariables =
-            targetIfEqual binderVariable
+        targetBoundVariables = targetIfEqual binderVariable
         newChild =
             Pattern.mapVariables
-                AdjUnifiedVariable
-                { elemVar =
-                    (ElementVariable . Lens.over _Wrapped) targetBoundVariables
-                , setVar = SetVariable NonTarget
+                AdjSomeVariableName
+                { adjSomeVariableNameElement =
+                    ElementVariableName targetBoundVariables
+                , adjSomeVariableNameSet = SetVariableName NonTarget
                 }
             <$> binderChild
      in Binder

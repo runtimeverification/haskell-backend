@@ -319,11 +319,14 @@ test_refreshVariable =
     setNonTargetOriginal  = mkSetNonTarget setOriginal
     avoidST = Set.singleton setTargetOriginal
 
-    unifiedTarget = mapUnifiedVariable mkUnifiedTarget
+    unifiedTarget = mapUnifiedVariable (pure Target)
 
-    unifiedNonTarget = mapUnifiedVariable mkUnifiedTarget
+    unifiedNonTarget = mapUnifiedVariable (pure Target)
 
     -- UnifiedVariable (Target Variable)
+    unifiedElemTargetOriginal, unifiedElemNonTargetOriginal,
+        unifiedSetTargetOriginal, unifiedSetNonTargetOriginal
+        :: UnifiedVariable (Target Variable)
     unifiedElemTargetOriginal    = unifiedTarget unifiedElemOriginal
     unifiedElemNonTargetOriginal = unifiedNonTarget unifiedElemOriginal
     unifiedSetTargetOriginal     = unifiedTarget  unifiedSetOriginal

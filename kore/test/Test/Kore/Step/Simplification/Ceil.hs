@@ -490,8 +490,8 @@ mapVariables
 mapVariables =
     Pattern.mapVariables (pure worker)
   where
-    worker :: Variable -> variable
-    worker v = fromVariable v { variableCounter = Just (Sup.Element 1) }
+    worker :: VariableName -> (VariableNameOf variable)
+    worker v = fromVariableName v { counter = Just (Sup.Element 1) }
 
 makeCeil
     :: InternalVariable variable

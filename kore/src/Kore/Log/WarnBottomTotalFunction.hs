@@ -12,7 +12,7 @@ module Kore.Log.WarnBottomTotalFunction
 import Prelude.Kore
 
 import qualified Generics.SOP as SOP
-import GHC.Generics as GHC
+import qualified GHC.Generics as GHC
 
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
@@ -21,7 +21,6 @@ import Kore.Step.Simplification.Simplify
 import Kore.Unparser
     ( unparse
     )
-import Kore.Variables.UnifiedVariable
 import Pretty
     ( Pretty
     )
@@ -60,5 +59,5 @@ warnBottomTotalFunction
     => InternalVariable variable
     => TermLike variable
     -> logger ()
-warnBottomTotalFunction (mapVariables toUnifiedVariable -> term) =
+warnBottomTotalFunction (mapVariables (pure toVariableName) -> term) =
     logEntry WarnBottomTotalFunction { term }

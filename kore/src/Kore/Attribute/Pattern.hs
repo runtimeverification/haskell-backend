@@ -63,6 +63,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Sort
     ( Sort
     )
+import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
@@ -172,12 +173,14 @@ See also: 'traverseVariables'
 
  -}
 mapVariables
-    :: Ord variable2
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> Pattern variable1 -> Pattern variable2
-mapVariables morphism =
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Pattern variable1
+    ->  Pattern variable2
+mapVariables adj =
     Lens.over (field @"freeVariables")
-        (mapFreeVariables morphism)
+        (mapFreeVariables adj)
 
 {- | Use the provided traversal to replace the free variables in a 'Pattern'.
 
@@ -185,13 +188,15 @@ See also: 'mapVariables'
 
  -}
 traverseVariables
-    :: forall m variable1 variable2
-    .  (Monad m, Ord variable2)
-    => AdjUnifiedVariable (variable1 -> m variable2)
-    -> Pattern variable1
-    -> m (Pattern variable2)
-traverseVariables morphism =
-    field @"freeVariables" (traverseFreeVariables morphism)
+    ::  forall m variable1 variable2
+    .   Monad m
+    =>  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> m (VariableNameOf variable2))
+    ->  Pattern variable1
+    ->  m (Pattern variable2)
+traverseVariables adj =
+    field @"freeVariables" (traverseFreeVariables adj)
 
 {- | Delete the given variable from the set of free variables.
  -}

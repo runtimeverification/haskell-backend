@@ -18,12 +18,12 @@ import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     , Variable
+    , toVariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Unparser
     ( unparse
     )
-import Kore.Variables.UnifiedVariable
 import Log
 import Pretty
     ( Pretty
@@ -63,6 +63,6 @@ infoAttemptUnification
 infoAttemptUnification term1' term2' =
     logWhile InfoAttemptUnification { term1, term2 }
   where
-    mapVariables = TermLike.mapVariables toUnifiedVariable
+    mapVariables = TermLike.mapVariables (pure toVariableName)
     term1 = mapVariables term1'
     term2 = mapVariables term2'

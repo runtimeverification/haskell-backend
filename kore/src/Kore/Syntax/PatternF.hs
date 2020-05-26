@@ -20,9 +20,13 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
+import qualified Control.Lens as Lens
 import Data.Functor.Const
 import Data.Functor.Identity
     ( Identity (..)
+    )
+import Data.Generics.Wrapped
+    ( _Unwrapped
     )
 import Data.Text
     ( Text
@@ -115,13 +119,15 @@ not injective!
 
 -}
 mapVariables
-    :: AdjUnifiedVariable (variable1 -> variable2)
-    -> PatternF variable1 child
-    -> PatternF variable2 child
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  PatternF variable1 child
+    ->  PatternF variable2 child
 mapVariables adj =
     runIdentity . traverseVariables adj'
   where
-    adj' = (Identity .) <$> adj
+    adj' = (.) pure <$> adj
 {-# INLINE mapVariables #-}
 
 {- | Use the provided traversal to replace all variables in a 'PatternF' head.
@@ -131,9 +137,11 @@ traversal is not injective!
 
 -}
 traverseVariables
-    :: Applicative f
-    => AdjUnifiedVariable (variable1 -> f variable2)
-    -> PatternF variable1 child -> f (PatternF variable2 child)
+    ::  Applicative f
+    =>  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> f (VariableNameOf variable2))
+    ->  PatternF variable1 child -> f (PatternF variable2 child)
 traverseVariables adj =
     \case
         -- Non-trivial cases
@@ -161,10 +169,11 @@ traverseVariables adj =
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
   where
-    trElemVar = sequenceA . (<*>) (elemVar adj)
-    trSetVar = sequenceA . (<*>) (setVar adj)
-    traverseVariable (Const variable) =
-        VariableF . Const <$> traverseUnifiedVariable adj variable
+    trElemVar = lensVariableName $ traverseElementVariableName adj
+    trSetVar = lensVariableName $ traverseSetVariableName adj
+    traverseVariable =
+        fmap VariableF
+        . Lens.traverseOf _Unwrapped (traverseUnifiedVariable adj)
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
         <$> trElemVar existsVariable

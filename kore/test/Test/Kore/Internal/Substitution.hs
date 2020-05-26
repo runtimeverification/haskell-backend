@@ -136,11 +136,11 @@ mapVariablesTests =
     [ testCase "map id over empty is empty"
         $ assertEqual ""
             (wrap mempty)
-            . mapVariables (pure id) $ emptySubst
+            . mapVariables @Variable @Variable (pure id) $ emptySubst
     , testCase "map id over wrap empty is normalized empty"
         $ assertEqual ""
             (wrap mempty)
-            . mapVariables (pure id) $ wrap emptyRawSubst
+            . mapVariables @Variable @Variable (pure id) $ wrap emptyRawSubst
     , testCase "map id over singleton == id"
         $ assertEqual ""
             (wrap singletonSubst)

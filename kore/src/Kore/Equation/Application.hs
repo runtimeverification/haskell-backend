@@ -99,7 +99,10 @@ import Kore.Syntax.Id
     , FileLocation (..)
     )
 import Kore.Syntax.Variable
-    ( Variable
+    ( AdjSomeVariableName
+    , NamedVariable (..)
+    , Variable
+    , toVariableName
     )
 import Kore.TopBottom
 import Kore.Unparser
@@ -355,10 +358,11 @@ data AttemptEquationError variable
     deriving (GHC.Generic)
 
 mapAttemptEquationErrorVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> AttemptEquationError variable1
-    -> AttemptEquationError variable2
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  AttemptEquationError variable1
+    ->  AttemptEquationError variable2
 mapAttemptEquationErrorVariables adj =
     \case
         WhileMatch matchError ->
@@ -433,15 +437,16 @@ instance InternalVariable variable => Pretty (MatchError variable) where
     pretty _ = "equation did not match term"
 
 mapMatchErrorVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> MatchError variable1
-    -> MatchError variable2
-mapMatchErrorVariables mapping =
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  MatchError variable1
+    ->  MatchError variable2
+mapMatchErrorVariables adj =
     \MatchError { matchTerm, matchEquation } ->
         MatchError
-        { matchTerm = TermLike.mapVariables mapping matchTerm
-        , matchEquation = Equation.mapVariables mapping matchEquation
+        { matchTerm = TermLike.mapVariables adj matchTerm
+        , matchEquation = Equation.mapVariables adj matchEquation
         }
 
 {- | Errors that can occur during 'applyMatchResult'.
@@ -481,14 +486,14 @@ instance
 
 mapApplyMatchResultErrorsVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
+    => AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
     -> ApplyMatchResultErrors variable1
     -> ApplyMatchResultErrors variable2
-mapApplyMatchResultErrorsVariables mapping applyMatchResultErrors =
+mapApplyMatchResultErrorsVariables adj applyMatchResultErrors =
     ApplyMatchResultErrors
-    { matchResult = mapMatchResultVariables mapping matchResult
+    { matchResult = mapMatchResultVariables adj matchResult
     , applyMatchErrors =
-        mapApplyMatchResultErrorVariables mapping <$> applyMatchErrors
+        mapApplyMatchResultErrorVariables adj <$> applyMatchErrors
     }
   where
     ApplyMatchResultErrors { matchResult, applyMatchErrors } =
@@ -496,17 +501,17 @@ mapApplyMatchResultErrorsVariables mapping applyMatchResultErrors =
 
 mapMatchResultVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
+    => AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
     -> MatchResult variable1
     -> MatchResult variable2
-mapMatchResultVariables mapping (predicate, substitution) =
-    ( Predicate.mapVariables mapping predicate
+mapMatchResultVariables adj (predicate, substitution) =
+    ( Predicate.mapVariables adj predicate
     , mapSubstitutionVariables substitution
     )
   where
     mapSubstitutionVariables =
-       Map.mapKeys (mapUnifiedVariable mapping)
-       . Map.map (TermLike.mapVariables mapping)
+       Map.mapKeys (mapUnifiedVariable adj)
+       . Map.map (TermLike.mapVariables adj)
 
 {- | @ApplyMatchResultError@ represents a reason the match could not be applied.
  -}
@@ -553,10 +558,10 @@ instance
 
 mapApplyMatchResultErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
+    => AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
     -> ApplyMatchResultError variable1
     -> ApplyMatchResultError variable2
-mapApplyMatchResultErrorVariables mapping applyMatchResultError =
+mapApplyMatchResultErrorVariables adj applyMatchResultError =
     case applyMatchResultError of
         NotConcrete variable termLike ->
             NotConcrete
@@ -568,8 +573,8 @@ mapApplyMatchResultErrorVariables mapping applyMatchResultError =
                 (mapTermLikeVariables termLike)
         NotMatched variable -> NotMatched (mapUnifiedVariable' variable)
   where
-    mapUnifiedVariable' = mapUnifiedVariable mapping
-    mapTermLikeVariables = TermLike.mapVariables mapping
+    mapUnifiedVariable' = mapUnifiedVariable adj
+    mapTermLikeVariables = TermLike.mapVariables adj
 
 {- | Errors that can occur during 'checkRequires'.
  -}
@@ -599,17 +604,18 @@ instance InternalVariable variable => Pretty (CheckRequiresError variable) where
         ]
 
 mapCheckRequiresErrorVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> CheckRequiresError variable1
-    -> CheckRequiresError variable2
-mapCheckRequiresErrorVariables mapping checkRequiresError =
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  CheckRequiresError variable1
+    ->  CheckRequiresError variable2
+mapCheckRequiresErrorVariables adj checkRequiresError =
     CheckRequiresError
     { matchPredicate = mapPredicateVariables matchPredicate
     , equationRequires = mapPredicateVariables equationRequires
     }
   where
-    mapPredicateVariables = Predicate.mapVariables mapping
+    mapPredicateVariables = Predicate.mapVariables adj
     CheckRequiresError { matchPredicate, equationRequires } = checkRequiresError
 
 -- * Logging
@@ -665,18 +671,19 @@ debugAttemptEquationResult
     -> log ()
 debugAttemptEquationResult equation result =
     logEntry $ DebugAttemptEquationResult
-        (Equation.mapVariables toUnifiedVariable equation)
-        (mapAttemptEquationResultVariables toUnifiedVariable result)
+        (Equation.mapVariables (pure toVariableName) equation)
+        (mapAttemptEquationResultVariables (pure toVariableName) result)
 
 mapAttemptEquationResultVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjUnifiedVariable (variable1 -> variable2)
-    -> AttemptEquationResult variable1
-    -> AttemptEquationResult variable2
-mapAttemptEquationResultVariables mapping =
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  AttemptEquationResult variable1
+    ->  AttemptEquationResult variable2
+mapAttemptEquationResultVariables adj =
     Bifunctor.bimap
-        (mapAttemptEquationErrorVariables mapping)
-        (Pattern.mapVariables mapping)
+        (mapAttemptEquationErrorVariables adj)
+        (Pattern.mapVariables adj)
 
 whileDebugAttemptEquation
     :: MonadLog log
@@ -688,8 +695,8 @@ whileDebugAttemptEquation
 whileDebugAttemptEquation termLike equation =
     logWhile (DebugAttemptEquation equation' termLike')
   where
-    termLike' = TermLike.mapVariables toUnifiedVariable termLike
-    equation' = Equation.mapVariables toUnifiedVariable equation
+    termLike' = TermLike.mapVariables (pure toVariableName) termLike
+    equation' = Equation.mapVariables (pure toVariableName) equation
 
 {- | Log when an 'Equation' is actually applied.
  -}
@@ -745,5 +752,5 @@ debugApplyEquation
 debugApplyEquation equation result =
     logEntry $ DebugApplyEquation equation' result'
   where
-    equation' = Equation.mapVariables toUnifiedVariable equation
-    result' = Pattern.mapVariables toUnifiedVariable result
+    equation' = Equation.mapVariables (pure toVariableName) equation
+    result' = Pattern.mapVariables (pure toVariableName) result

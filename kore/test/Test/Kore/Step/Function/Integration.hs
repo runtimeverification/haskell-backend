@@ -1330,8 +1330,8 @@ mapVariables
 mapVariables =
     Pattern.mapVariables (pure worker)
   where
-    worker :: Variable -> variable
-    worker v = fromVariable v { variableCounter = Just (Element 1) }
+    worker :: VariableName -> (VariableNameOf variable)
+    worker v = fromVariableName v { counter = Just (Element 1) }
 
 mockEvaluator
     :: Monad simplifier

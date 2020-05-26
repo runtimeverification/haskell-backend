@@ -399,12 +399,12 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcrete
-    :: Ord variable
+    :: NamedVariable variable
     => TermLike variable
     -> Maybe (TermLike Concrete)
-asConcrete = traverseVariables asConcreteUnifiedVariable
+asConcrete = traverseVariables (pure toVoid)
 
-isConcrete :: Ord variable => TermLike variable -> Bool
+isConcrete :: NamedVariable variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
@@ -420,7 +420,7 @@ fromConcrete
     :: (FreshPartialOrd variable, NamedVariable variable)
     => TermLike Concrete
     -> TermLike variable
-fromConcrete = mapVariables fromConcreteUnifiedVariable
+fromConcrete = mapVariables (pure $ from @Void)
 
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
