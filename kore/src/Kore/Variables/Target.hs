@@ -11,7 +11,6 @@ module Kore.Variables.Target
     , unTarget
     , unTargetElement
     , unTargetSet
-    , unTargetUnified
     , mkElementTarget
     , mkSetTarget
     , mkUnifiedTarget
@@ -96,9 +95,6 @@ unTargetElement = fmap unTarget
 
 unTargetSet :: SetVariable (Target variable) -> SetVariable variable
 unTargetSet = fmap unTarget
-
-unTargetUnified :: AdjSomeVariableName (Target variable -> variable)
-unTargetUnified = pure unTarget
 
 mkElementTarget
     :: ElementVariable variable

@@ -225,10 +225,10 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         _      -> return ()
     let predicate' =
             Predicate.substitute substitution predicate
-            & Predicate.mapVariables Target.unTargetUnified
+            & Predicate.mapVariables (pure Target.unTarget)
         equation' =
             Equation.substitute substitution equation
-            & Equation.mapVariables Target.unTargetUnified
+            & Equation.mapVariables (pure Target.unTarget)
     return (equation', predicate')
   where
     equationVariables = freeVariables equation & FreeVariables.toList
@@ -305,7 +305,7 @@ checkRequires sideCondition predicate requires =
     -- TODO (thomas.tuegel): Do not unwrap sideCondition.
     sideCondition' =
         SideCondition.mapVariables
-            Target.unTargetUnified
+            (pure Target.unTarget)
             sideCondition
 
     assertBottom orCondition

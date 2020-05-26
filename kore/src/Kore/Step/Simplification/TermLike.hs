@@ -152,7 +152,7 @@ import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
     ( Target (..)
     , targetIfEqual
-    , unTargetUnified
+    , unTarget
     )
 import qualified Pretty
 
@@ -407,8 +407,7 @@ simplifyInternal term sideCondition = do
                         (targetSideCondition sideCondition)
                         (targetSimplifiedChildren simplifiedChildren)
                 let unTargetedResults =
-                        Pattern.mapVariables unTargetUnified
-                        <$> targetedResults
+                        Pattern.mapVariables (pure unTarget) <$> targetedResults
                 return unTargetedResults
               where
                 refresh = Lens.over Binding.existsBinder refreshElementBinder
