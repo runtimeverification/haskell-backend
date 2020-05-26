@@ -234,18 +234,25 @@ refreshVariables
             rename
             & Map.map (Lens.view lensVariableName)
             & Map.mapKeys (Lens.view lensVariableName)
+        lookupSomeVariableName
+            :: forall variable'
+            .  Injection (SomeVariableName (VariableNameOf variable)) variable'
+            => variable'
+            -> variable'
+        lookupSomeVariableName variable =
+            do
+                let injected = inject @(SomeVariableName _) variable
+                someVariableName <- Map.lookup injected rename'
+                retract someVariableName
+            & fromMaybe variable
         adj =
             AdjSomeVariableName
             { adjSomeVariableNameElement =
-                ElementVariableName . Lens.over _Wrapped $ \variable ->
-                    case Map.lookup (inject @(SomeVariableName _) variable) rename' of
-                        Just (SomeVariableNameElement variable') -> variable'
-                        _ -> variable
+                ElementVariableName . Lens.over _Wrapped
+                $ lookupSomeVariableName @(ElementVariableName _)
             , adjSomeVariableNameSet =
-                SetVariableName . Lens.over _Wrapped $ \variable ->
-                    case Map.lookup (inject @(SomeVariableName _) variable) rename' of
-                        Just (SomeVariableNameSet variable') -> variable'
-                        _ -> variable
+                SetVariableName . Lens.over _Wrapped
+                $ lookupSomeVariableName @(SetVariableName _)
 
             }
         subst =
