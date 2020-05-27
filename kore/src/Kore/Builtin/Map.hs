@@ -644,9 +644,7 @@ unifyNotInKeys
         >>= Unify.scatter
 
     collectConditions terms =
-        foldr
-            (flip Pattern.andCondition)
-            Pattern.top
+        Data.Foldable.fold
             terms
 
     worker
