@@ -365,6 +365,13 @@ instance Debug VariableName
 
 instance Diff VariableName
 
+instance Unparse VariableName where
+    unparse VariableName { base, counter } =
+        unparse base <> Pretty.pretty counter
+
+    unparse2 VariableName { base, counter } =
+        unparse base <> Pretty.pretty counter
+
 -- * Element variables
 
 newtype ElementVariableName variable =
@@ -405,6 +412,13 @@ instance SOP.HasDatatypeInfo (ElementVariableName variable)
 instance Debug variable => Debug (ElementVariableName variable)
 
 instance (Debug variable, Diff variable) => Diff (ElementVariableName variable)
+
+instance Unparse variable => Unparse (ElementVariableName variable) where
+    unparse = unparseGeneric
+    {-# INLINE unparse #-}
+
+    unparse2 = unparse2Generic
+    {-# INLINE unparse2 #-}
 
 -- * Set variables
 
@@ -451,6 +465,13 @@ instance SOP.HasDatatypeInfo (SetVariableName variable)
 instance Debug variable => Debug (SetVariableName variable)
 
 instance (Debug variable, Diff variable) => Diff (SetVariableName variable)
+
+instance Unparse variable => Unparse (SetVariableName variable) where
+    unparse = unparseGeneric
+    {-# INLINE unparse #-}
+
+    unparse2 = unparse2Generic
+    {-# INLINE unparse2 #-}
 
 instance
     From variable VariableName => From (SetVariableName variable) VariableName
@@ -520,6 +541,13 @@ instance SOP.HasDatatypeInfo (SomeVariableName variable)
 instance Debug variable => Debug (SomeVariableName variable)
 
 instance (Debug variable, Diff variable) => Diff (SomeVariableName variable)
+
+instance Unparse variable => Unparse (SomeVariableName variable) where
+    unparse = unparseGeneric
+    {-# INLINE unparse #-}
+
+    unparse2 = unparse2Generic
+    {-# INLINE unparse2 #-}
 
 instance
     Injection (SomeVariableName variable) (ElementVariableName variable)
