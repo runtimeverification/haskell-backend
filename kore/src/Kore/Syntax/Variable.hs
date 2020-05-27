@@ -42,6 +42,7 @@ module Kore.Syntax.Variable
     , SortedVariable (..)
     , sortedVariableSort
     , unparse2SortedVariable
+    , unparse2SortedVariable1
     -- * Concrete
     , Concrete
     , Void
@@ -290,6 +291,21 @@ unparse2SortedVariable
     -> Pretty.Doc ann
 unparse2SortedVariable variable =
     unparse2 variable <> Pretty.colon <> unparse (sortedVariableSort variable)
+
+{- | Unparse a 'Variable1' in an Applicative Kore binder.
+
+Variables occur without their sorts as subterms in Applicative Kore patterns,
+but with their sorts in binders like @\\exists@ and
+@\\forall@. @unparse2SortedVariable@ adds the sort ascription to the unparsed
+variable for the latter case.
+
+ -}
+unparse2SortedVariable1
+    :: Unparse variable
+    => Variable1 variable
+    -> Pretty.Doc ann
+unparse2SortedVariable1 Variable1 { variableName1, variableSort1 } =
+    unparse2 variableName1 <> Pretty.colon <> unparse variableSort1
 
 {- | @Concrete@ is a variable occuring in a concrete pattern.
 
