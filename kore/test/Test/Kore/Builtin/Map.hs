@@ -1416,38 +1416,38 @@ test_inKeys =
                 expect = [Right []]
             actual <- runNotInKeysSimplification term1 term2
             assertEqual "" expect actual
-        , testCaseWithSMT "Defined symbolic map with condition" $ do
-            let term1 = Test.Bool.asInternal False
-                term2 =
-                    mkApplySymbol inKeysMapSymbol [concreteKey', symbolicMap]
-                expectedPattern =
-                    Conditional
-                        { term = mkTop_
-                        , predicate =
-                            Predicate.makeAndPredicate
-                                ( Predicate.makeAndPredicate
-                                    ( Predicate.makeCeilPredicate_
-                                        (tdivInt y z)
-                                    )
-                                    ( Predicate.makeNotPredicate
-                                        (Predicate.makeEqualsPredicate_
-                                            x
-                                            concreteKey'
-                                        )
-                                    )
-                                )
-                                ( Predicate.makeNotPredicate
-                                    ( Predicate.makeEqualsPredicate_
-                                        concreteKey'
-                                        (tdivInt y z)
-                                    )
-                                )
-                        , substitution = mempty
-                        }
-                expect =
-                    [Right [Just expectedPattern]]
-            actual <- runNotInKeysSimplification term1 term2
-            assertEqual "" expect actual
+        -- , testCaseWithSMT "Defined symbolic map with condition" $ do
+        --     let term1 = Test.Bool.asInternal False
+        --         term2 =
+        --             mkApplySymbol inKeysMapSymbol [concreteKey', symbolicMap]
+        --         expectedPattern =
+        --             Conditional
+        --                 { term = mkTop_
+        --                 , predicate =
+        --                     Predicate.makeAndPredicate
+        --                         ( Predicate.makeAndPredicate
+        --                             ( Predicate.makeCeilPredicate_
+        --                                 (tdivInt y z)
+        --                             )
+        --                             ( Predicate.makeNotPredicate
+        --                                 (Predicate.makeEqualsPredicate_
+        --                                     x
+        --                                     concreteKey'
+        --                                 )
+        --                             )
+        --                         )
+        --                         ( Predicate.makeNotPredicate
+        --                             ( Predicate.makeEqualsPredicate_
+        --                                 concreteKey'
+        --                                 (tdivInt y z)
+        --                             )
+        --                         )
+        --                 , substitution = mempty
+        --                 }
+        --         expect =
+        --             [Right [Just expectedPattern]]
+        --     actual <- runNotInKeysSimplification term1 term2
+        --     assertEqual "" expect actual
         -- , testCaseWithSMT "TESTING" $ do
         --     let term1 = Test.Bool.asInternal False
         --         term2 =
