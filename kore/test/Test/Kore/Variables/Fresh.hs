@@ -6,10 +6,16 @@ module Test.Kore.Variables.Fresh
     , test_FreshPartialOrd_ElementVariable
     , test_FreshPartialOrd_SetVariable
     , test_FreshPartialOrd_UnifiedVariable
+    , test_FreshPartialOrd_VariableName
+    , test_FreshPartialOrd_ElementVariableName
+    , test_FreshPartialOrd_SetVariableName
+    , test_FreshPartialOrd_SomeVariableName
     --
     , testFreshPartialOrd
     , relatedVariableGen
     , relatedUnifiedVariableGen
+    , relatedVariableNameGen
+    , someVariableNameGen
     ) where
 
 import Prelude.Kore
@@ -449,4 +455,52 @@ relatedUnifiedVariableGen =
     Gen.choice
         [ (fmap . fmap) ElemVar relatedElementVariableGen
         , (fmap . fmap) SetVar relatedSetVariableGen
+        ]
+
+test_FreshPartialOrd_VariableName :: TestTree
+test_FreshPartialOrd_VariableName =
+    testGroup "instance FreshPartialOrd VariableName"
+    $ testFreshPartialOrd relatedVariableNameGen
+
+relatedVariableNameGen :: Gen (Pair VariableName)
+relatedVariableNameGen = do
+    Pair name1 name2 <-
+        Gen.choice
+            [ do { name <- idGen; return (Pair name name) }
+            , Pair <$> idGen <*> idGen
+            ]
+    Pair counter1 counter2 <-
+        Gen.choice
+            [ do { counter <- counterGen; return (Pair counter counter) }
+            , Pair <$> counterGen <*> counterGen
+            ]
+    let variable1 = VariableName name1 counter1
+        variable2 = VariableName name2 counter2
+    return (Pair variable1 variable2)
+
+test_FreshPartialOrd_ElementVariableName :: TestTree
+test_FreshPartialOrd_ElementVariableName =
+    testGroup "instance FreshPartialOrd (ElementVariableName VariableName)"
+    $ testFreshPartialOrd
+    $ (fmap . fmap) ElementVariableName relatedVariableNameGen
+
+test_FreshPartialOrd_SetVariableName :: TestTree
+test_FreshPartialOrd_SetVariableName =
+    testGroup "instance FreshPartialOrd (SetVariableName VariableName)"
+    $ testFreshPartialOrd
+    $ (fmap . fmap) SetVariableName relatedVariableNameGen
+
+test_FreshPartialOrd_SomeVariableName :: TestTree
+test_FreshPartialOrd_SomeVariableName =
+    testGroup "instance FreshPartialOrd (SomeVariableName VariableName)"
+    $ testFreshPartialOrd
+    $ someVariableNameGen relatedVariableNameGen
+
+someVariableNameGen
+    :: Gen (Pair variable)
+    -> Gen (Pair (SomeVariableName variable))
+someVariableNameGen gen =
+    Gen.choice
+        [ (fmap . fmap) (inject . ElementVariableName) gen
+        , (fmap . fmap) (inject . SetVariableName) gen
         ]

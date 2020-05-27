@@ -138,6 +138,69 @@ instance
     nextVariable = Lens.over _Unwrapped nextVariable
     {-# INLINE nextVariable #-}
 
+instance FreshPartialOrd VariableName where
+    infVariable variable = variable { counter = Nothing }
+    {-# INLINE infVariable #-}
+
+    supVariable variable = variable { counter = Just Sup }
+    {-# INLINE supVariable #-}
+
+    nextVariable =
+        Lens.over (field @"counter") incrementCounter
+        . Lens.set (field @"base" . field @"idLocation") generated
+      where
+        generated = AstLocationGeneratedVariable
+        incrementCounter counter =
+            case counter of
+                Nothing          -> Just (Element 0)
+                Just (Element n) -> Just (Element (succ n))
+                Just Sup         -> illegalVariableCounter
+    {-# INLINE nextVariable #-}
+
+instance FreshPartialOrd Void where
+    infVariable = \case {}
+    supVariable = \case {}
+    nextVariable = \case {}
+
+instance
+    FreshPartialOrd variable
+    => FreshPartialOrd (ElementVariableName variable)
+  where
+    infVariable = fmap infVariable
+    {-# INLINE infVariable #-}
+
+    supVariable = fmap supVariable
+    {-# INLINE supVariable #-}
+
+    nextVariable = fmap nextVariable
+    {-# INLINE nextVariable #-}
+
+instance
+    FreshPartialOrd variable
+    => FreshPartialOrd (SetVariableName variable)
+  where
+    infVariable = fmap infVariable
+    {-# INLINE infVariable #-}
+
+    supVariable = fmap supVariable
+    {-# INLINE supVariable #-}
+
+    nextVariable = fmap nextVariable
+    {-# INLINE nextVariable #-}
+
+instance
+    FreshPartialOrd variable
+    => FreshPartialOrd (SomeVariableName variable)
+  where
+    infVariable = fmap infVariable
+    {-# INLINE infVariable #-}
+
+    supVariable = fmap supVariable
+    {-# INLINE supVariable #-}
+
+    nextVariable = fmap nextVariable
+    {-# INLINE nextVariable #-}
+
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
 class Ord variable => FreshVariable variable where
