@@ -542,6 +542,15 @@ instance SortedVariable (Variable1 variable) where
     {-# INLINE lensVariableSort #-}
 
 instance
+    Injection into from => Injection (Variable1 into) (Variable1 from)
+  where
+    inject = fmap inject
+    {-# INLINE inject #-}
+
+    retract = traverse retract
+    {-# INLINE retract #-}
+
+instance
     (Ord variable, From variable VariableName)
     => NamedVariable (Variable1 variable) where
     type VariableNameOf (Variable1 variable) = variable
