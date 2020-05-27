@@ -1448,6 +1448,13 @@ test_inKeys =
                     [Right [Just expectedPattern]]
             actual <- runNotInKeysSimplification term1 term2
             assertEqual "" expect actual
+        , testCaseWithSMT "TESTING" $ do
+            let term1 = Test.Bool.asInternal False
+                term2 =
+                    mkApplySymbol inKeysMapSymbol [concreteKey', concreteMap']
+                expect = [Right []]
+            actual <- runNotInKeysSimplification term1 term2
+            assertEqual "" expect actual
         ]
     ]
   where
@@ -1457,6 +1464,12 @@ test_inKeys =
         asInternal
         [ (Test.Int.asInternal 0, u)
         , (Test.Int.asInternal 1, v)
+        ]
+    concreteMap' =
+        asInternal
+        [ (Test.Int.asInternal 0, u)
+        , (Test.Int.asInternal 1, v)
+        , (Test.Int.asInternal 1, x)
         ]
     x, y, z, u, v, w :: TermLike Variable
     x = mkIntVar (testId "x")
