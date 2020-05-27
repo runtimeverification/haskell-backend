@@ -588,12 +588,18 @@ data InKeys term =
         , keyTerm, mapTerm :: !term
         }
 
+instance Injection (TermLike variable) (InKeys (TermLike variable)) where
+    inject InKeys { symbol, keyTerm, mapTerm } =
+        TermLike.mkApplySymbol symbol [keyTerm, mapTerm]
+        
+    retract termLike = do
+        App_ symbol [keyTerm, mapTerm] <- termLike
+        hook2 <- (getHook . symbolHook) symbol
+        Monad.guard (hook2 == Map.in_keysKey)
+        return InKeys { symbol, keyTerm, mapTerm }
+        
 matchInKeys :: TermLike variable -> Maybe (InKeys (TermLike variable))
-matchInKeys (App_ symbol [keyTerm, mapTerm]) = do
-    hook2 <- (getHook . symbolHook) symbol
-    Monad.guard (hook2 == Map.in_keysKey)
-    return InKeys { symbol, keyTerm, mapTerm }
-matchInKeys _ = Nothing
+matchInKeys = retract
 
 unifyNotInKeys
     :: forall variable unifier
