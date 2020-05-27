@@ -94,8 +94,8 @@ import Kore.Log.Registry
 import Kore.Log.SQLite
 import Log
 import System.FilePath.Posix
-    ( (</>)
-    , (<.>)
+    ( (<.>)
+    , (</>)
     )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.

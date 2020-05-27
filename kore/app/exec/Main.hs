@@ -34,11 +34,11 @@ import Data.Semigroup
     )
 import Data.Text
     ( Text
+    , unpack
     )
 import qualified Data.Text as Text
     ( null
     , split
-    , unpack
     )
 import qualified Data.Text.IO as Text
     ( putStrLn
@@ -84,14 +84,11 @@ import System.IO
 
 import qualified Data.Limit as Limit
 import Kore.Attribute.Symbol as Attribute
-import Kore.Exec
 import Kore.BugReport
-    ( unparseKoreLogOptions
-    , writeKoreMergeFiles
-    , writeKoreProveFiles
-    , unparseKoreMergeOptions
-    , unparseKoreProveOptions
+    ( BugReport (..)
+    , parseBugReport
     )
+import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , indexedModuleRawSentences
@@ -128,6 +125,7 @@ import Kore.Log
     , logEntry
     , parseKoreLogOptions
     , runKoreLog
+    , unparseKoreLogOptions
     )
 import Kore.Log.ErrorException
     ( errorException
@@ -154,6 +152,9 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Stuck (..)
@@ -288,20 +289,6 @@ parseSolver =
     longName = "smt"
     knownOptions = intercalate ", " (map fst options)
     options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
-
-newtype BugReport = BugReport { toReport :: Maybe FilePath }
-    deriving Show
-
-parseBugReport :: Parser BugReport
-parseBugReport =
-    BugReport
-        <$> optional
-            ( strOption
-                ( metavar "REPRT FILE"
-                <> long "bug-report"
-                <> help "Whether to report a bug"
-                )
-            )
 
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
@@ -444,6 +431,29 @@ unparseKoreSearchOptions (KoreSearchOptions _ bound searchType) =
     , "--searchType " <> show searchType
     ]
 
+unparseKoreMergeOptions :: KoreMergeOptions -> [String]
+unparseKoreMergeOptions (KoreMergeOptions _ maybeBatchSize) =
+    [ "--merge-rules mergeRules.kore"]
+    <> maybe mempty ((:[]) . ("--merge-batch-size " <>) . show) maybeBatchSize
+
+unparseKoreProveOptions :: KoreProveOptions -> [String]
+unparseKoreProveOptions
+    ( KoreProveOptions
+        _
+        (ModuleName moduleName)
+        graphSearch
+        bmc
+        saveProofs
+    )
+  =
+    [ "--prove spec.kore"
+    , "--spec-module " <> unpack moduleName
+    , "--graph-search "
+        <> if graphSearch == DepthFirst then "depth-first" else "breadth-first"
+    , if bmc then "--bmc" else ""
+    , maybe "" ("--save-proofs " <>) saveProofs
+    ]
+
 koreExecSh :: KoreExecOptions -> String
 koreExecSh
     ( KoreExecOptions
@@ -476,7 +486,7 @@ koreExecSh
             else "definition.kore"
         , if isJust patternFileName then "--pattern pgm.kore" else ""
         , if isJust outputFileName then "--output result.kore" else ""
-        , "--module " <> Text.unpack (getModuleName mainModuleName)
+        , "--module " <> unpack (getModuleName mainModuleName)
         , maybeLimit "" (("--smt-timeout " <>) . show) timeout
         , maybe "" ("--smt-prelude " <>) smtPrelude
         , "--smt " <> fmap Char.toLower (show smtSolver)
@@ -493,6 +503,15 @@ koreExecSh
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
     copyFile searchFileName $ reportFile <> "/searchFile.kore"
+
+writeKoreMergeFiles :: FilePath -> KoreMergeOptions -> IO ()
+writeKoreMergeFiles reportFile KoreMergeOptions { rulesFileName } =
+    copyFile rulesFileName $ reportFile <> "/mergeRules.kore"
+
+writeKoreProveFiles :: FilePath -> KoreProveOptions -> IO ()
+writeKoreProveFiles reportFile KoreProveOptions { specFileName, saveProofs } = do
+    copyFile specFileName $ reportFile <> "/spec.kore"
+    Foldable.forM_ saveProofs $ flip copyFile (reportFile <> "/saveProofs.kore")
 
 writeOptionsAndKoreFiles :: FilePath -> KoreExecOptions -> IO ()
 writeOptionsAndKoreFiles
