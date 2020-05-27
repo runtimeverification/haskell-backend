@@ -5,6 +5,8 @@ License     : UIUC/NCSA
 module Kore.Variables.Fresh
     ( FreshPartialOrd (..)
     , FreshVariable (..)
+    , defaultRefreshName
+    , defaultRefreshVariable
     , refreshVariables
     -- * Re-exports
     , module Kore.Syntax.Variable
@@ -201,6 +203,50 @@ instance
     nextVariable = fmap nextVariable
     {-# INLINE nextVariable #-}
 
+{- | A @FreshName@ can be renamed to avoid colliding with a set of names.
+-}
+class Ord name => FreshName name where
+    {- | Refresh a name, renaming it avoid the given set.
+
+    If the given name occurs in the set, @refreshName@ must return
+    'Just' a fresh name which does not occur in the set. If the given
+    name does /not/ occur in the set, @refreshName@ /may/ return
+    'Nothing'.
+
+     -}
+    refreshName
+        :: Set name  -- ^ names to avoid
+        -> name      -- ^ original name
+        -> Maybe name
+    default refreshName
+        :: FreshPartialOrd name
+        => Set name
+        -> name
+        -> Maybe name
+    refreshName = defaultRefreshName
+    {-# INLINE refreshName #-}
+
+defaultRefreshName
+    :: FreshPartialOrd variable
+    => Set variable
+    -> variable
+    -> Maybe variable
+defaultRefreshName avoiding original = do
+    let sup = supVariable original
+    largest <- Set.lookupLT sup avoiding
+    -- assignSort must not change the order with respect to sup.
+    assert (largest < sup) $ Monad.guard (largest >= infVariable original)
+    let next = nextVariable largest
+    -- nextVariable must yield a variable greater than largest.
+    assert (next > largest) $ pure next
+{-# INLINE defaultRefreshName #-}
+
+instance FreshName VariableName
+
+instance FreshPartialOrd variable => FreshName (ElementVariableName variable)
+
+instance FreshPartialOrd variable => FreshName (SetVariableName variable)
+
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}
 class Ord variable => FreshVariable variable where
@@ -246,6 +292,21 @@ instance FreshVariable Variable
 
 instance FreshVariable Concrete where
     refreshVariable _ = \case {}
+
+instance
+    (FreshName variable, Ord variable) => FreshVariable (Variable1 variable)
+  where
+    refreshVariable avoiding =
+        traverse (refreshName $ Set.map variableName1 avoiding)
+
+defaultRefreshVariable
+    :: (NamedVariable variable, FreshName (VariableNameOf variable))
+    => Set (VariableNameOf variable)
+    -> variable
+    -> Maybe variable
+defaultRefreshVariable avoiding =
+    lensVariableName (refreshName avoiding)
+{-# INLINE defaultRefreshVariable #-}
 
 {- | Rename one set of variables while avoiding another.
 

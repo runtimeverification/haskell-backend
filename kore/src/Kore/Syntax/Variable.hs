@@ -533,6 +533,20 @@ instance Unparse variable => Unparse (Variable1 variable) where
 
     unparse2 Variable1 { variableName1 } = unparse2 variableName1
 
+instance From variable VariableName => From (Variable1 variable) Variable where
+    from = fromVariable1 . fmap toVariableName
+    {-# INLINE from #-}
+
+instance SortedVariable (Variable1 variable) where
+    lensVariableSort = field @"variableSort1"
+    {-# INLINE lensVariableSort #-}
+
+instance
+    (Ord variable, From variable VariableName)
+    => NamedVariable (Variable1 variable) where
+    type VariableNameOf (Variable1 variable) = variable
+    isoVariable1 = id
+
 {- | @SomeVariableName@ is the name of a variable in a pattern.
 
 @SomeVariableName@ may be an 'ElementVariableName' or a 'SetVariableName'.
