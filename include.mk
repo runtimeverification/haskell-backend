@@ -48,7 +48,7 @@ export KORE_PARSER
 export KORE_PARSER_OPTS
 
 KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
-KORE_EXEC_OPTS =
+KORE_EXEC_OPTS = --bug-report report26mai
 export KORE_EXEC
 export KORE_EXEC_OPTS
 

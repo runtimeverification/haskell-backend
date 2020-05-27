@@ -155,6 +155,5 @@ golden: $(GOLDEN)
 
 clean:
 	rm -fr $(KOMPILED) $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
-	rm -fr report*
 
 .PHONY: test-k test golden clean

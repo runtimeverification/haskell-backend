@@ -93,6 +93,10 @@ import Kore.Log.Registry
     )
 import Kore.Log.SQLite
 import Log
+import System.FilePath.Posix
+    ( (</>)
+    , (<.>)
+    )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp ActualEntry LocalTime
@@ -105,27 +109,28 @@ withLogger
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
 withLogger reportDirectory koreLogOptions = runContT $ do
-    mainLogger <- ContT $ withMainLogger koreLogOptions
-    mainReport <-
-        case exeName koreLogOptions of
-            ExeName "kore-exec" ->
-                ContT $ withMainReport reportDirectory koreLogOptions
-            _ ->
-                pure mempty
+    mainLogger <- ContT $ withMainLogger reportDirectory koreLogOptions
     let KoreLogOptions { debugSolverOptions } = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
     let KoreLogOptions { logSQLiteOptions } = koreLogOptions
     logSQLite <- ContT $ withLogSQLite logSQLiteOptions
-    return $ mainLogger <> mainReport <> smtSolverLogger <> logSQLite
+    return $ mainLogger <> smtSolverLogger <> logSQLite
 
 withMainLogger
-    :: KoreLogOptions
+    :: FilePath
+    -> KoreLogOptions
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
 withMainLogger
+    reportDirectory
     koreLogOptions@KoreLogOptions { logType, timestampsSwitch, exeName }
     continue
-  =
+  = do
+    _ <- Colog.withLogTextFile (reportDirectory </> getExeName exeName <.> "log")
+        $ continue
+        . koreLogTransformer koreLogOptions { logLevel = Error}
+        . koreLogFilters koreLogOptions { logLevel = Error}
+        . makeKoreLogger exeName timestampsSwitch
     case logType of
         LogStdErr -> continue
             $ koreLogTransformer koreLogOptions
@@ -137,22 +142,6 @@ withMainLogger
             . koreLogTransformer koreLogOptions
             . koreLogFilters koreLogOptions
             . makeKoreLogger exeName timestampsSwitch
-
-withMainReport
-    :: FilePath
-    -> KoreLogOptions
-    -> (LogAction IO ActualEntry -> IO a)
-    -> IO a
-withMainReport
-    reportDirectory
-    koreLogOptions@KoreLogOptions { timestampsSwitch, exeName }
-    continue
-  =
-    Colog.withLogTextFile ("./" <> reportDirectory <> "/LoggedErrors.txt")
-        $ continue
-        . koreLogTransformer koreLogOptions { logLevel = Error}
-        . koreLogFilters koreLogOptions { logLevel = Error}
-        . makeKoreLogger exeName timestampsSwitch
 
 withSmtSolverLogger
     :: DebugSolverOptions -> (LogAction IO ActualEntry -> IO a) -> IO a

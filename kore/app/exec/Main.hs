@@ -10,6 +10,9 @@ import Control.Monad.Catch
     , handle
     , throwM
     )
+import Control.Monad.Extra
+    ( whenM
+    )
 import Control.Monad.Trans
     ( lift
     )
@@ -57,7 +60,6 @@ import Options.Applicative
     , readerError
     , str
     , strOption
-    , switch
     , value
     )
 import qualified Options.Applicative as Options
@@ -66,7 +68,6 @@ import System.Directory
     , doesDirectoryExist
     , doesFileExist
     , emptyPermissions
-    , removePathForcibly
     , setOwnerExecutable
     , setOwnerReadable
     , setOwnerSearchable
@@ -194,6 +195,9 @@ import Stats
 import System.IO.Temp
 
 import GlobalMain
+import System.FilePath.Posix
+    ( (</>)
+    )
 
 {-
 Main module to run kore-exec
@@ -239,7 +243,7 @@ parseKoreSearchOptions =
 
 parseSum :: String -> String -> String -> [(String, value)] -> Parser value
 parseSum metaName longName helpMsg options =
-    option (readSum longName options)
+    option (snd <$> readSum longName options)
         (  metavar metaName
         <> long longName
         <> help (helpMsg <> ": " <> knownOptions)
@@ -247,11 +251,11 @@ parseSum metaName longName helpMsg options =
   where
     knownOptions = intercalate ", " (map fst options)
 
-readSum :: String -> [(String, value)] -> Options.ReadM value
+readSum :: String -> [(String, value)] -> Options.ReadM (String, value)
 readSum longName options = do
     opt <- str
     case lookup opt options of
-        Just val -> pure val
+        Just val -> pure (opt, val)
         _ -> readerError (unknown opt ++ known)
   where
     knownOptions = intercalate ", " (map fst options)
@@ -286,7 +290,7 @@ data Solver = Z3 | None
 
 parseSolver :: Parser Solver
 parseSolver =
-    option (readSum longName options)
+    option (snd <$> readSum longName options)
     $  metavar "SOLVER"
     <> long longName
     <> help ("SMT solver for checking constraints: " <> knownOptions)
@@ -296,15 +300,18 @@ parseSolver =
     knownOptions = intercalate ", " (map fst options)
     options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
 
-newtype BugReport = BugReport { toReport :: Bool }
+newtype BugReport = BugReport { toReport :: Maybe FilePath }
     deriving Show
 
-parseBugReportSwitch :: Parser BugReport
-parseBugReportSwitch =
+parseBugReport :: Parser BugReport
+parseBugReport =
     BugReport
-        <$> switch
-            ( long "bug-report"
-            <> help "Whether to report a bug"
+        <$> optional
+            ( strOption
+                ( metavar "REPRT FILE"
+                <> long "bug-report"
+                <> help "Whether to report a bug"
+                )
             )
 
 -- | Main options record
@@ -382,7 +389,7 @@ parseKoreExecOptions =
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
         <*> optional parseRtsStatistics
-        <*> parseBugReportSwitch
+        <*> parseBugReport
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
@@ -402,14 +409,10 @@ parseKoreExecOptions =
             )
       where
         strategies =
-            [ ("any", ("any", priorityAnyStrategy))
-            , ("all", ("all", priorityAllStrategy))
-            ,   ( "any-heating-cooling"
-                , ("any-heating-cooling", heatingCooling priorityAnyStrategy)
-                )
-            ,   ( "all-heating-cooling"
-                , ("all-heating-cooling", heatingCooling priorityAllStrategy)
-                )
+            [ ("any", priorityAnyStrategy)
+            , ("all", priorityAllStrategy)
+            , ("any-heating-cooling", heatingCooling priorityAnyStrategy)
+            , ("all-heating-cooling", heatingCooling priorityAllStrategy)
             ]
     breadth =
         option auto
@@ -461,37 +464,39 @@ unparseKoreLogOptions
         debugEquationOptions
     )
   =
-    [ koreLogTypeFlag logType
-    , "--log-level " <> fmap Char.toLower (show logLevel)
-    , timestampsSwitchFlag timestampsSwitch
-    , logEntriesFlag logEntries
-    , debugSolverOptionsFlag debugSolverOptions
-    , logSQLiteOptionsFlag logSQLiteOptions
-    , if warningSwitch == AsError then "--warnings-to-errors" else ""
-    ]
-    <> debugApplyEquationOptionsFlag debugApplyEquationOptions
-    <> debugAttemptEquationOptionsFlag debugAttemptEquationOptions
-    <> debugEquationOptionsFlag debugEquationOptions
+    concat
+        [ koreLogTypeFlag logType
+        , ["--log-level", fmap Char.toLower (show logLevel)]
+        , timestampsSwitchFlag timestampsSwitch
+        , logEntriesFlag logEntries
+        , debugSolverOptionsFlag debugSolverOptions
+        , logSQLiteOptionsFlag logSQLiteOptions
+        , ["--warnings-to-errors" | AsError <- [warningSwitch] ]
+        , debugApplyEquationOptionsFlag debugApplyEquationOptions
+        , debugAttemptEquationOptionsFlag debugAttemptEquationOptions
+        , debugEquationOptionsFlag debugEquationOptions
+        ]
   where
-    koreLogTypeFlag LogStdErr = ""
-    koreLogTypeFlag (LogFileText file) = "--log " <> file
+    koreLogTypeFlag LogStdErr = []
+    koreLogTypeFlag (LogFileText file) = ["--log ", file]
 
-    timestampsSwitchFlag TimestampsEnable = "--enable-log-timestamps"
-    timestampsSwitchFlag TimestampsDisable = "--disable-log-timestamps"
+    timestampsSwitchFlag TimestampsEnable = ["--enable-log-timestamps"]
+    timestampsSwitchFlag TimestampsDisable = ["--disable-log-timestamps"]
 
     logEntriesFlag entries
-      | Set.null entries = ""
+      | Set.null entries = []
       | otherwise
-        = "--log-entries "
-        <> intercalate "," (fmap show (Foldable.toList entries))
+      = [ "--log-entries "
+        , intercalate "," (fmap show (Foldable.toList entries))
+        ]   
 
-    debugSolverOptionsFlag (DebugSolverOptions Nothing) = ""
+    debugSolverOptionsFlag (DebugSolverOptions Nothing) = []
     debugSolverOptionsFlag (DebugSolverOptions (Just file)) =
-        "--solver-transcript " <> file
+        ["--solver-transcript ", file]
 
-    logSQLiteOptionsFlag (LogSQLiteOptions Nothing) = ""
+    logSQLiteOptionsFlag (LogSQLiteOptions Nothing) = []
     logSQLiteOptionsFlag (LogSQLiteOptions (Just file)) =
-        "--sqlog " <> file
+        ["--sqlog ", file]
 
     debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) =
         ("--debug-apply-equation " <>) . unpack <$> Foldable.toList set
@@ -554,9 +559,8 @@ koreExecSh
     )
   =
     unlines $
-        [ "#!/bin/bash"
-        , "PATH_KORE_EXEC=\"$(stack path --local-bin)\""
-        , "$PATH_KORE_EXEC/kore-exec \\"
+        [ "#!/bin/sh"
+        , "exec kore-exec \\"
         ]
         <> (fmap (<> " \\") . filter (not . null)) options
   where
@@ -603,7 +607,7 @@ writeOptionsAndKoreFiles
         , koreMergeOptions
         }
   = do
-    let shellScript = reportDirectory <> "/kore-exec.sh"
+    let shellScript = reportDirectory </> "kore-exec.sh"
     writeFile shellScript
         . koreExecSh
         $ opts
@@ -616,12 +620,12 @@ writeOptionsAndKoreFiles
     copyFile
         definitionFileName
         (  reportDirectory
-        <> if isJust koreProveOptions
-            then "/vdefinition.kore"
-            else "/definition.kore"
+        </> if isJust koreProveOptions
+            then "vdefinition.kore"
+            else "definition.kore"
         )
     Foldable.forM_ patternFileName
-        $ flip copyFile (reportDirectory <> "/pgm.kore")
+        $ flip copyFile (reportDirectory </> "pgm.kore")
     Foldable.forM_
         koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
@@ -642,20 +646,25 @@ main = do
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions } = execOptions
-    tempDirectory <- createTempDirectory "." "report"
-    exitCode <-
-        runKoreLog tempDirectory koreLogOptions
-        $ handle (handleSomeException tempDirectory)
-        $ handle handleSomeEntry
-        $ handle handleWithConfiguration go
-    let KoreExecOptions { rtsStatistics } = execOptions
-    Foldable.forM_ rtsStatistics $ \filePath ->
-        writeStats filePath =<< getStats
-    writeInReportDirectory tempDirectory
-        `catch` \(_ ::SomeException) -> archiveDirectoryReport tempDirectory
-    archiveDirectoryReport tempDirectory
-    exitWith exitCode
+    let KoreExecOptions { koreLogOptions, bugReport } = execOptions
+    canonical <- getCanonicalTemporaryDirectory
+    traceM canonical
+    withSystemTempDirectory
+        (fromMaybe "report" $ toReport bugReport)
+        $ \tempDirectory -> do
+            exitCode <-
+                runKoreLog tempDirectory koreLogOptions
+                $ handle (handleSomeException tempDirectory)
+                $ handle handleSomeEntry
+                $ handle handleWithConfiguration go
+            let KoreExecOptions { rtsStatistics } = execOptions
+            Foldable.forM_ rtsStatistics $ \filePath ->
+                writeStats filePath =<< getStats
+            writeInReportDirectory tempDirectory
+                `catch` \(_ ::SomeException) ->
+                    archiveDirectoryReport tempDirectory
+            archiveDirectoryReport tempDirectory
+            exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
@@ -672,7 +681,7 @@ mainWithOptions execOptions = do
         errorException someException
         lift
             $ writeFile
-                (tempDirectory <> "/Errors.txt")
+                (tempDirectory <> "/error.log")
                 (displayException someException)
         return $ ExitFailure 1
 
@@ -703,16 +712,14 @@ mainWithOptions execOptions = do
 
     writeInReportDirectory :: FilePath -> IO ()
     writeInReportDirectory tempDirectory = do
-        when . toReport . bugReport
+        when . isJust . toReport . bugReport
             <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
         Foldable.forM_ (outputFileName execOptions)
-            $ flip copyFile ("./" <> tempDirectory <> "/outputFile.kore")
+            $ flip copyFile (tempDirectory <> "/outputFile.kore")
     archiveDirectoryReport :: FilePath -> IO ()
-    archiveDirectoryReport tempDirectory = do
-        directoryReportExists <- doesDirectoryExist tempDirectory
-        when directoryReportExists $ do
-            createTarGz ("./" <> tempDirectory <> ".tar.gz") "." [tempDirectory]
-            removePathForcibly $ "./" <> tempDirectory
+    archiveDirectoryReport tempDirectory =
+        whenM (doesDirectoryExist tempDirectory) $
+            createTarGz (tempDirectory <> ".tar.gz") "." [tempDirectory]
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
