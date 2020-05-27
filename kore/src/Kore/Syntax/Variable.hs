@@ -14,6 +14,9 @@ module Kore.Syntax.Variable
     , illegalVariableCounter
     , externalizeFreshVariable
     , Variable1 (..)
+    , SomeVariable1
+    , ElementVariable1
+    , SetVariable1
     -- * Variable names
     , VariableName (..)
     , ElementVariableName (..)
@@ -680,3 +683,9 @@ traverseSetVariableName adj =
 
 toVoid :: any -> Maybe Void
 toVoid = const Nothing
+
+type SomeVariable1 variable = Variable1 (SomeVariableName variable)
+
+type ElementVariable1 variable = Variable1 (ElementVariableName variable)
+
+type SetVariable1 variable = Variable1 (SetVariableName variable)
