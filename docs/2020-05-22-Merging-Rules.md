@@ -1,10 +1,10 @@
 # Rationale
 
-Rule application can benefit from indexing of rules, and using efficient
+Rule application can benefit from indexing of rules and using efficient
 data-structures to decide faster which rule can be applied on a given
 configuration.
 
-This document attempts to justify this approcah from a provability point of
+This document attempts to justify this approach from a provability point of
 view, to ensure that the indexing algorithms are provably sound.
 
 # Background
@@ -133,7 +133,7 @@ indeed; the choice being exclusive, there is no danger of contagion between
 variables with the same name belogining to different rules, as the choice 
 variable would make the whole substitution bottom if that happens.
 
-On the other hand, care should be taken, as not renaming rules migt allow
+On the other hand, care should be taken, as not renaming rules might allow
 for the same identifier to be used with different sorts in the same combined
 axiom, which might violate some existing assumptions.
 
