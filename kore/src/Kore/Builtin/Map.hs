@@ -37,6 +37,7 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Monad as Monad
+import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -588,17 +589,23 @@ data InKeys term =
         , keyTerm, mapTerm :: !term
         }
 
-instance Injection (TermLike variable) (InKeys (TermLike variable)) where
+instance
+    InternalVariable variable
+    => Injection (TermLike variable) (InKeys (TermLike variable))
+  where
     inject InKeys { symbol, keyTerm, mapTerm } =
         TermLike.mkApplySymbol symbol [keyTerm, mapTerm]
-        
-    retract termLike = do
-        App_ symbol [keyTerm, mapTerm] <- termLike
+
+    retract (App_ symbol [keyTerm, mapTerm]) = do
         hook2 <- (getHook . symbolHook) symbol
         Monad.guard (hook2 == Map.in_keysKey)
         return InKeys { symbol, keyTerm, mapTerm }
-        
-matchInKeys :: TermLike variable -> Maybe (InKeys (TermLike variable))
+    retract _ = empty
+
+matchInKeys
+    :: InternalVariable variable
+    => TermLike variable
+    -> Maybe (InKeys (TermLike variable))
 matchInKeys = retract
 
 unifyNotInKeys
@@ -650,8 +657,8 @@ unifyNotInKeys
         >>= Unify.scatter
 
     collectConditions terms =
-        Data.Foldable.fold
-            terms
+        Foldable.fold terms
+        & Pattern.fromCondition
 
     worker
         :: TermLike variable
@@ -669,10 +676,10 @@ unifyNotInKeys
                 <$> Domain.getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
 
-            mapValues =
-                Domain.getMapValue
-                <$> Domain.getSymbolicValuesOfAc normalizedMap
-                <> Domain.getConcreteValuesOfAc normalizedMap
+            -- mapValues =
+            --     Domain.getMapValue
+            --     <$> Domain.getSymbolicValuesOfAc normalizedMap
+            --     <> Domain.getConcreteValuesOfAc normalizedMap
 
             opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
             keyInKeysOpaque =
@@ -682,14 +689,17 @@ unifyNotInKeys
         Monad.guard . not . null $ mapKeys
         -- Concrete keys are constructor-like, therefore they are defined
         TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-        definedKeys <- traverse defineTerm (keyTerm : symbolicKeys)
-        definedValues <- traverse defineTerm mapValues
+        -- definedKeys <- traverse defineTerm (keyTerm : symbolicKeys)
+        -- definedValues <- traverse defineTerm mapValues
+        definedKey <- defineTerm keyTerm
+        definedMap <- defineTerm mapTerm
         keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
         opaqueConditions <-
             lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
         let conditions =
                 fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
-                <> definedKeys <> definedValues
+                <> [definedKey, definedMap]
+                -- <> definedKeys <> definedValues
         return $ collectConditions conditions
 
     worker _ _ = empty
