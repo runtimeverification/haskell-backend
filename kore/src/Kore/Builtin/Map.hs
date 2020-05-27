@@ -633,6 +633,8 @@ unifyNotInKeys
         Pattern.fromCondition . Pattern.withoutTerm
 
     unifyAndNegate t1 t2 = do
+        -- Erasing the unified term is valid here because
+        -- the terms are all wrapped in \ceil below.
         unificationSolutions <-
             fmap eraseTerm
             <$> Unify.gather (unifyChildren t1 t2)
