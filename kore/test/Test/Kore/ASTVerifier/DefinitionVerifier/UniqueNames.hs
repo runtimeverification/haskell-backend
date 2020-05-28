@@ -9,7 +9,9 @@ import Test.Tasty
     )
 
 import Kore.Error
-import Kore.Syntax
+import Kore.Syntax hiding
+    ( VariableName (..)
+    )
 import Kore.Syntax.Definition
 
 import Test.Kore.ASTVerifier.DefinitionVerifier
