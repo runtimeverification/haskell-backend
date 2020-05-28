@@ -5,6 +5,7 @@ License     : NCSA
 
 module Kore.Internal.SideCondition.SideCondition
     ( Representation
+    , mkRepresentation
     ) where
 
 import Prelude.Kore
@@ -77,7 +78,3 @@ instance Debug Representation where
 instance Diff Representation where
     diffPrec _ _ = Nothing
     {-# INLINE diffPrec #-}
-
-instance (Ord a, Hashable a, Typeable a) => From a Representation where
-    from = mkRepresentation
-    {-# INLINE from #-}

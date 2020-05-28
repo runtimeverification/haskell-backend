@@ -76,15 +76,10 @@ attemptEquation sideCondition termLike equation =
   where
     sideCondition' =
         SideCondition.mapVariables
-            Target.mkElementNonTarget
-            Target.mkSetNonTarget
+            Target.mkUnifiedNonTarget
             sideCondition
 
-    termLike' =
-        TermLike.mapVariables
-            Target.mkElementNonTarget
-            Target.mkSetNonTarget
-            termLike
+    termLike' = TermLike.mapVariables Target.mkUnifiedNonTarget termLike
 
 assertNotMatched :: AttemptEquationError Variable -> Assertion
 assertNotMatched (WhileMatch _) = return ()

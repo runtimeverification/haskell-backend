@@ -29,11 +29,9 @@ import Kore.Internal.TermLike
     , InternalVariable
     , TermLike
     , Variable
+    , fromVariableName
     , mapVariables
     , substitute
-    )
-import Kore.Syntax.Variable
-    ( fromVariable
     )
 import Kore.Unification.Unify
     ( MonadUnify
@@ -78,9 +76,7 @@ substituteInAlias
 substituteInAlias Alias { aliasLeft, aliasRight } children =
     assert (length aliasLeft == length children)
     $ substitute substitutionMap
-    $ mapVariables (fmap fromVariable) (fmap fromVariable) aliasRight
+    $ mapVariables (pure fromVariableName) aliasRight
   where
-    aliasLeft' =
-        mapUnifiedVariable (fmap fromVariable) (fmap fromVariable) <$> aliasLeft
-    substitutionMap =
-        Map.fromList $ zip aliasLeft' children
+    aliasLeft' = mapUnifiedVariable (pure fromVariableName) <$> aliasLeft
+    substitutionMap = Map.fromList $ zip aliasLeft' children

@@ -399,12 +399,12 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcrete
-    :: Ord variable
+    :: NamedVariable variable
     => TermLike variable
     -> Maybe (TermLike Concrete)
-asConcrete = traverseVariables (\case { _ -> Nothing }) (\case { _ -> Nothing })
+asConcrete = traverseVariables (pure toVoid)
 
-isConcrete :: Ord variable => TermLike variable -> Bool
+isConcrete :: NamedVariable variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
@@ -417,10 +417,10 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcrete
-    :: (FreshPartialOrd variable, SortedVariable variable)
+    :: (FreshPartialOrd variable, NamedVariable variable)
     => TermLike Concrete
     -> TermLike variable
-fromConcrete = mapVariables (\case {}) (\case {})
+fromConcrete = mapVariables (pure $ from @Void)
 
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =

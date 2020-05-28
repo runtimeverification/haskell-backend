@@ -25,7 +25,9 @@ import Kore.IndexedModule.Error
     ( noSort
     )
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Syntax
+import Kore.Syntax hiding
+    ( VariableName (..)
+    )
 import Kore.Syntax.Definition
 import Kore.Variables.UnifiedVariable
 

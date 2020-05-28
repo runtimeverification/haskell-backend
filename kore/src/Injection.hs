@@ -20,6 +20,7 @@ import Data.Dynamic
     , fromDynamic
     , toDyn
     )
+import Data.Void
 
 {- | The canonical injection or inclusion of @from ↪ into@.
 
@@ -79,4 +80,15 @@ instance Typeable a => Injection Dynamic a where
     {-# INLINE inject #-}
 
     retract = fromDynamic
+    {-# INLINE retract #-}
+
+{- | 'Void' can be 'inject'ed into any type by the principle of /ex falso
+quodlibet/.  Because 'Void' contains no data, it can likewise be 'retract'ed
+from any type.
+ -}
+instance Injection a Void where
+    inject = \case {}
+    {-# INLINE inject #-}
+
+    retract = const Nothing
     {-# INLINE retract #-}

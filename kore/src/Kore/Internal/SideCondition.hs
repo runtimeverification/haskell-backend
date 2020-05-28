@@ -41,16 +41,11 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
+import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Variable
-    ( ElementVariable
-    , InternalVariable
-    , SetVariable
-    , Variable
-    , toVariable
+    ( InternalVariable
     )
+import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -192,13 +187,13 @@ toRepresentation :: SideCondition variable -> SideCondition.Representation
 toRepresentation SideCondition { representation } = representation
 
 mapVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
-    -> SideCondition variable1
-    -> SideCondition variable2
-mapVariables mapElemVar mapSetVar condition@(SideCondition _ _) =
-    fromCondition (Condition.mapVariables mapElemVar mapSetVar assumedTrue)
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  SideCondition variable1
+    ->  SideCondition variable2
+mapVariables adj condition@(SideCondition _ _) =
+    fromCondition (Condition.mapVariables adj assumedTrue)
   where
     SideCondition { assumedTrue } = condition
 
@@ -214,9 +209,9 @@ toRepresentationCondition
     :: InternalVariable variable
     => Condition variable
     -> SideCondition.Representation
-toRepresentationCondition condition =
-    from @(Condition Variable)
-    $ Condition.mapVariables (fmap toVariable) (fmap toVariable) condition
+toRepresentationCondition =
+    mkRepresentation
+    . Condition.mapVariables @_ @Variable (pure toVariableName)
 
 isNormalized :: forall variable. Ord variable => SideCondition variable -> Bool
 isNormalized = Conditional.isNormalized . from @_ @(Condition variable)
