@@ -22,5 +22,4 @@ module TEST
   rule
     <k> added => end </k>
 
-
 endmodule

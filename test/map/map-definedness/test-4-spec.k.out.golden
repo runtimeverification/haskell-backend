@@ -1,0 +1,17 @@
+  #Ceil ( f ( X ) )
+#And
+  #Not ( {
+    f ( X ) in_keys ( M )
+  #Equals
+    false
+  } )
+#And
+  <T>
+    <k>
+      added
+    </k>
+    <a>
+      M
+      f ( X ) |-> 3
+    </a>
+  </T>
