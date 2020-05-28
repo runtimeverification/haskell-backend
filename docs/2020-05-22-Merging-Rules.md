@@ -18,7 +18,7 @@ where, in general, l is a constructor-based term
 
 When translated into matching logic, they are of the form
 
-    axiom l /\ c -> EX r
+    axiom l ∧ c → EX r
 
 Where EX is the next operator, meaning that there is a possible transition
 from l (satisfying c) to r.
@@ -34,69 +34,95 @@ The following is provable using FOL reasoning:
 
 ```coq
 Theorem combine
-  (p1 q1 p2 q2 : var -> Prop)
+  (p1 q1 p2 q2 : var → Prop)
   (i j : nat)
   (Hnij : i <> j)
-  : (forall x, p1  x -> q1 x) /\ (forall y, p2 y-> q2 y) 
-    <-> forall (c : nat) x y,
-        (c = i /\ p1 x) \/ (c = j /\ p2 y)
-        -> (c = i /\ q1 x) \/ (c = j /\ q2 y).
+  : (∀ x, p1  x → q1 x) ∧ (∀ y, p2 y → q2 y) 
+    ↔ ∀ (c : nat) x y,
+        (c = i ∧ p1 x) ∨ (c = j ∧ p2 y)
+        → (c = i ∧ q1 x) ∨ (c = j ∧ q2 y).
 ```
 
 ## Back to ML
 
 Given two rules
 
-    axiom forall x1 . l1 -> EX r1
-    axiom forall x2 . l2 -> EX r2
+    axiom ∀ x1 . l1 → EX r1
+    axiom ∀ x2 . l2 → EX r2
 
 From the theorem above, we can combine the two axiom into an equivalent one:
 
-    axiom forall c x1 x2 .
-        (c = 1 /\ l1) \/ (c = 2 /\ l2) ->
-        (c = 1 /\ EX r1) \/ (c = 2 /\ EX r2)
+    axiom ∀ c x1 x2 .
+        (c = 1 ∧ l1) ∨ (c = 2 ∧ l2) →
+        (c = 1 ∧ EX r1) ∨ (c = 2 ∧ EX r2)
 
 
 Given that `c = 1` and `c = 2` are predicates, and that EX is a standard symbol,
 we can transform the RHS of the rule into
 
-    EX ((c = 1 /\ r1) \/ (c = 2 /\ r2))
+    EX ((c = 1 ∧ r1) ∨ (c = 2 ∧ r2))
+
+Reasoning:
+
+            (c=1 ∧ EX r1) ∨ (c=2 ∧ EX r2)
+    equals  EX (c=1 ∧ r1) ∨ EX (c=2 ∧ r2)
+    equals  EX ((c=1 ∧ r1) ∧ (c=2 ∧ r2))
 
 ## Side conditions
 
-If `l1 = tl1 /\ pl1` and `l2 = tl2 /\ pl2` then we can transform the lhs above
-into `((c = 1 /\ tl1) \/ (c = 2 /\ tl2)) /\ ((c = 1 /\ tp1) \/ (c = 2 /\ tp2))`
+If `l1 = tl1 ∧ pl1` and `l2 = tl2 ∧ pl2` then we can transform the lhs above
+into `((c = 1 ∧ tl1) ∨ (c = 2 ∧ tl2)) ∧ ((c = 1 ∧ tp1) ∨ (c = 2 ∧ tp2))`
 
-Then, using the distributivity of `/\` over `\/` we can factor out common 
+Then, using the distributivity of `∧` over `∨` we can factor out common 
 predicates from the side condition.
+
+Note: in the case we have the same predicate / term / variable / constant
+in both rules, we can transform `(c = 1 ∧ t) ∨ (c = 2 ∧ t)` into
+`t ∧ (c = 1 ∨ c = 2)`.
 
 ## Pushing choice predicates into terms
 
 
-In fact, the property we stated above for `EX` holds for any symbol in the
-signature, so we can easily prove that
+Let us generalize the property we stated above for `EX` for any symbol in the
+signature. We will prove that
 
-    (c = 1 /\ f(t11, .., t1n)) \/ c = 2 /\ f(t21, ..., t2n))
+    (c = 1 ∧ f(t11, .., t1n)) ∨ c = 2 ∧ f(t21, ..., t2n))
 
 is equivalent to
 
-    f((c = 1 /\ t11) \/ (c = 2 /\ t21), ..., (c = 1 /\ t1n) \/ (c = 2 /\ t2n))
+    f((c = 1 ∧ t11) ∨ (c = 2 ∧ t21), ..., (c = 1 ∧ t1n) ∨ (c = 2 ∧ t2n))
 
-Note 1: in the case we have the same term / variable / constant in both rules,
-we can transform `(c = 1 /\ t) \/ (c = 2 /\ t)` into `t /\ (c = 1 \/ c = 2)`
+Reasoning:
 
-Note 2: When reaching an builtin construct we might choose to not push choices
+    f((c = 1 ∧ t11) ∨ (c = 2 ∧ t21), ..., (c = 1 ∧ t1n) ∨ (c = 2 ∧ t2n))
+    equals   ∨     f(c = p(1) ∧ tp(1)1, ..., c = p(n) ∧ tp(n)n)
+           p∈{1,2}ⁿ
+    equals    ∨     (c = p(1) ∧ ... ∧ c = p(n) ∧ f(tp(1)1, ..., tp(n)n))
+           p∈{1,2}ⁿ
+    equals (c = 1 ∧ f(t11, ..., t1n)) ∨ (c = 2 ∧ f(t21, ..., t2n))
+
+The last equality occurs because the cases where p is not constant 1 or 2 would
+contain `c = 1 ∧ c = 2` as part of the disjunct, yielding `⊥`.
+
+Note: When reaching a builtin construct we might choose not to push choices
 further on.  If we do, then builtin unification would have to handle choices as
 well.
 
 ### Indexed normal form
 
-Applying the above we can compress the two rules to something like:
+Applying the above we can compress two rules of the form
 
-    axiom forall x1 x2 c .
-      G[(c = 1 /\ t11) \/ (c = 2 /\ t21), ..., (c = 1 /\ t1m) \/ (c = 2 /\ t2m)]
+    axiom ∀ x1 . l1 ∧ p1 → EX r1 ∧ p1'
+    axiom ∀ x2 . l2 ∧ p2 → EX r2 ∧ p2'
+
+to something like:
+
+    axiom ∀ x1 x2 c .
+      G[(c = 1 ∧ t11) ∨ (c = 2 ∧ t21), ..., (c = 1 ∧ t1m) ∨ (c = 2 ∧ t2m)]
+      ∧ ((c = 1 ∧ p1) ∨ (c = 2 ∧ p2))
       =>
-      G'[(c = 1 /\ t11') \/ (c = 2 /\ t21'), ..., (c = 1 /\ t1n') \/ (c = 2 /\ t2n')]
+      G'[(c = 1 ∧ t11') ∨ (c = 2 ∧ t21'), ..., (c = 1 ∧ t1n') ∨ (c = 2 ∧ t2n')]
+      ∧ ((c = 1 ∧ p1') ∨ (c = 2 ∧ p2'))
 
 Where `G` and `G'` are multi-hole contexts such that:
 
@@ -106,7 +132,7 @@ Where `G` and `G'` are multi-hole contexts such that:
 - `symbol(t1j') != symbol(t2j')` for each `1 <= j <= n`
 
 
-Note 1: the restriction on top symbols are optional; we might not want to
+Note 1: the restrictions on top symbols are optional; we might not want to
 enforce maximal sharing.
 
 Note 2: we can choose not to index the RHSs, in which case G' will be the empty
@@ -141,27 +167,27 @@ axiom, which might violate some existing assumptions.
 
 When indexing the following two rules 
 
-    rule <T> <k> (X:Id => V) ~> K:K </k>, <store> __(X |-> V, Mem:Map) </store> </T>
-    rule <T> <k> (X:Id := V => .K) ~> K:K </k>, <store> __(X |-> (_ -> V), Mem:Map) </store> </T>
+    rule <T> <k> (X:Id => V) ~> K:K </k>, <store> __(X ↦ V, Mem:Map) </store> </T>
+    rule <T> <k> (X:Id := V => .K) ~> K:K </k>, <store> __(X ↦ (_ → V), Mem:Map) </store> </T>
 
 The merged axiom might look of the form
 
     axiom
       <T>
-        <k> _~>_(X:Id /\ c = 1 \/ X:Id := V /\ c = 2, K:K /\ (c = 1 \/ c = 2))
+        <k> _~>_(X:Id ∧ c = 1 ∨ X:Id := V ∧ c = 2, K:K ∧ (c = 1 ∨ c = 2))
         </k>
         <store>
             __(
-                _|->_(
-                    X /\ (c = 1 \/ c = 2),
-                    (V /\ c = 1) \/ (Any /\ c = 2)
+                _↦_(
+                    X ∧ (c = 1 ∨ c = 2),
+                    (V ∧ c = 1) ∨ (Any ∧ c = 2)
                 ),
-                Mem:Map /\ (c = 1 \/ c = 2)
+                Mem:Map ∧ (c = 1 ∨ c = 2)
             )
         </store>
-    => (c = 1 /\ <T> <k> V ~> K </k> <store> __(X |-> V, Mem) </store>)
-       \/
-       (c = 2 /\ <T> <k> .K ~> K </k> <store> __(X |-> V, Mem) </store>)
+    => (c = 1 ∧ <T> <k> V ~> K </k> <store> __(X ↦ V, Mem) </store>)
+       ∨
+       (c = 2 ∧ <T> <k> .K ~> K </k> <store> __(X ↦ V, Mem) </store>)
         
 
 ### Multiple rules
@@ -192,30 +218,30 @@ They could be merged into the following axiom:
       <k>
         _~>_(
             _/_(
-                (X:Exp /\ c = 0)
-                \/
-                inj{Int,Exp}(X:Int /\ (c = 1 \/ c = 2 \/ c = 3))
-            , (Y:Exp /\ (c = 0 \/ c = 1))
-              \/ inj{Int, Exp}(
-                  (Y:Int /\ c = 2)
-                  \/ (0 /\ c = 3)
+                (X:Exp ∧ c = 0)
+                ∨
+                inj{Int,Exp}(X:Int ∧ (c = 1 ∨ c = 2 ∨ c = 3))
+            , (Y:Exp ∧ (c = 0 ∨ c = 1))
+              ∨ inj{Int, Exp}(
+                  (Y:Int ∧ c = 2)
+                  ∨ (0 ∧ c = 3)
               )
             )
 
             ,
-            K:K /\ (c = 0 \/ c = 1 \/ c = 2 \/ c = 3)
+            K:K ∧ (c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3)
         )
       </k>
-      /\
-      ((c = 0 /\ notBool(isKResult(X:Exp)))
-       \/
-       (c = 1 /\ notBool(isKResult(Y:Exp)))
-       \/
-       (c = 2 /\ Y:Int =/=Int 0)
-       \/
+      ∧
+      ((c = 0 ∧ notBool(isKResult(X:Exp)))
+       ∨
+       (c = 1 ∧ notBool(isKResult(Y:Exp)))
+       ∨
+       (c = 2 ∧ Y:Int =/=Int 0)
+       ∨
        c = 3
       )
-    => (c = 0 /\ <k> X:Exp ~> []/ Y:Exp ~> K </k>)
-       \/ (c = 1 /\ <k> Y:Exp ~> X:Int /[] ~> K </k>)
-       \/ (c = 2 /\ <k> X:Int /Int Y:Int ~> K </k>)
-       \/ (c = 3 /\ <k> error("Division by 0") ~> K </k>)
+    => (c = 0 ∧ <k> X:Exp ~> []/ Y:Exp ~> K </k>)
+       ∨ (c = 1 ∧ <k> Y:Exp ~> X:Int /[] ~> K </k>)
+       ∨ (c = 2 ∧ <k> X:Int /Int Y:Int ~> K </k>)
+       ∨ (c = 3 ∧ <k> error("Division by 0") ~> K </k>)
