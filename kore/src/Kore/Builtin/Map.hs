@@ -675,31 +675,24 @@ unifyNotInKeys
                 TermLike.fromConcrete
                 <$> Domain.getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
-            opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
-            keyInKeysOpaque =
-                (\term -> TermLike.mkApplySymbol symbol [keyTerm, term])
-                <$> opaqueElements
+
         Monad.guard . not . null $ mapKeys
         -- Concrete keys are constructor-like, therefore they are defined
         TermLike.assertConstructorLikeKeys concreteKeys $ return ()
         definedKey <- defineTerm keyTerm
         definedMap <- defineTerm mapTerm
+        keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
+
+        let opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
+            keyInKeysOpaque =
+                (\term -> TermLike.mkApplySymbol symbol [keyTerm, term])
+                <$> opaqueElements
+
         opaqueConditions <-
             lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
-        let definedAndOpaqueConditions =
-                fmap Pattern.withoutTerm opaqueConditions
+        let conditions =
+                fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
                 <> [definedKey, definedMap]
-        if null mapKeys
-            then
-                return $ collectConditions definedAndOpaqueConditions
-            else do
-                keyConditions <-
-                    lift $ traverse (unifyAndNegate keyTerm) mapKeys
-                let conditions =
-                        fmap
-                            Pattern.withoutTerm
-                            (keyConditions <> opaqueConditions)
-                        <> definedAndOpaqueConditions
-                return $ collectConditions conditions
+        return $ collectConditions conditions
 
     worker _ _ = empty
