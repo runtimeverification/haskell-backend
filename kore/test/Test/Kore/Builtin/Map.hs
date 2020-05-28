@@ -101,30 +101,12 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike hiding
     ( asConcrete
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.RulePattern
-import Kore.Step.Simplification.AndTerms
-    ( termUnification
-    )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-import Kore.Step.Simplification.CeilSimplifier
-    ( CeilSimplifier (..)
-    )
-import Kore.Step.Simplification.Data
-    ( runSimplifierBranch
-    )
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.Error
-    ( UnificationError
-    )
-import Kore.Unification.UnifierT
-    ( runUnifierT
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -1394,83 +1376,14 @@ test_inKeys =
             actual <- inKeys (tdivInt x z) symbolicMap
             assertEqual "" Nothing actual
         ]
-    , testGroup "Map definedness with in_keys simplification"
-        [ testCaseWithSMT "Undefined concrete map: duplicate concrete key" $ do
-            let term1 = Test.Bool.asInternal False
-                term2 =
-                    mkApplySymbol inKeysMapSymbol [concreteKey, concreteMap]
-                expect = [Right []]
-            actual <- runNotInKeysSimplification term1 term2
-            assertEqual "" expect actual
-        , testCaseWithSMT "Defined concrete map" $ do
-            let term1 = Test.Bool.asInternal False
-                term2 =
-                    mkApplySymbol inKeysMapSymbol [concreteKey', concreteMap]
-                expect = [Right [Just Pattern.top]]
-            actual <- runNotInKeysSimplification term1 term2
-            assertEqual "" expect actual
-        , testCaseWithSMT "Undefined symbolic map: duplicate concrete key" $ do
-            let term1 = Test.Bool.asInternal False
-                term2 =
-                    mkApplySymbol inKeysMapSymbol [concreteKey, symbolicMap]
-                expect = [Right []]
-            actual <- runNotInKeysSimplification term1 term2
-            assertEqual "" expect actual
-        -- , testCaseWithSMT "Defined symbolic map with condition" $ do
-        --     let term1 = Test.Bool.asInternal False
-        --         term2 =
-        --             mkApplySymbol inKeysMapSymbol [concreteKey', symbolicMap]
-        --         expectedPattern =
-        --             Conditional
-        --                 { term = mkTop_
-        --                 , predicate =
-        --                     Predicate.makeAndPredicate
-        --                         ( Predicate.makeAndPredicate
-        --                             ( Predicate.makeCeilPredicate_
-        --                                 (tdivInt y z)
-        --                             )
-        --                             ( Predicate.makeNotPredicate
-        --                                 (Predicate.makeEqualsPredicate_
-        --                                     x
-        --                                     concreteKey'
-        --                                 )
-        --                             )
-        --                         )
-        --                         ( Predicate.makeNotPredicate
-        --                             ( Predicate.makeEqualsPredicate_
-        --                                 concreteKey'
-        --                                 (tdivInt y z)
-        --                             )
-        --                         )
-        --                 , substitution = mempty
-        --                 }
-        --         expect =
-        --             [Right [Just expectedPattern]]
-        --     actual <- runNotInKeysSimplification term1 term2
-        --     assertEqual "" expect actual
-        -- , testCaseWithSMT "TESTING" $ do
-        --     let term1 = Test.Bool.asInternal False
-        --         term2 =
-        --             mkApplySymbol inKeysMapSymbol [concreteKey', concreteMap']
-        --         expect = [Right []]
-        --     actual <- runNotInKeysSimplification term1 term2
-        --     assertEqual "" expect actual
-        ]
     ]
   where
     concreteKey = Test.Int.asInternal 0
-    concreteKey' = Test.Int.asInternal 3
     concreteMap =
         asInternal
         [ (Test.Int.asInternal 0, u)
         , (Test.Int.asInternal 1, v)
         ]
-    -- concreteMap' =
-    --     asInternal
-    --     [ (Test.Int.asInternal 0, u)
-    --     , (Test.Int.asInternal 1, v)
-    --     , (Test.Int.asInternal 1, x)
-    --     ]
     x, y, z, u, v, w :: TermLike Variable
     x = mkIntVar (testId "x")
     y = mkIntVar (testId "y")
@@ -1628,18 +1541,3 @@ distinctVariables variables =
     length variableNames == length (List.nub variableNames)
   where
     variableNames = map asVariableName variables
-
-runNotInKeysSimplification
-    :: TermLike Variable
-    -> TermLike Variable
-    -> SMT [Either UnificationError [Maybe (Pattern Variable)]]
-runNotInKeysSimplification term1 term2 =
-    runSimplifierBranch testEnv
-    . runUnifierT Not.notSimplifier
-    . runMaybeT
-    $ Map.unifyNotInKeys
-        (termUnification Not.notSimplifier)
-        Not.notSimplifier
-        (CeilSimplifier $ \Ceil { ceilChild } -> Ceil.makeEvaluateTerm SideCondition.top ceilChild)
-        term1
-        term2
