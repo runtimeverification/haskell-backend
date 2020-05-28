@@ -59,7 +59,7 @@ axioms of the form:
 
 Note that, given the pair of overloaded symbols, these axioms can be
 automatically inferred. To assist tooling, the compilation process
-annotates these geenrated axioms with an `overload` attribute
+annotates these generated axioms with an `overload` attribute
 having the two symbols involved as arguments.
 
 Problems
