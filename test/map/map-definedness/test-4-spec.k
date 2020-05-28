@@ -7,6 +7,6 @@ module TEST-4-SPEC
 
   rule
     <k> add(f(X), 3) => end </k>
-    <a> M => ?_ </a>
+    <a> 2 |-> 3 M => ?_ </a>
 
 endmodule
