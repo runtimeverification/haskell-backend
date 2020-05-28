@@ -25,6 +25,10 @@ module Kore.Domain.Builtin
     , removeSymbolicKeyOfAc
     , isConcreteKeyOfAc
     , removeConcreteKeyOfAc
+    , getSymbolicKeysOfAc
+    , getConcreteKeysOfAc
+    , getSymbolicValuesOfAc
+    , getConcreteValuesOfAc
     --
     , InternalMap
     , MapElement
@@ -175,15 +179,30 @@ isSymbolicKeyOfAc
     => child
     -> normalized key child
     -> Bool
-isSymbolicKeyOfAc
-    child
+isSymbolicKeyOfAc child normalized =
+    child `elem` getSymbolicKeysOfAc normalized
+
+getSymbolicKeysOfAc
+    :: AcWrapper normalized
+    => normalized key child
+    -> [child]
+getSymbolicKeysOfAc
     ( unwrapAc ->
         NormalizedAc { elementsWithVariables }
     )
   =
-    child `elem` symbolicKeys
-  where
-    symbolicKeys = fmap (fst . unwrapElement) elementsWithVariables
+    fst . unwrapElement <$> elementsWithVariables
+
+getSymbolicValuesOfAc
+    :: AcWrapper normalized
+    => normalized key child
+    -> [Value normalized child]
+getSymbolicValuesOfAc
+    ( unwrapAc ->
+        NormalizedAc { elementsWithVariables }
+    )
+  =
+    snd . unwrapElement <$> elementsWithVariables
 
 lookupSymbolicKeyOfAc
     :: AcWrapper normalized
@@ -224,13 +243,30 @@ isConcreteKeyOfAc
     => key
     -> normalized key child
     -> Bool
-isConcreteKeyOfAc
-    key
+isConcreteKeyOfAc key normalized =
+    key `elem` getConcreteKeysOfAc normalized
+
+getConcreteKeysOfAc
+    :: AcWrapper normalized
+    => normalized key child
+    -> [key]
+getConcreteKeysOfAc
     ( unwrapAc ->
         NormalizedAc { concreteElements }
     )
   =
-    key `Map.member` concreteElements
+    Map.keys concreteElements
+
+getConcreteValuesOfAc
+    :: AcWrapper normalized
+    => normalized key child
+    -> [Value normalized child]
+getConcreteValuesOfAc
+    ( unwrapAc ->
+        NormalizedAc { concreteElements }
+    )
+  =
+    Map.elems concreteElements
 
 removeConcreteKeyOfAc
     :: Ord key

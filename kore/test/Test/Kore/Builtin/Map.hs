@@ -82,6 +82,7 @@ import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Map.Map as Map
@@ -1495,7 +1496,7 @@ asInternal elements =
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> TermLike.asConcrete key <*> pure value
+        (,) <$> Builtin.toKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements

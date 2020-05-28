@@ -20,6 +20,7 @@ module Kore.Builtin.Map
     , internalize
     -- * Unification
     , unifyEquals
+    , unifyNotInKeys
     -- * Raw evaluators
     , evalConcat
     , evalElement
@@ -36,6 +37,7 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Monad as Monad
+import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -47,6 +49,9 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Builtin.Attributes
@@ -66,12 +71,22 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Condition
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    , symbolHook
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -84,6 +99,11 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
+import qualified Kore.Sort as Sort
+import Kore.Step.Simplification.CeilSimplifier
+    ( CeilSimplifier (..)
+    )
+import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence
     ( SentenceSort (..)
@@ -91,6 +111,7 @@ import Kore.Syntax.Sentence
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import qualified Kore.Unification.Unify as Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Variables.Fresh
 
@@ -506,7 +527,7 @@ reject the definition.
 unifyEquals
     :: forall variable unifier
     .  (InternalVariable variable, MonadUnify unifier)
-    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -561,3 +582,117 @@ unifyEquals unifyEqualsChildren first second = do
             normalizedOrBottom
                 :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
             normalizedOrBottom = Ac.toNormalized patt
+
+data InKeys term =
+    InKeys
+        { symbol :: !Symbol
+        , keyTerm, mapTerm :: !term
+        }
+
+instance
+    InternalVariable variable
+    => Injection (TermLike variable) (InKeys (TermLike variable))
+  where
+    inject InKeys { symbol, keyTerm, mapTerm } =
+        TermLike.mkApplySymbol symbol [keyTerm, mapTerm]
+
+    retract (App_ symbol [keyTerm, mapTerm]) = do
+        hook2 <- (getHook . symbolHook) symbol
+        Monad.guard (hook2 == Map.in_keysKey)
+        return InKeys { symbol, keyTerm, mapTerm }
+    retract _ = empty
+
+matchInKeys
+    :: InternalVariable variable
+    => TermLike variable
+    -> Maybe (InKeys (TermLike variable))
+matchInKeys = retract
+
+unifyNotInKeys
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> NotSimplifier unifier
+    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyNotInKeys
+    unifyChildren
+    (NotSimplifier notSimplifier)
+    (CeilSimplifier ceilSimplifier)
+    a
+    b
+  =
+    worker a b <|> worker b a
+  where
+    normalizedOrBottom
+       :: TermLike variable
+       -> Ac.NormalizedOrBottom Domain.NormalizedMap variable
+    normalizedOrBottom = Ac.toNormalized
+
+    defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
+    defineTerm termLike =
+        ceilSimplifier
+            TermLike.Ceil
+                { ceilResultSort = Sort.predicateSort
+                , ceilOperandSort = TermLike.termLikeSort termLike
+                , ceilChild = termLike
+                }
+        >>= lift . Unify.scatter
+
+    eraseTerm =
+        Pattern.fromCondition . Pattern.withoutTerm
+
+    unifyAndNegate t1 t2 = do
+        -- Erasing the unified term is valid here because
+        -- the terms are all wrapped in \ceil below.
+        unificationSolutions <-
+            fmap eraseTerm
+            <$> Unify.gather (unifyChildren t1 t2)
+        notSimplifier
+            SideCondition.top
+            (OrPattern.fromPatterns unificationSolutions)
+        >>= Unify.scatter
+
+    collectConditions terms =
+        Foldable.fold terms
+        & Pattern.fromCondition
+
+    worker
+        :: TermLike variable
+        -> TermLike variable
+        -> MaybeT unifier (Pattern variable)
+    worker termLike1 termLike2
+      | Just boolValue <- Bool.matchBool termLike1
+      , not boolValue
+      , Just inKeys@InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
+      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
+      = do
+        let symbolicKeys = Domain.getSymbolicKeysOfAc normalizedMap
+            concreteKeys =
+                TermLike.fromConcrete
+                <$> Domain.getConcreteKeysOfAc normalizedMap
+            mapKeys = symbolicKeys <> concreteKeys
+            opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
+
+        Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
+        -- Concrete keys are constructor-like, therefore they are defined
+        TermLike.assertConstructorLikeKeys concreteKeys $ return ()
+        definedKey <- defineTerm keyTerm
+        definedMap <- defineTerm mapTerm
+        keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
+
+        let keyInKeysOpaque =
+                (\term -> inject @(TermLike _) inKeys { mapTerm = term })
+                <$> opaqueElements
+
+        opaqueConditions <-
+            lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
+        let conditions =
+                fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
+                <> [definedKey, definedMap]
+        return $ collectConditions conditions
+
+    worker _ _ = empty
