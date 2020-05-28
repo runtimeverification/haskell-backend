@@ -23,7 +23,9 @@ import Kore.Error
 import Kore.IndexedModule.Error
     ( noSort
     )
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike hiding
+    ( VariableName (..)
+    )
 import Kore.Syntax.Definition
     ( AsSentence (..)
     , Attributes (..)

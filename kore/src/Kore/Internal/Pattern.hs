@@ -64,7 +64,6 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
-    , SetVariable
     , Sort
     , TermLike
     , mkAnd
@@ -78,12 +77,11 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Sort as Sort
     ( predicateSort
     )
+import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -134,21 +132,16 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    :: (InternalVariable variableFrom, InternalVariable variableTo)
-    => (ElementVariable variableFrom -> ElementVariable variableTo)
-    -> (SetVariable variableFrom -> SetVariable variableTo)
-    -> Pattern variableFrom
-    -> Pattern variableTo
-mapVariables
-    mapElemVar
-    mapSetVar
-    Conditional { term, predicate, substitution }
-  =
+    ::  (InternalVariable variable1, InternalVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Pattern variable1
+    ->  Pattern variable2
+mapVariables adj Conditional { term, predicate, substitution } =
     Conditional
-        { term = TermLike.mapVariables mapElemVar mapSetVar term
-        , predicate = Predicate.mapVariables mapElemVar mapSetVar predicate
-        , substitution =
-            Substitution.mapVariables mapElemVar mapSetVar substitution
+        { term = TermLike.mapVariables adj term
+        , predicate = Predicate.mapVariables adj predicate
+        , substitution = Substitution.mapVariables adj substitution
         }
 
 {- | Convert an 'Pattern' to an ordinary 'TermLike'.

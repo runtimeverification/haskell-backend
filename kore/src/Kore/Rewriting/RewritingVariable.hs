@@ -24,6 +24,7 @@ module Kore.Rewriting.RewritingVariable
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -52,10 +53,11 @@ import Kore.Rewriting.UnifyingRule
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    , foldMapVariable
-    )
 
+-- TODO (thomas.tuegel): Replace
+-- > data RewritingVariable
+-- with
+-- > type RewritingVariable = Variable1 RewritingVariableName
 data RewritingVariable
     = ConfigVariable !Variable
     | RuleVariable   !Variable
@@ -83,7 +85,42 @@ instance FreshPartialOrd RewritingVariable where
             ConfigVariable var -> ConfigVariable (nextVariable var)
     {-# INLINE nextVariable #-}
 
-instance VariableName RewritingVariable
+{- | The name of a 'RewritingVariable'.
+ -}
+data RewritingVariableName
+    = ConfigVariableName !VariableName
+    | RuleVariableName   !VariableName
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+
+instance NamedVariable RewritingVariable where
+    type VariableNameOf RewritingVariable = RewritingVariableName
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to (ConfigVariable variable) =
+            ConfigVariableName <$> Lens.view isoVariable1 variable
+        to (RuleVariable variable) =
+            RuleVariableName <$> Lens.view isoVariable1 variable
+        fr Variable1 { variableName1, variableSort1 } =
+            case variableName1 of
+                ConfigVariableName variableName1' ->
+                    Variable1
+                    { variableName1 = variableName1'
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
+                    & ConfigVariable
+                RuleVariableName variableName1' ->
+                    Variable1
+                    { variableName1 = variableName1'
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
+                    & RuleVariable
+
+instance VariableBase RewritingVariable
 
 instance SubstitutionOrd RewritingVariable where
     compareSubstitution (RuleVariable _) (ConfigVariable _) = LT
@@ -110,8 +147,15 @@ instance From RewritingVariable Variable where
     from (ConfigVariable variable) = variable
     from (RuleVariable variable) = variable
 
+instance From RewritingVariableName VariableName where
+    from (ConfigVariableName variable) = variable
+    from (RuleVariableName variable) = variable
+
 instance From Variable RewritingVariable where
     from = RuleVariable
+
+instance From VariableName RewritingVariableName where
+    from = RuleVariableName
 
 instance SortedVariable RewritingVariable where
     lensVariableSort f =
@@ -156,14 +200,6 @@ getUnifiedRuleVariable
 getUnifiedRuleVariable (ElemVar var) = ElemVar <$> traverse getRuleVariable var
 getUnifiedRuleVariable (SetVar var) = SetVar <$> traverse getRuleVariable var
 
-getElementRewritingVariable
-    :: ElementVariable RewritingVariable -> ElementVariable Variable
-getElementRewritingVariable = fmap (from @_ @Variable)
-
-getSetRewritingVariable
-    :: SetVariable RewritingVariable -> SetVariable Variable
-getSetRewritingVariable = fmap (from @_ @Variable)
-
 getPattern
     :: HasCallStack
     => Pattern RewritingVariable
@@ -174,14 +210,12 @@ getPattern pattern' =
   where
     freeVars = freeVariables pattern' & FreeVariables.toList
 
-getPatternAux
-    :: Pattern RewritingVariable
-    -> Pattern Variable
-getPatternAux pattern' =
-    Pattern.mapVariables
-        getElementRewritingVariable
-        getSetRewritingVariable
-        pattern'
+getRewritingVariable
+    :: AdjSomeVariableName (RewritingVariableName -> VariableName)
+getRewritingVariable = pure (from @RewritingVariableName @VariableName)
+
+getPatternAux :: Pattern RewritingVariable -> Pattern Variable
+getPatternAux = Pattern.mapVariables getRewritingVariable
 
 mkConfigVariable :: Variable -> RewritingVariable
 mkConfigVariable = ConfigVariable
@@ -245,27 +279,20 @@ mkRewritingRule
     :: UnifyingRule rule
     => rule Variable
     -> rule RewritingVariable
-mkRewritingRule = mapRuleVariables (fmap RuleVariable) (fmap RuleVariable)
+mkRewritingRule = mapRuleVariables (pure RuleVariableName)
 
 {- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
  -}
 unRewritingRule :: UnifyingRule rule => rule RewritingVariable -> rule Variable
-unRewritingRule =
-    mapRuleVariables getElementRewritingVariable getSetRewritingVariable
+unRewritingRule = mapRuleVariables getRewritingVariable
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern Variable -> Pattern RewritingVariable
-mkRewritingPattern =
-    Pattern.mapVariables
-        (fmap ConfigVariable)
-        (fmap ConfigVariable)
+mkRewritingPattern = Pattern.mapVariables (pure ConfigVariableName)
 
 getRemainderPredicate :: Predicate RewritingVariable -> Predicate Variable
 getRemainderPredicate predicate =
-    Predicate.mapVariables
-        getElementRewritingVariable
-        getSetRewritingVariable
-        predicate
+    Predicate.mapVariables getRewritingVariable predicate
     & assert (all isUnifiedConfigVariable freeVars)
   where
     freeVars = freeVariables predicate & FreeVariables.toList

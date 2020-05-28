@@ -18,11 +18,6 @@ module Kore.Variables.UnifiedVariable
     , MapVariables
     , mapUnifiedVariable
     , traverseUnifiedVariable
-    -- * UnifiedVariableMap
-    , VariableMap
-    , UnifiedVariableMap
-    , renameElementVariable, renameSetVariable
-    , lookupRenamedElementVariable, lookupRenamedSetVariable
     ) where
 
 import Prelude.Kore
@@ -32,13 +27,6 @@ import Control.DeepSeq
     )
 import qualified Control.Lens as Lens
 import Data.Functor.Const
-import Data.Generics.Product
-    ( field
-    )
-import Data.Map.Strict
-    ( Map
-    )
-import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
@@ -53,9 +41,6 @@ import Kore.Sort
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    , sortedVariableSort
-    )
 import Kore.Unparser
 import Kore.Variables.Fresh
 
@@ -65,7 +50,8 @@ from element variables (introduced by 'ElemVar').
 data UnifiedVariable variable
     = ElemVar !(ElementVariable variable)
     | SetVar  !(SetVariable variable)
-    deriving (Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (Generic)
 
 instance NFData variable => NFData (UnifiedVariable variable)
 
@@ -92,6 +78,48 @@ instance
             ElemVar elemVar -> ElemVar <$> lensVariableSort f elemVar
             SetVar setVar -> SetVar <$> lensVariableSort f setVar
     {-# INLINE lensVariableSort #-}
+
+instance From (UnifiedVariable variable) variable where
+    from (ElemVar elementVariable) = getElementVariable elementVariable
+    from (SetVar setVariable) = getSetVariable setVariable
+    {-# INLINE from #-}
+
+instance
+    From variable Variable => From (UnifiedVariable variable) Variable
+  where
+    from (ElemVar elementVariable) = from elementVariable
+    from (SetVar setVariable) = from setVariable
+    {-# INLINE from #-}
+
+instance
+    NamedVariable variable => NamedVariable (UnifiedVariable variable)
+  where
+    type VariableNameOf (UnifiedVariable variable) =
+        SomeVariableName (VariableNameOf variable)
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to (ElemVar elementVariable) =
+            SomeVariableNameElement <$> Lens.view isoVariable1 elementVariable
+        to (SetVar setVariable) =
+            SomeVariableNameSet <$> Lens.view isoVariable1 setVariable
+        fr Variable1 { variableName1, variableSort1 } =
+            case variableName1 of
+                SomeVariableNameElement elementVariableName ->
+                    Variable1
+                    { variableName1 = elementVariableName
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
+                    & ElemVar
+                SomeVariableNameSet setVariableName ->
+                    Variable1
+                    { variableName1 = setVariableName
+                    , variableSort1
+                    }
+                    & Lens.review isoVariable1
+                    & SetVar
 
 instance
     FreshPartialOrd variable => FreshPartialOrd (UnifiedVariable variable)
@@ -207,93 +235,22 @@ refreshSetVariable avoiding =
     fmap expectSetVar . refreshVariable avoiding . SetVar
 
 type MapVariables variable1 variable2 term1 term2 =
-        (ElementVariable variable1 -> ElementVariable variable2)
-    ->  (SetVariable     variable1 -> SetVariable     variable2)
-    ->  term1 -> term2
+    AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
+    -> term1 -> term2
 
 mapUnifiedVariable
-    ::  MapVariables variable1 variable2
-            (UnifiedVariable variable1)
-            (UnifiedVariable variable2)
-mapUnifiedVariable mapElemVar mapSetVar =
-    \case
-        ElemVar elemVar -> ElemVar (mapElemVar elemVar)
-        SetVar  setVar  -> SetVar (mapSetVar setVar)
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  UnifiedVariable variable1 -> UnifiedVariable variable2
+mapUnifiedVariable adj =
+    Lens.over lensVariableName (mapSomeVariableName adj)
 
 traverseUnifiedVariable
-    :: Functor f
-    => (ElementVariable variable1 -> f (ElementVariable variable2))
-    -> (SetVariable variable1 -> f (SetVariable variable2))
-    -> UnifiedVariable variable1 -> f (UnifiedVariable variable2)
-traverseUnifiedVariable traverseElemVar traverseSetVar =
-    \case
-        ElemVar elemVar -> ElemVar <$> traverseElemVar elemVar
-        SetVar  setVar  -> SetVar <$> traverseSetVar setVar
-
-type VariableMap meta variable1 variable2 =
-    Map (meta variable1) (meta variable2)
-
-data UnifiedVariableMap variable1 variable2 =
-    UnifiedVariableMap
-        { setVariables
-            :: !(VariableMap SetVariable variable1 variable2)
-        , elementVariables
-            :: !(VariableMap ElementVariable variable1 variable2)
-        }
-    deriving (Generic)
-
-instance
-    Ord variable1 => Semigroup (UnifiedVariableMap variable1 variable2)
-  where
-    (<>) a b =
-        UnifiedVariableMap
-            { setVariables = on (<>) setVariables a b
-            , elementVariables = on (<>) elementVariables a b
-            }
-    {-# INLINE (<>) #-}
-
-instance Ord variable1 => Monoid (UnifiedVariableMap variable1 variable2) where
-    mempty = UnifiedVariableMap mempty mempty
-    {-# INLINE mempty #-}
-
-renameSetVariable
-    :: Ord variable1
-    => SetVariable variable1
-    -> SetVariable variable2
-    -> UnifiedVariableMap variable1 variable2
-    -> UnifiedVariableMap variable1 variable2
-renameSetVariable variable1 variable2 =
-    Lens.over
-        (field @"setVariables")
-        (Map.insert variable1 variable2)
-{-# INLINE renameSetVariable #-}
-
-renameElementVariable
-    :: Ord variable1
-    => ElementVariable variable1
-    -> ElementVariable variable2
-    -> UnifiedVariableMap variable1 variable2
-    -> UnifiedVariableMap variable1 variable2
-renameElementVariable variable1 variable2 =
-    Lens.over
-        (field @"elementVariables")
-        (Map.insert variable1 variable2)
-{-# INLINE renameElementVariable #-}
-
-lookupRenamedElementVariable
-    :: Ord variable1
-    => ElementVariable variable1
-    -> UnifiedVariableMap variable1 variable2
-    -> Maybe (ElementVariable variable2)
-lookupRenamedElementVariable variable =
-    Map.lookup variable . elementVariables
-{-# INLINE lookupRenamedElementVariable #-}
-
-lookupRenamedSetVariable
-    :: Ord variable1
-    => SetVariable variable1
-    -> UnifiedVariableMap variable1 variable2
-    -> Maybe (SetVariable variable2)
-lookupRenamedSetVariable variable =
-    Map.lookup variable . setVariables
-{-# INLINE lookupRenamedSetVariable #-}
+    ::  Applicative f
+    =>  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> f (VariableNameOf variable2))
+    ->  UnifiedVariable variable1 -> f (UnifiedVariable variable2)
+traverseUnifiedVariable adj =
+    Lens.traverseOf lensVariableName (traverseSomeVariableName adj)

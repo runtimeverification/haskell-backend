@@ -1,6 +1,7 @@
 module Test.Kore.Variables.W
     ( W, mkW, war'
     , showVar
+    , showUnifiedVar
     ) where
 
 import Prelude.Kore
@@ -49,10 +50,24 @@ instance SortedVariable W where
 instance From Variable W where
     from = error "Not implemented"
 
+instance From VariableName W where
+    from = error "Not implemented"
+
 instance From W Variable where
     from = error "Not implemented"
 
-instance VariableName W
+instance From W VariableName where
+    from = error "Not implemented"
+
+instance NamedVariable W where
+    type VariableNameOf W = W
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to variableName1 =
+            Variable1 { variableName1, variableSort1 = sortVariable }
+        fr Variable1 { variableName1 } = variableName1
 
 instance FreshPartialOrd W where
     infVariable w = w { counter = Nothing }
@@ -71,8 +86,13 @@ instance FreshVariable W
 instance SubstitutionOrd W where
     compareSubstitution = compare
 
+instance VariableBase W
+
 showVar :: V -> W
 showVar (V i n) = W (show i) n
+
+showUnifiedVar :: AdjSomeVariableName (V -> W)
+showUnifiedVar = pure showVar
 
 war' :: String -> TermLike W
 war' = mkElemVar . ElementVariable . mkW

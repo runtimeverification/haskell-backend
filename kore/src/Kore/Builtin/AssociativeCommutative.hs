@@ -99,6 +99,7 @@ import Kore.Internal.TermLike
     , Concrete
     , pattern ElemVar_
     , InternalVariable
+    , NamedVariable
     , TermLike
     , mkApplySymbol
     , mkBuiltin
@@ -158,7 +159,7 @@ class
     @
     -}
     toNormalized
-        :: Ord variable
+        :: NamedVariable variable
         => TermLike variable
         -> NormalizedOrBottom normalized variable
 
@@ -355,7 +356,7 @@ deriving instance
 {- | The semigroup defined by the `concat` operation.
 -}
 instance
-    (Ord variable, TermWrapper normalized)
+    (NamedVariable variable, TermWrapper normalized)
     => Semigroup (NormalizedOrBottom normalized variable)
   where
     Bottom <> _ = Bottom
@@ -365,7 +366,7 @@ instance
 
 concatNormalized
     :: forall normalized variable
-    .  (TermWrapper normalized, Ord variable)
+    .  (TermWrapper normalized, NamedVariable variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
@@ -406,7 +407,7 @@ internal representations themselves; this "flattening" step also recurses to
 
  -}
 renormalize
-    :: (TermWrapper normalized, Ord variable)
+    :: (TermWrapper normalized, NamedVariable variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 renormalize = normalizeAbstractElements >=> flattenOpaque
@@ -457,7 +458,7 @@ Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
-    :: (TermWrapper normalized, Ord variable)
+    :: (TermWrapper normalized, NamedVariable variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
@@ -478,7 +479,7 @@ normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
 -- remains abstract.
 extractConcreteElement
     ::  Domain.AcWrapper collection
-    =>  Ord variable
+    =>  NamedVariable variable
     =>  Domain.Element collection (TermLike variable)
     ->  Either
             (TermLike Concrete, Domain.Value collection (TermLike variable))
@@ -494,7 +495,7 @@ extractConcreteElement element =
 
  -}
 flattenOpaque
-    :: (TermWrapper normalized, Ord variable)
+    :: (TermWrapper normalized, NamedVariable variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 flattenOpaque (Domain.unwrapAc -> normalized) = do
@@ -509,7 +510,7 @@ flattenOpaque (Domain.unwrapAc -> normalized) = do
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
 instance
-    (Ord variable, TermWrapper normalized)
+    (NamedVariable variable, TermWrapper normalized)
     => Monoid (NormalizedOrBottom normalized variable)
   where
     mempty = Normalized $ Domain.wrapAc Domain.emptyNormalizedAc
@@ -680,7 +681,7 @@ disjointMap input =
 
 splitVariableConcrete
     :: forall variable a
-    .  Ord variable
+    .  NamedVariable variable
     =>  [(TermLike variable, a)]
     -> ([(TermLike variable, a)], [(TermLike Concrete, a)])
 splitVariableConcrete terms =

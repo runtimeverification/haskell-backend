@@ -24,19 +24,16 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , InternalVariable
-    , SetVariable
-    , SortedVariable
+    ( InternalVariable
+    , NamedVariable
     , TermLike
     )
+import Kore.Syntax.Variable
 import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import qualified Pretty
 
 type Renaming variable =
@@ -100,11 +97,12 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        :: (Ord variable1, FreshPartialOrd variable2, SortedVariable variable2)
-        => (ElementVariable variable1 -> ElementVariable variable2)
-        -> (SetVariable variable1 -> SetVariable variable2)
-        -> rule variable1
-        -> rule variable2
+        ::  (NamedVariable variable1, NamedVariable variable2)
+        =>  FreshPartialOrd variable2
+        =>  AdjSomeVariableName
+                (VariableNameOf variable1 -> VariableNameOf variable2)
+        ->  rule variable1
+        ->  rule variable2
 
     -- | Checks whether a given substitution is acceptable for a rule
     checkInstantiation
