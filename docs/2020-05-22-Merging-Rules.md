@@ -1,4 +1,9 @@
-# Rationale
+Combining multiple rules in a single equivalent rule
+====================================================
+
+
+Introduction
+------------
 
 Rule application can benefit from indexing of rules and using efficient
 data-structures to decide faster which rule can be applied on a given
@@ -7,7 +12,7 @@ configuration.
 This document attempts to justify this approach from a provability point of
 view, to ensure that the indexing algorithms are provably sound.
 
-# Background
+### Background
 
 K rules, are of the form
 
@@ -23,12 +28,13 @@ When translated into matching logic, they are of the form
 Where EX is the next operator, meaning that there is a possible transition
 from l (satisfying c) to r.
 
-# Approach
+Approach
+--------
 
 We will only discuss here combining two rules, but it should be clear
 that this easily extends to any finite number of rules.
 
-## FOL interlude
+### FOL Interlude
 
 The following is provable using FOL reasoning:
 
@@ -43,7 +49,7 @@ Theorem combine
         → (c = i ∧ q1 x) ∨ (c = j ∧ q2 y).
 ```
 
-## Back to ML
+### Back to ML
 
 Given two rules
 
@@ -68,7 +74,7 @@ Reasoning:
     equals  EX (c=1 ∧ r1) ∨ EX (c=2 ∧ r2)
     equals  EX ((c=1 ∧ r1) ∧ (c=2 ∧ r2))
 
-## Side conditions
+## Dealing with side conditions
 
 If `l1 = tl1 ∧ pl1` and `l2 = tl2 ∧ pl2` then we can transform the lhs above
 into `((c = 1 ∧ tl1) ∨ (c = 2 ∧ tl2)) ∧ ((c = 1 ∧ tp1) ∨ (c = 2 ∧ tp2))`
@@ -80,7 +86,7 @@ Note: in the case we have the same predicate / term / variable / constant
 in both rules, we can transform `(c = 1 ∧ t) ∨ (c = 2 ∧ t)` into
 `t ∧ (c = 1 ∨ c = 2)`.
 
-## Pushing choice predicates into terms
+### Pushing choice predicates into terms
 
 
 Let us generalize the property we stated above for `EX` for any symbol in the
@@ -138,7 +144,7 @@ enforce maximal sharing.
 Note 2: we can choose not to index the RHSs, in which case G' will be the empty
 context
 
-## Pushing choices to variable / constant level?
+### Pushing choices to variable / constant level?
 
 We could continue the pushing down process for the choice predicates even after
 `symbol(t1i) != symbol(t2i)` for each `1 <= i <= m`, pushing the choices up to
@@ -152,7 +158,7 @@ Note, however, that this might not bring us additional benefits, because:
 - checking for conflicts between choices at end of unification is still needed
 
 
-## Sharing variables?
+### Sharing variables?
 
 Variables can be shared and there is no need to rename rules' variables;
 indeed; the choice being exclusive, there is no danger of contagion between 
@@ -163,7 +169,7 @@ On the other hand, care should be taken, as not renaming rules might allow
 for the same identifier to be used with different sorts in the same combined
 axiom, which might violate some existing assumptions.
 
-#### Example
+### Example
 
 When indexing the following two rules 
 
@@ -190,14 +196,15 @@ The merged axiom might look of the form
        (c = 2 ∧ <T> <k> .K ~> K </k> <store> __(X ↦ V, Mem) </store>)
         
 
-### Multiple rules
+Merging multiple rules
+----------------------
 
 When merging multiple rules, if not pushing choice predicates up to the
 leaves, it makes sense to only insert them at the moment that a certain
 rule diverges from all other rules. Rules sharing the same leaves will be
 handled as described above.
 
-#### Example
+### Example
 
 Consider the following 4 rules:
 
@@ -245,3 +252,13 @@ They could be merged into the following axiom:
        ∨ (c = 1 ∧ <k> Y:Exp ~> X:Int /[] ~> K </k>)
        ∨ (c = 2 ∧ <k> X:Int /Int Y:Int ~> K </k>)
        ∨ (c = 3 ∧ <k> error("Division by 0") ~> K </k>)
+
+
+On merging function-like patterns
+---------------------------------
+
+Let φ and ψ be (extended) function-like patterns, that is, patterns whose
+interpretation contains at most one element.
+Let c be a variable not occurring free in neither φ nor ψ.
+Let `γ`  be the merged pattern `(c = 1 ∧ φ) ∨ (c = 2 ∧ ψ)`.
+Then the interpretation of `γ` contains at most two elements.
