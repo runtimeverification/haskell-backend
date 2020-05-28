@@ -667,7 +667,7 @@ unifyNotInKeys
     worker termLike1 termLike2
       | Just boolValue <- Bool.matchBool termLike1
       , not boolValue
-      , Just InKeys { symbol, keyTerm, mapTerm } <- matchInKeys termLike2
+      , Just inKeys@InKeys { symbol, keyTerm, mapTerm } <- matchInKeys termLike2
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
       = do
         let symbolicKeys = Domain.getSymbolicKeysOfAc normalizedMap
