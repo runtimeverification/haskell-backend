@@ -685,7 +685,7 @@ unifyNotInKeys
         keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
 
         let keyInKeysOpaque =
-                (\term -> TermLike.mkApplySymbol symbol [keyTerm, term])
+                (\term -> inject @(TermLike _) inKeys { mapTerm = term })
                 <$> opaqueElements
 
         opaqueConditions <-
