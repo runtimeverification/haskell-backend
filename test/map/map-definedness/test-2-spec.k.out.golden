@@ -1,3 +1,6 @@
+  #Ceil ( M
+  N )
+#And
   #Not ( #Not ( {
       X
     #Equals
@@ -5,22 +8,15 @@
     } )
   #And
     {
-      X:Int in_keys ( M
-      N )
-    #Equals
       false
+    #Equals
+      X:Int in_keys ( M )
     }
   #And
     {
       false
     #Equals
-      2 in_keys ( M )
-    }
-  #And
-    {
-      false
-    #Equals
-      2 in_keys ( N )
+      X:Int in_keys ( N )
     } )
 #And
   <T>
@@ -36,8 +32,13 @@
   </T>
 #And
   {
-    2 in_keys ( M
-    N )
-  #Equals
     false
+  #Equals
+    2 in_keys ( M )
+  }
+#And
+  {
+    false
+  #Equals
+    2 in_keys ( N )
   }
