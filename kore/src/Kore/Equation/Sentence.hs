@@ -89,9 +89,37 @@ matchEquation attributes termLike
         (TermLike.Implies_ _
             (TermLike.And_ _
                 requires
+                argument@(TermLike.And_ _
+                    (TermLike.In_ _ _ _ _)
+                    _
+                         )
+            )
+            (TermLike.And_ _
+                (TermLike.Equals_ _ _ left right)
+                ensures
+            )
+        )
+      = do
+        requires' <- makePredicate requires & Bifunctor.first RequiresError
+        argument' <- makePredicate argument & Bifunctor.first ArgumentError
+        ensures'  <- makePredicate ensures  & Bifunctor.first EnsuresError
+        pure Equation
+            { requires = requires'
+            , argument = argument'
+            , antiLeft = Nothing
+            , left
+            , right
+            , ensures = ensures'
+            , attributes
+            }
+
+    match
+        (TermLike.Implies_ _
+            (TermLike.And_ _
+                antiLeft
                 (TermLike.And_ _
+                    requires
                     argument
-                    antiLeft
                 )
             )
             (TermLike.And_ _
@@ -108,14 +136,13 @@ matchEquation attributes termLike
         pure Equation
             { requires = requires'
             , argument = argument'
-            , antiLeft = antiLeft'
+            , antiLeft = Just antiLeft'
             , left
             , right
             , ensures = ensures'
             , attributes
             }
 
-    -- TODO: remove this case (old form of equations)
     match
         (TermLike.Implies_ _
             requires
@@ -130,7 +157,7 @@ matchEquation attributes termLike
         pure Equation
             { requires = requires'
             , argument = Predicate.makeTruePredicate sort
-            , antiLeft = Predicate.makeTruePredicate sort
+            , antiLeft = Nothing
             , left
             , right
             , ensures = ensures'
@@ -141,7 +168,7 @@ matchEquation attributes termLike
         pure Equation
             { requires = Predicate.makeTruePredicate sort
             , argument = Predicate.makeTruePredicate sort
-            , antiLeft = Predicate.makeTruePredicate sort
+            , antiLeft = Nothing
             , left
             , right
             , ensures = Predicate.makeTruePredicate sort
@@ -152,7 +179,7 @@ matchEquation attributes termLike
         pure Equation
             { requires = Predicate.makeTruePredicate sort
             , argument = Predicate.makeTruePredicate sort
-            , antiLeft = Predicate.makeTruePredicate sort
+            , antiLeft = Nothing
             , left
             , right = TermLike.mkTop sort
             , ensures = Predicate.makeTruePredicate sort

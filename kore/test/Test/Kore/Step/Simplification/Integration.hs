@@ -1418,7 +1418,7 @@ axiom left right requires =
         { left
         , requires
         , argument = Predicate.makeTruePredicate_
-        , antiLeft = Predicate.makeTruePredicate_
+        , antiLeft = Nothing
         , right
         , ensures = Predicate.makeTruePredicate_
         , attributes = Default.def

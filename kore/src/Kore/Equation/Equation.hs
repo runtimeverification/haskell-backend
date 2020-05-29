@@ -86,7 +86,7 @@ import qualified SQL
 data Equation variable = Equation
     { requires :: !(Predicate variable)
     , argument :: !(Predicate variable)
-    , antiLeft :: !(Predicate variable)
+    , antiLeft :: !(Maybe (Predicate variable))
     , left  :: !(TermLike variable)
     , right :: !(TermLike variable)
     , ensures :: !(Predicate variable)
@@ -109,7 +109,7 @@ mkEquation sort left right =
         { left
         , requires = Predicate.makeTruePredicate sort
         , argument = Predicate.makeTruePredicate sort
-        , antiLeft = Predicate.makeTruePredicate sort
+        , antiLeft = Nothing
         , right
         , ensures = Predicate.makeTruePredicate sort
         , attributes = Default.def
@@ -133,7 +133,7 @@ instance InternalVariable variable => Pretty (Equation variable) where
             , "argument:"
             , Pretty.indent 4 (unparse argument)
             , "antiLeft:"
-            , Pretty.indent 4 (unparse antiLeft)
+            , Pretty.indent 4 (maybe "" unparse antiLeft)
             , "left:"
             , Pretty.indent 4 (unparse left)
             , "right:"
@@ -165,6 +165,7 @@ instance
     InternalVariable variable
     => From (Equation variable) (TermLike variable)
   where
+    -- TODO: implement this
     from equation
       -- \ceil axiom
       | isTop requires
@@ -180,11 +181,9 @@ instance
       = TermLike.mkEquals sort left right
 
       -- conditional equation
-      -- TODO: old version, should be removed
       | not (isTop requires)
       , not (isTop ensures)
       , isTop argument
-      , isTop antiLeft
       =
         TermLike.mkImplies
             requires'
@@ -193,12 +192,31 @@ instance
                 ensures'
             )
 
-      -- conditional equation
+      | not (isTop requires)
+      , not (isTop ensures)
+      , not (isTop argument)
+      , Just antiLeft' <- antiLeft
+      =
+        let antiLeftTerm = from @(Predicate variable) antiLeft'
+         in
+            TermLike.mkImplies
+                (TermLike.mkAnd
+                    antiLeftTerm
+                    (TermLike.mkAnd
+                        requires'
+                        argument'
+                    )
+                )
+                (TermLike.mkAnd
+                    (TermLike.mkEquals sort left right)
+                    ensures'
+                )
+
       | otherwise =
         TermLike.mkImplies
             (TermLike.mkAnd
                 requires'
-                (TermLike.mkAnd argument' antiLeft')
+                (TermLike.mkAnd argument' (TermLike.mkTop sort))
             )
             (TermLike.mkAnd
                 (TermLike.mkEquals sort left right)
@@ -208,7 +226,6 @@ instance
       where
         requires' = from @(Predicate variable) requires
         argument' = from @(Predicate variable) argument
-        antiLeft' = from @(Predicate variable) antiLeft
         ensures' = from @(Predicate variable) ensures
         sort = termLikeSort requires'
         Equation
@@ -220,6 +237,7 @@ instance
             , ensures
             } = equation
 
+
 instance
     InternalVariable variable
     => HasFreeVariables (Equation variable) variable
@@ -230,7 +248,7 @@ instance
             freeVariables left
             <> freeVariables requires
             <> freeVariables argument
-            <> freeVariables antiLeft
+            <> maybe mempty freeVariables antiLeft
             <> freeVariables right
             <> freeVariables ensures
 
@@ -246,7 +264,7 @@ mapVariables mapElemVar mapSetVar equation@(Equation _ _ _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
         , argument = mapPredicateVariables argument
-        , antiLeft = mapPredicateVariables antiLeft
+        , antiLeft = mapPredicateVariables <$> antiLeft
         , left = mapTermLikeVariables left
         , right = mapTermLikeVariables right
         , ensures = mapPredicateVariables ensures
@@ -289,7 +307,7 @@ refreshVariables
         left' = TermLike.substitute subst left
         requires' = Predicate.substitute subst requires
         argument' = Predicate.substitute subst argument
-        antiLeft' = Predicate.substitute subst antiLeft
+        antiLeft' = Predicate.substitute subst <$> antiLeft
         right' = TermLike.substitute subst right
         ensures' = Predicate.substitute subst ensures
         attributes' =
@@ -336,7 +354,7 @@ substitute assignments equation =
     Equation
         { requires = Predicate.substitute assignments requires
         , argument = Predicate.substitute assignments argument
-        , antiLeft = Predicate.substitute assignments antiLeft
+        , antiLeft = Predicate.substitute assignments <$> antiLeft
         , left = TermLike.substitute assignments left
         , right = TermLike.substitute assignments right
         , ensures = Predicate.substitute assignments ensures

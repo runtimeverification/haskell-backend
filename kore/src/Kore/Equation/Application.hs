@@ -19,6 +19,11 @@ module Kore.Equation.Application
     , debugApplyEquation
     ) where
 
+-- import qualified Data.Text as Text
+--
+-- import Kore.Unparser
+--     ( unparseToString
+--     )
 import Prelude.Kore
 
 import qualified Branch
@@ -161,10 +166,20 @@ attemptEquation
     -> simplifier (AttemptEquationResult variable)
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
-        let Equation { left, argument } = equationRenamed
+        let Equation { left, argument, antiLeft } = equationRenamed
         matchResult <- match left termLike & whileMatch
         simplifiedResult <-
-            simplifyArgumentWithResult argument matchResult & lift
+            simplifyArgumentWithResult argument antiLeft matchResult & lift
+        -- traceM
+        --     $ "\n\nEquation:\n"
+        --         <> (Text.unpack
+        --             . Pretty.renderText
+        --             . Pretty.layoutPretty Pretty.defaultLayoutOptions
+        --             $ Pretty.pretty equation
+        --             -- <> Pretty.pretty (Equation.srcLoc eq)
+        --             )
+        --     <> "\n\nPredicate:\n"  <> unparseToString (fst simplifiedResult)
+        --     <> "\n\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap (snd simplifiedResult)))
         (equation', predicate') <-
             applyMatchResult equationRenamed simplifiedResult
             & whileApplyMatchResult
@@ -193,10 +208,12 @@ attemptEquation sideCondition termLike equation =
 
     simplifyArgumentWithResult
         :: Predicate (Target variable)
+        -> Maybe (Predicate (Target variable))
         -> MatchResult (Target variable)
         -> simplifier (MatchResult (Target variable))
     simplifyArgumentWithResult
         argument
+        _
         (matchPredicate, matchSubstitution)
       = do
         let toPattern =
@@ -206,7 +223,7 @@ attemptEquation sideCondition termLike equation =
         Conditional { predicate, substitution } <-
             Substitution.mergePredicatesAndSubstitutions
                 sideCondition
-                [argument, matchPredicate]
+                [argument, matchPredicate] -- <> maybeToList antiLeft)
                 [Substitution.fromMap matchSubstitution]
             & Branch.gather
             & fmap toPattern

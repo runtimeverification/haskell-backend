@@ -85,14 +85,14 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             left' = TermLike.substitute subst term
             requires' = TermLike.substitute subst <$> requires
             argument' = TermLike.substitute subst <$> argument
-            antiLeft' = TermLike.substitute subst <$> antiLeft
+            antiLeft' = (fmap . fmap ) (TermLike.substitute subst) antiLeft
             right' = TermLike.substitute subst right
             ensures' = TermLike.substitute subst <$> ensures
         return Equation
             { left = TermLike.forgetSimplified left'
             , requires = Predicate.forgetSimplified requires'
             , argument = Predicate.forgetSimplified argument'
-            , antiLeft = Predicate.forgetSimplified antiLeft'
+            , antiLeft = Predicate.forgetSimplified <$> antiLeft'
             , right = TermLike.forgetSimplified right'
             , ensures = Predicate.forgetSimplified ensures'
             , attributes = attributes

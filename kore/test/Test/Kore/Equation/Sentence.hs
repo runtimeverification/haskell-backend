@@ -52,10 +52,12 @@ test_fromSentenceAxiom =
         let requires = mkCeil sortR (Mock.f Mock.a)
             ensures = mkCeil sortR (Mock.h Mock.b)
             argument = mkIn sortR (mkElemVar Mock.y) (mkElemVar Mock.x)
+            argument' =
+                mkAnd argument (mkTop sortR)
             left = Mock.f (mkElemVar Mock.y)
             right = Mock.g (mkElemVar Mock.y)
             original =
-                mkImplies (mkAnd requires (mkAnd argument (mkTop sortR)))
+                mkImplies (mkAnd requires argument')
                 $ mkAnd (mkEquals sortR left right) ensures
             equation =
                 (mkEquation sortR left right)

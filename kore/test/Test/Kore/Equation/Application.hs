@@ -493,7 +493,7 @@ test_attemptEquationNEW =
         (sigma z z)
     , applies
         -- using SMT
-        "TESTING Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
+        "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
         (functionAxiomNEW sigmaSymbol [x, y] a (positive x `orNot` positive y))
         (SideCondition.fromPredicate $ positive a)
         (sigma a a)
