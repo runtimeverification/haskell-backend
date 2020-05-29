@@ -77,7 +77,7 @@ test_parse =
             expect = parseKoreLogOpts arguments
         let
             actual :: ParserResult KoreLogOptions
-            actual = fmap unparseKoreLogOptions expect >>= parseKoreLogOpts
+            actual = expect >>= parseKoreLogOpts . unparseKoreLogOptions
         getParseResult expect === getParseResult actual
 
 parseKoreLogOpts :: [String] -> ParserResult KoreLogOptions
