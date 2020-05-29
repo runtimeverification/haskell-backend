@@ -121,27 +121,21 @@ withMainLogger
     -> KoreLogOptions
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
-withMainLogger
-    reportDirectory
-    koreLogOptions@KoreLogOptions { logType, timestampsSwitch, exeName }
-    continue
-  = do
-    _ <- Colog.withLogTextFile (reportDirectory </> getExeName exeName <.> "log")
-        $ continue
-        . koreLogTransformer koreLogOptions { logLevel = Error}
-        . koreLogFilters koreLogOptions { logLevel = Error}
-        . makeKoreLogger exeName timestampsSwitch
-    case logType of
-        LogStdErr -> continue
-            $ koreLogTransformer koreLogOptions
-            $ koreLogFilters koreLogOptions
-                (stderrLogger exeName timestampsSwitch)
-        LogFileText filename ->
-            Colog.withLogTextFile filename
-            $ continue
-            . koreLogTransformer koreLogOptions
-            . koreLogFilters koreLogOptions
-            . makeKoreLogger exeName timestampsSwitch
+withMainLogger reportDirectory koreLogOptions = runContT $ do
+    let KoreLogOptions { exeName } = koreLogOptions
+        bugReportLogFile = reportDirectory </> getExeName exeName <.> "log"
+    bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
+    userLogAction <-
+        case logType koreLogOptions of
+            LogStdErr -> pure Colog.logTextStderr
+            LogFileText logFile -> ContT $ Colog.withLogTextFile logFile
+    let KoreLogOptions { timestampsSwitch } = koreLogOptions
+        logAction =
+            userLogAction <> bugReportLogAction
+            & makeKoreLogger exeName timestampsSwitch
+            & koreLogFilters koreLogOptions
+            & koreLogTransformer koreLogOptions
+    pure logAction
 
 withSmtSolverLogger
     :: DebugSolverOptions -> (LogAction IO ActualEntry -> IO a) -> IO a
