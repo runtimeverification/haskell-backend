@@ -3,7 +3,7 @@
       #addOne ~> #execute
     </k>
     <state>
-      "x" |-> X -Int 1
+      "x" |-> X +Int -1
     </state>
   </T>
 #And
