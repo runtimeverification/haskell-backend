@@ -54,7 +54,7 @@ unsupportedPatterns
     => String -> TermLike variable -> TermLike variable -> UnificationError
 unsupportedPatterns message =
     on (UnsupportedPatterns message)
-    $ mapVariables (fmap toVariable) (fmap toVariable)
+    $ mapVariables (pure toVariableName)
 
 instance Pretty UnificationError where
     pretty UnsupportedPatterns { message, first, second } =

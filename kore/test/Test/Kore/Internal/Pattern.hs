@@ -54,7 +54,7 @@ test_expandedPattern =
                     $ Substitution.mkUnwrappedSubstitution
                     [(ElemVar . ElementVariable $ mkW "4", war' "5")]
                 }
-            (Pattern.mapVariables (fmap showVar) (fmap showVar)
+            (Pattern.mapVariables showUnifiedVar
                 Conditional
                     { term = var' 1
                     , predicate = makeEquals (var' 2) (var' 3)
