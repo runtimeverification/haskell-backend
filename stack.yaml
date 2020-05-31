@@ -52,7 +52,8 @@ extra-deps:
   - witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
   - witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775
 
-  - tasty-test-reporter-0.1.1.1@sha256:e34ea27f5a8f6673de2952c29799da243adb2246b1912a207e903caa9a9dbe34,1779
+  - git: https://github.com/ttuegel/tasty-test-reporter.git
+    commit: 0befbde129690deb85abca91f730cda8b33dee29
   - junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
 
 # TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
