@@ -101,7 +101,7 @@ asBuiltin
     :: SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Seq (TermLike variable)
-    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
+    -> Domain.Builtin (TermLike Void) (TermLike variable)
 asBuiltin tools builtinListSort builtinListChild =
     Domain.BuiltinList
         Domain.InternalList

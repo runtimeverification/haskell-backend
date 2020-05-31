@@ -26,7 +26,6 @@ import Prelude.Kore
 import Control.Comonad.Trans.Env
     ( Env
     )
-import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Control.Monad.Reader
     ( MonadReader
@@ -57,31 +56,22 @@ import Kore.Variables.UnifiedVariable
     , refreshSetVariable
     )
 
-type VariableNameMap' variable1 variable2 =
+type VariableNameMap variable1 variable2 =
     AdjSomeVariableName (Map variable1 variable2)
 
-type VariableNameMap variable1 variable2 =
-    VariableNameMap' (VariableNameOf variable1) (VariableNameOf variable2)
-
-type RenamingT' variable1 variable2 =
-    ReaderT (VariableNameMap' variable1 variable2)
-
-type Renaming' variable1 variable2 =
-    Env (VariableNameMap' variable1 variable2)
-
 type RenamingT variable1 variable2 =
-    RenamingT' (VariableNameOf variable1) (VariableNameOf variable2)
+    ReaderT (VariableNameMap variable1 variable2)
 
 type Renaming variable1 variable2 =
-    Renaming' (VariableNameOf variable1) (VariableNameOf variable2)
+    Env (VariableNameMap variable1 variable2)
 
 renameFreeVariables
     :: forall m variable1 variable2
-    .  NamedVariable variable1
+    .  Ord variable1
     => Monad m
-    => AdjSomeVariableName (VariableNameOf variable1 -> m variable2)
+    => AdjSomeVariableName (variable1 -> m variable2)
     -> FreeVariables variable1
-    -> m (VariableNameMap' (VariableNameOf variable1) variable2)
+    -> m (VariableNameMap variable1 variable2)
 renameFreeVariables adj =
     Monad.foldM worker mempty . FreeVariables.toSet
   where
@@ -90,13 +80,11 @@ renameFreeVariables adj =
         variable2 <- rename variable1
         pure (Map.singleton variable1 variable2)
     worker
-        :: VariableNameMap' (VariableNameOf variable1) variable2
+        :: VariableNameMap variable1 variable2
         -> UnifiedVariable variable1
-        -> m (VariableNameMap' (VariableNameOf variable1) variable2)
-    worker renaming unifiedVariable = do
-        let someVariableName1 :: SomeVariableName (VariableNameOf variable1)
-            someVariableName1 = Lens.view lensVariableName unifiedVariable
-            idx :: SomeVariableName ()
+        -> m (VariableNameMap variable1 variable2)
+    worker renaming Variable1 { variableName1 = someVariableName1 } = do
+        let idx :: SomeVariableName ()
             (variable1, idx) = splitL someVariableName1
         renaming1 <- index adj' idx variable1
         let renaming' =
@@ -110,7 +98,7 @@ renameFreeVariables adj =
 
 askSomeVariableName
     :: Ord variable1
-    => MonadReader (VariableNameMap' variable1 variable2) m
+    => MonadReader (VariableNameMap variable1 variable2) m
     => AdjSomeVariableName (variable1 -> m variable2)
 askSomeVariableName =
     tabulate $ \idx variable1 ->
@@ -120,38 +108,38 @@ askSomeVariableName =
 
 askElementVariableName
     :: Ord variable1
-    => MonadReader (VariableNameMap' variable1 variable2) m
+    => MonadReader (VariableNameMap variable1 variable2) m
     => ElementVariableName variable1 -> m (ElementVariableName variable2)
 askElementVariableName = traverseElementVariableName askSomeVariableName
 
 askSetVariableName
     :: Ord variable1
-    => MonadReader (VariableNameMap' variable1 variable2) m
+    => MonadReader (VariableNameMap variable1 variable2) m
     => SetVariableName variable1 -> m (SetVariableName variable2)
 askSetVariableName = traverseSetVariableName askSomeVariableName
 
 askUnifiedVariable
-    :: (NamedVariable variable1, NamedVariable variable2)
+    :: Ord variable1
     => MonadReader (VariableNameMap variable1 variable2) m
     => UnifiedVariable variable1 -> m (UnifiedVariable variable2)
 askUnifiedVariable =
-    lensVariableName $ traverseSomeVariableName askSomeVariableName
+    traverse $ traverseSomeVariableName askSomeVariableName
 
 askElementVariable
-    :: (NamedVariable variable1, NamedVariable variable2)
+    :: Ord variable1
     => MonadReader (VariableNameMap variable1 variable2) m
     => ElementVariable variable1 -> m (ElementVariable variable2)
-askElementVariable = lensVariableName askElementVariableName
+askElementVariable = traverse askElementVariableName
 
 askSetVariable
-    :: (NamedVariable variable1, NamedVariable variable2)
+    :: Ord variable1
     => MonadReader (VariableNameMap variable1 variable2) m
     => SetVariable variable1 -> m (SetVariable variable2)
-askSetVariable = lensVariableName askSetVariableName
+askSetVariable = traverse askSetVariableName
 
 renameElementBinder
     :: MonadReader (VariableNameMap variable1 variable2) m
-    => (NamedVariable variable1, NamedVariable variable2)
+    => Ord variable1
     => FreshPartialOrd variable2
     => (ElementVariable variable1 -> m (ElementVariable variable2))
     -> FreeVariables variable2
@@ -162,14 +150,14 @@ renameElementBinder trElemVar avoiding binder = do
     elementVariable2 <- trElemVar binderVariable
     let binderVariable' =
             refreshElementVariable
-                (FreeVariables.toSet avoiding)
+                (FreeVariables.toNames avoiding)
                 elementVariable2
             & fromMaybe elementVariable2
         withRenaming =
             (renameSomeVariable . inject)
                 ((,)
-                    <$> Lens.view lensVariableName binderVariable
-                    <*> Lens.view lensVariableName binderVariable'
+                    <$> variableName1 binderVariable
+                    <*> variableName1 binderVariable'
                 )
     binder { binderVariable = binderVariable' }
         & sequenceA
@@ -179,8 +167,8 @@ renameElementBinder trElemVar avoiding binder = do
 renameSomeVariable
     :: Ord variable1
     => SomeVariableName (variable1, variable2)
-    -> VariableNameMap' variable1 variable2
-    -> VariableNameMap' variable1 variable2
+    -> VariableNameMap variable1 variable2
+    -> VariableNameMap variable1 variable2
 renameSomeVariable someVariableNames variableNameMap =
     let ((variable1, variable2), idx) = splitL someVariableNames
         worker idx'
@@ -191,22 +179,22 @@ renameSomeVariable someVariableNames variableNameMap =
 renameElementVariable
     :: Ord variable1
     => ElementVariableName (variable1, variable2)
-    -> VariableNameMap' variable1 variable2
-    -> VariableNameMap' variable1 variable2
+    -> VariableNameMap variable1 variable2
+    -> VariableNameMap variable1 variable2
 renameElementVariable elementVariableNames =
     renameSomeVariable (inject elementVariableNames)
 
 renameSetVariable
     :: Ord variable1
     => SetVariableName (variable1, variable2)
-    -> VariableNameMap' variable1 variable2
-    -> VariableNameMap' variable1 variable2
+    -> VariableNameMap variable1 variable2
+    -> VariableNameMap variable1 variable2
 renameSetVariable setVariableNames =
     renameSomeVariable (inject setVariableNames)
 
 renameSetBinder
     :: MonadReader (VariableNameMap variable1 variable2) m
-    => (NamedVariable variable1, NamedVariable variable2)
+    => Ord variable1
     => FreshPartialOrd variable2
     => (SetVariable variable1 -> m (SetVariable variable2))
     -> FreeVariables variable2
@@ -217,14 +205,14 @@ renameSetBinder trSetVar avoiding binder = do
     setVariable2 <- trSetVar binderVariable
     let binderVariable' =
             refreshSetVariable
-                (FreeVariables.toSet avoiding)
+                (FreeVariables.toNames avoiding)
                 setVariable2
             & fromMaybe setVariable2
         withRenaming =
             (renameSomeVariable . inject)
                 ((,)
-                    <$> Lens.view lensVariableName binderVariable
-                    <*> Lens.view lensVariableName binderVariable'
+                    <$> variableName1 binderVariable
+                    <*> variableName1 binderVariable'
                 )
     binder { binderVariable = binderVariable' }
         & sequenceA

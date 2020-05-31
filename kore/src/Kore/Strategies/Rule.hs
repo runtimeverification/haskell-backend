@@ -52,7 +52,7 @@ data family Rule goal
 -- * One-path reachability
 
 newtype instance Rule OnePathRule =
-    OnePathRewriteRule { unRuleOnePath :: RewriteRule RewritingVariable }
+    OnePathRewriteRule { unRuleOnePath :: RewriteRule RewritingVariableName }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule OnePathRule)
@@ -72,7 +72,7 @@ instance From (Rule OnePathRule) (Attribute.Priority, Attribute.Owise) where
 -- * All-path reachability
 
 newtype instance Rule AllPathRule =
-    AllPathRewriteRule { unRuleAllPath :: RewriteRule RewritingVariable }
+    AllPathRewriteRule { unRuleAllPath :: RewriteRule RewritingVariableName }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule AllPathRule)
@@ -93,7 +93,7 @@ instance From (Rule AllPathRule) (Attribute.Priority, Attribute.Owise) where
 
 newtype instance Rule ReachabilityRule =
     ReachabilityRewriteRule
-        { unReachabilityRewriteRule :: RewriteRule RewritingVariable }
+        { unReachabilityRewriteRule :: RewriteRule RewritingVariableName }
     deriving (GHC.Generic, Show, Unparse)
 
 instance SOP.Generic (Rule ReachabilityRule)

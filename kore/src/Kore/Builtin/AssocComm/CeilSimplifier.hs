@@ -60,11 +60,14 @@ import Kore.Internal.SideCondition
     )
 import Kore.Internal.TermLike
     ( Ceil (..)
-    , Concrete
-    , ElementVariable (..)
+    , ElementVariable
+    , ElementVariableName (..)
     , InternalVariable
     , TermLike
-    , Variable (..)
+    , Variable1 (..)
+    , VariableName (..)
+    , Void
+    , fromVariableName
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -80,7 +83,7 @@ import Kore.Variables.UnifiedVariable
     )
 
 type BuiltinAssocComm normalized variable =
-    Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
+    Domain.InternalAc (TermLike Void) normalized (TermLike variable)
 
 type MkBuiltinAssocComm normalized variable =
     BuiltinAssocComm normalized variable -> TermLike variable
@@ -174,12 +177,16 @@ generalizeMapElement freeVariables' element =
     element' = Domain.wrapElement (key, MapValue $ TermLike.mkElemVar variable)
     avoiding =
         TermLike.freeVariables key <> freeVariables'
-        & FreeVariables.toSet
+        & FreeVariables.toNames
     x =
-        (ElementVariable . from @Variable @variable) Variable
-            { variableName = "x"
-            , variableCounter = mempty
-            , variableSort = termLikeSort value
+        Variable1
+            { variableName1 =
+                VariableName
+                    { base = "x"
+                    , counter = mempty
+                    }
+                & fromVariableName @variable & ElementVariableName
+            , variableSort1 = termLikeSort value
             }
     variable = refreshElementVariable avoiding x & fromMaybe x
 
@@ -331,7 +338,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
         & MultiAnd.singleton
 
     notMembers
-        :: NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+        :: NormalizedAc normalized (TermLike Void) (TermLike variable)
         -> TermLike variable
         -> MultiAnd (OrCondition variable)
     notMembers normalizedAc termLike =
@@ -341,7 +348,7 @@ foldElements
     ::  AcWrapper collection
     =>  InternalVariable variable
     =>  Lens.Fold
-            (NormalizedAc collection (TermLike Concrete) (TermLike variable))
+            (NormalizedAc collection (TermLike Void) (TermLike variable))
             (Element collection (TermLike variable))
 foldElements =
     Lens.folding $ \normalizedAc ->
@@ -358,7 +365,7 @@ fromElement
     :: AcWrapper normalized
     => InternalVariable variable
     => Element normalized (TermLike variable)
-    -> NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    -> NormalizedAc normalized (TermLike Void) (TermLike variable)
 fromElement element
   | Just concreteKey <- Builtin.toKey symbolicKey
   = emptyNormalizedAc { concreteElements = Map.singleton concreteKey value }

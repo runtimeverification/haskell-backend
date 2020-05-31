@@ -95,6 +95,7 @@ import Kore.Internal.TermLike
     , pattern Nu_
     , Sort
     , TermLike
+    , Variable1 (..)
     , mkAnd
     , mkBottom
     , mkBottom_
@@ -119,9 +120,6 @@ import Kore.Unification.UnifierT
     )
 import Kore.Unparser
     ( unparse
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (ElemVar, SetVar)
     )
 import qualified Pretty
 
@@ -374,18 +372,18 @@ promoteSubTermsToTop predicate =
         _ :< replaceIn = Recursive.project original
 
         replacements'
-          | Exists_ _ var _ <- original = restrictReplacements (ElemVar var)
-          | Forall_ _ var _ <- original = restrictReplacements (ElemVar var)
-          | Mu_       var _ <- original = restrictReplacements (SetVar  var)
-          | Nu_       var _ <- original = restrictReplacements (SetVar  var)
+          | Exists_ _ var _ <- original = restrictReplacements (inject var)
+          | Forall_ _ var _ <- original = restrictReplacements (inject var)
+          | Mu_       var _ <- original = restrictReplacements (inject var)
+          | Nu_       var _ <- original = restrictReplacements (inject var)
           | otherwise = replacements
 
-        restrictReplacements unifiedVariable =
+        restrictReplacements Variable1 { variableName1 } =
             HashMap.filterWithKey
                 (\termLike _ -> wouldNotCapture termLike)
                 replacements
           where
-            wouldNotCapture = not . TermLike.hasFreeVariable unifiedVariable
+            wouldNotCapture = not . TermLike.hasFreeVariable variableName1
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified

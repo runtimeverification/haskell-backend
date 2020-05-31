@@ -86,8 +86,10 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
     , InternalVariable
+    , SomeVariableName (..)
     , TermLike
     , TermLikeF (..)
+    , Variable1 (..)
     , mkAnd
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -101,7 +103,7 @@ import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
+    ( UnifiedVariable
     , isSetVar
     )
 
@@ -340,9 +342,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         :: Assignment variable
         -> Impl variable simplifier (Assignment variable)
     simplifySingleSubstitution subst@(Assignment uVar termLike) =
-        case uVar of
-            SetVar _ -> return subst
-            ElemVar _
+        case variableName1 uVar of
+            SomeVariableNameSet _ -> return subst
+            SomeVariableNameElement _
               | isSimplified -> return subst
               | otherwise -> do
                 termLike' <- simplifyTermLike termLike

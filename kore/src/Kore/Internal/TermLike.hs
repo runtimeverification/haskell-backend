@@ -145,10 +145,8 @@ module Kore.Internal.TermLike
     , pattern Inj_
     -- * Re-exports
     , module Kore.Internal.Variable
-    , FreshVariable (..)
     , Symbol (..)
     , Alias (..)
-    , SortedVariable (..)
     , module Kore.Syntax.Id
     , CofreeF (..), Comonad (..)
     , Sort (..), SortActual (..), SortVariable (..)
@@ -273,8 +271,8 @@ import Kore.Unparser
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    , FreshVariable
+    ( FreshName
+    , FreshPartialOrd
     )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable
@@ -282,7 +280,7 @@ import qualified Pretty
 
 hasFreeVariable
     :: Ord variable
-    => UnifiedVariable variable
+    => SomeVariableName variable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
@@ -292,7 +290,7 @@ refreshVariables
     => FreeVariables variable
     -> TermLike variable
     -> TermLike variable
-refreshVariables (FreeVariables.toSet -> avoid) term =
+refreshVariables (FreeVariables.toNames -> avoid) term =
     Substitute.substitute subst term
   where
     rename = Fresh.refreshVariables avoid originalFreeVariables
@@ -313,16 +311,23 @@ freshSymbolInstance freeVars sym base =
   where
     sorts = applicationSortsOperands $ symbolSorts sym
     varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
+
     mkVariable :: Integer -> Sort -> ElementVariable variable
-    mkVariable vIdx vSort = ElementVariable . from @Variable @variable
-        $ Variable
-            { variableName = Id
-                { getId = base <> Text.pack (show vIdx)
-                , idLocation = AstLocationGeneratedVariable
-                }
-            , variableCounter = mempty
-            , variableSort = vSort
+    mkVariable vIdx vSort =
+        Variable1
+        { variableName1 =
+            ElementVariableName
+            $ from @VariableName @variable
+            VariableName
+            { base =
+                Id
+                    { getId = base <> Text.pack (show vIdx)
+                    , idLocation = AstLocationGeneratedVariable
+                    }
+            , counter = mempty
             }
+        , variableSort1 = vSort
+        }
 
 {- | Is the 'TermLike' a function pattern?
  -}
@@ -371,7 +376,7 @@ Otherwise, the argument is returned.
  -}
 withoutFreeVariable
     :: InternalVariable variable
-    => UnifiedVariable variable  -- ^ variable
+    => SomeVariableName variable  -- ^ variable
     -> TermLike variable
     -> a  -- ^ result, if the variable does not occur free in the pattern
     -> a
@@ -399,12 +404,12 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcrete
-    :: NamedVariable variable
+    :: Ord variable
     => TermLike variable
-    -> Maybe (TermLike Concrete)
+    -> Maybe (TermLike Void)
 asConcrete = traverseVariables (pure toVoid)
 
-isConcrete :: NamedVariable variable => TermLike variable -> Bool
+isConcrete :: Ord variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
@@ -417,8 +422,8 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcrete
-    :: (FreshPartialOrd variable, NamedVariable variable)
-    => TermLike Concrete
+    :: FreshPartialOrd variable
+    => TermLike Void
     -> TermLike variable
 fromConcrete = mapVariables (pure $ from @Void)
 
@@ -801,7 +806,7 @@ See also: 'applyAlias', 'applySymbol'
 mkApplyAlias
     :: HasCallStack
     => InternalVariable variable
-    => Alias (TermLike Variable)
+    => Alias (TermLike VariableName)
     -- ^ Application symbol or alias
     -> [TermLike variable]
     -- ^ Application arguments
@@ -863,7 +868,7 @@ See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
 applyAlias
     :: HasCallStack
     => InternalVariable variable
-    => SentenceAlias (TermLike Variable)
+    => SentenceAlias (TermLike VariableName)
     -- ^ 'Alias' declaration
     -> [Sort]
     -- ^ 'Alias' sort parameters
@@ -921,7 +926,7 @@ See also: 'mkApp', 'applyAlias'
 applyAlias_
     :: HasCallStack
     => InternalVariable variable
-    => SentenceAlias (TermLike Variable)
+    => SentenceAlias (TermLike VariableName)
     -> [TermLike variable]
     -> TermLike variable
 applyAlias_ sentence = updateCallStack . applyAlias sentence []
@@ -1037,7 +1042,7 @@ mkCeil_ = updateCallStack . mkCeil predicateSort
 mkBuiltin
     :: HasCallStack
     => InternalVariable variable
-    => Domain.Builtin (TermLike Concrete) (TermLike variable)
+    => Domain.Builtin (TermLike Void) (TermLike variable)
     -> TermLike variable
 mkBuiltin = updateCallStack . synthesize . BuiltinF
 
@@ -1055,7 +1060,7 @@ mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
 mkBuiltinMap
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    => Domain.InternalMap (TermLike Void) (TermLike variable)
     -> TermLike variable
 mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
 
@@ -1064,7 +1069,7 @@ mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
 mkBuiltinSet
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    => Domain.InternalSet (TermLike Void) (TermLike variable)
     -> TermLike variable
 mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
 
@@ -1357,7 +1362,7 @@ See also: 'mkTop_'
  -}
 mkTop
     :: HasCallStack
-    => InternalVariable variable
+    => Ord variable
     => Sort
     -> TermLike variable
 mkTop topSort =
@@ -1384,7 +1389,7 @@ mkElemVar
     => InternalVariable variable
     => ElementVariable variable
     -> TermLike variable
-mkElemVar = updateCallStack . mkVar . ElemVar
+mkElemVar = updateCallStack . mkVar . inject @(SomeVariable1 _)
 
 {- | Construct a set variable pattern.
  -}
@@ -1393,7 +1398,7 @@ mkSetVar
     => InternalVariable variable
     => SetVariable variable
     -> TermLike variable
-mkSetVar = updateCallStack . mkVar . SetVar
+mkSetVar = updateCallStack . mkVar . inject @(SomeVariable1 _)
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1434,7 +1439,7 @@ mkInhabitant = updateCallStack . synthesize . InhabitantF . Inhabitant
 
 mkEvaluated
     :: HasCallStack
-    => NamedVariable variable
+    => Ord variable
     => TermLike variable
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
@@ -1443,7 +1448,7 @@ mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
  -}
 mkEndianness
     :: HasCallStack
-    => NamedVariable variable
+    => Ord variable
     => Endianness
     -> TermLike variable
 mkEndianness = updateCallStack . synthesize . EndiannessF . Const
@@ -1452,7 +1457,7 @@ mkEndianness = updateCallStack . synthesize . EndiannessF . Const
  -}
 mkSignedness
     :: HasCallStack
-    => NamedVariable variable
+    => Ord variable
     => Signedness
     -> TermLike variable
 mkSignedness = updateCallStack . synthesize . SignednessF . Const
@@ -1469,12 +1474,11 @@ mkSortVariable name = SortVariableSort $ SortVariable name
 "name" `varS` sort
 @
  -}
-varS :: Id -> Sort -> Variable
-varS variableName variableSort =
-    Variable
-        { variableName
-        , variableSort
-        , variableCounter = mempty
+varS :: Id -> Sort -> Variable1 VariableName
+varS base variableSort1 =
+    Variable1
+        { variableName1 = VariableName { base, counter = mempty }
+        , variableSort1
         }
 
 {- | Construct an element variable with a given name and sort.
@@ -1485,9 +1489,9 @@ varS variableName variableSort =
 "name" `elemVarS` sort
 @
  -}
-elemVarS :: Id -> Sort -> ElementVariable Variable
+elemVarS :: Id -> Sort -> ElementVariable VariableName
 elemVarS variableName variableSort =
-    ElementVariable (varS variableName variableSort)
+    fmap ElementVariableName (varS variableName variableSort)
 
 {- | Construct a set variable with a given name and sort.
 
@@ -1497,9 +1501,9 @@ elemVarS variableName variableSort =
 "name" `setVarS` sort
 @
  -}
-setVarS :: Id -> Sort -> SetVariable Variable
+setVarS :: Id -> Sort -> SetVariable VariableName
 setVarS variableName variableSort =
-    SetVariable (varS variableName variableSort)
+    fmap SetVariableName (varS variableName variableSort)
 
 {- | Construct an axiom declaration with the given parameters and pattern.
  -}
@@ -1560,9 +1564,9 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [UnifiedVariable Variable]
-    -> TermLike Variable
-    -> SentenceAlias (TermLike Variable)
+    -> [UnifiedVariable VariableName]
+    -> TermLike VariableName
+    -> SentenceAlias (TermLike VariableName)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
     SentenceAlias
         { sentenceAliasAlias =
@@ -1586,7 +1590,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = foldMapVariable variableSort <$> arguments
+    argumentSorts = variableSort1 <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 
@@ -1596,9 +1600,9 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [UnifiedVariable Variable]
-    -> TermLike Variable
-    -> SentenceAlias (TermLike Variable)
+    -> [UnifiedVariable VariableName]
+    -> TermLike VariableName
+    -> SentenceAlias (TermLike VariableName)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
 
 pattern And_
@@ -1613,7 +1617,7 @@ pattern App_
     -> TermLike variable
 
 pattern ApplyAlias_
-    :: Alias (TermLike Variable)
+    :: Alias (TermLike VariableName)
     -> [TermLike variable]
     -> TermLike variable
 
@@ -1633,7 +1637,7 @@ pattern DV_
     -> TermLike variable
 
 pattern Builtin_
-    :: Domain.Builtin (TermLike Concrete) (TermLike variable)
+    :: Domain.Builtin (TermLike Void) (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinBool_
@@ -1649,11 +1653,11 @@ pattern BuiltinList_
     -> TermLike variable
 
 pattern BuiltinMap_
-    :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    :: Domain.InternalMap (TermLike Void) (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinSet_
-    :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    :: Domain.InternalSet (TermLike Void) (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinString_
@@ -1886,9 +1890,9 @@ pattern Top_ topSort <-
 pattern Var_ variable <-
     (Recursive.project -> _ :< VariableF (Const variable))
 
-pattern SetVar_ setVariable <- Var_ (SetVar setVariable)
+pattern SetVar_ setVariable <- Var_ (retract -> Just setVariable)
 
-pattern ElemVar_ elemVariable <- Var_ (ElemVar elemVariable)
+pattern ElemVar_ elemVariable <- Var_ (retract -> Just elemVariable)
 
 pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
@@ -1908,19 +1912,21 @@ pattern Inj_ :: Inj (TermLike child) -> TermLike child
 pattern Inj_ inj <- (Recursive.project -> _ :< InjF inj)
 
 refreshBinder
-    :: InternalVariable variable
-    => (Set (UnifiedVariable variable) -> bound -> Maybe bound)
-    -> (bound -> UnifiedVariable variable)
+    :: forall bound variable
+    .  (InternalVariable variable, Injection (SomeVariableName variable) bound)
+    => (Set (SomeVariableName variable) -> Variable1 bound -> Maybe (Variable1 bound))
     -> FreeVariables variable
-    -> Binder bound (TermLike variable)
-    -> Binder bound (TermLike variable)
-refreshBinder refreshBound mkUnified (FreeVariables.toSet -> avoiding) binder =
+    -> Binder (Variable1 bound) (TermLike variable)
+    -> Binder (Variable1 bound) (TermLike variable)
+refreshBinder refreshBound (FreeVariables.toNames -> avoiding) binder =
     do
         binderVariable' <- refreshBound avoiding binderVariable
         let renaming =
                 Map.singleton
-                    (mkUnified binderVariable)
-                    (mkVar $ mkUnified binderVariable')
+                    (inject @(SomeVariableName variable)
+                        (variableName1 binderVariable)
+                    )
+                    (mkVar $ inject @(SomeVariable1 _) binderVariable')
             binderChild' = Substitute.substitute renaming binderChild
         return Binder
             { binderVariable = binderVariable'
@@ -1935,11 +1941,11 @@ refreshElementBinder
     => FreeVariables variable
     -> Binder (ElementVariable variable) (TermLike variable)
     -> Binder (ElementVariable variable) (TermLike variable)
-refreshElementBinder = refreshBinder refreshElementVariable ElemVar
+refreshElementBinder = refreshBinder refreshElementVariable
 
 refreshSetBinder
     :: InternalVariable variable
     => FreeVariables variable
     -> Binder (SetVariable variable) (TermLike variable)
     -> Binder (SetVariable variable) (TermLike variable)
-refreshSetBinder = refreshBinder refreshSetVariable SetVar
+refreshSetBinder = refreshBinder refreshSetVariable

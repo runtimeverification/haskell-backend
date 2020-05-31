@@ -212,7 +212,9 @@ targetBinder
     -> Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
 targetBinder Binder { binderVariable, binderChild } =
     let newVar = mkElementTarget binderVariable
-        targetBoundVariables = targetIfEqual binderVariable
+        targetBoundVariables =
+            targetIfEqual
+            $ unElementVariableName . variableName1 $ binderVariable
         newChild =
             Pattern.mapVariables
                 AdjSomeVariableName

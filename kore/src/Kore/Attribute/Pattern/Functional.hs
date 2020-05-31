@@ -32,7 +32,8 @@ import Kore.Internal.InternalBytes
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
+    ( UnifiedVariable
+    , isElemVar
     )
 
 {- | A pattern is 'Functional' if it matches exactly one element.
@@ -181,8 +182,7 @@ instance Synthetic Functional (Top sort) where
 
 -- | A 'Variable' pattern is always 'Functional'.
 instance Synthetic Functional (Const (UnifiedVariable variable)) where
-    synthetic (Const (ElemVar _)) = Functional True
-    synthetic (Const (SetVar _)) = Functional False
+    synthetic (Const unifiedVariable) = Functional (isElemVar unifiedVariable)
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Functional'.

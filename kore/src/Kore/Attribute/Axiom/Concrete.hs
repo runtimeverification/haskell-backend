@@ -35,9 +35,7 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Error
-import Kore.Syntax.Variable hiding
-    ( Concrete
-    )
+import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
@@ -59,7 +57,13 @@ instance NFData variable => NFData (Concrete variable)
 instance Ord variable => Default (Concrete variable) where
     def = Concrete mempty
 
-instance From (Concrete variable) (Set (UnifiedVariable variable)) where
+instance
+    Ord variable => From (Concrete variable) (Set (UnifiedVariable variable))
+  where
+    from = from @(FreeVariables _) . unConcrete
+    {-# INLINE from #-}
+
+instance From (Concrete variable) (Set (SomeVariableName variable)) where
     from = from @(FreeVariables _) . unConcrete
     {-# INLINE from #-}
 
@@ -76,14 +80,14 @@ concreteSymbol =
         }
 
 -- | Kore pattern representing the @concrete@ attribute.
-concreteAttribute :: [UnifiedVariable Variable] -> AttributePattern
+concreteAttribute :: [UnifiedVariable VariableName] -> AttributePattern
 concreteAttribute = attributePattern concreteSymbol . map attributeVariable
 
 parseConcreteAttribute
-    :: FreeVariables Variable
+    :: FreeVariables VariableName
     -> AttributePattern
-    -> Concrete Variable
-    -> Parser (Concrete Variable)
+    -> Concrete VariableName
+    -> Parser (Concrete VariableName)
 parseConcreteAttribute freeVariables =
     Parser.withApplication concreteId parseApplication
   where
@@ -91,11 +95,11 @@ parseConcreteAttribute freeVariables =
         Concrete <$> parseFreeVariables freeVariables params args concreteVars
 
 parseFreeVariables
-    :: FreeVariables Variable
+    :: FreeVariables VariableName
     -> [Sort]
     -> [AttributePattern]
-    -> FreeVariables Variable
-    -> Parser (FreeVariables Variable)
+    -> FreeVariables VariableName
+    -> Parser (FreeVariables VariableName)
 parseFreeVariables freeVariables params args concreteVars = do
     Parser.getZeroParams params
     vars <- mapM getVariable args
@@ -115,13 +119,13 @@ parseFreeVariables freeVariables params args concreteVars = do
             ++ show duplicateVars)
     return (foldMap freeVariable nubVars)
   where
-    checkFree :: UnifiedVariable Variable -> Parser ()
-    checkFree variable =
-        unless (isFreeVariable variable freeVariables)
+    checkFree :: UnifiedVariable VariableName -> Parser ()
+    checkFree variable@Variable1 { variableName1 } =
+        unless (isFreeVariable variableName1 freeVariables)
         $ Kore.Error.koreFail
             ("expected free variable, found " ++ show variable)
 
-instance From (Concrete Variable) Attributes where
+instance From (Concrete VariableName) Attributes where
     from =
         from @AttributePattern
         . concreteAttribute
@@ -129,14 +133,17 @@ instance From (Concrete Variable) Attributes where
         . unConcrete
 
 mapConcreteVariables
-    ::  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Concrete variable1
-    ->  Concrete variable2
+    :: Ord variable2
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Concrete variable1
+    -> Concrete variable2
 mapConcreteVariables adj (Concrete freeVariables) =
     Concrete (mapFreeVariables adj freeVariables)
 
 isConcrete
-    :: Ord variable => Concrete variable -> UnifiedVariable variable -> Bool
-isConcrete Concrete { unConcrete } var = isFreeVariable var unConcrete
+    :: Ord variable
+    => Concrete variable
+    -> SomeVariableName variable
+    -> Bool
+isConcrete Concrete { unConcrete } someVariableName =
+    isFreeVariable someVariableName unConcrete

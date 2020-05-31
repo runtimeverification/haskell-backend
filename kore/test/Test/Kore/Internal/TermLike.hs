@@ -17,9 +17,16 @@ import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
+import qualified Control.Lens as Lens
 import Control.Monad.Reader as Reader
 import Data.Functor.Identity
     ( runIdentity
+    )
+import Data.Generics.Product
+    ( field
+    )
+import Data.Map.Strict
+    ( Map
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -38,9 +45,6 @@ import Kore.Domain.Builtin
     )
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike
-import Kore.Variables.Fresh
-    ( refreshVariable
-    )
 import Kore.Variables.UnifiedVariable
 
 import Test.Kore hiding
@@ -51,10 +55,13 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 import Test.Terse
 
-termLikeGen :: Hedgehog.Gen (TermLike Variable)
+type TermLike' = TermLike VariableName
+type ElementVariable' = ElementVariable VariableName
+
+termLikeGen :: Hedgehog.Gen (TermLike')
 termLikeGen = standaloneGen (termLikeChildGen =<< sortGen)
 
-termLikeChildGen :: Sort -> Gen (TermLike Variable)
+termLikeChildGen :: Sort -> Gen (TermLike')
 termLikeChildGen patternSort =
     Gen.sized termLikeChildGenWorker
   where
@@ -110,7 +117,7 @@ termLikeChildGen patternSort =
         var <- elementVariableGen varSort
         child <-
             Reader.local
-                (addVariable (ElemVar var))
+                (addVariable (inject var))
                 (termLikeChildGen patternSort)
         pure (mkExists var child)
     termLikeForallGen = do
@@ -118,7 +125,7 @@ termLikeChildGen patternSort =
         var <- elementVariableGen varSort
         child <-
             Reader.local
-                (addVariable (ElemVar var))
+                (addVariable (inject var))
                 (termLikeChildGen patternSort)
         pure (mkForall var child)
     termLikeFloorGen = do
@@ -145,17 +152,25 @@ termLikeChildGen patternSort =
     termLikeTopGen = pure (mkTop patternSort)
     termLikeVariableGen = mkElemVar <$> elementVariableGen patternSort
 
+mkSubst
+    :: Injection (SomeVariableName variable) variable'
+    => InternalVariable variable
+    => Variable1 variable'
+    -> ElementVariable variable
+    -> Map (SomeVariableName variable) (TermLike variable)
+mkSubst x' y' = Map.singleton (inject $ variableName1 x') (mkElemVar y')
+
 test_substitute :: [TestTree]
 test_substitute =
-    [ testCase "Replaces target variable"
-        (assertEqual
+    [ testCase "Replaces target variable" $ do
+        let subst =
+                Map.singleton
+                    (inject $ variableName1 Mock.x)
+                    (mkElemVar Mock.z)
+        assertEqual
             "Expected substituted variable"
             (mkElemVar Mock.z)
-            (substitute
-                (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
-                (mkElemVar Mock.x)
-            )
-        )
+            (substitute subst (mkElemVar Mock.x))
 
     , testCase "Replaces target variable (SetVariable)"
         (assertEqual
@@ -163,7 +178,7 @@ test_substitute =
             (mkElemVar Mock.z)
             (substitute
                 (Map.singleton
-                    (Mock.makeTestUnifiedVariable "@x")
+                    (variableName1 $ Mock.makeTestUnifiedVariable "@x")
                     (mkElemVar Mock.z)
                 )
                 (Mock.mkTestUnifiedVariable "@x")
@@ -176,22 +191,22 @@ test_substitute =
             (Mock.functionalConstr10 (mkElemVar Mock.z))
             (substitute
                 (Map.singleton
-                    (Mock.makeTestUnifiedVariable "@x")
+                    (variableName1 $ Mock.makeTestUnifiedVariable "@x")
                     (mkElemVar Mock.z)
                 )
                 (Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x"))
             )
         )
 
-    , testCase "Ignores non-target variable"
-        (assertEqual
+    , testCase "Ignores non-target variable" $ do
+        let subst =
+                Map.singleton
+                    (inject $ variableName1 Mock.x)
+                    (mkElemVar Mock.z)
+        assertEqual
             "Expected original non-target variable"
             (mkElemVar Mock.y)
-            (substitute
-                (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
-                (mkElemVar Mock.y)
-            )
-        )
+            (substitute subst (mkElemVar Mock.y))
 
     , testGroup "Ignores patterns without children" $
         let ignoring mkPredicate =
@@ -202,7 +217,7 @@ test_substitute =
                 expect = mkPredicate Mock.testSort
                 actual =
                     substitute
-                        (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
+                        (mkSubst Mock.x Mock.z)
                         (mkPredicate Mock.testSort)
         in
             [ testCase "Bottom" (ignoring mkBottom)
@@ -218,7 +233,7 @@ test_substitute =
                 expect = mkQuantifier Mock.x (mkElemVar Mock.x)
                 actual =
                     substitute
-                        (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
+                        (mkSubst Mock.x Mock.z)
                         (mkQuantifier Mock.x (mkElemVar Mock.x))
         in
             [ testCase "Exists" (ignoring mkExists)
@@ -235,12 +250,12 @@ test_substitute =
                     mkQuantifier z'
                         $ mkAnd (mkElemVar z') (mkElemVar Mock.z)
                   where
-                    Just (ElemVar z') =
-                        refreshVariable
-                            (Set.singleton (ElemVar Mock.z))
-                            (ElemVar Mock.z)
+                    Just z' =
+                        refreshElementVariable
+                            (Set.singleton (inject $ variableName1 Mock.z))
+                            Mock.z
                 actual =
-                    substitute (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
+                    substitute (mkSubst Mock.x Mock.z)
                     $ mkQuantifier Mock.z
                     $ mkAnd (mkElemVar Mock.z) (mkElemVar Mock.x)
         in
@@ -298,13 +313,13 @@ test_refreshVariables =
   where
     xTerm = mkElemVar Mock.x
     becomes
-        :: (TermLike Variable, [ElementVariable Variable])
-        -> TermLike Variable
+        :: (TermLike', [ElementVariable'])
+        -> TermLike'
         -> TestName
         -> TestTree
     becomes (term, vars) expected =
         equals
-            (refreshVariables (foldMap (freeVariable . ElemVar) vars) term)
+            (refreshVariables (foldMap (freeVariable . inject) vars) term)
             expected
 
 test_hasConstructorLikeTop :: [TestTree]
@@ -315,7 +330,7 @@ test_hasConstructorLikeTop =
                 True
                 $ isConstructorLikeTop (mkApplySymbol Mock.aSymbol [])
             let
-                dv :: DomainValue Sort (TermLike Variable)
+                dv :: DomainValue Sort (TermLike')
                 dv = DomainValue
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
@@ -344,26 +359,26 @@ test_hasConstructorLikeTop =
         )
     ]
   where
-    isConstructorLikeTop :: TermLike Variable -> Bool
+    isConstructorLikeTop :: TermLike' -> Bool
     isConstructorLikeTop = hasConstructorLikeTop
 
-x :: ElementVariable Variable
+x :: ElementVariable'
 x = Mock.x
 
-ex :: Variable
-ex = getElementVariable x
+setVariableName :: Lens.Setter' ElementVariable' VariableName
+setVariableName = Lens.mapped . Lens.mapped
 
-x_0 :: ElementVariable Variable
-x_0 = ElementVariable ex { variableCounter = Just (Element 0) }
+x_0 :: ElementVariable'
+x_0 = Lens.set (setVariableName . field @"counter") (Just (Element 0)) x
 
-x0 :: ElementVariable Variable
-x0 = ElementVariable ex { variableName = "x0" }
+x0 :: ElementVariable'
+x0 = Lens.set (setVariableName . field @"base") (testId "x0") x
 
-x00 :: ElementVariable Variable
-x00 = ElementVariable ex { variableName = "x00" }
+x00 :: ElementVariable'
+x00 = Lens.set (setVariableName . field @"base") (testId "x00") x
 
-x1 :: ElementVariable Variable
-x1 = ElementVariable ex { variableName = "x1" }
+x1 :: ElementVariable'
+x1 = Lens.set (setVariableName . field @"base") (testId "x1") x
 
 test_renaming :: [TestTree]
 test_renaming =
@@ -373,68 +388,46 @@ test_renaming =
     , testSet "\\nu" mkNu
     ]
   where
-    mapElementVariables' variable =
+    mapElementVariables' Variable1 { variableName1 } =
         mapVariables (pure id)
-            { adjSomeVariableNameElement =
-                ElementVariableName . const
-                $ unElementVariableName variableName1
-            }
-      where
-        Variable1 { variableName1 } = toVariable1 variable
-    mapSetVariables' variable =
+            { adjSomeVariableNameElement = const <$> variableName1 }
+    mapSetVariables' Variable1 { variableName1 } =
         mapVariables (pure id)
-            { adjSomeVariableNameSet =
-                SetVariableName . const
-                $ unSetVariableName variableName1
-            }
-      where
-        Variable1 { variableName1 } = toVariable1 variable
+            { adjSomeVariableNameSet = const <$> variableName1 }
 
-    traverseElementVariables' variable =
-        runIdentity
-        . traverseVariables (pure return)
-            { adjSomeVariableNameElement =
-                ElementVariableName . const
-                $ return $ unElementVariableName variableName1
-            }
-      where
-        Variable1 { variableName1 } = toVariable1 variable
-    traverseSetVariables' variable =
-        runIdentity
-        . traverseVariables (pure return)
-            { adjSomeVariableNameSet =
-                SetVariableName . const
-                $ return $ unSetVariableName variableName1
-            }
-      where
-        Variable1 { variableName1 } = toVariable1 variable
+    traverseElementVariables' Variable1 { variableName1 } =
+        runIdentity . traverseVariables (pure return)
+            { adjSomeVariableNameElement = const . return <$> variableName1 }
+    traverseSetVariables' Variable1 { variableName1 } =
+        runIdentity . traverseVariables (pure return)
+            { adjSomeVariableNameSet = const . return <$> variableName1 }
 
     doesNotCapture
         :: HasCallStack
-        => UnifiedVariable Variable
-        -> TermLike Variable
+        => UnifiedVariable VariableName
+        -> TermLike'
         -> Assertion
-    doesNotCapture unifiedVariable renamed =
+    doesNotCapture Variable1 { variableName1 } renamed =
         assertBool
             "does not capture free variables"
-            (hasFreeVariable unifiedVariable renamed)
+            (hasFreeVariable variableName1 renamed)
 
     updatesFreeVariables
         :: HasCallStack
-        => TermLike Variable
+        => TermLike'
         -> Assertion
     updatesFreeVariables renamed =
         assertEqual
             "updates the FreeVariables attribute"
-            (freeVariables resynthesized :: FreeVariables Variable)
+            (freeVariables resynthesized :: FreeVariables VariableName)
             (freeVariables       renamed)
       where
-        resynthesized :: TermLike Variable
+        resynthesized :: TermLike'
         resynthesized = resynthesize renamed
 
     testElement
         :: TestName
-        -> (ElementVariable Variable -> TermLike Variable -> TermLike Variable)
+        -> (ElementVariable' -> TermLike' -> TermLike')
         -> TestTree
     testElement testName mkBinder =
         testGroup testName
@@ -442,17 +435,17 @@ test_renaming =
                 let original = mkBinder Mock.y (mkElemVar Mock.x)
                     renamed = mapElementVariables' Mock.y original
                 updatesFreeVariables renamed
-                doesNotCapture (ElemVar Mock.y) renamed
+                doesNotCapture (inject Mock.y) renamed
             , testCase "traverseVariables" $ do
                 let original = mkBinder Mock.y (mkElemVar Mock.x)
                     renamed = traverseElementVariables' Mock.y original
                 updatesFreeVariables renamed
-                doesNotCapture (ElemVar Mock.y) renamed
+                doesNotCapture (inject Mock.y) renamed
             ]
 
     testSet
         :: TestName
-        -> (SetVariable Variable -> TermLike Variable -> TermLike Variable)
+        -> (SetVariable VariableName -> TermLike' -> TermLike')
         -> TestTree
     testSet testName mkBinder =
         testGroup testName
@@ -460,10 +453,10 @@ test_renaming =
                 let original = mkBinder Mock.setY (mkSetVar Mock.setX)
                     renamed = mapSetVariables' Mock.setY original
                 updatesFreeVariables renamed
-                doesNotCapture (SetVar Mock.setY) renamed
+                doesNotCapture (inject Mock.setY) renamed
             , testCase "traverseVariables" $ do
                 let original = mkBinder Mock.setY (mkSetVar Mock.setX)
                     renamed = traverseSetVariables' Mock.setY original
                 updatesFreeVariables renamed
-                doesNotCapture (SetVar Mock.setY) renamed
+                doesNotCapture (inject Mock.setY) renamed
             ]

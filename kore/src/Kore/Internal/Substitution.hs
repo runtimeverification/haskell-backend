@@ -124,7 +124,7 @@ instance Hashable variable => Hashable (Assignment variable)
 -- that for variable renaming, the smaller variable will be on the
 -- left of the substitution.
 assign
-    :: (NamedVariable variable, SubstitutionOrd variable)
+    :: (Ord variable, SubstitutionOrd variable)
     => UnifiedVariable variable
     -> TermLike variable
     -> Assignment variable
@@ -154,7 +154,7 @@ mapAssignedTerm f (Assignment variable term) =
     assign variable (f term)
 
 mkUnwrappedSubstitution
-    :: (NamedVariable variable, SubstitutionOrd variable)
+    :: (Ord variable, SubstitutionOrd variable)
     => [(UnifiedVariable variable, TermLike variable)]
     -> [Assignment variable]
 mkUnwrappedSubstitution = fmap (uncurry assign)
@@ -184,15 +184,13 @@ data Substitution variable
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
 instance
-    (NamedVariable variable, SubstitutionOrd variable)
-    => Eq (Substitution variable)
+    (Ord variable, SubstitutionOrd variable) => Eq (Substitution variable)
   where
     (==) = on (==) unwrap
 
 -- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
 instance
-    (NamedVariable variable, SubstitutionOrd variable)
-    => Ord (Substitution variable)
+    (Ord variable, SubstitutionOrd variable) => Ord (Substitution variable)
   where
     compare = on compare unwrap
 
@@ -291,7 +289,7 @@ type UnwrappedSubstitution variable = [Assignment variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
-    :: (NamedVariable variable, SubstitutionOrd variable)
+    :: (Ord variable, SubstitutionOrd variable)
     => Substitution variable
     -> [Assignment variable]
 unwrap (Substitution xs) =
@@ -309,11 +307,13 @@ See also: 'fromMap'
  -}
 toMap
     :: HasCallStack
+    => Ord variable
     => Substitution variable
-    -> Map (UnifiedVariable variable) (TermLike variable)
+    -> Map (SomeVariableName variable) (TermLike variable)
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
-toMap (NormalizedSubstitution norm) = norm
+toMap (NormalizedSubstitution norm) =
+    Map.mapKeys variableName1 norm
 
 toMultiMap
     :: InternalVariable variable
@@ -358,17 +358,18 @@ cycles.
 
  -}
 normalOrder
-    :: (NamedVariable variable, SubstitutionOrd variable)
+    :: forall variable
+    .  (Ord variable, SubstitutionOrd variable)
     => (UnifiedVariable variable, TermLike variable)
     -> (UnifiedVariable variable, TermLike variable)
 normalOrder (uVar1, Var_ uVar2)
-  | ElemVar eVar1 <- uVar1
-  , ElemVar eVar2 <- uVar2
+  | Just eVar1 <- retract @_ @(ElementVariable variable) uVar1
+  , Just eVar2 <- retract @_ @(ElementVariable variable) uVar2
   , LT <- compareSubstitution eVar2 eVar1
   = (uVar2, mkVar uVar1)
 
-  | SetVar sVar1 <- uVar1
-  , SetVar sVar2 <- uVar2
+  | Just sVar1 <- retract @_ @(SetVariable variable) uVar1
+  , Just sVar2 <- retract @_ @(SetVariable variable) uVar2
   , LT <- compareSubstitution sVar2 sVar1
   = (uVar2, mkVar uVar1)
 normalOrder subst = subst
@@ -389,8 +390,8 @@ singleton
     => UnifiedVariable variable
     -> TermLike variable
     -> Substitution variable
-singleton var termLike
-  | TermLike.hasFreeVariable var termLike =
+singleton var@Variable1 { variableName1 } termLike
+  | TermLike.hasFreeVariable variableName1 termLike =
       Substitution [assign var termLike]
   | otherwise = NormalizedSubstitution (Map.singleton var termLike)
 
@@ -426,8 +427,10 @@ unsafeWrap =
         -- must be defined.
         & assert (not $ isElemVar var && isBottom termLike)
       where
-        occurs = TermLike.hasFreeVariable var
-        depends var' = TermLike.hasFreeVariable var' termLike
+        Variable1 { variableName1 } = var
+        occurs = TermLike.hasFreeVariable variableName1
+        depends Variable1 { variableName1 = variableName1' } =
+            TermLike.hasFreeVariable variableName1' termLike
 
 unsafeWrapFromAssignments
     :: Ord variable
@@ -446,11 +449,10 @@ modify
 modify f = wrap . f . unwrap
 
 mapAssignmentVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Assignment variable1
-    ->  Assignment variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Assignment variable1
+    -> Assignment variable2
 mapAssignmentVariables adj (Assignment variable term) =
     assign mappedVariable mappedTerm
   where
@@ -460,12 +462,11 @@ mapAssignmentVariables adj (Assignment variable term) =
 -- | 'mapVariables' changes all the variables in the substitution
 -- with the given function.
 mapVariables
-    ::  forall variable1 variable2
-    .   (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Substitution variable1
-    ->  Substitution variable2
+    :: forall variable1 variable2
+    .  (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Substitution variable1
+    -> Substitution variable2
 mapVariables adj = modify . fmap $ mapAssignmentVariables adj
 
 mapTerms
@@ -560,7 +561,7 @@ orderRenameAndRenormalizeTODO
                 replacedSubstitution =
                     fmap
                         (TermLike.substitute
-                            (Map.singleton variable replacement)
+                            (Map.singleton (variableName1 variable) replacement)
                         )
                         (assertNoneAreFreeVarsInRhs
                             (Set.fromList reversableVars)
@@ -686,7 +687,9 @@ applyNormalized Normalization { normalized, denormalized } =
   where
     substitute =
         TermLike.substitute
-            (Map.fromList (assignmentToPair <$> normalized))
+        $ Map.mapKeys variableName1
+        $ Map.fromList
+        $ map assignmentToPair normalized
 
 {- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
 

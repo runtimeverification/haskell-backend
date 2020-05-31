@@ -53,25 +53,25 @@ freePureVariables root =
             ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (ElemVar existsVariable))
+                    (Set.insert (inject @(SomeVariable1 _) existsVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 existsChild)
             ForallF Forall { forallVariable, forallChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (ElemVar forallVariable))
+                    (Set.insert (inject @(SomeVariable1 _) forallVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 forallChild)
             MuF Mu { muVariable, muChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (SetVar muVariable))
+                    (Set.insert (inject @(SomeVariable1 _) muVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 muChild)
             NuF Nu { nuVariable, nuChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (SetVar nuVariable))
+                    (Set.insert (inject @(SomeVariable1 _) nuVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 nuChild)
             p -> mapM_ freePureVariables1 p
@@ -86,13 +86,13 @@ pureMergeVariables base =
     case Cofree.tailF base of
         VariableF (Const variable) -> Set.singleton variable
         ExistsF Exists { existsVariable, existsChild } ->
-            Set.insert (ElemVar existsVariable) existsChild
+            Set.insert (inject @(SomeVariable1 _) existsVariable) existsChild
         ForallF Forall { forallVariable, forallChild } ->
-            Set.insert (ElemVar forallVariable) forallChild
+            Set.insert (inject @(SomeVariable1 _) forallVariable) forallChild
         MuF Mu { muVariable, muChild } ->
-            Set.insert (SetVar muVariable) muChild
+            Set.insert (inject @(SomeVariable1 _) muVariable) muChild
         NuF Nu { nuVariable, nuChild } ->
-            Set.insert (SetVar nuVariable) nuChild
+            Set.insert (inject @(SomeVariable1 _) nuVariable) nuChild
         p -> Foldable.foldl' Set.union Set.empty p
 
 {-| 'pureAllVariables' extracts all variables of a given level in a pattern as a

@@ -29,6 +29,7 @@ import Data.String
 import Data.Text
     ( Text
     )
+import Data.Void
 
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Pattern
@@ -38,8 +39,7 @@ import qualified Kore.Internal.Pattern as Pattern
     ( fromTermLike
     )
 import Kore.Internal.TermLike
-    ( Concrete
-    , DomainValue (DomainValue)
+    ( DomainValue (DomainValue)
     , InternalVariable
     , Sort
     , TermLike
@@ -77,7 +77,7 @@ asInternal builtinBoolSort builtinBoolValue =
 asBuiltin
     :: Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
+    -> Domain.Builtin (TermLike Void) (TermLike variable)
 asBuiltin builtinBoolSort builtinBoolValue =
     Domain.BuiltinBool Domain.InternalBool
         { builtinBoolSort

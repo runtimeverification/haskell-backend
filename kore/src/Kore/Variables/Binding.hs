@@ -40,7 +40,7 @@ import Kore.Syntax.Mu
 import Kore.Syntax.Nu
 import Kore.Syntax.SetVariable
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
+    ( UnifiedVariable
     , expectElemVar
     , expectSetVar
     )
@@ -67,11 +67,11 @@ class Binding binding where
         traversalSet =
             fmap (field @"binderVariable" %~ expectSetVar)
             . traversal
-            . (field @"binderVariable" %~ SetVar)
+            . (field @"binderVariable" %~ inject)
         traversalElem =
             fmap (field @"binderVariable" %~ expectElemVar)
             . traversal
-            . (field @"binderVariable" %~ ElemVar)
+            . (field @"binderVariable" %~ inject)
 
     -- | Traverse the element variable binder at the top of a pattern.
     traverseElementBinder
@@ -92,8 +92,8 @@ class Binding binding where
       where
         matchSet = matchWith traverseSetVariable traversalSet binding
         matchElem = matchWith traverseElementVariable traversalElem binding
-        traversalSet = fmap expectSetVar . traversal . SetVar
-        traversalElem = fmap expectElemVar . traversal . ElemVar
+        traversalSet = fmap expectSetVar . traversal . inject
+        traversalElem = fmap expectElemVar . traversal . inject
 
     -- | Traverse the element variable at the top of a pattern.
     traverseElementVariable

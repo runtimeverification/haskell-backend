@@ -103,10 +103,10 @@ transitionRule
     :: forall m
     .  HasCallStack
     => MonadSimplify m
-    => Prim (RewriteRule Variable)
-    -> Pattern Variable
+    => Prim (RewriteRule VariableName)
+    -> Pattern VariableName
     -- ^ Configuration being rewritten
-    -> TransitionT (RewriteRule Variable) m (Pattern Variable)
+    -> TransitionT (RewriteRule VariableName) m (Pattern VariableName)
 transitionRule =
     \case
         Simplify -> transitionSimplify
@@ -192,10 +192,10 @@ priorityAnyStrategy rewrites =
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    :: ([RewriteRule Variable] -> Strategy (Prim (RewriteRule Variable)))
+    :: ([RewriteRule VariableName] -> Strategy (Prim (RewriteRule VariableName)))
     -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule Variable]
-    -> Strategy (Prim (RewriteRule Variable))
+    -> [RewriteRule VariableName]
+    -> Strategy (Prim (RewriteRule VariableName))
 heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where

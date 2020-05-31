@@ -368,15 +368,15 @@ test_allPathVerification =
     ]
 
 simpleAxiom
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> Rule ReachabilityRule
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
 simplePriorityAxiom
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> Integer
     -> Rule ReachabilityRule
 simplePriorityAxiom left right priority =
@@ -392,8 +392,8 @@ simplePriorityAxiom left right priority =
         }
 
 simpleClaim
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> ReachabilityRule
 simpleClaim left right =
     (AllPath . AllPathRule)
@@ -406,8 +406,8 @@ simpleClaim left right =
         }
 
 simpleTrustedClaim
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> ReachabilityRule
 simpleTrustedClaim left right =
     (AllPath . AllPathRule)

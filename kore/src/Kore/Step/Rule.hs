@@ -57,7 +57,7 @@ import qualified Kore.Internal.Symbol as Internal.Symbol
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
-    , Variable
+    , VariableName
     )
 import Kore.Sort
     ( Sort (..)
@@ -100,8 +100,8 @@ newtype AxiomPatternError = AxiomPatternError ()
 instance NFData AxiomPatternError
 
 qualifiedAxiomOpToConstructor
-    :: Alias (TermLike.TermLike Variable)
-    -> Maybe (RulePattern Variable -> QualifiedAxiomPattern Variable)
+    :: Alias (TermLike.TermLike VariableName)
+    -> Maybe (RulePattern VariableName -> QualifiedAxiomPattern VariableName)
 qualifiedAxiomOpToConstructor patternHead
     | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
     | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
@@ -134,7 +134,7 @@ instance (Debug variable, Diff variable) => Diff (QualifiedAxiomPattern variable
 -- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms
     :: VerifiedModule declAtts
-    -> [RewriteRule Variable]
+    -> [RewriteRule VariableName]
 extractRewriteAxioms idxMod =
     extractRewrites
     . groupSortOn (Attribute.getPriorityOfAxiom . fst)
@@ -161,21 +161,21 @@ extractRewriteAxioms idxMod =
 extractImplicationClaims
     :: VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    ->  [   ( Attribute.Axiom Internal.Symbol.Symbol Variable
-            , ImplicationRule Variable
+    ->  [   ( Attribute.Axiom Internal.Symbol.Symbol VariableName
+            , ImplicationRule VariableName
             )
         ]
 extractImplicationClaims =
     mapMaybe extractImplicationClaimFrom . indexedModuleClaims
 
 extractImplicationClaimFrom
-    ::  ( Attribute.Axiom Internal.Symbol.Symbol Variable
+    ::  ( Attribute.Axiom Internal.Symbol.Symbol VariableName
         , Verified.SentenceClaim
         )
     -- ^ Sentence to extract axiom pattern from
     -> Maybe
-        ( Attribute.Axiom Internal.Symbol.Symbol Variable
-        , ImplicationRule Variable
+        ( Attribute.Axiom Internal.Symbol.Symbol VariableName
+        , ImplicationRule VariableName
         )
 extractImplicationClaimFrom (attrs, sentence) =
     case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
@@ -184,10 +184,10 @@ extractImplicationClaimFrom (attrs, sentence) =
 
 -- | Attempts to extract a rule from the 'Verified.Sentence'.
 fromSentence
-    ::  ( Attribute.Axiom Internal.Symbol.Symbol Variable
+    ::  ( Attribute.Axiom Internal.Symbol.Symbol VariableName
         , Verified.Sentence
         )
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 fromSentence (attrs, Syntax.SentenceAxiomSentence sentenceAxiom) =
     fromSentenceAxiom (attrs, sentenceAxiom)
 fromSentence _ =
@@ -195,10 +195,10 @@ fromSentence _ =
 
 -- | Attempts to extract a rule from the 'Verified.SentenceAxiom'.
 fromSentenceAxiom
-    ::  ( Attribute.Axiom Internal.Symbol.Symbol Variable
+    ::  ( Attribute.Axiom Internal.Symbol.Symbol VariableName
         , Verified.SentenceAxiom
         )
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 fromSentenceAxiom (attributes, sentenceAxiom) =
     termToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
@@ -285,9 +285,9 @@ complexRewriteTermToRule attributes pat =
 not encode a normal rewrite or function axiom.
 -}
 termToAxiomPattern
-    :: Attribute.Axiom Internal.Symbol.Symbol Variable
-    -> TermLike.TermLike Variable
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
+    :: Attribute.Axiom Internal.Symbol.Symbol VariableName
+    -> TermLike.TermLike VariableName
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 termToAxiomPattern attributes pat =
     case pat of
         -- Reachability claims
@@ -337,8 +337,8 @@ termToAxiomPattern attributes pat =
 -}
 
 axiomPatternToTerm
-    :: QualifiedAxiomPattern Variable
-    -> TermLike.TermLike Variable
+    :: QualifiedAxiomPattern VariableName
+    -> TermLike.TermLike VariableName
 axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
     OnePathClaimPattern rule -> onePathRuleToTerm rule
@@ -351,9 +351,9 @@ The requires clause must be a predicate, i.e. it can occur in any sort.
 
  -}
 mkRewriteAxiom
-    :: TermLike.TermLike Variable  -- ^ left-hand side
-    -> TermLike.TermLike Variable  -- ^ right-hand side
-    -> Maybe (Sort -> TermLike.TermLike Variable)  -- ^ requires clause
+    :: TermLike.TermLike VariableName  -- ^ left-hand side
+    -> TermLike.TermLike VariableName  -- ^ right-hand side
+    -> Maybe (Sort -> TermLike.TermLike VariableName)  -- ^ requires clause
     -> Verified.Sentence
 mkRewriteAxiom lhs rhs requires =
     (Syntax.SentenceAxiomSentence . TermLike.mkAxiom_)
@@ -370,9 +370,9 @@ The requires clause must be a predicate, i.e. it can occur in any sort.
 
  -}
 mkEqualityAxiom
-    :: TermLike.TermLike Variable  -- ^ left-hand side
-    -> TermLike.TermLike Variable  -- ^ right-hand side
-    -> Maybe (Sort -> TermLike.TermLike Variable)  -- ^ requires clause
+    :: TermLike.TermLike VariableName  -- ^ left-hand side
+    -> TermLike.TermLike VariableName  -- ^ right-hand side
+    -> Maybe (Sort -> TermLike.TermLike VariableName)  -- ^ requires clause
     -> Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
     Syntax.SentenceAxiomSentence
@@ -392,7 +392,7 @@ mkEqualityAxiom lhs rhs requires =
 
  -}
 mkCeilAxiom
-    :: TermLike.TermLike Variable  -- ^ the child of 'Ceil'
+    :: TermLike.TermLike VariableName  -- ^ the child of 'Ceil'
     -> Verified.Sentence
 mkCeilAxiom child =
     Syntax.SentenceAxiomSentence

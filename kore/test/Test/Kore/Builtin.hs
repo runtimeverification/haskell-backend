@@ -125,9 +125,9 @@ test_internalize =
     y = mkElemVar (elemVarS "y" intSort)
 
 withInternalized
-    :: (TermLike Variable -> Assertion)
+    :: (TermLike VariableName -> Assertion)
     -> TestName
-    -> TermLike Variable
+    -> TermLike VariableName
     -> TestTree
 withInternalized check name origin =
     testCase name (check $ Kore.internalize metadata origin)
@@ -135,8 +135,8 @@ withInternalized check name origin =
 internalizes
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> TermLike Variable
+    -> TermLike VariableName
+    -> TermLike VariableName
     -> TestTree
 internalizes name origin expect =
     withInternalized (assertEqual "" expect) name origin
@@ -144,7 +144,7 @@ internalizes name origin expect =
 notInternalizes
     :: HasCallStack
     => TestName
-    -> TermLike Variable
+    -> TermLike VariableName
     -> TestTree
 notInternalizes name origin =
     withInternalized (assertEqual "" origin) name origin

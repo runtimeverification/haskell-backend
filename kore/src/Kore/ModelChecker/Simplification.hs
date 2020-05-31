@@ -45,21 +45,18 @@ import Kore.TopBottom
     )
 import Kore.Unparser
 import Kore.Variables.Fresh
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Pretty
 
 checkImplicationIsTop
     :: MonadSimplify m
-    => Pattern Variable
-    -> TermLike Variable
+    => Pattern VariableName
+    -> TermLike VariableName
     -> m Bool
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkElemVar <$> Map.mapKeys ElemVar rename
+                subst = mkElemVar <$> Map.mapKeys inject rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm =
@@ -83,13 +80,16 @@ checkImplicationIsTop lhs rhs =
              , Pretty.indent 4 (unparse rhs)
              ]
       where
-        lhsFreeVariables = Set.fromList $
-            getFreeElementVariables (freeVariables lhs)
+        lhsFreeVariables =
+            freeVariables lhs
+            & getFreeElementVariables
+            & map variableName1
+            & Set.fromList
         lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers
-    :: TermLike Variable
-    -> (Set.Set (ElementVariable Variable), TermLike Variable)
+    :: TermLike VariableName
+    -> (Set.Set (ElementVariable VariableName), TermLike VariableName)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

@@ -72,8 +72,8 @@ declareSMTLemmas m = do
     tools = given
 
     declareRule
-        ::  ( Attribute.Axiom Internal.Symbol.Symbol Variable
-            , SentenceAxiom (TermLike Variable)
+        ::  ( Attribute.Axiom Internal.Symbol.Symbol VariableName
+            , SentenceAxiom (TermLike VariableName)
             )
         -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do

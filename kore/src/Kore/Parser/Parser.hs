@@ -53,7 +53,7 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Variables.UnifiedVariable
 
-asParsedPattern :: (PatternF Variable) ParsedPattern -> ParsedPattern
+asParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
 
 {-| Parses a @sort-variable@.
@@ -206,7 +206,7 @@ BNF fragments:
 -}
 existsForallRemainderParser
     :: Parser child
-    -> (Sort -> ElementVariable Variable -> child -> m child)
+    -> (Sort -> ElementVariable VariableName -> child -> m child)
     -- ^ Element constructor.
     -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
@@ -228,7 +228,7 @@ BNF fragment:
 -}
 muNuRemainderParser
     :: Parser child
-    -> (SetVariable Variable -> child -> m child)
+    -> (SetVariable VariableName -> child -> m child)
     -- ^ Element constructor.
     -> Parser (m child)
 muNuRemainderParser childParser constructor = do
@@ -317,7 +317,7 @@ Always starts with @{@.
 symbolOrAliasPatternRemainderParser
     :: Parser child
     -> Id  -- ^ The already parsed prefix.
-    -> Parser (PatternF Variable child)
+    -> Parser (PatternF VariableName child)
 symbolOrAliasPatternRemainderParser childParser identifier =
     ApplicationF
     <$> (   Application
@@ -356,14 +356,13 @@ Always starts with @:@.
 -}
 variableRemainderParser
     :: Id  -- ^ The already parsed prefix.
-    -> Parser Variable
-variableRemainderParser identifier = do
+    -> Parser (Variable1 VariableName)
+variableRemainderParser base = do
     colonParser
-    sort <- sortParser
-    return Variable
-        { variableName = identifier
-        , variableSort = sort
-        , variableCounter = mempty
+    variableSort1 <- sortParser
+    return Variable1
+        { variableName1 = VariableName { base, counter = mempty }
+        , variableSort1
         }
 
 {- | Parses an element variable
@@ -373,9 +372,10 @@ variableRemainderParser identifier = do
   ::= <element-variable-id> ":" <sort>
 @
 -}
-elementVariableParser :: Parser (ElementVariable Variable)
+elementVariableParser :: Parser (ElementVariable VariableName)
 elementVariableParser =
-    ElementVariable <$> (elementVariableIdParser >>= variableRemainderParser)
+    (fmap . fmap) ElementVariableName
+    $ elementVariableIdParser >>= variableRemainderParser
 
 
 {- | Parses an set variable
@@ -385,9 +385,10 @@ elementVariableParser =
   ::= <set-variable-id> ":" <sort>
 @
 -}
-setVariableParser :: Parser (SetVariable Variable)
+setVariableParser :: Parser (SetVariable VariableName)
 setVariableParser =
-    SetVariable <$> (setVariableIdParser >>= variableRemainderParser)
+    (fmap . fmap) SetVariableName
+    $ setVariableIdParser >>= variableRemainderParser
 
 {- | Parses a variable.
 
@@ -399,12 +400,12 @@ setVariableParser =
 
 Set variables always start with @\@@, while element variables do not.
 -}
-variableParser :: Parser (UnifiedVariable Variable)
+variableParser :: Parser (UnifiedVariable VariableName)
 variableParser = do
     c <- ParserUtils.peekChar'
     if c == '@'
-        then SetVar  <$> setVariableParser
-        else ElemVar <$> elementVariableParser
+        then inject @(SomeVariable1 _) <$> setVariableParser
+        else inject @(SomeVariable1 _) <$> elementVariableParser
 
 {-| Parses an element variable pattern or application pattern,
 using an open recursion scheme for its children.
@@ -423,14 +424,16 @@ BNF definitions:
 -}
 elemVarOrTermPatternParser
     :: Parser child
-    -> Parser (PatternF Variable child)
+    -> Parser (PatternF VariableName child)
 elemVarOrTermPatternParser childParser = do
     identifier <- idParser
     c <- ParserUtils.peekChar'
     if c == ':'
         then do
             var <- variableRemainderParser identifier
-            return $ VariableF $ Const $ ElemVar $ ElementVariable var
+            return
+                $ VariableF $ Const
+                $ inject @(SomeVariable1 _) $ ElementVariableName <$> var
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
@@ -464,7 +467,7 @@ koreVariableOrTermPatternParser = do
         case c of
         '@' -> do
             var <- setVariableParser
-            return $ VariableF $ Const $ SetVar var
+            return $ VariableF $ Const $ inject @(SomeVariable1 _) var
         '\\' -> do
             identifier <- symbolIdParser
             symbolOrAliasPatternRemainderParser korePatternParser identifier
@@ -547,7 +550,7 @@ mlConstructorRemainderParser
     :: Parser child
     -> Parser (DomainValue Sort child)
     -> MLPatternType
-    -> Parser (PatternF Variable child)
+    -> Parser (PatternF VariableName child)
 mlConstructorRemainderParser childParser domainValueParser' patternType =
     case patternType of
         AndPatternType -> AndF <$>

@@ -80,10 +80,10 @@ import Test.SMT
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genIntegerPattern :: Gen (TermLike Variable)
+genIntegerPattern :: Gen (TermLike VariableName)
 genIntegerPattern = asInternal <$> genInteger
 
-genConcreteIntegerPattern :: Gen (TermLike Concrete)
+genConcreteIntegerPattern :: Gen (TermLike Void)
 genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
@@ -359,7 +359,7 @@ test_emod =
     ]
 
 -- | Another name for asInternal.
-intLiteral :: Integer -> TermLike Variable
+intLiteral :: Integer -> TermLike VariableName
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
@@ -367,22 +367,22 @@ asInternal :: InternalVariable variable => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 -- | Specialize 'asInternal' to the builtin sort 'intSort'.
-asConcretePattern :: Integer -> TermLike Concrete
+asConcretePattern :: Integer -> TermLike Void
 asConcretePattern = asInternal
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> Pattern Variable
+asPattern :: Integer -> Pattern VariableName
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialPattern :: Maybe Integer -> Pattern Variable
+asPartialPattern :: Maybe Integer -> Pattern VariableName
 asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
     -> Symbol
-    -> [TermLike Variable]
-    -> Pattern Variable
+    -> [TermLike VariableName]
+    -> Pattern VariableName
     -> TestTree
 testInt name = testSymbolWithSolver evaluate name
 

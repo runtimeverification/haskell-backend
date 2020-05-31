@@ -180,7 +180,7 @@ test_KEqualSimplification =
 
     ]
 
-dvT, dvX :: TermLike Variable
+dvT, dvX :: TermLike VariableName
 dvT =
     mkDomainValue DomainValue
         { domainValueSort = idSort
@@ -193,9 +193,9 @@ dvX =
         }
 
 runKEqualSimplification
-    :: TermLike Variable
-    -> TermLike Variable
-    -> SMT [Either UnificationError [Maybe (Pattern Variable)]]
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> SMT [Either UnificationError [Maybe (Pattern VariableName)]]
 runKEqualSimplification term1 term2 =
     runSimplifierBranch testEnv
     . runUnifierT Not.notSimplifier

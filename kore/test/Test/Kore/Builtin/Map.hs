@@ -107,9 +107,6 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.RulePattern
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import SMT
     ( SMT
     )
@@ -142,14 +139,14 @@ genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =
     Gen.map (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
 
-genConcreteMap :: Gen a -> Gen (Map (TermLike Concrete) a)
+genConcreteMap :: Gen a -> Gen (Map (TermLike Void) a)
 genConcreteMap genElement =
     Map.mapKeys Test.Int.asInternal <$> genMapInteger genElement
 
-genMapPattern :: Gen (TermLike Variable)
+genMapPattern :: Gen (TermLike VariableName)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
-genMapSortedVariable :: Sort -> Gen a -> Gen (Map (ElementVariable Variable) a)
+genMapSortedVariable :: Sort -> Gen a -> Gen (Map (ElementVariable VariableName) a)
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)
@@ -640,21 +637,14 @@ test_inclusion =
 -- | Check that simplification is carried out on map elements.
 test_simplify :: TestTree
 test_simplify =
-    testCaseWithSMT
-        "simplify builtin Map elements"
-        $ do
-            let
-                x =
-                    mkElemVar $ ElementVariable Variable
-                        { variableName = testId "x"
-                        , variableCounter = mempty
-                        , variableSort = intSort
-                        }
-                key = Test.Int.asInternal 1
-                original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
-                expected = asPattern $ Map.fromList [(key, x)]
-            actual <- evaluate original
-            assertEqual "expected simplified Map" expected actual
+    testCaseWithSMT "simplify builtin Map elements" $ do
+        let
+            x = mkIntVar (testId "x")
+            key = Test.Int.asInternal 1
+            original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
+            expected = asPattern $ Map.fromList [(key, x)]
+        actual <- evaluate original
+        assertEqual "expected simplified Map" expected actual
 
 -- | Maps with symbolic keys are not simplified.
 test_symbolic :: TestTree
@@ -717,11 +707,11 @@ test_unifyConcrete =
 -- `MapItem(absInt(K:Int), absInt(V:Int)) Rest:Map`, or
 -- `Rest:Map MapItem(absInt(K:Int), absInt(V:Int))`, respectively.
 selectFunctionPattern
-    :: ElementVariable Variable           -- ^key variable
-    -> ElementVariable Variable           -- ^value variable
-    -> ElementVariable Variable           -- ^map variable
+    :: ElementVariable VariableName           -- ^key variable
+    -> ElementVariable VariableName           -- ^value variable
+    -> ElementVariable VariableName           -- ^map variable
     -> (forall a . [a] -> [a])            -- ^scrambling function
-    -> TermLike Variable
+    -> TermLike VariableName
 selectFunctionPattern keyVar valueVar mapVar permutation  =
     mkApplySymbol concatMapSymbol $ permutation [singleton, mkElemVar mapVar]
   where
@@ -730,12 +720,12 @@ selectFunctionPattern keyVar valueVar mapVar permutation  =
     singleton = mkApplySymbol elementMapSymbol [ key, value ]
 
 makeElementSelect
-    :: ElementVariable Variable -> ElementVariable Variable -> TermLike Variable
+    :: ElementVariable VariableName -> ElementVariable VariableName -> TermLike VariableName
 makeElementSelect keyVar valueVar =
     mkApplySymbol elementMapSymbol [mkElemVar keyVar, mkElemVar valueVar]
 
 makeElementLookup
-    :: TermLike Concrete -> ElementVariable Variable -> TermLike Variable
+    :: TermLike Void -> ElementVariable VariableName -> TermLike VariableName
 makeElementLookup key valueVar =
     mkApplySymbol
         elementMapSymbol
@@ -746,31 +736,31 @@ makeElementLookup key valueVar =
 -- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
 -- respectively.
 selectPattern
-    :: ElementVariable Variable           -- ^key variable
-    -> ElementVariable Variable           -- ^value variable
-    -> ElementVariable Variable           -- ^map variable
+    :: ElementVariable VariableName           -- ^key variable
+    -> ElementVariable VariableName           -- ^value variable
+    -> ElementVariable VariableName           -- ^map variable
     -> (forall a . [a] -> [a])            -- ^scrambling function
-    -> TermLike Variable
+    -> TermLike VariableName
 selectPattern keyVar valueVar mapVar permutation  =
     mkApplySymbol concatMapSymbol $ permutation [element, mkElemVar mapVar]
   where
     element = makeElementSelect keyVar valueVar
 
 addSelectElement
-    :: ElementVariable Variable          -- ^key variable
-    -> ElementVariable Variable          -- ^value variable
-    -> TermLike Variable
-    -> TermLike Variable
+    :: ElementVariable VariableName          -- ^key variable
+    -> ElementVariable VariableName          -- ^value variable
+    -> TermLike VariableName
+    -> TermLike VariableName
 addSelectElement keyVar valueVar mapPattern  =
     mkApplySymbol concatMapSymbol [element, mapPattern]
   where
     element = makeElementSelect keyVar valueVar
 
 addLookupElement
-    :: TermLike Concrete                 -- ^key
-    -> ElementVariable Variable          -- ^value variable
-    -> TermLike Variable
-    -> TermLike Variable
+    :: TermLike Void                 -- ^key
+    -> ElementVariable VariableName          -- ^value variable
+    -> TermLike VariableName
+    -> TermLike VariableName
 addLookupElement key valueVar mapPattern  =
     mkApplySymbol concatMapSymbol [element, mapPattern]
   where
@@ -844,9 +834,9 @@ test_unifySelectFromSingleton =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar mapVar, asInternal [])
-                                , (ElemVar keyVar, key)
-                                , (ElemVar valueVar, value)
+                                [ (inject mapVar, asInternal [])
+                                , (inject keyVar, key)
+                                , (inject valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Rest:Map
@@ -878,8 +868,8 @@ test_unifySelectSingletonFromSingleton =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar keyVar, key)
-                                , (ElemVar valueVar, value)
+                                [ (inject keyVar, key)
+                                , (inject valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int) Map.unit
@@ -906,8 +896,8 @@ test_unifySelectFromSingletonWithoutLeftovers =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar keyVar, key)
-                                , (ElemVar valueVar, value)
+                                [ (inject keyVar, key)
+                                , (inject valueVar, value)
                                 ]
                         }
             -- { 5 -> 7 } /\ Item(K:Int, V:Int)
@@ -941,9 +931,9 @@ test_unifySelectFromTwoElementMap =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar mapVar, asInternal [(key2, value2)])
-                                , (ElemVar keyVar, key1)
-                                , (ElemVar valueVar, value1)
+                                [ (inject mapVar, asInternal [(key2, value2)])
+                                , (inject keyVar, key1)
+                                , (inject valueVar, value1)
                                 ]
                         }
                 expect2 =
@@ -952,9 +942,9 @@ test_unifySelectFromTwoElementMap =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar mapVar, asInternal [(key1, value1)])
-                                , (ElemVar keyVar, key2)
-                                , (ElemVar valueVar, value2)
+                                [ (inject mapVar, asInternal [(key1, value1)])
+                                , (inject keyVar, key2)
+                                , (inject valueVar, value2)
                                 ]
                         }
             -- { 5 -> 6, 7 -> 8 } /\ Item(K:Int, V:Int) Rest:Map
@@ -995,11 +985,11 @@ test_unifySelectTwoFromTwoElementMap =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar mapVar, asInternal [])
-                                , (ElemVar keyVar1, key1)
-                                , (ElemVar keyVar2, key2)
-                                , (ElemVar valueVar1, value1)
-                                , (ElemVar valueVar2, value2)
+                                [ (inject mapVar, asInternal [])
+                                , (inject keyVar1, key1)
+                                , (inject keyVar2, key2)
+                                , (inject valueVar1, value1)
+                                , (inject valueVar2, value2)
                                 ]
                         }
                 expect2 =
@@ -1008,11 +998,11 @@ test_unifySelectTwoFromTwoElementMap =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar mapVar, asInternal [])
-                                , (ElemVar keyVar1, key2)
-                                , (ElemVar keyVar2, key1)
-                                , (ElemVar valueVar1, value2)
-                                , (ElemVar valueVar2, value1)
+                                [ (inject mapVar, asInternal [])
+                                , (inject keyVar1, key2)
+                                , (inject keyVar2, key1)
+                                , (inject valueVar1, value2)
+                                , (inject valueVar2, value1)
                                 ]
                         }
 
@@ -1046,8 +1036,8 @@ test_unifySameSymbolicKey =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar mapVar, asInternal [])
-                                , (ElemVar valueVar1, value1)
+                                [ (inject mapVar, asInternal [])
+                                , (inject valueVar1, value1)
                                 ]
                         }
 
@@ -1100,9 +1090,9 @@ test_unifySameSymbolicKeySymbolicOpaque =
                         , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar minMapVar, mkElemVar maxMapVar)
-                                , (ElemVar valueVar1, value1)
-                                , (ElemVar valueVar2, value2)
+                                [ (inject minMapVar, mkElemVar maxMapVar)
+                                , (inject valueVar1, value1)
+                                , (inject valueVar2, value2)
                                 ]
                         }
 
@@ -1114,9 +1104,9 @@ test_unifySameSymbolicKeySymbolicOpaque =
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
-    => TermLike Variable
-    -> TermLike Variable
-    -> Pattern Variable
+    => TermLike VariableName
+    -> TermLike VariableName
+    -> Pattern VariableName
     -> PropertyT SMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
@@ -1124,9 +1114,9 @@ unifiesWith pat1 pat2 expected =
 -- use as (pat1 `unifiesWithMulti` pat2) expect
 unifiesWithMulti
     :: HasCallStack
-    => TermLike Variable
-    -> TermLike Variable
-    -> [Pattern Variable]
+    => TermLike VariableName
+    -> TermLike VariableName
+    -> [Pattern VariableName]
     -> PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
@@ -1173,19 +1163,9 @@ test_concretizeKeys =
             actual <- evaluate original
             assertEqual "expected simplified Map" expected actual
   where
-    x =
-        ElementVariable Variable
-            { variableName = testId "x"
-            , variableCounter = mempty
-            , variableSort = intSort
-            }
-    v =
-        ElementVariable Variable
-            { variableName = testId "v"
-            , variableCounter = mempty
-            , variableSort = intSort
-            }
-    key :: TermLike Variable
+    x = mkElementVariable (testId "x") intSort
+    v = mkElementVariable (testId "v") intSort
+    key :: TermLike VariableName
     key = fromConcrete $ Test.Int.asInternal 1
     val = Test.Int.asInternal 2
     concreteMap = asInternal [(key, val)]
@@ -1199,7 +1179,7 @@ test_concretizeKeys =
             { term = mkPair intSort mapSort key (asInternal [(key, val)])
             , predicate = Predicate.makeTruePredicate (termLikeSort original)
             , substitution =
-                Substitution.unsafeWrap [(ElemVar v, val), (ElemVar x, key)]
+                Substitution.unsafeWrap [(inject v, val), (inject x, key)]
             }
 
 {- | Unify a concrete map with symbolic-keyed map in an axiom
@@ -1282,9 +1262,9 @@ test_renormalize =
     becomes
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -> NormalizedMap (TermLike Void) (TermLike VariableName)
         -- ^ original, (possibly) de-normalized map
-        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -> NormalizedMap (TermLike Void) (TermLike VariableName)
         -- ^ expected normalized map
         -> TestTree
     becomes name origin expect =
@@ -1293,26 +1273,26 @@ test_renormalize =
     unchanged
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -> NormalizedMap (TermLike Void) (TermLike VariableName)
         -> TestTree
     unchanged name origin = becomes name origin origin
 
     denorm
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -> NormalizedMap (TermLike Void) (TermLike VariableName)
         -> TestTree
     denorm name origin =
         testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
 
     mkMap
-        :: [(TermLike Variable, TermLike Variable)]
+        :: [(TermLike VariableName, TermLike VariableName)]
         -- ^ abstract elements
-        -> [(TermLike Concrete, TermLike Variable)]
+        -> [(TermLike Void, TermLike VariableName)]
         -- ^ concrete elements
-        -> [NormalizedMap (TermLike Concrete) (TermLike Variable)]
+        -> [NormalizedMap (TermLike Void) (TermLike VariableName)]
         -- ^ opaque terms
-        -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+        -> NormalizedMap (TermLike Void) (TermLike VariableName)
     mkMap abstract concrete opaque =
         Domain.wrapAc Domain.NormalizedAc
             { elementsWithVariables = Domain.MapElement <$> abstract
@@ -1384,7 +1364,7 @@ test_inKeys =
         [ (Test.Int.asInternal 0, u)
         , (Test.Int.asInternal 1, v)
         ]
-    x, y, z, u, v, w :: TermLike Variable
+    x, y, z, u, v, w :: TermLike VariableName
     x = mkIntVar (testId "x")
     y = mkIntVar (testId "y")
     z = mkIntVar (testId "z")
@@ -1399,8 +1379,8 @@ test_inKeys =
         ]
     inKeys
         :: HasCallStack
-        => TermLike Variable
-        -> TermLike Variable
+        => TermLike VariableName
+        -> TermLike VariableName
         -> IO (Maybe Bool)
     inKeys termKey termMap = do
         output <-
@@ -1432,8 +1412,8 @@ test_inKeys =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Map (TermLike Variable) (TermLike Variable)
-    -> TermLike Variable
+    :: Map (TermLike VariableName) (TermLike VariableName)
+    -> TermLike VariableName
 asSymbolicPattern result
     | Map.null result =
         applyUnit
@@ -1445,14 +1425,14 @@ asSymbolicPattern result
     applyConcat map1 map2 = concatMap map1 map2
 
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
-asTermLike :: Map (TermLike Concrete) (TermLike Variable) -> TermLike Variable
+asTermLike :: Map (TermLike Void) (TermLike VariableName) -> TermLike VariableName
 asTermLike =
     Reflection.give testMetadataTools Map.asTermLike
     . builtinMap
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map (TermLike Concrete) (TermLike Variable) -> Pattern Variable
+asPattern :: Map (TermLike Void) (TermLike VariableName) -> Pattern VariableName
 asPattern concreteMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
@@ -1463,7 +1443,7 @@ asPattern concreteMap =
         }
 
 asVariablePattern
-    :: Map (TermLike Variable) (TermLike Variable) -> Pattern Variable
+    :: Map (TermLike VariableName) (TermLike VariableName) -> Pattern VariableName
 asVariablePattern variableMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
@@ -1474,7 +1454,7 @@ asVariablePattern variableMap =
         }
 
 asVariableInternal
-    :: Map (TermLike Variable) (TermLike Variable) -> TermLike Variable
+    :: Map (TermLike VariableName) (TermLike VariableName) -> TermLike VariableName
 asVariableInternal variableMap =
     Ac.asInternal testMetadataTools mapSort
     $ Domain.wrapAc Domain.NormalizedAc
@@ -1485,8 +1465,8 @@ asVariableInternal variableMap =
 
 -- | Specialize 'Ac.asInternal' to the builtin sort 'mapSort'.
 asInternal
-    :: [(TermLike Variable, TermLike Variable)]
-    -> TermLike Variable
+    :: [(TermLike VariableName, TermLike VariableName)]
+    -> TermLike VariableName
 asInternal elements =
     Ac.asInternal testMetadataTools mapSort
     $ Domain.wrapAc Domain.NormalizedAc
@@ -1502,7 +1482,7 @@ asInternal elements =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements
         & partitionEithers
 
-unsafeAsConcrete :: TermLike Variable -> TermLike Concrete
+unsafeAsConcrete :: TermLike VariableName -> TermLike Void
 unsafeAsConcrete term =
     TermLike.asConcrete term
     & fromMaybe (error "Expected concrete term.")
@@ -1513,11 +1493,11 @@ It is an error if the collection cannot be normalized.
 
  -}
 normalizedMap
-    :: [(TermLike Variable, TermLike Variable)]
+    :: [(TermLike VariableName, TermLike VariableName)]
     -- ^ (abstract or concrete) elements
-    -> [TermLike Variable]
+    -> [TermLike VariableName]
     -- ^ opaque terms
-    -> NormalizedMap (TermLike Concrete) (TermLike Variable)
+    -> NormalizedMap (TermLike Void) (TermLike VariableName)
 normalizedMap elements opaque =
     Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
         { elementsWithVariables = Domain.MapElement <$> elements
@@ -1527,16 +1507,13 @@ normalizedMap elements opaque =
 
 -- * Constructors
 
-mkIntVar :: Id -> TermLike Variable
-mkIntVar variableName =
-    mkElemVar $ ElementVariable
-        Variable
-            { variableName, variableCounter = mempty, variableSort = intSort }
+mkIntVar :: Id -> TermLike VariableName
+mkIntVar variableName = mkElemVar $ mkElementVariable variableName intSort
 
-asVariableName :: ElementVariable Variable -> Id
-asVariableName = variableName . getElementVariable
+asVariableName :: ElementVariable VariableName -> Id
+asVariableName = base . unElementVariableName . variableName1
 
-distinctVariables :: [ElementVariable Variable] -> Bool
+distinctVariables :: [ElementVariable VariableName] -> Bool
 distinctVariables variables =
     length variableNames == length (List.nub variableNames)
   where

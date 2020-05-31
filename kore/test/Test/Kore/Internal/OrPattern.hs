@@ -26,7 +26,7 @@ import Test.Kore.Internal.Pattern
     ( internalPatternGen
     )
 
-orPatternGen :: Gen (OrPattern Variable)
+orPatternGen :: Gen (OrPattern VariableName)
 orPatternGen =
     OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) internalPatternGen
 

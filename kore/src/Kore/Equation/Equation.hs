@@ -31,10 +31,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
-import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -62,7 +58,7 @@ import Kore.Internal.TermLike
     , InternalVariable
     , Sort
     , TermLike
-    , Variable
+    , VariableName
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -147,9 +143,9 @@ instance TopBottom (Equation variable) where
     isTop _ = False
     isBottom _ = False
 
-instance SQL.Table (Equation Variable)
+instance SQL.Table (Equation VariableName)
 
-instance SQL.Column (Equation Variable) where
+instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
@@ -200,11 +196,10 @@ instance AstWithLocation variable => AstWithLocation (Equation variable) where
     locationFromAst = locationFromAst . left
 
 mapVariables
-    ::  (NamedVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Equation variable1
-    ->  Equation variable2
+    :: (Ord variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Equation variable1
+    -> Equation variable2
 mapVariables mapping equation@(Equation _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
@@ -225,26 +220,25 @@ refreshVariables
     -> Equation variable
     -> (Renaming variable, Equation variable)
 refreshVariables
-    (from @_ @(Set (UnifiedVariable _)) -> avoid)
+    (FreeVariables.toNames -> avoid)
     equation@(Equation _ _ _ _ _)
   =
-    let rename =
-            Fresh.refreshVariables avoid originalFreeVariables
-        rename' =
-            rename
-            & Map.map (Lens.view lensVariableName)
-            & Map.mapKeys (Lens.view lensVariableName)
+    let rename :: Map (SomeVariableName variable) (UnifiedVariable variable)
+        rename =
+            FreeVariables.toSet originalFreeVariables
+            & Fresh.refreshVariables avoid
         lookupSomeVariableName
             :: forall variable'
-            .  Injection (SomeVariableName (VariableNameOf variable)) variable'
+            .  Injection (SomeVariableName variable) variable'
             => variable'
             -> variable'
         lookupSomeVariableName variable =
             do
                 let injected = inject @(SomeVariableName _) variable
-                someVariableName <- Map.lookup injected rename'
+                someVariableName <- variableName1 <$> Map.lookup injected rename
                 retract someVariableName
             & fromMaybe variable
+        adj :: AdjSomeVariableName (variable -> variable)
         adj =
             AdjSomeVariableName
             { adjSomeVariableNameElement =
@@ -255,12 +249,15 @@ refreshVariables
                 $ lookupSomeVariableName @(SetVariableName _)
 
             }
+        subst :: Map (SomeVariableName variable) (TermLike variable)
         subst =
-            Set.toList originalFreeVariables
+            FreeVariables.toList originalFreeVariables
             & map mkSubst
             & Map.fromList
         mkSubst variable =
-            (variable, TermLike.mkVar (mapUnifiedVariable adj variable))
+            ( variableName1 variable
+            , TermLike.mkVar (mapUnifiedVariable adj variable)
+            )
         left' = TermLike.substitute subst left
         requires' = Predicate.substitute subst requires
         right' = TermLike.substitute subst right
@@ -277,7 +274,7 @@ refreshVariables
     in (rename, equation')
   where
     Equation { left, requires, right, ensures, attributes } = equation
-    originalFreeVariables = freeVariables equation & FreeVariables.toSet
+    originalFreeVariables = freeVariables equation
 
 isSimplificationRule :: Equation variable -> Bool
 isSimplificationRule Equation { attributes } =
@@ -291,7 +288,7 @@ equationPriority = Attribute.getPriorityOfAxiom . attributes
 
 substitute
     :: InternalVariable variable
-    => Map (UnifiedVariable variable) (TermLike variable)
+    => Map (SomeVariableName variable) (TermLike variable)
     -> Equation variable
     -> Equation variable
 substitute assignments equation =

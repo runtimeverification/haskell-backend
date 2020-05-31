@@ -25,7 +25,6 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
     ( InternalVariable
-    , NamedVariable
     , TermLike
     )
 import Kore.Syntax.Variable
@@ -37,7 +36,7 @@ import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 type Renaming variable =
-    Map (UnifiedVariable variable) (UnifiedVariable variable)
+    Map (SomeVariableName variable) (UnifiedVariable variable)
 
 data InstantiationFailure variable
     = ConcreteFailure (UnifiedVariable variable) (TermLike variable)
@@ -97,12 +96,11 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        ::  (NamedVariable variable1, NamedVariable variable2)
-        =>  FreshPartialOrd variable2
-        =>  AdjSomeVariableName
-                (VariableNameOf variable1 -> VariableNameOf variable2)
-        ->  rule variable1
-        ->  rule variable2
+        :: Ord variable1
+        => FreshPartialOrd variable2
+        => AdjSomeVariableName (variable1 -> variable2)
+        -> rule variable1
+        -> rule variable2
 
     -- | Checks whether a given substitution is acceptable for a rule
     checkInstantiation

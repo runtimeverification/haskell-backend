@@ -174,7 +174,7 @@ data SentenceAlias (patternType :: *) =
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
         , sentenceAliasLeftPattern
-            :: !(Application SymbolOrAlias (UnifiedVariable Variable))
+            :: !(Application SymbolOrAlias (UnifiedVariable VariableName))
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }
@@ -472,7 +472,7 @@ instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse2 = unparseAxiom2 "axiom"
 
 instance
-    NamedVariable variable
+    Ord variable
     => HasFreeVariables (SentenceAxiom (Pattern variable annotation)) variable
   where
     freeVariables =
@@ -547,7 +547,7 @@ instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse2 = unparseAxiom2 "claim" . getSentenceClaim
 
 instance
-    NamedVariable variable
+    Ord variable
     => HasFreeVariables (SentenceClaim (Pattern variable annotation)) variable
   where
     freeVariables = freeVariables . getSentenceClaim

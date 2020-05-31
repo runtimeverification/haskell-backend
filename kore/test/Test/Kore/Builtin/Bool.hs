@@ -39,7 +39,6 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -78,11 +77,11 @@ test_implies = testBinary impliesBoolSymbol implies
     implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
-asInternal :: Bool -> TermLike Variable
+asInternal :: Bool -> TermLike VariableName
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> Pattern Variable
+asPattern :: Bool -> Pattern VariableName
 asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
@@ -150,15 +149,15 @@ test_termAndEquals =
     _True  = asInternal True
     _False = asInternal False
     literals = [(_True, True), (_False, False)]
-    x = ElemVar (elemVarS "x" boolSort)
-    y = ElemVar (elemVarS "y" boolSort)
+    x = inject (elemVarS "x" boolSort)
+    y = inject (elemVarS "y" boolSort)
 
     test
         :: HasCallStack
         => TestName
-        -> TermLike Variable
-        -> TermLike Variable
-        -> [Maybe (Pattern Variable)]
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> [Maybe (Pattern VariableName)]
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
@@ -184,7 +183,7 @@ test_termAndEquals =
       where
         worker term1 term2
           | ElemVar_ var <- term1 =
-            Pattern.assign (ElemVar var) term2
+            Pattern.assign (inject var) term2
             & return
           | otherwise = empty
         fallback term1 term2 =

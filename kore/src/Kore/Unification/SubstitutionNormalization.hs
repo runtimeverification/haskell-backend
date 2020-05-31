@@ -191,7 +191,7 @@ backSubstitute sorted =
         insertSubstitution variable termLike'
         return $ Substitution.assign variable termLike'
     insertSubstitution variable termLike =
-        State.modify' $ Map.insert variable termLike
+        State.modify' $ Map.insert (variableName1 variable) termLike
     applySubstitution termLike = do
         substitution <- State.get
         return $ TermLike.substitute substitution termLike

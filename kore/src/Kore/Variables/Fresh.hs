@@ -4,9 +4,9 @@ License     : UIUC/NCSA
  -}
 module Kore.Variables.Fresh
     ( FreshPartialOrd (..)
-    , FreshVariable (..)
+    , FreshName (..)
     , defaultRefreshName
-    , defaultRefreshVariable
+    , refreshVariable
     , refreshVariables
     -- * Re-exports
     , module Kore.Syntax.Variable
@@ -20,9 +20,6 @@ import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
-import Data.Generics.Wrapped
-    ( _Unwrapped
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -34,8 +31,6 @@ import qualified Data.Set as Set
 
 import Data.Sup
 import Kore.Sort
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 
 {- | @FreshPartialOrder@ defines a partial order for renaming variables.
@@ -89,56 +84,6 @@ class Ord variable => FreshPartialOrd variable where
     {- | @nextVariable@ increments the counter attached to a variable.
      -}
     nextVariable :: variable -> variable
-
-instance FreshPartialOrd Variable where
-    infVariable variable = variable { variableCounter = Nothing }
-    {-# INLINE infVariable #-}
-
-    supVariable variable = variable { variableCounter = Just Sup }
-    {-# INLINE supVariable #-}
-
-    nextVariable =
-        Lens.over (field @"variableCounter") incrementCounter
-        . Lens.set (field @"variableName" . field @"idLocation") generated
-      where
-        generated = AstLocationGeneratedVariable
-        incrementCounter counter =
-            case counter of
-                Nothing          -> Just (Element 0)
-                Just (Element n) -> Just (Element (succ n))
-                Just Sup         -> illegalVariableCounter
-    {-# INLINE nextVariable #-}
-
-instance FreshPartialOrd Concrete where
-    infVariable = \case {}
-    supVariable = \case {}
-    nextVariable = \case {}
-
-instance
-    FreshPartialOrd variable
-    => FreshPartialOrd (ElementVariable variable)
-  where
-    infVariable = Lens.over _Unwrapped infVariable
-    {-# INLINE infVariable #-}
-
-    supVariable = Lens.over _Unwrapped supVariable
-    {-# INLINE supVariable #-}
-
-    nextVariable = Lens.over _Unwrapped nextVariable
-    {-# INLINE nextVariable #-}
-
-instance
-    FreshPartialOrd variable
-    => FreshPartialOrd (SetVariable variable)
-  where
-    infVariable = Lens.over _Unwrapped infVariable
-    {-# INLINE infVariable #-}
-
-    supVariable = Lens.over _Unwrapped supVariable
-    {-# INLINE supVariable #-}
-
-    nextVariable = Lens.over _Unwrapped nextVariable
-    {-# INLINE nextVariable #-}
 
 instance FreshPartialOrd VariableName where
     infVariable variable = variable { counter = Nothing }
@@ -241,72 +186,25 @@ defaultRefreshName avoiding original = do
     assert (next > largest) $ pure next
 {-# INLINE defaultRefreshName #-}
 
+instance FreshName Void where
+    refreshName _ = \case {}
+    {-# INLINE refreshName #-}
+
 instance FreshName VariableName
 
 instance FreshPartialOrd variable => FreshName (ElementVariableName variable)
 
 instance FreshPartialOrd variable => FreshName (SetVariableName variable)
 
-{- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
--}
-class Ord variable => FreshVariable variable where
-    {- | Refresh a variable, renaming it avoid the given set.
+instance FreshPartialOrd variable => FreshName (SomeVariableName variable)
 
-    If the given variable occurs in the set, @refreshVariable@ must return
-    'Just' a fresh variable which does not occur in the set. If the given
-    variable does /not/ occur in the set, @refreshVariable@ /may/ return
-    'Nothing'.
-
-     -}
-    refreshVariable
-        :: Set variable  -- ^ variables to avoid
-        -> variable      -- ^ variable to rename
-        -> Maybe variable
-    default refreshVariable
-        :: (FreshPartialOrd variable, SortedVariable variable)
-        => Set variable
-        -> variable
-        -> Maybe variable
-    refreshVariable avoiding original = do
-        let sup = supVariable original
-        largest <- assignSort <$> Set.lookupLT sup avoiding
-        -- assignSort must not change the order with respect to sup.
-        assert (largest < sup) $ Monad.guard (largest >= infVariable original)
-        let next = nextVariable largest
-        -- nextVariable must yield a variable greater than largest.
-        assert (next > largest) $ pure next
-      where
-        originalSort = Lens.view lensVariableSort original
-        assignSort = Lens.set lensVariableSort originalSort
-    {-# INLINE refreshVariable #-}
-
-instance
-    (FreshPartialOrd variable, SortedVariable variable)
-    => FreshVariable (ElementVariable variable)
-
-instance
-    (FreshPartialOrd variable, SortedVariable variable)
-    => FreshVariable (SetVariable variable)
-
-instance FreshVariable Variable
-
-instance FreshVariable Concrete where
-    refreshVariable _ = \case {}
-
-instance
-    (FreshName variable, Ord variable) => FreshVariable (Variable1 variable)
-  where
-    refreshVariable avoiding =
-        traverse (refreshName $ Set.map variableName1 avoiding)
-
-defaultRefreshVariable
-    :: (NamedVariable variable, FreshName (VariableNameOf variable))
-    => Set (VariableNameOf variable)
-    -> variable
-    -> Maybe variable
-defaultRefreshVariable avoiding =
-    lensVariableName (refreshName avoiding)
-{-# INLINE defaultRefreshVariable #-}
+refreshVariable
+    :: FreshName variable
+    => Set variable
+    -> Variable1 variable
+    -> Maybe (Variable1 variable)
+refreshVariable avoiding = traverse (refreshName avoiding)
+{-# INLINE refreshVariable #-}
 
 {- | Rename one set of variables while avoiding another.
 
@@ -326,10 +224,10 @@ result with 'Kore.Internal.TermLike.mkVar':
 
  -}
 refreshVariables
-    :: FreshVariable variable
+    :: FreshName variable
     => Set variable  -- ^ variables to avoid
-    -> Set variable  -- ^ variables to rename
-    -> Map variable variable
+    -> Set (Variable1 variable)  -- ^ variables to rename
+    -> Map variable (Variable1 variable)
 refreshVariables avoid0 =
     snd <$> Foldable.foldl' refreshVariablesWorker (avoid0, Map.empty)
   where
@@ -337,13 +235,13 @@ refreshVariables avoid0 =
       | Just var' <- refreshVariable avoid var =
         let avoid' =
                 -- Avoid the freshly-generated variable in future renamings.
-                Set.insert var' avoid
+                Set.insert (variableName1 var') avoid
             rename' =
                 -- Record a mapping from the original variable to the
                 -- freshly-generated variable.
-                Map.insert var var' rename
+                Map.insert (variableName1 var) var' rename
         in (avoid', rename')
       | otherwise =
         -- The variable does not collide with any others, so renaming is not
         -- necessary.
-        (Set.insert var avoid, rename)
+        (Set.insert (variableName1 var) avoid, rename)

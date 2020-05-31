@@ -25,11 +25,8 @@ import Kore.IndexedModule.Error
     ( noSort
     )
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Syntax hiding
-    ( VariableName (..)
-    )
+import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
@@ -41,13 +38,13 @@ data PatternRestrict
     | NeedsSortedParent
 
 data TestPattern = TestPattern
-    { testPatternPattern    :: !(PatternF Variable ParsedPattern)
+    { testPatternPattern    :: !(PatternF VariableName ParsedPattern)
     , testPatternSort       :: !Sort
     , testPatternErrorStack :: !ErrorStack
     }
 
 newtype VariableOfDeclaredSort
-    = VariableOfDeclaredSort (ElementVariable Variable)
+    = VariableOfDeclaredSort (ElementVariable VariableName)
 
 testPatternErrorStackStrings :: TestPattern -> [String]
 testPatternErrorStackStrings
@@ -387,7 +384,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Object pattern - unquantified variable"
-        (VariableF $ Const $ ElemVar objectVariable')
+        (VariableF $ Const $ inject objectVariable')
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -565,7 +562,7 @@ test_patternVerifier =
     objectSortName = SortName "ObjectSort"
     objectSort :: Sort
     objectSort = simpleSort objectSortName
-    objectVariableName = VariableName "ObjectVariable"
+    objectVariableName = "ObjectVariable"
     objectVariable' = variable objectVariableName objectSort
     objectSetVariable' = setVariable objectVariableName objectSort
     objectSortSentence = simpleSortSentence objectSortName
@@ -589,12 +586,7 @@ test_patternVerifier =
         objectAliasSentenceWithArguments
             objectAliasName
             objectSort
-            [ ElemVar $ ElementVariable Variable
-                { variableName = testId "x"
-                , variableCounter = mempty
-                , variableSort = anotherObjectSort2
-                }
-            ]
+            [ inject $ mkElementVariable (testId "x") anotherObjectSort2 ]
     objectSortVariable = sortVariable "ObjectSortVariable"
     objectSortVariableSort :: Sort
     objectSortVariableSort = sortVariableSort "ObjectSortVariable"
@@ -683,20 +675,19 @@ test_verifyBinder =
         expect = Internal.mkForall x (Internal.mkElemVar x)
 
 dummyVariableAndSentences
-    :: NamePrefix -> (ElementVariable Variable, [ParsedSentence])
+    :: NamePrefix -> (ElementVariable VariableName, [ParsedSentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
     dummySortName = SortName (namePrefix <> "_OtherSort")
     dummySort' = simpleSort dummySortName
-    dummyVariable =
-        variable (VariableName (namePrefix <> "_OtherVariable")) dummySort'
+    dummyVariable = variable (namePrefix <> "_OtherVariable") dummySort'
 
 
 successTestsForObjectPattern
     :: HasCallStack
     => String
-    -> PatternF Variable ParsedPattern
+    -> PatternF VariableName ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -743,7 +734,7 @@ failureTestsForObjectPattern
     => String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> PatternF Variable ParsedPattern
+    -> PatternF VariableName ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -772,7 +763,7 @@ failureTestsForObjectPattern
     dummySortName = SortName (rawNamePrefix <> "_OtherSort")
     dummySort' = simpleSort dummySortName
     dummyVariable =
-        variable (VariableName (rawNamePrefix <> "_OtherVariable")) dummySort'
+        variable (rawNamePrefix <> "_OtherVariable") dummySort'
     dummySortSentence = simpleSortSentence dummySortName
     testData =
         genericPatternInAllContexts
@@ -795,7 +786,7 @@ failureTestsForObjectPattern
             patternRestrict
 
 genericPatternInAllContexts
-    :: PatternF Variable ParsedPattern
+    :: PatternF VariableName ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -843,11 +834,7 @@ genericPatternInAllContexts
                 Builtin.externalize $ Internal.mkElemVar anotherVariable
             }
     anotherVariable =
-        ElementVariable Variable
-            { variableName = testId (namePrefix <> "_anotherVar")
-            , variableCounter = mempty
-            , variableSort = testedSort
-            }
+        mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
     rawSymbolName = namePrefix <> "_anotherSymbol"
     rawAliasName = namePrefix <> "_anotherAlias"
     symbolFromSort sort =
@@ -862,7 +849,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: PatternF Variable ParsedPattern
+    :: PatternF VariableName ParsedPattern
     -> NamePrefix
     -> TestedPatternSort
     -> SortVariablesThatMustBeDeclared
@@ -898,11 +885,7 @@ objectPatternInAllContexts
                 $ Internal.mkElemVar anotherVariable
             }
     anotherVariable =
-        ElementVariable Variable
-            { variableName = testId (namePrefix <> "_anotherVar")
-            , variableCounter = mempty
-            , variableSort = testedSort
-            }
+        mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
 
 patternsInAllContexts
     :: [TestPattern]
@@ -967,12 +950,7 @@ patternsInAllContexts
                                 SortVariableSort <$> aliasParams
                             }
                     , applicationChildren =
-                        [ SetVar $ SetVariable Variable
-                            { variableName = testId "x"
-                            , variableCounter = mempty
-                            , variableSort = symbolAliasSort
-                            }
-                        ]
+                        [ inject $ mkSetVariable (testId "x") symbolAliasSort ]
                     }
             , sentenceAliasRightPattern =
                 Builtin.externalize $ Internal.mkTop anotherSort
@@ -980,8 +958,8 @@ patternsInAllContexts
             }
 
 genericPatternInPatterns
-    :: PatternF Variable ParsedPattern
-    -> PatternF Variable ParsedPattern
+    :: PatternF VariableName ParsedPattern
+    -> PatternF VariableName ParsedPattern
     -> OperandSort
     -> Helpers.ResultSort
     -> VariableOfDeclaredSort
@@ -1041,16 +1019,16 @@ genericPatternInPatterns
         ]
 
 objectPatternInPatterns
-    :: PatternF Variable ParsedPattern
-    -> PatternF Variable ParsedPattern
+    :: PatternF VariableName ParsedPattern
+    -> PatternF VariableName ParsedPattern
     -> OperandSort
     -> [TestPattern]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
-    :: PatternF Variable ParsedPattern
+    :: PatternF VariableName ParsedPattern
     -> Sort
-    -> ElementVariable Variable
+    -> ElementVariable VariableName
     -> [TestPattern]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
@@ -1064,7 +1042,9 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\exists '"
                     ++ getIdForError
-                        (variableName (getElementVariable quantifiedVariable))
+                        ( base . unElementVariableName . variableName1
+                        $ quantifiedVariable
+                        )
                     ++ "' (<test data>)"
                 ]
         }
@@ -1079,7 +1059,9 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\forall '"
                     ++ getIdForError
-                        (variableName (getElementVariable quantifiedVariable))
+                        ( base . unElementVariableName . variableName1
+                        $ quantifiedVariable
+                        )
                     ++ "' (<test data>)"
                 ]
         }
@@ -1088,8 +1070,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     testedKorePattern = asParsedPattern testedPattern
 
 patternInUnquantifiedGenericPatterns
-    :: PatternF Variable ParsedPattern
-    -> PatternF Variable ParsedPattern
+    :: PatternF VariableName ParsedPattern
+    -> PatternF VariableName ParsedPattern
     -> OperandSort
     -> Helpers.ResultSort
     -> [TestPattern]
@@ -1243,8 +1225,8 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asParsedPattern testedPattern
 
 patternInUnquantifiedObjectPatterns
-    :: PatternF Variable ParsedPattern
-    -> PatternF Variable ParsedPattern
+    :: PatternF VariableName ParsedPattern
+    -> PatternF VariableName ParsedPattern
     -> OperandSort
     -> [TestPattern]
 patternInUnquantifiedObjectPatterns

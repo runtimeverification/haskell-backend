@@ -36,7 +36,7 @@ import Kore.Syntax
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
+    ( UnifiedVariable
     )
 
 {- | Traverse the pattern from the top down and apply substitutions.
@@ -58,7 +58,7 @@ substitute
         , Synthetic attribute patternBase
         , HasFreeVariables patternType variable
         )
-    => Map (UnifiedVariable variable) patternType
+    => Map (SomeVariableName variable) patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
@@ -66,25 +66,32 @@ substitute
 substitute =
     substituteWorker . Map.map Left
   where
-    extractFreeVariables :: patternType -> Set (UnifiedVariable variable)
-    extractFreeVariables = FreeVariables.toSet . freeVariables
+    extractFreeVariables :: patternType -> Set (SomeVariableName variable)
+    extractFreeVariables = FreeVariables.toNames . freeVariables
+
+    getTargetFreeVariables
+        :: Either patternType (UnifiedVariable variable)
+        -> Set (SomeVariableName variable)
+    getTargetFreeVariables =
+        either extractFreeVariables (Set.singleton . variableName1)
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
         :: UnifiedVariable variable  -- ^ Original variable
         -> Maybe (UnifiedVariable variable)  -- ^ Renamed variable
         -> Map
-            (UnifiedVariable variable)
+            (SomeVariableName variable)
             (Either patternType (UnifiedVariable variable))
         -- ^ Substitution
         -> Map
-            (UnifiedVariable variable)
+            (SomeVariableName variable)
             (Either patternType (UnifiedVariable variable))
-    renaming variable = maybe id (Map.insert variable . Right)
+    renaming Variable1 { variableName1 } =
+        maybe id (Map.insert variableName1 . Right)
 
     substituteWorker
         :: Map
-            (UnifiedVariable variable)
+            (SomeVariableName variable)
             (Either patternType (UnifiedVariable variable))
         -> patternType
         -> patternType
@@ -129,7 +136,7 @@ substitute =
             worker
                 :: UnifiedVariable variable
                 -> Either patternType (UnifiedVariable variable)
-            worker variable =
+            worker Variable1 { variableName1 } =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.
                 fromMaybe
@@ -139,7 +146,7 @@ substitute =
                     -- @patternType@. If the variable is substituted,
                     -- 'Map.lookup' returns a 'Left' which is used directly as
                     -- the result, exiting early from @traverseVariable@.
-                    (Map.lookup variable subst')
+                    (Map.lookup variableName1 subst')
 
         -- | Default case: Descend into sub-patterns and apply the substitution.
         substituteDefault =
@@ -164,7 +171,7 @@ substitute =
             -- | Free variables of the target substitutions.
             targetFreeVariables =
                 Foldable.foldl' Set.union Set.empty
-                    (either extractFreeVariables Set.singleton <$> subst')
+                    (getTargetFreeVariables <$> subst')
 
         -- | Rename a bound variable, if needed.
         avoidCapture = refreshVariable freeVariables'

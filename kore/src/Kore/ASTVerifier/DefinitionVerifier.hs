@@ -44,8 +44,6 @@ import qualified Kore.Internal.Symbol as Internal.Symbol
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
-    ( Variable (..)
-    )
 import qualified Kore.Verified as Verified
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
@@ -121,7 +119,7 @@ verifyAndIndexDefinitionWithBase
             :: ImplicitIndexedModule
                 Verified.Pattern
                 Attribute.Symbol
-                (Attribute.Axiom Internal.Symbol.Symbol Variable)
+                (Attribute.Axiom Internal.Symbol.Symbol VariableName)
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition

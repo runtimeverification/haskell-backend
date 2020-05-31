@@ -34,12 +34,15 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Implies as Implies
-import qualified Pretty
-
 import Kore.Unparser
+import qualified Pretty
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+
+type Pattern' = Pattern VariableName
+type OrPattern' = OrPattern VariableName
+type Predicate' = Predicate VariableName
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
@@ -63,8 +66,8 @@ test_simplifyEvaluated =
   where
     becomes_
         :: HasCallStack
-        => ([Pattern Variable], [Pattern Variable])
-        -> [Pattern Variable]
+        => ([Pattern'], [Pattern'])
+        -> [Pattern']
         -> TestTree
     becomes_ (firsts, seconds) expecteds =
         testCase "becomes" $ do
@@ -89,62 +92,62 @@ test_simplifyEvaluated =
           where
             actuals = Foldable.toList actual
 
-termA :: Pattern Variable
+termA :: Pattern'
 termA = Pattern.fromTermLike Mock.a
 
-termB :: Pattern Variable
+termB :: Pattern'
 termB = Pattern.fromTermLike Mock.b
 
-aImpliesB :: Pattern Variable
+aImpliesB :: Pattern'
 aImpliesB = Conditional
     { term = mkImplies Mock.a Mock.b
     , predicate = Predicate.makeTruePredicate_
     , substitution = mempty
     }
 
-equalsXA :: Pattern Variable
+equalsXA :: Pattern'
 equalsXA = fromPredicate equalsXA_
 
-equalsXB :: Pattern Variable
+equalsXB :: Pattern'
 equalsXB = fromPredicate equalsXB_
 
-equalsXC :: Pattern Variable
+equalsXC :: Pattern'
 equalsXC = fromPredicate equalsXC_
 
-equalsXA_ :: Predicate Variable
+equalsXA_ :: Predicate'
 equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
 
-equalsXB_ :: Predicate Variable
+equalsXB_ :: Predicate'
 equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
 
-equalsXC_ :: Predicate Variable
+equalsXC_ :: Predicate'
 equalsXC_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c
 
-impliesEqualsXAEqualsXB :: Pattern Variable
+impliesEqualsXAEqualsXB :: Pattern'
 impliesEqualsXAEqualsXB = fromPredicate $
     Predicate.makeImpliesPredicate equalsXA_ equalsXB_
 
-impliesEqualsXAEqualsXC :: Pattern Variable
+impliesEqualsXAEqualsXC :: Pattern'
 impliesEqualsXAEqualsXC = fromPredicate $
     Predicate.makeImpliesPredicate equalsXA_ equalsXC_
 
-impliesEqualsXBEqualsXC_ :: Condition Variable
+impliesEqualsXBEqualsXC_ :: Condition VariableName
 impliesEqualsXBEqualsXC_ = Condition.fromPredicate $
     Predicate.makeImpliesPredicate equalsXB_ equalsXC_
 
-forceTermSort :: Pattern Variable -> Pattern Variable
+forceTermSort :: Pattern' -> Pattern'
 forceTermSort = fmap (forceSort Mock.testSort)
 
-fromPredicate :: Predicate Variable -> Pattern Variable
+fromPredicate :: Predicate' -> Pattern'
 fromPredicate =
     forceTermSort
     . Pattern.fromCondition
     . Condition.fromPredicate
 
 simplifyEvaluated
-    :: OrPattern Variable
-    -> OrPattern Variable
-    -> IO (OrPattern Variable)
+    :: OrPattern'
+    -> OrPattern'
+    -> IO (OrPattern')
 simplifyEvaluated first second =
     runSimplifier mockEnv
     $ Implies.simplifyEvaluated SideCondition.top first second

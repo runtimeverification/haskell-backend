@@ -198,8 +198,6 @@ import qualified Kore.Syntax.Id as Id
     ( Id (..)
     )
 import Kore.Syntax.Variable
-    ( Variable
-    )
 import Kore.Unparser
     ( Unparse
     , unparse
@@ -857,7 +855,7 @@ tryAxiomClaimWorker mode ref = do
                         }
                     second
               where
-                patternUnifier :: Pattern Variable -> ReplM m ()
+                patternUnifier :: Pattern VariableName -> ReplM m ()
                 patternUnifier
                     (Pattern.splitTerm -> (secondTerm, secondCondition))
                   =
@@ -886,9 +884,9 @@ tryAxiomClaimWorker mode ref = do
                 updateExecutionGraph graph
 
     runUnifier'
-        :: SideCondition Variable
-        -> TermLike Variable
-        -> TermLike Variable
+        :: SideCondition VariableName
+        -> TermLike VariableName
+        -> TermLike VariableName
         -> ReplM m ()
     runUnifier' sideCondition first second =
         runUnifier sideCondition first' second
@@ -896,7 +894,7 @@ tryAxiomClaimWorker mode ref = do
       where
         first' = TermLike.refreshVariables (freeVariables second) first
 
-    extractLeftPattern :: Either Axiom ReachabilityRule -> TermLike Variable
+    extractLeftPattern :: Either Axiom ReachabilityRule -> TermLike VariableName
     extractLeftPattern = left . either toRulePattern toRulePattern
 
 -- | Removes specified node and all its child nodes.
@@ -982,7 +980,7 @@ savePartialProof maybeNatural file = do
             saveUnparsedDefinitionToFile (unparse newDefinition)
             putStrLn' "Done."
   where
-    unwrapConfig :: CommonProofState -> Pattern Variable
+    unwrapConfig :: CommonProofState -> Pattern VariableName
     unwrapConfig = proofState commonProofStateTransformer
 
     saveUnparsedDefinitionToFile
@@ -1220,7 +1218,7 @@ unparseStrategy omitList =
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
-    hide :: TermLike Variable -> TermLike Variable
+    hide :: TermLike VariableName -> TermLike VariableName
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
@@ -1425,7 +1423,7 @@ parseEvalScript file scriptModeOutput = do
                     command
 
 formatUnificationMessage
-    :: Either ReplOutput (NonEmpty (Condition Variable))
+    :: Either ReplOutput (NonEmpty (Condition VariableName))
     -> ReplOutput
 formatUnificationMessage docOrCondition =
     either id prettyUnifiers docOrCondition

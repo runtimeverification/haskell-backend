@@ -65,11 +65,19 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
+type TermLike' = TermLike VariableName
+type Equation' = Equation VariableName
+type SideCondition' = SideCondition VariableName
+type Pattern' = Pattern VariableName
+type Predicate' = Predicate VariableName
+type AttemptEquationError' = AttemptEquationError VariableName
+type AttemptEquationResult' = AttemptEquationResult VariableName
+
 attemptEquation
-    :: SideCondition Variable
-    -> TermLike Variable
-    -> Equation Variable
-    -> IO (AttemptEquationResult Variable)
+    :: SideCondition'
+    -> TermLike'
+    -> Equation'
+    -> IO (AttemptEquationResult')
 attemptEquation sideCondition termLike equation =
     Equation.attemptEquation sideCondition' termLike' equation
     & runSimplifier Mock.env
@@ -81,7 +89,7 @@ attemptEquation sideCondition termLike equation =
 
     termLike' = TermLike.mapVariables Target.mkUnifiedNonTarget termLike
 
-assertNotMatched :: AttemptEquationError Variable -> Assertion
+assertNotMatched :: AttemptEquationError' -> Assertion
 assertNotMatched (WhileMatch _) = return ()
 assertNotMatched result =
     (assertFailure . show . Pretty.vsep)
@@ -89,7 +97,7 @@ assertNotMatched result =
         , Pretty.indent 4 (debug result)
         ]
 
-assertApplyMatchResultErrors :: AttemptEquationError Variable -> Assertion
+assertApplyMatchResultErrors :: AttemptEquationError' -> Assertion
 assertApplyMatchResultErrors (WhileApplyMatchResult _) = return ()
 assertApplyMatchResultErrors result =
     (assertFailure . show . Pretty.vsep)
@@ -97,7 +105,7 @@ assertApplyMatchResultErrors result =
         , Pretty.indent 4 (debug result)
         ]
 
-assertRequiresNotMet :: AttemptEquationError Variable -> Assertion
+assertRequiresNotMet :: AttemptEquationError' -> Assertion
 assertRequiresNotMet (WhileCheckRequires _) = return ()
 assertRequiresNotMet result =
     (assertFailure . show . Pretty.vsep)
@@ -355,54 +363,54 @@ test_attemptEquation =
 
 -- * Test data
 
-equationId :: Equation Variable
+equationId :: Equation'
 equationId = mkEquation sortR (mkElemVar Mock.x) (mkElemVar Mock.x)
 
-equationRequiresBottom :: Equation Variable
+equationRequiresBottom :: Equation'
 equationRequiresBottom =
     (mkEquation sortR Mock.a Mock.b)
         { requires = makeFalsePredicate sortR }
 
-equationEnsuresBottom :: Equation Variable
+equationEnsuresBottom :: Equation'
 equationEnsuresBottom =
     (mkEquation sortR Mock.a Mock.b)
         { ensures = makeFalsePredicate sortR }
 
-equationBottom :: Equation Variable
+equationBottom :: Equation'
 equationBottom =
     mkEquation sortR Mock.a (mkBottom Mock.testSort)
 
 sortR :: Sort
 sortR = mkSortVariable (testId "R")
 
-f, g :: TermLike Variable -> TermLike Variable
+f, g :: TermLike' -> TermLike'
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
 
-cf :: TermLike Variable
+cf :: TermLike'
 cf = Mock.cf
 
-sigma :: TermLike Variable -> TermLike Variable -> TermLike Variable
+sigma :: TermLike' -> TermLike' -> TermLike'
 sigma = Mock.functionalConstr20
 
-string :: Text -> TermLike Variable
+string :: Text -> TermLike'
 string = Mock.builtinString
 
-x, xString, xInt, y, z :: TermLike Variable
+x, xString, xInt, y, z :: TermLike'
 x = mkElemVar Mock.x
 xInt = mkElemVar Mock.xInt
 xString = mkElemVar Mock.xString
 y = mkElemVar Mock.y
 z = mkElemVar Mock.z
 
-a, b :: TermLike Variable
+a, b :: TermLike'
 a = Mock.a
 b = Mock.b
 
-tdivInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
+tdivInt :: TermLike' -> TermLike' -> TermLike'
 tdivInt = Mock.tdivInt
 
-positive :: TermLike Variable -> Predicate Variable
+positive :: TermLike' -> Predicate'
 positive u =
     makeEqualsPredicate Mock.testSort
         (Mock.lessInt
@@ -412,35 +420,35 @@ positive u =
         (Mock.builtinBool False)
 
 andNot, orNot
-    :: Predicate Variable
-    -> Predicate Variable
-    -> Predicate Variable
+    :: Predicate'
+    -> Predicate'
+    -> Predicate'
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
 
 -- * Helpers
 
 axiom
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
-    -> Equation Variable
+    :: TermLike'
+    -> TermLike'
+    -> Predicate'
+    -> Equation'
 axiom left right requires =
     (mkEquation sortR left right) { requires }
 
 axiom_
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Equation Variable
+    :: TermLike'
+    -> TermLike'
+    -> Equation'
 axiom_ left right = axiom left right (makeTruePredicate sortR)
 
-concrete :: [TermLike Variable] -> Equation Variable -> Equation Variable
+concrete :: [TermLike'] -> Equation' -> Equation'
 concrete vars =
     Lens.set
         (field @"attributes" . field @"concrete")
         (Concrete $ foldMap freeVariables vars)
 
-symbolic :: [TermLike Variable] -> Equation Variable -> Equation Variable
+symbolic :: [TermLike'] -> Equation' -> Equation'
 symbolic vars =
     Lens.set
         (field @"attributes" . field @"symbolic")
@@ -449,21 +457,21 @@ symbolic vars =
 -- * Test cases
 
 withAttemptEquationResult
-    :: (AttemptEquationResult Variable -> Assertion)
+    :: (AttemptEquationResult' -> Assertion)
     -> TestName
-    -> Equation Variable
-    -> SideCondition Variable
-    -> TermLike Variable
+    -> Equation'
+    -> SideCondition'
+    -> TermLike'
     -> TestTree
 withAttemptEquationResult check testName equation sideCondition initial =
     testCase testName (attemptEquation sideCondition initial equation >>= check)
 
 applies
     :: TestName
-    -> Equation Variable
-    -> SideCondition Variable
-    -> TermLike Variable
-    -> Pattern Variable
+    -> Equation'
+    -> SideCondition'
+    -> TermLike'
+    -> Pattern'
     -> TestTree
 applies testName equation sideCondition initial expect =
     withAttemptEquationResult
@@ -475,26 +483,26 @@ applies testName equation sideCondition initial expect =
 
 notMatched
     :: TestName
-    -> Equation Variable
-    -> SideCondition Variable
-    -> TermLike Variable
+    -> Equation'
+    -> SideCondition'
+    -> TermLike'
     -> TestTree
 notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 
 notInstantiated
     :: TestName
-    -> Equation Variable
-    -> SideCondition Variable
-    -> TermLike Variable
+    -> Equation'
+    -> SideCondition'
+    -> TermLike'
     -> TestTree
 notInstantiated =
     withAttemptEquationResult (expectLeft >=> assertApplyMatchResultErrors)
 
 requiresNotMet
     :: TestName
-    -> Equation Variable
-    -> SideCondition Variable
-    -> TermLike Variable
+    -> Equation'
+    -> SideCondition'
+    -> TermLike'
     -> TestTree
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)

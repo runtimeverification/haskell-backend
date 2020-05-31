@@ -52,7 +52,13 @@ instance NFData variable => NFData (Symbolic variable)
 instance Ord variable => Default (Symbolic variable) where
     def = Symbolic mempty
 
-instance From (Symbolic variable) (Set (UnifiedVariable variable)) where
+instance
+    Ord variable => From (Symbolic variable) (Set (UnifiedVariable variable))
+  where
+    from = from @(FreeVariables _) . unSymbolic
+    {-# INLINE from #-}
+
+instance From (Symbolic variable) (Set (SomeVariableName variable)) where
     from = from @(FreeVariables _) . unSymbolic
     {-# INLINE from #-}
 
@@ -69,21 +75,21 @@ symbolicSymbol =
         }
 
 -- | Kore pattern representing the @symbolic@ attribute.
-symbolicAttribute :: [UnifiedVariable Variable] -> AttributePattern
+symbolicAttribute :: [UnifiedVariable VariableName] -> AttributePattern
 symbolicAttribute = attributePattern symbolicSymbol . map attributeVariable
 
 parseSymbolicAttribute
-    :: FreeVariables Variable
+    :: FreeVariables VariableName
     -> AttributePattern
-    -> Symbolic Variable
-    -> Parser (Symbolic Variable)
+    -> Symbolic VariableName
+    -> Parser (Symbolic VariableName)
 parseSymbolicAttribute freeVariables =
     Parser.withApplication symbolicId parseApplication
   where
     parseApplication params args (Symbolic concreteVars) =
         Symbolic <$> parseFreeVariables freeVariables params args concreteVars
 
-instance From (Symbolic Variable) Attributes where
+instance From (Symbolic VariableName) Attributes where
     from =
         from @AttributePattern @Attributes
         . symbolicAttribute
@@ -91,14 +97,16 @@ instance From (Symbolic Variable) Attributes where
         . unSymbolic
 
 mapSymbolicVariables
-    ::  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Symbolic variable1
-    ->  Symbolic variable2
+    :: Ord variable2
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Symbolic variable1
+    -> Symbolic variable2
 mapSymbolicVariables adj (Symbolic freeVariables) =
     Symbolic (mapFreeVariables adj freeVariables)
 
 isSymbolic
-    :: Ord variable => Symbolic variable -> UnifiedVariable variable -> Bool
-isSymbolic (Symbolic vars) = not . flip isFreeVariable  vars
+    :: Ord variable
+    => Symbolic variable
+    -> SomeVariableName variable
+    -> Bool
+isSymbolic (Symbolic vars) = not . flip isFreeVariable vars

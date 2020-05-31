@@ -24,8 +24,12 @@ data V =
     V { value :: Integer, counter :: Maybe (Sup Natural) }
     deriving (Show, Eq, Ord, GHC.Generic)
 
-mkV :: Integer -> V
-mkV value = V { value, counter = Nothing }
+mkV :: Integer -> Variable1 V
+mkV value =
+    Variable1
+    { variableName1 = V { value, counter = Nothing }
+    , variableSort1 = sortVariable
+    }
 
 instance Hashable V
 
@@ -41,31 +45,11 @@ instance Unparse V where
     unparse (V n _) = "V" <> pretty n <> ":" <> unparse sortVariable
     unparse2 = undefined
 
-instance SortedVariable V where
-    lensVariableSort = Lens.lens (const sortVariable) const
-    {-# INLINE lensVariableSort #-}
-
-instance From Variable V where
-    from = error "Not implemented"
-
 instance From VariableName V where
-    from = error "Not implemented"
-
-instance From V Variable where
     from = error "Not implemented"
 
 instance From V VariableName where
     from = error "Not implemented"
-
-instance NamedVariable V where
-    type VariableNameOf V = V
-
-    isoVariable1 =
-        Lens.iso to fr
-      where
-        to variableName1 =
-            Variable1 { variableName1, variableSort1 = sortVariable }
-        fr Variable1 { variableName1 } = variableName1
 
 instance FreshPartialOrd V where
     infVariable v = v { counter = Nothing }
@@ -79,15 +63,13 @@ instance FreshPartialOrd V where
                 Just (Element a) -> Just (Element (succ a))
                 Just Sup -> illegalVariableCounter
 
-instance FreshVariable V
+instance FreshName V
 
 instance SubstitutionOrd V where
     compareSubstitution = compare
 
-instance VariableBase V
-
 var' :: Integer -> TermLike V
-var' = mkElemVar . ElementVariable . mkV
+var' = mkElemVar . fmap ElementVariableName . mkV
 
 sortVariable :: Sort
 sortVariable = SortVariableSort (SortVariable (Id "#a" AstLocationTest))

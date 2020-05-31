@@ -29,7 +29,7 @@ import qualified Pretty
 
 newtype WarnDecidePredicateUnknown =
     WarnDecidePredicateUnknown
-        { predicates :: NonEmpty (Predicate Variable)
+        { predicates :: NonEmpty (Predicate VariableName)
         }
     deriving (Show)
 

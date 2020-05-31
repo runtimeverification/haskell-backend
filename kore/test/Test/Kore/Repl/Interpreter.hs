@@ -76,8 +76,6 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
-    ( Variable
-    )
 import Kore.Unification.Procedure
     ( unificationProcedureWorker
     )
@@ -601,8 +599,8 @@ emptyClaim =
     $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 mkNamedAxiom
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> String
     -> Axiom
 mkNamedAxiom left right name =
@@ -615,10 +613,10 @@ mkNamedAxiom left right name =
     label = Attribute.Label . pure $ pack name
 
 claimWithName
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> String
-    -> RewriteRule Variable
+    -> RewriteRule VariableName
 claimWithName left right name =
     rulePattern left right
     & Lens.set (field @"attributes" . typed @Attribute.Label) label
@@ -627,8 +625,8 @@ claimWithName left right name =
     label = Attribute.Label . pure $ pack name
 
 mkAxiom
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> Axiom
 mkAxiom left right =
     rulePattern left right
@@ -768,8 +766,8 @@ mkConfig logger =
 
 formatUnificationError
     :: Pretty.Doc ()
-    -> TermLike Variable
-    -> TermLike Variable
+    -> TermLike VariableName
+    -> TermLike VariableName
     -> IO ReplOutput
 formatUnificationError info first second = do
     res <- runSimplifier testEnv . runUnifierWithExplanation $ do
@@ -777,5 +775,5 @@ formatUnificationError info first second = do
         empty
     return $ formatUnificationMessage res
 
-formatUnifiers :: NonEmpty (Condition Variable) -> ReplOutput
+formatUnifiers :: NonEmpty (Condition VariableName) -> ReplOutput
 formatUnifiers = formatUnificationMessage . Right

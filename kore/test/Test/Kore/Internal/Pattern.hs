@@ -24,9 +24,6 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore
     ( Gen
@@ -39,7 +36,9 @@ import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty.HUnit.Ext
 
-internalPatternGen :: Gen (Internal.Pattern Variable)
+type Pattern' = Internal.Pattern VariableName
+
+internalPatternGen :: Gen Pattern'
 internalPatternGen =
     Internal.Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
@@ -52,7 +51,7 @@ test_expandedPattern =
                 , predicate = makeEquals (war' "2") (war' "3")
                 , substitution = Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar . ElementVariable $ mkW "4", war' "5")]
+                    [(inject . fmap ElementVariableName $ mkW "4", war' "5")]
                 }
             (Pattern.mapVariables showUnifiedVar
                 Conditional
@@ -60,7 +59,7 @@ test_expandedPattern =
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar . ElementVariable $ mkV 4, var' 5)]
+                        [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
         )
@@ -79,7 +78,7 @@ test_expandedPattern =
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar . ElementVariable $ mkV 4, var' 5)]
+                        [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
         )
@@ -95,7 +94,7 @@ test_expandedPattern =
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar . ElementVariable $ mkV 4, var' 5)]
+                        [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
         )
@@ -119,7 +118,7 @@ test_expandedPattern =
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar . ElementVariable $ mkV 4, var' 5)]
+                        [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
         )

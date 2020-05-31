@@ -23,8 +23,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-    ( Variable
-    )
 import qualified Kore.Step.SMT.Evaluator as Evaluator
 import Kore.Step.SMT.Translate
     ( evalTranslator
@@ -158,7 +156,7 @@ test_goTranslatePredicate =
     existst i p = existsQ [List [var i, Atom "|HB_testSort|"]] p
     fun i p = SMT.SimpleSMT.List (var i : p)
 
-translating :: HasCallStack => Predicate Variable -> IO (Maybe SExpr)
+translating :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translating =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator
     . Evaluator.translatePredicate Mock.metadataTools

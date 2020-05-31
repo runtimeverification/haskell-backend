@@ -7,7 +7,7 @@ License     : NCSA
 module Kore.Internal.Variable
     ( SubstitutionOrd (..)
     , InternalVariable
-    , FreshVariable
+    , FreshName
     , FreshPartialOrd
     , module Kore.Syntax.ElementVariable
     , module Kore.Syntax.SetVariable
@@ -26,8 +26,8 @@ import Kore.Unparser
     ( Unparse
     )
 import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    , FreshVariable
+    ( FreshName
+    , FreshPartialOrd
     )
 
 {- | @SubstitutionOrd@ orders variables for substitution.
@@ -54,24 +54,47 @@ prop> (compareSubstitution x y == compareSubstitution y z) == (compareSubstituti
 class Eq variable => SubstitutionOrd variable where
     compareSubstitution :: variable -> variable -> Ordering
 
-instance SubstitutionOrd Variable where
-    compareSubstitution = compare
-    {-# INLINE compareSubstitution #-}
-
-instance SubstitutionOrd Concrete where
+instance SubstitutionOrd Void where
     compareSubstitution = \case {}
     {-# INLINE compareSubstitution #-}
 
-instance
-    SubstitutionOrd variable => SubstitutionOrd (ElementVariable variable)
-  where
-    compareSubstitution = on compareSubstitution getElementVariable
+instance SubstitutionOrd VariableName where
+    compareSubstitution = compare
     {-# INLINE compareSubstitution #-}
 
 instance
-    SubstitutionOrd variable => SubstitutionOrd (SetVariable variable)
+    SubstitutionOrd variable => SubstitutionOrd (ElementVariableName variable)
   where
-    compareSubstitution = on compareSubstitution getSetVariable
+    compareSubstitution = on compareSubstitution unElementVariableName
+    {-# INLINE compareSubstitution #-}
+
+instance
+    SubstitutionOrd variable => SubstitutionOrd (SetVariableName variable)
+  where
+    compareSubstitution = on compareSubstitution unSetVariableName
+    {-# INLINE compareSubstitution #-}
+
+instance
+    SubstitutionOrd variable => SubstitutionOrd (SomeVariableName variable)
+  where
+    compareSubstitution
+        (SomeVariableNameElement x)
+        (SomeVariableNameElement y)
+      =
+        compareSubstitution x y
+    compareSubstitution (SomeVariableNameElement _) _ = LT
+    compareSubstitution
+        (SomeVariableNameSet x)
+        (SomeVariableNameSet y)
+      =
+        compareSubstitution x y
+    compareSubstitution (SomeVariableNameSet _) _ = GT
+    {-# INLINE compareSubstitution #-}
+
+instance
+    SubstitutionOrd variable => SubstitutionOrd (Variable1 variable)
+  where
+    compareSubstitution = on compareSubstitution variableName1
     {-# INLINE compareSubstitution #-}
 
 {- | 'InternalVariable' is the basic constraint on variable types.
@@ -84,7 +107,6 @@ these constraints.
 type InternalVariable variable =
     ( Hashable variable, Ord variable, SubstitutionOrd variable
     , Debug variable, Show variable, Unparse variable
-    , NamedVariable variable, SortedVariable variable
-    , VariableBase variable, From VariableName (VariableNameOf variable)
-    , FreshPartialOrd variable, FreshVariable variable
+    , From VariableName variable, From variable VariableName
+    , FreshPartialOrd variable, FreshName variable
     )

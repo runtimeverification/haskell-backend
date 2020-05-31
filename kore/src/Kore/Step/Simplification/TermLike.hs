@@ -47,8 +47,7 @@ import qualified Kore.Internal.Substitution as Substitution
     ( toMap
     )
 import Kore.Internal.TermLike
-    ( ElementVariable (..)
-    , TermLike
+    ( TermLike
     , TermLikeF (..)
     , termLikeSort
     )
@@ -140,6 +139,7 @@ import Kore.Syntax.Variable
     ( AdjSomeVariableName (..)
     , ElementVariableName (..)
     , SetVariableName (..)
+    , Variable1 (..)
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -419,7 +419,7 @@ simplifyInternal term sideCondition = do
                         AdjSomeVariableName
                         { adjSomeVariableNameElement =
                             ElementVariableName
-                            (targetIfEqual (ElementVariable boundVar))
+                            (targetIfEqual existsVariableName)
                         , adjSomeVariableNameSet = SetVariableName NonTarget
                         }
                 targetSimplifiedChildren
@@ -433,8 +433,9 @@ simplifyInternal term sideCondition = do
                         (OrPattern (Target variable))
                 targetSimplifiedChildren =
                     Lens.over Binding.existsBinder OrPattern.targetBinder
-                (TermLike.ElementVariable boundVar) =
-                    TermLike.existsVariable exists
+                existsVariableName =
+                    (unElementVariableName . variableName1)
+                        (TermLike.existsVariable exists)
             IffF iffF ->
                 Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->

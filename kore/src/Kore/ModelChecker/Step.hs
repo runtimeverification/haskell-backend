@@ -69,7 +69,7 @@ import Kore.Step.Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Variable
-    ( Variable
+    ( VariableName
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Pretty
@@ -93,7 +93,7 @@ data ModalPattern variable = ModalPattern
 deriving instance Eq variable => Eq (ModalPattern variable)
 deriving instance Show variable => Show (ModalPattern variable)
 
-type CommonModalPattern = ModalPattern Variable
+type CommonModalPattern = ModalPattern VariableName
 
 data ProofState patt
     = Proven
@@ -105,8 +105,8 @@ data ProofState patt
     -- ^ State which can't be rewritten anymore.
   deriving (Show, Eq, Ord, Generic)
 
--- | A 'ProofState' instantiated to 'Pattern Variable' for convenience.
-type CommonProofState = ProofState (Pattern Variable)
+-- | A 'ProofState' instantiated to 'Pattern VariableName' for convenience.
+type CommonProofState = ProofState (Pattern VariableName)
 
 instance Hashable patt => Hashable (ProofState patt)
 
@@ -123,12 +123,12 @@ computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
 type Transition m =
-    TransitionT (RewriteRule Variable) (StateT (Maybe ()) m)
+    TransitionT (RewriteRule VariableName) (StateT (Maybe ()) m)
 
 transitionRule
     :: forall m
     .  MonadSimplify m
-    => Prim CommonModalPattern (RewriteRule Variable)
+    => Prim CommonModalPattern (RewriteRule VariableName)
     -> CommonProofState
     -> Transition m CommonProofState
 transitionRule
@@ -203,7 +203,7 @@ transitionRule
                       ]
 
     transitionComputeWeakNext
-        :: [RewriteRule Variable]
+        :: [RewriteRule VariableName]
         -> CommonProofState
         -> Transition m CommonProofState
     transitionComputeWeakNext _ Proven = return Proven
@@ -216,8 +216,8 @@ transitionRule
     unificationProcedure = Unification.unificationProcedure
 
     transitionComputeWeakNextHelper
-        :: [RewriteRule Variable]
-        -> Pattern Variable
+        :: [RewriteRule VariableName]
+        -> Pattern VariableName
         -> Transition m CommonProofState
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven

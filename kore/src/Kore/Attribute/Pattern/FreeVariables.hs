@@ -8,6 +8,7 @@ module Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , toList
     , toSet
+    , toNames
     , nullFreeVariables
     , freeVariable
     , isFreeVariable
@@ -31,6 +32,7 @@ import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -42,7 +44,7 @@ import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 
 newtype FreeVariables variable =
-    FreeVariables { getFreeVariables :: Map (UnifiedVariable variable) Sort }
+    FreeVariables { getFreeVariables :: Map (SomeVariableName variable) Sort }
     deriving GHC.Generic
     deriving (Eq, Ord, Show)
     deriving (Semigroup, Monoid)
@@ -62,8 +64,7 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     {-# INLINE hashWithSalt #-}
 
 instance
-    NamedVariable variable
-    => Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
+    Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
@@ -72,24 +73,38 @@ instance From (FreeVariables variable) [UnifiedVariable variable] where
     from = toList
     {-# INLINE from #-}
 
-instance From (FreeVariables variable) (Set (UnifiedVariable variable)) where
+instance
+    Ord variable
+    => From (FreeVariables variable) (Set (UnifiedVariable variable))
+  where
     from = toSet
     {-# INLINE from #-}
 
+instance From (FreeVariables variable) (Set (SomeVariableName variable)) where
+    from = toNames
+    {-# INLINE from #-}
+
 toList :: FreeVariables variable -> [UnifiedVariable variable]
-toList = Map.keys . getFreeVariables
+toList = map (uncurry Variable1) . Map.toAscList . getFreeVariables
 {-# INLINE toList #-}
 
 fromList
-    :: NamedVariable variable
+    :: Ord variable
     => [UnifiedVariable variable]
     -> FreeVariables variable
 fromList = foldMap freeVariable
 {-# INLINE fromList #-}
 
-toSet :: FreeVariables variable -> Set (UnifiedVariable variable)
-toSet = Map.keysSet . getFreeVariables
+toSet
+    :: Ord variable
+    => FreeVariables variable
+    -> Set (UnifiedVariable variable)
+toSet = Set.fromList . toList
 {-# INLINE toSet #-}
+
+toNames :: FreeVariables variable -> Set (SomeVariableName variable)
+toNames = Map.keysSet . getFreeVariables
+{-# INLINE toNames #-}
 
 nullFreeVariables :: FreeVariables variable -> Bool
 nullFreeVariables = Map.null . getFreeVariables
@@ -100,8 +115,8 @@ bindVariable
     => UnifiedVariable variable
     -> FreeVariables variable
     -> FreeVariables variable
-bindVariable variable (FreeVariables freeVars) =
-    FreeVariables (Map.delete variable freeVars)
+bindVariable Variable1 { variableName1 } (FreeVariables freeVars) =
+    FreeVariables (Map.delete variableName1 freeVars)
 {-# INLINE bindVariable #-}
 
 bindVariables
@@ -116,35 +131,30 @@ bindVariables bound free =
 
 isFreeVariable
     :: Ord variable
-    => UnifiedVariable variable -> FreeVariables variable -> Bool
-isFreeVariable variable (FreeVariables freeVars) =
-    Map.member variable freeVars
+    => SomeVariableName variable
+    -> FreeVariables variable
+    -> Bool
+isFreeVariable someVariableName (FreeVariables freeVars) =
+    Map.member someVariableName freeVars
 {-# INLINE isFreeVariable #-}
 
-freeVariable
-    :: NamedVariable variable
-    => UnifiedVariable variable
-    -> FreeVariables variable
-freeVariable variable =
-    FreeVariables (Map.singleton variable variableSort1)
-  where
-    Variable1 { variableSort1 } = toVariable1 variable
+freeVariable :: UnifiedVariable variable -> FreeVariables variable
+freeVariable Variable1 { variableName1, variableSort1 } =
+    FreeVariables (Map.singleton variableName1 variableSort1)
 {-# INLINE freeVariable #-}
 
 mapFreeVariables
-    ::  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  FreeVariables variable1 -> FreeVariables variable2
+    :: Ord variable2
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> FreeVariables variable1 -> FreeVariables variable2
 mapFreeVariables adj = fromList . map (mapUnifiedVariable adj) . toList
 {-# INLINE mapFreeVariables #-}
 
 traverseFreeVariables
-    ::  Applicative f
-    =>  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> f (VariableNameOf variable2))
-    ->  FreeVariables variable1 -> f (FreeVariables variable2)
+    :: Applicative f
+    => Ord variable2
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> FreeVariables variable1 -> f (FreeVariables variable2)
 traverseFreeVariables adj =
     fmap fromList . traverse (traverseUnifiedVariable adj) . toList
 {-# INLINE traverseFreeVariables #-}

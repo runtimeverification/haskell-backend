@@ -132,11 +132,10 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Pattern variable1
-    ->  Pattern variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Pattern variable1
+    -> Pattern variable2
 mapVariables adj Conditional { term, predicate, substitution } =
     Conditional
         { term = TermLike.mapVariables adj term

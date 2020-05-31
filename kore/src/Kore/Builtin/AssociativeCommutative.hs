@@ -96,10 +96,8 @@ import Kore.Internal.TermLike
     ( pattern App_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
-    , Concrete
     , pattern ElemVar_
     , InternalVariable
-    , NamedVariable
     , TermLike
     , mkApplySymbol
     , mkBuiltin
@@ -111,12 +109,7 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Syntax.ElementVariable
-    ( ElementVariable (getElementVariable)
-    )
 import Kore.Syntax.Variable
-    ( sortedVariableSort
-    )
 import Kore.Unification.Unify
     ( MonadUnify
     )
@@ -159,7 +152,7 @@ class
     @
     -}
     toNormalized
-        :: NamedVariable variable
+        :: Ord variable
         => TermLike variable
         -> NormalizedOrBottom normalized variable
 
@@ -171,7 +164,7 @@ class
      -}
     matchBuiltin
         :: TermLike variable
-        -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+        -> Maybe (normalized (TermLike Void) (TermLike variable))
 
     simplifiedAttributeValue
         :: Domain.Value normalized (TermLike variable) -> Attribute.Simplified
@@ -308,7 +301,7 @@ instance TermWrapper Domain.NormalizedSet where
     simplifiedAttributeValue Domain.SetValue = mempty
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
-after converting @TermLike Concrete@ to @TermLike variable@.
+after converting @TermLike Void@ to @TermLike variable@.
 -}
 data ConcreteOrWithVariable normalized variable
     = ConcretePat (TermLike variable, Domain.Value normalized (TermLike variable))
@@ -332,7 +325,7 @@ fromConcreteOrWithVariable = from
 {- | Particularizes @Domain.NormalizedAc@ to the most common types.
 -}
 type TermNormalizedAc normalized variable =
-    normalized (TermLike Concrete) (TermLike variable)
+    normalized (TermLike Void) (TermLike variable)
 
 {-| A normalized representation of an associative-commutative structure that
 also allows bottom values.
@@ -356,7 +349,7 @@ deriving instance
 {- | The semigroup defined by the `concat` operation.
 -}
 instance
-    (NamedVariable variable, TermWrapper normalized)
+    (Ord variable, TermWrapper normalized)
     => Semigroup (NormalizedOrBottom normalized variable)
   where
     Bottom <> _ = Bottom
@@ -366,10 +359,10 @@ instance
 
 concatNormalized
     :: forall normalized variable
-    .  (TermWrapper normalized, NamedVariable variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    .  (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Void) (TermLike variable)
+    -> normalized (TermLike Void) (TermLike variable)
+    -> Maybe (normalized (TermLike Void) (TermLike variable))
 concatNormalized normalized1 normalized2 = do
     Monad.guard disjointConcreteElements
     abstract' <-
@@ -386,7 +379,7 @@ concatNormalized normalized1 normalized2 = do
         ::  (a -> a -> r)
         ->  (   Domain.NormalizedAc
                     normalized
-                    (TermLike Concrete)
+                    (TermLike Void)
                     (TermLike variable)
             ->  a
             )
@@ -407,9 +400,9 @@ internal representations themselves; this "flattening" step also recurses to
 
  -}
 renormalize
-    :: (TermWrapper normalized, NamedVariable variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    :: (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Void) (TermLike variable)
+    -> Maybe (normalized (TermLike Void) (TermLike variable))
 renormalize = normalizeAbstractElements >=> flattenOpaque
 
 -- | Insert the @key@-@value@ pair if it is missing from the 'Map'.
@@ -429,9 +422,9 @@ Return 'Nothing' if there are any duplicate keys.
 
  -}
 updateConcreteElements
-    :: Map (TermLike Concrete) value
-    -> [(TermLike Concrete, value)]
-    -> Maybe (Map (TermLike Concrete) value)
+    :: Map (TermLike Void) value
+    -> [(TermLike Void, value)]
+    -> Maybe (Map (TermLike Void) value)
 updateConcreteElements elems newElems =
     TermLike.assertConstructorLikeKeys allKeys
         $ Foldable.foldrM (uncurry insertMissing) elems newElems
@@ -458,9 +451,9 @@ Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
-    :: (TermWrapper normalized, NamedVariable variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    :: (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Void) (TermLike variable)
+    -> Maybe (normalized (TermLike Void) (TermLike variable))
 normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
     concrete' <- updateConcreteElements concrete newConcrete
     abstract' <- updateAbstractElements newAbstract
@@ -479,10 +472,10 @@ normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
 -- remains abstract.
 extractConcreteElement
     ::  Domain.AcWrapper collection
-    =>  NamedVariable variable
+    =>  Ord variable
     =>  Domain.Element collection (TermLike variable)
     ->  Either
-            (TermLike Concrete, Domain.Value collection (TermLike variable))
+            (TermLike Void, Domain.Value collection (TermLike variable))
             (Domain.Element collection (TermLike variable))
 extractConcreteElement element =
     maybe (Right element) (Left . flip (,) value) (Builtin.toKey key)
@@ -495,9 +488,9 @@ extractConcreteElement element =
 
  -}
 flattenOpaque
-    :: (TermWrapper normalized, NamedVariable variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    :: (TermWrapper normalized, Ord variable)
+    => normalized (TermLike Void) (TermLike variable)
+    -> Maybe (normalized (TermLike Void) (TermLike variable))
 flattenOpaque (Domain.unwrapAc -> normalized) = do
     let opaque = Domain.opaque normalized
         (builtin, opaque') = partitionEithers (extractBuiltin <$> opaque)
@@ -510,7 +503,7 @@ flattenOpaque (Domain.unwrapAc -> normalized) = do
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
 instance
-    (NamedVariable variable, TermWrapper normalized)
+    (Ord variable, TermWrapper normalized)
     => Monoid (NormalizedOrBottom normalized variable)
   where
     mempty = Normalized $ Domain.wrapAc Domain.emptyNormalizedAc
@@ -557,7 +550,7 @@ returnConcreteAc
         , TermWrapper normalized
         )
     => Sort
-    -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
+    -> Map (TermLike Void) (Domain.Value normalized (TermLike variable))
     -> m (Pattern variable)
 returnConcreteAc resultSort concrete =
     (returnAc resultSort . Domain.wrapAc)
@@ -592,7 +585,7 @@ asInternalConcrete
     :: (InternalVariable variable, TermWrapper normalized)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
-    -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
+    -> Map (TermLike Void) (Domain.Value normalized (TermLike variable))
     -> TermLike variable
 asInternalConcrete tools sort1 concreteAc =
     asInternal tools sort1
@@ -618,7 +611,7 @@ elementListAsNormalized
     .  (InternalVariable variable, TermWrapper normalized)
     => [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> Maybe
-        (Domain.NormalizedAc normalized (TermLike Concrete) (TermLike variable))
+        (Domain.NormalizedAc normalized (TermLike Void) (TermLike variable))
 elementListAsNormalized terms = do
     let (withVariables, concrete) = splitVariableConcrete terms
     _checkDisjoinVariables <- disjointMap withVariables
@@ -681,15 +674,15 @@ disjointMap input =
 
 splitVariableConcrete
     :: forall variable a
-    .  NamedVariable variable
+    .  Ord variable
     =>  [(TermLike variable, a)]
-    -> ([(TermLike variable, a)], [(TermLike Concrete, a)])
+    -> ([(TermLike variable, a)], [(TermLike Void, a)])
 splitVariableConcrete terms =
     partitionEithers (map toConcreteEither terms)
   where
     toConcreteEither
         :: (TermLike variable, a)
-        -> Either (TermLike variable, a) (TermLike Concrete, a)
+        -> Either (TermLike variable, a) (TermLike Void, a)
     toConcreteEither (term, a) =
         case TermLike.asConcrete term of
             Nothing -> Left (term, a)
@@ -716,8 +709,8 @@ unifyEqualsNormalized
     -> TermLike variable
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
-    -> Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
+    -> Domain.InternalAc (TermLike Void) normalized (TermLike variable)
+    -> Domain.InternalAc (TermLike Void) normalized (TermLike variable)
     -> MaybeT unifier (Pattern variable)
 unifyEqualsNormalized
     tools
@@ -952,7 +945,7 @@ unifyEqualsNormalizedAc
         ++ map toConcretePat elementDifference2
 
     toConcretePat
-        :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
+        :: (TermLike Void, Domain.Value normalized (TermLike variable))
         -> ConcreteOrWithVariable normalized variable
     toConcretePat (a, b) = ConcretePat (TermLike.fromConcrete a, b)
 
@@ -1033,7 +1026,7 @@ buildResultFromUnifiers
         , TermWrapper normalized
         )
     => (forall result . Doc () -> unifier result)
-    -> [(TermLike Concrete, Domain.Value normalized (TermLike variable))]
+    -> [(TermLike Void, Domain.Value normalized (TermLike variable))]
     -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> [TermLike variable]
     ->  [ Conditional
@@ -1106,7 +1099,7 @@ buildResultFromUnifiers
             (almostResultConditions ++ opaquesConditions ++ predicates)
         result
             :: Conditional variable
-                (normalized (TermLike Concrete) (TermLike variable))
+                (normalized (TermLike Void) (TermLike variable))
         result =
             Domain.wrapAc Domain.NormalizedAc
                 { elementsWithVariables =
@@ -1369,7 +1362,7 @@ unifyOpaqueVariable
                 then noCheckUnifyOpaqueChildren unifyChildren v1 secondTerm
                 else empty
   where
-    sort = sortedVariableSort (getElementVariable v1)
+    sort = variableSort1 v1
     pairs = map fromConcreteOrWithVariable concreteOrVariableTerms
 
 noCheckUnifyOpaqueChildren

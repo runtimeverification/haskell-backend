@@ -47,7 +47,6 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore.Step.MockSymbols
     ( testSort
@@ -55,6 +54,10 @@ import Test.Kore.Step.MockSymbols
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+type TermLike' = TermLike VariableName
+type Pattern' = Pattern VariableName
+type OrPattern' = OrPattern VariableName
 
 test_ceilSimplification :: [TestTree]
 test_ceilSimplification =
@@ -144,7 +147,7 @@ test_ceilSimplification =
                         (makeCeilPredicate_ somethingOfA)
                         (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                        Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -154,7 +157,7 @@ test_ceilSimplification =
                 , substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar Mock.x, fOfB)]
+                    [(inject Mock.x, fOfB)]
                 }
         assertEqual "ceil(something(a) and equals(f(a), g(a)))"
             expected
@@ -178,7 +181,7 @@ test_ceilSimplification =
                                 )
                                 (makeEqualsPredicate_ fOfA gOfA)
                         , substitution =
-                            Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                            Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                         }
                     ]
             actual <- makeEvaluate
@@ -188,7 +191,7 @@ test_ceilSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, fOfB)]
+                        [(inject Mock.x, fOfB)]
                     }
             assertEqual
                 "ceil(constr(something(a), something(b)) and eq(f(a), g(a)))"
@@ -220,7 +223,7 @@ test_ceilSimplification =
                             )
                             (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                        Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -230,7 +233,7 @@ test_ceilSimplification =
                 , substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar Mock.x, fOfB)]
+                    [(inject Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional(something(a), something(b)) and eq(f(a), g(a)))"
@@ -249,7 +252,7 @@ test_ceilSimplification =
                             (makeCeilPredicate_ fOfA)
                             (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                        Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -259,7 +262,7 @@ test_ceilSimplification =
                 , substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar Mock.x, fOfB)]
+                    [(inject Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(f(a)) and eq(f(a), g(a)))"
@@ -275,7 +278,7 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeEqualsPredicate_ fOfA gOfA
                     , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                        Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -285,7 +288,7 @@ test_ceilSimplification =
                 , substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar Mock.x, fOfB)]
+                    [(inject Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional and eq(f(a), g(a)))"
@@ -301,7 +304,7 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate = makeEqualsPredicate_ fOfA gOfA
                     , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                        Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -311,7 +314,7 @@ test_ceilSimplification =
                 , substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar Mock.x, fOfB)]
+                    [(inject Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional and eq(f(a), g(a)))"
@@ -335,7 +338,7 @@ test_ceilSimplification =
                             )
                             (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                        Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluate
@@ -345,7 +348,7 @@ test_ceilSimplification =
                 , substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar Mock.x, fOfB)]
+                    [(inject Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
@@ -366,7 +369,7 @@ test_ceilSimplification =
                             (makeEqualsPredicate_ Mock.a Mock.cf)
                             (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
+                        Substitution.unsafeWrap [(inject Mock.x, fOfB)]
                     }
                 ]
         actual <- makeEvaluateWithAxioms
@@ -388,7 +391,7 @@ test_ceilSimplification =
                 , substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [(ElemVar Mock.x, fOfB)]
+                    [(inject Mock.x, fOfB)]
                 }
         assertEqual
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
@@ -445,9 +448,9 @@ test_ceilSimplification =
             (OrPattern.isSimplified sideRepresentation actual)
     ]
   where
-    fOfA :: TermLike Variable
+    fOfA :: TermLike'
     fOfA = Mock.f Mock.a
-    fOfB :: TermLike Variable
+    fOfB :: TermLike'
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
     somethingOfA = Mock.plain10 Mock.a
@@ -464,7 +467,7 @@ test_ceilSimplification =
         }
 
 appliedMockEvaluator
-    :: Pattern Variable -> BuiltinAndAxiomSimplifier
+    :: Pattern' -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -485,12 +488,12 @@ mockEvaluator evaluation _ _ = return evaluation
 mapVariables
     :: forall variable
     .  InternalVariable variable
-    => Pattern Variable
+    => Pattern'
     -> Pattern variable
 mapVariables =
     Pattern.mapVariables (pure worker)
   where
-    worker :: VariableName -> VariableNameOf variable
+    worker :: VariableName -> variable
     worker v = fromVariableName v { counter = Just (Sup.Element 1) }
 
 makeCeil
@@ -505,8 +508,8 @@ makeCeil patterns =
         }
 
 evaluate
-    :: Ceil Sort (OrPattern Variable)
-    -> IO (OrPattern Variable)
+    :: Ceil Sort (OrPattern')
+    -> IO (OrPattern')
 evaluate ceil =
     runSimplifier mockEnv
     $ Ceil.simplify SideCondition.top ceil
@@ -514,15 +517,15 @@ evaluate ceil =
     mockEnv = Mock.env
 
 makeEvaluate
-    :: Pattern Variable
-    -> IO (OrPattern Variable)
+    :: Pattern'
+    -> IO (OrPattern')
 makeEvaluate = makeEvaluateWithAxioms Map.empty
 
 makeEvaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern Variable
-    -> IO (OrPattern Variable)
+    -> Pattern'
+    -> IO (OrPattern')
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     runSimplifier mockEnv
     $ Ceil.makeEvaluate SideCondition.top child
@@ -531,4 +534,5 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)
+    SideCondition.toRepresentation
+    (SideCondition.top :: SideCondition VariableName)

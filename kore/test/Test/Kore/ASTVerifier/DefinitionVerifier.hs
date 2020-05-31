@@ -20,7 +20,6 @@ module Test.Kore.ASTVerifier.DefinitionVerifier
     , variableParsedPattern
     , stringParsedPattern
     , simpleSort
-    , VariableName (..)
     , variable
     , setVariable
     , simpleSortSentence
@@ -86,7 +85,6 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
 import Kore.Syntax hiding
     ( PatternF (..)
-    , VariableName (..)
     )
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
@@ -194,7 +192,6 @@ newtype AliasName = AliasName Text
 newtype SymbolName = SymbolName Text
 newtype SortName = SortName Text
 newtype SortVariableName = SortVariableName Text
-newtype VariableName = VariableName Text
 newtype NamePrefix = NamePrefix Text
 newtype OperandSort = OperandSort Sort
 newtype ResultSort = ResultSort Sort
@@ -399,12 +396,7 @@ sentenceAliasWithSortArgument
                             SortVariableSort <$> parameters
                         }
                 , applicationChildren =
-                    [ ElemVar $ ElementVariable Variable
-                        { variableName = testId "x"
-                        , variableCounter = mempty
-                        , variableSort = sortArgument
-                        }
-                    ]
+                    [ inject $ mkElementVariable (testId "x") sortArgument ]
                 }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
@@ -440,12 +432,7 @@ sentenceAliasWithSortArgument'
                             SortVariableSort <$> parameters
                         }
                 , applicationChildren =
-                    [ SetVar $ SetVariable Variable
-                        { variableName = testId "x"
-                        , variableCounter = mempty
-                        , variableSort = sortArgument
-                        }
-                    ]
+                    [ inject $ mkSetVariable (testId "x") sortArgument ]
                 }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
@@ -572,7 +559,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [UnifiedVariable Variable] -> ParsedSentence
+    :: AliasName -> Sort -> [UnifiedVariable VariableName] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -583,7 +570,7 @@ objectAliasSentenceWithArguments a b c =
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
-    -> [UnifiedVariable Variable]
+    -> [UnifiedVariable VariableName]
     -> patternType
     -> Sentence patternType
 aliasSentenceWithArguments (AliasName name) sort operands r =
@@ -593,8 +580,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
                 { aliasConstructor = testId name
                 , aliasParams = []
                 }
-            , sentenceAliasSorts =
-                foldMapVariable variableSort <$> operands
+            , sentenceAliasSorts = variableSort1 <$> operands
             , sentenceAliasResultSort = sort
             , sentenceAliasLeftPattern =
                 Application
@@ -630,33 +616,23 @@ stringParsedPattern :: Text -> ParsedPattern
 stringParsedPattern =
     Builtin.externalize . Internal.mkStringLiteral
 
-variable :: VariableName -> Sort -> ElementVariable Variable
-variable (VariableName name) sort =
-    ElementVariable Variable
-        { variableName = testId name
-        , variableCounter = mempty
-        , variableSort = sort
-        }
+variable :: Text -> Sort -> ElementVariable VariableName
+variable name sort = mkElementVariable (testId name) sort
 
-setVariable :: VariableName -> Sort -> SetVariable Variable
-setVariable (VariableName name) sort =
-    SetVariable Variable
-        { variableName = testId ("@" <> name)
-        , variableCounter = mempty
-        , variableSort = sort
-        }
+setVariable :: Text -> Sort -> SetVariable VariableName
+setVariable name sort = mkSetVariable (testId ("@" <> name)) sort
 
-variableTermLike :: VariableName -> Sort -> TermLike Variable
+variableTermLike :: Text -> Sort -> TermLike VariableName
 variableTermLike name sort = Internal.mkElemVar (variable name sort)
 
-variableParsedPattern :: VariableName -> Sort -> ParsedPattern
+variableParsedPattern :: Text -> Sort -> ParsedPattern
 variableParsedPattern name sort =
     Builtin.externalize $ variableTermLike name sort
 
 simpleExistsPattern
-    :: ElementVariable Variable
+    :: ElementVariable VariableName
     -> Sort
-    -> Syntax.PatternF Variable ParsedPattern
+    -> Syntax.PatternF VariableName ParsedPattern
 simpleExistsPattern quantifiedVariable resultSort =
     Syntax.ExistsF Exists
         { existsSort = resultSort
@@ -666,8 +642,8 @@ simpleExistsPattern quantifiedVariable resultSort =
         }
 
 simpleMuPattern
-    :: SetVariable Variable
-    -> Syntax.PatternF Variable ParsedPattern
+    :: SetVariable VariableName
+    -> Syntax.PatternF VariableName ParsedPattern
 simpleMuPattern quantifiedVariable =
     Syntax.MuF Mu
         { muVariable = quantifiedVariable
@@ -676,8 +652,8 @@ simpleMuPattern quantifiedVariable =
         }
 
 simpleNuPattern
-    :: SetVariable Variable
-    -> Syntax.PatternF Variable ParsedPattern
+    :: SetVariable VariableName
+    -> Syntax.PatternF VariableName ParsedPattern
 simpleNuPattern quantifiedVariable =
     Syntax.NuF Nu
         { nuVariable = quantifiedVariable
@@ -686,18 +662,18 @@ simpleNuPattern quantifiedVariable =
         }
 
 simpleExistsUnifiedPattern
-    :: VariableName -> Sort -> TermLike Variable
+    :: Text -> Sort -> TermLike VariableName
 simpleExistsUnifiedPattern name sort =
     Internal.mkExists quantifiedVariable (Internal.mkElemVar quantifiedVariable)
   where
     quantifiedVariable = variable name sort
 
-simpleExistsParsedPattern :: VariableName -> Sort -> ParsedPattern
+simpleExistsParsedPattern :: Text -> Sort -> ParsedPattern
 simpleExistsParsedPattern name sort =
     Builtin.externalize $ simpleExistsUnifiedPattern name sort
 
 simpleExistsEqualsParsedPattern
-    :: VariableName
+    :: Text
     -> OperandSort
     -> ResultSort
     -> ParsedPattern
@@ -706,12 +682,12 @@ simpleExistsEqualsParsedPattern name operandSort resultSort =
     $ simpleExistsEqualsTermLike name operandSort resultSort
 
 simpleExistsEqualsTermLike
-    :: VariableName
+    :: Text
     -> OperandSort
     -> ResultSort
-    -> TermLike Variable
+    -> TermLike VariableName
 simpleExistsEqualsTermLike
-    (VariableName name)
+    name
     (OperandSort operandSort)
     (ResultSort resultSort)
   =
@@ -719,12 +695,7 @@ simpleExistsEqualsTermLike
     $ Internal.mkEquals resultSort variablePattern' variablePattern'
   where
     variablePattern' = Internal.mkElemVar var
-    var =
-        ElementVariable Variable
-            { variableName = testId name
-            , variableCounter = mempty
-            , variableSort = operandSort
-            }
+    var = mkElementVariable (testId name) operandSort
 
 applicationPatternWithChildren
     :: SymbolName
@@ -752,7 +723,7 @@ applicationUnifiedPatternWithParams
     :: Sort
     -> SymbolName
     -> [Sort]
-    -> TermLike Variable
+    -> TermLike VariableName
 applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
     Internal.mkApplySymbol
         Internal.Symbol

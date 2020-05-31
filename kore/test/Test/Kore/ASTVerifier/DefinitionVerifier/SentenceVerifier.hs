@@ -36,9 +36,6 @@ import Kore.Step.RulePattern
     )
 import Kore.Syntax
 import Kore.Syntax.Definition as Syntax
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore
     ( testId
@@ -72,13 +69,7 @@ test_FreeVarInRHS =
         )
     ]
   where
-    setVarChildren =
-        [ SetVar $ SetVariable Variable
-            { variableName = testId "x"
-            , variableCounter = mempty
-            , variableSort = Mock.testSort
-            }
-        ]
+    setVarChildren = [ inject $ mkSetVariable (testId "x") Mock.testSort ]
     sentenceAlias =
         sentenceAliasWithSortArgument
             (AliasName weakExistsFinally)
@@ -87,18 +78,18 @@ test_FreeVarInRHS =
             [SortVariable Mock.testSortId]
             (externalize $ mkSetVar (setVarS "x" Mock.testSort))
 
-patternToSentence :: Pattern Variable Null -> ParsedSentence
+patternToSentence :: Pattern VariableName Null -> ParsedSentence
 patternToSentence patt =
     SentenceClaimSentence $ SentenceClaim
     $ SentenceAxiom [] patt (Attributes [])
 
-patternFreeVarInRHS :: Pattern Variable Null
+patternFreeVarInRHS :: Pattern VariableName Null
 patternFreeVarInRHS =
     externalize
     $ Rule.axiomPatternToTerm $ Rule.OnePathClaimPattern
     $ OnePathRule rulePatternFreeVarInRHS
   where
-    rulePatternFreeVarInRHS :: RulePattern Variable
+    rulePatternFreeVarInRHS :: RulePattern VariableName
     rulePatternFreeVarInRHS = RulePattern
         { left = mkTop Mock.testSort
         , antiLeft = Nothing
@@ -112,13 +103,13 @@ patternFreeVarInRHS =
         , attributes = Default.def
         }
 
-patternNoFreeVarInRHS :: Pattern Variable Null
+patternNoFreeVarInRHS :: Pattern VariableName Null
 patternNoFreeVarInRHS =
     externalize
     $ Rule.axiomPatternToTerm $ Rule.OnePathClaimPattern
     $ OnePathRule rulePatternNoFreeVarInRHS
   where
-    rulePatternNoFreeVarInRHS :: RulePattern Variable
+    rulePatternNoFreeVarInRHS :: RulePattern VariableName
     rulePatternNoFreeVarInRHS = RulePattern
         { left = mkTop Mock.testSort
         , antiLeft = Nothing

@@ -729,7 +729,7 @@ unfilteredTestExamplesForSort
     rawAliasName = identifierPrefix <> "_alias"
     aliasName = AliasName rawAliasName
     rawVariableName = identifierPrefix <> "_variable"
-    variableName1 = VariableName rawVariableName
+    variableName1 = rawVariableName
     sortVariableName1 = identifierPrefix <> "_sortVariable"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     additionalSortName = SortName additionalSortRawName

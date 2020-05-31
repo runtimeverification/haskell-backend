@@ -464,8 +464,8 @@ See also: 'Kore.Proof.Value.Value'
 
  -}
 toKey
-    :: NamedVariable variable
-    => TermLike variable -> Maybe (TermLike Concrete)
+    :: Ord variable
+    => TermLike variable -> Maybe (TermLike Void)
 toKey purePattern = do
     p <- TermLike.asConcrete purePattern
     -- TODO (thomas.tuegel): Use the return value as the term.

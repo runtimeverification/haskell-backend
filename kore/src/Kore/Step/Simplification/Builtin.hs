@@ -76,10 +76,10 @@ simplifyInternal normalizer tOrPattern = do
 
 simplifyInternalMap
     :: InternalVariable variable
-    => ( InternalMap (TermLike Concrete) (TermLike variable)
+    => ( InternalMap (TermLike Void) (TermLike variable)
         -> NormalizedMapResult variable
        )
-    -> InternalMap (TermLike Concrete) (OrPattern variable)
+    -> InternalMap (TermLike Void) (OrPattern variable)
     -> MultiOr (Conditional variable (TermLike variable))
 simplifyInternalMap normalizer tOrPattern = do
     conditional <- getCompose $ traverse Compose tOrPattern
@@ -87,7 +87,7 @@ simplifyInternalMap normalizer tOrPattern = do
     return normalized
 
 data NormalizedMapResult variable =
-    NormalizedMapResult (InternalMap (TermLike Concrete) (TermLike variable))
+    NormalizedMapResult (InternalMap (TermLike Void) (TermLike variable))
     | SingleOpaqueElemResult (TermLike variable)
     | BottomResult
 
@@ -103,8 +103,8 @@ normalizedMapResultToTerm BottomResult =
     mkBottom_
 
 normalizeInternalMap
-    :: NamedVariable variable
-    => InternalMap (TermLike Concrete) (TermLike variable)
+    :: Ord variable
+    => InternalMap (TermLike Void) (TermLike variable)
     -> NormalizedMapResult variable
 normalizeInternalMap map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
@@ -121,16 +121,16 @@ normalizeInternalMap map' =
 
 simplifyInternalSet
     :: InternalVariable variable
-    => Domain.InternalSet (TermLike Concrete) (OrPattern variable)
+    => Domain.InternalSet (TermLike Void) (OrPattern variable)
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalSet =
     (fmap . fmap) Domain.BuiltinSet
     . simplifyInternal normalizeInternalSet
 
 normalizeInternalSet
-    :: NamedVariable variable
-    => InternalSet (TermLike Concrete) (TermLike variable)
-    -> Maybe (InternalSet (TermLike Concrete) (TermLike variable))
+    :: Ord variable
+    => InternalSet (TermLike Void) (TermLike variable)
+    -> Maybe (InternalSet (TermLike Void) (TermLike variable))
 normalizeInternalSet =
     Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
 

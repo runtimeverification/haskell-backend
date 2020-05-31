@@ -18,7 +18,6 @@ import Kore.Internal.TermLike
 import Kore.Syntax hiding
     ( PatternF (..)
     )
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore.Builtin.Builtin
     ( emptyNormalizedSet
@@ -60,10 +59,12 @@ test_instance_Synthetic =
     , testGroup "TopF" [ isn't $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF $ Const (ElemVar Mock.x) ]
+    , testGroup "VariableF"
+        [ is $ VariableF $ Const (mkSomeVariable1 @VariableName Mock.x) ]
     , testGroup "MuF" $ map (isn't . MuF) (Mu Mock.setX <$> range)
     , testGroup "NuF" $ map (isn't . NuF) (Nu Mock.setX <$> range)
-    , testGroup "SetVariableF" [ isn't $ VariableF $ Const (SetVar Mock.setX) ]
+    , testGroup "SetVariableF"
+        [ isn't $ VariableF $ Const (mkSomeVariable1 @VariableName Mock.setX) ]
     , testGroup "BuiltinSet"
         [ is . asSetBuiltin
             $ emptyNormalizedSet
@@ -115,33 +116,26 @@ test_instance_Synthetic =
             assertBool "" (checking actual)
 
     is
-        ::  ( HasCallStack
-            , Synthetic Functional term
-            )
+        :: (HasCallStack, Synthetic Functional term)
         => term Functional -> TestTree
     is = check "Functional pattern" isFunctional
 
     isn't
-        ::  ( HasCallStack
-            , Synthetic Functional term
-            )
+        :: (HasCallStack, Synthetic Functional term)
         => term Functional -> TestTree
     isn't = check "Non-functional pattern" (not . isFunctional)
 
     expect
         :: HasCallStack
         => Functional
-        -> TermLikeF Variable Functional
+        -> TermLikeF VariableName Functional
         -> TestTree
     expect x
       | isFunctional x = is
       | otherwise      = isn't
 
     asSetBuiltin
-        ::  Domain.NormalizedAc
-                Domain.NormalizedSet
-                (TermLike Concrete)
-                Functional
-        -> Domain.Builtin (TermLike Concrete) Functional
+        :: Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) Functional
+        -> Domain.Builtin (TermLike Void) Functional
     asSetBuiltin =
         Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . Domain.wrapAc

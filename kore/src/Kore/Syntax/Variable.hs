@@ -9,16 +9,16 @@ Please refer to Section 9 (The Kore Language) of the
 {-# LANGUAGE EmptyDataDeriving #-}
 
 module Kore.Syntax.Variable
-    ( Variable (..)
-    , isOriginalVariable
+    ( isOriginalVariableName
     , illegalVariableCounter
-    , externalizeFreshVariable
+    , externalizeFreshVariableName
     , Variable1 (..)
     , SomeVariable1
-    , ElementVariable1
-    , SetVariable1
+    , mkSomeVariable1
     -- * Variable names
     , VariableName (..)
+    , mkVariableName
+    , VariableCounter
     , ElementVariableName (..)
     , SetVariableName (..)
     , SomeVariableName (..)
@@ -29,22 +29,14 @@ module Kore.Syntax.Variable
     , traverseSomeVariableName
     , traverseElementVariableName
     , traverseSetVariableName
-    , NamedVariable (..)
-    , lensVariableName
-    , fromVariable1
-    , toVariable1
     , VariableBase
     , toVariable
     , fromVariable
     , toVariableName
     , fromVariableName
     -- * Variable sorts
-    , SortedVariable (..)
-    , sortedVariableSort
-    , unparse2SortedVariable
     , unparse2SortedVariable1
     -- * Concrete
-    , Concrete
     , Void
     , toVoid
     ) where
@@ -54,12 +46,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
-import Control.Lens
-    ( Iso'
-    , Lens
-    , Lens'
-    )
-import qualified Control.Lens as Lens
 import Data.Distributive
     ( Distributive (..)
     )
@@ -69,11 +55,11 @@ import Data.Functor.Adjunction
     , indexAdjunction
     , tabulateAdjunction
     )
+import Data.Functor.Const
+    ( Const (..)
+    )
 import Data.Functor.Rep
     ( Representable (..)
-    )
-import Data.Generics.Product
-    ( field
     )
 import Data.Generics.Sum
     ( _Ctor
@@ -85,6 +71,7 @@ import qualified GHC.Generics as GHC
 import Numeric.Natural
 
 import Data.Sup
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
@@ -141,36 +128,12 @@ instance From VariableName VariableName where
     from = id
     {-# INLINE from #-}
 
-instance NamedVariable Variable where
-    type VariableNameOf Variable = VariableName
-
-    isoVariable1 =
-        Lens.iso to fr
-      where
-        to Variable { variableName, variableCounter, variableSort } =
-            Variable1
-            { variableName1 =
-                VariableName
-                { base = variableName
-                , counter = variableCounter
-                }
-            , variableSort1 = variableSort
-            }
-        fr Variable1 { variableName1, variableSort1 } =
-            Variable
-            { variableName = base
-            , variableCounter = counter
-            , variableSort = variableSort1
-            }
-          where
-            VariableName { base, counter } = variableName1
-
 instance VariableBase Variable
 
 {- | Is the variable original (as opposed to generated)?
  -}
-isOriginalVariable :: Variable -> Bool
-isOriginalVariable Variable { variableCounter } = isNothing variableCounter
+isOriginalVariableName :: VariableName -> Bool
+isOriginalVariableName = isNothing . counter
 
 {- | Error thrown when 'variableCounter' takes an illegal value.
  -}
@@ -178,71 +141,25 @@ illegalVariableCounter :: a
 illegalVariableCounter =
     error "Illegal use of Variable { variableCounter = Just Sup }"
 
-{- | Reset 'variableCounter' so that a 'Variable' may be unparsed.
+{- | Reset 'counter' so that a 'VariableName' may be unparsed.
 
-@externalizeFreshVariable@ is not injective and is unsafe if used with
+@externalizeFreshVariableName@ is not injective and is unsafe if used with
 'mapVariables'. See 'Kore.Internal.Pattern.externalizeFreshVariables' instead.
 
  -}
-externalizeFreshVariable :: Variable -> Variable
-externalizeFreshVariable variable@Variable { variableName, variableCounter } =
-    variable
-        { variableName = variableName'
-        , variableCounter = Nothing
-        }
+externalizeFreshVariableName :: VariableName -> VariableName
+externalizeFreshVariableName VariableName { base, counter } =
+    VariableName { base = base', counter = Nothing }
   where
-    variableName' =
-        variableName
+    base' =
+        base
             { getId =
-                case variableCounter of
-                    Nothing -> getId variableName
-                    Just (Element n) -> getId variableName <> Text.pack (show n)
+                case counter of
+                    Nothing -> getId base
+                    Just (Element n) -> getId base <> Text.pack (show n)
                     Just Sup -> illegalVariableCounter
             , idLocation = AstLocationGeneratedVariable
             }
-
-{- | 'NamedVariable' is the name of a Kore variable.
-
-A 'NamedVariable' has instances:
-
-* @'From' variable 'Variable'@
-* @'From' 'Variable' variable@
-
-such that both implementations of 'from' are injective,
-
-prop> (==) (fromVariable x) (fromVariable y) === (==) x y
-
-prop> (==) x y === (==) (toVariable x) (toVariable y)
-
- -}
-class
-    (Ord variable, Ord (VariableNameOf variable), From (VariableNameOf variable) VariableName, From variable Variable, SortedVariable variable)
-    => NamedVariable variable
-  where
-    type VariableNameOf variable
-
-    isoVariable1 :: Iso' variable (Variable1 (VariableNameOf variable))
-
-lensVariableName
-    ::  forall variable1 variable2
-    .   (NamedVariable variable1, NamedVariable variable2)
-    =>  Lens
-                            variable1                  variable2
-            (VariableNameOf variable1) (VariableNameOf variable2)
-lensVariableName f =
-    fmap fromVariable1 . field @"variableName1" f . toVariable1
-
-fromVariable1
-    :: NamedVariable variable
-    => Variable1 (VariableNameOf variable)
-    -> variable
-fromVariable1 = Lens.review isoVariable1
-
-toVariable1
-    :: NamedVariable variable
-    => variable
-    -> Variable1 (VariableNameOf variable)
-toVariable1 = Lens.view isoVariable1
 
 class
     (From Variable variable, From variable Variable) => VariableBase variable
@@ -262,35 +179,6 @@ fromVariableName = from @VariableName @variable
 toVariableName
     :: forall variable. From variable VariableName => variable -> VariableName
 toVariableName = from @variable @VariableName
-
-{- | 'SortedVariable' is a Kore variable with a known sort.
-
- -}
-class SortedVariable variable where
-    lensVariableSort :: Lens' variable Sort
-
--- | The known 'Sort' of the given variable.
-sortedVariableSort :: SortedVariable variable => variable -> Sort
-sortedVariableSort = Lens.view lensVariableSort
-
-instance SortedVariable Variable where
-    lensVariableSort = field @"variableSort"
-    {-# INLINE lensVariableSort #-}
-
-{- | Unparse any 'SortedVariable' in an Applicative Kore binder.
-
-Variables occur without their sorts as subterms in Applicative Kore patterns,
-but with their sorts in binders like @\\exists@ and
-@\\forall@. @unparse2SortedVariable@ adds the sort ascription to the unparsed
-variable for the latter case.
-
- -}
-unparse2SortedVariable
-    :: (SortedVariable variable, Unparse variable)
-    => variable
-    -> Pretty.Doc ann
-unparse2SortedVariable variable =
-    unparse2 variable <> Pretty.colon <> unparse (sortedVariableSort variable)
 
 {- | Unparse a 'Variable1' in an Applicative Kore binder.
 
@@ -334,17 +222,6 @@ instance Unparse Concrete where
     unparse = \case {}
     unparse2 = \case {}
 
-instance SortedVariable Concrete where
-    lensVariableSort _ = \case {}
-    {-# INLINE lensVariableSort #-}
-
-instance NamedVariable Concrete where
-    type VariableNameOf Concrete = Void
-    isoVariable1 =
-        Lens.iso
-            (\case {})
-            (\Variable1 { variableName1 } -> case variableName1 of {})
-
 instance VariableBase Concrete
 
 instance From VariableName Void where
@@ -361,13 +238,18 @@ instance From Concrete variable where
 
 -- * Variable names
 
+type VariableCounter = Maybe (Sup Natural)
+
 data VariableName =
     VariableName
     { base :: !Id
-    , counter :: !(Maybe (Sup Natural))
+    , counter :: !VariableCounter
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
+
+mkVariableName :: Id -> VariableName
+mkVariableName base = VariableName { base, counter = mempty }
 
 instance Hashable VariableName
 
@@ -533,14 +415,6 @@ instance Unparse variable => Unparse (Variable1 variable) where
 
     unparse2 Variable1 { variableName1 } = unparse2 variableName1
 
-instance From variable VariableName => From (Variable1 variable) Variable where
-    from = fromVariable1 . fmap toVariableName
-    {-# INLINE from #-}
-
-instance SortedVariable (Variable1 variable) where
-    lensVariableSort = field @"variableSort1"
-    {-# INLINE lensVariableSort #-}
-
 instance
     Injection into from => Injection (Variable1 into) (Variable1 from)
   where
@@ -550,11 +424,9 @@ instance
     retract = traverse retract
     {-# INLINE retract #-}
 
-instance
-    (Ord variable, From variable VariableName)
-    => NamedVariable (Variable1 variable) where
-    type VariableNameOf (Variable1 variable) = variable
-    isoVariable1 = id
+instance Synthetic Sort (Const (Variable1 variable)) where
+    synthetic = variableSort1 . getConst
+    {-# INLINE synthetic #-}
 
 {- | @SomeVariableName@ is the name of a variable in a pattern.
 
@@ -604,6 +476,14 @@ instance
     From variable VariableName => From (SomeVariableName variable) VariableName
   where
     from = extractL . fmap from
+    {-# INLINE from #-}
+
+instance
+    From variable1 variable2
+    => From (SomeVariableName variable1) (SomeVariableName variable2)
+  where
+    from = fmap from
+    {-# INLINE from #-}
 
 {- | 'AdjSomeVariableName' is the right adjoint of 'SomeVariableName'.
 
@@ -753,6 +633,9 @@ toVoid = const Nothing
 
 type SomeVariable1 variable = Variable1 (SomeVariableName variable)
 
-type ElementVariable1 variable = Variable1 (ElementVariableName variable)
-
-type SetVariable1 variable = Variable1 (SetVariableName variable)
+mkSomeVariable1
+    :: forall variable f
+    .  Injection (SomeVariable1 variable) (Variable1 (f variable))
+    => Variable1 (f variable)
+    -> SomeVariable1 variable
+mkSomeVariable1 = inject

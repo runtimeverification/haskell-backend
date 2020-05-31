@@ -9,8 +9,12 @@ import Test.Tasty
 import Data.Default
     ( def
     )
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Map.Strict as Map
 
+import qualified Control.Lens as Lens
 import Data.Sup
     ( Sup (Element)
     )
@@ -54,14 +58,10 @@ import Kore.Step.RulePattern
     )
 import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Syntax.ElementVariable
-    ( ElementVariable (ElementVariable)
-    )
 import Kore.Syntax.Id
     ( Id
     )
 import Kore.Syntax.Variable
-    ( Variable (Variable)
-    )
 
 import Test.Kore
     ( testId
@@ -73,7 +73,7 @@ import Test.Kore.With
 import Test.Tasty.HUnit.Ext
 
 class OnePathRuleBase base where
-    rewritesTo :: base Variable -> base Variable -> OnePathRule
+    rewritesTo :: base VariableName -> base VariableName -> OnePathRule
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
@@ -268,13 +268,17 @@ test_expandRule =
     x0 = mkElemVar Mock.x0
 
     x00TestSortVar =
-        ElementVariable
-            (Variable (testId "x0") (Just (Element 0)) Mock.testSort)
+        mkElementVariable (testId "x0") Mock.testSort
+        & Lens.set
+            (field @"variableName1" . Lens.mapped . field @"counter")
+            (Just (Element 0))
     x00TestSort = mkElemVar x00TestSortVar
 
     x00TestSort1Var =
-        ElementVariable
-            (Variable (testId "x0") (Just (Element 0)) Mock.testSort1)
+        mkElementVariable (testId "x0") Mock.testSort1
+        & Lens.set
+            (field @"variableName1" . Lens.mapped . field @"counter")
+            (Just (Element 0))
     x00TestSort1 = mkElemVar x00TestSort1Var
 
     metadataTools
@@ -294,7 +298,7 @@ test_expandRule =
         & Symbol.constructor
     expandableConstructor1
         :: HasCallStack
-        => TermLike Variable -> TermLike Variable
+        => TermLike VariableName -> TermLike VariableName
     expandableConstructor1 arg =
         mkApplySymbol expandableConstructor1Symbol [arg]
 
@@ -310,7 +314,9 @@ test_expandRule =
         & Symbol.constructor
     expandableConstructor2
         :: HasCallStack
-        => TermLike Variable -> TermLike Variable -> TermLike Variable
+        => TermLike VariableName
+        -> TermLike VariableName
+        -> TermLike VariableName
     expandableConstructor2 arg1 arg2 =
         mkApplySymbol expandableConstructor2Symbol [arg1, arg2]
 
@@ -326,7 +332,9 @@ test_expandRule =
         & Symbol.constructor
     expandableConstructor2a
         :: HasCallStack
-        => TermLike Variable -> TermLike Variable -> TermLike Variable
+        => TermLike VariableName
+        -> TermLike VariableName
+        -> TermLike VariableName
     expandableConstructor2a arg1 arg2 =
         mkApplySymbol expandableConstructor2aSymbol [arg1, arg2]
 

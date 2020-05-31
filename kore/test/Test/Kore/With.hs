@@ -20,6 +20,7 @@ import qualified Data.List.NonEmpty as NonEmpty
     , reverse
     )
 import qualified Data.Map.Strict as Map
+import Data.Void
 
 import Kore.Attribute.Attributes
     ( AttributePattern
@@ -101,9 +102,6 @@ import qualified Kore.Syntax.Sentence as SentenceSort
     )
 import qualified Kore.Syntax.Sentence as SentenceSymbol
     ( SentenceSymbol (..)
-    )
-import Kore.Syntax.Variable
-    ( Concrete
     )
 import qualified SMT.AST as AST
     ( Constructor (Constructor)
@@ -323,10 +321,10 @@ instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
         }
 
 newtype ConcreteElement =
-    ConcreteElement {getConcreteElement :: TermLike Concrete}
+    ConcreteElement {getConcreteElement :: TermLike Void}
 
 instance With
-    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) child)
     ConcreteElement
   where
     with
@@ -339,13 +337,13 @@ instance With
         }
 
 instance With
-    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) child)
     [ConcreteElement]
   where
     with = foldl' with
 
 instance With
-    (Domain.NormalizedSet (TermLike Concrete) child)
+    (Domain.NormalizedSet (TermLike Void) child)
     ConcreteElement
   where
     with
@@ -354,7 +352,7 @@ instance With
       = Domain.NormalizedSet (ac `with` value)
 
 instance With
-    (Domain.NormalizedSet (TermLike Concrete) child)
+    (Domain.NormalizedSet (TermLike Void) child)
     [ConcreteElement]
   where
     with = foldl' with
@@ -365,7 +363,7 @@ newtype VariableElement child = VariableElement {getVariableElement :: child}
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) child)
         (VariableElement child)
   where
     with
@@ -378,14 +376,14 @@ instance Ord child
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) child)
         [VariableElement child]
   where
     with = foldl' with
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedSet (TermLike Void) child)
         (VariableElement child)
   where
     with
@@ -395,7 +393,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedSet (TermLike Void) child)
         [VariableElement child]
   where
     with = foldl' with
@@ -406,7 +404,7 @@ newtype OpaqueSet child = OpaqueSet {getOpaqueSet :: child}
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) child)
         (OpaqueSet child)
   where
     with
@@ -417,7 +415,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) child)
         [OpaqueSet child]
   where
     with = foldl' with
@@ -425,7 +423,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedSet (TermLike Void) child)
         (OpaqueSet child)
   where
     with
@@ -435,7 +433,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (Domain.NormalizedSet (TermLike Void) child)
         [OpaqueSet child]
   where
     with = foldl' with

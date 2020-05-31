@@ -6,6 +6,10 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
@@ -37,9 +41,6 @@ import Kore.Step.Simplification.Application
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -154,8 +155,8 @@ test_applicationSimplification =
                                     )
                                     (makeEqualsPredicate_ gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (ElemVar Mock.x, fOfA)
-                                , (ElemVar Mock.y, gOfA)
+                                [ (inject Mock.x, fOfA)
+                                , (inject Mock.y, gOfA)
                                 ]
                             }
                         ]
@@ -170,7 +171,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (ElemVar Mock.x, fOfA) ]
+                                    [ (inject Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
@@ -179,7 +180,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (ElemVar Mock.y, gOfA) ]
+                                    [ (inject Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -193,8 +194,14 @@ test_applicationSimplification =
             --        (f(a)=f(b) and g(a)=g(b) and f(a)=g(a)) and
             --        [x=f(a), y=g(a), z=f(b)]
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
-            let ElementVariable z = Mock.z
-                z' = ElementVariable z { variableCounter = Just (Element 1) }
+            let z' =
+                    Lens.set
+                        ( field @"variableName1"
+                        . Lens.mapped
+                        . field @"counter"
+                        )
+                        (Just (Element 1))
+                        Mock.z
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -211,19 +218,14 @@ test_applicationSimplification =
                                     (makeEqualsPredicate_ gOfA gOfB)
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
-                                    [ (ElemVar z', gOfB)
-                                    , (ElemVar Mock.x, fOfA)
-                                    , (ElemVar Mock.y, gOfA)
+                                    [ (inject z', gOfB)
+                                    , (inject Mock.x, fOfA)
+                                    , (inject Mock.y, gOfA)
                                     ]
                             }
                         ]
             actual <-
                 let
-                    zvar
-                        :: forall variable
-                        .  InternalVariable variable
-                        => ElementVariable variable
-                    zvar = fromVariable <$> z'
                     result
                         :: forall variable
                         .  InternalVariable variable
@@ -236,11 +238,14 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (ElemVar zvar, gOfB) ]
+                                    [ (inject zvar, gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
                         }
+                      where
+                        zvar :: ElementVariable variable
+                        zvar = fmap from <$> z'
                 in
                     evaluate
                         (Map.singleton
@@ -259,7 +264,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (ElemVar Mock.x, fOfA) ]
+                                    [ (inject Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
@@ -268,7 +273,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (ElemVar Mock.y, gOfA) ]
+                                    [ (inject Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -330,8 +335,8 @@ makeApplication symbol patterns =
 evaluate
     :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Application Symbol (OrPattern Variable)
-    -> IO (OrPattern Variable)
+    -> Application Symbol (OrPattern VariableName)
+    -> IO (OrPattern VariableName)
 evaluate simplifierAxioms = runSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env { simplifierAxioms }

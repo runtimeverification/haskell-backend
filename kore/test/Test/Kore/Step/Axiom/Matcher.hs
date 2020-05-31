@@ -23,6 +23,9 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -31,7 +34,6 @@ import qualified Kore.Builtin.String as String
 import Kore.Internal.Predicate
     ( Predicate
     , makeCeilPredicate_
-    , makeFalsePredicate_
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
@@ -39,9 +41,8 @@ import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
+    ( UnifiedVariable
     )
-import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 
 import Test.Kore
     ( testId
@@ -62,11 +63,11 @@ test_matcherEqualHeads =
         [ matches "same symbol"
             (Mock.plain10 (mkElemVar Mock.x))
             (Mock.plain10 Mock.a)
-            [(ElemVar Mock.x, Mock.a)]
+            [(inject Mock.x, Mock.a)]
         , matches "same symbol, set variables"
             (Mock.plain10 (mkSetVar Mock.setX ))
             (Mock.plain10 (mkTop Mock.testSort))
-            [(SetVar Mock.setX, mkTop Mock.testSort)]
+            [(inject Mock.setX, mkTop Mock.testSort)]
         , doesn'tMatch "different constructors"
             (Mock.constr10 (mkElemVar Mock.x))
             (Mock.constr11 Mock.a)
@@ -94,9 +95,9 @@ test_matcherEqualHeads =
 
     , testCase "Ceil" $ do
         let expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
-                    , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.a
+                    , Map.singleton (inject Mock.x) Mock.a
                     )
         actual <-
             matchDefinition
@@ -106,10 +107,10 @@ test_matcherEqualHeads =
 
     , testCase "Equals" $ do
         let expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
                     , Map.singleton
-                        (UnifiedVariable.ElemVar Mock.x)
+                        (inject Mock.x)
                         (mkElemVar Mock.y)
                     )
         actual <-
@@ -174,9 +175,9 @@ test_matcherEqualHeads =
     , testGroup "Simplification"
         [ testCase "same symbol" $ do
             let expect =
-                    Just
+                    mkMatchResult
                         ( makeTruePredicate_
-                        , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.a
+                        , Map.singleton (inject Mock.x) Mock.a
                         )
             actual <-
                 matchSimplification
@@ -190,10 +191,10 @@ test_matcherVariableFunction :: [TestTree]
 test_matcherVariableFunction =
     [ testCase "Functional" $ do
         let expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
                     , Map.singleton
-                       (UnifiedVariable.ElemVar Mock.x)
+                       (inject Mock.x)
                         Mock.functional00
                     )
         actual <- matchDefinition (mkElemVar Mock.x) Mock.functional00
@@ -201,10 +202,10 @@ test_matcherVariableFunction =
 
     , testCase "SetVariable vs Function" $ do
         let expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
                     , Map.singleton
-                        (UnifiedVariable.SetVar Mock.setX)
+                        (inject Mock.setX)
                         Mock.cf
                     )
         actual <- matchDefinition (mkSetVar Mock.setX) Mock.cf
@@ -212,10 +213,10 @@ test_matcherVariableFunction =
 
     , testCase "SetVariable vs Bottom" $ do
         let expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
                     , Map.singleton
-                        (UnifiedVariable.SetVar Mock.setX)
+                        (inject Mock.setX)
                         (mkBottom Mock.testSort)
                     )
         actual <- matchDefinition (mkSetVar Mock.setX) (mkBottom Mock.testSort)
@@ -223,9 +224,9 @@ test_matcherVariableFunction =
 
     , testCase "Function" $ do
         let expect =
-                Just
+                mkMatchResult
                     ( makeCeilPredicate_ Mock.cf
-                    , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.cf
+                    , Map.singleton (inject Mock.x) Mock.cf
                     )
         actual <- matchDefinition (mkElemVar Mock.x) Mock.cf
         assertEqual "" expect actual
@@ -246,12 +247,12 @@ test_matcherVariableFunction =
     , testCase "Injection" $ do
         let
             a = Mock.functional00SubSubSort
-            x = ElementVariable $ Variable (testId "x") mempty Mock.subSort
+            x = mkElementVariable (testId "x") Mock.subSort
             expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
                     , Map.singleton
-                        (UnifiedVariable.ElemVar x)
+                        (inject x)
                         (Mock.sortInjectionSubSubToSub a)
                     )
         actual <-
@@ -263,7 +264,7 @@ test_matcherVariableFunction =
     , testCase "Injection reverse" $ do
         let
             a = Mock.functional00SubSubSort
-            x = ElementVariable $ Variable (testId "x") mempty Mock.subSort
+            x = mkElementVariable (testId "x") Mock.subSort
             expect = Nothing
         actual <-
             matchDefinition
@@ -274,13 +275,13 @@ test_matcherVariableFunction =
     , testCase "Injection + substitution" $ do
         let
             expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
                     , Map.fromList
-                        [ ( UnifiedVariable.ElemVar xSub
+                        [ ( inject xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
                           )
-                        , ( UnifiedVariable.ElemVar Mock.x
+                        , ( inject Mock.x
                           , Mock.functional10 Mock.a
                           )
                         ]
@@ -300,13 +301,13 @@ test_matcherVariableFunction =
     , testCase "substitution + Injection" $ do
         let
             expect =
-                Just
+                mkMatchResult
                     ( makeTruePredicate_
                     , Map.fromList
-                        [ ( UnifiedVariable.ElemVar xSub
+                        [ ( inject xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
                           )
-                        , ( UnifiedVariable.ElemVar Mock.x
+                        , ( inject Mock.x
                           , Mock.functional10 Mock.a
                           )
                         ]
@@ -326,9 +327,9 @@ test_matcherVariableFunction =
     , testGroup "Simplification"
         [ testCase "Function" $ do
             let expect =
-                    Just
+                    mkMatchResult
                         ( makeCeilPredicate_ Mock.cf
-                        , Map.singleton (UnifiedVariable.ElemVar Mock.x) Mock.cf
+                        , Map.singleton (inject Mock.x) Mock.cf
                         )
             actual <- matchSimplification (mkElemVar Mock.x) Mock.cf
             assertEqual "" expect actual
@@ -345,10 +346,10 @@ test_matcherVariableFunction =
         [ testCase "Functional" $ do
             let evaluated = mkEvaluated Mock.functional00
                 expect =
-                    Just
+                    mkMatchResult
                         ( makeTruePredicate_
                         , Map.singleton
-                            (UnifiedVariable.ElemVar Mock.x)
+                            (inject Mock.x)
                             evaluated
                         )
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
@@ -357,10 +358,10 @@ test_matcherVariableFunction =
         , testCase "Function" $ do
             let evaluated = mkEvaluated Mock.cf
                 expect =
-                    Just
+                    mkMatchResult
                         ( makeCeilPredicate_ evaluated
                         , Map.singleton
-                            (UnifiedVariable.ElemVar Mock.x)
+                            (inject Mock.x)
                             evaluated
                         )
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
@@ -369,7 +370,7 @@ test_matcherVariableFunction =
     ]
   where
     aSubSub = Mock.functional00SubSubSort
-    xSub = ElementVariable $ Variable (testId "xSub") mempty Mock.subSort
+    xSub = mkElementVariable (testId "xSub") Mock.subSort
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
@@ -386,11 +387,11 @@ test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults =
     [ testCase "Application" $ do
         let expect =
-                Just
+                mkMatchResult
                     ( makeCeilPredicate_ Mock.cf
                     , Map.fromList
-                        [ (UnifiedVariable.ElemVar Mock.x, Mock.cf)
-                        , (UnifiedVariable.ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.x, Mock.cf)
+                        , (inject Mock.y, Mock.b)
                         ]
                     )
         actual <-
@@ -425,7 +426,7 @@ test_matching_Bool =
         actual <- matchConcrete True False
         assertEqual "" expect actual
     , testCase "variable vs concrete" $ do
-        let expect = substitution [(UnifiedVariable.ElemVar Mock.xBool, True)]
+        let expect = substitution [(inject Mock.xBool, True)]
         actual <- matchVariable Mock.xBool True
         assertEqual "" expect actual
     , doesn'tMatch "true does not match x:Bool"
@@ -438,7 +439,7 @@ test_matching_Bool =
   where
     top = topCondition
     substitution subst =
-        Just
+        mkMatchResult
             ( makeTruePredicate_
             , Map.fromList ((fmap . fmap) mkBool subst)
             )
@@ -455,7 +456,7 @@ test_matching_Int =
         assertEqual "" expect actual
     , doesn'tMatch "1 does not match 2" (mkInt 1) (mkInt 2)
     , testCase "variable vs concrete" $ do
-        let expect = substitution [(UnifiedVariable.ElemVar Mock.xInt, 1)]
+        let expect = substitution [(inject Mock.xInt, 1)]
         actual <- matchVariable Mock.xInt 1
         assertEqual "" expect actual
     , doesn'tMatch "1 does not match x:Int"
@@ -465,7 +466,7 @@ test_matching_Int =
   where
     top = topCondition
     substitution subst =
-        Just
+        mkMatchResult
             ( makeTruePredicate_
             , Map.fromList ((fmap . fmap) mkInt subst)
             )
@@ -485,7 +486,7 @@ test_matching_String =
         assertEqual "" expect actual
     , testCase "variable vs concrete" $ do
         let expect =
-                substitution [(UnifiedVariable.ElemVar Mock.xString, "str")]
+                substitution [(inject Mock.xString, "str")]
         actual <- matchVariable Mock.xString "str"
         assertEqual "" expect actual
     , doesn'tMatch "\"str\" does not match x:String"
@@ -494,7 +495,7 @@ test_matching_String =
     ]
   where
     substitution subst =
-        Just
+        mkMatchResult
             ( makeTruePredicate_
             , Map.fromList ((fmap . fmap) mkStr subst)
             )
@@ -521,15 +522,15 @@ test_matching_List =
     , matches "[1, x:Int] matches [1, 2]"
         (mkList [mkInt 1, mkElemVar Mock.xInt])
         (concreteList [1, 2])
-        [(ElemVar Mock.xInt, mkInt 2)]
+        [(inject Mock.xInt, mkInt 2)]
     , matches "[x:Int, y:Int] matches [1, 2]"
         (mkList [mkElemVar xInt, mkElemVar yInt])
         (mkList [mkInt 1, mkInt 2])
-        [(ElemVar xInt, mkInt 1), (ElemVar yInt, mkInt 2)]
+        [(inject xInt, mkInt 1), (inject yInt, mkInt 2)]
     , matches "[1, x:Int, 3, y:Int] matches [1, 2, 3, 4]"
         (mkList [mkInt 1, mkElemVar xInt, mkInt 3, mkElemVar yInt])
         (mkList [mkInt 1, mkInt 2, mkInt 3, mkInt 4])
-        [(ElemVar xInt, mkInt 2), (ElemVar yInt, mkInt 4)]
+        [(inject xInt, mkInt 2), (inject yInt, mkInt 4)]
     , doesn'tMatch "[1, x:Int] does not match [2, 1]"
         (mkList [mkInt 1, mkElemVar xInt])
         (concreteList [2, 1])
@@ -552,11 +553,11 @@ test_matching_List =
     , matches "[x:Int] x:List matches [1, 2, 3]"
         (concatList (mkList [mkElemVar xInt]) (mkVar xList))
         (mkList [mkInt 1, mkInt 2, mkInt 3])
-        [(ElemVar xInt, mkInt 1), (xList, mkList [mkInt 2, mkInt 3])]
+        [(inject xInt, mkInt 1), (xList, mkList [mkInt 2, mkInt 3])]
     , matches "x:List [x:Int] matches [1, 2, 3]"
         (concatList (mkVar xList) (mkList [mkElemVar xInt]))
         (mkList [mkInt 1, mkInt 2, mkInt 3])
-        [(ElemVar xInt, mkInt 3), (xList, mkList [mkInt 1, mkInt 2])]
+        [(inject xInt, mkInt 3), (xList, mkList [mkInt 1, mkInt 2])]
     , doesn'tMatch "[] does not match y:List" unitList (mkVar yList)
     , doesn'tMatch "[1] x:List does not match y:List"
         (prefixList [one] xList)
@@ -583,7 +584,7 @@ test_matching_List =
     , matches "[x:Int] ~ [1]"
         (mkList [mkElemVar xInt])
         (mkList [one       ])
-        [(ElemVar xInt, one)]
+        [(inject xInt, one)]
     , doesn'tMatch "[1] does not match [1] x:List"
         (mkList [one])
         (prefixList [one] xList)
@@ -601,7 +602,7 @@ test_matching_List =
     , matches "[x:Int] y:List ~ [1]"
         (prefixList [mkElemVar xInt] yList)
         (mkList     [one]             )
-        [ (ElemVar xInt, one)
+        [ (inject xInt, one)
         , (yList, unitList)
         ]
     , matches "[1] x:List ~ [1, 2]"
@@ -611,7 +612,7 @@ test_matching_List =
     , matches "[x:Int] y:List ~ [1, 2]"
         (prefixList [mkElemVar xInt] yList)
         (mkList     [one,        two ])
-        [ (ElemVar xInt, one)
+        [ (inject xInt, one)
         , (yList, mkList [two])
         ]
 
@@ -625,7 +626,7 @@ test_matching_List =
     , matches "y:List [x:Int] ~ [1]"
         (suffixList yList [mkElemVar xInt])
         (mkList           [one       ])
-        [ (ElemVar xInt, one)
+        [ (inject xInt, one)
         , (yList, unitList)
         ]
     , matches "x:List [2] ~ [1, 2]"
@@ -635,13 +636,13 @@ test_matching_List =
     , matches "y:List [x:Int] ~ [1, 2]"
         (suffixList yList [mkElemVar xInt])
         (mkList    [one,   two       ])
-        [ (ElemVar xInt, two)
+        [ (inject xInt, two)
         , (yList, mkList [one])
         ]
     ]
   where
-    xList = ElemVar $ elemVarS (testId "xList") Test.listSort
-    yList = ElemVar $ elemVarS (testId "yList") Test.listSort
+    xList = inject $ elemVarS (testId "xList") Test.listSort
+    yList = inject $ elemVarS (testId "yList") Test.listSort
     one = mkInt 1
     two = mkInt 2
     concatList = Test.concatList
@@ -660,7 +661,7 @@ test_matching_Exists =
     , matches        "∃ x:Int. (x, z:Int) matches ∃ y:Int. (y, 1)"
         (mkExists xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
         (mkExists yInt $ mkPair (mkElemVar yInt) (mkInt 1))
-        [(ElemVar zInt, mkInt 1)]
+        [(inject zInt, mkInt 1)]
     , matches        "∃ x:Int y:Int. (x, y) matches ∃ y:Int x:Int. (y, x)"
         (mkExistsN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
         (mkExistsN [yInt, xInt] $ mkPair (mkElemVar yInt) (mkElemVar xInt))
@@ -693,7 +694,7 @@ test_matching_Equals =
     [ matches "equals(x,y) matches equals(1,y)"
         (mkEquals' (mkElemVar xInt) (mkElemVar yInt))
         (mkEquals' (mkInt 1) (mkElemVar yInt))
-        [(ElemVar xInt, mkInt 1)]
+        [(inject xInt, mkInt 1)]
     , doesn'tMatch "equals(x,1) doesn't match equals(y,2)"
         (mkEquals' (mkElemVar xInt) (mkInt 1))
         (mkEquals' (mkElemVar yInt) (mkInt 2))
@@ -713,7 +714,7 @@ test_matching_Forall =
     , matches        "∀ x:Int. (x, z:Int) matches ∀ y:Int. (y, 1)"
         (mkForall xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
         (mkForall yInt $ mkPair (mkElemVar yInt) (mkInt 1))
-        [(ElemVar zInt, mkInt 1)]
+        [(inject zInt, mkInt 1)]
     , matches        "∀ x:Int y:Int. (x, y) matches ∀ y:Int x:Int. (y, x)"
         (mkForallN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
         (mkForallN [yInt, xInt] $ mkPair (mkElemVar yInt) (mkElemVar xInt))
@@ -749,21 +750,21 @@ test_matching_Pair =
     , matches        "(x, y) matches (y, y)"
         (mkPair (mkElemVar xInt) (mkElemVar xInt))
         (mkPair (mkElemVar yInt) (mkElemVar yInt))
-        [(ElemVar xInt, mkElemVar yInt)]
+        [(inject xInt, mkElemVar yInt)]
     , doesn'tMatch   "(x, x) does not match (1, 2)"
         (mkPair (mkElemVar xInt) (mkElemVar xInt))
         (mkPair (mkInt 1) (mkInt 2))
     , matches        "(x, y) matches (y, z)"
         (mkPair (mkElemVar xInt) (mkElemVar yInt))
         (mkPair (mkElemVar yInt) (mkElemVar zInt))
-        [(ElemVar xInt, mkElemVar zInt), (ElemVar yInt, mkElemVar zInt)]
+        [(inject xInt, mkElemVar zInt), (inject yInt, mkElemVar zInt)]
     , matches        "(y, x) matches (z, y)"
         (mkPair (mkElemVar yInt) (mkElemVar xInt))
         (mkPair (mkElemVar zInt) (mkElemVar yInt))
-        [(ElemVar xInt, mkElemVar zInt), (ElemVar yInt, mkElemVar zInt)]
+        [(inject xInt, mkElemVar zInt), (inject yInt, mkElemVar zInt)]
     ]
 
-mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
+mkPair :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 mkPair = Test.pair
 
 topCondition :: MatchResult
@@ -793,25 +794,25 @@ test_matching_Set =
         "[x:Int] s:Set matches [0]"
         (mkSet [mkElemVar xInt] [mkVar sSet])
         (mkSet [mkInt 0] [])
-        [ (ElemVar xInt, mkInt 0)
+        [ (inject xInt, mkInt 0)
         , (sSet, mkSet [] [])
         ]
     , matches
         "[x:Int] s:Set matches [0, 1]"
         (mkSet [mkElemVar xInt]         [mkVar sSet])
         (mkSet [mkInt 0   , mkInt 1   ] [          ])
-        [ (ElemVar xInt, mkInt 0)
+        [ (inject xInt, mkInt 0)
         , (sSet, mkSet [mkInt 1] [])
         ]
     ]
 
-sSet :: UnifiedVariable.UnifiedVariable Variable
-sSet = UnifiedVariable.ElemVar $ elemVarS (testId "sSet") Test.setSort
+sSet :: UnifiedVariable VariableName
+sSet = inject $ elemVarS (testId "sSet") Test.setSort
 
 mkSet
-    :: [TermLike Variable]
-    -> [TermLike Variable]
-    -> TermLike Variable
+    :: [TermLike VariableName]
+    -> [TermLike VariableName]
+    -> TermLike VariableName
 mkSet elements opaques =
     Ac.asInternal Test.testMetadataTools Test.setSort
     $ Test.Set.normalizedSet elements opaques
@@ -835,31 +836,31 @@ test_matching_Map =
     , matches "0 |-> x:Int matches 0 |-> 1"
         (mkMap [(mkInt 0, mkElemVar xInt)] [])
         (mkMap [(mkInt 0, mkInt 1   )] [])
-        [(ElemVar xInt, mkInt 1)]
+        [(inject xInt, mkInt 1)]
     , matches "0 |-> x:Int  1 |-> y:Int matches 0 |-> 1  1 |-> 2"
         (mkMap [(mkInt 0, mkElemVar xInt), (mkInt 1, mkElemVar yInt)] [])
         (mkMap [(mkInt 0, mkInt 1   ), (mkInt 1, mkInt 2   )] [])
-        [(ElemVar xInt, mkInt 1), (ElemVar yInt, mkInt 2)]
+        [(inject xInt, mkInt 1), (inject yInt, mkInt 2)]
     , matches "0 |-> 1  1 |-> 2  m:Map matches 0 |-> 1  1 |-> 2"
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [          ])
-        [(ElemVar mMap, mkMap [] [])]
+        [(inject mMap, mkMap [] [])]
     , matches "(x:Int, [x:Int -> y:Int] m:Map) matches (0, [0 -> 1, 1 -> 2])"
         (mkPair (mkElemVar xInt) (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap]))
         (mkPair (mkInt 0   ) (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []))
-        [ (ElemVar xInt, mkInt 0)
-        , (ElemVar yInt, mkInt 1)
-        , (ElemVar mMap, mkMap [(mkInt 1, mkInt 2)] [])
+        [ (inject xInt, mkInt 0)
+        , (inject yInt, mkInt 1)
+        , (inject mMap, mkMap [(mkInt 1, mkInt 2)] [])
         ]
 
     , matches "x:Int |-> y:Int matches x:Int |-> 0"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [])
         (mkMap [(mkElemVar xInt, mkInt 0       )] [])
-        [(ElemVar yInt, mkInt 0)]
+        [(inject yInt, mkInt 0)]
     , matches "x:Int |-> y:Int 1 -> z:Int matches x:Int |-> 0  1 -> 2"
         (mkMap [(mkElemVar xInt, mkElemVar yInt), (mkInt 1, mkElemVar zInt)] [])
         (mkMap [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2       )] [])
-        [(ElemVar yInt, mkInt 0), (ElemVar zInt, mkInt 2)]
+        [(inject yInt, mkInt 0), (inject zInt, mkInt 2)]
     , doesn'tMatch "x:Int |-> y:Int doesn't match x:Int |-> 0  1 |-> 2"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [])
         (mkMap [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2)] [])
@@ -870,11 +871,11 @@ test_matching_Map =
     , matches "m:Map matches x:Int |-> 0"
         (mkMap [] [mkElemVar mMap])
         (mkMap [(mkElemVar xInt, mkInt 0       )] [])
-        [(ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0       )] [])]
+        [(inject mMap, mkMap [(mkElemVar xInt, mkInt 0       )] [])]
     , matches "x:Int |-> y:Int  m:Map matches x:Int |-> 0"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkElemVar xInt, mkInt 0       )] [])
-        [(ElemVar yInt, mkInt 0), (ElemVar mMap, mkMap [] [])]
+        [(inject yInt, mkInt 0), (inject mMap, mkMap [] [])]
     , matches "x:Int |-> y:Int 1 -> z:Int  m:Map matches x:Int |-> 0  1 -> 2"
         (mkMap
             [(mkElemVar xInt, mkElemVar yInt), (mkInt 1, mkElemVar zInt)]
@@ -884,21 +885,21 @@ test_matching_Map =
             [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2       )]
             []
         )
-        [ (ElemVar yInt, mkInt 0)
-        , (ElemVar zInt, mkInt 2)
-        , (ElemVar mMap, mkMap [] [])
+        [ (inject yInt, mkInt 0)
+        , (inject zInt, mkInt 2)
+        , (inject mMap, mkMap [] [])
         ]
     , matches "x:Int |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2)] [])
-        [ (ElemVar yInt, mkInt 0)
-        , (ElemVar mMap, mkMap [(mkInt 1, mkInt 2)] [])
+        [ (inject yInt, mkInt 0)
+        , (inject mMap, mkMap [(mkInt 1, mkInt 2)] [])
         ]
     , matches "1 |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2"
         (mkMap [(mkInt 1, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkElemVar xInt, mkInt 0), (mkInt 1, mkInt 2)] [])
-        [ (ElemVar yInt, mkInt 2)
-        , (ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0)] [])
+        [ (inject yInt, mkInt 2)
+        , (inject mMap, mkMap [(mkElemVar xInt, mkInt 0)] [])
         ]
     , doesn'tMatch "x:Int |-> y:Int  1 |-> 2   m:Map doesn't match x:Int |-> 0"
         (mkMap
@@ -911,14 +912,14 @@ test_matching_Map =
     , matches "1 |-> y:Int  m:Map matches 1 |-> 2  n:Map"
         (mkMap [(mkInt 1, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 1, mkInt 2       )] [mkElemVar nMap])
-        [ (ElemVar yInt, mkInt 2)
-        , (ElemVar mMap, mkElemVar nMap)
+        [ (inject yInt, mkInt 2)
+        , (inject mMap, mkElemVar nMap)
         ]
     , matches "x:Int |-> y:Int  m:Map matches x:Int |-> 0  n:Map"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkElemVar xInt, mkInt 0       )] [mkElemVar nMap])
-        [ (ElemVar yInt, mkInt 0)
-        , (ElemVar mMap, mkElemVar nMap)
+        [ (inject yInt, mkInt 0)
+        , (inject mMap, mkElemVar nMap)
         ]
     , matchesP "x:Int |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2  n:Map"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
@@ -928,8 +929,8 @@ test_matching_Map =
             ]
             [mkElemVar nMap])
         (makeCeilPredicate_ (mkMap [(mkInt 1, mkInt 2)] [mkElemVar nMap]))
-        [ (ElemVar yInt, mkInt 0)
-        , (ElemVar mMap, mkMap [(mkInt 1, mkInt 2)] [mkElemVar nMap])
+        [ (inject yInt, mkInt 0)
+        , (inject mMap, mkMap [(mkInt 1, mkInt 2)] [mkElemVar nMap])
         ]
     , matchesP "1 |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2  n:Map"
         (mkMap [(mkInt 1, mkElemVar yInt)] [mkElemVar mMap])
@@ -941,24 +942,24 @@ test_matching_Map =
         (makeCeilPredicate_
             (mkMap [(mkElemVar xInt, mkInt 0)] [mkElemVar nMap])
         )
-        [ (ElemVar yInt, mkInt 2)
-        , (ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0)] [mkElemVar nMap])
+        [ (inject yInt, mkInt 2)
+        , (inject mMap, mkMap [(mkElemVar xInt, mkInt 0)] [mkElemVar nMap])
         ]
     , matches
         "x:Int |-> y:Int  m matches 0 |-> 1"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1)] [])
-        [ (ElemVar xInt, mkInt 0)
-        , (ElemVar yInt, mkInt 1)
-        , (ElemVar mMap, mkMap [] [])
+        [ (inject xInt, mkInt 0)
+        , (inject yInt, mkInt 1)
+        , (inject mMap, mkMap [] [])
         ]
     , matches
         "x:Int |-> y:Int  m:Map matches 0 |-> 1  2 |-> 3"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 2, mkInt 3)] [])
-        [ (ElemVar xInt, mkInt 0)
-        , (ElemVar yInt, mkInt 1)
-        , (ElemVar mMap, mkMap [(mkInt 2, mkInt 3)] [])
+        [ (inject xInt, mkInt 0)
+        , (inject yInt, mkInt 1)
+        , (inject mMap, mkMap [(mkInt 2, mkInt 3)] [])
         ]
     ]
 
@@ -1002,45 +1003,51 @@ test_matcherOverloading =
         ]
     ]
 
-xInt, yInt, zInt, mMap, nMap :: ElementVariable Variable
+xInt, yInt, zInt, mMap, nMap :: ElementVariable VariableName
 mMap = elemVarS (testId "mMap") Test.mapSort
 nMap = elemVarS (testId "nMap") Test.mapSort
 xInt = elemVarS (testId "xInt") Test.intSort
 yInt = elemVarS (testId "yInt") Test.intSort
 zInt = elemVarS (testId "zInt") Test.intSort
 
-mkInt :: Integer -> TermLike Variable
+mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal
 
 mkMap
-    :: [(TermLike Variable, TermLike Variable)]
-    -> [TermLike Variable]
-    -> TermLike Variable
+    :: [(TermLike VariableName, TermLike VariableName)]
+    -> [TermLike VariableName]
+    -> TermLike VariableName
 mkMap elements opaques =
     Ac.asInternal Test.testMetadataTools Test.mapSort
     $ Test.Map.normalizedMap elements opaques
 
 matchDefinition
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> IO MatchResult
 matchDefinition = match
 
 matchSimplification
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> IO MatchResult
 matchSimplification = matchDefinition
 
 type MatchResult =
     Maybe
-        ( Predicate Variable
-        , Map.Map (UnifiedVariable Variable) (TermLike Variable)
+        ( Predicate VariableName
+        , Map.Map (SomeVariableName VariableName) (TermLike VariableName)
         )
 
+mkMatchResult
+    :: (Predicate VariableName, Map (UnifiedVariable VariableName) (TermLike VariableName))
+    -> MatchResult
+mkMatchResult (predicate, substitution) =
+    Just (predicate, Map.mapKeys variableName1 substitution)
+
 match
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> IO MatchResult
 match first second =
     runSimplifier Mock.env matchResult
@@ -1051,8 +1058,8 @@ match first second =
 withMatch
     :: (MatchResult -> Assertion)
     -> TestName
-    -> TermLike Variable
-    -> TermLike Variable
+    -> TermLike VariableName
+    -> TermLike VariableName
     -> TestTree
 withMatch check comment term1 term2 =
     testCase comment $ do
@@ -1062,46 +1069,42 @@ withMatch check comment term1 term2 =
 doesn'tMatch
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> TermLike Variable
+    -> TermLike VariableName
+    -> TermLike VariableName
     -> TestTree
 doesn'tMatch = withMatch (assertBool "" . isNothing)
 
 matches
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> TermLike Variable
-    -> [(UnifiedVariable.UnifiedVariable Variable, TermLike Variable)]
+    -> TermLike VariableName
+    -> TermLike VariableName
+    -> [(UnifiedVariable VariableName, TermLike VariableName)]
     -> TestTree
 matches comment term1 term2 substs =
-    matchesAux comment term1 term2 makeTruePredicate_ (Just substs)
+    matchesAux comment term1 term2
+        (mkMatchResult (makeTruePredicate_, Map.fromList substs))
 
 matchesP
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
-    -> [(UnifiedVariable.UnifiedVariable Variable, TermLike Variable)]
+    -> TermLike VariableName
+    -> TermLike VariableName
+    -> Predicate VariableName
+    -> [(UnifiedVariable VariableName, TermLike VariableName)]
     -> TestTree
 matchesP comment term1 term2 predicate substs =
-    matchesAux comment term1 term2 predicate (Just substs)
+    matchesAux comment term1 term2
+        (mkMatchResult (predicate, Map.fromList substs))
 
 matchesAux
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
-    -> Maybe [(UnifiedVariable.UnifiedVariable Variable, TermLike Variable)]
+    -> TermLike VariableName
+    -> TermLike VariableName
+    -> MatchResult
     -> TestTree
-matchesAux comment term1 term2 expectPredicate expect =
+matchesAux comment term1 term2 expect =
     withMatch check comment term1 term2
   where
-    solution =
-        case expect of
-            Nothing -> (makeFalsePredicate_, Map.empty)
-            Just substs -> (expectPredicate, Map.fromList substs)
-    check Nothing = assertFailure "Expected matching solution."
-    check (Just actual) = assertEqual "" solution actual
+    check actual = assertEqual "" expect actual

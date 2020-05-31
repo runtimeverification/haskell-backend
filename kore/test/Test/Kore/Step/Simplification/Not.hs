@@ -33,14 +33,16 @@ import Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Pretty
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+type Pattern' = Pattern VariableName
+type OrPattern' = OrPattern VariableName
+type Predicate' = Predicate VariableName
+type Substitution' = Substitution VariableName
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
@@ -59,8 +61,8 @@ test_simplifyEvaluated =
   where
     becomes_
         :: HasCallStack
-        => [Pattern Variable]
-        -> [Pattern Variable]
+        => [Pattern']
+        -> [Pattern']
         -> TestTree
     becomes_ originals expecteds =
         testCase "becomes" $ do
@@ -82,8 +84,8 @@ test_simplifyEvaluated =
             actuals = Foldable.toList actual
     patternBecomes
         :: HasCallStack
-        => Pattern Variable
-        -> [Pattern Variable]
+        => Pattern'
+        -> [Pattern']
         -> TestTree
     patternBecomes original expecteds =
         testCase "patternBecomes" $ do
@@ -100,54 +102,54 @@ test_simplifyEvaluated =
                 , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
                 ]
 
-termX :: Pattern Variable
+termX :: Pattern'
 termX = Pattern.fromTermLike (mkElemVar Mock.x)
 
-termY :: Pattern Variable
+termY :: Pattern'
 termY = Pattern.fromTermLike (mkElemVar Mock.y)
 
-termXAndY :: Pattern Variable
+termXAndY :: Pattern'
 termXAndY = mkAnd <$> termX <*> termY
 
-termNotXAndY :: Pattern Variable
+termNotXAndY :: Pattern'
 termNotXAndY = mkAnd <$> termNotX <*> termY
 
-termNotX :: Pattern Variable
+termNotX :: Pattern'
 termNotX = mkNot <$> termX
 
-termNotY :: Pattern Variable
+termNotY :: Pattern'
 termNotY = mkNot <$> termY
 
-xAndEqualsXA :: Pattern Variable
+xAndEqualsXA :: Pattern'
 xAndEqualsXA = const <$> termX <*> equalsXA
 
-equalsXAWithSortedBottom :: Pattern Variable
+equalsXAWithSortedBottom :: Pattern'
 equalsXAWithSortedBottom = Conditional
     { term = mkBottom Mock.testSort
     , predicate = equalsXA_
     , substitution = mempty
     }
 
-equalsXA :: Pattern Variable
+equalsXA :: Pattern'
 equalsXA = fromPredicate equalsXA_
 
-equalsXB :: Pattern Variable
+equalsXB :: Pattern'
 equalsXB = fromPredicate equalsXB_
 
-equalsXA_ :: Predicate Variable
+equalsXA_ :: Predicate'
 equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
 
-equalsXB_ :: Predicate Variable
+equalsXB_ :: Predicate'
 equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
 
-notEqualsXA :: Pattern Variable
+notEqualsXA :: Pattern'
 notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
 
-notEqualsXASorted :: Pattern Variable
+notEqualsXASorted :: Pattern'
 notEqualsXASorted =
     Pattern.coerceSort Mock.testSort notEqualsXA
 
-neitherXAB :: Pattern Variable
+neitherXAB :: Pattern'
 neitherXAB =
     Pattern.coerceSort Mock.testSort
     $ fromPredicate
@@ -155,29 +157,29 @@ neitherXAB =
         (Predicate.makeNotPredicate equalsXA_)
         (Predicate.makeNotPredicate equalsXB_)
 
-substXA :: Pattern Variable
-substXA = fromSubstitution $ Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
+substXA :: Pattern'
+substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.x, Mock.a)]
 
-forceTermSort :: Pattern Variable -> Pattern Variable
+forceTermSort :: Pattern' -> Pattern'
 forceTermSort = fmap (forceSort Mock.testSort)
 
-fromPredicate :: Predicate Variable -> Pattern Variable
+fromPredicate :: Predicate' -> Pattern'
 fromPredicate =
     forceTermSort
     . Pattern.fromCondition
     . Condition.fromPredicate
 
 fromSubstitution
-    :: Substitution Variable
-    -> Pattern Variable
+    :: Substitution'
+    -> Pattern'
 fromSubstitution =
     forceTermSort
     . Pattern.fromCondition
     . Condition.fromSubstitution
 
 simplifyEvaluated
-    :: OrPattern Variable
-    -> IO (OrPattern Variable)
+    :: OrPattern'
+    -> IO (OrPattern')
 simplifyEvaluated =
     runSimplifier mockEnv . Not.simplifyEvaluated SideCondition.top
   where

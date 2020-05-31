@@ -56,10 +56,13 @@ import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 import Test.Kore
+import Test.Kore.Step.MockSymbols
+    ( MockElementVariable
+    , pattern MockElementVariable
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
@@ -68,68 +71,65 @@ import Test.SMT
     )
 import Test.Tasty.HUnit.Ext
 
-var :: Text -> Sort -> ElementVariable Variable
-var name variableSort =
-    ElementVariable Variable
-        { variableName = testId name
-        , variableSort
-        , variableCounter = mempty
-        }
+type TermLike' = TermLike VariableName
+type Pattern' = Pattern VariableName
+type Assignment' = Assignment VariableName
+type Predicate' = Predicate VariableName
 
-a1, a2, a3, a4, a5 :: TermLike Variable
+var :: Text -> Sort -> MockElementVariable
+var name variableSort =
+    MockElementVariable (testId name) mempty variableSort
+
+a1, a2, a3, a4, a5 :: TermLike'
 a1 = Mock.c
 a2 = TermLike.markSimplified Mock.functional00
 a3 = Mock.constr00
 a4 = TermLike.markSimplified Mock.functionalInjective00
 a5 = TermLike.markSimplified Mock.cf
 
-a :: TermLike Variable
+a :: TermLike'
 a = Mock.a
 
-b :: TermLike Variable
+b :: TermLike'
 b = Mock.b
 
-f :: TermLike Variable -> TermLike Variable
+f :: TermLike' -> TermLike'
 f = Mock.constr10
 
-ef
-    :: TermLike Variable
-    -> TermLike Variable
-    -> TermLike Variable
-    -> TermLike Variable
+ef :: TermLike' -> TermLike' -> TermLike' -> TermLike'
 ef = Mock.functionalConstr30
 
-eg, eh :: TermLike Variable -> TermLike Variable
+eg, eh :: TermLike' -> TermLike'
 eg = Mock.functionalConstr10
 eh = Mock.functionalConstr11
 
-nonLinF :: TermLike Variable -> TermLike Variable -> TermLike Variable
+nonLinF :: TermLike' -> TermLike' -> TermLike'
 nonLinF = Mock.functionalConstr20
 
-nonLinG :: TermLike Variable -> TermLike Variable
+nonLinG :: TermLike' -> TermLike'
 nonLinG = Mock.functionalConstr12
 
-nonLinA, nonLinX, nonLinY :: TermLike Variable
+nonLinA, nonLinX, nonLinY :: TermLike'
 nonLinA = Mock.d
 nonLinX = mkElemVar Mock.x
 nonLinY = mkElemVar Mock.y
 
-expBin :: TermLike Variable -> TermLike Variable -> TermLike Variable
+expBin :: TermLike' -> TermLike' -> TermLike'
 expBin = Mock.functionalConstr21
 
-expA, expX, expY :: TermLike Variable
+expA, expX, expY :: TermLike'
 expA = mkElemVar $ var "a" Mock.testSort
 expX = mkElemVar $ var "x" Mock.testSort
 expY = mkElemVar $ var "y" Mock.testSort
 
-ex1, ex2, ex3, ex4 :: TermLike Variable
+ex1, ex2, ex3, ex4 :: TermLike'
 ex1 = mkElemVar $ var "ex1" Mock.testSort
 ex2 = mkElemVar $ var "ex2" Mock.testSort
 ex3 = mkElemVar $ var "ex3" Mock.testSort
 ex4 = mkElemVar $ var "ex4" Mock.testSort
 
 
-dv1, dv2 :: TermLike Variable
+dv1, dv2 :: TermLike'
 dv1 =
     mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
@@ -144,24 +144,19 @@ dv2 =
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv = Mock.env
 
-unificationProblem
-    :: UnificationTerm
-    -> UnificationTerm
-    -> TermLike Variable
+unificationProblem :: UnificationTerm -> UnificationTerm -> TermLike'
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     mkAnd term1 term2
 
-type Substitution = [(Text, TermLike Variable)]
+type Substitution = [(Text, TermLike')]
 
-unificationSubstitution
-    :: Substitution
-    -> [ Assignment Variable ]
+unificationSubstitution :: Substitution -> [ Assignment' ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
         Substitution.assign (Mock.makeUnifiedVariable v (termLikeSort p)) p
 
-unificationResult :: UnificationResult -> Pattern Variable
+unificationResult :: UnificationResult -> Pattern'
 unificationResult
     UnificationResult { term, substitution, predicate }
   =
@@ -173,7 +168,7 @@ unificationResult
                 $ unificationSubstitution substitution
         }
 
-newtype UnificationTerm = UnificationTerm (TermLike Variable)
+newtype UnificationTerm = UnificationTerm (TermLike')
 
 instance Unparse UnificationTerm where
     unparse (UnificationTerm term) = unparse term
@@ -181,15 +176,15 @@ instance Unparse UnificationTerm where
 
 data UnificationResult =
     UnificationResult
-        { term :: TermLike Variable
+        { term :: TermLike'
         , substitution :: Substitution
-        , predicate :: Predicate Variable
+        , predicate :: Predicate'
         }
 
 simplifyAnds
     :: Monad.Unify.MonadUnify unifier
-    => NonEmpty (TermLike Variable)
-    -> unifier (Pattern Variable)
+    => NonEmpty (TermLike')
+    -> unifier (Pattern')
 simplifyAnds =
     SubstitutionSimplifier.simplifyAnds
         (Unification.unificationMakeAnd Not.notSimplifier)
@@ -229,7 +224,7 @@ andSimplifyFailure
     -> UnificationError
     -> Assertion
 andSimplifyFailure term1 term2 err = do
-    let expect :: Either UnificationError (Pattern Variable)
+    let expect :: Either UnificationError (Pattern')
         expect = Left err
     actual <-
         runNoSMT
@@ -263,7 +258,7 @@ unificationProcedureSuccessWithSimplifiers
     -> BuiltinAndAxiomSimplifierMap
     -> UnificationTerm
     -> UnificationTerm
-    -> [([Assignment Variable], Predicate Variable)]
+    -> [([Assignment'], Predicate')]
     -> TestTree
 unificationProcedureSuccessWithSimplifiers
     message
@@ -283,9 +278,7 @@ unificationProcedureSuccessWithSimplifiers
             & runSimplifier mockEnv
             & runNoSMT
         let
-            normalize
-                :: Condition Variable
-                -> ([Assignment Variable], Predicate Variable)
+            normalize :: Condition VariableName -> ([Assignment'], Predicate')
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
         assertEqual ""
@@ -297,7 +290,7 @@ unificationProcedureSuccess
     => TestName
     -> UnificationTerm
     -> UnificationTerm
-    -> [(Substitution, Predicate Variable)]
+    -> [(Substitution, Predicate')]
     -> TestTree
 unificationProcedureSuccess message term1 term2 substPredicate =
     unificationProcedureSuccessWithSimplifiers
@@ -307,7 +300,7 @@ unificationProcedureSuccess message term1 term2 substPredicate =
         term2
         expect
   where
-    expect :: [([Assignment Variable], Predicate Variable)]
+    expect :: [([Assignment'], Predicate')]
     expect =
         map (Bifunctor.first unificationSubstitution) substPredicate
 
@@ -536,13 +529,13 @@ test_unification =
     , testCase "Maps substitution variables"
         (assertEqual ""
             (Substitution.mkUnwrappedSubstitution
-                [(ElemVar $ ElementVariable $ mkW "1", war' "2")]
+                [(inject . ElementVariableName <$> mkW "1", war' "2")]
             )
             (Substitution.unwrap
                 . Substitution.mapVariables showUnifiedVar
                 . Substitution.wrap
                 . Substitution.mkUnwrappedSubstitution
-                $ [(ElemVar $ ElementVariable $ mkV 1, var' 2)]
+                $ [(inject . ElementVariableName <$> mkV 1, var' 2)]
             )
         )
     , testCase "framed Map with concrete Map" $
@@ -809,8 +802,5 @@ simplifyPattern (UnificationTerm term) = do
             (config : _) -> return config
     expandedPattern = Pattern.fromTermLike term
 
-makeEqualsPredicate_
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
+makeEqualsPredicate_ :: TermLike' -> TermLike' -> Predicate'
 makeEqualsPredicate_ = Predicate.makeEqualsPredicate_

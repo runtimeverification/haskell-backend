@@ -63,18 +63,11 @@ import Kore.Step.RulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Syntax.ElementVariable
-    ( ElementVariable (ElementVariable)
-    )
 import Kore.Syntax.Variable
-    ( Variable (Variable, variableSort)
-    )
 import Kore.Variables.Fresh
     ( refreshVariable
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (ElemVar)
-    , extractElementVariable
-    )
 import qualified Pretty
 
 -- | Instantiate variables on sorts with a single constructor
@@ -88,7 +81,7 @@ class ExpandSingleConstructors rule where
         -> rule
         -> rule
 
-instance ExpandSingleConstructors (RulePattern Variable) where
+instance ExpandSingleConstructors (RulePattern VariableName) where
     expandSingleConstructors
         metadataTools
         rule@(RulePattern _ _ _ _ _)
@@ -97,20 +90,24 @@ instance ExpandSingleConstructors (RulePattern Variable) where
             {left, antiLeft, requires
             , rhs = RulePattern.RHS {existentials, right, ensures}
             } ->
-            let leftVariables :: [ElementVariable Variable]
+            let leftVariables :: [ElementVariable VariableName]
                 leftVariables =
                     mapMaybe extractElementVariable
                     $ FreeVariables.toList
                     $ freeVariables left
-                allUnifiedVariables :: Set (UnifiedVariable Variable)
+                allUnifiedVariables :: Set (UnifiedVariable VariableName)
                 allUnifiedVariables =
                     FreeVariables.toSet (freeVariables rule)
-                allElementVariables :: Set (ElementVariable Variable)
-                allElementVariables = Set.fromList
-                    $ [ v | ElemVar v <- Set.toList allUnifiedVariables]
+                allElementVariables :: Set (ElementVariableName VariableName)
+                allElementVariables =
+                    Set.fromList
+                    $ map variableName1
+                    $ mapMaybe retract (Set.toList allUnifiedVariables)
                         ++ existentials
                 expansion
-                    :: Map.Map (UnifiedVariable Variable) (TermLike Variable)
+                    ::  Map.Map
+                            (UnifiedVariable VariableName)
+                            (TermLike VariableName)
                 expansion =
                     expandVariables
                         metadataTools
@@ -122,18 +119,19 @@ instance ExpandSingleConstructors (RulePattern Variable) where
                     . Substitution.mkUnwrappedSubstitution
                     )
                         (Map.toList expansion)
+                subst = Map.mapKeys variableName1 expansion
             in rule
-                { RulePattern.left = TermLike.substitute expansion left
+                { RulePattern.left = TermLike.substitute subst left
                 , RulePattern.antiLeft =
-                    TermLike.substitute expansion <$> antiLeft
+                    TermLike.substitute subst <$> antiLeft
                 , RulePattern.requires =
                     makeAndPredicate
-                        (Predicate.substitute expansion requires)
+                        (Predicate.substitute subst requires)
                         substitutionPredicate
                 , RulePattern.rhs = RulePattern.RHS
                     { existentials
-                    , right = TermLike.substitute expansion right
-                    , ensures = Predicate.substitute expansion ensures
+                    , right = TermLike.substitute subst right
+                    , ensures = Predicate.substitute subst ensures
                     }
                 }
 
@@ -161,47 +159,47 @@ instance ExpandSingleConstructors ReachabilityRule where
 
 expandVariables
     :: SmtMetadataTools attributes
-    -> [ElementVariable Variable]
-    -> Set.Set (ElementVariable Variable)
-    -> Map.Map (UnifiedVariable Variable) (TermLike Variable)
+    -> [ElementVariable VariableName]
+    -> Set.Set (ElementVariableName VariableName)
+    -> Map.Map (UnifiedVariable VariableName) (TermLike VariableName)
 expandVariables metadataTools variables toAvoid =
     fst $ foldl' expandAddVariable (Map.empty, toAvoid) variables
   where
     expandAddVariable
-        ::  ( Map.Map (UnifiedVariable Variable) (TermLike Variable)
-            , Set.Set (ElementVariable Variable)
+        ::  ( Map.Map (UnifiedVariable VariableName) (TermLike VariableName)
+            , Set.Set (ElementVariableName VariableName)
             )
-        -> ElementVariable Variable
-        ->  ( Map.Map (UnifiedVariable Variable) (TermLike Variable)
-            , Set.Set (ElementVariable Variable)
+        -> ElementVariable VariableName
+        ->  ( Map.Map (UnifiedVariable VariableName) (TermLike VariableName)
+            , Set.Set (ElementVariableName VariableName)
             )
     expandAddVariable (substitution, toAvoid') variable =
         case expandVariable metadataTools toAvoid' variable of
             (newVariables, term) ->
                 ( if mkElemVar variable == term
                     then substitution
-                    else Map.insert (ElemVar variable) term substitution
+                    else Map.insert (inject variable) term substitution
                 , foldr Set.insert toAvoid' newVariables
                 )
 
 expandVariable
     :: SmtMetadataTools attributes
-    -> Set.Set (ElementVariable Variable)
-    -> ElementVariable Variable
-    -> (Set.Set (ElementVariable Variable), TermLike Variable)
+    -> Set.Set (ElementVariableName VariableName)
+    -> ElementVariable VariableName
+    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
 expandVariable
     metadataTools
     usedVariables
-    variable@(ElementVariable Variable {variableSort})
-  = expandSort metadataTools usedVariables variable UseDirectly variableSort
+    variable@Variable1 { variableSort1 }
+  = expandSort metadataTools usedVariables variable UseDirectly variableSort1
 
 expandSort
     :: SmtMetadataTools attributes
-    -> Set.Set (ElementVariable Variable)
-    -> ElementVariable Variable
+    -> Set.Set (ElementVariableName VariableName)
+    -> ElementVariable VariableName
     -> VariableUsage
     -> Sort
-    -> (Set.Set (ElementVariable Variable), TermLike Variable)
+    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
 expandSort
     _metadataTools
     usedVariables
@@ -239,10 +237,10 @@ expandSort
 
 expandConstructor
     :: SmtMetadataTools attributes
-    -> Set.Set (ElementVariable Variable)
-    -> ElementVariable Variable
+    -> Set.Set (ElementVariableName VariableName)
+    -> ElementVariable VariableName
     -> Attribute.Constructors.Constructor
-    -> (Set.Set (ElementVariable Variable), TermLike Variable)
+    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
 expandConstructor
     metadataTools
     usedVariables
@@ -255,8 +253,8 @@ expandConstructor
 
     expandChildSort
         :: Sort
-        -> ([TermLike Variable], Set.Set (ElementVariable Variable))
-        -> ([TermLike Variable], Set.Set (ElementVariable Variable))
+        -> ([TermLike VariableName], Set.Set (ElementVariableName VariableName))
+        -> ([TermLike VariableName], Set.Set (ElementVariableName VariableName))
     expandChildSort sort (terms, beforeUsedVariables) =
         (term : terms, afterUsedVariables)
       where
@@ -291,24 +289,24 @@ data VariableUsage =
     -- variable, so we need to generate a new one based on it.
 
 maybeNewVariable
-    :: Set.Set (ElementVariable Variable)
-    -> ElementVariable Variable
+    :: Set.Set (ElementVariableName VariableName)
+    -> ElementVariable VariableName
     -> Sort
     -> VariableUsage
-    -> (Set.Set (ElementVariable Variable), TermLike Variable)
+    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
 maybeNewVariable
     usedVariables
-    variable@(ElementVariable Variable {variableSort})
+    variable@Variable1 { variableSort1 }
     sort
     UseDirectly
   =
-    if sort /= variableSort
+    if sort /= variableSort1
         then error "Unmatching sort for direct use variable."
         else (usedVariables, mkElemVar variable)
 maybeNewVariable usedVariables variable sort UseAsPrototype =
     case refreshVariable usedVariables variable' of
         Just newVariable ->
-            ( Set.insert newVariable usedVariables
+            ( Set.insert (variableName1 newVariable) usedVariables
             , mkElemVar newVariable
             )
         Nothing ->
@@ -320,4 +318,4 @@ maybeNewVariable usedVariables variable sort UseAsPrototype =
                 ]
   where
     variable' = resort variable
-    resort (ElementVariable var) = ElementVariable var { variableSort = sort }
+    resort var = var { variableSort1 = sort }
