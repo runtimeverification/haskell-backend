@@ -61,15 +61,16 @@ test_FreeVarInRHS =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ patternToSentence patternNoFreeVarInRHS
             , simpleSortSentence (SortName (getId Mock.testSortId))
-            , asSentence
-                $ Lens.over (field @ "sentenceAliasLeftPattern")
-                    (setField @ "applicationChildren" setVarChildren)
-                    sentenceAlias
+            , sentenceAlias
+                & Lens.over (field @"sentenceAliasLeftPattern")
+                    (setField @"applicationChildren"
+                        [inject $ mkSetVariable (testId "x") Mock.testSort]
+                    )
+                & asSentence
             ]
         )
     ]
   where
-    setVarChildren = [ inject $ mkSetVariable (testId "x") Mock.testSort ]
     sentenceAlias =
         sentenceAliasWithSortArgument
             (AliasName weakExistsFinally)

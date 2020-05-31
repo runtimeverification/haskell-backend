@@ -225,7 +225,7 @@ test_Debug =
         \{ variableName1 =\n\
         \    VariableName\n\
         \    { base = Id { getId = \"v\", idLocation = AstLocationTest }\n\
-        \    , variableCounter = Nothing\n\
+        \    , counter = Nothing\n\
         \    }\
         \, variableSort1 =\n\
         \    SortVariableSort\n\
@@ -244,6 +244,12 @@ test_Debug =
         $ "Maybe - Nothing"
     ]
   where
+    yields
+        :: (HasCallStack, Debug a)
+        => a
+        -> String
+        -> TestName
+        -> TestTree
     yields input = Terse.equals (show $ debug input)
 
 test_diff :: [TestTree]

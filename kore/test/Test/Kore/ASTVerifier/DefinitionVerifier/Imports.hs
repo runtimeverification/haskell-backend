@@ -919,7 +919,7 @@ aliasVisibilityTests =
                             }
                     , applicationChildren =
                         [ mkSomeVariable1
-                            $ mkSetVariable (testId "x")
+                            $ mkSetVariable (testId "@x")
                             $ SortVariableSort (SortVariable (testId "sv1"))
                         ]
                     }
