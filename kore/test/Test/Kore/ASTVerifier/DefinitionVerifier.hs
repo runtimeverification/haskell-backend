@@ -579,7 +579,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
                 { aliasConstructor = testId name
                 , aliasParams = []
                 }
-            , sentenceAliasSorts = variableSort1 <$> operands
+            , sentenceAliasSorts = variableSort <$> operands
             , sentenceAliasResultSort = sort
             , sentenceAliasLeftPattern =
                 Application

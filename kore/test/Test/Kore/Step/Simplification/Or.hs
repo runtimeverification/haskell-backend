@@ -149,7 +149,7 @@ testVar ident =
         { base = testId ident
         , counter = mempty
         }
-    , variableSort1 = Mock.testSort
+    , variableSort = Mock.testSort
     }
 
 type TestPredicate = Predicate VariableName

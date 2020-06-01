@@ -139,8 +139,8 @@ unparse2SortedVariable
     :: Unparse variable
     => Variable variable
     -> Pretty.Doc ann
-unparse2SortedVariable Variable { variableName, variableSort1 } =
-    unparse2 variableName <> Pretty.colon <> unparse variableSort1
+unparse2SortedVariable Variable { variableName, variableSort } =
+    unparse2 variableName <> Pretty.colon <> unparse variableSort
 
 instance From VariableName Void where
     from = error "Cannot construct a variable in a concrete term!"
@@ -302,7 +302,7 @@ Every occurrence of a variable carries the 'Sort' of the variable.
 data Variable variable =
     Variable
     { variableName :: !variable
-    , variableSort1 :: !Sort
+    , variableSort :: !Sort
     }
     deriving (Eq, Ord, Show)
     deriving (Functor)
@@ -322,10 +322,10 @@ instance Debug variable => Debug (Variable variable)
 instance (Debug variable, Diff variable) => Diff (Variable variable)
 
 instance Unparse variable => Unparse (Variable variable) where
-    unparse Variable { variableName, variableSort1 } =
+    unparse Variable { variableName, variableSort } =
         unparse variableName
         <> Pretty.colon
-        <> unparse variableSort1
+        <> unparse variableSort
 
     unparse2 Variable { variableName } = unparse2 variableName
 
@@ -339,27 +339,27 @@ instance
     {-# INLINE retract #-}
 
 instance Synthetic Sort (Const (Variable variable)) where
-    synthetic = variableSort1 . getConst
+    synthetic = variableSort . getConst
     {-# INLINE synthetic #-}
 
 -- | Element (singleton) Kore variables
 type ElementVariable variable = Variable (ElementVariableName variable)
 
 mkElementVariable :: Id -> Sort -> ElementVariable VariableName
-mkElementVariable base variableSort1 =
+mkElementVariable base variableSort =
     Variable
     { variableName = ElementVariableName (mkVariableName base)
-    , variableSort1
+    , variableSort
     }
 
 -- | Kore set variables
 type SetVariable variable = Variable (SetVariableName variable)
 
 mkSetVariable :: Id -> Sort -> SetVariable VariableName
-mkSetVariable base variableSort1 =
+mkSetVariable base variableSort =
     Variable
     { variableName = SetVariableName (mkVariableName base)
-    , variableSort1
+    , variableSort
     }
 
 {- | @SomeVariableName@ is the name of a variable in a pattern.

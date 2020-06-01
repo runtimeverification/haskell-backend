@@ -264,7 +264,7 @@ translatePredicateWith translateTerm predicate =
         existsConstructorSort = do
             smtSort <- hoistMaybe $ translateSort varSort
             translateExists smtSort existsVariable existsChild
-        varSort = variableSort1 existsVariable
+        varSort = variableSort existsVariable
         tools :: SmtMetadataTools Attribute.Symbol
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =

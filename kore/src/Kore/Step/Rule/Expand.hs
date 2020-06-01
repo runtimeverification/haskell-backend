@@ -188,8 +188,8 @@ expandVariable
 expandVariable
     metadataTools
     usedVariables
-    variable@Variable { variableSort1 }
-  = expandSort metadataTools usedVariables variable UseDirectly variableSort1
+    variable@Variable { variableSort }
+  = expandSort metadataTools usedVariables variable UseDirectly variableSort
 
 expandSort
     :: SmtMetadataTools attributes
@@ -294,11 +294,11 @@ maybeNewVariable
     -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
 maybeNewVariable
     usedVariables
-    variable@Variable { variableSort1 }
+    variable@Variable { variableSort }
     sort
     UseDirectly
   =
-    if sort /= variableSort1
+    if sort /= variableSort
         then error "Unmatching sort for direct use variable."
         else (usedVariables, mkElemVar variable)
 maybeNewVariable usedVariables variable sort UseAsPrototype =
@@ -316,4 +316,4 @@ maybeNewVariable usedVariables variable sort UseAsPrototype =
                 ]
   where
     variable' = resort variable
-    resort var = var { variableSort1 = sort }
+    resort var = var { variableSort = sort }

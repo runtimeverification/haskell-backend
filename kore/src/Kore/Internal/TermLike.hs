@@ -327,7 +327,7 @@ freshSymbolInstance freeVars sym base =
                     }
             , counter = mempty
             }
-        , variableSort1 = vSort
+        , variableSort = vSort
         }
 
 {- | Is the 'TermLike' a function pattern?
@@ -1476,10 +1476,10 @@ mkSortVariable name = SortVariableSort $ SortVariable name
 @
  -}
 varS :: Id -> Sort -> Variable VariableName
-varS base variableSort1 =
+varS base variableSort =
     Variable
         { variableName = VariableName { base, counter = mempty }
-        , variableSort1
+        , variableSort
         }
 
 {- | Construct an element variable with a given name and sort.
@@ -1591,7 +1591,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = variableSort1 <$> arguments
+    argumentSorts = variableSort <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 

@@ -78,5 +78,5 @@ instance Synthetic Sort (Nu variable) where
         nuSort
         & seq (matchSort nuSort nuChild)
       where
-        Variable { variableSort1 = nuSort } = nuVariable
+        Variable { variableSort = nuSort } = nuVariable
     {-# INLINE synthetic #-}

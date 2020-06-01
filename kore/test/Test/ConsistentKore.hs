@@ -1007,7 +1007,7 @@ elementVariableGenerators = do
     generatorForVariable variable =
         TermGenerator
             { arity = 0
-            , sort = SpecificSort (variableSort1 variable)
+            , sort = SpecificSort (variableSort variable)
             , attributes = AttributeRequirements
                 { isConstructorLike = False
                 , isConcrete = False
@@ -1016,7 +1016,7 @@ elementVariableGenerators = do
             }
 
     variableGenerator variable _termGenerator sort = do
-        when (sort /= variableSort1 variable) (error "Sort mismatch.")
+        when (sort /= variableSort variable) (error "Sort mismatch.")
         return (Just (mkElemVar variable))
 
 setVariableGenerators :: Gen (Map.Map SortRequirements TermGenerator)
@@ -1029,7 +1029,7 @@ setVariableGenerators = do
     generatorForVariable variable =
         TermGenerator
             { arity = 0
-            , sort = SpecificSort (variableSort1 variable)
+            , sort = SpecificSort (variableSort variable)
             , attributes = AttributeRequirements
                 { isConstructorLike = False
                 , isConcrete = False
@@ -1038,7 +1038,7 @@ setVariableGenerators = do
             }
 
     variableGenerator variable _termGenerator sort = do
-        when (sort /= variableSort1 variable) (error "Sort mismatch.")
+        when (sort /= variableSort variable) (error "Sort mismatch.")
         return (Just (mkSetVar variable))
 
 filterGeneratorsGroupAndPickOne
@@ -1093,7 +1093,7 @@ elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen sort = (fmap . fmap) ElementVariableName (variableGen sort)
 
 variableGen :: Sort -> Gen (Variable VariableName)
-variableGen variableSort1 = do
+variableGen variableSort = do
     base <- idGen
     let variableName = VariableName { base, counter = mempty }
-    return Variable { variableName, variableSort1 }
+    return Variable { variableName, variableSort }

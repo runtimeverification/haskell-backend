@@ -556,7 +556,7 @@ test_simplificationIntegration =
                     { base = testId "mx"
                     , counter = mempty
                     }
-                , variableSort1 = Mock.subOthersort
+                , variableSort = Mock.subOthersort
                 }
             iz =
                 Variable
@@ -565,7 +565,7 @@ test_simplificationIntegration =
                     { base = testId "iz"
                     , counter = mempty
                     }
-                , variableSort1 = Mock.intSort
+                , variableSort = Mock.intSort
                 }
             ub =
                 Variable
@@ -574,7 +574,7 @@ test_simplificationIntegration =
                     { base = testId "ub"
                     , counter = mempty
                     }
-                , variableSort1 = Mock.boolSort
+                , variableSort = Mock.boolSort
                 }
 
         let expected = OrPattern.fromPatterns

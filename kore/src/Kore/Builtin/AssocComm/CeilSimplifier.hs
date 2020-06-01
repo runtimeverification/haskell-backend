@@ -186,7 +186,7 @@ generalizeMapElement freeVariables' element =
                     , counter = mempty
                     }
                 & fromVariableName @variable & ElementVariableName
-            , variableSort1 = termLikeSort value
+            , variableSort = termLikeSort value
             }
     variable = refreshElementVariable avoiding x & fromMaybe x
 

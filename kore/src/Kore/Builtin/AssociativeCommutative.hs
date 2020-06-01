@@ -1362,7 +1362,7 @@ unifyOpaqueVariable
                 then noCheckUnifyOpaqueChildren unifyChildren v1 secondTerm
                 else empty
   where
-    sort = variableSort1 v1
+    sort = variableSort v1
     pairs = map fromConcreteOrWithVariable concreteOrVariableTerms
 
 noCheckUnifyOpaqueChildren

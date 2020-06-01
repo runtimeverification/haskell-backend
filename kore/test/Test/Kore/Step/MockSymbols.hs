@@ -640,20 +640,20 @@ type MockElementVariable = ElementVariable VariableName
 
 pattern MockElementVariable
     :: Id -> VariableCounter -> Sort -> MockElementVariable
-pattern MockElementVariable base counter variableSort1 =
+pattern MockElementVariable base counter variableSort =
     Variable
     { variableName = ElementVariableName VariableName { base, counter }
-    , variableSort1
+    , variableSort
     }
 
 type MockSetVariable = SetVariable VariableName
 
 pattern MockSetVariable
     :: Id -> VariableCounter -> Sort -> MockSetVariable
-pattern MockSetVariable base counter variableSort1 =
+pattern MockSetVariable base counter variableSort =
     Variable
     { variableName = SetVariableName VariableName { base, counter }
-    , variableSort1
+    , variableSort
     }
 
 var_x_0 :: MockElementVariable
@@ -714,9 +714,9 @@ xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
-makeSomeVariable name variableSort1 =
+makeSomeVariable name variableSort =
     Variable
-    { variableSort1
+    { variableSort
     , variableName
     }
   where

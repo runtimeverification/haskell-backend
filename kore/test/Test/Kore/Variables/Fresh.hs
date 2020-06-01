@@ -54,14 +54,14 @@ metaVariable :: Variable'
 metaVariable =
     Variable
     { variableName = VariableName { base = testId "#v", counter = mempty }
-    , variableSort1 = SortVariableSort (SortVariable (testId "#s"))
+    , variableSort = SortVariableSort (SortVariable (testId "#s"))
     }
 
 metaVariableDifferentSort :: Variable'
 metaVariableDifferentSort =
     Variable
     { variableName = VariableName { base = testId "#v", counter = mempty }
-    , variableSort1 = SortVariableSort (SortVariable (testId "#s1"))
+    , variableSort = SortVariableSort (SortVariable (testId "#s1"))
     }
 
 test_refreshVariable :: [TestTree]
@@ -72,9 +72,9 @@ test_refreshVariable =
             x0 =
                 Variable
                 { variableName
-                , variableSort1 = testSort0
+                , variableSort = testSort0
                 }
-            x1 = x0 { variableSort1 = testSort1 }
+            x1 = x0 { variableSort = testSort1 }
             x1' =
                 Lens.set
                     (field @"variableName" . field @"counter")
@@ -101,7 +101,7 @@ test_refreshVariable =
     , testCase "refreshVariable - expecting the same sort" $
         assertBool
             "Expected fresh variable has same sort as original"
-            (variableSort1 original == variableSort1 fresh2)
+            (variableSort original == variableSort fresh2)
 
     , testCase "refreshVariable - sort order does not matter" $ do
         let assertRefreshes (variableName -> a) b =

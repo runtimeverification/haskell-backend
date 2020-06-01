@@ -28,7 +28,7 @@ mkV :: Integer -> Variable V
 mkV value =
     Variable
     { variableName = V { value, counter = Nothing }
-    , variableSort1 = sortVariable
+    , variableSort = sortVariable
     }
 
 instance Hashable V

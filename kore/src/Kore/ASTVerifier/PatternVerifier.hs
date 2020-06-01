@@ -90,7 +90,7 @@ verifyAliasLeftPattern
 verifyAliasLeftPattern alias aliasSorts leftPattern = do
     koreFailWhen (declaredHead /= symbolOrAlias) aliasDeclarationMismatch
     let expect = expectVariable <$> applicationChildren leftPattern
-    verified <- verifyPatternsWithSorts variableSort1 aliasSorts expect
+    verified <- verifyPatternsWithSorts variableSort aliasSorts expect
     declaredVariables <- uniqueDeclaredVariables verified
     let verifiedLeftPattern = leftPattern { applicationChildren = verified }
     return (declaredVariables, verifiedLeftPattern)
@@ -456,21 +456,21 @@ verifyMu
     -> PatternVerifier (Mu VariableName Verified.Pattern)
 verifyMu = verifyBinder muSort (inject . muVariable)
   where
-    muSort = variableSort1 . muVariable
+    muSort = variableSort . muVariable
 
 verifyNu
     :: Nu VariableName (PatternVerifier Verified.Pattern)
     -> PatternVerifier (Nu VariableName Verified.Pattern)
 verifyNu = verifyBinder nuSort (inject . nuVariable)
   where
-    nuSort = variableSort1 . nuVariable
+    nuSort = variableSort . nuVariable
 
 verifyVariable
     :: SomeVariable VariableName
     -> PatternVerifier (Const (SomeVariable VariableName) Verified.Pattern)
 verifyVariable var = do
     declaredVariable <- lookupDeclaredVariable varName
-    let declaredSort = variableSort1 declaredVariable
+    let declaredSort = variableSort declaredVariable
     koreFailWithLocationsWhen
         (varSort /= declaredSort)
         [ var, declaredVariable ]
@@ -478,7 +478,7 @@ verifyVariable var = do
     return (Const var)
   where
     varName = variableName var
-    varSort = variableSort1 var
+    varSort = variableSort var
 
 verifyDomainValue
     :: DomainValue Sort (PatternVerifier Verified.Pattern)
@@ -526,7 +526,7 @@ verifyVariableDeclaration variable = do
         declaredSortVariables
         varSort
   where
-    varSort = variableSort1 variable
+    varSort = variableSort variable
 
 verifyFreeVariables
     :: ParsedPattern

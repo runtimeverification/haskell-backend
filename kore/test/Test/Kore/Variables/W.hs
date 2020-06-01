@@ -30,7 +30,7 @@ mkW :: String -> Variable W
 mkW value =
     Variable
     { variableName = W { value, counter = Nothing }
-    , variableSort1 = sortVariable
+    , variableSort = sortVariable
     }
 
 instance Hashable W

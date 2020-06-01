@@ -538,7 +538,7 @@ x1 =
         { base = generatedId "x1"
         , counter = mempty
         }
-    , variableSort1 = Mock.subSort
+    , variableSort = Mock.subSort
     }
 
 generatedId :: Text -> Id

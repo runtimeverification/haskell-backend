@@ -78,5 +78,5 @@ instance Synthetic Sort (Mu variable) where
         muSort
         & seq (matchSort muSort muChild)
       where
-        Variable { variableSort1 = muSort } = muVariable
+        Variable { variableSort = muSort } = muVariable
     {-# INLINE synthetic #-}

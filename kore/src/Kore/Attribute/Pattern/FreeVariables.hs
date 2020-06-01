@@ -137,8 +137,8 @@ isFreeVariable someVariableName (FreeVariables freeVars) =
 {-# INLINE isFreeVariable #-}
 
 freeVariable :: SomeVariable variable -> FreeVariables variable
-freeVariable Variable { variableName, variableSort1 } =
-    FreeVariables (Map.singleton variableName variableSort1)
+freeVariable Variable { variableName, variableSort } =
+    FreeVariables (Map.singleton variableName variableSort)
 {-# INLINE freeVariable #-}
 
 mapFreeVariables

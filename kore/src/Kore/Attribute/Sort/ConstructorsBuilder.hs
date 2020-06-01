@@ -194,7 +194,7 @@ parseSMTConstructor patt =
         -> Maybe Sort
     parseVariableSort
         Variable
-            { variableSort1 =
+            { variableSort =
                 sort@(SortActualSort SortActual {sortActualSorts = []})
             }
       = Just sort

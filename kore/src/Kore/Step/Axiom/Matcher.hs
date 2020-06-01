@@ -286,7 +286,7 @@ matchBinder
     -> Binder (ElementVariable variable) (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
 matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
-    Monad.guard (on (==) variableSort1 variable1 variable2)
+    Monad.guard (on (==) variableSort variable1 variable2)
     -- Lift the bound variable to the top level.
     lifted1 <- liftVariable unified1
     let term1' = fromMaybe term1 $ do

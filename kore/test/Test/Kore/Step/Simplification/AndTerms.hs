@@ -1117,7 +1117,7 @@ mkVariable :: Text -> Variable VariableName
 mkVariable ident =
     Variable
     { variableName = mkVariableName (testId ident)
-    , variableSort1 = Mock.testSort
+    , variableSort = Mock.testSort
     }
 
 mkAlias'

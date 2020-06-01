@@ -358,10 +358,10 @@ variableRemainderParser
     -> Parser (Variable VariableName)
 variableRemainderParser base = do
     colonParser
-    variableSort1 <- sortParser
+    variableSort <- sortParser
     return Variable
         { variableName = VariableName { base, counter = mempty }
-        , variableSort1
+        , variableSort
         }
 
 {- | Parses an element variable

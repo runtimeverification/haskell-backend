@@ -218,7 +218,7 @@ test_Debug :: [TestTree]
 test_Debug =
     [ Variable
         { variableName = VariableName { base = testId "v", counter = mempty }
-        , variableSort1 = SortVariableSort (SortVariable (testId "sv"))
+        , variableSort = SortVariableSort (SortVariable (testId "sv"))
         }
         `yields`
         "Variable\n\
@@ -227,7 +227,7 @@ test_Debug =
         \    { base = Id { getId = \"v\", idLocation = AstLocationTest }\n\
         \    , counter = Nothing\n\
         \    }\n\
-        \, variableSort1 =\n\
+        \, variableSort =\n\
         \    SortVariableSort\n\
         \        SortVariable\n\
         \        { getSortVariable = Id { getId = \"sv\", idLocation = AstLocationTest }\n\
