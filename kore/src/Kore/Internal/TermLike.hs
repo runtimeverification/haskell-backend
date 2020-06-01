@@ -315,20 +315,13 @@ freshSymbolInstance freeVars sym base =
 
     mkVariable :: Integer -> Sort -> ElementVariable variable
     mkVariable vIdx vSort =
-        Variable
-        { variableName =
-            ElementVariableName
-            $ from @VariableName @variable
-            VariableName
-            { base =
-                Id
-                    { getId = base <> Text.pack (show vIdx)
-                    , idLocation = AstLocationGeneratedVariable
-                    }
-            , counter = mempty
-            }
-        , variableSort = vSort
-        }
+        mkElementVariable
+            Id
+                { getId = base <> Text.pack (show vIdx)
+                , idLocation = AstLocationGeneratedVariable
+                }
+            vSort
+        & (fmap . fmap) fromVariableName
 
 {- | Is the 'TermLike' a function pattern?
  -}
