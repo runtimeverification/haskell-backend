@@ -27,6 +27,7 @@ module Kore.Syntax.Variable
     , SetVariableName (..)
     , SomeVariableName (..)
     , AdjSomeVariableName (..)
+    , foldSomeVariableName
     , mapSomeVariableName
     , mapElementVariableName
     , mapSetVariableName
@@ -603,6 +604,12 @@ instance Adjunction SomeVariableName AdjSomeVariableName where
         . unSetVariableName
         $ adj
     {-# INLINE counit #-}
+
+foldSomeVariableName
+    :: AdjSomeVariableName (variable1 -> r)
+    -> SomeVariableName variable1 -> r
+foldSomeVariableName adj =
+    rightAdjunct (\variable1 -> ($ variable1) <$> adj)
 
 mapSomeVariableName
     :: AdjSomeVariableName (variable1 -> variable2)
