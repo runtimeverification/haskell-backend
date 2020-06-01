@@ -124,8 +124,6 @@ mkUnifiedNonTarget = pure NonTarget
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
 
-instance VariableBase variable => VariableBase (Target variable)
-
 instance From variable1 variable2 => From variable1 (Target variable2) where
     from = Target . from @variable1 @variable2
     {-# INLINE from #-}

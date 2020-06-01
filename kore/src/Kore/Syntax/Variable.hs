@@ -35,9 +35,6 @@ module Kore.Syntax.Variable
     , traverseSomeVariableName
     , traverseElementVariableName
     , traverseSetVariableName
-    , VariableBase
-    , toVariable
-    , fromVariable
     , toVariableName
     , fromVariableName
     -- * Variable sorts
@@ -83,59 +80,6 @@ import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
 
-{-|'Variable' corresponds to the @variable@ syntactic category from the
-Semantics of K, Section 9.1.4 (Patterns).
-
-Particularly, this is the type of variable in patterns returned by the parser.
-
--}
--- Invariant [variableCounter = Just Sup]:
--- No function returns a value that would match the pattern:
---
--- > Variable { variableCounter = Just Sup }
---
--- This value of variableCounter may only be used in refreshVariable to pivot
--- the set of variables that must not be captured.
-data Variable = Variable
-    { variableName :: !Id
-    , variableCounter :: !(Maybe (Sup Natural))
-    , variableSort :: !Sort
-    }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable Variable
-
-instance NFData Variable
-
-instance SOP.Generic Variable
-
-instance SOP.HasDatatypeInfo Variable
-
-instance Debug Variable
-
-instance Diff Variable
-
-instance Unparse Variable where
-    unparse Variable { variableName, variableCounter, variableSort } =
-        unparse variableName
-        <> Pretty.pretty variableCounter
-        <> Pretty.colon
-        <> unparse variableSort
-
-    unparse2 Variable { variableName, variableCounter } =
-        unparse2 variableName
-        <> Pretty.pretty variableCounter
-
-instance From Variable Variable where
-    from = id
-    {-# INLINE from #-}
-
-instance From VariableName VariableName where
-    from = id
-    {-# INLINE from #-}
-
-instance VariableBase Variable
-
 {- | Is the variable original (as opposed to generated)?
  -}
 isOriginalVariableName :: VariableName -> Bool
@@ -167,17 +111,6 @@ externalizeFreshVariableName VariableName { base, counter } =
             , idLocation = AstLocationGeneratedVariable
             }
 
-class
-    (From Variable variable, From variable Variable) => VariableBase variable
-
--- | An injection from 'Variable' to any 'NamedVariable'.
-fromVariable :: forall variable. From Variable variable => Variable -> variable
-fromVariable = from @Variable @variable
-
--- | An injection from any 'NamedVariable' to 'Variable'.
-toVariable :: forall variable. From variable Variable => variable -> Variable
-toVariable = from @variable @Variable
-
 fromVariableName
     :: forall variable. From VariableName variable => VariableName -> variable
 fromVariableName = from @VariableName @variable
@@ -201,45 +134,8 @@ unparse2SortedVariable1
 unparse2SortedVariable1 Variable1 { variableName1, variableSort1 } =
     unparse2 variableName1 <> Pretty.colon <> unparse variableSort1
 
-{- | @Concrete@ is a variable occuring in a concrete pattern.
-
-Concrete patterns do not contain variables, so this is an uninhabited type
-(it has no constructors).
-
-See also: 'Data.Void.Void'
-
- -}
-data Concrete
-    deriving (Eq, GHC.Generic, Ord, Read, Show)
-
-instance Hashable Concrete
-
-instance NFData Concrete
-
-instance SOP.Generic Concrete
-
-instance SOP.HasDatatypeInfo Concrete
-
-instance Debug Concrete
-
-instance Diff Concrete
-
-instance Unparse Concrete where
-    unparse = \case {}
-    unparse2 = \case {}
-
-instance VariableBase Concrete
-
 instance From VariableName Void where
     from = error "Cannot construct a variable in a concrete term!"
-    {-# INLINE from #-}
-
-instance From Variable Concrete where
-    from = error "Cannot construct a variable in a concrete term!"
-    {-# INLINE from #-}
-
-instance From Concrete variable where
-    from = \case {}
     {-# INLINE from #-}
 
 -- * Variable names
@@ -275,6 +171,10 @@ instance Unparse VariableName where
 
     unparse2 VariableName { base, counter } =
         unparse base <> Pretty.pretty counter
+
+instance From VariableName VariableName where
+    from = id
+    {-# INLINE from #-}
 
 -- * Element variables
 
