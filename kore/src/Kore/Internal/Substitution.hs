@@ -362,13 +362,13 @@ normalOrder
     => (SomeVariable variable, TermLike variable)
     -> (SomeVariable variable, TermLike variable)
 normalOrder (uVar1, Var_ uVar2)
-  | Just eVar1 <- retract @_ @(ElementVariable variable) uVar1
-  , Just eVar2 <- retract @_ @(ElementVariable variable) uVar2
+  | Just eVar1 <- retractElementVariable uVar1
+  , Just eVar2 <- retractElementVariable uVar2
   , LT <- compareSubstitution eVar2 eVar1
   = (uVar2, mkVar uVar1)
 
-  | Just sVar1 <- retract @_ @(SetVariable variable) uVar1
-  , Just sVar2 <- retract @_ @(SetVariable variable) uVar2
+  | Just sVar1 <- retractSetVariable uVar1
+  , Just sVar2 <- retractSetVariable uVar2
   , LT <- compareSubstitution sVar2 sVar1
   = (uVar2, mkVar uVar1)
 normalOrder subst = subst
