@@ -15,6 +15,7 @@ module Kore.Syntax.Variable
     , Variable1 (..)
     , SomeVariable1
     , mkSomeVariable1
+    , foldSomeVariable
     , ElementVariable
     , mkElementVariable
     , SetVariable
@@ -670,3 +671,8 @@ mkSomeVariable1
     => Variable1 (f variable)
     -> SomeVariable1 variable
 mkSomeVariable1 = inject
+
+foldSomeVariable
+    :: AdjSomeVariableName (variable1 -> r)
+    -> SomeVariable1 variable1 -> r
+foldSomeVariable adj = foldSomeVariableName adj . variableName1

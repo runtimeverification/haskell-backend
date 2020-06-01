@@ -49,9 +49,6 @@ import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify (..)
     )
-import Kore.Variables.UnifiedVariable
-    ( foldMapVariable
-    )
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 
@@ -125,10 +122,7 @@ unificationConditions
 unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
-    substitution' =
-        Substitution.filter
-            (foldMapVariable isConfigVariable)
-            substitution
+    substitution' = Substitution.filter isSomeConfigVariable substitution
 
 substitutionConditions
     :: InternalVariable variable

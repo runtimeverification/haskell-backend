@@ -845,7 +845,7 @@ externalizeFreshVariables termLike =
     originalFreeVariables, generatedFreeVariables
         :: Set (UnifiedVariable VariableName)
     (originalFreeVariables, generatedFreeVariables) =
-        Set.partition (foldMapVariable Variable.isOriginalVariableName)
+        Set.partition (foldSomeVariable (pure Variable.isOriginalVariableName))
         $ FreeVariables.toSet $ freeVariables termLike
 
     -- | The map of generated free variables, renamed to be unique from the

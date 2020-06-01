@@ -189,10 +189,7 @@ getResultPattern
 getResultPattern initial config@Conditional { substitution } =
     getPatternAux renamed
   where
-    substitution' =
-        Substitution.filter
-            (foldMapVariable isConfigVariable)
-            substitution
+    substitution' = Substitution.filter isSomeConfigVariable substitution
     filtered = config { Pattern.substitution = substitution' }
     avoiding =
         initial

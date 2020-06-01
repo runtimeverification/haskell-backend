@@ -11,7 +11,6 @@ module Kore.Variables.UnifiedVariable
     , isSetVar
     , expectSetVar
     , extractElementVariable
-    , foldMapVariable
     , refreshElementVariable
     , refreshSetVariable
     , mapUnifiedVariable
@@ -79,15 +78,6 @@ expectSetVar unifiedVariable
 extractElementVariable
     :: UnifiedVariable variable -> Maybe (ElementVariable variable)
 extractElementVariable = retract
-
--- |Meant for extracting variable-related information from a 'UnifiedVariable'
-foldMapVariable :: (variable -> a) -> UnifiedVariable variable -> a
-foldMapVariable f Variable1 { variableName1 } =
-    case variableName1 of
-        SomeVariableNameElement elementVariableName ->
-            f (unElementVariableName elementVariableName)
-        SomeVariableNameSet setVariableName ->
-            f (unSetVariableName setVariableName)
 
 refreshElementVariable
     :: FreshName (SomeVariableName variable)
