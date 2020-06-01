@@ -61,11 +61,8 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( Ceil (..)
     , ElementVariable
-    , ElementVariableName (..)
     , InternalVariable
     , TermLike
-    , Variable (..)
-    , VariableName (..)
     , Void
     , fromVariableName
     , termLikeSort
@@ -179,15 +176,8 @@ generalizeMapElement freeVariables' element =
         TermLike.freeVariables key <> freeVariables'
         & FreeVariables.toNames
     x =
-        Variable
-            { variableName =
-                VariableName
-                    { base = "x"
-                    , counter = mempty
-                    }
-                & fromVariableName @variable & ElementVariableName
-            , variableSort = termLikeSort value
-            }
+        TermLike.mkElementVariable "x" (termLikeSort value)
+        & (fmap . fmap) (fromVariableName @variable)
     variable = refreshElementVariable avoiding x & fromMaybe x
 
 newBuiltinAssocCommCeilSimplifier
