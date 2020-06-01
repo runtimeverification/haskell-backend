@@ -201,4 +201,4 @@ checkSubstitutionCoverage configuration solution
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     missingVariables = wouldNarrowWith solution
     isCoveringSubstitution = Set.null missingVariables
-    isSymbolic = Foldable.any isSomeConfigVariable substitutionVariables
+    isSymbolic = Foldable.any isSomeConfigVariableName substitutionVariables

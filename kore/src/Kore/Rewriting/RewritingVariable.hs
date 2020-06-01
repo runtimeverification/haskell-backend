@@ -9,6 +9,7 @@ module Kore.Rewriting.RewritingVariable
     , isConfigVariable
     , isRuleVariable
     , isSomeConfigVariable
+    , isSomeConfigVariableName
     , mkConfigVariable
     , mkRuleVariable
     , mkElementConfigVariable
@@ -153,7 +154,7 @@ getPattern
     -> Pattern VariableName
 getPattern pattern' =
     getPatternAux pattern'
-    & assert (all isUnifiedConfigVariable freeVars)
+    & assert (all isSomeConfigVariable freeVars)
   where
     freeVars = freeVariables pattern' & FreeVariables.toList
 
@@ -245,7 +246,7 @@ getRemainderPredicate
     -> Predicate VariableName
 getRemainderPredicate predicate =
     Predicate.mapVariables getRewritingVariable predicate
-    & assert (all isUnifiedConfigVariable freeVars)
+    & assert (all isSomeConfigVariable freeVars)
   where
     freeVars = freeVariables predicate & FreeVariables.toList
 
@@ -255,11 +256,8 @@ getRemainderPattern
     -> Pattern VariableName
 getRemainderPattern = getPattern
 
-isUnifiedConfigVariable :: UnifiedVariable RewritingVariableName -> Bool
-isUnifiedConfigVariable = foldMapVariable isConfigVariable
+isSomeConfigVariable :: UnifiedVariable RewritingVariableName -> Bool
+isSomeConfigVariable = isSomeConfigVariableName . variableName1
 
-isSomeConfigVariable :: SomeVariableName RewritingVariableName -> Bool
-isSomeConfigVariable (SomeVariableNameElement variable) =
-    isConfigVariable (unElementVariableName variable)
-isSomeConfigVariable (SomeVariableNameSet variable) =
-    isConfigVariable (unSetVariableName variable)
+isSomeConfigVariableName :: SomeVariableName RewritingVariableName -> Bool
+isSomeConfigVariableName = foldSomeVariableName (pure isConfigVariable)
