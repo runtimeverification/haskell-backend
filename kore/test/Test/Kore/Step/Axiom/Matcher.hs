@@ -1040,7 +1040,7 @@ mkMatchResult
     :: (Predicate VariableName, Map (SomeVariable VariableName) (TermLike VariableName))
     -> MatchResult
 mkMatchResult (predicate, substitution) =
-    Just (predicate, Map.mapKeys variableName1 substitution)
+    Just (predicate, Map.mapKeys variableName substitution)
 
 match
     :: TermLike VariableName

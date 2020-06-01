@@ -234,7 +234,7 @@ refreshVariables
         lookupSomeVariableName variable =
             do
                 let injected = inject @(SomeVariableName _) variable
-                someVariableName <- variableName1 <$> Map.lookup injected rename
+                someVariableName <- variableName <$> Map.lookup injected rename
                 retract someVariableName
             & fromMaybe variable
         adj :: AdjSomeVariableName (variable -> variable)
@@ -254,7 +254,7 @@ refreshVariables
             & map mkSubst
             & Map.fromList
         mkSubst variable =
-            ( variableName1 variable
+            ( variableName variable
             , TermLike.mkVar (mapSomeVariable adj variable)
             )
         left' = TermLike.substitute subst left

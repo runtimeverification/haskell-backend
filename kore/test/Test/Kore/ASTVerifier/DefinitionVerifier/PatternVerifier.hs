@@ -1042,7 +1042,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\exists '"
                     ++ getIdForError
-                        ( base . unElementVariableName . variableName1
+                        ( base . unElementVariableName . variableName
                         $ quantifiedVariable
                         )
                     ++ "' (<test data>)"
@@ -1059,7 +1059,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\forall '"
                     ++ getIdForError
-                        ( base . unElementVariableName . variableName1
+                        ( base . unElementVariableName . variableName
                         $ quantifiedVariable
                         )
                     ++ "' (<test data>)"

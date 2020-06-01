@@ -341,7 +341,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         :: Assignment variable
         -> Impl variable simplifier (Assignment variable)
     simplifySingleSubstitution subst@(Assignment uVar termLike) =
-        case variableName1 uVar of
+        case variableName uVar of
             SomeVariableNameSet _ -> return subst
             SomeVariableNameElement _
               | isSimplified -> return subst

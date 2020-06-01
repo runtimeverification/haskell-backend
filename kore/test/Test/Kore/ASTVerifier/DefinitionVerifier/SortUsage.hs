@@ -629,7 +629,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        (simpleExistsParsedPattern variableName1 sort)
+                        (simpleExistsParsedPattern variableName sort)
                         sortVariables
                     : additionalSentences
                     )
@@ -654,7 +654,7 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         ( simpleExistsEqualsParsedPattern
-                            variableName1
+                            variableName
                             (OperandSort sort)
                             (ResultSort additionalSort)
                         )
@@ -682,7 +682,7 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         ( simpleExistsEqualsParsedPattern
-                            variableName1
+                            variableName
                             (OperandSort additionalSort)
                             (ResultSort sort)
                         )
@@ -729,7 +729,7 @@ unfilteredTestExamplesForSort
     rawAliasName = identifierPrefix <> "_alias"
     aliasName = AliasName rawAliasName
     rawVariableName = identifierPrefix <> "_variable"
-    variableName1 = rawVariableName
+    variableName = rawVariableName
     sortVariableName1 = identifierPrefix <> "_sortVariable"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     additionalSortName = SortName additionalSortRawName

@@ -113,8 +113,8 @@ bindVariable
     => SomeVariable variable
     -> FreeVariables variable
     -> FreeVariables variable
-bindVariable Variable { variableName1 } (FreeVariables freeVars) =
-    FreeVariables (Map.delete variableName1 freeVars)
+bindVariable Variable { variableName } (FreeVariables freeVars) =
+    FreeVariables (Map.delete variableName freeVars)
 {-# INLINE bindVariable #-}
 
 bindVariables
@@ -137,8 +137,8 @@ isFreeVariable someVariableName (FreeVariables freeVars) =
 {-# INLINE isFreeVariable #-}
 
 freeVariable :: SomeVariable variable -> FreeVariables variable
-freeVariable Variable { variableName1, variableSort1 } =
-    FreeVariables (Map.singleton variableName1 variableSort1)
+freeVariable Variable { variableName, variableSort1 } =
+    FreeVariables (Map.singleton variableName variableSort1)
 {-# INLINE freeVariable #-}
 
 mapFreeVariables

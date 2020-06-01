@@ -229,12 +229,12 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     errors = concatMap checkVariable equationVariables
 
-    checkVariable Variable { variableName1 } =
-        case Map.lookup variableName1 substitution of
-            Nothing -> [NotMatched variableName1]
+    checkVariable Variable { variableName } =
+        case Map.lookup variableName substitution of
+            Nothing -> [NotMatched variableName]
             Just termLike ->
-                checkConcreteVariable variableName1 termLike
-                <> checkSymbolicVariable variableName1 termLike
+                checkConcreteVariable variableName termLike
+                <> checkSymbolicVariable variableName termLike
 
     checkConcreteVariable variable termLike
       | Set.member variable concretes

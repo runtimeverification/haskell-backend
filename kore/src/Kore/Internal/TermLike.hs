@@ -316,7 +316,7 @@ freshSymbolInstance freeVars sym base =
     mkVariable :: Integer -> Sort -> ElementVariable variable
     mkVariable vIdx vSort =
         Variable
-        { variableName1 =
+        { variableName =
             ElementVariableName
             $ from @VariableName @variable
             VariableName
@@ -1478,7 +1478,7 @@ mkSortVariable name = SortVariableSort $ SortVariable name
 varS :: Id -> Sort -> Variable VariableName
 varS base variableSort1 =
     Variable
-        { variableName1 = VariableName { base, counter = mempty }
+        { variableName = VariableName { base, counter = mempty }
         , variableSort1
         }
 
@@ -1925,7 +1925,7 @@ refreshBinder refreshBound (FreeVariables.toNames -> avoiding) binder =
         let renaming =
                 Map.singleton
                     (inject @(SomeVariableName variable)
-                        (variableName1 binderVariable)
+                        (variableName binderVariable)
                     )
                     (mkVar $ inject @(SomeVariable _) binderVariable')
             binderChild' = Substitute.substitute renaming binderChild

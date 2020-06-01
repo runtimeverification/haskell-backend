@@ -82,7 +82,7 @@ renameFreeVariables adj =
         :: VariableNameMap variable1 variable2
         -> SomeVariable variable1
         -> m (VariableNameMap variable1 variable2)
-    worker renaming Variable { variableName1 = someVariableName1 } = do
+    worker renaming Variable { variableName = someVariableName1 } = do
         let idx :: SomeVariableName ()
             (variable1, idx) = splitL someVariableName1
         renaming1 <- index adj' idx variable1
@@ -155,8 +155,8 @@ renameElementBinder trElemVar avoiding binder = do
         withRenaming =
             (renameSomeVariable . inject)
                 ((,)
-                    <$> variableName1 binderVariable
-                    <*> variableName1 binderVariable'
+                    <$> variableName binderVariable
+                    <*> variableName binderVariable'
                 )
     binder { binderVariable = binderVariable' }
         & sequenceA
@@ -210,8 +210,8 @@ renameSetBinder trSetVar avoiding binder = do
         withRenaming =
             (renameSomeVariable . inject)
                 ((,)
-                    <$> variableName1 binderVariable
-                    <*> variableName1 binderVariable'
+                    <$> variableName binderVariable
+                    <*> variableName binderVariable'
                 )
     binder { binderVariable = binderVariable' }
         & sequenceA

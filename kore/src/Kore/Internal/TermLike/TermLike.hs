@@ -857,7 +857,7 @@ externalizeFreshVariables termLike =
                 , FreeVariables VariableName
                 )
         rename (renaming, avoiding) variable =
-            case variableName1 variable of
+            case variableName variable of
                 SomeVariableNameElement elementVariableName ->
                     let
                         elementVariableName' =
@@ -952,13 +952,13 @@ externalizeFreshVariables termLike =
 
     underElementBinder freeVariables' variable child = do
         let variable' = safeElementVariable freeVariables' <$> variable
-            names = (,) <$> variableName1 variable <*> variableName1 variable'
+            names = (,) <$> variableName variable <*> variableName variable'
         child' <- Reader.local (renameElementVariable names) child
         return (variable', child')
 
     underSetBinder freeVariables' variable child = do
         let variable' = safeSetVariable freeVariables' <$> variable
-            names = (,) <$> variableName1 variable <*> variableName1 variable'
+            names = (,) <$> variableName variable <*> variableName variable'
         child' <- Reader.local (renameSetVariable names) child
         return (variable', child')
 

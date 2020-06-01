@@ -214,7 +214,7 @@ targetBinder Binder { binderVariable, binderChild } =
     let newVar = mkElementTarget binderVariable
         targetBoundVariables =
             targetIfEqual
-            $ unElementVariableName . variableName1 $ binderVariable
+            $ unElementVariableName . variableName $ binderVariable
         newChild =
             Pattern.mapVariables
                 AdjSomeVariableName

@@ -551,7 +551,7 @@ test_simplificationIntegration =
     , testCase "Sort matching" $ do
         let mx =
                 Variable
-                { variableName1 =
+                { variableName =
                     SetVariableName VariableName
                     { base = testId "mx"
                     , counter = mempty
@@ -560,7 +560,7 @@ test_simplificationIntegration =
                 }
             iz =
                 Variable
-                { variableName1 =
+                { variableName =
                     SetVariableName VariableName
                     { base = testId "iz"
                     , counter = mempty
@@ -569,7 +569,7 @@ test_simplificationIntegration =
                 }
             ub =
                 Variable
-                { variableName1 =
+                { variableName =
                     ElementVariableName VariableName
                     { base = testId "ub"
                     , counter = mempty

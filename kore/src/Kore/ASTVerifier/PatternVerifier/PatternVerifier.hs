@@ -217,7 +217,7 @@ addDeclaredVariable
     -> DeclaredVariables
 addDeclaredVariable variable (getDeclaredVariables -> variables) =
     DeclaredVariables $ Map.insert
-        (variableName1 variable)
+        (variableName variable)
         variable
         variables
 
@@ -236,7 +236,7 @@ newDeclaredVariable declared variable = do
         Just variable' -> alreadyDeclared variable'
         Nothing -> return (addDeclaredVariable variable declared)
   where
-    name = variableName1 variable
+    name = variableName variable
     alreadyDeclared
         :: SomeVariable VariableName -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =

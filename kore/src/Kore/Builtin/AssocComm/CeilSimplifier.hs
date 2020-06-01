@@ -180,7 +180,7 @@ generalizeMapElement freeVariables' element =
         & FreeVariables.toNames
     x =
         Variable
-            { variableName1 =
+            { variableName =
                 VariableName
                     { base = "x"
                     , counter = mempty

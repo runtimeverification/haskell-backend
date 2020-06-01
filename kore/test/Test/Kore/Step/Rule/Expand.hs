@@ -269,14 +269,14 @@ test_expandRule =
     x00TestSortVar =
         mkElementVariable (testId "x0") Mock.testSort
         & Lens.set
-            (field @"variableName1" . Lens.mapped . field @"counter")
+            (field @"variableName" . Lens.mapped . field @"counter")
             (Just (Element 0))
     x00TestSort = mkElemVar x00TestSortVar
 
     x00TestSort1Var =
         mkElementVariable (testId "x0") Mock.testSort1
         & Lens.set
-            (field @"variableName1" . Lens.mapped . field @"counter")
+            (field @"variableName" . Lens.mapped . field @"counter")
             (Just (Element 0))
     x00TestSort1 = mkElemVar x00TestSort1Var
 

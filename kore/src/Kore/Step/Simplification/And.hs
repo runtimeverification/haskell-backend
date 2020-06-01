@@ -378,12 +378,12 @@ promoteSubTermsToTop predicate =
           | Nu_       var _ <- original = restrictReplacements (inject var)
           | otherwise = replacements
 
-        restrictReplacements Variable { variableName1 } =
+        restrictReplacements Variable { variableName } =
             HashMap.filterWithKey
                 (\termLike _ -> wouldNotCapture termLike)
                 replacements
           where
-            wouldNotCapture = not . TermLike.hasFreeVariable variableName1
+            wouldNotCapture = not . TermLike.hasFreeVariable variableName
 
     makeSimplifiedAndPredicate a b =
         Predicate.setSimplified

@@ -90,7 +90,7 @@ instance
 instance
     SubstitutionOrd variable => SubstitutionOrd (Variable variable)
   where
-    compareSubstitution = on compareSubstitution variableName1
+    compareSubstitution = on compareSubstitution variableName
     {-# INLINE compareSubstitution #-}
 
 {- | 'InternalVariable' is the basic constraint on variable types.

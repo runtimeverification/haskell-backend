@@ -477,7 +477,7 @@ verifyVariable var = do
         "The declared sort is different."
     return (Const var)
   where
-    varName = variableName1 var
+    varName = variableName var
     varSort = variableSort1 var
 
 verifyDomainValue
@@ -544,7 +544,7 @@ addFreeVariable
     -> PatternVerifier DeclaredVariables
 addFreeVariable (getDeclaredVariables -> vars) var = do
     checkVariable var vars
-    return . DeclaredVariables $ Map.insert (variableName1 var) var vars
+    return . DeclaredVariables $ Map.insert (variableName var) var vars
 
 checkVariable
     :: SomeVariable VariableName
@@ -552,7 +552,7 @@ checkVariable
     -> PatternVerifier VerifySuccess
 checkVariable var vars =
     maybe verifySuccess inconsistent
-    $ Map.lookup (variableName1 var) vars
+    $ Map.lookup (variableName var) vars
   where
     inconsistent v =
         koreFailWithLocations [v, var]
@@ -577,13 +577,13 @@ patternNameForContext (EqualsF _) = "\\equals"
 patternNameForContext (ExistsF exists) =
     (Pretty.renderText . Pretty.layoutOneLine . Pretty.hsep)
     [ "\\exists"
-    , Pretty.squotes (unparse $ variableName1 $ existsVariable exists)
+    , Pretty.squotes (unparse $ variableName $ existsVariable exists)
     ]
 patternNameForContext (FloorF _) = "\\floor"
 patternNameForContext (ForallF forall) =
     (Pretty.renderText . Pretty.layoutOneLine . Pretty.hsep)
     [ "\\forall"
-    , Pretty.squotes (unparse $ variableName1 $ forallVariable forall)
+    , Pretty.squotes (unparse $ variableName $ forallVariable forall)
     ]
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"
@@ -600,10 +600,10 @@ patternNameForContext (InhabitantF _) = "\\inh"
 patternNameForContext (VariableF (Const someVariable)) =
     (Pretty.renderText . Pretty.layoutOneLine . Pretty.hsep)
     [ variableClass
-    , Pretty.squotes (unparse $ variableName1 someVariable)
+    , Pretty.squotes (unparse $ variableName someVariable)
     ]
   where
     variableClass =
-        case variableName1 someVariable of
+        case variableName someVariable of
             SomeVariableNameElement _ -> "element variable"
             SomeVariableNameSet _ -> "set variable"

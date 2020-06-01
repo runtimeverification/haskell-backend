@@ -405,7 +405,7 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
         , ensures = Predicate.substitute subst' ensures
         }
   where
-    subst' = foldr (Map.delete . inject . variableName1) subst existentials
+    subst' = foldr (Map.delete . inject . variableName) subst existentials
 
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
 rhsForgetSimplified RHS { existentials, right, ensures } =
@@ -886,7 +886,7 @@ instance UnifyingRule RulePattern where
         in (rename, rule2)
       where
         RulePattern { left, antiLeft, requires, rhs } = rule1
-        exVars = Set.fromList $ inject . variableName1 <$> existentials rhs
+        exVars = Set.fromList $ inject . variableName <$> existentials rhs
         originalFreeVariables = freeVariables rule1 & FreeVariables.toSet
 
     mapRuleVariables adj rule1@(RulePattern _ _ _ _ _) =

@@ -53,34 +53,34 @@ type Variable' = Variable VariableName
 metaVariable :: Variable'
 metaVariable =
     Variable
-    { variableName1 = VariableName { base = testId "#v", counter = mempty }
+    { variableName = VariableName { base = testId "#v", counter = mempty }
     , variableSort1 = SortVariableSort (SortVariable (testId "#s"))
     }
 
 metaVariableDifferentSort :: Variable'
 metaVariableDifferentSort =
     Variable
-    { variableName1 = VariableName { base = testId "#v", counter = mempty }
+    { variableName = VariableName { base = testId "#v", counter = mempty }
     , variableSort1 = SortVariableSort (SortVariable (testId "#s1"))
     }
 
 test_refreshVariable :: [TestTree]
 test_refreshVariable =
     [ testCase "same name, different sort" $ do
-        let variableName1 =
+        let variableName =
                 VariableName { base = testId "x0", counter = mempty }
             x0 =
                 Variable
-                { variableName1
+                { variableName
                 , variableSort1 = testSort0
                 }
             x1 = x0 { variableSort1 = testSort1 }
             x1' =
                 Lens.set
-                    (field @"variableName1" . field @"counter")
+                    (field @"variableName" . field @"counter")
                     (Just (Element 0))
                     x1
-        let avoiding = Set.singleton variableName1
+        let avoiding = Set.singleton variableName
         assertEqual "Expected fresh variable"
             (Just x1')
             (refreshVariable avoiding x1)
@@ -104,7 +104,7 @@ test_refreshVariable =
             (variableSort1 original == variableSort1 fresh2)
 
     , testCase "refreshVariable - sort order does not matter" $ do
-        let assertRefreshes (variableName1 -> a) b =
+        let assertRefreshes (variableName -> a) b =
                 assertBool "Expected fresh variable"
                     (isJust (refreshVariable (Set.singleton a) b))
         assertRefreshes original metaVariableDifferentSort
@@ -112,15 +112,15 @@ test_refreshVariable =
     ]
   where
     original = metaVariable
-    avoid2 = Set.singleton (variableName1 metaVariableDifferentSort)
+    avoid2 = Set.singleton (variableName metaVariableDifferentSort)
     Just fresh2 = refreshVariable avoid2 original
 
     avoid0 :: Variable variable -> Set variable
-    avoid0 = Set.singleton . variableName1
+    avoid0 = Set.singleton . variableName
 
     avoid1 :: FreshName variable => Variable variable -> Set variable
     avoid1 variable =
-        Set.insert (variableName1 $ fresh0 variable) (avoid0 variable)
+        Set.insert (variableName $ fresh0 variable) (avoid0 variable)
 
     fresh0, fresh1
         :: FreshName variable

@@ -70,7 +70,7 @@ substitute =
         :: Either patternType (SomeVariable variable)
         -> Set (SomeVariableName variable)
     getTargetFreeVariables =
-        either extractFreeVariables (Set.singleton . variableName1)
+        either extractFreeVariables (Set.singleton . variableName)
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
@@ -83,8 +83,8 @@ substitute =
         -> Map
             (SomeVariableName variable)
             (Either patternType (SomeVariable variable))
-    renaming Variable { variableName1 } =
-        maybe id (Map.insert variableName1 . Right)
+    renaming Variable { variableName } =
+        maybe id (Map.insert variableName . Right)
 
     substituteWorker
         :: Map
@@ -133,7 +133,7 @@ substitute =
             worker
                 :: SomeVariable variable
                 -> Either patternType (SomeVariable variable)
-            worker Variable { variableName1 } =
+            worker Variable { variableName } =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.
                 fromMaybe
@@ -143,7 +143,7 @@ substitute =
                     -- @patternType@. If the variable is substituted,
                     -- 'Map.lookup' returns a 'Left' which is used directly as
                     -- the result, exiting early from @traverseVariable@.
-                    (Map.lookup variableName1 subst')
+                    (Map.lookup variableName subst')
 
         -- | Default case: Descend into sub-patterns and apply the substitution.
         substituteDefault =

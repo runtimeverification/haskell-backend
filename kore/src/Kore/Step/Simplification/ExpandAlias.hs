@@ -78,6 +78,6 @@ substituteInAlias Alias { aliasLeft, aliasRight } children =
     $ mapVariables (pure fromVariableName) aliasRight
   where
     aliasLeft' =
-        mapSomeVariableName (pure fromVariableName) . variableName1
+        mapSomeVariableName (pure fromVariableName) . variableName
         <$> aliasLeft
     substitutionMap = Map.fromList $ zip aliasLeft' children

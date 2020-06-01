@@ -217,12 +217,12 @@ test_debugPrec =
 test_Debug :: [TestTree]
 test_Debug =
     [ Variable
-        { variableName1 = VariableName { base = testId "v", counter = mempty }
+        { variableName = VariableName { base = testId "v", counter = mempty }
         , variableSort1 = SortVariableSort (SortVariable (testId "sv"))
         }
         `yields`
         "Variable\n\
-        \{ variableName1 =\n\
+        \{ variableName =\n\
         \    VariableName\n\
         \    { base = Id { getId = \"v\", idLocation = AstLocationTest }\n\
         \    , counter = Nothing\n\

@@ -982,7 +982,7 @@ change this file.
 _checkAllVariableImplemented
     :: SomeVariable VariableName -> SomeVariable VariableName
 _checkAllVariableImplemented variable =
-    case variableName1 variable of
+    case variableName variable of
         SomeVariableNameSet _ -> variable
         SomeVariableNameElement _ -> variable
 
@@ -1095,5 +1095,5 @@ elementVariableGen sort = (fmap . fmap) ElementVariableName (variableGen sort)
 variableGen :: Sort -> Gen (Variable VariableName)
 variableGen variableSort1 = do
     base <- idGen
-    let variableName1 = VariableName { base, counter = mempty }
-    return Variable { variableName1, variableSort1 }
+    let variableName = VariableName { base, counter = mempty }
+    return Variable { variableName, variableSort1 }

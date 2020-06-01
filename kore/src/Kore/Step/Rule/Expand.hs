@@ -99,7 +99,7 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
                 allElementVariables :: Set (ElementVariableName VariableName)
                 allElementVariables =
                     Set.fromList
-                    $ map variableName1
+                    $ map variableName
                     $ mapMaybe retract (Set.toList allSomeVariables)
                         ++ existentials
                 expansion
@@ -117,7 +117,7 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
                     . Substitution.mkUnwrappedSubstitution
                     )
                         (Map.toList expansion)
-                subst = Map.mapKeys variableName1 expansion
+                subst = Map.mapKeys variableName expansion
             in rule
                 { RulePattern.left = TermLike.substitute subst left
                 , RulePattern.antiLeft =
@@ -304,7 +304,7 @@ maybeNewVariable
 maybeNewVariable usedVariables variable sort UseAsPrototype =
     case refreshVariable usedVariables variable' of
         Just newVariable ->
-            ( Set.insert (variableName1 newVariable) usedVariables
+            ( Set.insert (variableName newVariable) usedVariables
             , mkElemVar newVariable
             )
         Nothing ->

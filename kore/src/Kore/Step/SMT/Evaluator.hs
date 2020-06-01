@@ -235,7 +235,7 @@ translateTerm t (UninterpretedTerm pat) = do
             & FreeVariables.toNames
         boundVarsMap =
             Map.filterWithKey
-                (\k _ -> inject (variableName1 k) `Set.member` freeVars)
+                (\k _ -> inject (variableName k) `Set.member` freeVars)
                 quantifiedVars
         boundPat = TermLike.mkExistsN (Map.keys boundVarsMap) pat
     lookupUninterpreted boundPat quantifiedVars terms

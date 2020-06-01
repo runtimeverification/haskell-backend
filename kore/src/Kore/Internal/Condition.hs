@@ -137,7 +137,7 @@ hasFreeVariable
     -> Condition variable
     -> Bool
 hasFreeVariable variable =
-    isFreeVariable (variableName1 variable) . freeVariables
+    isFreeVariable (variableName variable) . freeVariables
 
 {- | Extract the set of free set variables from a predicate and substitution.
 

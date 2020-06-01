@@ -1511,7 +1511,7 @@ mkIntVar :: Id -> TermLike VariableName
 mkIntVar variableName = mkElemVar $ mkElementVariable variableName intSort
 
 asVariableName :: ElementVariable VariableName -> Id
-asVariableName = base . unElementVariableName . variableName1
+asVariableName = base . unElementVariableName . variableName
 
 distinctVariables :: [ElementVariable VariableName] -> Bool
 distinctVariables variables =

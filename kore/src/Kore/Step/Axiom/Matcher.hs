@@ -290,10 +290,10 @@ matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     -- Lift the bound variable to the top level.
     lifted1 <- liftVariable unified1
     let term1' = fromMaybe term1 $ do
-            subst1 <- Map.singleton (variableName1 unified1) . mkVar <$> lifted1
+            subst1 <- Map.singleton (variableName unified1) . mkVar <$> lifted1
             return $ substituteTermLike subst1 term1
     let variable1' = fromMaybe unified1 lifted1
-        subst2 = Map.singleton (variableName1 unified2) (mkVar variable1')
+        subst2 = Map.singleton (variableName unified2) (mkVar variable1')
         term2' = substituteTermLike subst2 term2
     -- Record the uniquely-named variable so it will not be shadowed later.
     bindVariable variable1'
@@ -518,9 +518,9 @@ substitute eVariable termLike = do
     return ()
   where
     variable = inject eVariable
-    Variable { variableName1 } = variable
-    isIndependent = not . any (hasFreeVariable variableName1)
-    subst = Map.singleton variableName1 termLike
+    Variable { variableName } = variable
+    isIndependent = not . any (hasFreeVariable variableName)
+    subst = Map.singleton variableName termLike
 
     substitute2
         :: Constraint variable
@@ -578,9 +578,9 @@ setSubstitute sVariable termLike = do
     return ()
   where
     variable = inject sVariable
-    Variable { variableName1 } = variable
-    isIndependent = not . any (hasFreeVariable variableName1)
-    subst = Map.singleton variableName1 termLike
+    Variable { variableName } = variable
+    isIndependent = not . any (hasFreeVariable variableName)
+    subst = Map.singleton variableName termLike
     substitute2 :: Constraint variable -> Constraint variable
     substitute2 (Constraint pair) = Constraint $ fmap substitute1 pair
     substitute1 = substituteTermLike subst
@@ -606,8 +606,8 @@ occursCheck
     => SomeVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable simplifier) ()
-occursCheck Variable { variableName1 } termLike =
-    (Monad.guard . not) (hasFreeVariable variableName1 termLike)
+occursCheck Variable { variableName } termLike =
+    (Monad.guard . not) (hasFreeVariable variableName termLike)
 
 definedTerm
     :: (MatchingVariable variable, MonadState (MatcherState variable) matcher)
@@ -631,9 +631,9 @@ targetCheck
     :: (MatchingVariable variable, Monad simplifier)
     => SomeVariable variable
     -> MaybeT (MatcherT variable simplifier) ()
-targetCheck Variable { variableName1 } = do
+targetCheck Variable { variableName } = do
     MatcherState { targets } <- Monad.State.get
-    Monad.guard (Set.member variableName1 targets)
+    Monad.guard (Set.member variableName targets)
 
 {- | Ensure that no bound variables occur free in the pattern.
 
@@ -661,9 +661,9 @@ bindVariable
     => MonadState (MatcherState variable) matcher
     => SomeVariable variable
     -> matcher ()
-bindVariable Variable { variableName1 } = do
-    field @"bound" %= Set.insert variableName1
-    field @"avoiding" %= Set.insert variableName1
+bindVariable Variable { variableName } = do
+    field @"bound" %= Set.insert variableName
+    field @"avoiding" %= Set.insert variableName
 
 {- | Lift a (bound) variable to the top level by with a globally-unique name.
 

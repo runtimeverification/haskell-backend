@@ -434,7 +434,7 @@ simplifyInternal term sideCondition = do
                 targetSimplifiedChildren =
                     Lens.over Binding.existsBinder OrPattern.targetBinder
                 existsVariableName =
-                    (unElementVariableName . variableName1)
+                    (unElementVariableName . variableName)
                         (TermLike.existsVariable exists)
             IffF iffF ->
                 Iff.simplify sideCondition =<< simplifyChildren iffF

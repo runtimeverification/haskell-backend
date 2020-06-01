@@ -160,14 +160,14 @@ mkSubst
     => Variable variable'
     -> ElementVariable variable
     -> Map (SomeVariableName variable) (TermLike variable)
-mkSubst x' y' = Map.singleton (inject $ variableName1 x') (mkElemVar y')
+mkSubst x' y' = Map.singleton (inject $ variableName x') (mkElemVar y')
 
 test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Replaces target variable" $ do
         let subst =
                 Map.singleton
-                    (inject $ variableName1 Mock.x)
+                    (inject $ variableName Mock.x)
                     (mkElemVar Mock.z)
         assertEqual
             "Expected substituted variable"
@@ -180,7 +180,7 @@ test_substitute =
             (mkElemVar Mock.z)
             (substitute
                 (Map.singleton
-                    (variableName1 $ Mock.makeTestSomeVariable "@x")
+                    (variableName $ Mock.makeTestSomeVariable "@x")
                     (mkElemVar Mock.z)
                 )
                 (Mock.mkTestSomeVariable "@x")
@@ -193,7 +193,7 @@ test_substitute =
             (Mock.functionalConstr10 (mkElemVar Mock.z))
             (substitute
                 (Map.singleton
-                    (variableName1 $ Mock.makeTestSomeVariable "@x")
+                    (variableName $ Mock.makeTestSomeVariable "@x")
                     (mkElemVar Mock.z)
                 )
                 (Mock.functionalConstr10 (Mock.mkTestSomeVariable "@x"))
@@ -203,7 +203,7 @@ test_substitute =
     , testCase "Ignores non-target variable" $ do
         let subst =
                 Map.singleton
-                    (inject $ variableName1 Mock.x)
+                    (inject $ variableName Mock.x)
                     (mkElemVar Mock.z)
         assertEqual
             "Expected original non-target variable"
@@ -254,7 +254,7 @@ test_substitute =
                   where
                     Just z' =
                         refreshElementVariable
-                            (Set.singleton (inject $ variableName1 Mock.z))
+                            (Set.singleton (inject $ variableName Mock.z))
                             Mock.z
                 actual =
                     substitute (mkSubst Mock.x Mock.z)
@@ -390,29 +390,29 @@ test_renaming =
     , testSet "\\nu" mkNu
     ]
   where
-    mapElementVariables' Variable { variableName1 } =
+    mapElementVariables' Variable { variableName } =
         mapVariables (pure id)
-            { adjSomeVariableNameElement = const <$> variableName1 }
-    mapSetVariables' Variable { variableName1 } =
+            { adjSomeVariableNameElement = const <$> variableName }
+    mapSetVariables' Variable { variableName } =
         mapVariables (pure id)
-            { adjSomeVariableNameSet = const <$> variableName1 }
+            { adjSomeVariableNameSet = const <$> variableName }
 
-    traverseElementVariables' Variable { variableName1 } =
+    traverseElementVariables' Variable { variableName } =
         runIdentity . traverseVariables (pure return)
-            { adjSomeVariableNameElement = const . return <$> variableName1 }
-    traverseSetVariables' Variable { variableName1 } =
+            { adjSomeVariableNameElement = const . return <$> variableName }
+    traverseSetVariables' Variable { variableName } =
         runIdentity . traverseVariables (pure return)
-            { adjSomeVariableNameSet = const . return <$> variableName1 }
+            { adjSomeVariableNameSet = const . return <$> variableName }
 
     doesNotCapture
         :: HasCallStack
         => SomeVariable VariableName
         -> TermLike'
         -> Assertion
-    doesNotCapture Variable { variableName1 } renamed =
+    doesNotCapture Variable { variableName } renamed =
         assertBool
             "does not capture free variables"
-            (hasFreeVariable variableName1 renamed)
+            (hasFreeVariable variableName renamed)
 
     updatesFreeVariables
         :: HasCallStack

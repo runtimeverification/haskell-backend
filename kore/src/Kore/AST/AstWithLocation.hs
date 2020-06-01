@@ -74,7 +74,7 @@ instance
 instance
     AstWithLocation variable => AstWithLocation (Variable variable)
   where
-    locationFromAst = locationFromAst . variableName1
+    locationFromAst = locationFromAst . variableName
 
 instance AstWithLocation Alias where
     locationFromAst = locationFromAst . aliasConstructor

@@ -1116,7 +1116,7 @@ test_andTermsSimplification =
 mkVariable :: Text -> Variable VariableName
 mkVariable ident =
     Variable
-    { variableName1 = mkVariableName (testId ident)
+    { variableName = mkVariableName (testId ident)
     , variableSort1 = Mock.testSort
     }
 

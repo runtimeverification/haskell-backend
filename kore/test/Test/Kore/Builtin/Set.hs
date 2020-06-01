@@ -620,7 +620,7 @@ addSelectElement elementVar setPattern  =
 
 distinctVars :: [ElementVariable VariableName] -> Bool
 distinctVars vars = varNames == List.nub varNames
-  where varNames = map variableName1 vars
+  where varNames = map variableName vars
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -628,7 +628,7 @@ test_unifySelectFromEmpty =
         elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
         setVar <- forAll (standaloneGen $ elementVariableGen setSort)
         when
-            (variableName1 elementVar == variableName1 setVar)
+            (variableName elementVar == variableName setVar)
             discard
         let selectPat       = selectPattern elementVar setVar id
             selectPatRev    = selectPattern elementVar setVar reverse
@@ -662,8 +662,8 @@ test_unifySelectFromSingleton =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             when
-                ( unElementVariableName (variableName1 elementVar)
-                == unElementVariableName (variableName1 setVar)
+                ( unElementVariableName (variableName elementVar)
+                == unElementVariableName (variableName setVar)
                 )
                 discard
             let selectPat       = selectPattern elementVar setVar id
@@ -723,8 +723,8 @@ test_unifySelectFromTwoElementSet =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             when
-                ( unElementVariableName (variableName1 elementVar)
-                == unElementVariableName (variableName1 setVar)
+                ( unElementVariableName (variableName elementVar)
+                == unElementVariableName (variableName setVar)
                 )
                 discard
 
@@ -1499,7 +1499,7 @@ test_unifyFnSelectFromSingleton =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             when
-                (variableName1 elementVar == variableName1 setVar)
+                (variableName elementVar == variableName setVar)
                 discard
             let fnSelectPat    = selectFunctionPattern elementVar setVar id
                 fnSelectPatRev = selectFunctionPattern elementVar setVar reverse

@@ -119,8 +119,8 @@ parseFreeVariables freeVariables params args concreteVars = do
     return (foldMap freeVariable nubVars)
   where
     checkFree :: SomeVariable VariableName -> Parser ()
-    checkFree variable@Variable { variableName1 } =
-        unless (isFreeVariable variableName1 freeVariables)
+    checkFree variable@Variable { variableName } =
+        unless (isFreeVariable variableName freeVariables)
         $ Kore.Error.koreFail
             ("expected free variable, found " ++ show variable)
 

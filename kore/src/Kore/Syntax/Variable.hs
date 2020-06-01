@@ -139,8 +139,8 @@ unparse2SortedVariable
     :: Unparse variable
     => Variable variable
     -> Pretty.Doc ann
-unparse2SortedVariable Variable { variableName1, variableSort1 } =
-    unparse2 variableName1 <> Pretty.colon <> unparse variableSort1
+unparse2SortedVariable Variable { variableName, variableSort1 } =
+    unparse2 variableName <> Pretty.colon <> unparse variableSort1
 
 instance From VariableName Void where
     from = error "Cannot construct a variable in a concrete term!"
@@ -301,7 +301,7 @@ Every occurrence of a variable carries the 'Sort' of the variable.
  -}
 data Variable variable =
     Variable
-    { variableName1 :: !variable
+    { variableName :: !variable
     , variableSort1 :: !Sort
     }
     deriving (Eq, Ord, Show)
@@ -322,12 +322,12 @@ instance Debug variable => Debug (Variable variable)
 instance (Debug variable, Diff variable) => Diff (Variable variable)
 
 instance Unparse variable => Unparse (Variable variable) where
-    unparse Variable { variableName1, variableSort1 } =
-        unparse variableName1
+    unparse Variable { variableName, variableSort1 } =
+        unparse variableName
         <> Pretty.colon
         <> unparse variableSort1
 
-    unparse2 Variable { variableName1 } = unparse2 variableName1
+    unparse2 Variable { variableName } = unparse2 variableName
 
 instance
     Injection into from => Injection (Variable into) (Variable from)
@@ -348,7 +348,7 @@ type ElementVariable variable = Variable (ElementVariableName variable)
 mkElementVariable :: Id -> Sort -> ElementVariable VariableName
 mkElementVariable base variableSort1 =
     Variable
-    { variableName1 = ElementVariableName (mkVariableName base)
+    { variableName = ElementVariableName (mkVariableName base)
     , variableSort1
     }
 
@@ -358,7 +358,7 @@ type SetVariable variable = Variable (SetVariableName variable)
 mkSetVariable :: Id -> Sort -> SetVariable VariableName
 mkSetVariable base variableSort1 =
     Variable
-    { variableName1 = SetVariableName (mkVariableName base)
+    { variableName = SetVariableName (mkVariableName base)
     , variableSort1
     }
 
@@ -583,7 +583,7 @@ mkSomeVariable = inject
 foldSomeVariable
     :: AdjSomeVariableName (variable1 -> r)
     -> SomeVariable variable1 -> r
-foldSomeVariable adj = foldSomeVariableName adj . variableName1
+foldSomeVariable adj = foldSomeVariableName adj . variableName
 
 mapSomeVariable
     :: AdjSomeVariableName (variable1 -> variable2)

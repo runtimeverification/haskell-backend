@@ -196,7 +196,7 @@ test_applicationSimplification =
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
             let z' =
                     Lens.set
-                        ( field @"variableName1"
+                        ( field @"variableName"
                         . Lens.mapped
                         . field @"counter"
                         )

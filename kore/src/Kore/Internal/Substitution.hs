@@ -312,7 +312,7 @@ toMap
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) =
-    Map.mapKeys variableName1 norm
+    Map.mapKeys variableName norm
 
 toMultiMap
     :: InternalVariable variable
@@ -389,8 +389,8 @@ singleton
     => SomeVariable variable
     -> TermLike variable
     -> Substitution variable
-singleton var@Variable { variableName1 } termLike
-  | TermLike.hasFreeVariable variableName1 termLike =
+singleton var@Variable { variableName } termLike
+  | TermLike.hasFreeVariable variableName termLike =
       Substitution [assign var termLike]
   | otherwise = NormalizedSubstitution (Map.singleton var termLike)
 
@@ -426,10 +426,10 @@ unsafeWrap =
         -- must be defined.
         & assert (not $ isElementVariable var && isBottom termLike)
       where
-        Variable { variableName1 } = var
-        occurs = TermLike.hasFreeVariable variableName1
-        depends Variable { variableName1 = variableName1' } =
-            TermLike.hasFreeVariable variableName1' termLike
+        Variable { variableName } = var
+        occurs = TermLike.hasFreeVariable variableName
+        depends Variable { variableName = variableName' } =
+            TermLike.hasFreeVariable variableName' termLike
 
 unsafeWrapFromAssignments
     :: Ord variable
@@ -560,7 +560,7 @@ orderRenameAndRenormalizeTODO
                 replacedSubstitution =
                     fmap
                         (TermLike.substitute
-                            (Map.singleton (variableName1 variable) replacement)
+                            (Map.singleton (variableName variable) replacement)
                         )
                         (assertNoneAreFreeVarsInRhs
                             (Set.fromList reversableVars)
@@ -686,7 +686,7 @@ applyNormalized Normalization { normalized, denormalized } =
   where
     substitute =
         TermLike.substitute
-        $ Map.mapKeys variableName1
+        $ Map.mapKeys variableName
         $ Map.fromList
         $ map assignmentToPair normalized
 

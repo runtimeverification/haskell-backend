@@ -238,8 +238,8 @@ variableGen' patternSort variables genId =
   where
     bySort Variable { variableSort1 } = variableSort1 == patternSort
     freshVariable = do
-        variableName1 <- VariableName <$> genId <*> pure mempty
-        pure Variable { variableName1, variableSort1 = patternSort }
+        variableName <- VariableName <$> genId <*> pure mempty
+        pure Variable { variableName, variableSort1 = patternSort }
 
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen patternSort = do

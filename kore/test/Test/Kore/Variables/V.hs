@@ -27,7 +27,7 @@ data V =
 mkV :: Integer -> Variable V
 mkV value =
     Variable
-    { variableName1 = V { value, counter = Nothing }
+    { variableName = V { value, counter = Nothing }
     , variableSort1 = sortVariable
     }
 

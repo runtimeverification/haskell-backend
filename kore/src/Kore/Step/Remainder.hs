@@ -86,7 +86,7 @@ existentiallyQuantifyRuleVariables predicate =
     Predicate.makeMultipleExists freeRuleVariables predicate
   where
     freeRuleVariables =
-        filter (isRuleVariable . unElementVariableName . variableName1)
+        filter (isRuleVariable . unElementVariableName . variableName)
         . Predicate.freeElementVariables
         $ predicate
 

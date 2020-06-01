@@ -29,7 +29,7 @@ data W = W { value :: String, counter :: Maybe (Sup Natural) }
 mkW :: String -> Variable W
 mkW value =
     Variable
-    { variableName1 = W { value, counter = Nothing }
+    { variableName = W { value, counter = Nothing }
     , variableSort1 = sortVariable
     }
 

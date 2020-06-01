@@ -360,7 +360,7 @@ variableRemainderParser base = do
     colonParser
     variableSort1 <- sortParser
     return Variable
-        { variableName1 = VariableName { base, counter = mempty }
+        { variableName = VariableName { base, counter = mempty }
         , variableSort1
         }
 

@@ -83,7 +83,7 @@ checkImplicationIsTop lhs rhs =
         lhsFreeVariables =
             freeVariables lhs
             & getFreeElementVariables
-            & map variableName1
+            & map variableName
             & Set.fromList
         lhsMLPatt = Pattern.toTermLike lhs
 

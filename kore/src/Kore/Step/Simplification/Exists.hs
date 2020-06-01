@@ -245,7 +245,7 @@ matchesToVariableSubstitution
   | Equals_ _sort1 _sort2 first second <-
         Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
-  , not (TermLike.hasFreeVariable (inject $ variableName1 variable) term)
+  , not (TermLike.hasFreeVariable (inject $ variableName variable) term)
   = do
     matchResult <- matchIncremental first second
     case matchResult of
@@ -276,7 +276,7 @@ singleVariableSubstitution
             TermLike.withoutFreeVariable someVariableName substTerm True
   | otherwise = False
   where
-    someVariableName = inject (variableName1 variable)
+    someVariableName = inject (variableName variable)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -314,7 +314,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
             lift $ Pattern.simplify sideCondition substituted
         Branch.scatter (MultiOr.extractPatterns orPattern)
   where
-    someVariableName = inject (variableName1 variable)
+    someVariableName = inject (variableName variable)
 
 
 {- | Existentially quantify a variable in the given 'Pattern'.
@@ -388,7 +388,7 @@ splitSubstitution variable substitution =
         maybe (Right dependent) Left
         $ Map.lookup someVariableName (Substitution.toMap dependent)
     someVariable = inject variable
-    someVariableName = variableName1 someVariable
+    someVariableName = variableName someVariable
 
 {- | Existentially quantify the variable in a 'Pattern'.
 
@@ -419,7 +419,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     $ Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
-    someVariableName = inject (variableName1 variable)
+    someVariableName = inject (variableName variable)
     quantifyTerm = TermLike.hasFreeVariable someVariableName term
     predicate' =
         Predicate.makeAndPredicate predicate

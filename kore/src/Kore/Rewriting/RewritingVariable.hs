@@ -253,7 +253,7 @@ getRemainderPattern
 getRemainderPattern = getPattern
 
 isSomeConfigVariable :: SomeVariable RewritingVariableName -> Bool
-isSomeConfigVariable = isSomeConfigVariableName . variableName1
+isSomeConfigVariable = isSomeConfigVariableName . variableName
 
 isSomeConfigVariableName :: SomeVariableName RewritingVariableName -> Bool
 isSomeConfigVariableName = foldSomeVariableName (pure isConfigVariable)

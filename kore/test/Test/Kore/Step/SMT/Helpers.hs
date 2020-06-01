@@ -260,7 +260,7 @@ constructorAxiom sortName constructors =
 makeVariable :: Natural -> Text -> ElementVariable VariableName
 makeVariable varIndex sortName =
     mkElementVariable (testId "var") (makeSort sortName)
-    & Lens.set (field @"variableName1" . Lens.mapped . field @"counter")
+    & Lens.set (field @"variableName" . Lens.mapped . field @"counter")
         (Just (Element varIndex))
 
 makeSort :: Text -> Sort

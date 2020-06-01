@@ -642,7 +642,7 @@ pattern MockElementVariable
     :: Id -> VariableCounter -> Sort -> MockElementVariable
 pattern MockElementVariable base counter variableSort1 =
     Variable
-    { variableName1 = ElementVariableName VariableName { base, counter }
+    { variableName = ElementVariableName VariableName { base, counter }
     , variableSort1
     }
 
@@ -652,7 +652,7 @@ pattern MockSetVariable
     :: Id -> VariableCounter -> Sort -> MockSetVariable
 pattern MockSetVariable base counter variableSort1 =
     Variable
-    { variableName1 = SetVariableName VariableName { base, counter }
+    { variableName = SetVariableName VariableName { base, counter }
     , variableSort1
     }
 
@@ -717,14 +717,14 @@ makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort1 =
     Variable
     { variableSort1
-    , variableName1
+    , variableName
     }
   where
     variableName =
-        VariableName { base = testId name, counter = mempty }
-    variableName1
-      | Text.head name == '@' = inject . SetVariableName $ variableName
-      | otherwise = inject . ElementVariableName $ variableName
+        injectVariableName VariableName { base = testId name, counter = mempty }
+    injectVariableName
+      | Text.head name == '@' = inject . SetVariableName
+      | otherwise = inject . ElementVariableName
 
 makeTestSomeVariable :: Text -> SomeVariable VariableName
 makeTestSomeVariable = (`makeSomeVariable` testSort)

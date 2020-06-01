@@ -257,13 +257,13 @@ refreshVariables avoid0 =
       | Just var' <- refreshVariable avoid var =
         let avoid' =
                 -- Avoid the freshly-generated variable in future renamings.
-                Set.insert (variableName1 var') avoid
+                Set.insert (variableName var') avoid
             rename' =
                 -- Record a mapping from the original variable to the
                 -- freshly-generated variable.
-                Map.insert (variableName1 var) var' rename
+                Map.insert (variableName var) var' rename
         in (avoid', rename')
       | otherwise =
         -- The variable does not collide with any others, so renaming is not
         -- necessary.
-        (Set.insert (variableName1 var) avoid, rename)
+        (Set.insert (variableName var) avoid, rename)
