@@ -14,7 +14,6 @@ module Kore.Variables.UnifiedVariable
     , foldMapVariable
     , refreshElementVariable
     , refreshSetVariable
-    , MapVariables
     , mapUnifiedVariable
     , traverseUnifiedVariable
     ) where
@@ -109,9 +108,6 @@ refreshSetVariable avoiding =
     -- expectElemVar is safe because the FreshVariable instance of
     -- UnifiedVariable (above) conserves the SetVar constructor.
     fmap expectSetVar . refreshVariable avoiding . inject
-
-type MapVariables variable1 variable2 term1 term2 =
-    AdjSomeVariableName (variable1 -> variable2) -> term1 -> term2
 
 mapUnifiedVariable
     :: AdjSomeVariableName (variable1 -> variable2)

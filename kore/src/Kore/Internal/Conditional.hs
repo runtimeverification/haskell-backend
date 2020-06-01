@@ -61,7 +61,8 @@ import Kore.Internal.Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( InternalVariable
+    ( AdjSomeVariableName
+    , InternalVariable
     , Sort
     , SubstitutionOrd
     , TermLike
@@ -73,8 +74,7 @@ import Kore.TopBottom
     )
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
-    ( MapVariables
-    , UnifiedVariable
+    ( UnifiedVariable
     )
 import Pretty
     ( Doc
@@ -429,12 +429,12 @@ isPredicate Conditional {term} = isTop term
 
 -}
 mapVariables
-    ::  InternalVariable variableFrom
-    =>  InternalVariable variableTo
-    =>  MapVariables variableFrom variableTo termFrom termTo
-    ->  MapVariables variableFrom variableTo
-            (Conditional variableFrom termFrom)
-            (Conditional variableTo   termTo)
+    :: InternalVariable variable1
+    => InternalVariable variable2
+    => (AdjSomeVariableName (variable1 -> variable2) -> term1 -> term2)
+    -> AdjSomeVariableName (variable1 -> variable2)
+    -> (Conditional variable1 term1)
+    -> (Conditional variable2 term2)
 mapVariables
     mapTermVariables
     adj
