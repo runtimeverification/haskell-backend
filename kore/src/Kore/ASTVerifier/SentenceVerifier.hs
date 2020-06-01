@@ -94,9 +94,6 @@ import Kore.Step.RulePattern
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -427,7 +424,7 @@ verifyClaimSentence sentence =
       =
         not $ Set.isSubsetOf rightVars leftVars
           where
-            rightVars, leftVars :: Set (UnifiedVariable VariableName)
+            rightVars, leftVars :: Set (SomeVariable1 VariableName)
             rightVars = freeVariables rhs & FreeVariables.toSet
             lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
             leftVars = foldMap freeVariables lhs & FreeVariables.toSet

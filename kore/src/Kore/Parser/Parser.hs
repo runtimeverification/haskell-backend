@@ -51,7 +51,6 @@ import Kore.Parser.ParserUtils
 import qualified Kore.Parser.ParserUtils as ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Variables.UnifiedVariable
 
 asParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
@@ -400,7 +399,7 @@ setVariableParser =
 
 Set variables always start with @\@@, while element variables do not.
 -}
-variableParser :: Parser (UnifiedVariable VariableName)
+variableParser :: Parser (SomeVariable1 VariableName)
 variableParser = do
     c <- ParserUtils.peekChar'
     if c == '@'

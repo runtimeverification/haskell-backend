@@ -30,9 +30,6 @@ import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -181,7 +178,7 @@ test_SubstitutionSimplifier =
     test
         :: HasCallStack
         => TestName
-        -> [(UnifiedVariable VariableName, TermLike VariableName)]
+        -> [(SomeVariable1 VariableName, TermLike VariableName)]
         -- ^ Test input
         -> [Normalization VariableName]
         -- ^ Expected normalized, denormalized outputs
@@ -239,7 +236,7 @@ test_SubstitutionSimplifier =
                 let sort = Condition.conditionSort first
                 in map (Condition.coerceSort sort) expect
 
-x, y, z, xs, ys :: UnifiedVariable VariableName
+x, y, z, xs, ys :: SomeVariable1 VariableName
 x = inject Mock.x
 y = inject Mock.y
 z = inject Mock.z

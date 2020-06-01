@@ -31,8 +31,7 @@ import Kore.Internal.InternalBytes
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    , isElemVar
+    ( isElemVar
     )
 
 {- | A pattern is 'Function' if it matches zero or one elements.
@@ -163,7 +162,7 @@ instance Synthetic Function Inhabitant where
     {-# INLINE synthetic #-}
 
 -- | A 'Variable' pattern is always 'Function'.
-instance Synthetic Function (Const (UnifiedVariable variable)) where
+instance Synthetic Function (Const (SomeVariable1 variable)) where
     synthetic (Const unifiedVariable) = Function (isElemVar unifiedVariable)
     {-# INLINE synthetic #-}
 

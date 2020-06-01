@@ -16,7 +16,7 @@ module Kore.Internal.TermLike.Renaming
     , askSomeVariableName
     , askElementVariableName
     , askSetVariableName
-    , askUnifiedVariable
+    , askSomeVariable1
     , askElementVariable
     , askSetVariable
     ) where
@@ -54,9 +54,6 @@ import Kore.Variables.Fresh
     ( refreshElementVariable
     , refreshSetVariable
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 type VariableNameMap variable1 variable2 =
     AdjSomeVariableName (Map variable1 variable2)
@@ -83,7 +80,7 @@ renameFreeVariables adj =
         pure (Map.singleton variable1 variable2)
     worker
         :: VariableNameMap variable1 variable2
-        -> UnifiedVariable variable1
+        -> SomeVariable1 variable1
         -> m (VariableNameMap variable1 variable2)
     worker renaming Variable1 { variableName1 = someVariableName1 } = do
         let idx :: SomeVariableName ()
@@ -120,11 +117,11 @@ askSetVariableName
     => SetVariableName variable1 -> m (SetVariableName variable2)
 askSetVariableName = traverseSetVariableName askSomeVariableName
 
-askUnifiedVariable
+askSomeVariable1
     :: Ord variable1
     => MonadReader (VariableNameMap variable1 variable2) m
-    => UnifiedVariable variable1 -> m (UnifiedVariable variable2)
-askUnifiedVariable =
+    => SomeVariable1 variable1 -> m (SomeVariable1 variable2)
+askSomeVariable1 =
     traverse $ traverseSomeVariableName askSomeVariableName
 
 askElementVariable

@@ -18,9 +18,6 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Unification.SubstitutionNormalization
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
@@ -305,7 +302,7 @@ test_normalize =
     test
         :: HasCallStack
         => TestName
-        -> Map (UnifiedVariable VariableName) (TermLike VariableName)
+        -> Map (SomeVariable1 VariableName) (TermLike VariableName)
         -- ^ Test input
         -> Normalization VariableName
         -- ^ Expected output
@@ -319,7 +316,7 @@ test_normalize =
     testBottom
         :: HasCallStack
         => TestName
-        -> Map (UnifiedVariable VariableName) (TermLike VariableName)
+        -> Map (SomeVariable1 VariableName) (TermLike VariableName)
         -- ^ Test input
         -> TestTree
     testBottom testName input =
@@ -327,7 +324,7 @@ test_normalize =
             let actual = normalize input
             assertEqual "" Nothing actual
 
-x, y, z, xs, ys :: UnifiedVariable VariableName
+x, y, z, xs, ys :: SomeVariable1 VariableName
 x = inject Mock.x
 y = inject Mock.y
 z = inject Mock.z

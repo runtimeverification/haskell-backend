@@ -63,6 +63,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( AdjSomeVariableName
     , InternalVariable
+    , SomeVariable1
     , Sort
     , SubstitutionOrd
     , TermLike
@@ -73,9 +74,6 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import Pretty
     ( Doc
     )
@@ -387,14 +385,14 @@ fromSingleSubstitution
     -> Conditional variable ()
 fromSingleSubstitution = from
 
-{- | A 'Conditional' assigning the 'UnifiedVariable' to the 'TermLike'.
+{- | A 'Conditional' assigning the 'SomeVariable1' to the 'TermLike'.
 
 The result has a true 'Predicate'.
 
  -}
 assign
     :: InternalVariable variable
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> TermLike variable
     -> Conditional variable ()
 assign uVar term = fromSingleSubstitution (Substitution.assign uVar term)

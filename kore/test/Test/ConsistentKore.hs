@@ -115,7 +115,6 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore
     ( idGen
@@ -977,11 +976,11 @@ aliasGenerator
     error "Not implemented."
 
 {- The only purpose of this function is to produce an error message when
-new cases are being added to UnifiedVariable, so that we don't forget to also
+new cases are being added to SomeVariable1, so that we don't forget to also
 change this file.
 -}
 _checkAllVariableImplemented
-    :: UnifiedVariable VariableName -> UnifiedVariable VariableName
+    :: SomeVariable1 VariableName -> SomeVariable1 VariableName
 _checkAllVariableImplemented variable =
     case variableName1 variable of
         SomeVariableNameSet _ -> variable

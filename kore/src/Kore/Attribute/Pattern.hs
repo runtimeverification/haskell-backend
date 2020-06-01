@@ -64,7 +64,6 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
  -}
@@ -197,7 +196,7 @@ traverseVariables adj = field @"freeVariables" (traverseFreeVariables adj)
  -}
 deleteFreeVariable
     :: Ord variable
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =

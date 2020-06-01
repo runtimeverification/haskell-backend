@@ -106,7 +106,6 @@ import qualified Kore.Step.SMT.Representation.Resolve as SMT
     )
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
@@ -714,8 +713,8 @@ xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
 xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
 
-makeUnifiedVariable :: Text -> Sort -> UnifiedVariable VariableName
-makeUnifiedVariable name variableSort1 =
+makeSomeVariable1 :: Text -> Sort -> SomeVariable1 VariableName
+makeSomeVariable1 name variableSort1 =
     Variable1
     { variableSort1
     , variableName1
@@ -727,11 +726,11 @@ makeUnifiedVariable name variableSort1 =
       | Text.head name == '@' = inject . SetVariableName $ variableName
       | otherwise = inject . ElementVariableName $ variableName
 
-makeTestUnifiedVariable :: Text -> UnifiedVariable VariableName
-makeTestUnifiedVariable = (`makeUnifiedVariable` testSort)
+makeTestSomeVariable1 :: Text -> SomeVariable1 VariableName
+makeTestSomeVariable1 = (`makeSomeVariable1` testSort)
 
-mkTestUnifiedVariable :: Text -> TermLike VariableName
-mkTestUnifiedVariable = Internal.mkVar . makeTestUnifiedVariable
+mkTestSomeVariable1 :: Text -> TermLike VariableName
+mkTestSomeVariable1 = Internal.mkVar . makeTestSomeVariable1
 
 a :: InternalVariable variable => TermLike variable
 a = Internal.mkApplySymbol aSymbol []

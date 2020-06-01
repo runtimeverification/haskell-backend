@@ -36,9 +36,6 @@ import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import qualified Pretty
 import qualified SQL
 
@@ -75,7 +72,7 @@ attributeString literal =
 attributeInteger :: Integer -> AttributePattern
 attributeInteger = attributeString . Text.pack . show
 
-attributeVariable :: UnifiedVariable VariableName -> AttributePattern
+attributeVariable :: SomeVariable1 VariableName -> AttributePattern
 attributeVariable v = (asAttributePattern . VariableF . Const) v
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.

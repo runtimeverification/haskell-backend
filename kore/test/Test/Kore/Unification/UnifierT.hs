@@ -43,9 +43,6 @@ import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
 import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
@@ -358,8 +355,8 @@ test_mergeAndNormalizeSubstitutions =
     ]
 
 merge
-    :: [(UnifiedVariable VariableName, TermLike VariableName)]
-    -> [(UnifiedVariable VariableName, TermLike VariableName)]
+    :: [(SomeVariable1 VariableName, TermLike VariableName)]
+    -> [(SomeVariable1 VariableName, TermLike VariableName)]
     -> IO (Either UnificationError [Condition VariableName])
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)

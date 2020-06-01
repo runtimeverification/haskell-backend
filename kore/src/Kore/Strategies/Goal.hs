@@ -175,8 +175,7 @@ import Kore.Unparser
     ( unparse
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    , extractElementVariable
+    ( extractElementVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
@@ -1034,7 +1033,7 @@ removalPredicate
                     "Cannot quantify non-element variables: "
                     : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
             else remainderElementVariables config dest
-    configVariables :: Pattern variable -> Set.Set (UnifiedVariable variable)
+    configVariables :: Pattern variable -> Set.Set (SomeVariable1 variable)
     configVariables = FreeVariables.toSet . freeVariables
     destVariables = FreeVariables.toSet . freeVariables
     remainderVariables config dest =

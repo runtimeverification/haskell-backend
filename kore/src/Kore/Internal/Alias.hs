@@ -38,7 +38,7 @@ data Alias patternType =
         { aliasConstructor :: !Id
         , aliasParams      :: ![Sort]
         , aliasSorts       :: !ApplicationSorts
-        , aliasLeft        :: [UnifiedVariable VariableName]
+        , aliasLeft        :: [SomeVariable1 VariableName]
         , aliasRight       :: patternType
         }
     deriving (GHC.Generic, Show)

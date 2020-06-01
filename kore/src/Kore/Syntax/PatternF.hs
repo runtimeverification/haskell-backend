@@ -86,7 +86,7 @@ data PatternF variable child
     | TopF           !(Top Sort child)
     | InhabitantF    !(Inhabitant child)
     | StringLiteralF !(Const StringLiteral child)
-    | VariableF      !(Const (UnifiedVariable variable) child)
+    | VariableF      !(Const (SomeVariable1 variable) child)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (PatternF variable child)
@@ -168,7 +168,7 @@ traverseVariables adj =
     trSetVar = traverse $ traverseSetVariableName adj
     traverseVariable =
         fmap VariableF
-        . Lens.traverseOf _Unwrapped (traverseUnifiedVariable adj)
+        . Lens.traverseOf _Unwrapped (traverseSomeVariable1 adj)
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
         <$> trElemVar existsVariable

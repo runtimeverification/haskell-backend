@@ -84,6 +84,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
     , InternalVariable
+    , SomeVariable1
     , SomeVariableName (..)
     , TermLike
     , TermLikeF (..)
@@ -101,8 +102,7 @@ import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    , isSetVar
+    ( isSetVar
     )
 import qualified Pretty
 
@@ -215,7 +215,7 @@ deduplicateSubstitution
     ->  Substitution variable
     ->  monad
             ( Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
+            , Map (SomeVariable1 variable) (TermLike variable)
             )
 deduplicateSubstitution sideCondition makeAnd' =
     worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
@@ -235,10 +235,10 @@ deduplicateSubstitution sideCondition makeAnd' =
 
     worker
         ::  Predicate variable
-        ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
+        ->  Map (SomeVariable1 variable) (NonEmpty (TermLike variable))
         ->  monad
                 ( Predicate variable
-                , Map (UnifiedVariable variable) (TermLike variable)
+                , Map (SomeVariable1 variable) (TermLike variable)
                 )
     worker predicate substitutions
       | Just deduplicated <- traverse getSingleton substitutions
@@ -373,7 +373,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     deduplicate
         ::  Substitution variable
         ->  Impl variable simplifier
-                (Map (UnifiedVariable variable) (TermLike variable))
+                (Map (SomeVariable1 variable) (TermLike variable))
     deduplicate substitution = do
         (predicate, substitution') <-
             deduplicateSubstitution makeAnd' sideCondition substitution

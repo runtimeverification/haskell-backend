@@ -49,9 +49,6 @@ import Kore.Internal.Predicate
     ( makeTruePredicate
     )
 import Kore.Internal.TermLike
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 import Test.Kore
     ( testId
@@ -296,7 +293,7 @@ test_concatSymbolic =
                         { term = patConcatY
                         , predicate = makeTruePredicate listSort
                         , substitution =
-                            from @(Map (UnifiedVariable VariableName) _)
+                            from @(Map (SomeVariable1 VariableName) _)
                             $ Map.fromList
                                 [ (inject elemVarX, patSymbolicY)
                                 , (inject elemVarXs, patSymbolicYs)
@@ -313,7 +310,7 @@ test_concatSymbolic =
                         { term = patConcatY'
                         , predicate = makeTruePredicate listSort
                         , substitution =
-                            from @(Map (UnifiedVariable VariableName) _)
+                            from @(Map (SomeVariable1 VariableName) _)
                             $ Map.fromList
                                 [ (inject elemVarX, patSymbolicY)
                                 , (inject elemVarXs, patSymbolicYs)
@@ -354,7 +351,7 @@ test_concatSymbolicDifferentLengths =
                         (patElemX2 `concatList` patSymbolicXs)
                     , predicate = makeTruePredicate listSort
                     , substitution =
-                        from @(Map (UnifiedVariable VariableName) _)
+                        from @(Map (SomeVariable1 VariableName) _)
                         $ Map.fromList
                             [ (inject elemVarX1, patSymbolicY)
                             ,   ( inject elemVarYs

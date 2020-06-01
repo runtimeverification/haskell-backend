@@ -81,7 +81,6 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Variables.UnifiedVariable
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -301,7 +300,7 @@ syncSort patt = coerceSort (patternSort patt) patt
 
 assign
     :: InternalVariable variable
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> TermLike variable
     -> Pattern variable
 assign variable term =

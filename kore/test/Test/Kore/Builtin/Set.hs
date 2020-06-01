@@ -121,7 +121,6 @@ import Kore.Syntax.Id
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import Kore.Variables.UnifiedVariable
 import SMT
     ( SMT
     )
@@ -1756,7 +1755,7 @@ unifiesWithMulti pat1 pat2 expectedResults = do
 unifiedBy
     :: HasCallStack
     => (TermLike VariableName, TermLike VariableName)
-    -> [(UnifiedVariable VariableName, TermLike VariableName)]
+    -> [(SomeVariable1 VariableName, TermLike VariableName)]
     -> TestName
     -> TestTree
 unifiedBy (termLike1, termLike2) substitution testName =

@@ -83,10 +83,10 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 verifyAliasLeftPattern
     :: Alias
     -> [Sort]
-    -> Application SymbolOrAlias (UnifiedVariable VariableName)
+    -> Application SymbolOrAlias (SomeVariable1 VariableName)
     -> PatternVerifier
         ( DeclaredVariables
-        , Application SymbolOrAlias (UnifiedVariable VariableName)
+        , Application SymbolOrAlias (SomeVariable1 VariableName)
         )
 verifyAliasLeftPattern alias aliasSorts leftPattern = do
     koreFailWhen (declaredHead /= symbolOrAlias) aliasDeclarationMismatch
@@ -110,8 +110,8 @@ verifyAliasLeftPattern alias aliasSorts leftPattern = do
             , Pretty.indent 4 $ unparse alias
             ]
     expectVariable
-        :: UnifiedVariable VariableName
-        -> PatternVerifier (UnifiedVariable VariableName)
+        :: SomeVariable1 VariableName
+        -> PatternVerifier (SomeVariable1 VariableName)
     expectVariable var = do
         verifyVariableDeclaration var
         return var
@@ -357,7 +357,7 @@ verifyApplyAlias application =
         , applicationChildren      = children
         } = application
 
-    getLeftVariables :: Id -> PatternVerifier [UnifiedVariable VariableName]
+    getLeftVariables :: Id -> PatternVerifier [SomeVariable1 VariableName]
     getLeftVariables aliasId = do
         indexedModule <- Reader.asks indexedModule
         alias <- resolveAlias indexedModule aliasId
@@ -368,7 +368,7 @@ verifyApplyAlias application =
     -- If it was defined using a set variable, we can use it with any argument.
     -- Otherwise, it is a verification error.
     ensureChildIsDeclaredVarType
-        :: (UnifiedVariable VariableName, PatternVerifier Verified.Pattern)
+        :: (SomeVariable1 VariableName, PatternVerifier Verified.Pattern)
         -> PatternVerifier ()
     ensureChildIsDeclaredVarType (var, mpat)
       | isElemVar var = do
@@ -424,7 +424,7 @@ verifyApplication application = do
 verifyBinder
     :: Traversable binder
     => (forall a. binder a -> Sort)
-    -> (forall a. binder a -> UnifiedVariable VariableName)
+    -> (forall a. binder a -> SomeVariable1 VariableName)
     -> binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (binder Verified.Pattern)
 verifyBinder binderSort binderVariable = \binder -> do
@@ -467,8 +467,8 @@ verifyNu = verifyBinder nuSort (inject . nuVariable)
     nuSort = variableSort1 . nuVariable
 
 verifyVariable
-    :: UnifiedVariable VariableName
-    -> PatternVerifier (Const (UnifiedVariable VariableName) Verified.Pattern)
+    :: SomeVariable1 VariableName
+    -> PatternVerifier (Const (SomeVariable1 VariableName) Verified.Pattern)
 verifyVariable var = do
     declaredVariable <- lookupDeclaredVariable varName
     let declaredSort = variableSort1 declaredVariable
@@ -519,7 +519,7 @@ verifyStringLiteral
 verifyStringLiteral = sequence
 
 verifyVariableDeclaration
-    :: UnifiedVariable VariableName -> PatternVerifier VerifySuccess
+    :: SomeVariable1 VariableName -> PatternVerifier VerifySuccess
 verifyVariableDeclaration variable = do
     Context { declaredSortVariables } <- Reader.ask
     verifySort
@@ -541,15 +541,15 @@ verifyFreeVariables unifiedPattern =
 
 addFreeVariable
     :: DeclaredVariables
-    -> UnifiedVariable VariableName
+    -> SomeVariable1 VariableName
     -> PatternVerifier DeclaredVariables
 addFreeVariable (getDeclaredVariables -> vars) var = do
     checkVariable var vars
     return . DeclaredVariables $ Map.insert (variableName1 var) var vars
 
 checkVariable
-    :: UnifiedVariable VariableName
-    -> Map.Map (SomeVariableName VariableName) (UnifiedVariable VariableName)
+    :: SomeVariable1 VariableName
+    -> Map.Map (SomeVariableName VariableName) (SomeVariable1 VariableName)
     -> PatternVerifier VerifySuccess
 checkVariable var vars =
     maybe verifySuccess inconsistent

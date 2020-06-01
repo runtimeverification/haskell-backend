@@ -94,18 +94,18 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
                     mapMaybe extractElementVariable
                     $ FreeVariables.toList
                     $ freeVariables left
-                allUnifiedVariables :: Set (UnifiedVariable VariableName)
-                allUnifiedVariables =
+                allSomeVariable1s :: Set (SomeVariable1 VariableName)
+                allSomeVariable1s =
                     FreeVariables.toSet (freeVariables rule)
                 allElementVariables :: Set (ElementVariableName VariableName)
                 allElementVariables =
                     Set.fromList
                     $ map variableName1
-                    $ mapMaybe retract (Set.toList allUnifiedVariables)
+                    $ mapMaybe retract (Set.toList allSomeVariable1s)
                         ++ existentials
                 expansion
                     ::  Map.Map
-                            (UnifiedVariable VariableName)
+                            (SomeVariable1 VariableName)
                             (TermLike VariableName)
                 expansion =
                     expandVariables
@@ -160,16 +160,16 @@ expandVariables
     :: SmtMetadataTools attributes
     -> [ElementVariable VariableName]
     -> Set.Set (ElementVariableName VariableName)
-    -> Map.Map (UnifiedVariable VariableName) (TermLike VariableName)
+    -> Map.Map (SomeVariable1 VariableName) (TermLike VariableName)
 expandVariables metadataTools variables toAvoid =
     fst $ foldl' expandAddVariable (Map.empty, toAvoid) variables
   where
     expandAddVariable
-        ::  ( Map.Map (UnifiedVariable VariableName) (TermLike VariableName)
+        ::  ( Map.Map (SomeVariable1 VariableName) (TermLike VariableName)
             , Set.Set (ElementVariableName VariableName)
             )
         -> ElementVariable VariableName
-        ->  ( Map.Map (UnifiedVariable VariableName) (TermLike VariableName)
+        ->  ( Map.Map (SomeVariable1 VariableName) (TermLike VariableName)
             , Set.Set (ElementVariableName VariableName)
             )
     expandAddVariable (substitution, toAvoid') variable =

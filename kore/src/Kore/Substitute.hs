@@ -35,9 +35,6 @@ import Kore.Internal.Variable
 import Kore.Syntax
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -70,29 +67,29 @@ substitute =
     extractFreeVariables = FreeVariables.toNames . freeVariables
 
     getTargetFreeVariables
-        :: Either patternType (UnifiedVariable variable)
+        :: Either patternType (SomeVariable1 variable)
         -> Set (SomeVariableName variable)
     getTargetFreeVariables =
         either extractFreeVariables (Set.singleton . variableName1)
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
-        :: UnifiedVariable variable  -- ^ Original variable
-        -> Maybe (UnifiedVariable variable)  -- ^ Renamed variable
+        :: SomeVariable1 variable  -- ^ Original variable
+        -> Maybe (SomeVariable1 variable)  -- ^ Renamed variable
         -> Map
             (SomeVariableName variable)
-            (Either patternType (UnifiedVariable variable))
+            (Either patternType (SomeVariable1 variable))
         -- ^ Substitution
         -> Map
             (SomeVariableName variable)
-            (Either patternType (UnifiedVariable variable))
+            (Either patternType (SomeVariable1 variable))
     renaming Variable1 { variableName1 } =
         maybe id (Map.insert variableName1 . Right)
 
     substituteWorker
         :: Map
             (SomeVariableName variable)
-            (Either patternType (UnifiedVariable variable))
+            (Either patternType (SomeVariable1 variable))
         -> patternType
         -> patternType
     substituteWorker subst termLike =
@@ -115,8 +112,8 @@ substitute =
             runIdentity <$> matchWith traverseBinder worker termLike
           where
             worker
-                :: Binder (UnifiedVariable variable) patternType
-                -> Identity (Binder (UnifiedVariable variable) patternType)
+                :: Binder (SomeVariable1 variable) patternType
+                -> Identity (Binder (SomeVariable1 variable) patternType)
             worker Binder { binderVariable, binderChild } = do
                 let
                     binderVariable' = avoidCapture binderVariable
@@ -134,8 +131,8 @@ substitute =
             either id id <$> matchWith traverseVariable worker termLike
           where
             worker
-                :: UnifiedVariable variable
-                -> Either patternType (UnifiedVariable variable)
+                :: SomeVariable1 variable
+                -> Either patternType (SomeVariable1 variable)
             worker Variable1 { variableName1 } =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.

@@ -216,7 +216,7 @@ refreshElementVariable
     -> Maybe (ElementVariable variable)
 refreshElementVariable avoiding =
     -- expectElemVar is safe because the FreshVariable instance of
-    -- UnifiedVariable (above) conserves the ElemVar constructor.
+    -- SomeVariable1 (above) conserves the ElemVar constructor.
     fmap expectElemVar . refreshVariable avoiding . inject
 
 refreshSetVariable
@@ -226,7 +226,7 @@ refreshSetVariable
     -> Maybe (SetVariable variable)
 refreshSetVariable avoiding =
     -- expectElemVar is safe because the FreshVariable instance of
-    -- UnifiedVariable (above) conserves the SetVar constructor.
+    -- SomeVariable1 (above) conserves the SetVar constructor.
     fmap expectSetVar . refreshVariable avoiding . inject
 
 {- | Rename one set of variables while avoiding another.

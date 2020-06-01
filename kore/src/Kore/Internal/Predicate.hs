@@ -122,7 +122,6 @@ import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
-import Kore.Variables.UnifiedVariable
 import Pretty
     ( Pretty (..)
     )
@@ -795,7 +794,7 @@ forgetSimplified (GenericPredicate termLike) =
 isFreeOf
     :: Ord variable
     => Predicate variable
-    -> Set (UnifiedVariable variable)
+    -> Set (SomeVariable1 variable)
     -> Bool
 isFreeOf predicate =
     Set.disjoint (FreeVariables.toSet $ freeVariables predicate)

@@ -86,15 +86,12 @@ import Kore.Variables.Target
     , mkSetNonTarget
     , mkSetTarget
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
 data Context =
     Context
-        { objectVariables :: ![UnifiedVariable VariableName]
+        { objectVariables :: ![SomeVariable1 VariableName]
         , objectSortVariables :: ![SortVariable]
         , symbols :: !(Maybe [Internal.Symbol])
         , sorts :: !(Maybe [Sort])
@@ -113,11 +110,11 @@ standaloneGen :: Gen a -> Hedgehog.Gen a
 standaloneGen generator =
     Reader.runReaderT generator emptyContext
 
-addVariable :: UnifiedVariable VariableName -> Context -> Context
+addVariable :: SomeVariable1 VariableName -> Context -> Context
 addVariable var ctx@Context { objectVariables } =
     ctx { objectVariables = var : objectVariables }
 
-addVariables :: [UnifiedVariable VariableName] -> Context -> Context
+addVariables :: [SomeVariable1 VariableName] -> Context -> Context
 addVariables vars = \ctx -> foldr addVariable ctx vars
 
 addSortVariable :: SortVariable -> Context -> Context
@@ -262,7 +259,7 @@ setVariableGen sort = do
     variableGen' sort variables setVarIdGen
         & (fmap . fmap) SetVariableName
 
-unifiedVariableGen :: Sort -> Gen (UnifiedVariable VariableName)
+unifiedVariableGen :: Sort -> Gen (SomeVariable1 VariableName)
 unifiedVariableGen sort = Gen.choice
     [ fmap inject <$> elementVariableGen sort
     , fmap inject <$> setVariableGen sort
@@ -280,7 +277,7 @@ setTargetVariableGen sort = Gen.choice
     , mkSetNonTarget <$> setVariableGen sort
     ]
 
-unifiedTargetVariableGen :: Sort -> Gen (UnifiedVariable (Target VariableName))
+unifiedTargetVariableGen :: Sort -> Gen (SomeVariable1 (Target VariableName))
 unifiedTargetVariableGen sort = Gen.choice
     [ fmap inject <$> elementTargetVariableGen sort
     , fmap inject <$> setTargetVariableGen     sort

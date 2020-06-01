@@ -32,8 +32,7 @@ import Kore.Internal.InternalBytes
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    , isElemVar
+    ( isElemVar
     )
 
 {- | A pattern is 'Defined' if it matches at least one element.
@@ -202,7 +201,7 @@ instance Synthetic Defined Inhabitant where
 
 -- | An element variable pattern is always 'Defined'.
 --   A set variable is not.
-instance Synthetic Defined (Const (UnifiedVariable variable)) where
+instance Synthetic Defined (Const (SomeVariable1 variable)) where
     synthetic (Const unifiedVariable)= Defined (isElemVar unifiedVariable)
     {-# INLINE synthetic #-}
 

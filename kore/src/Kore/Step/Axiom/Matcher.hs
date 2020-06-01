@@ -93,7 +93,6 @@ import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
 import qualified Kore.Variables.Fresh as Variables
-import Kore.Variables.UnifiedVariable
 import Pair
 
 -- * Matching
@@ -604,7 +603,7 @@ substituteTermLike subst = renormalizeBuiltins . TermLike.substitute subst
 
 occursCheck
     :: (MatchingVariable variable, Monad simplifier)
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> TermLike variable
     -> MaybeT (MatcherT variable simplifier) ()
 occursCheck Variable1 { variableName1 } termLike =
@@ -630,7 +629,7 @@ do not attempt to match on them.
  -}
 targetCheck
     :: (MatchingVariable variable, Monad simplifier)
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> MaybeT (MatcherT variable simplifier) ()
 targetCheck Variable1 { variableName1 } = do
     MatcherState { targets } <- Monad.State.get
@@ -660,7 +659,7 @@ The bound variable will not escape, nor will it be shadowed.
 bindVariable
     :: Ord variable
     => MonadState (MatcherState variable) matcher
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> matcher ()
 bindVariable Variable1 { variableName1 } = do
     field @"bound" %= Set.insert variableName1
@@ -674,8 +673,8 @@ Returns 'Nothing' if the variable name is already globally-unique.
 liftVariable
     :: (FreshPartialOrd variable)
     => MonadState (MatcherState variable) matcher
-    => UnifiedVariable variable
-    -> matcher (Maybe (UnifiedVariable variable))
+    => SomeVariable1 variable
+    -> matcher (Maybe (SomeVariable1 variable))
 liftVariable variable =
     flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 

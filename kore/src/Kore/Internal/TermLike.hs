@@ -277,7 +277,6 @@ import Kore.Variables.Fresh
     , refreshSetVariable
     )
 import qualified Kore.Variables.Fresh as Fresh
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 hasFreeVariable
@@ -1566,7 +1565,7 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [UnifiedVariable VariableName]
+    -> [SomeVariable1 VariableName]
     -> TermLike VariableName
     -> SentenceAlias (TermLike VariableName)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
@@ -1602,7 +1601,7 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [UnifiedVariable VariableName]
+    -> [SomeVariable1 VariableName]
     -> TermLike VariableName
     -> SentenceAlias (TermLike VariableName)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
@@ -1744,7 +1743,7 @@ pattern Rewrites_
 
 pattern Top_ :: Sort -> TermLike variable
 
-pattern Var_ :: UnifiedVariable variable -> TermLike variable
+pattern Var_ :: SomeVariable1 variable -> TermLike variable
 
 pattern ElemVar_ :: ElementVariable variable -> TermLike variable
 

@@ -154,7 +154,7 @@ unificationSubstitution :: Substitution -> [ Assignment' ]
 unificationSubstitution = map trans
   where
     trans (v, p) =
-        Substitution.assign (Mock.makeUnifiedVariable v (termLikeSort p)) p
+        Substitution.assign (Mock.makeSomeVariable1 v (termLikeSort p)) p
 
 unificationResult :: UnificationResult -> Pattern'
 unificationResult
@@ -479,20 +479,20 @@ test_unification =
             )
     , testCase "SetVariable w. constructor" $
         andSimplifyFailure
-            (UnificationTerm (f (Mock.mkTestUnifiedVariable "@x")))
+            (UnificationTerm (f (Mock.mkTestSomeVariable1 "@x")))
             (UnificationTerm (f a))
             (unsupportedPatterns
                 "Unknown unification case."
-                (Mock.mkTestUnifiedVariable "@x")
+                (Mock.mkTestSomeVariable1 "@x")
                 a
             )
     , testCase "SetVariable" $
         andSimplifyFailure
-            (UnificationTerm (Mock.mkTestUnifiedVariable "@x"))
+            (UnificationTerm (Mock.mkTestSomeVariable1 "@x"))
             (UnificationTerm a)
             (unsupportedPatterns
                 "Unknown unification case."
-                (Mock.mkTestUnifiedVariable "@x")
+                (Mock.mkTestSomeVariable1 "@x")
                 a
             )
     , testCase "non-constructor symbolHead right" $

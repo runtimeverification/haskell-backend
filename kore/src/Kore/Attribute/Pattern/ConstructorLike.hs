@@ -38,9 +38,6 @@ import Kore.Syntax
 import Kore.Syntax.Application
     ( Application (..)
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 
 {- | A pattern is 'ConstructorLike' if logical equality is syntactic equality.
 
@@ -234,7 +231,7 @@ instance Synthetic ConstructorLike Inhabitant where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
-instance Synthetic ConstructorLike (Const (UnifiedVariable variable)) where
+instance Synthetic ConstructorLike (Const (SomeVariable1 variable)) where
     synthetic = const (ConstructorLike Nothing)
 
 instance Synthetic ConstructorLike (Const StringLiteral) where

@@ -31,7 +31,6 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 
 {- | @Symbolic@ represents the @symbolic@ attribute for axioms.
  -}
@@ -53,7 +52,7 @@ instance Ord variable => Default (Symbolic variable) where
     def = Symbolic mempty
 
 instance
-    Ord variable => From (Symbolic variable) (Set (UnifiedVariable variable))
+    Ord variable => From (Symbolic variable) (Set (SomeVariable1 variable))
   where
     from = from @(FreeVariables _) . unSymbolic
     {-# INLINE from #-}
@@ -75,7 +74,7 @@ symbolicSymbol =
         }
 
 -- | Kore pattern representing the @symbolic@ attribute.
-symbolicAttribute :: [UnifiedVariable VariableName] -> AttributePattern
+symbolicAttribute :: [SomeVariable1 VariableName] -> AttributePattern
 symbolicAttribute = attributePattern symbolicSymbol . map attributeVariable
 
 parseSymbolicAttribute

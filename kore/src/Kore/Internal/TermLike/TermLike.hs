@@ -205,7 +205,7 @@ data TermLikeF variable child
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
     | InternalBytesF !(Const InternalBytes child)
-    | VariableF      !(Const (UnifiedVariable variable) child)
+    | VariableF      !(Const (SomeVariable1 variable) child)
     | EndiannessF    !(Const Endianness child)
     | SignednessF    !(Const Signedness child)
     | InjF           !(Inj child)
@@ -631,7 +631,7 @@ traverseVariablesF adj =
     trElemVar = traverse $ traverseElementVariableName adj
     trSetVar = traverse $ traverseSetVariableName adj
     traverseConstVariable (Const variable) =
-        Const <$> traverseUnifiedVariable adj variable
+        Const <$> traverseSomeVariable1 adj variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
         <$> trElemVar existsVariable
@@ -691,7 +691,7 @@ mapVariables adj termLike =
         sequenceAdjunct $ nuBinder $ renameSetBinder trSetVar avoiding
 
     askSomeVariableName' = rightAdjunct <$> askSomeVariableName
-    askUnifiedVariable' = rightAdjunct askUnifiedVariable
+    askSomeVariable1' = rightAdjunct askSomeVariable1
 
     renameAttrs renaming =
         Attribute.mapVariables
@@ -711,7 +711,7 @@ mapVariables adj termLike =
                 case termLikeF of
                     VariableF (Const unifiedVariable1) ->
                         (VariableF . Const)
-                            (askUnifiedVariable' (env $> unifiedVariable1))
+                            (askSomeVariable1' (env $> unifiedVariable1))
                     ExistsF exists ->
                         ExistsF (mapExists avoiding (env $> exists))
                     ForallF forall ->
@@ -769,7 +769,7 @@ traverseVariables adj termLike =
         let avoiding = freeVariables attrs'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
-                unifiedVariable' <- askUnifiedVariable unifiedVariable
+                unifiedVariable' <- askSomeVariable1 unifiedVariable
                 (pure . VariableF) (Const unifiedVariable')
             ExistsF exists -> ExistsF <$> traverseExists avoiding exists
             ForallF forall -> ForallF <$> traverseForall avoiding forall
@@ -843,7 +843,7 @@ externalizeFreshVariables termLike =
     -- not have a generated counter. 'generatedFreeVariables' have a generated
     -- counter, usually because they were introduced by applying some axiom.
     originalFreeVariables, generatedFreeVariables
-        :: Set (UnifiedVariable VariableName)
+        :: Set (SomeVariable1 VariableName)
     (originalFreeVariables, generatedFreeVariables) =
         Set.partition (foldSomeVariable (pure Variable.isOriginalVariableName))
         $ FreeVariables.toSet $ freeVariables termLike
@@ -863,7 +863,7 @@ externalizeFreshVariables termLike =
             ::  ( VariableNameMap VariableName VariableName
                 , FreeVariables VariableName
                 )
-            ->  UnifiedVariable VariableName
+            ->  SomeVariable1 VariableName
             ->  ( VariableNameMap VariableName VariableName
                 , FreeVariables VariableName
                 )
@@ -1064,7 +1064,7 @@ updateCallStack = Lens.set created callstack
 mkVar
     :: HasCallStack
     => Ord variable
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> TermLike variable
 mkVar = updateCallStack . synthesize . VariableF . Const
 

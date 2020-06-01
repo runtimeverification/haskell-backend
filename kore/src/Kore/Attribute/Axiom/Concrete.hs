@@ -36,7 +36,6 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Error
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
@@ -58,7 +57,7 @@ instance Ord variable => Default (Concrete variable) where
     def = Concrete mempty
 
 instance
-    Ord variable => From (Concrete variable) (Set (UnifiedVariable variable))
+    Ord variable => From (Concrete variable) (Set (SomeVariable1 variable))
   where
     from = from @(FreeVariables _) . unConcrete
     {-# INLINE from #-}
@@ -80,7 +79,7 @@ concreteSymbol =
         }
 
 -- | Kore pattern representing the @concrete@ attribute.
-concreteAttribute :: [UnifiedVariable VariableName] -> AttributePattern
+concreteAttribute :: [SomeVariable1 VariableName] -> AttributePattern
 concreteAttribute = attributePattern concreteSymbol . map attributeVariable
 
 parseConcreteAttribute
@@ -119,7 +118,7 @@ parseFreeVariables freeVariables params args concreteVars = do
             ++ show duplicateVars)
     return (foldMap freeVariable nubVars)
   where
-    checkFree :: UnifiedVariable VariableName -> Parser ()
+    checkFree :: SomeVariable1 VariableName -> Parser ()
     checkFree variable@Variable1 { variableName1 } =
         unless (isFreeVariable variableName1 freeVariables)
         $ Kore.Error.koreFail

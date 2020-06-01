@@ -63,7 +63,6 @@ import qualified Kore.Internal.TermLike as TermLike
     )
 import Kore.Internal.Variable
 import Kore.Syntax
-import Kore.Variables.UnifiedVariable
 
 -- | A predicate and substitution without an accompanying term.
 type Condition variable = Conditional variable ()
@@ -134,7 +133,7 @@ bottomCondition = bottom
 
 hasFreeVariable
     :: InternalVariable variable
-    => UnifiedVariable variable
+    => SomeVariable1 variable
     -> Condition variable
     -> Bool
 hasFreeVariable variable =

@@ -48,7 +48,6 @@ import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshElementVariable
     )
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore hiding
     ( symbolGen
@@ -181,10 +180,10 @@ test_substitute =
             (mkElemVar Mock.z)
             (substitute
                 (Map.singleton
-                    (variableName1 $ Mock.makeTestUnifiedVariable "@x")
+                    (variableName1 $ Mock.makeTestSomeVariable1 "@x")
                     (mkElemVar Mock.z)
                 )
-                (Mock.mkTestUnifiedVariable "@x")
+                (Mock.mkTestSomeVariable1 "@x")
             )
         )
 
@@ -194,10 +193,10 @@ test_substitute =
             (Mock.functionalConstr10 (mkElemVar Mock.z))
             (substitute
                 (Map.singleton
-                    (variableName1 $ Mock.makeTestUnifiedVariable "@x")
+                    (variableName1 $ Mock.makeTestSomeVariable1 "@x")
                     (mkElemVar Mock.z)
                 )
-                (Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x"))
+                (Mock.functionalConstr10 (Mock.mkTestSomeVariable1 "@x"))
             )
         )
 
@@ -407,7 +406,7 @@ test_renaming =
 
     doesNotCapture
         :: HasCallStack
-        => UnifiedVariable VariableName
+        => SomeVariable1 VariableName
         -> TermLike'
         -> Assertion
     doesNotCapture Variable1 { variableName1 } renamed =

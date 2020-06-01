@@ -56,7 +56,6 @@ import Kore.Internal.TermLike as TermLike hiding
 import Kore.Rewriting.UnifyingRule
 import Kore.Unparser
 import Kore.Variables.Fresh
-import Kore.Variables.UnifiedVariable
 
 {- | The name of a 'RewritingVariable'.
  -}
@@ -130,13 +129,13 @@ mkElementRuleVariable
 mkElementRuleVariable = (fmap . fmap) RuleVariableName
 
 mkUnifiedRuleVariable
-    :: UnifiedVariable VariableName
-    -> UnifiedVariable RewritingVariableName
+    :: SomeVariable1 VariableName
+    -> SomeVariable1 RewritingVariableName
 mkUnifiedRuleVariable = (fmap . fmap) RuleVariableName
 
 mkUnifiedConfigVariable
-    :: UnifiedVariable VariableName
-    -> UnifiedVariable RewritingVariableName
+    :: SomeVariable1 VariableName
+    -> SomeVariable1 RewritingVariableName
 mkUnifiedConfigVariable = (fmap . fmap) ConfigVariableName
 
 getRuleVariable :: RewritingVariableName -> Maybe VariableName
@@ -144,8 +143,8 @@ getRuleVariable (RuleVariableName var) = Just var
 getRuleVariable _ = Nothing
 
 getUnifiedRuleVariable
-    :: UnifiedVariable RewritingVariableName
-    -> Maybe (UnifiedVariable VariableName)
+    :: SomeVariable1 RewritingVariableName
+    -> Maybe (SomeVariable1 VariableName)
 getUnifiedRuleVariable = (traverse . traverse) getRuleVariable
 
 getPattern
@@ -253,7 +252,7 @@ getRemainderPattern
     -> Pattern VariableName
 getRemainderPattern = getPattern
 
-isSomeConfigVariable :: UnifiedVariable RewritingVariableName -> Bool
+isSomeConfigVariable :: SomeVariable1 RewritingVariableName -> Bool
 isSomeConfigVariable = isSomeConfigVariableName . variableName1
 
 isSomeConfigVariableName :: SomeVariableName RewritingVariableName -> Bool

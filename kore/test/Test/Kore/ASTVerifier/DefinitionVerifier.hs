@@ -91,7 +91,6 @@ import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Unparser
     ( unparseToString
     )
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore
 
@@ -559,7 +558,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [UnifiedVariable VariableName] -> ParsedSentence
+    :: AliasName -> Sort -> [SomeVariable1 VariableName] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -570,7 +569,7 @@ objectAliasSentenceWithArguments a b c =
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
-    -> [UnifiedVariable VariableName]
+    -> [SomeVariable1 VariableName]
     -> patternType
     -> Sentence patternType
 aliasSentenceWithArguments (AliasName name) sort operands r =

@@ -132,7 +132,6 @@ import Kore.Unparser
     , unparse2
     )
 import Kore.Variables.Fresh
-import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 import Pretty
     ( Pretty
@@ -185,7 +184,7 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
         freeVariables right <> freeVariables ensures
         & FreeVariables.bindVariables (inject <$> existentials)
         & FreeVariables.toNames
-    rename :: Map (SomeVariableName variable) (UnifiedVariable variable)
+    rename :: Map (SomeVariableName variable) (SomeVariable1 variable)
     rename =
         refreshVariables
             (avoid <> bindExistsFreeVariables)
@@ -385,11 +384,11 @@ isFreeOf
     :: forall variable
     .  InternalVariable variable
     => RulePattern variable
-    -> Set.Set (UnifiedVariable variable)
+    -> Set.Set (SomeVariable1 variable)
     -> Bool
 isFreeOf rule =
     Set.disjoint
-    $ from @(FreeVariables variable) @(Set (UnifiedVariable _))
+    $ from @(FreeVariables variable) @(Set (SomeVariable1 _))
     $ freeVariables rule
 
 {- | Apply the substitution to the right-hand-side of a rule.

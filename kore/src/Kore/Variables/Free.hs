@@ -27,13 +27,12 @@ import Data.Set
 import qualified Data.Set as Set
 
 import Kore.Syntax
-import Kore.Variables.UnifiedVariable
 
 -- | The free variables of a pure pattern.
 freePureVariables
     :: Ord variable
     => Pattern variable annotation
-    -> Set (UnifiedVariable variable)
+    -> Set (SomeVariable1 variable)
 freePureVariables root =
     let (free, ()) =
             Monad.RWS.execRWS
@@ -80,8 +79,8 @@ pureMergeVariables
     :: Ord variable
     => Base
         (Pattern variable annotation)
-        (Set.Set (UnifiedVariable variable))
-    -> Set.Set (UnifiedVariable variable)
+        (Set.Set (SomeVariable1 variable))
+    -> Set.Set (SomeVariable1 variable)
 pureMergeVariables base =
     case Cofree.tailF base of
         VariableF (Const variable) -> Set.singleton variable
@@ -101,5 +100,5 @@ set, regardless of whether they are quantified or not.
 pureAllVariables
     :: Ord variable
     => Pattern variable annotation
-    -> Set.Set (UnifiedVariable variable)
+    -> Set.Set (SomeVariable1 variable)
 pureAllVariables = Recursive.fold pureMergeVariables

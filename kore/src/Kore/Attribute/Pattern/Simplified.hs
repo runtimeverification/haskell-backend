@@ -320,7 +320,7 @@ instance Synthetic Simplified (Const InternalBytes) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
-instance Synthetic Simplified (Const (UnifiedVariable variable)) where
+instance Synthetic Simplified (Const (SomeVariable1 variable)) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
