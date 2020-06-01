@@ -69,10 +69,7 @@ instance
 instance
     AstWithLocation variable => AstWithLocation (SomeVariableName variable)
   where
-    locationFromAst (SomeVariableNameElement elementVariableName) =
-        locationFromAst elementVariableName
-    locationFromAst (SomeVariableNameSet setVariableName) =
-        locationFromAst setVariableName
+    locationFromAst = foldSomeVariableName (pure locationFromAst)
 
 instance
     AstWithLocation variable => AstWithLocation (Variable variable)
