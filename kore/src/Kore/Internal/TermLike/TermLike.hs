@@ -464,20 +464,10 @@ instance TopBottom (TermLike variable) where
 instance InternalVariable variable => Binding (TermLike variable) where
     type VariableType (TermLike variable) = variable
 
-    traverseElementVariable traversal termLike =
+    traverseVariable traversal termLike =
         case termLikeF of
-            VariableF (Const unifiedVariable)
-              | Just elementVariable <- retract unifiedVariable ->
-                mkVar . inject <$> traversal elementVariable
-            _ -> pure termLike
-      where
-        _ :< termLikeF = Recursive.project termLike
-
-    traverseSetVariable traversal termLike =
-        case termLikeF of
-            VariableF (Const unifiedVariable)
-              | Just setVariable <- retract unifiedVariable ->
-                mkVar . inject <$> traversal setVariable
+            VariableF (Const unifiedVariable) ->
+                mkVar <$> traversal unifiedVariable
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike

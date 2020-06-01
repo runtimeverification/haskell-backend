@@ -85,21 +85,18 @@ class Binding binding where
 
     -- | Traverse the variable at the top of a pattern.
     traverseVariable :: Lens.Traversal' binding (SomeVariableType binding)
-    traverseVariable traversal binding =
-        fromMaybe (pure binding) (matchElem <|> matchSet)
-      where
-        matchSet = matchWith traverseSetVariable traversalSet binding
-        matchElem = matchWith traverseElementVariable traversalElem binding
-        traversalSet = fmap expectSetVar . traversal . inject
-        traversalElem = fmap expectElemVar . traversal . inject
 
     -- | Traverse the element variable at the top of a pattern.
     traverseElementVariable
         :: Lens.Traversal' binding (ElementVariableType binding)
+    traverseElementVariable = traverseVariable . injection
+    {-# INLINE traverseElementVariable #-}
 
     -- | Traverse the element variable at the top of a pattern.
     traverseSetVariable
         :: Lens.Traversal' binding (SetVariableType binding)
+    traverseSetVariable = traverseVariable . injection
+    {-# INLINE traverseSetVariable #-}
 
 type SomeVariableType    binding = SomeVariable    (VariableType binding)
 type ElementVariableType binding = ElementVariable (VariableType binding)
