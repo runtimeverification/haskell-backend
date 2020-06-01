@@ -12,7 +12,6 @@ module Kore.Variables.UnifiedVariable
     , expectSetVar
     , extractElementVariable
     , foldMapVariable
-    , unifiedVariableSort
     , refreshElementVariable
     , refreshSetVariable
     , MapVariables
@@ -26,7 +25,6 @@ import Data.Set
     ( Set
     )
 
-import Kore.Sort
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh
 
@@ -91,10 +89,6 @@ foldMapVariable f Variable1 { variableName1 } =
             f (unElementVariableName elementVariableName)
         SomeVariableNameSet setVariableName ->
             f (unSetVariableName setVariableName)
-
--- | The 'Sort' of a 'SetVariable' or an 'ElementVariable'.
-unifiedVariableSort :: UnifiedVariable variable -> Sort
-unifiedVariableSort = variableSort1
 
 refreshElementVariable
     :: FreshName (SomeVariableName variable)

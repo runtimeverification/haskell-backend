@@ -91,7 +91,7 @@ verifyAliasLeftPattern
 verifyAliasLeftPattern alias aliasSorts leftPattern = do
     koreFailWhen (declaredHead /= symbolOrAlias) aliasDeclarationMismatch
     let expect = expectVariable <$> applicationChildren leftPattern
-    verified <- verifyPatternsWithSorts unifiedVariableSort aliasSorts expect
+    verified <- verifyPatternsWithSorts variableSort1 aliasSorts expect
     declaredVariables <- uniqueDeclaredVariables verified
     let verifiedLeftPattern = leftPattern { applicationChildren = verified }
     return (declaredVariables, verifiedLeftPattern)
