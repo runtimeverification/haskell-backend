@@ -2,9 +2,7 @@ module Test.Kore.Variables.UnifiedVariable
     ( test_isSetVar
     , test_isElemVar
     -- * Re-exports
-    , module Kore.Syntax.ElementVariable
     , module Kore.Syntax.Variable
-    , module Kore.Syntax.SetVariable
     , module Kore.Variables.UnifiedVariable
     ) where
 
@@ -12,8 +10,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 

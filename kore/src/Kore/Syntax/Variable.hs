@@ -15,6 +15,10 @@ module Kore.Syntax.Variable
     , Variable1 (..)
     , SomeVariable1
     , mkSomeVariable1
+    , ElementVariable
+    , mkElementVariable
+    , SetVariable
+    , mkSetVariable
     -- * Variable names
     , VariableName (..)
     , mkVariableName
@@ -427,6 +431,26 @@ instance
 instance Synthetic Sort (Const (Variable1 variable)) where
     synthetic = variableSort1 . getConst
     {-# INLINE synthetic #-}
+
+-- | Element (singleton) Kore variables
+type ElementVariable variable = Variable1 (ElementVariableName variable)
+
+mkElementVariable :: Id -> Sort -> ElementVariable VariableName
+mkElementVariable base variableSort1 =
+    Variable1
+    { variableName1 = ElementVariableName (mkVariableName base)
+    , variableSort1
+    }
+
+-- | Kore set variables
+type SetVariable variable = Variable1 (SetVariableName variable)
+
+mkSetVariable :: Id -> Sort -> SetVariable VariableName
+mkSetVariable base variableSort1 =
+    Variable1
+    { variableName1 = SetVariableName (mkVariableName base)
+    , variableSort1
+    }
 
 {- | @SomeVariableName@ is the name of a variable in a pattern.
 

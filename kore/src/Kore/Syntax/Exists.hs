@@ -20,7 +20,6 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
 import qualified Pretty

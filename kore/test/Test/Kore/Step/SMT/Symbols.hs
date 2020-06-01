@@ -64,7 +64,6 @@ import Kore.Step.SMT.Translate
     ( evalTranslator
     , translatePredicateWith
     )
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Log
     ( MonadLog (..)

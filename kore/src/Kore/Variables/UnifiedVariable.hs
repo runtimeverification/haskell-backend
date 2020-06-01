@@ -27,8 +27,6 @@ import Data.Set
     )
 
 import Kore.Sort
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh
 

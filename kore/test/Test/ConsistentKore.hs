@@ -114,8 +114,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 

@@ -9,8 +9,6 @@ module Kore.Internal.Variable
     , InternalVariable
     , FreshName
     , FreshPartialOrd
-    , module Kore.Syntax.ElementVariable
-    , module Kore.Syntax.SetVariable
     , module Kore.Syntax.Variable
     ) where
 
@@ -19,8 +17,6 @@ import Prelude.Kore
 import Kore.Debug
     ( Debug
     )
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
     ( Unparse

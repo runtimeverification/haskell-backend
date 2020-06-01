@@ -33,12 +33,11 @@ import Data.Monoid
     )
 import qualified GHC.Generics as GHC
 
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
-import Kore.Syntax.SetVariable
+import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     , expectElemVar

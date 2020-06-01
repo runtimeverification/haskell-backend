@@ -73,7 +73,6 @@ import Kore.Step.RulePattern as RulePattern
     , rulePattern
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 
 import Test.Kore

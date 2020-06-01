@@ -39,7 +39,6 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 

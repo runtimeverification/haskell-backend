@@ -62,7 +62,6 @@ import Kore.Step.RulePattern
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh
     ( refreshVariable

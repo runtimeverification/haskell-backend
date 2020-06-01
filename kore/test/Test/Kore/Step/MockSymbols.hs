@@ -105,8 +105,6 @@ import qualified Kore.Step.SMT.Representation.Resolve as SMT
     ( resolve
     )
 import Kore.Syntax.Application
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 import qualified SMT.AST as SMT

@@ -53,7 +53,6 @@ import Kore.Sort
     , SortActual (SortActual)
     )
 import qualified Kore.Sort as Sort.DoNotUse
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Id
     ( Id
     )

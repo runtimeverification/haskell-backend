@@ -57,7 +57,6 @@ import Kore.Step.RulePattern
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.RulePattern as Rule.DoNotUse
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Id
     ( Id
     )
