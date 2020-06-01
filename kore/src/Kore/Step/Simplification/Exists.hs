@@ -69,6 +69,7 @@ import Kore.Internal.TermLike
     , TermLike
     , Variable (..)
     , mkExists
+    , retractElementVariable
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -94,9 +95,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( retractElementVariable
-    )
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done

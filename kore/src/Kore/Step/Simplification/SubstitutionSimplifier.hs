@@ -89,6 +89,7 @@ import Kore.Internal.TermLike
     , TermLike
     , TermLikeF (..)
     , Variable (..)
+    , isSetVariable
     , mkAnd
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -100,9 +101,6 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization
     ( normalize
-    )
-import Kore.Variables.UnifiedVariable
-    ( isSetVariable
     )
 import qualified Pretty
 

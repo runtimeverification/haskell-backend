@@ -101,8 +101,10 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( isFunctionPattern
+    ( isElementVariable
+    , isFunctionPattern
     , mkAnd
+    , retractElementVariable
     )
 import Kore.Log.DebugProofState
 import Kore.Log.ErrorRewritesInstantiation
@@ -173,10 +175,6 @@ import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
     ( unparse
-    )
-import Kore.Variables.UnifiedVariable
-    ( isElementVariable
-    , retractElementVariable
     )
 import qualified Kore.Verified as Verified
 import Log

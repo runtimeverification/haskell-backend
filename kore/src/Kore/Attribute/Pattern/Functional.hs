@@ -31,9 +31,6 @@ import Kore.Internal.InternalBytes
     )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
-import Kore.Variables.UnifiedVariable
-    ( isElementVariable
-    )
 
 {- | A pattern is 'Functional' if it matches exactly one element.
  -}

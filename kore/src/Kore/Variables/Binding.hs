@@ -38,10 +38,6 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
-    ( expectElementVariable
-    , expectSetVariable
-    )
 
 {- | @Binding@ defines traversals for patterns with binders.
 

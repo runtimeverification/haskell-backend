@@ -62,7 +62,7 @@ import Kore.Syntax
     , StringLiteral
     , Top
     )
-import Kore.Variables.UnifiedVariable
+import Kore.Syntax.Variable
 
 {- | How well simplified is a pattern.
 -}

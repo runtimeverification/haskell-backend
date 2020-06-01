@@ -28,10 +28,7 @@ import Kore.Internal.ApplicationSorts
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
-    ( VariableName
-    )
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 
 data Alias patternType =
     Alias
