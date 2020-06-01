@@ -59,7 +59,6 @@ import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 
 {- | 'PatternF' is the 'Base' functor of Kore patterns
 

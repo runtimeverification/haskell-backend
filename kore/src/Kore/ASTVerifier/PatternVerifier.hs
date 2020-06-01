@@ -57,7 +57,6 @@ import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 import qualified Kore.Variables.Free as Variables
-import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 import Pretty
     ( (<+>)
@@ -371,7 +370,7 @@ verifyApplyAlias application =
         :: (SomeVariable VariableName, PatternVerifier Verified.Pattern)
         -> PatternVerifier ()
     ensureChildIsDeclaredVarType (var, mpat)
-      | isElemVar var = do
+      | isElementVariable var = do
         pat <- mpat
         case pat of
             Internal.ElemVar_ _ -> pure ()

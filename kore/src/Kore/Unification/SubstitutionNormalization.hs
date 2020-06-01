@@ -47,7 +47,6 @@ import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
-import Kore.Variables.UnifiedVariable
 
 {- | 'normalize' a substitution as far as possible.
 
@@ -83,7 +82,7 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
                     -- All substitutions in the cycle are variable-only renaming
                     -- substitutions.
                     renamingCycle
-                  | all isSetVar cycleVariables' ->
+                  | all isSetVariable cycleVariables' ->
                     -- All variables in the cycle are set variables.
                     setCtorCycle cycleVariables'
                   | otherwise ->
@@ -217,7 +216,7 @@ isSatisfiableSubstitution
     :: Assignment variable
     -> Bool
 isSatisfiableSubstitution (Assignment variable termLike) =
-    not $ isElemVar variable && isBottom termLike
+    not $ isElementVariable variable && isBottom termLike
 
 {- | Calculate the dependencies of a substitution.
 

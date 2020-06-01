@@ -95,7 +95,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
-    ( extractElementVariable
+    ( retractElementVariable
     )
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
@@ -229,7 +229,7 @@ makeEvaluate sideCondition variables original = do
 
     substVariables =
         mapMaybe
-            extractElementVariable
+            retractElementVariable
             $ Foldable.toList
             $ Substitution.variables
                 (Conditional.substitution original)

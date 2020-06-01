@@ -95,7 +95,6 @@ import Kore.TopBottom
 import Kore.Unparser
     ( unparseToString
     )
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 import qualified SQL
 
@@ -425,7 +424,7 @@ unsafeWrap =
         & assert (not $ any depends $ Map.keys subst)
         -- and if this is an element variable substitution, the substitution
         -- must be defined.
-        & assert (not $ isElemVar var && isBottom termLike)
+        & assert (not $ isElementVariable var && isBottom termLike)
       where
         Variable { variableName1 } = var
         occurs = TermLike.hasFreeVariable variableName1

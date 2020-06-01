@@ -40,7 +40,6 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 
 newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Map (SomeVariableName variable) Sort }
@@ -161,7 +160,7 @@ traverseFreeVariables adj =
 {- | Extracts the list of free element variables
 -}
 getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
-getFreeElementVariables = mapMaybe extractElementVariable . toList
+getFreeElementVariables = mapMaybe retractElementVariable . toList
 
 -- TODO (thomas.tuegel): Use an associated type family with HasFreeVariables to
 -- fix type inference.

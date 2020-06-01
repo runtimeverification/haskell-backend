@@ -102,7 +102,7 @@ import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
 import Kore.Variables.UnifiedVariable
-    ( isSetVar
+    ( isSetVariable
     )
 import qualified Pretty
 
@@ -228,7 +228,7 @@ deduplicateSubstitution sideCondition makeAnd' =
         ]
       | otherwise = m
       where
-        getProblems = Map.filterWithKey (\k v -> isSetVar k && isNotSingleton v)
+        getProblems = Map.filterWithKey (\k v -> isSetVariable k && isNotSingleton v)
         isNotSingleton = isNothing . getSingleton
 
     simplifyAnds' = simplifyAnds sideCondition makeAnd'

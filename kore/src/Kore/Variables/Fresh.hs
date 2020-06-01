@@ -34,7 +34,6 @@ import qualified Data.Set as Set
 import Data.Sup
 import Kore.Sort
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 
 {- | @FreshPartialOrder@ defines a partial order for renaming variables.
 
@@ -215,9 +214,9 @@ refreshElementVariable
     -> ElementVariable variable
     -> Maybe (ElementVariable variable)
 refreshElementVariable avoiding =
-    -- expectElemVar is safe because the FreshVariable instance of
+    -- expectElementVariable is safe because the FreshVariable instance of
     -- SomeVariable (above) conserves the ElemVar constructor.
-    fmap expectElemVar . refreshVariable avoiding . inject
+    fmap expectElementVariable . refreshVariable avoiding . inject
 
 refreshSetVariable
     :: FreshName (SomeVariableName variable)
@@ -225,9 +224,9 @@ refreshSetVariable
     -> SetVariable variable
     -> Maybe (SetVariable variable)
 refreshSetVariable avoiding =
-    -- expectElemVar is safe because the FreshVariable instance of
+    -- expectElementVariable is safe because the FreshVariable instance of
     -- SomeVariable (above) conserves the SetVar constructor.
-    fmap expectSetVar . refreshVariable avoiding . inject
+    fmap expectSetVariable . refreshVariable avoiding . inject
 
 {- | Rename one set of variables while avoiding another.
 

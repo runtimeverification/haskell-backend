@@ -175,8 +175,8 @@ import Kore.Unparser
     ( unparse
     )
 import Kore.Variables.UnifiedVariable
-    ( extractElementVariable
-    , isElemVar
+    ( isElementVariable
+    , retractElementVariable
     )
 import qualified Kore.Verified as Verified
 import Log
@@ -1042,10 +1042,10 @@ removalPredicate
             (destVariables dest)
             (configVariables config)
     remainderNonElemVariables config dest =
-        filter (not . isElemVar) (remainderVariables config dest)
+        filter (not . isElementVariable) (remainderVariables config dest)
     remainderElementVariables config dest =
         mapMaybe
-            extractElementVariable
+            retractElementVariable
             (remainderVariables config dest)
 
 getConfiguration :: ReachabilityRule -> Pattern VariableName

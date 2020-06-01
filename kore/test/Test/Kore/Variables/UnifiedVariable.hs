@@ -1,6 +1,6 @@
 module Test.Kore.Variables.UnifiedVariable
-    ( test_isSetVar
-    , test_isElemVar
+    ( test_isSetVariable
+    , test_isElementVariable
     -- * Re-exports
     , module Kore.Syntax.Variable
     , module Kore.Variables.UnifiedVariable
@@ -21,8 +21,8 @@ import Test.Kore.Step.MockSymbols
     )
 import Test.Tasty.HUnit.Ext
 
-test_isSetVar :: [TestTree]
-test_isSetVar =
+test_isSetVariable :: [TestTree]
+test_isSetVariable =
     [ test "set variable"
         (True, mkSomeVariable $ mkSetVariable (testId "@x") testSort)
     , test "element variable"
@@ -36,11 +36,11 @@ test_isSetVar =
         -> TestTree
     test name (expect, input) =
         testCase name $ do
-            let actual = isSetVar input
+            let actual = isSetVariable input
             assertEqual "" expect actual
 
-test_isElemVar :: [TestTree]
-test_isElemVar =
+test_isElementVariable :: [TestTree]
+test_isElementVariable =
     [ test "set variable"
         (False, mkSomeVariable $ mkSetVariable (testId "@x") testSort)
     , test "element variable"
@@ -54,5 +54,5 @@ test_isElemVar =
         -> TestTree
     test name (expect, input) =
         testCase name $ do
-            let actual = isElemVar input
+            let actual = isElementVariable input
             assertEqual "" expect actual

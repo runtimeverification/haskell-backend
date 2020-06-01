@@ -39,8 +39,8 @@ import Kore.Syntax.Mu
 import Kore.Syntax.Nu
 import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
-    ( expectElemVar
-    , expectSetVar
+    ( expectElementVariable
+    , expectSetVariable
     )
 
 {- | @Binding@ defines traversals for patterns with binders.
@@ -63,11 +63,11 @@ class Binding binding where
         matchSet = matchWith traverseSetBinder traversalSet binding
         matchElem = matchWith traverseElementBinder traversalElem binding
         traversalSet =
-            fmap (field @"binderVariable" %~ expectSetVar)
+            fmap (field @"binderVariable" %~ expectSetVariable)
             . traversal
             . (field @"binderVariable" %~ inject)
         traversalElem =
-            fmap (field @"binderVariable" %~ expectElemVar)
+            fmap (field @"binderVariable" %~ expectElementVariable)
             . traversal
             . (field @"binderVariable" %~ inject)
 

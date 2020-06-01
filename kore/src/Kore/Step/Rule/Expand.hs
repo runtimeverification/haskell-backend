@@ -66,7 +66,6 @@ import Kore.Syntax.Variable
 import Kore.Variables.Fresh
     ( refreshVariable
     )
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 -- | Instantiate variables on sorts with a single constructor
@@ -91,7 +90,7 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
             } ->
             let leftVariables :: [ElementVariable VariableName]
                 leftVariables =
-                    mapMaybe extractElementVariable
+                    mapMaybe retractElementVariable
                     $ FreeVariables.toList
                     $ freeVariables left
                 allSomeVariables :: Set (SomeVariable VariableName)

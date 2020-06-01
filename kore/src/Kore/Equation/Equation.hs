@@ -74,7 +74,6 @@ import Kore.Unparser
     ( Unparse (..)
     )
 import qualified Kore.Variables.Fresh as Fresh
-import Kore.Variables.UnifiedVariable
 import Pretty
     ( Pretty (..)
     )

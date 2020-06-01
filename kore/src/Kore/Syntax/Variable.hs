@@ -16,6 +16,14 @@ module Kore.Syntax.Variable
     , SomeVariable
     , mkSomeVariable
     , foldSomeVariable
+    , mapSomeVariable
+    , traverseSomeVariable
+    , retractElementVariable
+    , isElementVariable
+    , expectElementVariable
+    , retractSetVariable
+    , isSetVariable
+    , expectSetVariable
     , ElementVariable
     , mkElementVariable
     , SetVariable
@@ -576,3 +584,66 @@ foldSomeVariable
     :: AdjSomeVariableName (variable1 -> r)
     -> SomeVariable variable1 -> r
 foldSomeVariable adj = foldSomeVariableName adj . variableName1
+
+mapSomeVariable
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> SomeVariable variable1 -> SomeVariable variable2
+mapSomeVariable adj = fmap (mapSomeVariableName adj)
+
+traverseSomeVariable
+    :: Applicative f
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> SomeVariable variable1 -> f (SomeVariable variable2)
+traverseSomeVariable adj = traverse (traverseSomeVariableName adj)
+
+retractElementVariable
+    :: SomeVariable variable
+    -> Maybe (ElementVariable variable)
+retractElementVariable = retract
+
+isElementVariable :: SomeVariable variable -> Bool
+isElementVariable = isJust . retractElementVariable
+
+{- | Extract an 'ElementVariable' from a 'SomeVariable'.
+
+It is an error if the 'SomeVariable' is not the 'ElemVar' constructor.
+
+Use @expectElementVariable@ when maintaining the invariant outside the type
+system that the 'SomeVariable' is an 'ElementVariable', but please include a
+comment at the call site describing how the invariant is maintained.
+
+ -}
+expectElementVariable
+    :: HasCallStack
+    => SomeVariable variable
+    -> ElementVariable variable
+expectElementVariable unifiedVariable =
+    retractElementVariable unifiedVariable
+    & fromMaybe (error "Expected element variable")
+
+retractSetVariable
+    :: SomeVariable variable
+    -> Maybe (SetVariable variable)
+retractSetVariable = retract
+
+isSetVariable :: forall variable. SomeVariable variable -> Bool
+isSetVariable unifiedVariable
+  | Just _ <- retract @_ @(SetVariable variable) unifiedVariable = True
+  | otherwise                                                    = False
+
+{- | Extract an 'SetVariable' from a 'SomeVariable'.
+
+It is an error if the 'SomeVariable' is not the 'SetVar' constructor.
+
+Use @expectSetVariable@ when maintaining the invariant outside the type system
+that the 'SomeVariable' is an 'SetVariable', but please include a comment at the
+call site describing how the invariant is maintained.
+
+ -}
+expectSetVariable
+    :: HasCallStack
+    => SomeVariable variable
+    -> SetVariable variable
+expectSetVariable unifiedVariable =
+    retractSetVariable unifiedVariable
+    & fromMaybe (error "Expected set variable")
