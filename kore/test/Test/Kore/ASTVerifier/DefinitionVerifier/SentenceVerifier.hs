@@ -25,7 +25,6 @@ import Kore.Internal.TermLike
     , mkSetVar
     , mkTop
     , mkTop
-    , setVarS
     )
 import qualified Kore.Step.Rule as Rule
 import Kore.Step.RulePattern
@@ -54,7 +53,7 @@ test_FreeVarInRHS =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ patternToSentence patternFreeVarInRHS
             , simpleSortSentence (SortName (getId Mock.testSortId))
-            , asSentence sentenceAlias
+            , sentenceAlias
             ]
         )
     , expectSuccess "Claim with only existentially quantified variables in rhs"
@@ -62,22 +61,23 @@ test_FreeVarInRHS =
             [ patternToSentence patternNoFreeVarInRHS
             , simpleSortSentence (SortName (getId Mock.testSortId))
             , sentenceAlias
-                & Lens.over (field @"sentenceAliasLeftPattern")
-                    (setField @"applicationChildren"
-                        [inject $ mkSetVariable (testId "x") Mock.testSort]
-                    )
-                & asSentence
             ]
         )
     ]
   where
+    sortVariableR = SortVariable (testId "R")
+    sortR = SortVariableSort sortVariableR
+    x = mkSetVariable (testId "x") sortR
     sentenceAlias =
         sentenceAliasWithSortArgument
             (AliasName weakExistsFinally)
-            Mock.testSort
-            Mock.testSort
-            [SortVariable Mock.testSortId]
-            (externalize $ mkSetVar (setVarS "x" Mock.testSort))
+            sortR
+            sortR
+            [sortVariableR]
+            (externalize $ mkSetVar x)
+        & Lens.over (field @"sentenceAliasLeftPattern")
+            (setField @"applicationChildren" [inject x])
+        & asSentence
 
 patternToSentence :: Pattern VariableName Null -> ParsedSentence
 patternToSentence patt =

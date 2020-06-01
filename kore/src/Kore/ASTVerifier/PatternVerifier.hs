@@ -370,14 +370,16 @@ verifyApplyAlias application =
     ensureChildIsDeclaredVarType
         :: (UnifiedVariable VariableName, PatternVerifier Verified.Pattern)
         -> PatternVerifier ()
-    ensureChildIsDeclaredVarType (var, mpat) = do
+    ensureChildIsDeclaredVarType (var, mpat)
+      | isElemVar var = do
         pat <- mpat
         case pat of
-            Internal.ElemVar_ _ | isElemVar var -> pure ()
+            Internal.ElemVar_ _ -> pure ()
             _ ->
                 koreFail
                     "The alias was declared with an element variable, but its\
                     \ argument is not an element variable."
+      | otherwise = pure ()
 
 verifyApplySymbol
     :: (child -> Sort)
