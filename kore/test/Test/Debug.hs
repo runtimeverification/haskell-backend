@@ -226,7 +226,7 @@ test_Debug =
         \    VariableName\n\
         \    { base = Id { getId = \"v\", idLocation = AstLocationTest }\n\
         \    , counter = Nothing\n\
-        \    }\
+        \    }\n\
         \, variableSort1 =\n\
         \    SortVariableSort\n\
         \        SortVariable\n\
