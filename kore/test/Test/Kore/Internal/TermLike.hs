@@ -45,6 +45,9 @@ import Kore.Domain.Builtin
     )
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike
+import Kore.Variables.Fresh
+    ( refreshElementVariable
+    )
 import Kore.Variables.UnifiedVariable
 
 import Test.Kore hiding

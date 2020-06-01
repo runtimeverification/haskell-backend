@@ -11,20 +11,13 @@ module Kore.Variables.UnifiedVariable
     , isSetVar
     , expectSetVar
     , extractElementVariable
-    , refreshElementVariable
-    , refreshSetVariable
     , mapUnifiedVariable
     , traverseUnifiedVariable
     ) where
 
 import Prelude.Kore
 
-import Data.Set
-    ( Set
-    )
-
 import Kore.Syntax.Variable
-import Kore.Variables.Fresh
 
 {- | @UnifiedVariable@ helps distinguish set variables (introduced by 'SetVar')
 from element variables (introduced by 'ElemVar').
@@ -78,26 +71,6 @@ expectSetVar unifiedVariable
 extractElementVariable
     :: UnifiedVariable variable -> Maybe (ElementVariable variable)
 extractElementVariable = retract
-
-refreshElementVariable
-    :: FreshName (SomeVariableName variable)
-    => Set (SomeVariableName variable)
-    -> ElementVariable variable
-    -> Maybe (ElementVariable variable)
-refreshElementVariable avoiding =
-    -- expectElemVar is safe because the FreshVariable instance of
-    -- UnifiedVariable (above) conserves the ElemVar constructor.
-    fmap expectElemVar . refreshVariable avoiding . inject
-
-refreshSetVariable
-    :: FreshName (SomeVariableName variable)
-    => Set (SomeVariableName variable)
-    -> SetVariable variable
-    -> Maybe (SetVariable variable)
-refreshSetVariable avoiding =
-    -- expectElemVar is safe because the FreshVariable instance of
-    -- UnifiedVariable (above) conserves the SetVar constructor.
-    fmap expectSetVar . refreshVariable avoiding . inject
 
 mapUnifiedVariable
     :: AdjSomeVariableName (variable1 -> variable2)

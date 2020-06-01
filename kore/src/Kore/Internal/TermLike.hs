@@ -273,6 +273,8 @@ import Kore.Variables.Binding
 import Kore.Variables.Fresh
     ( FreshName
     , FreshPartialOrd
+    , refreshElementVariable
+    , refreshSetVariable
     )
 import qualified Kore.Variables.Fresh as Fresh
 import Kore.Variables.UnifiedVariable

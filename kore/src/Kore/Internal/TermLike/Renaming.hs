@@ -50,10 +50,12 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Variable
 import Kore.Variables.Binding
+import Kore.Variables.Fresh
+    ( refreshElementVariable
+    , refreshSetVariable
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
-    , refreshElementVariable
-    , refreshSetVariable
     )
 
 type VariableNameMap variable1 variable2 =

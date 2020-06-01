@@ -78,7 +78,7 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
-import Kore.Variables.UnifiedVariable
+import Kore.Variables.Fresh
     ( refreshElementVariable
     )
 
