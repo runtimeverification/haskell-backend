@@ -1755,7 +1755,7 @@ unifiesWithMulti pat1 pat2 expectedResults = do
 unifiedBy
     :: HasCallStack
     => (TermLike VariableName, TermLike VariableName)
-    -> [(SomeVariable1 VariableName, TermLike VariableName)]
+    -> [(SomeVariable VariableName, TermLike VariableName)]
     -> TestName
     -> TestTree
 unifiedBy (termLike1, termLike2) substitution testName =

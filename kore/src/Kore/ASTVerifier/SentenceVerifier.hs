@@ -424,7 +424,7 @@ verifyClaimSentence sentence =
       =
         not $ Set.isSubsetOf rightVars leftVars
           where
-            rightVars, leftVars :: Set (SomeVariable1 VariableName)
+            rightVars, leftVars :: Set (SomeVariable VariableName)
             rightVars = freeVariables rhs & FreeVariables.toSet
             lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
             leftVars = foldMap freeVariables lhs & FreeVariables.toSet

@@ -52,7 +52,7 @@ instance Ord variable => Default (Symbolic variable) where
     def = Symbolic mempty
 
 instance
-    Ord variable => From (Symbolic variable) (Set (SomeVariable1 variable))
+    Ord variable => From (Symbolic variable) (Set (SomeVariable variable))
   where
     from = from @(FreeVariables _) . unSymbolic
     {-# INLINE from #-}
@@ -74,7 +74,7 @@ symbolicSymbol =
         }
 
 -- | Kore pattern representing the @symbolic@ attribute.
-symbolicAttribute :: [SomeVariable1 VariableName] -> AttributePattern
+symbolicAttribute :: [SomeVariable VariableName] -> AttributePattern
 symbolicAttribute = attributePattern symbolicSymbol . map attributeVariable
 
 parseSymbolicAttribute

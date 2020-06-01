@@ -7,7 +7,7 @@ License     : NCSA
 module Kore.Variables.Binding
     ( Binding (..)
     , matchWith
-    , SomeVariable1Type
+    , SomeVariableType
     , ElementVariableType
     , SetVariableType
     -- * Binders
@@ -56,7 +56,7 @@ class Binding binding where
     traverseBinder
         ::  Lens.Traversal'
                 binding
-                (Binder (SomeVariable1Type binding) binding)
+                (Binder (SomeVariableType binding) binding)
     traverseBinder traversal binding =
         fromMaybe (pure binding) (matchElem <|> matchSet)
       where
@@ -84,7 +84,7 @@ class Binding binding where
                 (Binder (SetVariableType binding) binding)
 
     -- | Traverse the variable at the top of a pattern.
-    traverseVariable :: Lens.Traversal' binding (SomeVariable1Type binding)
+    traverseVariable :: Lens.Traversal' binding (SomeVariableType binding)
     traverseVariable traversal binding =
         fromMaybe (pure binding) (matchElem <|> matchSet)
       where
@@ -101,7 +101,7 @@ class Binding binding where
     traverseSetVariable
         :: Lens.Traversal' binding (SetVariableType binding)
 
-type SomeVariable1Type binding = SomeVariable1 (VariableType binding)
+type SomeVariableType    binding = SomeVariable    (VariableType binding)
 type ElementVariableType binding = ElementVariable (VariableType binding)
 type SetVariableType     binding = SetVariable     (VariableType binding)
 

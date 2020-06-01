@@ -558,7 +558,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [SomeVariable1 VariableName] -> ParsedSentence
+    :: AliasName -> Sort -> [SomeVariable VariableName] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -569,7 +569,7 @@ objectAliasSentenceWithArguments a b c =
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
-    -> [SomeVariable1 VariableName]
+    -> [SomeVariable VariableName]
     -> patternType
     -> Sentence patternType
 aliasSentenceWithArguments (AliasName name) sort operands r =

@@ -300,7 +300,7 @@ syncSort patt = coerceSort (patternSort patt) patt
 
 assign
     :: InternalVariable variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> TermLike variable
     -> Pattern variable
 assign variable term =

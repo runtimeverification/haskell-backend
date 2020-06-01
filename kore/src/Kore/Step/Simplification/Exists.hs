@@ -67,7 +67,7 @@ import Kore.Internal.TermLike
     , SomeVariableName
     , Sort
     , TermLike
-    , Variable1 (..)
+    , Variable (..)
     , mkExists
     , withoutFreeVariable
     )

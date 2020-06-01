@@ -355,11 +355,11 @@ Always starts with @:@.
 -}
 variableRemainderParser
     :: Id  -- ^ The already parsed prefix.
-    -> Parser (Variable1 VariableName)
+    -> Parser (Variable VariableName)
 variableRemainderParser base = do
     colonParser
     variableSort1 <- sortParser
-    return Variable1
+    return Variable
         { variableName1 = VariableName { base, counter = mempty }
         , variableSort1
         }
@@ -399,12 +399,12 @@ setVariableParser =
 
 Set variables always start with @\@@, while element variables do not.
 -}
-variableParser :: Parser (SomeVariable1 VariableName)
+variableParser :: Parser (SomeVariable VariableName)
 variableParser = do
     c <- ParserUtils.peekChar'
     if c == '@'
-        then inject @(SomeVariable1 _) <$> setVariableParser
-        else inject @(SomeVariable1 _) <$> elementVariableParser
+        then inject @(SomeVariable _) <$> setVariableParser
+        else inject @(SomeVariable _) <$> elementVariableParser
 
 {-| Parses an element variable pattern or application pattern,
 using an open recursion scheme for its children.
@@ -432,7 +432,7 @@ elemVarOrTermPatternParser childParser = do
             var <- variableRemainderParser identifier
             return
                 $ VariableF $ Const
-                $ inject @(SomeVariable1 _) $ ElementVariableName <$> var
+                $ inject @(SomeVariable _) $ ElementVariableName <$> var
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
@@ -466,7 +466,7 @@ koreVariableOrTermPatternParser = do
         case c of
         '@' -> do
             var <- setVariableParser
-            return $ VariableF $ Const $ inject @(SomeVariable1 _) var
+            return $ VariableF $ Const $ inject @(SomeVariable _) var
         '\\' -> do
             identifier <- symbolIdParser
             symbolOrAliasPatternRemainderParser korePatternParser identifier

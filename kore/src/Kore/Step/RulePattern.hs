@@ -184,7 +184,7 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
         freeVariables right <> freeVariables ensures
         & FreeVariables.bindVariables (inject <$> existentials)
         & FreeVariables.toNames
-    rename :: Map (SomeVariableName variable) (SomeVariable1 variable)
+    rename :: Map (SomeVariableName variable) (SomeVariable variable)
     rename =
         refreshVariables
             (avoid <> bindExistsFreeVariables)
@@ -384,11 +384,11 @@ isFreeOf
     :: forall variable
     .  InternalVariable variable
     => RulePattern variable
-    -> Set.Set (SomeVariable1 variable)
+    -> Set.Set (SomeVariable variable)
     -> Bool
 isFreeOf rule =
     Set.disjoint
-    $ from @(FreeVariables variable) @(Set (SomeVariable1 _))
+    $ from @(FreeVariables variable) @(Set (SomeVariable _))
     $ freeVariables rule
 
 {- | Apply the substitution to the right-hand-side of a rule.

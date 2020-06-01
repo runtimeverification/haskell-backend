@@ -550,7 +550,7 @@ test_simplificationIntegration =
         assertEqual "" expected actual
     , testCase "Sort matching" $ do
         let mx =
-                Variable1
+                Variable
                 { variableName1 =
                     SetVariableName VariableName
                     { base = testId "mx"
@@ -559,7 +559,7 @@ test_simplificationIntegration =
                 , variableSort1 = Mock.subOthersort
                 }
             iz =
-                Variable1
+                Variable
                 { variableName1 =
                     SetVariableName VariableName
                     { base = testId "iz"
@@ -568,7 +568,7 @@ test_simplificationIntegration =
                 , variableSort1 = Mock.intSort
                 }
             ub =
-                Variable1
+                Variable
                 { variableName1 =
                     ElementVariableName VariableName
                     { base = testId "ub"

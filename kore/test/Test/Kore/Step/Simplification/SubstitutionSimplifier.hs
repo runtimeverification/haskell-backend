@@ -178,7 +178,7 @@ test_SubstitutionSimplifier =
     test
         :: HasCallStack
         => TestName
-        -> [(SomeVariable1 VariableName, TermLike VariableName)]
+        -> [(SomeVariable VariableName, TermLike VariableName)]
         -- ^ Test input
         -> [Normalization VariableName]
         -- ^ Expected normalized, denormalized outputs
@@ -236,7 +236,7 @@ test_SubstitutionSimplifier =
                 let sort = Condition.conditionSort first
                 in map (Condition.coerceSort sort) expect
 
-x, y, z, xs, ys :: SomeVariable1 VariableName
+x, y, z, xs, ys :: SomeVariable VariableName
 x = inject Mock.x
 y = inject Mock.y
 z = inject Mock.z

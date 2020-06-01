@@ -62,7 +62,7 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
-    , Variable1 (..)
+    , Variable (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition

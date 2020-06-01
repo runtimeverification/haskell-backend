@@ -24,6 +24,6 @@ an or containing a term made of that variable.
 -}
 simplify
     :: InternalVariable variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> OrPattern variable
 simplify var = OrPattern.fromTermLike $ mkVar var

@@ -139,7 +139,7 @@ import Kore.Syntax.Variable
     ( AdjSomeVariableName (..)
     , ElementVariableName (..)
     , SetVariableName (..)
-    , Variable1 (..)
+    , Variable (..)
     )
 import Kore.TopBottom
     ( TopBottom (..)

@@ -193,7 +193,7 @@ parseSMTConstructor patt =
         :: ElementVariable VariableName
         -> Maybe Sort
     parseVariableSort
-        Variable1
+        Variable
             { variableSort1 =
                 sort@(SortActualSort SortActual {sortActualSorts = []})
             }

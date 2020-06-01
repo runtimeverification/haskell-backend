@@ -28,7 +28,7 @@ import Kore.Internal.TermLike
     ( pattern ApplyAlias_
     , InternalVariable
     , TermLike
-    , Variable1 (..)
+    , Variable (..)
     , VariableName
     , fromVariableName
     , mapSomeVariableName

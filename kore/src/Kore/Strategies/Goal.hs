@@ -1033,7 +1033,7 @@ removalPredicate
                     "Cannot quantify non-element variables: "
                     : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
             else remainderElementVariables config dest
-    configVariables :: Pattern variable -> Set.Set (SomeVariable1 variable)
+    configVariables :: Pattern variable -> Set.Set (SomeVariable variable)
     configVariables = FreeVariables.toSet . freeVariables
     destVariables = FreeVariables.toSet . freeVariables
     remainderVariables config dest =

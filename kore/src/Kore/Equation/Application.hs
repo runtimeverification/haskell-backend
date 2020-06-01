@@ -229,7 +229,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     errors = concatMap checkVariable equationVariables
 
-    checkVariable Variable1 { variableName1 } =
+    checkVariable Variable { variableName1 } =
         case Map.lookup variableName1 substitution of
             Nothing -> [NotMatched variableName1]
             Just termLike ->

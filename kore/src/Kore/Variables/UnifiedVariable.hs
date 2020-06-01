@@ -9,8 +9,8 @@ module Kore.Variables.UnifiedVariable
     , isSetVar
     , expectSetVar
     , extractElementVariable
-    , mapSomeVariable1
-    , traverseSomeVariable1
+    , mapSomeVariable
+    , traverseSomeVariable
     , module Kore.Syntax.Variable
     ) where
 
@@ -18,61 +18,61 @@ import Prelude.Kore
 
 import Kore.Syntax.Variable
 
-isElemVar :: forall variable. SomeVariable1 variable -> Bool
+isElemVar :: forall variable. SomeVariable variable -> Bool
 isElemVar unifiedVariable
   | Just _ <- retract @_ @(ElementVariable variable) unifiedVariable = True
   | otherwise                                                        = False
 
-{- | Extract an 'ElementVariable' from a 'SomeVariable1'.
+{- | Extract an 'ElementVariable' from a 'SomeVariable'.
 
-It is an error if the 'SomeVariable1' is not the 'ElemVar' constructor.
+It is an error if the 'SomeVariable' is not the 'ElemVar' constructor.
 
 Use @expectElemVar@ when maintaining the invariant outside the type system that
-the 'SomeVariable1' is an 'ElementVariable', but please include a comment at
+the 'SomeVariable' is an 'ElementVariable', but please include a comment at
 the call site describing how the invariant is maintained.
 
  -}
 expectElemVar
     :: HasCallStack
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> ElementVariable variable
 expectElemVar unifiedVariable
   | Just elementVariable <- retract unifiedVariable = elementVariable
   | otherwise = error "Expected element variable"
 
-isSetVar :: forall variable. SomeVariable1 variable -> Bool
+isSetVar :: forall variable. SomeVariable variable -> Bool
 isSetVar unifiedVariable
   | Just _ <- retract @_ @(SetVariable variable) unifiedVariable = True
   | otherwise                                                    = False
 
-{- | Extract an 'SetVariable' from a 'SomeVariable1'.
+{- | Extract an 'SetVariable' from a 'SomeVariable'.
 
-It is an error if the 'SomeVariable1' is not the 'SetVar' constructor.
+It is an error if the 'SomeVariable' is not the 'SetVar' constructor.
 
 Use @expectSetVar@ when maintaining the invariant outside the type system that
-the 'SomeVariable1' is an 'SetVariable', but please include a comment at
+the 'SomeVariable' is an 'SetVariable', but please include a comment at
 the call site describing how the invariant is maintained.
 
  -}
 expectSetVar
     :: HasCallStack
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> SetVariable variable
 expectSetVar unifiedVariable
   | Just setVariable <- retract unifiedVariable = setVariable
   | otherwise = error "Expected set variable"
 
 extractElementVariable
-    :: SomeVariable1 variable -> Maybe (ElementVariable variable)
+    :: SomeVariable variable -> Maybe (ElementVariable variable)
 extractElementVariable = retract
 
-mapSomeVariable1
+mapSomeVariable
     :: AdjSomeVariableName (variable1 -> variable2)
-    -> SomeVariable1 variable1 -> SomeVariable1 variable2
-mapSomeVariable1 adj = fmap (mapSomeVariableName adj)
+    -> SomeVariable variable1 -> SomeVariable variable2
+mapSomeVariable adj = fmap (mapSomeVariableName adj)
 
-traverseSomeVariable1
+traverseSomeVariable
     :: Applicative f
     => AdjSomeVariableName (variable1 -> f variable2)
-    -> SomeVariable1 variable1 -> f (SomeVariable1 variable2)
-traverseSomeVariable1 adj = traverse (traverseSomeVariableName adj)
+    -> SomeVariable variable1 -> f (SomeVariable variable2)
+traverseSomeVariable adj = traverse (traverseSomeVariableName adj)

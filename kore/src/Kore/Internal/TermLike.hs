@@ -315,7 +315,7 @@ freshSymbolInstance freeVars sym base =
 
     mkVariable :: Integer -> Sort -> ElementVariable variable
     mkVariable vIdx vSort =
-        Variable1
+        Variable
         { variableName1 =
             ElementVariableName
             $ from @VariableName @variable
@@ -1390,7 +1390,7 @@ mkElemVar
     => InternalVariable variable
     => ElementVariable variable
     -> TermLike variable
-mkElemVar = updateCallStack . mkVar . inject @(SomeVariable1 _)
+mkElemVar = updateCallStack . mkVar . inject @(SomeVariable _)
 
 {- | Construct a set variable pattern.
  -}
@@ -1399,7 +1399,7 @@ mkSetVar
     => InternalVariable variable
     => SetVariable variable
     -> TermLike variable
-mkSetVar = updateCallStack . mkVar . inject @(SomeVariable1 _)
+mkSetVar = updateCallStack . mkVar . inject @(SomeVariable _)
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1475,9 +1475,9 @@ mkSortVariable name = SortVariableSort $ SortVariable name
 "name" `varS` sort
 @
  -}
-varS :: Id -> Sort -> Variable1 VariableName
+varS :: Id -> Sort -> Variable VariableName
 varS base variableSort1 =
-    Variable1
+    Variable
         { variableName1 = VariableName { base, counter = mempty }
         , variableSort1
         }
@@ -1565,7 +1565,7 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [SomeVariable1 VariableName]
+    -> [SomeVariable VariableName]
     -> TermLike VariableName
     -> SentenceAlias (TermLike VariableName)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
@@ -1601,7 +1601,7 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [SomeVariable1 VariableName]
+    -> [SomeVariable VariableName]
     -> TermLike VariableName
     -> SentenceAlias (TermLike VariableName)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
@@ -1743,7 +1743,7 @@ pattern Rewrites_
 
 pattern Top_ :: Sort -> TermLike variable
 
-pattern Var_ :: SomeVariable1 variable -> TermLike variable
+pattern Var_ :: SomeVariable variable -> TermLike variable
 
 pattern ElemVar_ :: ElementVariable variable -> TermLike variable
 
@@ -1915,10 +1915,10 @@ pattern Inj_ inj <- (Recursive.project -> _ :< InjF inj)
 refreshBinder
     :: forall bound variable
     .  (InternalVariable variable, Injection (SomeVariableName variable) bound)
-    => (Set (SomeVariableName variable) -> Variable1 bound -> Maybe (Variable1 bound))
+    => (Set (SomeVariableName variable) -> Variable bound -> Maybe (Variable bound))
     -> FreeVariables variable
-    -> Binder (Variable1 bound) (TermLike variable)
-    -> Binder (Variable1 bound) (TermLike variable)
+    -> Binder (Variable bound) (TermLike variable)
+    -> Binder (Variable bound) (TermLike variable)
 refreshBinder refreshBound (FreeVariables.toNames -> avoiding) binder =
     do
         binderVariable' <- refreshBound avoiding binderVariable
@@ -1927,7 +1927,7 @@ refreshBinder refreshBound (FreeVariables.toNames -> avoiding) binder =
                     (inject @(SomeVariableName variable)
                         (variableName1 binderVariable)
                     )
-                    (mkVar $ inject @(SomeVariable1 _) binderVariable')
+                    (mkVar $ inject @(SomeVariable _) binderVariable')
             binderChild' = Substitute.substitute renaming binderChild
         return Binder
             { binderVariable = binderVariable'

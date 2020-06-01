@@ -794,7 +794,7 @@ forgetSimplified (GenericPredicate termLike) =
 isFreeOf
     :: Ord variable
     => Predicate variable
-    -> Set (SomeVariable1 variable)
+    -> Set (SomeVariable variable)
     -> Bool
 isFreeOf predicate =
     Set.disjoint (FreeVariables.toSet $ freeVariables predicate)

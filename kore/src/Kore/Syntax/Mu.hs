@@ -61,7 +61,7 @@ instance
     unparse2 Mu { muVariable, muChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\mu"
-            , unparse2SortedVariable1 muVariable
+            , unparse2SortedVariable muVariable
             , unparse2 muChild
             ])
 
@@ -70,7 +70,7 @@ instance
     Synthetic (FreeVariables variable) (Mu variable)
   where
     synthetic Mu { muVariable, muChild } =
-        bindVariable (inject @(SomeVariable1 _) muVariable) muChild
+        bindVariable (inject @(SomeVariable _) muVariable) muChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Mu variable) where
@@ -78,5 +78,5 @@ instance Synthetic Sort (Mu variable) where
         muSort
         & seq (matchSort muSort muChild)
       where
-        Variable1 { variableSort1 = muSort } = muVariable
+        Variable { variableSort1 = muSort } = muVariable
     {-# INLINE synthetic #-}

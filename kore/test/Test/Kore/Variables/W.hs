@@ -26,9 +26,9 @@ import Test.Kore.Variables.V
 data W = W { value :: String, counter :: Maybe (Sup Natural) }
     deriving (Show, Eq, Ord, GHC.Generic)
 
-mkW :: String -> Variable1 W
+mkW :: String -> Variable W
 mkW value =
-    Variable1
+    Variable
     { variableName1 = W { value, counter = Nothing }
     , variableSort1 = sortVariable
     }

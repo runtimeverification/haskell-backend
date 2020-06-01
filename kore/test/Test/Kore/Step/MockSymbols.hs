@@ -641,7 +641,7 @@ type MockElementVariable = ElementVariable VariableName
 pattern MockElementVariable
     :: Id -> VariableCounter -> Sort -> MockElementVariable
 pattern MockElementVariable base counter variableSort1 =
-    Variable1
+    Variable
     { variableName1 = ElementVariableName VariableName { base, counter }
     , variableSort1
     }
@@ -651,7 +651,7 @@ type MockSetVariable = SetVariable VariableName
 pattern MockSetVariable
     :: Id -> VariableCounter -> Sort -> MockSetVariable
 pattern MockSetVariable base counter variableSort1 =
-    Variable1
+    Variable
     { variableName1 = SetVariableName VariableName { base, counter }
     , variableSort1
     }
@@ -713,9 +713,9 @@ xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
 xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
 
-makeSomeVariable1 :: Text -> Sort -> SomeVariable1 VariableName
-makeSomeVariable1 name variableSort1 =
-    Variable1
+makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
+makeSomeVariable name variableSort1 =
+    Variable
     { variableSort1
     , variableName1
     }
@@ -726,11 +726,11 @@ makeSomeVariable1 name variableSort1 =
       | Text.head name == '@' = inject . SetVariableName $ variableName
       | otherwise = inject . ElementVariableName $ variableName
 
-makeTestSomeVariable1 :: Text -> SomeVariable1 VariableName
-makeTestSomeVariable1 = (`makeSomeVariable1` testSort)
+makeTestSomeVariable :: Text -> SomeVariable VariableName
+makeTestSomeVariable = (`makeSomeVariable` testSort)
 
-mkTestSomeVariable1 :: Text -> TermLike VariableName
-mkTestSomeVariable1 = Internal.mkVar . makeTestSomeVariable1
+mkTestSomeVariable :: Text -> TermLike VariableName
+mkTestSomeVariable = Internal.mkVar . makeTestSomeVariable
 
 a :: InternalVariable variable => TermLike variable
 a = Internal.mkApplySymbol aSymbol []

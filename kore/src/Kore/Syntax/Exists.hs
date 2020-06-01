@@ -71,7 +71,7 @@ instance
     unparse2 Exists { existsVariable, existsChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\exists"
-            , unparse2SortedVariable1 existsVariable
+            , unparse2SortedVariable existsVariable
             , unparse2 existsChild
             ])
 
@@ -80,7 +80,7 @@ instance
     Synthetic (FreeVariables variable) (Exists sort variable)
   where
     synthetic Exists { existsVariable, existsChild } =
-        bindVariable (inject @(SomeVariable1 _) existsVariable) existsChild
+        bindVariable (inject @(SomeVariable _) existsVariable) existsChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Exists Sort variable) where

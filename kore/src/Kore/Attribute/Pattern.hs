@@ -196,7 +196,7 @@ traverseVariables adj = field @"freeVariables" (traverseFreeVariables adj)
  -}
 deleteFreeVariable
     :: Ord variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =

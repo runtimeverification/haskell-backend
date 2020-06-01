@@ -35,13 +35,13 @@ import Kore.Variables.Fresh
 import qualified Pretty
 
 type Renaming variable =
-    Map (SomeVariableName variable) (SomeVariable1 variable)
+    Map (SomeVariableName variable) (SomeVariable variable)
 
 data InstantiationFailure variable
-    = ConcreteFailure (SomeVariable1 variable) (TermLike variable)
-    | SymbolicFailure (SomeVariable1 variable) (TermLike variable)
-    | UninstantiatedConcrete (SomeVariable1 variable)
-    | UninstantiatedSymbolic (SomeVariable1 variable)
+    = ConcreteFailure (SomeVariable variable) (TermLike variable)
+    | SymbolicFailure (SomeVariable variable) (TermLike variable)
+    | UninstantiatedConcrete (SomeVariable variable)
+    | UninstantiatedSymbolic (SomeVariable variable)
 
 instance InternalVariable variable
     => Pretty.Pretty (InstantiationFailure variable)
@@ -105,7 +105,7 @@ class UnifyingRule rule where
     checkInstantiation
         :: InternalVariable variable
         => rule variable
-        -> Map.Map (SomeVariable1 variable) (TermLike variable)
+        -> Map.Map (SomeVariable variable) (TermLike variable)
         -> [InstantiationFailure variable]
     checkInstantiation _ _ = []
     {-# INLINE checkInstantiation #-}

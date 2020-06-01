@@ -71,7 +71,7 @@ instance
     unparse2 Forall { forallVariable, forallChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\forall"
-            , unparse2SortedVariable1 forallVariable
+            , unparse2SortedVariable forallVariable
             , unparse2 forallChild
             ])
 
@@ -80,7 +80,7 @@ instance
     Synthetic (FreeVariables variable) (Forall sort variable)
   where
     synthetic Forall { forallVariable, forallChild } =
-        bindVariable (inject @(SomeVariable1 _) forallVariable) forallChild
+        bindVariable (inject @(SomeVariable _) forallVariable) forallChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Forall Sort variable) where

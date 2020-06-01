@@ -1113,16 +1113,16 @@ test_andTermsSimplification =
         ]
     ]
 
-mkVariable :: Text -> Variable1 VariableName
+mkVariable :: Text -> Variable VariableName
 mkVariable ident =
-    Variable1
+    Variable
     { variableName1 = mkVariableName (testId ident)
     , variableSort1 = Mock.testSort
     }
 
 mkAlias'
     :: Text
-    -> Variable1 VariableName
+    -> Variable VariableName
     -> TermLike VariableName
     -> SentenceAlias (TermLike VariableName)
 mkAlias' ident var inner =

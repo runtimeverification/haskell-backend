@@ -201,7 +201,7 @@ instance Synthetic Defined Inhabitant where
 
 -- | An element variable pattern is always 'Defined'.
 --   A set variable is not.
-instance Synthetic Defined (Const (SomeVariable1 variable)) where
+instance Synthetic Defined (Const (SomeVariable variable)) where
     synthetic (Const unifiedVariable)= Defined (isElemVar unifiedVariable)
     {-# INLINE synthetic #-}
 

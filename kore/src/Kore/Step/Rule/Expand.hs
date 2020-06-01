@@ -94,18 +94,18 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
                     mapMaybe extractElementVariable
                     $ FreeVariables.toList
                     $ freeVariables left
-                allSomeVariable1s :: Set (SomeVariable1 VariableName)
-                allSomeVariable1s =
+                allSomeVariables :: Set (SomeVariable VariableName)
+                allSomeVariables =
                     FreeVariables.toSet (freeVariables rule)
                 allElementVariables :: Set (ElementVariableName VariableName)
                 allElementVariables =
                     Set.fromList
                     $ map variableName1
-                    $ mapMaybe retract (Set.toList allSomeVariable1s)
+                    $ mapMaybe retract (Set.toList allSomeVariables)
                         ++ existentials
                 expansion
                     ::  Map.Map
-                            (SomeVariable1 VariableName)
+                            (SomeVariable VariableName)
                             (TermLike VariableName)
                 expansion =
                     expandVariables
@@ -160,16 +160,16 @@ expandVariables
     :: SmtMetadataTools attributes
     -> [ElementVariable VariableName]
     -> Set.Set (ElementVariableName VariableName)
-    -> Map.Map (SomeVariable1 VariableName) (TermLike VariableName)
+    -> Map.Map (SomeVariable VariableName) (TermLike VariableName)
 expandVariables metadataTools variables toAvoid =
     fst $ foldl' expandAddVariable (Map.empty, toAvoid) variables
   where
     expandAddVariable
-        ::  ( Map.Map (SomeVariable1 VariableName) (TermLike VariableName)
+        ::  ( Map.Map (SomeVariable VariableName) (TermLike VariableName)
             , Set.Set (ElementVariableName VariableName)
             )
         -> ElementVariable VariableName
-        ->  ( Map.Map (SomeVariable1 VariableName) (TermLike VariableName)
+        ->  ( Map.Map (SomeVariable VariableName) (TermLike VariableName)
             , Set.Set (ElementVariableName VariableName)
             )
     expandAddVariable (substitution, toAvoid') variable =
@@ -189,7 +189,7 @@ expandVariable
 expandVariable
     metadataTools
     usedVariables
-    variable@Variable1 { variableSort1 }
+    variable@Variable { variableSort1 }
   = expandSort metadataTools usedVariables variable UseDirectly variableSort1
 
 expandSort
@@ -295,7 +295,7 @@ maybeNewVariable
     -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
 maybeNewVariable
     usedVariables
-    variable@Variable1 { variableSort1 }
+    variable@Variable { variableSort1 }
     sort
     UseDirectly
   =

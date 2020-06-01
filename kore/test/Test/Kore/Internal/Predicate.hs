@@ -288,7 +288,7 @@ test_predicate =
                 $ freeVariables (makeTruePredicate_ :: Predicate VariableName)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
-                    [ inject @(SomeVariable1 VariableName) $ a Mock.testSort
+                    [ inject @(SomeVariable VariableName) $ a Mock.testSort
                     , inject $ b Mock.testSort
                     ]
                 )

@@ -64,7 +64,7 @@ import Kore.Internal.TermLike
     , ElementVariableName (..)
     , InternalVariable
     , TermLike
-    , Variable1 (..)
+    , Variable (..)
     , VariableName (..)
     , Void
     , fromVariableName
@@ -179,7 +179,7 @@ generalizeMapElement freeVariables' element =
         TermLike.freeVariables key <> freeVariables'
         & FreeVariables.toNames
     x =
-        Variable1
+        Variable
             { variableName1 =
                 VariableName
                     { base = "x"

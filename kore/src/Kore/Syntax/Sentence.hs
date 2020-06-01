@@ -173,7 +173,7 @@ data SentenceAlias (patternType :: *) =
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
         , sentenceAliasLeftPattern
-            :: !(Application SymbolOrAlias (SomeVariable1 VariableName))
+            :: !(Application SymbolOrAlias (SomeVariable VariableName))
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }

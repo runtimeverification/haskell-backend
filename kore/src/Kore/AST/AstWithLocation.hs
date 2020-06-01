@@ -75,7 +75,7 @@ instance
         locationFromAst setVariableName
 
 instance
-    AstWithLocation variable => AstWithLocation (Variable1 variable)
+    AstWithLocation variable => AstWithLocation (Variable variable)
   where
     locationFromAst = locationFromAst . variableName1
 

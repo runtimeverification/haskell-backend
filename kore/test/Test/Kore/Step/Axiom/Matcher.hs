@@ -803,7 +803,7 @@ test_matching_Set =
         ]
     ]
 
-sSet :: SomeVariable1 VariableName
+sSet :: SomeVariable VariableName
 sSet = inject $ elemVarS (testId "sSet") Test.setSort
 
 mkSet
@@ -1037,7 +1037,7 @@ type MatchResult =
         )
 
 mkMatchResult
-    :: (Predicate VariableName, Map (SomeVariable1 VariableName) (TermLike VariableName))
+    :: (Predicate VariableName, Map (SomeVariable VariableName) (TermLike VariableName))
     -> MatchResult
 mkMatchResult (predicate, substitution) =
     Just (predicate, Map.mapKeys variableName1 substitution)
@@ -1076,7 +1076,7 @@ matches
     => TestName
     -> TermLike VariableName
     -> TermLike VariableName
-    -> [(SomeVariable1 VariableName, TermLike VariableName)]
+    -> [(SomeVariable VariableName, TermLike VariableName)]
     -> TestTree
 matches comment term1 term2 substs =
     matchesAux comment term1 term2
@@ -1088,7 +1088,7 @@ matchesP
     -> TermLike VariableName
     -> TermLike VariableName
     -> Predicate VariableName
-    -> [(SomeVariable1 VariableName, TermLike VariableName)]
+    -> [(SomeVariable VariableName, TermLike VariableName)]
     -> TestTree
 matchesP comment term1 term2 predicate substs =
     matchesAux comment term1 term2

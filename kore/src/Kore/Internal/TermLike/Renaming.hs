@@ -16,7 +16,7 @@ module Kore.Internal.TermLike.Renaming
     , askSomeVariableName
     , askElementVariableName
     , askSetVariableName
-    , askSomeVariable1
+    , askSomeVariable
     , askElementVariable
     , askSetVariable
     ) where
@@ -80,9 +80,9 @@ renameFreeVariables adj =
         pure (Map.singleton variable1 variable2)
     worker
         :: VariableNameMap variable1 variable2
-        -> SomeVariable1 variable1
+        -> SomeVariable variable1
         -> m (VariableNameMap variable1 variable2)
-    worker renaming Variable1 { variableName1 = someVariableName1 } = do
+    worker renaming Variable { variableName1 = someVariableName1 } = do
         let idx :: SomeVariableName ()
             (variable1, idx) = splitL someVariableName1
         renaming1 <- index adj' idx variable1
@@ -117,11 +117,11 @@ askSetVariableName
     => SetVariableName variable1 -> m (SetVariableName variable2)
 askSetVariableName = traverseSetVariableName askSomeVariableName
 
-askSomeVariable1
+askSomeVariable
     :: Ord variable1
     => MonadReader (VariableNameMap variable1 variable2) m
-    => SomeVariable1 variable1 -> m (SomeVariable1 variable2)
-askSomeVariable1 =
+    => SomeVariable variable1 -> m (SomeVariable variable2)
+askSomeVariable =
     traverse $ traverseSomeVariableName askSomeVariableName
 
 askElementVariable

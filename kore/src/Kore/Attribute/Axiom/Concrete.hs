@@ -57,7 +57,7 @@ instance Ord variable => Default (Concrete variable) where
     def = Concrete mempty
 
 instance
-    Ord variable => From (Concrete variable) (Set (SomeVariable1 variable))
+    Ord variable => From (Concrete variable) (Set (SomeVariable variable))
   where
     from = from @(FreeVariables _) . unConcrete
     {-# INLINE from #-}
@@ -79,7 +79,7 @@ concreteSymbol =
         }
 
 -- | Kore pattern representing the @concrete@ attribute.
-concreteAttribute :: [SomeVariable1 VariableName] -> AttributePattern
+concreteAttribute :: [SomeVariable VariableName] -> AttributePattern
 concreteAttribute = attributePattern concreteSymbol . map attributeVariable
 
 parseConcreteAttribute
@@ -118,8 +118,8 @@ parseFreeVariables freeVariables params args concreteVars = do
             ++ show duplicateVars)
     return (foldMap freeVariable nubVars)
   where
-    checkFree :: SomeVariable1 VariableName -> Parser ()
-    checkFree variable@Variable1 { variableName1 } =
+    checkFree :: SomeVariable VariableName -> Parser ()
+    checkFree variable@Variable { variableName1 } =
         unless (isFreeVariable variableName1 freeVariables)
         $ Kore.Error.koreFail
             ("expected free variable, found " ++ show variable)

@@ -67,29 +67,29 @@ substitute =
     extractFreeVariables = FreeVariables.toNames . freeVariables
 
     getTargetFreeVariables
-        :: Either patternType (SomeVariable1 variable)
+        :: Either patternType (SomeVariable variable)
         -> Set (SomeVariableName variable)
     getTargetFreeVariables =
         either extractFreeVariables (Set.singleton . variableName1)
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
-        :: SomeVariable1 variable  -- ^ Original variable
-        -> Maybe (SomeVariable1 variable)  -- ^ Renamed variable
+        :: SomeVariable variable  -- ^ Original variable
+        -> Maybe (SomeVariable variable)  -- ^ Renamed variable
         -> Map
             (SomeVariableName variable)
-            (Either patternType (SomeVariable1 variable))
+            (Either patternType (SomeVariable variable))
         -- ^ Substitution
         -> Map
             (SomeVariableName variable)
-            (Either patternType (SomeVariable1 variable))
-    renaming Variable1 { variableName1 } =
+            (Either patternType (SomeVariable variable))
+    renaming Variable { variableName1 } =
         maybe id (Map.insert variableName1 . Right)
 
     substituteWorker
         :: Map
             (SomeVariableName variable)
-            (Either patternType (SomeVariable1 variable))
+            (Either patternType (SomeVariable variable))
         -> patternType
         -> patternType
     substituteWorker subst termLike =
@@ -112,8 +112,8 @@ substitute =
             runIdentity <$> matchWith traverseBinder worker termLike
           where
             worker
-                :: Binder (SomeVariable1 variable) patternType
-                -> Identity (Binder (SomeVariable1 variable) patternType)
+                :: Binder (SomeVariable variable) patternType
+                -> Identity (Binder (SomeVariable variable) patternType)
             worker Binder { binderVariable, binderChild } = do
                 let
                     binderVariable' = avoidCapture binderVariable
@@ -131,9 +131,9 @@ substitute =
             either id id <$> matchWith traverseVariable worker termLike
           where
             worker
-                :: SomeVariable1 variable
-                -> Either patternType (SomeVariable1 variable)
-            worker Variable1 { variableName1 } =
+                :: SomeVariable variable
+                -> Either patternType (SomeVariable variable)
+            worker Variable { variableName1 } =
                 -- If the variable is not substituted or renamed, return the
                 -- original pattern.
                 fromMaybe

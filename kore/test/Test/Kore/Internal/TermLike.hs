@@ -157,7 +157,7 @@ termLikeChildGen patternSort =
 mkSubst
     :: Injection (SomeVariableName variable) variable'
     => InternalVariable variable
-    => Variable1 variable'
+    => Variable variable'
     -> ElementVariable variable
     -> Map (SomeVariableName variable) (TermLike variable)
 mkSubst x' y' = Map.singleton (inject $ variableName1 x') (mkElemVar y')
@@ -180,10 +180,10 @@ test_substitute =
             (mkElemVar Mock.z)
             (substitute
                 (Map.singleton
-                    (variableName1 $ Mock.makeTestSomeVariable1 "@x")
+                    (variableName1 $ Mock.makeTestSomeVariable "@x")
                     (mkElemVar Mock.z)
                 )
-                (Mock.mkTestSomeVariable1 "@x")
+                (Mock.mkTestSomeVariable "@x")
             )
         )
 
@@ -193,10 +193,10 @@ test_substitute =
             (Mock.functionalConstr10 (mkElemVar Mock.z))
             (substitute
                 (Map.singleton
-                    (variableName1 $ Mock.makeTestSomeVariable1 "@x")
+                    (variableName1 $ Mock.makeTestSomeVariable "@x")
                     (mkElemVar Mock.z)
                 )
-                (Mock.functionalConstr10 (Mock.mkTestSomeVariable1 "@x"))
+                (Mock.functionalConstr10 (Mock.mkTestSomeVariable "@x"))
             )
         )
 
@@ -390,26 +390,26 @@ test_renaming =
     , testSet "\\nu" mkNu
     ]
   where
-    mapElementVariables' Variable1 { variableName1 } =
+    mapElementVariables' Variable { variableName1 } =
         mapVariables (pure id)
             { adjSomeVariableNameElement = const <$> variableName1 }
-    mapSetVariables' Variable1 { variableName1 } =
+    mapSetVariables' Variable { variableName1 } =
         mapVariables (pure id)
             { adjSomeVariableNameSet = const <$> variableName1 }
 
-    traverseElementVariables' Variable1 { variableName1 } =
+    traverseElementVariables' Variable { variableName1 } =
         runIdentity . traverseVariables (pure return)
             { adjSomeVariableNameElement = const . return <$> variableName1 }
-    traverseSetVariables' Variable1 { variableName1 } =
+    traverseSetVariables' Variable { variableName1 } =
         runIdentity . traverseVariables (pure return)
             { adjSomeVariableNameSet = const . return <$> variableName1 }
 
     doesNotCapture
         :: HasCallStack
-        => SomeVariable1 VariableName
+        => SomeVariable VariableName
         -> TermLike'
         -> Assertion
-    doesNotCapture Variable1 { variableName1 } renamed =
+    doesNotCapture Variable { variableName1 } renamed =
         assertBool
             "does not capture free variables"
             (hasFreeVariable variableName1 renamed)

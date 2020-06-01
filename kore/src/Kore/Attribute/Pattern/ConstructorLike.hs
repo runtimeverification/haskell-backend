@@ -231,7 +231,7 @@ instance Synthetic ConstructorLike Inhabitant where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
-instance Synthetic ConstructorLike (Const (SomeVariable1 variable)) where
+instance Synthetic ConstructorLike (Const (SomeVariable variable)) where
     synthetic = const (ConstructorLike Nothing)
 
 instance Synthetic ConstructorLike (Const StringLiteral) where

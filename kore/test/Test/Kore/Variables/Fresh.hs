@@ -48,18 +48,18 @@ import Test.Kore.Step.MockSymbols
     , testSort1
     )
 
-type Variable' = Variable1 VariableName
+type Variable' = Variable VariableName
 
 metaVariable :: Variable'
 metaVariable =
-    Variable1
+    Variable
     { variableName1 = VariableName { base = testId "#v", counter = mempty }
     , variableSort1 = SortVariableSort (SortVariable (testId "#s"))
     }
 
 metaVariableDifferentSort :: Variable'
 metaVariableDifferentSort =
-    Variable1
+    Variable
     { variableName1 = VariableName { base = testId "#v", counter = mempty }
     , variableSort1 = SortVariableSort (SortVariable (testId "#s1"))
     }
@@ -70,7 +70,7 @@ test_refreshVariable =
         let variableName1 =
                 VariableName { base = testId "x0", counter = mempty }
             x0 =
-                Variable1
+                Variable
                 { variableName1
                 , variableSort1 = testSort0
                 }
@@ -115,17 +115,17 @@ test_refreshVariable =
     avoid2 = Set.singleton (variableName1 metaVariableDifferentSort)
     Just fresh2 = refreshVariable avoid2 original
 
-    avoid0 :: Variable1 variable -> Set variable
+    avoid0 :: Variable variable -> Set variable
     avoid0 = Set.singleton . variableName1
 
-    avoid1 :: FreshName variable => Variable1 variable -> Set variable
+    avoid1 :: FreshName variable => Variable variable -> Set variable
     avoid1 variable =
         Set.insert (variableName1 $ fresh0 variable) (avoid0 variable)
 
     fresh0, fresh1
         :: FreshName variable
-        => Variable1 variable
-        -> Variable1 variable
+        => Variable variable
+        -> Variable variable
     fresh0 var = fromJust $ refreshVariable (avoid0 var) var
     fresh1 var = fromJust $ refreshVariable (avoid1 var) var
 

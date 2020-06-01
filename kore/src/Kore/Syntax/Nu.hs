@@ -61,7 +61,7 @@ instance
     unparse2 Nu {nuVariable, nuChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\nu"
-            , unparse2SortedVariable1 nuVariable
+            , unparse2SortedVariable nuVariable
             , unparse2 nuChild
             ])
 
@@ -70,7 +70,7 @@ instance
     Synthetic (FreeVariables variable) (Nu variable)
   where
     synthetic Nu { nuVariable, nuChild } =
-        bindVariable (inject @(SomeVariable1 _) nuVariable) nuChild
+        bindVariable (inject @(SomeVariable _) nuVariable) nuChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Nu variable) where
@@ -78,5 +78,5 @@ instance Synthetic Sort (Nu variable) where
         nuSort
         & seq (matchSort nuSort nuChild)
       where
-        Variable1 { variableSort1 = nuSort } = nuVariable
+        Variable { variableSort1 = nuSort } = nuVariable
     {-# INLINE synthetic #-}

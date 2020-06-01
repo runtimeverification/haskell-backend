@@ -12,9 +12,9 @@ module Kore.Syntax.Variable
     ( isOriginalVariableName
     , illegalVariableCounter
     , externalizeFreshVariableName
-    , Variable1 (..)
-    , SomeVariable1
-    , mkSomeVariable1
+    , Variable (..)
+    , SomeVariable
+    , mkSomeVariable
     , foldSomeVariable
     , ElementVariable
     , mkElementVariable
@@ -38,7 +38,7 @@ module Kore.Syntax.Variable
     , toVariableName
     , fromVariableName
     -- * Variable sorts
-    , unparse2SortedVariable1
+    , unparse2SortedVariable
     -- * Concrete
     , Void
     , toVoid
@@ -119,7 +119,7 @@ toVariableName
     :: forall variable. From variable VariableName => variable -> VariableName
 toVariableName = from @variable @VariableName
 
-{- | Unparse a 'Variable1' in an Applicative Kore binder.
+{- | Unparse a 'Variable' in an Applicative Kore binder.
 
 Variables occur without their sorts as subterms in Applicative Kore patterns,
 but with their sorts in binders like @\\exists@ and
@@ -127,11 +127,11 @@ but with their sorts in binders like @\\exists@ and
 variable for the latter case.
 
  -}
-unparse2SortedVariable1
+unparse2SortedVariable
     :: Unparse variable
-    => Variable1 variable
+    => Variable variable
     -> Pretty.Doc ann
-unparse2SortedVariable1 Variable1 { variableName1, variableSort1 } =
+unparse2SortedVariable Variable { variableName1, variableSort1 } =
     unparse2 variableName1 <> Pretty.colon <> unparse variableSort1
 
 instance From VariableName Void where
@@ -284,15 +284,15 @@ instance
 
 -- * Variable occurrences
 
-{- | @Variable1@ is an occurrence of a variable in a Kore pattern.
+{- | @Variable@ is an occurrence of a variable in a Kore pattern.
 
 The @variable@ parameter is the type of variable names.
 
 Every occurrence of a variable carries the 'Sort' of the variable.
 
  -}
-data Variable1 variable =
-    Variable1
+data Variable variable =
+    Variable
     { variableName1 :: !variable
     , variableSort1 :: !Sort
     }
@@ -301,28 +301,28 @@ data Variable1 variable =
     deriving (Foldable, Traversable)
     deriving (GHC.Generic)
 
-instance Hashable variable => Hashable (Variable1 variable)
+instance Hashable variable => Hashable (Variable variable)
 
-instance NFData variable => NFData (Variable1 variable)
+instance NFData variable => NFData (Variable variable)
 
-instance SOP.Generic (Variable1 variable)
+instance SOP.Generic (Variable variable)
 
-instance SOP.HasDatatypeInfo (Variable1 variable)
+instance SOP.HasDatatypeInfo (Variable variable)
 
-instance Debug variable => Debug (Variable1 variable)
+instance Debug variable => Debug (Variable variable)
 
-instance (Debug variable, Diff variable) => Diff (Variable1 variable)
+instance (Debug variable, Diff variable) => Diff (Variable variable)
 
-instance Unparse variable => Unparse (Variable1 variable) where
-    unparse Variable1 { variableName1, variableSort1 } =
+instance Unparse variable => Unparse (Variable variable) where
+    unparse Variable { variableName1, variableSort1 } =
         unparse variableName1
         <> Pretty.colon
         <> unparse variableSort1
 
-    unparse2 Variable1 { variableName1 } = unparse2 variableName1
+    unparse2 Variable { variableName1 } = unparse2 variableName1
 
 instance
-    Injection into from => Injection (Variable1 into) (Variable1 from)
+    Injection into from => Injection (Variable into) (Variable from)
   where
     inject = fmap inject
     {-# INLINE inject #-}
@@ -330,26 +330,26 @@ instance
     retract = traverse retract
     {-# INLINE retract #-}
 
-instance Synthetic Sort (Const (Variable1 variable)) where
+instance Synthetic Sort (Const (Variable variable)) where
     synthetic = variableSort1 . getConst
     {-# INLINE synthetic #-}
 
 -- | Element (singleton) Kore variables
-type ElementVariable variable = Variable1 (ElementVariableName variable)
+type ElementVariable variable = Variable (ElementVariableName variable)
 
 mkElementVariable :: Id -> Sort -> ElementVariable VariableName
 mkElementVariable base variableSort1 =
-    Variable1
+    Variable
     { variableName1 = ElementVariableName (mkVariableName base)
     , variableSort1
     }
 
 -- | Kore set variables
-type SetVariable variable = Variable1 (SetVariableName variable)
+type SetVariable variable = Variable (SetVariableName variable)
 
 mkSetVariable :: Id -> Sort -> SetVariable VariableName
 mkSetVariable base variableSort1 =
-    Variable1
+    Variable
     { variableName1 = SetVariableName (mkVariableName base)
     , variableSort1
     }
@@ -563,16 +563,16 @@ traverseSetVariableName adj =
 toVoid :: any -> Maybe Void
 toVoid = const Nothing
 
-type SomeVariable1 variable = Variable1 (SomeVariableName variable)
+type SomeVariable variable = Variable (SomeVariableName variable)
 
-mkSomeVariable1
+mkSomeVariable
     :: forall variable f
-    .  Injection (SomeVariable1 variable) (Variable1 (f variable))
-    => Variable1 (f variable)
-    -> SomeVariable1 variable
-mkSomeVariable1 = inject
+    .  Injection (SomeVariable variable) (Variable (f variable))
+    => Variable (f variable)
+    -> SomeVariable variable
+mkSomeVariable = inject
 
 foldSomeVariable
     :: AdjSomeVariableName (variable1 -> r)
-    -> SomeVariable1 variable1 -> r
+    -> SomeVariable variable1 -> r
 foldSomeVariable adj = foldSomeVariableName adj . variableName1

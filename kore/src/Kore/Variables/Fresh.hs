@@ -204,8 +204,8 @@ instance FreshPartialOrd variable => FreshName (SomeVariableName variable)
 refreshVariable
     :: FreshName variable
     => Set variable
-    -> Variable1 variable
-    -> Maybe (Variable1 variable)
+    -> Variable variable
+    -> Maybe (Variable variable)
 refreshVariable avoiding = traverse (refreshName avoiding)
 {-# INLINE refreshVariable #-}
 
@@ -216,7 +216,7 @@ refreshElementVariable
     -> Maybe (ElementVariable variable)
 refreshElementVariable avoiding =
     -- expectElemVar is safe because the FreshVariable instance of
-    -- SomeVariable1 (above) conserves the ElemVar constructor.
+    -- SomeVariable (above) conserves the ElemVar constructor.
     fmap expectElemVar . refreshVariable avoiding . inject
 
 refreshSetVariable
@@ -226,7 +226,7 @@ refreshSetVariable
     -> Maybe (SetVariable variable)
 refreshSetVariable avoiding =
     -- expectElemVar is safe because the FreshVariable instance of
-    -- SomeVariable1 (above) conserves the SetVar constructor.
+    -- SomeVariable (above) conserves the SetVar constructor.
     fmap expectSetVar . refreshVariable avoiding . inject
 
 {- | Rename one set of variables while avoiding another.
@@ -249,8 +249,8 @@ result with 'Kore.Internal.TermLike.mkVar':
 refreshVariables
     :: FreshName variable
     => Set variable  -- ^ variables to avoid
-    -> Set (Variable1 variable)  -- ^ variables to rename
-    -> Map variable (Variable1 variable)
+    -> Set (Variable variable)  -- ^ variables to rename
+    -> Map variable (Variable variable)
 refreshVariables avoid0 =
     snd <$> Foldable.foldl' refreshVariablesWorker (avoid0, Map.empty)
   where

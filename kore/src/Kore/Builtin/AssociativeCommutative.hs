@@ -1424,14 +1424,14 @@ unifyEqualsConcreteOrWithVariable
   = unifyEqualsPair unifier concrete1 withVariable2
 unifyEqualsConcreteOrWithVariable
     unifier
-    (WithVariablePat withVariable1)
+    (WithVariablePat withVariable)
     (ConcretePat concrete2)
-  = unifyEqualsPair unifier concrete2 withVariable1
+  = unifyEqualsPair unifier concrete2 withVariable
 unifyEqualsConcreteOrWithVariable
     unifier
-    (WithVariablePat withVariable1)
+    (WithVariablePat withVariable)
     (WithVariablePat withVariable2)
-  = unifyEqualsPair unifier withVariable1 withVariable2
+  = unifyEqualsPair unifier withVariable withVariable2
 
 unifyEqualsPair
     :: forall normalized unifier variable

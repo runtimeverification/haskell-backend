@@ -162,7 +162,7 @@ instance Synthetic Function Inhabitant where
     {-# INLINE synthetic #-}
 
 -- | A 'Variable' pattern is always 'Function'.
-instance Synthetic Function (Const (SomeVariable1 variable)) where
+instance Synthetic Function (Const (SomeVariable variable)) where
     synthetic (Const unifiedVariable) = Function (isElemVar unifiedVariable)
     {-# INLINE synthetic #-}
 

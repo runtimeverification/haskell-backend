@@ -24,9 +24,9 @@ data V =
     V { value :: Integer, counter :: Maybe (Sup Natural) }
     deriving (Show, Eq, Ord, GHC.Generic)
 
-mkV :: Integer -> Variable1 V
+mkV :: Integer -> Variable V
 mkV value =
-    Variable1
+    Variable
     { variableName1 = V { value, counter = Nothing }
     , variableSort1 = sortVariable
     }

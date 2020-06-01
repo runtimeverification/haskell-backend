@@ -518,7 +518,7 @@ substitute eVariable termLike = do
     return ()
   where
     variable = inject eVariable
-    Variable1 { variableName1 } = variable
+    Variable { variableName1 } = variable
     isIndependent = not . any (hasFreeVariable variableName1)
     subst = Map.singleton variableName1 termLike
 
@@ -578,7 +578,7 @@ setSubstitute sVariable termLike = do
     return ()
   where
     variable = inject sVariable
-    Variable1 { variableName1 } = variable
+    Variable { variableName1 } = variable
     isIndependent = not . any (hasFreeVariable variableName1)
     subst = Map.singleton variableName1 termLike
     substitute2 :: Constraint variable -> Constraint variable
@@ -603,10 +603,10 @@ substituteTermLike subst = renormalizeBuiltins . TermLike.substitute subst
 
 occursCheck
     :: (MatchingVariable variable, Monad simplifier)
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable simplifier) ()
-occursCheck Variable1 { variableName1 } termLike =
+occursCheck Variable { variableName1 } termLike =
     (Monad.guard . not) (hasFreeVariable variableName1 termLike)
 
 definedTerm
@@ -629,9 +629,9 @@ do not attempt to match on them.
  -}
 targetCheck
     :: (MatchingVariable variable, Monad simplifier)
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> MaybeT (MatcherT variable simplifier) ()
-targetCheck Variable1 { variableName1 } = do
+targetCheck Variable { variableName1 } = do
     MatcherState { targets } <- Monad.State.get
     Monad.guard (Set.member variableName1 targets)
 
@@ -659,9 +659,9 @@ The bound variable will not escape, nor will it be shadowed.
 bindVariable
     :: Ord variable
     => MonadState (MatcherState variable) matcher
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> matcher ()
-bindVariable Variable1 { variableName1 } = do
+bindVariable Variable { variableName1 } = do
     field @"bound" %= Set.insert variableName1
     field @"avoiding" %= Set.insert variableName1
 
@@ -673,8 +673,8 @@ Returns 'Nothing' if the variable name is already globally-unique.
 liftVariable
     :: (FreshPartialOrd variable)
     => MonadState (MatcherState variable) matcher
-    => SomeVariable1 variable
-    -> matcher (Maybe (SomeVariable1 variable))
+    => SomeVariable variable
+    -> matcher (Maybe (SomeVariable variable))
 liftVariable variable =
     flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 

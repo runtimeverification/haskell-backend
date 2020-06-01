@@ -355,8 +355,8 @@ test_mergeAndNormalizeSubstitutions =
     ]
 
 merge
-    :: [(SomeVariable1 VariableName, TermLike VariableName)]
-    -> [(SomeVariable1 VariableName, TermLike VariableName)]
+    :: [(SomeVariable VariableName, TermLike VariableName)]
+    -> [(SomeVariable VariableName, TermLike VariableName)]
     -> IO (Either UnificationError [Condition VariableName])
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)

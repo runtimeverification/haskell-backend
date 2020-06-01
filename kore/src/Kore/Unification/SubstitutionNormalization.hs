@@ -66,7 +66,7 @@ than var2 to satisfy the 'Kore.Internal.Substitution.Assignment' invariant.
 normalize
     ::  forall variable
     .   InternalVariable variable
-    =>  Map (SomeVariable1 variable) (TermLike variable)
+    =>  Map (SomeVariable variable) (TermLike variable)
     -- ^ De-duplicated substitution
     ->  Maybe (Normalization variable)
 normalize (dropTrivialSubstitutions -> substitutionMap) =
@@ -128,20 +128,20 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
             <$> Map.lookup variable deps
 
     assignBottom
-        :: Map (SomeVariable1 variable) (TermLike variable)
-        -> SomeVariable1 variable
-        -> Map (SomeVariable1 variable) (TermLike variable)
+        :: Map (SomeVariable variable) (TermLike variable)
+        -> SomeVariable variable
+        -> Map (SomeVariable variable) (TermLike variable)
     assignBottom subst variable =
         Map.adjust (mkBottom . termLikeSort) variable subst
 
-    interestingVariables :: Set (SomeVariable1 variable)
+    interestingVariables :: Set (SomeVariable variable)
     interestingVariables = Map.keysSet substitutionMap
 
     getDependencies' =
         getDependencies interestingVariables
 
     allDependencies
-        :: Map (SomeVariable1 variable) [SomeVariable1 variable]
+        :: Map (SomeVariable variable) [SomeVariable variable]
     allDependencies =
         Map.map Set.toList
         $ Map.mapWithKey getDependencies' substitutionMap
@@ -150,12 +150,12 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
         getNonSimplifiableDependencies interestingVariables
 
     nonSimplifiableDependencies
-        :: Map (SomeVariable1 variable) [SomeVariable1 variable]
+        :: Map (SomeVariable variable) [SomeVariable variable]
     nonSimplifiableDependencies =
         Map.map Set.toList
         $ Map.mapWithKey getNonSimplifiableDependencies' substitutionMap
 
-    sorted :: [SomeVariable1 variable] -> Maybe (Normalization variable)
+    sorted :: [SomeVariable variable] -> Maybe (Normalization variable)
     sorted order
       | any (not . isSatisfiableSubstitution) substitution = empty
       | otherwise = do
@@ -198,7 +198,7 @@ backSubstitute sorted =
 
 isTrivialSubstitution
     :: Eq variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> TermLike variable
     -> Bool
 isTrivialSubstitution variable =
@@ -208,8 +208,8 @@ isTrivialSubstitution variable =
 
 dropTrivialSubstitutions
     :: Eq variable
-    => Map (SomeVariable1 variable) (TermLike variable)
-    -> Map (SomeVariable1 variable) (TermLike variable)
+    => Map (SomeVariable variable) (TermLike variable)
+    -> Map (SomeVariable variable) (TermLike variable)
 dropTrivialSubstitutions =
     Map.filterWithKey $ \k v -> not $ isTrivialSubstitution k v
 
@@ -228,10 +228,10 @@ isSatisfiableSubstitution (Assignment variable termLike) =
 getDependencies
     :: forall variable
     .  Ord variable
-    => Set (SomeVariable1 variable)  -- ^ interesting variables
-    -> SomeVariable1 variable  -- ^ substitution variable
+    => Set (SomeVariable variable)  -- ^ interesting variables
+    -> SomeVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set (SomeVariable1 variable)
+    -> Set (SomeVariable variable)
 getDependencies interesting var termLike =
     case termLike of
         Var_ v | v == var -> Set.empty
@@ -248,10 +248,10 @@ getDependencies interesting var termLike =
  -}
 getNonSimplifiableDependencies
     :: Ord variable
-    => Set (SomeVariable1 variable)  -- ^ interesting variables
-    -> SomeVariable1 variable  -- ^ substitution variable
+    => Set (SomeVariable variable)  -- ^ interesting variables
+    -> SomeVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set (SomeVariable1 variable)
+    -> Set (SomeVariable variable)
 getNonSimplifiableDependencies interesting var termLike =
     case termLike of
         Var_ v | v == var -> Set.empty
@@ -261,9 +261,9 @@ getNonSimplifiableDependencies interesting var termLike =
 nonSimplifiableAbove
     :: forall variable
     .  Ord variable
-    => Set (SomeVariable1 variable)
-    -> Base (TermLike variable) (Set (SomeVariable1 variable))
-    -> Set (SomeVariable1 variable)
+    => Set (SomeVariable variable)
+    -> Base (TermLike variable) (Set (SomeVariable variable))
+    -> Set (SomeVariable variable)
 nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
         VariableF (Const v)
@@ -274,5 +274,5 @@ nonSimplifiableAbove interesting p =
         InjF _ -> dependencies
         _ -> Set.empty
   where
-    dependencies :: Set (SomeVariable1 variable)
+    dependencies :: Set (SomeVariable variable)
     dependencies = foldl Set.union Set.empty p

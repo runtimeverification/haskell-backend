@@ -532,7 +532,7 @@ withUnificationTwice check comment termPair =
 
 x1 :: TermLike'
 x1 =
-    mkElemVar Variable1
+    mkElemVar Variable
     { variableName1 =
         ElementVariableName VariableName
         { base = generatedId "x1"

@@ -790,7 +790,7 @@ unfilteredTestExamplesForObjectSort
         }
     ]
   where
-    sortVariableName1 = namePrefix <> "_sortVariable1"
+    sortVariableName1 = namePrefix <> "_sortVariable"
     sortVariableName2 = namePrefix <> "_sortVariable2"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     differentAdditionalSortRawName = additionalSortRawName <> "1"

@@ -976,11 +976,11 @@ aliasGenerator
     error "Not implemented."
 
 {- The only purpose of this function is to produce an error message when
-new cases are being added to SomeVariable1, so that we don't forget to also
+new cases are being added to SomeVariable, so that we don't forget to also
 change this file.
 -}
 _checkAllVariableImplemented
-    :: SomeVariable1 VariableName -> SomeVariable1 VariableName
+    :: SomeVariable VariableName -> SomeVariable VariableName
 _checkAllVariableImplemented variable =
     case variableName1 variable of
         SomeVariableNameSet _ -> variable
@@ -1092,8 +1092,8 @@ setVariableGen sort = (fmap . fmap) SetVariableName (variableGen sort)
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen sort = (fmap . fmap) ElementVariableName (variableGen sort)
 
-variableGen :: Sort -> Gen (Variable1 VariableName)
+variableGen :: Sort -> Gen (Variable VariableName)
 variableGen variableSort1 = do
     base <- idGen
     let variableName1 = VariableName { base, counter = mempty }
-    return Variable1 { variableName1, variableSort1 }
+    return Variable { variableName1, variableSort1 }

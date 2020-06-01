@@ -143,7 +143,7 @@ t_ = mkBottom Mock.testSort
 
 testVar :: Text -> ElementVariable VariableName
 testVar ident =
-    Variable1
+    Variable
     { variableName1 =
         ElementVariableName VariableName
         { base = testId ident

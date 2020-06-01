@@ -88,7 +88,7 @@ instance
     {-# INLINE compareSubstitution #-}
 
 instance
-    SubstitutionOrd variable => SubstitutionOrd (Variable1 variable)
+    SubstitutionOrd variable => SubstitutionOrd (Variable variable)
   where
     compareSubstitution = on compareSubstitution variableName1
     {-# INLINE compareSubstitution #-}

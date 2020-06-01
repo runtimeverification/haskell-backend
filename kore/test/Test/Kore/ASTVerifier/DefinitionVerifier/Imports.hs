@@ -473,7 +473,7 @@ sortVisibilityTests =
                             , symbolOrAliasParams = []
                             }
                     , applicationChildren =
-                        [ mkSomeVariable1 $ mkElementVariable (testId "x") sort
+                        [ mkSomeVariable $ mkElementVariable (testId "x") sort
                         ]
                     }
             , sentenceAliasRightPattern =
@@ -918,7 +918,7 @@ aliasVisibilityTests =
                                 ]
                             }
                     , applicationChildren =
-                        [ mkSomeVariable1
+                        [ mkSomeVariable
                             $ mkSetVariable (testId "@x")
                             $ SortVariableSort (SortVariable (testId "sv1"))
                         ]

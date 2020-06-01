@@ -63,18 +63,18 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     {-# INLINE hashWithSalt #-}
 
 instance
-    Synthetic (FreeVariables variable) (Const (SomeVariable1 variable))
+    Synthetic (FreeVariables variable) (Const (SomeVariable variable))
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
 
-instance From (FreeVariables variable) [SomeVariable1 variable] where
+instance From (FreeVariables variable) [SomeVariable variable] where
     from = toList
     {-# INLINE from #-}
 
 instance
     Ord variable
-    => From (FreeVariables variable) (Set (SomeVariable1 variable))
+    => From (FreeVariables variable) (Set (SomeVariable variable))
   where
     from = toSet
     {-# INLINE from #-}
@@ -83,13 +83,13 @@ instance From (FreeVariables variable) (Set (SomeVariableName variable)) where
     from = toNames
     {-# INLINE from #-}
 
-toList :: FreeVariables variable -> [SomeVariable1 variable]
-toList = map (uncurry Variable1) . Map.toAscList . getFreeVariables
+toList :: FreeVariables variable -> [SomeVariable variable]
+toList = map (uncurry Variable) . Map.toAscList . getFreeVariables
 {-# INLINE toList #-}
 
 fromList
     :: Ord variable
-    => [SomeVariable1 variable]
+    => [SomeVariable variable]
     -> FreeVariables variable
 fromList = foldMap freeVariable
 {-# INLINE fromList #-}
@@ -97,7 +97,7 @@ fromList = foldMap freeVariable
 toSet
     :: Ord variable
     => FreeVariables variable
-    -> Set (SomeVariable1 variable)
+    -> Set (SomeVariable variable)
 toSet = Set.fromList . toList
 {-# INLINE toSet #-}
 
@@ -111,17 +111,17 @@ nullFreeVariables = Map.null . getFreeVariables
 
 bindVariable
     :: Ord variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> FreeVariables variable
     -> FreeVariables variable
-bindVariable Variable1 { variableName1 } (FreeVariables freeVars) =
+bindVariable Variable { variableName1 } (FreeVariables freeVars) =
     FreeVariables (Map.delete variableName1 freeVars)
 {-# INLINE bindVariable #-}
 
 bindVariables
     :: Ord variable
     => Foldable f
-    => f (SomeVariable1 variable)
+    => f (SomeVariable variable)
     -> FreeVariables variable
     -> FreeVariables variable
 bindVariables bound free =
@@ -137,8 +137,8 @@ isFreeVariable someVariableName (FreeVariables freeVars) =
     Map.member someVariableName freeVars
 {-# INLINE isFreeVariable #-}
 
-freeVariable :: SomeVariable1 variable -> FreeVariables variable
-freeVariable Variable1 { variableName1, variableSort1 } =
+freeVariable :: SomeVariable variable -> FreeVariables variable
+freeVariable Variable { variableName1, variableSort1 } =
     FreeVariables (Map.singleton variableName1 variableSort1)
 {-# INLINE freeVariable #-}
 
@@ -146,7 +146,7 @@ mapFreeVariables
     :: Ord variable2
     => AdjSomeVariableName (variable1 -> variable2)
     -> FreeVariables variable1 -> FreeVariables variable2
-mapFreeVariables adj = fromList . map (mapSomeVariable1 adj) . toList
+mapFreeVariables adj = fromList . map (mapSomeVariable adj) . toList
 {-# INLINE mapFreeVariables #-}
 
 traverseFreeVariables
@@ -155,7 +155,7 @@ traverseFreeVariables
     => AdjSomeVariableName (variable1 -> f variable2)
     -> FreeVariables variable1 -> f (FreeVariables variable2)
 traverseFreeVariables adj =
-    fmap fromList . traverse (traverseSomeVariable1 adj) . toList
+    fmap fromList . traverse (traverseSomeVariable adj) . toList
 {-# INLINE traverseFreeVariables #-}
 
 {- | Extracts the list of free element variables

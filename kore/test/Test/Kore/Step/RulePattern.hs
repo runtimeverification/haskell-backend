@@ -28,7 +28,7 @@ test_freeVariables =
     testCase "Extract free variables" $ do
         let expect =
                 foldMap freeVariable
-                $ map (inject @(SomeVariable1 VariableName))
+                $ map (inject @(SomeVariable VariableName))
                 [Mock.x, Mock.z, Mock.t, Mock.u]
             actual = freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual

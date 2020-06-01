@@ -24,15 +24,15 @@ import Test.Tasty.HUnit.Ext
 test_isSetVar :: [TestTree]
 test_isSetVar =
     [ test "set variable"
-        (True, mkSomeVariable1 $ mkSetVariable (testId "@x") testSort)
+        (True, mkSomeVariable $ mkSetVariable (testId "@x") testSort)
     , test "element variable"
-        (False, mkSomeVariable1 $ mkElementVariable (testId "x") testSort)
+        (False, mkSomeVariable $ mkElementVariable (testId "x") testSort)
     ]
   where
     test
         :: HasCallStack
         => TestName
-        -> (Bool, SomeVariable1 VariableName)
+        -> (Bool, SomeVariable VariableName)
         -> TestTree
     test name (expect, input) =
         testCase name $ do
@@ -42,15 +42,15 @@ test_isSetVar =
 test_isElemVar :: [TestTree]
 test_isElemVar =
     [ test "set variable"
-        (False, mkSomeVariable1 $ mkSetVariable (testId "@x") testSort)
+        (False, mkSomeVariable $ mkSetVariable (testId "@x") testSort)
     , test "element variable"
-        (True, mkSomeVariable1 $ mkElementVariable (testId "x") testSort)
+        (True, mkSomeVariable $ mkElementVariable (testId "x") testSort)
     ]
   where
     test
         :: HasCallStack
         => TestName
-        -> (Bool, SomeVariable1 VariableName)
+        -> (Bool, SomeVariable VariableName)
         -> TestTree
     test name (expect, input) =
         testCase name $ do

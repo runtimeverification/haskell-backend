@@ -73,7 +73,7 @@ newtype DeclaredVariables =
         { getDeclaredVariables
             ::  Map.Map
                     (SomeVariableName VariableName)
-                    (SomeVariable1 VariableName)
+                    (SomeVariable VariableName)
         }
     deriving (Monoid, Semigroup)
 
@@ -197,12 +197,12 @@ lookupSymbol symbolOrAlias = do
 
 lookupDeclaredVariable
     :: SomeVariableName VariableName
-    -> PatternVerifier (SomeVariable1 VariableName)
+    -> PatternVerifier (SomeVariable VariableName)
 lookupDeclaredVariable varId = do
     variables <- Reader.asks (getDeclaredVariables . declaredVariables)
     maybe errorUnquantified return $ Map.lookup varId variables
   where
-    errorUnquantified :: PatternVerifier (SomeVariable1 VariableName)
+    errorUnquantified :: PatternVerifier (SomeVariable VariableName)
     errorUnquantified =
         koreFailWithLocations [varId]
         $ Pretty.renderText . Pretty.layoutOneLine
@@ -212,7 +212,7 @@ lookupDeclaredVariable varId = do
         ]
 
 addDeclaredVariable
-    :: SomeVariable1 VariableName
+    :: SomeVariable VariableName
     -> DeclaredVariables
     -> DeclaredVariables
 addDeclaredVariable variable (getDeclaredVariables -> variables) =
@@ -228,7 +228,7 @@ The new variable must not already be declared.
  -}
 newDeclaredVariable
     :: DeclaredVariables
-    -> SomeVariable1 VariableName
+    -> SomeVariable VariableName
     -> PatternVerifier DeclaredVariables
 newDeclaredVariable declared variable = do
     let declaredVariables = getDeclaredVariables declared
@@ -238,7 +238,7 @@ newDeclaredVariable declared variable = do
   where
     name = variableName1 variable
     alreadyDeclared
-        :: SomeVariable1 VariableName -> PatternVerifier DeclaredVariables
+        :: SomeVariable VariableName -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
         $ Pretty.renderText . Pretty.layoutOneLine
@@ -257,7 +257,7 @@ See also: 'newDeclaredVariable'
  -}
 uniqueDeclaredVariables
     :: Foldable f
-    => f (SomeVariable1 VariableName)
+    => f (SomeVariable VariableName)
     -> PatternVerifier DeclaredVariables
 uniqueDeclaredVariables =
     Foldable.foldlM newDeclaredVariable emptyDeclaredVariables

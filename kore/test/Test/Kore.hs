@@ -91,7 +91,7 @@ import Kore.Variables.Target
  -}
 data Context =
     Context
-        { objectVariables :: ![SomeVariable1 VariableName]
+        { objectVariables :: ![SomeVariable VariableName]
         , objectSortVariables :: ![SortVariable]
         , symbols :: !(Maybe [Internal.Symbol])
         , sorts :: !(Maybe [Sort])
@@ -110,11 +110,11 @@ standaloneGen :: Gen a -> Hedgehog.Gen a
 standaloneGen generator =
     Reader.runReaderT generator emptyContext
 
-addVariable :: SomeVariable1 VariableName -> Context -> Context
+addVariable :: SomeVariable VariableName -> Context -> Context
 addVariable var ctx@Context { objectVariables } =
     ctx { objectVariables = var : objectVariables }
 
-addVariables :: [SomeVariable1 VariableName] -> Context -> Context
+addVariables :: [SomeVariable VariableName] -> Context -> Context
 addVariables vars = \ctx -> foldr addVariable ctx vars
 
 addSortVariable :: SortVariable -> Context -> Context
@@ -224,9 +224,9 @@ moduleNameGen = ModuleName <$> objectIdGen
 
 variableGen'
     :: Sort
-    -> [Variable1 VariableName]
+    -> [Variable VariableName]
     -> Gen Id
-    -> Gen (Variable1 VariableName)
+    -> Gen (Variable VariableName)
 variableGen' patternSort variables genId =
     case filter bySort variables of
         [] -> freshVariable
@@ -236,10 +236,10 @@ variableGen' patternSort variables genId =
                 , freshVariable
                 ]
   where
-    bySort Variable1 { variableSort1 } = variableSort1 == patternSort
+    bySort Variable { variableSort1 } = variableSort1 == patternSort
     freshVariable = do
         variableName1 <- VariableName <$> genId <*> pure mempty
-        pure Variable1 { variableName1, variableSort1 = patternSort }
+        pure Variable { variableName1, variableSort1 = patternSort }
 
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen patternSort = do
@@ -259,7 +259,7 @@ setVariableGen sort = do
     variableGen' sort variables setVarIdGen
         & (fmap . fmap) SetVariableName
 
-unifiedVariableGen :: Sort -> Gen (SomeVariable1 VariableName)
+unifiedVariableGen :: Sort -> Gen (SomeVariable VariableName)
 unifiedVariableGen sort = Gen.choice
     [ fmap inject <$> elementVariableGen sort
     , fmap inject <$> setVariableGen sort
@@ -277,7 +277,7 @@ setTargetVariableGen sort = Gen.choice
     , mkSetNonTarget <$> setVariableGen sort
     ]
 
-unifiedTargetVariableGen :: Sort -> Gen (SomeVariable1 (Target VariableName))
+unifiedTargetVariableGen :: Sort -> Gen (SomeVariable (Target VariableName))
 unifiedTargetVariableGen sort = Gen.choice
     [ fmap inject <$> elementTargetVariableGen sort
     , fmap inject <$> setTargetVariableGen     sort

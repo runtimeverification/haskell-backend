@@ -349,5 +349,5 @@ pr1 =
         (mkElemVar $ b Mock.testSort)
 
 a, b :: Sort -> ElementVariable'
-a = fmap ElementVariableName . Variable1 (VariableName (testId "a") mempty)
-b = fmap ElementVariableName . Variable1 (VariableName (testId "b") mempty)
+a = fmap ElementVariableName . Variable (VariableName (testId "a") mempty)
+b = fmap ElementVariableName . Variable (VariableName (testId "b") mempty)

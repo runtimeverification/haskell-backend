@@ -129,13 +129,13 @@ mkElementRuleVariable
 mkElementRuleVariable = (fmap . fmap) RuleVariableName
 
 mkUnifiedRuleVariable
-    :: SomeVariable1 VariableName
-    -> SomeVariable1 RewritingVariableName
+    :: SomeVariable VariableName
+    -> SomeVariable RewritingVariableName
 mkUnifiedRuleVariable = (fmap . fmap) RuleVariableName
 
 mkUnifiedConfigVariable
-    :: SomeVariable1 VariableName
-    -> SomeVariable1 RewritingVariableName
+    :: SomeVariable VariableName
+    -> SomeVariable RewritingVariableName
 mkUnifiedConfigVariable = (fmap . fmap) ConfigVariableName
 
 getRuleVariable :: RewritingVariableName -> Maybe VariableName
@@ -143,8 +143,8 @@ getRuleVariable (RuleVariableName var) = Just var
 getRuleVariable _ = Nothing
 
 getUnifiedRuleVariable
-    :: SomeVariable1 RewritingVariableName
-    -> Maybe (SomeVariable1 VariableName)
+    :: SomeVariable RewritingVariableName
+    -> Maybe (SomeVariable VariableName)
 getUnifiedRuleVariable = (traverse . traverse) getRuleVariable
 
 getPattern
@@ -252,7 +252,7 @@ getRemainderPattern
     -> Pattern VariableName
 getRemainderPattern = getPattern
 
-isSomeConfigVariable :: SomeVariable1 RewritingVariableName -> Bool
+isSomeConfigVariable :: SomeVariable RewritingVariableName -> Bool
 isSomeConfigVariable = isSomeConfigVariableName . variableName1
 
 isSomeConfigVariableName :: SomeVariableName RewritingVariableName -> Bool

@@ -133,7 +133,7 @@ bottomCondition = bottom
 
 hasFreeVariable
     :: InternalVariable variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> Condition variable
     -> Bool
 hasFreeVariable variable =

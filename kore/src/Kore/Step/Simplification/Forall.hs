@@ -46,9 +46,9 @@ import Kore.Internal.TermLike
     ( ElementVariable
     , Forall (Forall)
     , InternalVariable
-    , SomeVariable1
+    , SomeVariable
     , Sort
-    , Variable1 (..)
+    , Variable (..)
     , mkForall
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -134,7 +134,7 @@ makeEvaluate variable patt
     $ Pattern.toTermLike patt
   where
     (term, predicate) = Pattern.splitTerm patt
-    unifiedVariable = inject @(SomeVariable1 _) variable
+    unifiedVariable = inject @(SomeVariable _) variable
     variableInTerm =
         TermLike.hasFreeVariable (variableName1 unifiedVariable) term
     variableInCondition = Condition.hasFreeVariable unifiedVariable predicate

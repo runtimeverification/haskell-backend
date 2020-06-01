@@ -223,7 +223,7 @@ refreshVariables
     (FreeVariables.toNames -> avoid)
     equation@(Equation _ _ _ _ _)
   =
-    let rename :: Map (SomeVariableName variable) (SomeVariable1 variable)
+    let rename :: Map (SomeVariableName variable) (SomeVariable variable)
         rename =
             FreeVariables.toSet originalFreeVariables
             & Fresh.refreshVariables avoid
@@ -256,7 +256,7 @@ refreshVariables
             & Map.fromList
         mkSubst variable =
             ( variableName1 variable
-            , TermLike.mkVar (mapSomeVariable1 adj variable)
+            , TermLike.mkVar (mapSomeVariable adj variable)
             )
         left' = TermLike.substitute subst left
         requires' = Predicate.substitute subst requires

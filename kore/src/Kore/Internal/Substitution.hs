@@ -101,7 +101,7 @@ import qualified SQL
 
 data Assignment variable =
     Assignment_
-        { assignedVariable :: !(SomeVariable1 variable)
+        { assignedVariable :: !(SomeVariable variable)
         , assignedTerm :: !(TermLike variable)
         }
     deriving (Show, Eq, Ord, GHC.Generic)
@@ -125,14 +125,14 @@ instance Hashable variable => Hashable (Assignment variable)
 -- left of the substitution.
 assign
     :: (Ord variable, SubstitutionOrd variable)
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> TermLike variable
     -> Assignment variable
 assign variable term =
     uncurry Assignment_ $ curry normalOrder variable term
 
 pattern Assignment
-    :: SomeVariable1 variable
+    :: SomeVariable variable
     -> TermLike variable
     -> Assignment variable
 pattern Assignment assignedVariable assignedTerm <-
@@ -141,7 +141,7 @@ pattern Assignment assignedVariable assignedTerm <-
 
 assignmentToPair
     :: Assignment variable
-    -> (SomeVariable1 variable, TermLike variable)
+    -> (SomeVariable variable, TermLike variable)
 assignmentToPair (Assignment variable term) =
     (variable, term)
 
@@ -155,7 +155,7 @@ mapAssignedTerm f (Assignment variable term) =
 
 mkUnwrappedSubstitution
     :: (Ord variable, SubstitutionOrd variable)
-    => [(SomeVariable1 variable, TermLike variable)]
+    => [(SomeVariable variable, TermLike variable)]
     -> [Assignment variable]
 mkUnwrappedSubstitution = fmap (uncurry assign)
 
@@ -164,7 +164,7 @@ mkUnwrappedSubstitution = fmap (uncurry assign)
 Individual substitutions are a pair of type
 
 @
-(SomeVariable1 variable, TermLike variable)
+(SomeVariable variable, TermLike variable)
 @
 
 A collection of substitutions @[xᵢ=φᵢ]@ is /normalized/ if, for all @xⱼ=φⱼ@ in
@@ -179,7 +179,7 @@ data Substitution variable
     -- instance below.
     = Substitution ![Assignment variable]
     | NormalizedSubstitution
-        !(Map (SomeVariable1 variable) (TermLike variable))
+        !(Map (SomeVariable variable) (TermLike variable))
     deriving GHC.Generic
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
@@ -242,14 +242,14 @@ instance InternalVariable variable => SQL.Column (Substitution variable) where
 instance
     InternalVariable variable =>
     From
-        (Map (SomeVariable1 variable) (TermLike variable))
+        (Map (SomeVariable variable) (TermLike variable))
         (Substitution variable)
   where
     from = wrap . mkUnwrappedSubstitution . Map.toList
 
 instance
     InternalVariable variable
-    => From (SomeVariable1 variable, TermLike variable) (Substitution variable)
+    => From (SomeVariable variable, TermLike variable) (Substitution variable)
   where
     from = uncurry singleton
 
@@ -318,7 +318,7 @@ toMap (NormalizedSubstitution norm) =
 toMultiMap
     :: InternalVariable variable
     => Substitution variable
-    -> Map (SomeVariable1 variable) (NonEmpty (TermLike variable))
+    -> Map (SomeVariable variable) (NonEmpty (TermLike variable))
 toMultiMap =
     Foldable.foldl' insertSubstitution Map.empty
     . fmap assignmentToPair
@@ -360,8 +360,8 @@ cycles.
 normalOrder
     :: forall variable
     .  (Ord variable, SubstitutionOrd variable)
-    => (SomeVariable1 variable, TermLike variable)
-    -> (SomeVariable1 variable, TermLike variable)
+    => (SomeVariable variable, TermLike variable)
+    -> (SomeVariable variable, TermLike variable)
 normalOrder (uVar1, Var_ uVar2)
   | Just eVar1 <- retract @_ @(ElementVariable variable) uVar1
   , Just eVar2 <- retract @_ @(ElementVariable variable) uVar2
@@ -376,7 +376,7 @@ normalOrder subst = subst
 
 fromMap
     :: InternalVariable variable
-    => Map (SomeVariable1 variable) (TermLike variable)
+    => Map (SomeVariable variable) (TermLike variable)
     -> Substitution variable
 fromMap = from
 
@@ -387,10 +387,10 @@ The substitution is normalized if the variable does not occur free in the term.
  -}
 singleton
     :: InternalVariable variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> TermLike variable
     -> Substitution variable
-singleton var@Variable1 { variableName1 } termLike
+singleton var@Variable { variableName1 } termLike
   | TermLike.hasFreeVariable variableName1 termLike =
       Substitution [assign var termLike]
   | otherwise = NormalizedSubstitution (Map.singleton var termLike)
@@ -409,7 +409,7 @@ wrap xs = Substitution xs
 unsafeWrap
     :: HasCallStack
     => Ord variable
-    => [(SomeVariable1 variable, TermLike variable)]
+    => [(SomeVariable variable, TermLike variable)]
     -> Substitution variable
 unsafeWrap =
     NormalizedSubstitution . List.foldl' insertNormalized Map.empty
@@ -427,9 +427,9 @@ unsafeWrap =
         -- must be defined.
         & assert (not $ isElemVar var && isBottom termLike)
       where
-        Variable1 { variableName1 } = var
+        Variable { variableName1 } = var
         occurs = TermLike.hasFreeVariable variableName1
-        depends Variable1 { variableName1 = variableName1' } =
+        depends Variable { variableName1 = variableName1' } =
             TermLike.hasFreeVariable variableName1' termLike
 
 unsafeWrapFromAssignments
@@ -456,7 +456,7 @@ mapAssignmentVariables
 mapAssignmentVariables adj (Assignment variable term) =
     assign mappedVariable mappedTerm
   where
-    mappedVariable = mapSomeVariable1 adj variable
+    mappedVariable = mapSomeVariable adj variable
     mappedTerm = TermLike.mapVariables adj term
 
 -- | 'mapVariables' changes all the variables in the substitution
@@ -510,7 +510,7 @@ null (NormalizedSubstitution norm) = Map.null norm
 -- | Filter the variables of the 'Substitution'.
 filter
     :: InternalVariable variable
-    => (SomeVariable1 variable -> Bool)
+    => (SomeVariable variable -> Bool)
     -> Substitution variable
     -> Substitution variable
 filter filtering =
@@ -522,7 +522,7 @@ The normalization state is preserved.
 
  -}
 partition
-    :: (SomeVariable1 variable -> TermLike variable -> Bool)
+    :: (SomeVariable variable -> TermLike variable -> Bool)
     -> Substitution variable
     -> (Substitution variable, Substitution variable)
 partition criterion (Substitution substitution) =
@@ -539,7 +539,7 @@ partition criterion (NormalizedSubstitution substitution) =
 orderRenameAndRenormalizeTODO
     :: forall variable
     .  InternalVariable variable
-    => SomeVariable1 variable
+    => SomeVariable variable
     -> Substitution variable
     -> Substitution variable
 orderRenameAndRenormalizeTODO
@@ -550,14 +550,14 @@ orderRenameAndRenormalizeTODO
         [] -> original
         (v:vs) ->
             let
-                replacementVar :: SomeVariable1 variable
+                replacementVar :: SomeVariable variable
                 replacementVar = foldr max v vs
 
                 replacement :: TermLike variable
                 replacement = mkVar replacementVar
 
                 replacedSubstitution
-                    :: Map (SomeVariable1 variable) (TermLike variable)
+                    :: Map (SomeVariable variable) (TermLike variable)
                 replacedSubstitution =
                     fmap
                         (TermLike.substitute
@@ -571,22 +571,22 @@ orderRenameAndRenormalizeTODO
                 NormalizedSubstitution
                     (Map.insert variable replacement replacedSubstitution)
   where
-    reversable :: [(SomeVariable1 variable, TermLike variable)]
+    reversable :: [(SomeVariable variable, TermLike variable)]
     reversable = List.filter (rhsIsVar variable) (Map.toList substitution)
 
-    reversableVars :: [SomeVariable1 variable]
+    reversableVars :: [SomeVariable variable]
     reversableVars = map fst reversable
 
-    rhsIsVar :: SomeVariable1 variable -> (thing, TermLike variable) -> Bool
+    rhsIsVar :: SomeVariable variable -> (thing, TermLike variable) -> Bool
     rhsIsVar var (_, Var_ otherVar) = var == otherVar
     rhsIsVar _ _ = False
 orderRenameAndRenormalizeTODO _ substitution = substitution
 
 assertNoneAreFreeVarsInRhs
     :: InternalVariable variable
-    => Set (SomeVariable1 variable)
-    -> Map (SomeVariable1 variable) (TermLike variable)
-    -> Map (SomeVariable1 variable) (TermLike variable)
+    => Set (SomeVariable variable)
+    -> Map (SomeVariable variable) (TermLike variable)
+    -> Map (SomeVariable variable) (TermLike variable)
 assertNoneAreFreeVarsInRhs lhsVariables =
     fmap assertNoneAreFree
   where
@@ -623,7 +623,7 @@ instance InternalVariable variable
 variables
     :: Ord variable
     => Substitution variable
-    -> Set (SomeVariable1 variable)
+    -> Set (SomeVariable variable)
 variables (NormalizedSubstitution subst) = Map.keysSet subst
 variables (Substitution subst) =
     Foldable.foldMap (Set.singleton . assignedVariable) subst
@@ -661,8 +661,8 @@ instance Monoid (Normalization variable) where
 
 mkNormalization
     :: InternalVariable variable
-    => [(SomeVariable1 variable, TermLike variable)]
-    -> [(SomeVariable1 variable, TermLike variable)]
+    => [(SomeVariable variable, TermLike variable)]
+    -> [(SomeVariable variable, TermLike variable)]
     -> Normalization variable
 mkNormalization normalized' denormalized' =
     Normalization

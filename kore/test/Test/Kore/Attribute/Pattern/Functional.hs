@@ -60,11 +60,11 @@ test_instance_Synthetic =
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
     , testGroup "VariableF"
-        [ is $ VariableF $ Const (mkSomeVariable1 @VariableName Mock.x) ]
+        [ is $ VariableF $ Const (mkSomeVariable @VariableName Mock.x) ]
     , testGroup "MuF" $ map (isn't . MuF) (Mu Mock.setX <$> range)
     , testGroup "NuF" $ map (isn't . NuF) (Nu Mock.setX <$> range)
     , testGroup "SetVariableF"
-        [ isn't $ VariableF $ Const (mkSomeVariable1 @VariableName Mock.setX) ]
+        [ isn't $ VariableF $ Const (mkSomeVariable @VariableName Mock.setX) ]
     , testGroup "BuiltinSet"
         [ is . asSetBuiltin
             $ emptyNormalizedSet

@@ -72,7 +72,7 @@ attributeString literal =
 attributeInteger :: Integer -> AttributePattern
 attributeInteger = attributeString . Text.pack . show
 
-attributeVariable :: SomeVariable1 VariableName -> AttributePattern
+attributeVariable :: SomeVariable VariableName -> AttributePattern
 attributeVariable v = (asAttributePattern . VariableF . Const) v
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.

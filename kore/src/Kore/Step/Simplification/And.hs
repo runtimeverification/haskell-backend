@@ -95,7 +95,7 @@ import Kore.Internal.TermLike
     , pattern Nu_
     , Sort
     , TermLike
-    , Variable1 (..)
+    , Variable (..)
     , mkAnd
     , mkBottom
     , mkBottom_
@@ -378,7 +378,7 @@ promoteSubTermsToTop predicate =
           | Nu_       var _ <- original = restrictReplacements (inject var)
           | otherwise = replacements
 
-        restrictReplacements Variable1 { variableName1 } =
+        restrictReplacements Variable { variableName1 } =
             HashMap.filterWithKey
                 (\termLike _ -> wouldNotCapture termLike)
                 replacements
