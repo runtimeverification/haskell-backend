@@ -40,15 +40,13 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Monoid
-    ( Any (..)
-    )
 import qualified GHC.Generics as GHC
 
 import Branch
     ( BranchT
     )
 import qualified Branch
+import Debug
 import Kore.Internal.Condition
     ( Condition
     )
@@ -106,6 +104,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     , isSetVar
     )
+import qualified Pretty
 
 newtype SubstitutionSimplifier simplifier =
     SubstitutionSimplifier
@@ -222,13 +221,15 @@ deduplicateSubstitution sideCondition makeAnd' =
     worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
   where
     checkSetVars m
-      | isProblematic m = error
-        "Found SetVar key with non-singleton list of assignments as value."
+      | problems <- getProblems m, (not . null) problems =
+        (error . show . Pretty.vsep)
+        [ "Cannot reconcile multiple assignments of a set variable:"
+        , Pretty.indent 4 (debug problems)
+        ]
       | otherwise = m
-        where
-            isProblematic = getAny . Map.foldMapWithKey
-                (\k v -> Any $ isSetVar k && isNotSingleton v)
-            isNotSingleton = isNothing . getSingleton
+      where
+        getProblems = Map.filterWithKey (\k v -> isSetVar k && isNotSingleton v)
+        isNotSingleton = isNothing . getSingleton
 
     simplifyAnds' = simplifyAnds sideCondition makeAnd'
 
