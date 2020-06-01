@@ -61,8 +61,8 @@ expectElemVar unifiedVariable
 
 isSetVar :: forall variable. UnifiedVariable variable -> Bool
 isSetVar unifiedVariable
-  | Just _ <- retract @_ @(ElementVariable variable) unifiedVariable = True
-  | otherwise                                                        = False
+  | Just _ <- retract @_ @(SetVariable variable) unifiedVariable = True
+  | otherwise                                                    = False
 
 {- | Extract an 'SetVariable' from a 'UnifiedVariable'.
 
