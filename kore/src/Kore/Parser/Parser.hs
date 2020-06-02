@@ -432,7 +432,7 @@ elemVarOrTermPatternParser childParser = do
             var <- variableRemainderParser identifier
             return
                 $ VariableF $ Const
-                $ inject @(SomeVariable _) $ ElementVariableName <$> var
+                $ mkSomeVariable $ ElementVariableName <$> var
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
