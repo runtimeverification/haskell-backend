@@ -62,7 +62,9 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
+    , NamedVariable
     , Sort
+    , SubstitutionOrd
     , TermLike
     , termLikeSort
     )
@@ -103,11 +105,11 @@ data Conditional variable child =
     deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 deriving instance
-    (Eq child, InternalVariable variable) =>
+    (Eq child, NamedVariable variable, SubstitutionOrd variable) =>
     Eq (Conditional variable child)
 
 deriving instance
-    (Ord child, InternalVariable variable) =>
+    (Ord child, NamedVariable variable, SubstitutionOrd variable) =>
     Ord (Conditional variable child)
 
 deriving instance
@@ -436,15 +438,13 @@ mapVariables
             (Conditional variableTo   termTo)
 mapVariables
     mapTermVariables
-    mapElemVar
-    mapSetVar
+    adj
     Conditional { term, predicate, substitution }
   =
     Conditional
-        { term = mapTermVariables mapElemVar mapSetVar term
-        , predicate = Predicate.mapVariables mapElemVar mapSetVar predicate
-        , substitution =
-            Substitution.mapVariables mapElemVar mapSetVar substitution
+        { term = mapTermVariables adj term
+        , predicate = Predicate.mapVariables adj predicate
+        , substitution = Substitution.mapVariables adj substitution
         }
 
 splitTerm :: Conditional variable term -> (term, Conditional variable ())

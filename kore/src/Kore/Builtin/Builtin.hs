@@ -463,7 +463,9 @@ If the pattern is not concrete and normalized, the function is
 See also: 'Kore.Proof.Value.Value'
 
  -}
-toKey :: Ord variable => TermLike variable -> Maybe (TermLike Concrete)
+toKey
+    :: NamedVariable variable
+    => TermLike variable -> Maybe (TermLike Concrete)
 toKey purePattern = do
     p <- TermLike.asConcrete purePattern
     -- TODO (thomas.tuegel): Use the return value as the term.

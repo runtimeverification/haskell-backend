@@ -56,8 +56,4 @@ warnDecidePredicateUnknown
 warnDecidePredicateUnknown predicates' =
     logEntry WarnDecidePredicateUnknown { predicates }
   where
-    predicates =
-        Predicate.mapVariables
-            (fmap toVariable)
-            (fmap toVariable)
-        <$> predicates'
+    predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'

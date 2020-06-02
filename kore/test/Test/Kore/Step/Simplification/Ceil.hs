@@ -48,8 +48,6 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore.Step.MockSymbols
     ( testSort
@@ -490,11 +488,10 @@ mapVariables
     => Pattern Variable
     -> Pattern variable
 mapVariables =
-    Pattern.mapVariables worker worker
+    Pattern.mapVariables (pure worker)
   where
-    worker :: Functor f => f Variable -> f variable
-    worker = fmap $ \v ->
-        fromVariable v { variableCounter = Just (Sup.Element 1) }
+    worker :: VariableName -> VariableNameOf variable
+    worker v = fromVariableName v { counter = Just (Sup.Element 1) }
 
 makeCeil
     :: InternalVariable variable

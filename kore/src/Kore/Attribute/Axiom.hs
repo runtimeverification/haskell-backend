@@ -86,10 +86,8 @@ import Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
     )
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
-import Kore.Syntax.Variable
-    ( Variable (..)
+import Kore.Syntax.Variable hiding
+    ( Concrete
     )
 import qualified SQL
 
@@ -266,14 +264,15 @@ parseAxiomAttributes freeVariables (Attributes attrs) =
     Foldable.foldlM (flip $ parseAxiomAttribute freeVariables) Default.def attrs
 
 mapAxiomVariables
-    :: Ord variable2
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
-    -> Axiom symbol variable1 -> Axiom symbol variable2
-mapAxiomVariables e s axiom@Axiom { concrete, symbolic } =
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  Axiom symbol variable1
+    ->  Axiom symbol variable2
+mapAxiomVariables adj axiom@Axiom { concrete, symbolic } =
     axiom
-        { concrete = mapConcreteVariables e s concrete
-        , symbolic = mapSymbolicVariables e s symbolic
+        { concrete = mapConcreteVariables adj concrete
+        , symbolic = mapSymbolicVariables adj symbolic
         }
 
 getPriorityOfAxiom

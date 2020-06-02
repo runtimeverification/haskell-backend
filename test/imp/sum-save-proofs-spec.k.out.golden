@@ -1,5 +1,5 @@
   #Not ( {
-    0 +Int ( N +Int 1 ) *Int N
+    ( N +Int 1 ) *Int N
   #Equals
     ( N +Int 2 ) *Int N
   } )
@@ -10,7 +10,7 @@
     </k>
     <state>
       n |-> 0
-      sum |-> 0 +Int ( N +Int 1 ) *Int N
+      sum |-> ( N +Int 1 ) *Int N
     </state>
   </T>
 #And

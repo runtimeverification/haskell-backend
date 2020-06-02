@@ -48,10 +48,24 @@ instance SortedVariable V where
 instance From Variable V where
     from = error "Not implemented"
 
+instance From VariableName V where
+    from = error "Not implemented"
+
 instance From V Variable where
     from = error "Not implemented"
 
-instance VariableName V
+instance From V VariableName where
+    from = error "Not implemented"
+
+instance NamedVariable V where
+    type VariableNameOf V = V
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to variableName1 =
+            Variable1 { variableName1, variableSort1 = sortVariable }
+        fr Variable1 { variableName1 } = variableName1
 
 instance FreshPartialOrd V where
     infVariable v = v { counter = Nothing }
@@ -69,6 +83,8 @@ instance FreshVariable V
 
 instance SubstitutionOrd V where
     compareSubstitution = compare
+
+instance VariableBase V
 
 var' :: Integer -> TermLike V
 var' = mkElemVar . ElementVariable . mkV
