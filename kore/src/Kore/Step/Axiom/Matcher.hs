@@ -288,19 +288,21 @@ matchBinder
 matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     Monad.guard (on (==) variableSort variable1 variable2)
     -- Lift the bound variable to the top level.
-    lifted1 <- liftVariable unified1
+    lifted1 <- liftVariable someVariable1
     let term1' = fromMaybe term1 $ do
-            subst1 <- Map.singleton (variableName unified1) . mkVar <$> lifted1
+            subst1 <- Map.singleton someVariableName1 . mkVar <$> lifted1
             return $ substituteTermLike subst1 term1
-    let variable1' = fromMaybe unified1 lifted1
-        subst2 = Map.singleton (variableName unified2) (mkVar variable1')
+    let variable1' = fromMaybe someVariable1 lifted1
+        subst2 = Map.singleton someVariableName2 (mkVar variable1')
         term2' = substituteTermLike subst2 term2
     -- Record the uniquely-named variable so it will not be shadowed later.
     bindVariable variable1'
     push (Pair term1' term2')
   where
-    unified1 = inject variable1
-    unified2 = inject variable2
+    someVariable1 = inject variable1
+    someVariable2 = inject variable2
+    someVariableName1 = variableName someVariable1
+    someVariableName2 = variableName someVariable2
 
 matchVariable
     :: (MatchingVariable variable, MonadSimplify simplifier)
