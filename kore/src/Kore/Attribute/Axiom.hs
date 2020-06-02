@@ -151,7 +151,7 @@ instance
 
 instance (NFData symbol, NFData variable) => NFData (Axiom symbol variable)
 
-instance Ord variable => Default (Axiom symbol variable) where
+instance Default (Axiom symbol variable) where
     def =
         Axiom
             { heatCool = def

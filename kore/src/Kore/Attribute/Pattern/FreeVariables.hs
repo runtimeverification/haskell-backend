@@ -10,6 +10,7 @@ module Kore.Attribute.Pattern.FreeVariables
     , toSet
     , toNames
     , nullFreeVariables
+    , emptyFreeVariables
     , freeVariable
     , isFreeVariable
     , bindVariable
@@ -106,6 +107,10 @@ nullFreeVariables :: FreeVariables variable -> Bool
 nullFreeVariables = Map.null . getFreeVariables
 {-# INLINE nullFreeVariables #-}
 
+emptyFreeVariables :: FreeVariables variable
+emptyFreeVariables = FreeVariables Map.empty
+{-# INLINE emptyFreeVariables #-}
+
 bindVariable
     :: Ord variable
     => SomeVariable variable
@@ -167,5 +172,5 @@ getFreeElementVariables = mapMaybe retractElementVariable . toList
 class HasFreeVariables pat variable where
     freeVariables :: pat -> FreeVariables variable
 
-instance Ord variable => HasFreeVariables () variable where
-    freeVariables = const mempty
+instance HasFreeVariables () variable where
+    freeVariables = const emptyFreeVariables

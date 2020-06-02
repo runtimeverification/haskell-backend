@@ -48,8 +48,8 @@ instance (Debug variable, Diff variable) => Diff (Symbolic variable)
 
 instance NFData variable => NFData (Symbolic variable)
 
-instance Ord variable => Default (Symbolic variable) where
-    def = Symbolic mempty
+instance Default (Symbolic variable) where
+    def = Symbolic FreeVariables.emptyFreeVariables
 
 instance From (Symbolic variable) (Set (SomeVariable variable)) where
     from = from @(FreeVariables _) . unSymbolic
