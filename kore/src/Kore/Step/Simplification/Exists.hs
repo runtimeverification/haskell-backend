@@ -382,7 +382,7 @@ splitSubstitution variable substitution =
     (dependent, independent) =
         Substitution.partition hasVariable orderRenamedSubstitution
     hasVariable variable' term =
-        inject variable == variable'
+        someVariable == variable'
         || TermLike.hasFreeVariable someVariableName term
     bound =
         maybe (Right dependent) Left
