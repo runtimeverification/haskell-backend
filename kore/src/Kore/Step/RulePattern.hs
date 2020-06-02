@@ -64,9 +64,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
@@ -182,13 +179,13 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
     avoid = FreeVariables.toNames avoid'
     bindExistsFreeVariables =
         freeVariables right <> freeVariables ensures
-        & FreeVariables.bindVariables (inject <$> existentials)
+        & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
         & FreeVariables.toNames
     rename :: Map (SomeVariableName variable) (SomeVariable variable)
     rename =
         refreshVariables
             (avoid <> bindExistsFreeVariables)
-            (Set.fromList $ inject <$> existentials)
+            (Set.fromList $ mkSomeVariable <$> existentials)
     subst = TermLike.mkVar <$> rename
 
 {- | Normal rewriting axioms and claims
@@ -388,7 +385,7 @@ isFreeOf
     -> Bool
 isFreeOf rule =
     Set.disjoint
-    $ from @(FreeVariables variable) @(Set (SomeVariable _))
+    $ FreeVariables.toSet
     $ freeVariables rule
 
 {- | Apply the substitution to the right-hand-side of a rule.
@@ -895,10 +892,7 @@ instance UnifyingRule RulePattern where
             , antiLeft = mapTermLikeVariables <$> antiLeft
             , requires = mapPredicateVariables requires
             , rhs = RHS
-                { existentials =
-                    (fmap . fmap)
-                        (mapElementVariableName adj)
-                        existentials
+                { existentials = mapElementVariable adj <$> existentials
                 , right = mapTermLikeVariables right
                 , ensures = mapPredicateVariables ensures
                 }

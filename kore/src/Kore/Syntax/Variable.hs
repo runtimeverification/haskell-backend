@@ -26,8 +26,12 @@ module Kore.Syntax.Variable
     , expectSetVariable
     , ElementVariable
     , mkElementVariable
+    , mapElementVariable
+    , traverseElementVariable
     , SetVariable
     , mkSetVariable
+    , mapSetVariable
+    , traverseSetVariable
     -- * Variable names
     , VariableName (..)
     , mkVariableName
@@ -352,6 +356,17 @@ mkElementVariable base variableSort =
     , variableSort
     }
 
+mapElementVariable
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> ElementVariable variable1 -> ElementVariable variable2
+mapElementVariable adj = fmap (mapElementVariableName adj)
+
+traverseElementVariable
+    :: Applicative f
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> ElementVariable variable1 -> f (ElementVariable variable2)
+traverseElementVariable adj = traverse (traverseElementVariableName adj)
+
 -- | Kore set variables
 type SetVariable variable = Variable (SetVariableName variable)
 
@@ -361,6 +376,17 @@ mkSetVariable base variableSort =
     { variableName = SetVariableName (mkVariableName base)
     , variableSort
     }
+
+mapSetVariable
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> SetVariable variable1 -> SetVariable variable2
+mapSetVariable adj = fmap (mapSetVariableName adj)
+
+traverseSetVariable
+    :: Applicative f
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> SetVariable variable1 -> f (SetVariable variable2)
+traverseSetVariable adj = traverse (traverseSetVariableName adj)
 
 {- | @SomeVariableName@ is the name of a variable in a pattern.
 
