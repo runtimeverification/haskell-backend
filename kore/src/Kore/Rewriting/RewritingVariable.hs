@@ -193,7 +193,7 @@ getResultPattern initial config@Conditional { substitution } =
     avoiding =
         initial
         & FreeVariables.toNames
-        & Set.map (from @_ @(SomeVariableName VariableName))
+        & (Set.map . fmap) toVariableName
     introduced =
         Set.fromAscList
         . mapMaybe getUnifiedRuleVariable
