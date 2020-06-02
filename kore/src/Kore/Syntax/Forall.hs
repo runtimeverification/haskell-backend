@@ -80,7 +80,7 @@ instance
     Synthetic (FreeVariables variable) (Forall sort variable)
   where
     synthetic Forall { forallVariable, forallChild } =
-        bindVariable (inject @(SomeVariable _) forallVariable) forallChild
+        bindVariable (inject forallVariable) forallChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Forall Sort variable) where

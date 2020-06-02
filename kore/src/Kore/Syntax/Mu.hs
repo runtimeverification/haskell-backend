@@ -70,7 +70,7 @@ instance
     Synthetic (FreeVariables variable) (Mu variable)
   where
     synthetic Mu { muVariable, muChild } =
-        bindVariable (inject @(SomeVariable _) muVariable) muChild
+        bindVariable (inject muVariable) muChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Mu variable) where

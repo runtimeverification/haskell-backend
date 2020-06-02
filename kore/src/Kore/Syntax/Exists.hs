@@ -80,7 +80,7 @@ instance
     Synthetic (FreeVariables variable) (Exists sort variable)
   where
     synthetic Exists { existsVariable, existsChild } =
-        bindVariable (inject @(SomeVariable _) existsVariable) existsChild
+        bindVariable (inject existsVariable) existsChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Exists Sort variable) where

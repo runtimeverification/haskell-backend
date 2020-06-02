@@ -70,7 +70,7 @@ instance
     Synthetic (FreeVariables variable) (Nu variable)
   where
     synthetic Nu { nuVariable, nuChild } =
-        bindVariable (inject @(SomeVariable _) nuVariable) nuChild
+        bindVariable (inject nuVariable) nuChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Nu variable) where
