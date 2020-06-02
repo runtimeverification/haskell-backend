@@ -81,7 +81,7 @@ instance SubstitutionOrd RewritingVariableName where
     compareSubstitution (RuleVariableName _) (ConfigVariableName _) = LT
     compareSubstitution (ConfigVariableName _) (RuleVariableName _) = GT
     compareSubstitution variable1 variable2 =
-        on compareSubstitution (from @_ @VariableName) variable1 variable2
+        on compareSubstitution toVariableName variable1 variable2
 
 instance FreshPartialOrd RewritingVariableName where
     infVariable =
