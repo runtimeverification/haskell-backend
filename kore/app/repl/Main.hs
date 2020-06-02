@@ -204,7 +204,7 @@ mainWithOptions
         , outputFile
         , koreLogOptions
         }
-  = 
+  =
     Temp.withSystemTempDirectory
         "report"
         $ \tempDirectory ->
