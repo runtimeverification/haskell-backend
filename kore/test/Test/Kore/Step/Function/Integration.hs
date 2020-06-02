@@ -712,8 +712,8 @@ natSort =
         }
 
 natM, natN :: ElementVariable VariableName
-natM = elemVarS "M" natSort
-natN = elemVarS "N" natSort
+natM = mkElementVariable "M" natSort
+natN = mkElementVariable "N" natSort
 
 varM, varN :: TermLike VariableName
 varM = mkElemVar natM
@@ -978,11 +978,11 @@ unitList = mkList []
 varX, varY, varL, mMapTerm :: TermLike VariableName
 varX = mkElemVar xInt
 varY = mkElemVar yInt
-varL = mkElemVar (elemVarS (testId "lList") listSort)
+varL = mkElemVar (mkElementVariable (testId "lList") listSort)
 mMapTerm = mkElemVar mMap
 
 mMap :: ElementVariable VariableName
-mMap = elemVarS (testId "mMap") mapSort
+mMap = mkElementVariable (testId "mMap") mapSort
 
 lengthListSymbol :: Symbol
 lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function
@@ -1237,13 +1237,13 @@ mapSimplifiers =
         ]
 
 uInt, vInt, xInt, yInt :: ElementVariable VariableName
-uInt = elemVarS (testId "uInt") intSort
-vInt = elemVarS (testId "vInt") intSort
-xInt = elemVarS (testId "xInt") intSort
-yInt = elemVarS (testId "yInt") intSort
+uInt = mkElementVariable (testId "uInt") intSort
+vInt = mkElementVariable (testId "vInt") intSort
+xInt = mkElementVariable (testId "xInt") intSort
+yInt = mkElementVariable (testId "yInt") intSort
 
 xsInt :: SetVariable VariableName
-xsInt = setVarS (testId "xsInt") intSort
+xsInt = mkSetVariable (testId "xsInt") intSort
 
 test_Ceil :: [TestTree]
 test_Ceil =

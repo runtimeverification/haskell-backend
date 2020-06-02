@@ -149,8 +149,8 @@ test_termAndEquals =
     _True  = asInternal True
     _False = asInternal False
     literals = [(_True, True), (_False, False)]
-    x = inject (elemVarS "x" boolSort)
-    y = inject (elemVarS "y" boolSort)
+    x = inject (mkElementVariable "x" boolSort)
+    y = inject (mkElementVariable "y" boolSort)
 
     test
         :: HasCallStack

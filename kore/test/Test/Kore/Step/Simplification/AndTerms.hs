@@ -841,7 +841,7 @@ test_andTermsSimplification =
             assertEqual "" expect actual
 
         , testCase "[a] `concat` x /\\ [a, b] " $ do
-            let x = elemVarS "x" Mock.listSort
+            let x = mkElementVariable "x" Mock.listSort
                 term5 =
                     Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
@@ -870,8 +870,8 @@ test_andTermsSimplification =
                     Pattern.fromTermLike expectTerm
                     `Conditional.andPredicate`
                         makeCeilPredicate Mock.listSort expectTerm
-                x = mkElemVar $ elemVarS "x" Mock.testSort
-                l = mkElemVar $ elemVarS "y" Mock.listSort
+                x = mkElemVar $ mkElementVariable "x" Mock.testSort
+                l = mkElemVar $ mkElementVariable "y" Mock.listSort
                 -- List unification does not fully succeed because the
                 -- elementList symbol is not simplified to a builtin structure.
                 lhs = Mock.concatList (Mock.elementList x) l
@@ -880,7 +880,7 @@ test_andTermsSimplification =
             assertEqual "" (Just [expect]) actual
 
         , testCase "[a] `concat` unit /\\ x " $ do
-            let x = elemVarS "x" Mock.listSort
+            let x = mkElementVariable "x" Mock.listSort
                 term9 = Mock.builtinList [Mock.a]
                 term10 = Mock.concatList Mock.unitList (mkElemVar x)
                 term11 = Mock.concatList (mkElemVar x) Mock.unitList

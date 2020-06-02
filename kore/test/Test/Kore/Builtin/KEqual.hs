@@ -85,8 +85,8 @@ test_KEqual =
                 mkEquals_
                     (Test.Bool.asInternal True)
                     (keqBool
-                        (kseq (mkElemVar (elemVarS "x" kItemSort)) dotk)
-                        (kseq (mkElemVar (elemVarS "x" kItemSort)) dotk)
+                        (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
+                        (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
                     )
         actual <- evaluate original
         assertEqual' "" expect actual
@@ -97,8 +97,8 @@ test_KEqual =
                 mkEquals_
                     (Test.Bool.asInternal True)
                     (keqBool
-                        (kseq (inj kItemSort (mkElemVar (elemVarS "x" idSort))) dotk)
-                        (kseq (inj kItemSort (mkElemVar (elemVarS "x" idSort))) dotk)
+                        (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
+                        (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
                     )
         actual <- evaluate original
         assertEqual' "" expect actual

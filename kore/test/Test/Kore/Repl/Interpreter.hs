@@ -51,10 +51,10 @@ import Kore.Internal.Condition
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
     ( TermLike
-    , elemVarS
     , mkAnd
     , mkBottom_
     , mkElemVar
+    , mkElementVariable
     , mkTop_
     )
 import qualified Kore.Log as Log
@@ -582,7 +582,7 @@ add1 =
     mkNamedAxiom n plusOne "add1Axiom"
   where
     one     = Int.asInternal intSort 1
-    n       = mkElemVar $ elemVarS "x" intSort
+    n       = mkElemVar $ mkElementVariable "x" intSort
     plusOne = n `addInt` one
 
 zeroToTen :: Claim

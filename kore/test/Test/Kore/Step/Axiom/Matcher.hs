@@ -638,8 +638,8 @@ test_matching_List =
         ]
     ]
   where
-    xList = inject $ elemVarS (testId "xList") Test.listSort
-    yList = inject $ elemVarS (testId "yList") Test.listSort
+    xList = inject $ mkElementVariable (testId "xList") Test.listSort
+    yList = inject $ mkElementVariable (testId "yList") Test.listSort
     one = mkInt 1
     two = mkInt 2
     concatList = Test.concatList
@@ -804,7 +804,7 @@ test_matching_Set =
     ]
 
 sSet :: SomeVariable VariableName
-sSet = inject $ elemVarS (testId "sSet") Test.setSort
+sSet = inject $ mkElementVariable (testId "sSet") Test.setSort
 
 mkSet
     :: [TermLike VariableName]
@@ -1001,11 +1001,11 @@ test_matcherOverloading =
     ]
 
 xInt, yInt, zInt, mMap, nMap :: ElementVariable VariableName
-mMap = elemVarS (testId "mMap") Test.mapSort
-nMap = elemVarS (testId "nMap") Test.mapSort
-xInt = elemVarS (testId "xInt") Test.intSort
-yInt = elemVarS (testId "yInt") Test.intSort
-zInt = elemVarS (testId "zInt") Test.intSort
+mMap = mkElementVariable (testId "mMap") Test.mapSort
+nMap = mkElementVariable (testId "nMap") Test.mapSort
+xInt = mkElementVariable (testId "xInt") Test.intSort
+yInt = mkElementVariable (testId "yInt") Test.intSort
+zInt = mkElementVariable (testId "zInt") Test.intSort
 
 mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal

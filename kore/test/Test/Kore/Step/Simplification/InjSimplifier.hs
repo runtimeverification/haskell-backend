@@ -63,7 +63,7 @@ simplOther = plain00OtherSort
 simpl0 = plain00Sort0
 
 xSub :: TermLike VariableName
-xSub = mkElemVar (elemVarS "xSub" subSort)
+xSub = mkElemVar (mkElementVariable "xSub" subSort)
 
 test_unifyInj :: [TestTree]
 test_unifyInj =

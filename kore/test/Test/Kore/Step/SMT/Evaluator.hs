@@ -211,7 +211,7 @@ evaluateSMT = lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
 -- Refute Int predicates
 
 vInt :: Id -> TermLike VariableName
-vInt s = mkElemVar (elemVarS s Builtin.intSort)
+vInt s = mkElemVar (mkElementVariable s Builtin.intSort)
 
 a, b, c :: TermLike VariableName
 a = vInt (testId "a")
@@ -219,7 +219,7 @@ b = vInt (testId "b")
 c = vInt (testId "c")
 
 vBool :: Id -> TermLike VariableName
-vBool s = mkElemVar (elemVarS s Builtin.boolSort)
+vBool s = mkElemVar (mkElementVariable s Builtin.boolSort)
 
 p, q :: TermLike VariableName
 p = vBool (testId "p")

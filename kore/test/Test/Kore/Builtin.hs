@@ -99,21 +99,21 @@ test_internalize =
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
-    l = mkElemVar (elemVarS "l" listSort)
+    l = mkElemVar (mkElementVariable "l" listSort)
 
     mapSort = Builtin.mapSort
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
     mkMap = Map.asInternal
-    m = mkElemVar (elemVarS "m" mapSort)
+    m = mkElemVar (mkElementVariable "m" mapSort)
 
     setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
     mkSet = Set.asInternal . Data.Set.fromList
-    s = mkElemVar (elemVarS "s" setSort)
+    s = mkElemVar (mkElementVariable "s" setSort)
 
     mkInt :: InternalVariable variable => Integer -> TermLike variable
     mkInt = Int.asInternal
@@ -121,8 +121,8 @@ test_internalize =
     zero, one :: InternalVariable variable => TermLike variable
     zero = mkInt 0
     one = mkInt 1
-    x = mkElemVar (elemVarS "x" intSort)
-    y = mkElemVar (elemVarS "y" intSort)
+    x = mkElemVar (mkElementVariable "x" intSort)
+    y = mkElemVar (mkElementVariable "y" intSort)
 
 withInternalized
     :: (TermLike VariableName -> Assertion)

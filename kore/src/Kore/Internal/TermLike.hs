@@ -84,8 +84,6 @@ module Kore.Internal.TermLike
     , mkEvaluated
     , mkEndianness
     , mkSignedness
-    , elemVarS
-    , setVarS
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -1458,43 +1456,6 @@ mkSort name = SortActualSort $ SortActual name []
 
 mkSortVariable :: Id -> Sort
 mkSortVariable name = SortVariableSort $ SortVariable name
-
-{- | Construct a variable with a given name and sort.
-
-@
-"name" `varS` sort
-@
- -}
-varS :: Id -> Sort -> Variable VariableName
-varS base variableSort =
-    Variable
-        { variableName = VariableName { base, counter = mempty }
-        , variableSort
-        }
-
-{- | Construct an element variable with a given name and sort.
-
-@variableName@ should *not* start with the @at@ symbol
-
-@
-"name" `elemVarS` sort
-@
- -}
-elemVarS :: Id -> Sort -> ElementVariable VariableName
-elemVarS variableName variableSort =
-    fmap ElementVariableName (varS variableName variableSort)
-
-{- | Construct a set variable with a given name and sort.
-
-@variableName@ should start with the @at@ symbol
-
-@
-"name" `setVarS` sort
-@
- -}
-setVarS :: Id -> Sort -> SetVariable VariableName
-setVarS variableName variableSort =
-    fmap SetVariableName (varS variableName variableSort)
 
 {- | Construct an axiom declaration with the given parameters and pattern.
  -}

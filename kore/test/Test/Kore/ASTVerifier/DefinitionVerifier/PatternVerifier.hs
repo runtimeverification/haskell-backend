@@ -666,12 +666,12 @@ test_verifyBinder =
     testVerifyExists =
         testVerifyBinder "verifyExists" expect
       where
-        x = Internal.elemVarS "x" Builtin.intSort
+        x = Internal.mkElementVariable "x" Builtin.intSort
         expect = Internal.mkExists x (Internal.mkElemVar x)
     testVerifyForall =
         testVerifyBinder "verifyForall" expect
       where
-        x = Internal.elemVarS "x" Builtin.intSort
+        x = Internal.mkElementVariable "x" Builtin.intSort
         expect = Internal.mkForall x (Internal.mkElemVar x)
 
 dummyVariableAndSentences

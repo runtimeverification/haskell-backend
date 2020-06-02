@@ -829,7 +829,7 @@ test_equalsSimplification_TermLike =
                         term4
                     )
         ,
-            let x = elemVarS "x" Mock.listSort
+            let x = mkElementVariable "x" Mock.listSort
                 term5 =
                     Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]

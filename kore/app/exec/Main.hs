@@ -89,8 +89,8 @@ import Kore.Internal.TermLike
     ( pattern And_
     , TermLike
     , Variable
-    , elemVarS
     , mkElemVar
+    , mkElementVariable
     , mkSort
     , mkSortVariable
     , mkTop
@@ -610,7 +610,7 @@ koreBmc execOptions proveOptions = do
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
     unknown =
         ( ExitSuccess
-        , mkElemVar $ elemVarS "Unknown" (mkSort $ noLocationId "SortUnknown")
+        , mkElemVar $ mkElementVariable "Unknown" (mkSort $ noLocationId "SortUnknown")
         )
 
 koreMerge :: KoreExecOptions -> KoreMergeOptions -> Main ExitCode

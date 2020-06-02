@@ -1426,8 +1426,8 @@ subsortDecl subsort supersort =
             }
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR
-    x = elemVarS "x" supersort
-    y = elemVarS "y" subsort
+    x = mkElementVariable "x" supersort
+    y = mkElementVariable "y" subsort
 
 injSymbolDecl :: ParsedSentence
 injSymbolDecl =

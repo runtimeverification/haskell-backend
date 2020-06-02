@@ -188,7 +188,7 @@ test_unit =
         $ "concat(x:Set, unit()) === x:Set"
     ]
   where
-    xSet = elemVarS "xSet" setSort
+    xSet = mkElementVariable "xSet" setSort
     becomes
         :: HasCallStack
         => TermLike VariableName
@@ -1534,7 +1534,7 @@ test_unify_concat_xSet_unit_unit_vs_unit =
         $ "concat(xSet:Set, unit()) ~ unit()"
     ]
   where
-    xSet = elemVarS "xSet" setSort
+    xSet = mkElementVariable "xSet" setSort
     internalUnit = asInternal Set.empty
 
 

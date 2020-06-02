@@ -20,8 +20,8 @@ import Kore.Builtin.External
 import Kore.Error
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
-    ( elemVarS
-    , mkElemVar
+    ( mkElemVar
+    , mkElementVariable
     , mkSetVar
     , mkTop
     , mkTop
@@ -98,7 +98,7 @@ patternFreeVarInRHS =
         , rhs =
             RHS
                 { existentials = []
-                , right = mkElemVar (elemVarS "x" Mock.testSort)
+                , right = mkElemVar (mkElementVariable "x" Mock.testSort)
                 , ensures = makeTruePredicate Mock.testSort
                 }
         , attributes = Default.def
@@ -117,8 +117,8 @@ patternNoFreeVarInRHS =
         , requires = makeTruePredicate Mock.testSort
         , rhs =
             RHS
-                { existentials = [elemVarS "x" Mock.testSort]
-                , right = mkElemVar (elemVarS "x" Mock.testSort)
+                { existentials = [mkElementVariable "x" Mock.testSort]
+                , right = mkElemVar (mkElementVariable "x" Mock.testSort)
                 , ensures = makeTruePredicate Mock.testSort
                 }
         , attributes = Default.def
