@@ -14,35 +14,30 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
-import Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
 import qualified Pretty
 
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern
+    ( TestPattern
+    )
+import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Predicate
+    ( TestPredicate
+    )
+import qualified Test.Kore.Internal.Predicate as Predicate
+import Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-
-type Pattern' = Pattern VariableName
-type OrPattern' = OrPattern VariableName
-type Predicate' = Predicate VariableName
-type Substitution' = Substitution VariableName
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
@@ -61,8 +56,8 @@ test_simplifyEvaluated =
   where
     becomes_
         :: HasCallStack
-        => [Pattern']
-        -> [Pattern']
+        => [TestPattern]
+        -> [TestPattern]
         -> TestTree
     becomes_ originals expecteds =
         testCase "becomes" $ do
@@ -84,8 +79,8 @@ test_simplifyEvaluated =
             actuals = Foldable.toList actual
     patternBecomes
         :: HasCallStack
-        => Pattern'
-        -> [Pattern']
+        => TestPattern
+        -> [TestPattern]
         -> TestTree
     patternBecomes original expecteds =
         testCase "patternBecomes" $ do
@@ -102,54 +97,54 @@ test_simplifyEvaluated =
                 , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
                 ]
 
-termX :: Pattern'
+termX :: TestPattern
 termX = Pattern.fromTermLike (mkElemVar Mock.x)
 
-termY :: Pattern'
+termY :: TestPattern
 termY = Pattern.fromTermLike (mkElemVar Mock.y)
 
-termXAndY :: Pattern'
+termXAndY :: TestPattern
 termXAndY = mkAnd <$> termX <*> termY
 
-termNotXAndY :: Pattern'
+termNotXAndY :: TestPattern
 termNotXAndY = mkAnd <$> termNotX <*> termY
 
-termNotX :: Pattern'
+termNotX :: TestPattern
 termNotX = mkNot <$> termX
 
-termNotY :: Pattern'
+termNotY :: TestPattern
 termNotY = mkNot <$> termY
 
-xAndEqualsXA :: Pattern'
+xAndEqualsXA :: TestPattern
 xAndEqualsXA = const <$> termX <*> equalsXA
 
-equalsXAWithSortedBottom :: Pattern'
+equalsXAWithSortedBottom :: TestPattern
 equalsXAWithSortedBottom = Conditional
     { term = mkBottom Mock.testSort
     , predicate = equalsXA_
     , substitution = mempty
     }
 
-equalsXA :: Pattern'
+equalsXA :: TestPattern
 equalsXA = fromPredicate equalsXA_
 
-equalsXB :: Pattern'
+equalsXB :: TestPattern
 equalsXB = fromPredicate equalsXB_
 
-equalsXA_ :: Predicate'
+equalsXA_ :: TestPredicate
 equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
 
-equalsXB_ :: Predicate'
+equalsXB_ :: TestPredicate
 equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
 
-notEqualsXA :: Pattern'
+notEqualsXA :: TestPattern
 notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
 
-notEqualsXASorted :: Pattern'
+notEqualsXASorted :: TestPattern
 notEqualsXASorted =
     Pattern.coerceSort Mock.testSort notEqualsXA
 
-neitherXAB :: Pattern'
+neitherXAB :: TestPattern
 neitherXAB =
     Pattern.coerceSort Mock.testSort
     $ fromPredicate
@@ -157,29 +152,29 @@ neitherXAB =
         (Predicate.makeNotPredicate equalsXA_)
         (Predicate.makeNotPredicate equalsXB_)
 
-substXA :: Pattern'
+substXA :: TestPattern
 substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.x, Mock.a)]
 
-forceTermSort :: Pattern' -> Pattern'
+forceTermSort :: TestPattern -> TestPattern
 forceTermSort = fmap (forceSort Mock.testSort)
 
-fromPredicate :: Predicate' -> Pattern'
+fromPredicate :: TestPredicate -> TestPattern
 fromPredicate =
     forceTermSort
     . Pattern.fromCondition
     . Condition.fromPredicate
 
 fromSubstitution
-    :: Substitution'
-    -> Pattern'
+    :: TestSubstitution
+    -> TestPattern
 fromSubstitution =
     forceTermSort
     . Pattern.fromCondition
     . Condition.fromSubstitution
 
 simplifyEvaluated
-    :: OrPattern'
-    -> IO (OrPattern')
+    :: OrTestPattern
+    -> IO OrTestPattern
 simplifyEvaluated =
     runSimplifier mockEnv . Not.simplifyEvaluated SideCondition.top
   where

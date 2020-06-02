@@ -29,20 +29,8 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiOr
-    ( MultiOr
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
     , makeCeilPredicate
@@ -76,23 +64,28 @@ import Kore.Variables.Fresh
     ( nextVariable
     )
 
+import Test.Kore.Internal.Condition as Condition
+import Test.Kore.Internal.OrCondition
+    ( OrTestCondition
+    )
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-type Condition' = Condition VariableName
-type OrCondition' = OrCondition VariableName
-type Pattern' = Pattern VariableName
-type OrPattern' = OrPattern VariableName
 type RulePattern' = RulePattern VariableName
 type Conditional' = Conditional VariableName
 type RewriteRule' = RewriteRule VariableName
 type Results' = Step.Results RulePattern VariableName
 
 applyInitialConditions
-    :: Condition'
-    -> Condition'
-    -> IO [OrCondition']
+    :: TestCondition
+    -> TestCondition
+    -> IO [OrTestCondition]
 applyInitialConditions initial unification =
     Step.applyInitialConditions initial unification
     & runSimplifier Mock.env . Branch.gather
@@ -148,7 +141,7 @@ test_applyInitialConditions =
     ]
 
 unifyRule
-    :: Pattern'
+    :: TestPattern
     -> RulePattern'
     -> IO (Either UnificationError [Conditional' RulePattern'])
 unifyRule initial rule =
@@ -220,28 +213,28 @@ test_unifyRule =
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
 applyRewriteRule_
-    ::  ( Pattern'
+    ::  ( TestPattern
           -> [RewriteRule']
           -> IO (Either UnificationError Results')
         )
     -- ^ 'RewriteRule'
-    -> Pattern'
+    -> TestPattern
     -- ^ Configuration
     -> RewriteRule'
     -- ^ Rewrite rule
-    -> IO (Either UnificationError [OrPattern'])
+    -> IO (Either UnificationError [OrTestPattern])
 applyRewriteRule_ applyRewriteRules initial rule =
     applyRewriteRules_ applyRewriteRules initial [rule]
 
 -- | Apply the 'RewriteRule's to the configuration, but discard remainders.
 applyRewriteRules_
-    :: (Pattern' -> [RewriteRule'] -> IO (Either UnificationError Results'))
+    :: (TestPattern -> [RewriteRule'] -> IO (Either UnificationError Results'))
     -- ^ 'RewriteRule's
-    -> Pattern'
+    -> TestPattern
     -- ^ Configuration
     -> [RewriteRule']
     -- ^ Rewrite rule
-    -> IO (Either UnificationError [OrPattern'])
+    -> IO (Either UnificationError [OrTestPattern])
 applyRewriteRules_ applyRewriteRules initial rules = do
     result <- applyRewriteRules initial rules
     return (Foldable.toList . discardRemainders <$> result)
@@ -633,7 +626,7 @@ test_applyRewriteRule_ =
                     (Mock.functional10 (mkElemVar Mock.x))
             rhs = (RulePattern.rhs ruleId) { ensures }
             expect :: Either
-                UnificationError [OrPattern']
+                UnificationError [OrTestPattern]
             expect = Right
                 [ OrPattern.fromPatterns
                     [ Conditional
@@ -766,7 +759,7 @@ test_applyRewriteRule_ =
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRulesParallel
-    :: Pattern'
+    :: TestPattern
     -- ^ Configuration
     -> [RewriteRule']
     -- ^ Rewrite rule
@@ -780,7 +773,7 @@ applyRewriteRulesParallel initial rules =
 
 checkResults
     :: HasCallStack
-    => MultiOr (Pattern')
+    => OrTestPattern
     -> Results'
     -> Assertion
 checkResults expect actual =
@@ -790,7 +783,7 @@ checkResults expect actual =
 
 checkRemainders
     :: HasCallStack
-    => MultiOr (Pattern')
+    => OrTestPattern
     -> Results'
     -> Assertion
 checkRemainders expect actual =
@@ -1157,7 +1150,7 @@ axiomsCase = [axiomCaseA, axiomCaseB]
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 applyRewriteRulesSequence
-    :: Pattern'
+    :: TestPattern
     -- ^ Configuration
     -> [RewriteRule']
     -- ^ Rewrite rule

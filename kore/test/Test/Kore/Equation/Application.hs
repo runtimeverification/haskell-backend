@@ -32,28 +32,6 @@ import Kore.Equation.Application hiding
     )
 import qualified Kore.Equation.Application as Equation
 import Kore.Equation.Equation
-import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import Kore.Internal.Predicate as Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate
-    , makeEqualsPredicate_
-    , makeFalsePredicate
-    , makeNotPredicate
-    , makeOrPredicate
-    , makeTruePredicate
-    , makeTruePredicate_
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Variables.Target as Target
 import qualified Pretty
 
@@ -61,23 +39,24 @@ import Test.Expect
 import Test.Kore
     ( testId
     )
+import qualified Test.Kore.Internal.Condition as Condition
+import Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Predicate as Predicate
+import Test.Kore.Internal.SideCondition as SideCondition
+import Test.Kore.Internal.TermLike as TermLike
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-type TermLike' = TermLike VariableName
 type Equation' = Equation VariableName
-type SideCondition' = SideCondition VariableName
-type Pattern' = Pattern VariableName
-type Predicate' = Predicate VariableName
 type AttemptEquationError' = AttemptEquationError VariableName
 type AttemptEquationResult' = AttemptEquationResult VariableName
 
 attemptEquation
-    :: SideCondition'
-    -> TermLike'
+    :: TestSideCondition
+    -> TestTerm
     -> Equation'
-    -> IO (AttemptEquationResult')
+    -> IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
     Equation.attemptEquation sideCondition' termLike' equation
     & runSimplifier Mock.env
@@ -383,34 +362,34 @@ equationBottom =
 sortR :: Sort
 sortR = mkSortVariable (testId "R")
 
-f, g :: TermLike' -> TermLike'
+f, g :: TestTerm -> TestTerm
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
 
-cf :: TermLike'
+cf :: TestTerm
 cf = Mock.cf
 
-sigma :: TermLike' -> TermLike' -> TermLike'
+sigma :: TestTerm -> TestTerm -> TestTerm
 sigma = Mock.functionalConstr20
 
-string :: Text -> TermLike'
+string :: Text -> TestTerm
 string = Mock.builtinString
 
-x, xString, xInt, y, z :: TermLike'
+x, xString, xInt, y, z :: TestTerm
 x = mkElemVar Mock.x
 xInt = mkElemVar Mock.xInt
 xString = mkElemVar Mock.xString
 y = mkElemVar Mock.y
 z = mkElemVar Mock.z
 
-a, b :: TermLike'
+a, b :: TestTerm
 a = Mock.a
 b = Mock.b
 
-tdivInt :: TermLike' -> TermLike' -> TermLike'
+tdivInt :: TestTerm -> TestTerm -> TestTerm
 tdivInt = Mock.tdivInt
 
-positive :: TermLike' -> Predicate'
+positive :: TestTerm -> TestPredicate
 positive u =
     makeEqualsPredicate Mock.testSort
         (Mock.lessInt
@@ -420,35 +399,35 @@ positive u =
         (Mock.builtinBool False)
 
 andNot, orNot
-    :: Predicate'
-    -> Predicate'
-    -> Predicate'
+    :: TestPredicate
+    -> TestPredicate
+    -> TestPredicate
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
 
 -- * Helpers
 
 axiom
-    :: TermLike'
-    -> TermLike'
-    -> Predicate'
+    :: TestTerm
+    -> TestTerm
+    -> TestPredicate
     -> Equation'
 axiom left right requires =
     (mkEquation sortR left right) { requires }
 
 axiom_
-    :: TermLike'
-    -> TermLike'
+    :: TestTerm
+    -> TestTerm
     -> Equation'
 axiom_ left right = axiom left right (makeTruePredicate sortR)
 
-concrete :: [TermLike'] -> Equation' -> Equation'
+concrete :: [TestTerm] -> Equation' -> Equation'
 concrete vars =
     Lens.set
         (field @"attributes" . field @"concrete")
         (Concrete $ foldMap freeVariables vars)
 
-symbolic :: [TermLike'] -> Equation' -> Equation'
+symbolic :: [TestTerm] -> Equation' -> Equation'
 symbolic vars =
     Lens.set
         (field @"attributes" . field @"symbolic")
@@ -460,8 +439,8 @@ withAttemptEquationResult
     :: (AttemptEquationResult' -> Assertion)
     -> TestName
     -> Equation'
-    -> SideCondition'
-    -> TermLike'
+    -> TestSideCondition
+    -> TestTerm
     -> TestTree
 withAttemptEquationResult check testName equation sideCondition initial =
     testCase testName (attemptEquation sideCondition initial equation >>= check)
@@ -469,9 +448,9 @@ withAttemptEquationResult check testName equation sideCondition initial =
 applies
     :: TestName
     -> Equation'
-    -> SideCondition'
-    -> TermLike'
-    -> Pattern'
+    -> TestSideCondition
+    -> TestTerm
+    -> TestPattern
     -> TestTree
 applies testName equation sideCondition initial expect =
     withAttemptEquationResult
@@ -484,16 +463,16 @@ applies testName equation sideCondition initial expect =
 notMatched
     :: TestName
     -> Equation'
-    -> SideCondition'
-    -> TermLike'
+    -> TestSideCondition
+    -> TestTerm
     -> TestTree
 notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 
 notInstantiated
     :: TestName
     -> Equation'
-    -> SideCondition'
-    -> TermLike'
+    -> TestSideCondition
+    -> TestTerm
     -> TestTree
 notInstantiated =
     withAttemptEquationResult (expectLeft >=> assertApplyMatchResultErrors)
@@ -501,8 +480,8 @@ notInstantiated =
 requiresNotMet
     :: TestName
     -> Equation'
-    -> SideCondition'
-    -> TermLike'
+    -> TestSideCondition
+    -> TestTerm
     -> TestTree
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)

@@ -1,6 +1,11 @@
 module Test.Kore.Internal.Substitution
     ( test_substitution
     , test_toPredicate
+    -- * Re-exports
+    , TestAssignment
+    , TestSubstitution
+    , module Kore.Internal.Substitution
+    , module Test.Kore.Internal.TermLike
     ) where
 
 import Prelude.Kore hiding
@@ -11,16 +16,7 @@ import Test.Tasty
 
 import qualified Data.Set as Set
 
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeEqualsPredicate_
-    , makeTruePredicate_
-    )
 import Kore.Internal.Substitution
-import Kore.Internal.TermLike hiding
-    ( mapVariables
-    )
 import Kore.TopBottom
     ( isBottom
     , isTop
@@ -31,15 +27,28 @@ import Kore.Variables.Target
     )
 
 import Test.Kore
+import Test.Kore.Internal.Predicate
+    ( TestPredicate
+    , makeAndPredicate
+    , makeEqualsPredicate_
+    , makeTruePredicate_
+    )
+import Test.Kore.Internal.TermLike hiding
+    ( forgetSimplified
+    , isSimplified
+    , mapVariables
+    , simplifiedAttribute
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 import Test.Terse
     ( gives_
     )
 
-type Assignment' = Assignment VariableName
-type Substitution' = Substitution VariableName
-type Predicate' = Predicate VariableName
+
+type TestAssignment = Assignment VariableName
+type TestSubstitution = Substitution VariableName
+
 type ElementVariable' = ElementVariable VariableName
 
 test_substitution :: [TestTree]
@@ -64,7 +73,7 @@ propertyTests =
   , null `gives_`         [(mempty, True),  (normalized, False), (unnormalized, False) ]
   ]
   where
-    normalized, unnormalized :: Substitution'
+    normalized, unnormalized :: TestSubstitution
     normalized = unsafeWrap [(inject Mock.x, Mock.a)]
     unnormalized = wrap [assign (inject Mock.x) Mock.a]
 
@@ -321,13 +330,13 @@ orderRenameAndRenormalizeTODOTests =
     nonTargetVarZ = inject . mkElementNonTarget $ Mock.z
     nonTargetPattZ = mkElemVar . mkElementNonTarget $ Mock.z
 
-emptyRawSubst :: [Assignment']
+emptyRawSubst :: [TestAssignment]
 emptyRawSubst = mempty
 
-emptySubst :: Substitution'
+emptySubst :: TestSubstitution
 emptySubst = mempty
 
-singletonSubst :: [Assignment']
+singletonSubst :: [TestAssignment]
 singletonSubst = [assign (inject Mock.x) Mock.a]
 
 test_toPredicate :: TestTree
@@ -335,14 +344,14 @@ test_toPredicate =
     testCase "toPredicate" $ do
         assertEqual "null substitutions is top"
             makeTruePredicate_
-            (toPredicate mempty :: Predicate')
+            (toPredicate mempty :: TestPredicate)
         assertEqual "a = b"
             (makeAndPredicate pr1 makeTruePredicate_)
             (toPredicate $ wrap
                 [assign (inject $ a Mock.testSort) (mkElemVar $ b Mock.testSort)]
             )
 
-pr1 :: Predicate'
+pr1 :: TestPredicate
 pr1 =
     makeEqualsPredicate_
         (mkElemVar $ a Mock.testSort)

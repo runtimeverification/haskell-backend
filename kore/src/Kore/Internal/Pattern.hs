@@ -10,6 +10,7 @@ module Kore.Internal.Pattern
     , patternSort
     , fromCondition
     , fromConditionSorted
+    , fromPredicateSorted
     , bottom
     , bottomOf
     , isBottom
@@ -102,6 +103,13 @@ fromConditionSorted
     -> Condition variable
     -> Pattern variable
 fromConditionSorted sort = (<$) (mkTop sort)
+
+fromPredicateSorted
+    :: InternalVariable variable
+    => Sort
+    -> Predicate variable
+    -> Pattern variable
+fromPredicateSorted sort = fromConditionSorted sort . Condition.fromPredicate
 
 isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =

@@ -25,32 +25,6 @@ import Kore.Equation
     ( Equation (..)
     , mkEquation
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeCeilPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate
-    , makeEqualsPredicate_
-    , makeFloorPredicate_
-    , makeIffPredicate
-    , makeImpliesPredicate
-    , makeInPredicate
-    , makeNotPredicate
-    , makeOrPredicate
-    , makeTruePredicate
-    , makeTruePredicate_
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -61,8 +35,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
-import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
 import Kore.Sort
     ( predicateSort
     )
@@ -82,15 +54,24 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 
 import Test.Kore
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern
+    ( Conditional (..)
+    , TestPattern
+    )
+import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Predicate as Predicate
+import Test.Kore.Internal.Substitution as Substitution hiding
+    ( test_substitute
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-type Pattern' = Pattern VariableName
-type OrPattern' = OrPattern VariableName
 type SideCondition' = SideCondition VariableName
-type TermLike' = TermLike VariableName
-type Predicate' = Predicate.Predicate VariableName
 
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =
@@ -224,7 +205,7 @@ test_simplificationIntegration =
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
                             ,   [ mkEquation
-                                    predicateSort
+                                    Kore.Sort.predicateSort
                                     (Mock.function20MapTest
                                         (Mock.concatMap
                                             (Mock.elementMap
@@ -989,7 +970,8 @@ conditionalEqualityPattern
     -> TermLike variable
     -> Equation variable
 conditionalEqualityPattern left requires right =
-    mkEquation predicateSort left right & Lens.set (field @"requires") requires
+    mkEquation Kore.Sort.predicateSort left right
+    & Lens.set (field @"requires") requires
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -1119,21 +1101,21 @@ test_substituteList =
   where
     mkDomainBuiltinList = Mock.builtinList
 
-evaluate :: Pattern' -> IO (OrPattern')
+evaluate :: TestPattern -> IO OrTestPattern
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
-    -> Pattern'
-    -> IO (OrPattern')
+    -> TestPattern
+    -> IO OrTestPattern
 evaluateWithAxioms axioms =
     evaluateConditionalWithAxioms axioms SideCondition.top
 
 evaluateConditionalWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> SideCondition'
-    -> Pattern'
-    -> IO (OrPattern')
+    -> TestPattern
+    -> IO OrTestPattern
 evaluateConditionalWithAxioms axioms sideCondition =
     runSimplifier env . Pattern.simplify sideCondition
   where
@@ -1188,9 +1170,9 @@ builtinAxioms =
         ]
 
 axiom
-    :: TermLike'
-    -> TermLike'
-    -> Predicate'
+    :: TestTerm
+    -> TestTerm
+    -> TestPredicate
     -> Equation VariableName
 axiom left right requires =
     Equation
@@ -1202,7 +1184,7 @@ axiom left right requires =
         }
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set.Set (TermLike Void) -> TermLike'
+asInternal :: Set.Set (TermLike Void) -> TestTerm
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
     . Map.fromSet (const Domain.SetValue)

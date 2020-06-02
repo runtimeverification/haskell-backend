@@ -14,23 +14,6 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate_
-    , makeExistsPredicate
-    , makeTruePredicate_
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
@@ -40,12 +23,20 @@ import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Unparser
 import qualified Pretty
 
+import Test.Kore.Internal.OrPattern
+    ( OrPattern
+    , OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern
+    ( Pattern
+    , TestPattern
+    )
+import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-
-type Pattern' = Pattern VariableName
-type OrPattern' = OrPattern VariableName
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -133,8 +124,8 @@ test_simplify =
 
     simplifiesTo
         :: HasCallStack
-        => [Pattern']
-        -> [Pattern']
+        => [TestPattern]
+        -> [TestPattern]
         -> String
         -> TestTree
     simplifiesTo original expected testName =
@@ -156,12 +147,12 @@ test_makeEvaluate =
     [ testGroup "Exists - Predicates"
         [ testCase "Top" $ do
             let expect = OrPattern.fromPatterns [ Pattern.top ]
-            actual <- makeEvaluate Mock.x (Pattern.top :: Pattern')
+            actual <- makeEvaluate Mock.x (Pattern.top :: TestPattern)
             assertEqual "" expect actual
 
         , testCase " Bottom" $ do
             let expect = OrPattern.fromPatterns []
-            actual <- makeEvaluate Mock.x (Pattern.bottom :: Pattern')
+            actual <- makeEvaluate Mock.x (Pattern.bottom :: TestPattern)
             assertEqual "" expect actual
         ]
 
@@ -380,14 +371,14 @@ testSort :: Sort
 testSort = Mock.testSort
 
 simplify
-    :: Exists Sort VariableName (OrPattern')
-    -> IO (OrPattern')
+    :: Exists Sort VariableName OrTestPattern
+    -> IO OrTestPattern
 simplify = runSimplifier Mock.env . Exists.simplify SideCondition.top
 
 makeEvaluate
     :: ElementVariable VariableName
-    -> Pattern'
-    -> IO (OrPattern')
+    -> TestPattern
+    -> IO OrTestPattern
 makeEvaluate variable child =
     runSimplifier Mock.env
     $ Exists.makeEvaluate SideCondition.top [variable] child

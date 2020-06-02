@@ -15,16 +15,15 @@ import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.String.String as String
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.TermLike
 import Kore.Step.Simplification.Overloading
 import Pair
 
+import Test.Kore.Internal.TermLike
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Kore.Syntax.Id
 import Test.Tasty.HUnit.Ext
 
-type TermLike' = TermLike VariableName
 type ElementVariable' = ElementVariable VariableName
 
 test_matchOverloading :: [TestTree]
@@ -325,7 +324,7 @@ test_unifyOverloading =
          ]
     ]
 
-otherDomainValue :: TermLike'
+otherDomainValue :: TestTerm
 otherDomainValue =
     mkDomainValue DomainValue
         { domainValueSort = Mock.otherSort
@@ -335,8 +334,8 @@ otherDomainValue =
 matches
     :: HasCallStack
     => TestName
-    -> (TermLike', TermLike')
-    -> (TermLike', TermLike')
+    -> (TestTerm, TestTerm)
+    -> (TestTerm, TestTerm)
     -> TestTree
 matches comment (term1, term2) (term1', term2') =
     withMatching
@@ -347,8 +346,8 @@ matches comment (term1, term2) (term1', term2') =
 doesn'tMatch
     :: HasCallStack
     => TestName
-    -> TermLike'
-    -> TermLike'
+    -> TestTerm
+    -> TestTerm
     -> String
     -> TestTree
 doesn'tMatch comment term1 term2 reason
@@ -360,8 +359,8 @@ doesn'tMatch comment term1 term2 reason
 matchNotApplicable
     :: HasCallStack
     => TestName
-    -> TermLike'
-    -> TermLike'
+    -> TestTerm
+    -> TestTerm
     -> TestTree
 matchNotApplicable comment term1 term2
     = withMatching
@@ -372,8 +371,8 @@ matchNotApplicable comment term1 term2
 matchNotApplicableTwice
     :: HasCallStack
     => TestName
-    -> TermLike'
-    -> TermLike'
+    -> TestTerm
+    -> TestTerm
     -> TestTree
 matchNotApplicableTwice comment term1 term2
     = withMatchingTwice
@@ -384,8 +383,8 @@ matchNotApplicableTwice comment term1 term2
 unifies
     :: HasCallStack
     => TestName
-    -> (TermLike', TermLike')
-    -> (TermLike', TermLike')
+    -> (TestTerm, TestTerm)
+    -> (TestTerm, TestTerm)
     -> TestTree
 unifies comment (term1, term2) (term1', term2') =
     withUnification
@@ -396,9 +395,9 @@ unifies comment (term1, term2) (term1', term2') =
 narrows
     :: HasCallStack
     => TestName
-    -> (TermLike', TermLike')
-    ->  ( (ElementVariable', TermLike')
-        , (TermLike', TermLike')
+    -> (TestTerm, TestTerm)
+    ->  ( (ElementVariable', TestTerm)
+        , (TestTerm, TestTerm)
         )
     -> TestTree
 narrows comment (term1, term2) ((v, term), (term1', term2')) =
@@ -422,8 +421,8 @@ narrows comment (term1, term2) ((v, term), (term1', term2')) =
 doesn'tUnify
     :: HasCallStack
     => TestName
-    -> TermLike'
-    -> TermLike'
+    -> TestTerm
+    -> TestTerm
     -> String
     -> TestTree
 doesn'tUnify comment term1 term2 reason
@@ -435,8 +434,8 @@ doesn'tUnify comment term1 term2 reason
 unifyNotApplicable
     :: HasCallStack
     => TestName
-    -> TermLike'
-    -> TermLike'
+    -> TestTerm
+    -> TestTerm
     -> TestTree
 unifyNotApplicable comment term1 term2
     = withUnification
@@ -447,8 +446,8 @@ unifyNotApplicable comment term1 term2
 unifyNotApplicableTwice
     :: HasCallStack
     => TestName
-    -> TermLike'
-    -> TermLike'
+    -> TestTerm
+    -> TestTerm
     -> TestTree
 unifyNotApplicableTwice comment term1 term2
     = withUnificationTwice
@@ -456,10 +455,10 @@ unifyNotApplicableTwice comment term1 term2
         comment
         (Pair term1 term2)
 
-type MatchResult = Either UnifyOverloadingError (Pair (TermLike'))
+type MatchResult = Either UnifyOverloadingError (Pair TestTerm)
 
 match
-    :: Pair (TermLike')
+    :: Pair TestTerm
     -> IO MatchResult
 match termPair = runSimplifier Mock.env $ runExceptT matchResult
   where
@@ -469,7 +468,7 @@ match termPair = runSimplifier Mock.env $ runExceptT matchResult
 withMatching
     :: (MatchResult -> Assertion)
     -> TestName
-    -> Pair (TermLike')
+    -> Pair TestTerm
     -> TestTree
 withMatching check comment termPair =
     testCase comment $ do
@@ -479,7 +478,7 @@ withMatching check comment termPair =
 withMatchingTwice
     :: (MatchResult -> Assertion)
     -> TestName
-    -> Pair (TermLike')
+    -> Pair TestTerm
     -> TestTree
 withMatchingTwice check comment termPair =
     testCase comment $ do
@@ -494,7 +493,7 @@ type UnificationResult =
     Either UnifyOverloadingError (OverloadingResolution VariableName)
 
 unify
-    :: Pair (TermLike')
+    :: Pair TestTerm
     -> IO UnificationResult
 unify termPair = runSimplifier Mock.env $ runExceptT unifyResult
   where
@@ -504,7 +503,7 @@ unify termPair = runSimplifier Mock.env $ runExceptT unifyResult
 withUnification
     :: (UnificationResult -> Assertion)
     -> TestName
-    -> Pair (TermLike')
+    -> Pair TestTerm
     -> TestTree
 withUnification check comment termPair =
     testCase comment $ do
@@ -514,7 +513,7 @@ withUnification check comment termPair =
 withUnificationTwice
     :: (UnificationResult -> Assertion)
     -> TestName
-    -> Pair (TermLike')
+    -> Pair TestTerm
     -> TestTree
 withUnificationTwice check comment termPair =
     testCase comment $ do
@@ -528,5 +527,5 @@ withUnificationTwice check comment termPair =
                 actual' <- unify overloadPair
                 check actual'
 
-x1 :: TermLike'
+x1 :: TestTerm
 x1 = mkElemVar (mkElementVariable (testId "x1") Mock.subSort)

@@ -17,11 +17,6 @@ import Data.Text
     ( Text
     )
 
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate_
@@ -40,11 +35,13 @@ import Kore.Step.Simplification.Or
 import qualified Kore.Unparser as Unparser
 import qualified Pretty
 
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Terse
-
-type OrPattern' = OrPattern VariableName
-type Pattern' = Pattern VariableName
 
 -- * Part 1: 'simplifyEvaluated'
 
@@ -93,16 +90,16 @@ test_simplify =
             (simplifyEvaluated          orPattern1 orPattern2 )
         ]
   where
-    orPattern1 :: OrPattern'
+    orPattern1 :: OrTestPattern
     orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: OrPattern'
+    orPattern2 :: OrTestPattern
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: OrPattern'
-      -> OrPattern'
-      -> Or Sort (OrPattern')
+      :: OrTestPattern
+      -> OrTestPattern
+      -> Or Sort OrTestPattern
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -121,13 +118,11 @@ Key for variable names:
             named `pm` and `pM` are expected to be unequal.
 -}
 
-{- | Short-hand for: @Pattern'@
+{- | Short-hand for: @TestPattern@
 
 See also: 'orChild'
  -}
 type TestConfig = (TestTerm, TestPredicate, TestSubstitution)
-
-type TestTerm = TermLike VariableName
 
 tT :: TestTerm
 tT = mkTop Mock.testSort
@@ -217,7 +212,7 @@ test_valueProperties =
 becomes
   :: HasCallStack
   => (TestConfig, TestConfig)
-  -> [Pattern']
+  -> [TestPattern]
   -> TestTree
 becomes
     (orChild -> or1, orChild -> or2)
@@ -260,8 +255,8 @@ simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
 -- * Support Functions
 
 prettyOr
-    :: Pattern'
-    -> Pattern'
+    :: TestPattern
+    -> TestPattern
     -> Pretty.Doc a
 prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
@@ -274,7 +269,7 @@ stateIntention actualAndSoOn =
 
 orChild
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> Pattern'
+    -> TestPattern
 orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
 
@@ -282,5 +277,5 @@ orChild (term, predicate, substitution) =
 -- during conversion of a Conditional into an OrPattern
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> OrPattern'
+    -> OrTestPattern
 wrapInOrPattern tuple = OrPattern.fromPatterns [orChild tuple]

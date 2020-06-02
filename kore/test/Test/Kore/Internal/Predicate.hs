@@ -1,5 +1,8 @@
 module Test.Kore.Internal.Predicate
     ( test_predicate
+    -- * Re-exports
+    , TestPredicate
+    , module Predicate
     ) where
 
 import Prelude.Kore
@@ -31,6 +34,8 @@ import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+type TestPredicate = Predicate VariableName
 
 test_predicate :: [TestTree]
 test_predicate =

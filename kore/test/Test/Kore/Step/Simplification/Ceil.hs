@@ -10,11 +10,6 @@ import qualified Data.Map.Strict as Map
 
 import qualified Data.Sup as Sup
 import Kore.Internal.Condition as Condition
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate_
@@ -48,16 +43,18 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 
+import Test.Kore.Internal.OrPattern
+    ( OrPattern
+    , OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-
-type TermLike' = TermLike VariableName
-type Pattern' = Pattern VariableName
-type OrPattern' = OrPattern VariableName
 
 test_ceilSimplification :: [TestTree]
 test_ceilSimplification =
@@ -448,9 +445,9 @@ test_ceilSimplification =
             (OrPattern.isSimplified sideRepresentation actual)
     ]
   where
-    fOfA :: TermLike'
+    fOfA :: TestTerm
     fOfA = Mock.f Mock.a
-    fOfB :: TermLike'
+    fOfB :: TestTerm
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
     somethingOfA = Mock.plain10 Mock.a
@@ -467,7 +464,7 @@ test_ceilSimplification =
         }
 
 appliedMockEvaluator
-    :: Pattern' -> BuiltinAndAxiomSimplifier
+    :: TestPattern -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -488,7 +485,7 @@ mockEvaluator evaluation _ _ = return evaluation
 mapVariables
     :: forall variable
     .  InternalVariable variable
-    => Pattern'
+    => TestPattern
     -> Pattern variable
 mapVariables =
     Pattern.mapVariables (pure worker)
@@ -507,25 +504,21 @@ makeCeil patterns =
         , ceilChild       = OrPattern.fromPatterns patterns
         }
 
-evaluate
-    :: Ceil Sort (OrPattern')
-    -> IO (OrPattern')
+evaluate :: Ceil Sort OrTestPattern -> IO OrTestPattern
 evaluate ceil =
     runSimplifier mockEnv
     $ Ceil.simplify SideCondition.top ceil
   where
     mockEnv = Mock.env
 
-makeEvaluate
-    :: Pattern'
-    -> IO (OrPattern')
+makeEvaluate :: TestPattern -> IO OrTestPattern
 makeEvaluate = makeEvaluateWithAxioms Map.empty
 
 makeEvaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
-    -> Pattern'
-    -> IO (OrPattern')
+    -> TestPattern
+    -> IO OrTestPattern
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     runSimplifier mockEnv
     $ Ceil.makeEvaluate SideCondition.top child

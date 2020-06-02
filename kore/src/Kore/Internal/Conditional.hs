@@ -431,8 +431,8 @@ mapVariables
     => InternalVariable variable2
     => (AdjSomeVariableName (variable1 -> variable2) -> term1 -> term2)
     -> AdjSomeVariableName (variable1 -> variable2)
-    -> (Conditional variable1 term1)
-    -> (Conditional variable2 term2)
+    -> Conditional variable1 term1
+    -> Conditional variable2 term2
 mapVariables
     mapTermVariables
     adj

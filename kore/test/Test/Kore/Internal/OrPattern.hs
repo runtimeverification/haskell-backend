@@ -2,6 +2,9 @@ module Test.Kore.Internal.OrPattern
     ( hprop_mergeIdemOr
     , hprop_makeIdemOr
     , hprop_flattenIdemOr
+    -- * Re-exports
+    , OrTestPattern
+    , module OrPattern
     ) where
 
 import Prelude.Kore
@@ -18,7 +21,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPattern as OrPattern
 import Kore.Syntax.Variable
 
 import Test.Kore
@@ -26,7 +29,9 @@ import Test.Kore.Internal.Pattern
     ( internalPatternGen
     )
 
-orPatternGen :: Gen (OrPattern VariableName)
+type OrTestPattern = OrPattern VariableName
+
+orPatternGen :: Gen OrTestPattern
 orPatternGen =
     OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) internalPatternGen
 

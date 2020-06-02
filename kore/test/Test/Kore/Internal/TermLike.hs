@@ -9,6 +9,9 @@ module Test.Kore.Internal.TermLike
     --
     , termLikeGen
     , termLikeChildGen
+    -- * Re-exports
+    , TestTerm
+    , module Kore.Internal.TermLike
     ) where
 
 import Prelude.Kore
@@ -57,13 +60,13 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 import Test.Terse
 
-type TermLike' = TermLike VariableName
+type TestTerm = TermLike VariableName
 type ElementVariable' = ElementVariable VariableName
 
-termLikeGen :: Hedgehog.Gen (TermLike')
+termLikeGen :: Hedgehog.Gen TestTerm
 termLikeGen = standaloneGen (termLikeChildGen =<< sortGen)
 
-termLikeChildGen :: Sort -> Gen (TermLike')
+termLikeChildGen :: Sort -> Gen TestTerm
 termLikeChildGen patternSort =
     Gen.sized termLikeChildGenWorker
   where
@@ -315,8 +318,8 @@ test_refreshVariables =
   where
     xTerm = mkElemVar Mock.x
     becomes
-        :: (TermLike', [ElementVariable'])
-        -> TermLike'
+        :: (TestTerm, [ElementVariable'])
+        -> TestTerm
         -> TestName
         -> TestTree
     becomes (term, vars) expected =
@@ -332,7 +335,7 @@ test_hasConstructorLikeTop =
                 True
                 $ isConstructorLikeTop (mkApplySymbol Mock.aSymbol [])
             let
-                dv :: DomainValue Sort (TermLike')
+                dv :: DomainValue Sort TestTerm
                 dv = DomainValue
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
@@ -361,7 +364,7 @@ test_hasConstructorLikeTop =
         )
     ]
   where
-    isConstructorLikeTop :: TermLike' -> Bool
+    isConstructorLikeTop :: TestTerm -> Bool
     isConstructorLikeTop = hasConstructorLikeTop
 
 x :: ElementVariable'
@@ -407,7 +410,7 @@ test_renaming =
     doesNotCapture
         :: HasCallStack
         => SomeVariable VariableName
-        -> TermLike'
+        -> TestTerm
         -> Assertion
     doesNotCapture Variable { variableName } renamed =
         assertBool
@@ -416,7 +419,7 @@ test_renaming =
 
     updatesFreeVariables
         :: HasCallStack
-        => TermLike'
+        => TestTerm
         -> Assertion
     updatesFreeVariables renamed =
         assertEqual
@@ -424,12 +427,12 @@ test_renaming =
             (freeVariables resynthesized :: FreeVariables VariableName)
             (freeVariables       renamed)
       where
-        resynthesized :: TermLike'
+        resynthesized :: TestTerm
         resynthesized = resynthesize renamed
 
     testElement
         :: TestName
-        -> (ElementVariable' -> TermLike' -> TermLike')
+        -> (ElementVariable' -> TestTerm -> TestTerm)
         -> TestTree
     testElement testName mkBinder =
         testGroup testName
@@ -447,7 +450,7 @@ test_renaming =
 
     testSet
         :: TestName
-        -> (SetVariable VariableName -> TermLike' -> TermLike')
+        -> (SetVariable VariableName -> TestTerm -> TestTerm)
         -> TestTree
     testSet testName mkBinder =
         testGroup testName

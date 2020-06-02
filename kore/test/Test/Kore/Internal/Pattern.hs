@@ -1,6 +1,10 @@
 module Test.Kore.Internal.Pattern
     ( test_expandedPattern
     , internalPatternGen
+    -- * Re-exports
+    , TestPattern
+    , module Pattern
+    , module Test.Kore.Internal.TermLike
     ) where
 
 import Prelude.Kore
@@ -8,14 +12,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import Kore.Internal.Pattern as Pattern
-    ( Conditional (..)
-    , mapVariables
-    , toTermLike
-    )
-import qualified Kore.Internal.Pattern as Internal
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Internal.Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate_
@@ -23,24 +19,26 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
 
 import Test.Kore
     ( Gen
     , sortGen
     )
-import Test.Kore.Internal.TermLike
-    ( termLikeChildGen
+import Test.Kore.Internal.TermLike hiding
+    ( forgetSimplified
+    , isSimplified
+    , mapVariables
+    , simplifiedAttribute
     )
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty.HUnit.Ext
 
-type Pattern' = Internal.Pattern VariableName
+type TestPattern = Pattern VariableName
 
-internalPatternGen :: Gen Pattern'
+internalPatternGen :: Gen TestPattern
 internalPatternGen =
-    Internal.Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
+    Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
 
 test_expandedPattern :: [TestTree]
 test_expandedPattern =
