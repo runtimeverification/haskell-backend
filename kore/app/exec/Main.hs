@@ -203,7 +203,6 @@ data KoreSearchOptions =
         , searchType :: !SearchType
         -- ^ The type of search to perform
         }
-    deriving Show
 
 parseKoreSearchOptions :: Parser KoreSearchOptions
 parseKoreSearchOptions =

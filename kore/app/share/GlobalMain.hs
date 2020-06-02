@@ -173,7 +173,6 @@ data KoreProveOptions =
         -- ^ The file in which to save the proven claims in case the prover
         -- fails.
         }
-    deriving Show
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
 parseModuleName metaName longName helpMsg =
@@ -249,7 +248,6 @@ data KoreMergeOptions =
         -- ^ Name for file containing a sequence of rules to merge.
         , maybeBatchSize    :: Maybe Int
         }
-    deriving Show
 
 parseKoreMergeOptions :: Parser KoreMergeOptions
 parseKoreMergeOptions =

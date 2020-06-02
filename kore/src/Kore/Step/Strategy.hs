@@ -392,7 +392,7 @@ emptyExecutionGraph config =
 
 {-| Search order of the execution graph.
 -}
-data GraphSearchOrder = BreadthFirst | DepthFirst deriving (Eq, Show)
+data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
 newtype LimitExceeded a = LimitExceeded (Seq a)
     deriving (Show, Typeable)
