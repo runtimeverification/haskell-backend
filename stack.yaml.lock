@@ -33,12 +33,12 @@ packages:
     version: 0.1.1.1
     git: https://github.com/ttuegel/tasty-test-reporter.git
     pantry-tree:
-      size: 744
-      sha256: 2c4cf548a9c0d661d74f4441b0d5d6c79b9e3ea930bb8bea1aa4fb51647cc6f1
-    commit: 0befbde129690deb85abca91f730cda8b33dee29
+      size: 810
+      sha256: 57f84ef3bff91c81d1b32f84673dd194a2180db82ac2860a1e1646d1a04d7de6
+    commit: e411234da88d3f32dfe1319c5edce478abf5115b
   original:
     git: https://github.com/ttuegel/tasty-test-reporter.git
-    commit: 0befbde129690deb85abca91f730cda8b33dee29
+    commit: e411234da88d3f32dfe1319c5edce478abf5115b
 - completed:
     hackage: junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
     pantry-tree:
