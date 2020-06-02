@@ -133,11 +133,10 @@ bottomCondition = bottom
 
 hasFreeVariable
     :: InternalVariable variable
-    => SomeVariable variable
+    => SomeVariableName variable
     -> Condition variable
     -> Bool
-hasFreeVariable variable =
-    isFreeVariable (variableName variable) . freeVariables
+hasFreeVariable name = isFreeVariable name . freeVariables
 
 {- | Extract the set of free set variables from a predicate and substitution.
 

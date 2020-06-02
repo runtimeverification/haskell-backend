@@ -137,6 +137,6 @@ makeEvaluate variable patt
     unifiedVariable = inject @(SomeVariable _) variable
     variableInTerm =
         TermLike.hasFreeVariable (variableName unifiedVariable) term
-    variableInCondition = Condition.hasFreeVariable unifiedVariable predicate
+    variableInCondition = Condition.hasFreeVariable (variableName unifiedVariable) predicate
     termIsBoolean = isTop term || isBottom term
     predicateIsBoolean = isTop predicate || isBottom predicate
