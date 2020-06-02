@@ -23,9 +23,9 @@ where, in general, l is a constructor-based term
 
 When translated into matching logic, they are of the form
 
-    axiom l ∧ c → EX r
+    axiom l ∧ c → • r
 
-Where EX is the next operator, meaning that there is a possible transition
+Where • is the next operator, meaning that there is a possible transition
 from l (satisfying c) to r.
 
 Approach
@@ -53,26 +53,26 @@ Theorem combine
 
 Given two rules
 
-    axiom ∀ x1 . l1 → EX r1
-    axiom ∀ x2 . l2 → EX r2
+    axiom ∀ x1 . l1 → • r1
+    axiom ∀ x2 . l2 → • r2
 
 From the theorem above, we can combine the two axiom into an equivalent one:
 
     axiom ∀ c x1 x2 .
         (c = 1 ∧ l1) ∨ (c = 2 ∧ l2) →
-        (c = 1 ∧ EX r1) ∨ (c = 2 ∧ EX r2)
+        (c = 1 ∧ • r1) ∨ (c = 2 ∧ • r2)
 
 
-Given that `c = 1` and `c = 2` are predicates, and that EX is a standard symbol,
+Given that `c = 1` and `c = 2` are predicates, and that • is a standard symbol,
 we can transform the RHS of the rule into
 
-    EX ((c = 1 ∧ r1) ∨ (c = 2 ∧ r2))
+    • ((c = 1 ∧ r1) ∨ (c = 2 ∧ r2))
 
 Reasoning:
 
-            (c=1 ∧ EX r1) ∨ (c=2 ∧ EX r2)
-    equals  EX (c=1 ∧ r1) ∨ EX (c=2 ∧ r2)
-    equals  EX ((c=1 ∧ r1) ∧ (c=2 ∧ r2))
+            (c=1 ∧ • r1) ∨ (c=2 ∧ • r2)
+    equals  • (c=1 ∧ r1) ∨ • (c=2 ∧ r2)
+    equals  • ((c=1 ∧ r1) ∧ (c=2 ∧ r2))
 
 ## Dealing with side conditions
 
@@ -89,7 +89,7 @@ in both rules, we can transform `(c = 1 ∧ t) ∨ (c = 2 ∧ t)` into
 ### Pushing choice predicates into terms
 
 
-Let us generalize the property we stated above for `EX` for any symbol in the
+Let us generalize the property we stated above for `•` for any symbol in the
 signature. We will prove that
 
     (c = 1 ∧ f(t11, .., t1n)) ∨ c = 2 ∧ f(t21, ..., t2n))
@@ -118,8 +118,8 @@ well.
 
 Applying the above we can compress two rules of the form
 
-    axiom ∀ x1 . l1 ∧ p1 → EX r1 ∧ p1'
-    axiom ∀ x2 . l2 ∧ p2 → EX r2 ∧ p2'
+    axiom ∀ x1 . l1 ∧ p1 → • r1 ∧ p1'
+    axiom ∀ x2 . l2 ∧ p2 → • r2 ∧ p2'
 
 to something like:
 
@@ -253,12 +253,128 @@ They could be merged into the following axiom:
        ∨ (c = 2 ∧ <k> X:Int /Int Y:Int ~> K </k>)
        ∨ (c = 3 ∧ <k> error("Division by 0") ~> K </k>)
 
+On merging all-path / one-path claims
+-------------------------------------
 
-On merging function-like patterns
----------------------------------
+Since all-path claims are of the form `∀xᵢ.φᵢ → [w] ∃zᵢ.ψᵢ` where
+`[w]` denotes the weak always finally operator, the reasoning above works,
+yielding the following merged rule:
 
-Let φ and ψ be (extended) function-like patterns, that is, patterns whose
-interpretation contains at most one element.
-Let c be a variable not occurring free in neither φ nor ψ.
-Let `γ`  be the merged pattern `(c = 1 ∧ φ) ∨ (c = 2 ∧ ψ)`.
-Then the interpretation of `γ` contains at most two elements.
+
+    axiom ∀ x1 x2 ... xn c .
+      (c = 1 ∧ l1) ∨ ... (c = n ∧ ln) → [w] (c = 1 ∧ 11) ∨ ... (c = n ∧ rn)
+
+We can then continue merging the lhs part as pointed above.
+
+A similar argument applies for one-path claims.
+
+
+All path reachability proofs
+----------------------------
+(See [All Path Reachability Proofs](2019-03-28-All-Path-Reachability-Proofs))
+
+Assumption: in a goal to be proven, `∀x.φ → [w]∃z.ψ`, `φ` will be assumed to be
+function-like.
+This allows transforming any conjunction `φ ∧ γ` into the equivalent
+`φ ∧ ⌈φ ∧ γ⌉`.
+
+
+
+### Reinterpreting unification
+
+The main idea is to transform `⌈φ ∧ γ⌉` through equivalences to a disjunction
+of conjunctions of equalities between variables and terms representing a
+substitution.  Using equivlaneces guarantees that a MGU is achieved.
+
+In fact, the existing cases for unification stay the same; however, we now need
+to take into account disjunctions and rule choice predicates.
+
+For strongly deterministic definitions (using non-overlapping rules),
+the unification itself will be deterministic, yielding substitutions
+guarded by the choice predicate corresponding to the (only) rule unifying
+with the current configuration.
+
+
+### Reinterpreting the `derivePar` algorithm
+
+
+
+
+Upone merging the one step axioms and the all path claims we interpret the
+all-path algorithm as follows:
+
+__Input__: goal `∀x.φ → [w]∃z.ψ`  and set of tuples `{ (xᵢ,φᵢ,zᵢ,ψᵢ) : 1 ≤ i ≤ n }`
+representing either
+
++ a merged claim `∀x₁ x₂ ... xₙ c . l → [w] r`
++ a merged axiom `∀x₁ x₂ ... xₙ c . l → • ∃ z₁ ... zₙ . r`
+
+where
+
++ `l ∧ (c = i) = φᵢ ∧ c = i` for `1 ≤ i ≤ n`,  and `l ∧ (c = i) = ⊥` if `¬(i = 1) ∧ ... ∧ ¬(i = n)`
++ `r ∧ (c = i) = ψᵢ ∧ c = i` for `1 ≤ i ≤ n`,  and `r ∧ (c = i) = ⊥` if `¬(i = 1) ∧ ... ∧ ¬(i = n)`
+
+__Output:__ `(Goal, goalᵣₑₘ)`
+
+* Let `goalᵣₑₘ := ∀x.(φ ∧ ¬∃x₁ x₂ ... xₙ c .⌈φ ∧ l⌉) → [w]∃z.ψ`
+* Let `Goal := ∀x z₁ z₂ ... zₙ.(∃x₁ x₂ ... xₙ c.r ∧ ⌈φ∧l⌉) → [w]∃z.ψ`
+
+#### Argument for equivalence to the original algorithm
+
+
+Say we want to prove `∀x.φ → [w]∃z.ψ`, and say we want to apply
+circularities, i.e., the merged claim `∀x₁ x₂ ... xₙ c . l → [w] r`.
+
+
+
+
+##### Unification predicate `⌈φ ∧ l⌉`
+
+`⌈φ ∧ l⌉` equals `⌈φ ∧ l⌉ ∧ ∃i.c=i` equals 
+`∃i.⌈φ ∧ l⌉ ∧ c=i ∧ (i = 1 ∨ i = 2 ∨ ... ∨ i = n ∨ ¬(i = 1) ∧ ... ∧ ¬(i = n)`
+equals
+`∃i.(⌈φ ∧ l⌉ ∧ c=i ∧ i = 1) ∨ (⌈φ ∧ l⌉ ∧ c=i ∧ i = 2) ∨ ... ∨ (⌈φ ∧ l⌉ ∧ c=i ∧ i = n) ∨ (⌈φ ∧ l⌉ ∧ c=i ∧ ¬(i = 1) ∧ ... ∧ ¬(i = n))`
+equals
+`∃i.⌈φ ∧ l ∧ c=i ∧ i = 1⌉ ∨ ⌈φ ∧ l ∧ c=i ∧ i = 2⌉ ∨ ... ∨ ⌈φ ∧ l ∧ c=i ∧ i = n⌉ ∨ ⌈φ ∧ l ∧ c=i ∧ ¬(i = 1) ∧ ... ∧ ¬(i = n)⌉`
+equals
+`∃i.⌈φ ∧ l ∧ c=i ∧ i = 1⌉ ∨ ⌈φ ∧ l ∧ c=i ∧ i = 2⌉ ∨ ... ∨ ⌈φ ∧ l ∧ c=i ∧ i = n⌉ ∨ ⌈φ ∧ l ∧ c=i ∧ ¬(i = 1) ∧ ... ∧ ¬(i = n)⌉`
+equals
+`∃i.⌈φ ∧ φ₁ ∧ c = i ∧ i = 1⌉ ∨ ⌈φ ∧ φ₂ ∧ c = i ∧i = 2⌉ ∨ ... ∨ ⌈φ ∧ φₙ ∧ c = i ∧ i = n⌉ ∨ ⌈φ ∧ ⊥ ∧ ¬(i = 1) ∧ ... ∧ ¬(i = n)⌉`
+equals
+`∃i.(⌈φ ∧ φ₁⌉ ∧ c = i ∧ i = 1) ∨ ∃i.(⌈φ ∧ φ₂⌉ ∧ c = i ∧ i = 2) ∨ ... ∨ ∃i.(⌈φ ∧ φₙ⌉ ∧ c = i ∧ i = n)`
+equals
+`(⌈φ ∧ φ₁⌉ ∧ c = 1) ∨ (⌈φ ∧ φ₂⌉ ∧ c = 2) ∨ ... ∨ (⌈φ ∧ φₙ⌉ ∧ c = n)`
+
+#### `goalᵣₑₘ`
+
+`goalᵣₑₘ` equals `∀x.(φ ∧ ¬∃x₁ x₂ ... xₙ c .⌈φ ∧ l⌉) → [w]∃z.ψ`
+equals (from the above)
+`forall x. (φ ∧ ¬∃x₁ ... xₙ c . ((⌈φ ∧ φ₁⌉ ∧ c = 1) ∨ (⌈φ ∧ φ₂⌉ ∧ c = 2) ∨ ... ∨ (⌈φ ∧ φₙ⌉ ∧ c = n))) → [w]∃z.ψ`
+equals (FOL manipulation)
+`forall x. (φ ∧ ¬(∃x₁ ... xₙ . ⌈φ ∧ φ₁⌉ ∨  ... ∨  ∃x₁ ... xₙ .⌈φ ∧ φₙ⌉)) → [w]∃z.ψ`
+equals (xᵢ distinct, φᵢ contains only xᵢ, φ does not contain any of the xᵢs)
+`forall x. (φ ∧ ¬(∃x₁. ⌈φ ∧ φ₁⌉ ∨  ... ∨  ∃xₙ .⌈φ ∧ φₙ⌉)) → [w]∃z.ψ`
+equals (¬ distribution)
+`forall x. (φ ∧ ¬∃x₁. ⌈φ ∧ φ₁⌉ ∧  ... ∧ ¬∃xₙ .⌈φ ∧ φₙ⌉) → [w]∃z.ψ`
+which is precisely the remainder from the original `derivePar` algorithm
+
+##### Goal
+
+`Goal` equals `∀x z₁ z₂ ... zₙ.(∃x₁ x₂ ... xₙ c.r ∧ ⌈φ∧l⌉) → [w]∃z.ψ`
+equals
+`∀x z₁ z₂ ... zₙ.(∃x₁ x₂ ... xₙ c.r ∧ ((⌈φ ∧ φ₁⌉ ∧ c = 1) ∨ (⌈φ ∧ φ₂⌉ ∧ c = 2) ∨ ... ∨ (⌈φ ∧ φₙ⌉ ∧ c = n))) → [w]∃z.ψ`
+equals (distributivity)
+`∀x z₁ z₂ ... zₙ.(∃x₁ x₂ ... xₙ c.(r ∧ ⌈φ ∧ φ₁⌉ ∧ c = 1) ∨ (r ∧ ⌈φ ∧ φ₂⌉ ∧ c = 2) ∨ ... ∨ (r ∧ ⌈φ ∧ φₙ⌉ ∧ c = n)) → [w]∃z.ψ`
+equals (rules for `r`)
+`∀x z₁ z₂ ... zₙ.(∃x₁ x₂ ... xₙ c.(ψ₁ ∧ ⌈φ ∧ φ₁⌉ ∧ c = 1) ∨ ... ∨ (ψₙ ∧ ⌈φ ∧ φₙ⌉ ∧ c = n)) → [w]∃z.ψ`
+equals (FOL manipulation)
+`∀x z₁ z₂ ... zₙ.(∃x₁ x₂ ... xₙ .(ψ₁ ∧ ⌈φ ∧ φ₁⌉) ∨ ... ∨ ∃x₁ x₂ ... xₙ .(ψₙ ∧ ⌈φ ∧ φₙ⌉)) → [w]∃z.ψ`
+equals (xᵢ distinct, φᵢ and ψᵢ contain only xᵢ, φ does not contain any of the xᵢs)
+`∀x z₁ z₂ ... zₙ.(∃x₁.(ψ₁ ∧ ⌈φ ∧ φ₁⌉) ∨ ... ∨ ∃xₙ.(ψₙ ∧ ⌈φ ∧ φₙ⌉)) → [w]∃z.ψ`
+equals (FOL manipulation
+`(∀x z₁ z₂ ... zₙ.∃x₁.(ψ₁ ∧ ⌈φ ∧ φ₁⌉) → [w]∃z.ψ) ∧ ... ∧  (∀x z₁ z₂ ... zₙ.∃xₙ.(ψₙ ∧ ⌈φ ∧ φₙ⌉)) → [w]∃z.ψ`
+equals (zᵢ distinct, ψᵢ contains only zᵢ, φ, φᵢ does not contain any of the xᵢs, and all types are inhabited)
+`(∀x z₁.∃x₁.(ψ₁ ∧ ⌈φ ∧ φ₁⌉) → [w]∃z.ψ) ∧ ... ∧  (∀x zₙ.∃xₙ.(ψₙ ∧ ⌈φ ∧ φₙ⌉)) → [w]∃z.ψ`
+
+Which is precisely the conjunction of `Goals` from the original `derivePar` algorithm. 
+
