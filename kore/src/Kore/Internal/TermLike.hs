@@ -316,10 +316,7 @@ freshSymbolInstance freeVars sym base =
     mkVariable :: Integer -> Sort -> ElementVariable variable
     mkVariable vIdx vSort =
         mkElementVariable
-            Id
-                { getId = base <> Text.pack (show vIdx)
-                , idLocation = AstLocationGeneratedVariable
-                }
+            (generatedId $ base <> (Text.pack . show) vIdx)
             vSort
         & (fmap . fmap) fromVariableName
 

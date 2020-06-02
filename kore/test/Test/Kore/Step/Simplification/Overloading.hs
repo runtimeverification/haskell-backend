@@ -10,9 +10,6 @@ import Test.Tasty
 import Control.Monad.Trans.Except
     ( runExceptT
     )
-import Data.Text
-    ( Text
-    )
 
 import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Int.Int as Int
@@ -24,6 +21,7 @@ import Pair
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Kore.Syntax.Id
 import Test.Tasty.HUnit.Ext
 
 type TermLike' = TermLike VariableName
@@ -531,19 +529,4 @@ withUnificationTwice check comment termPair =
                 check actual'
 
 x1 :: TermLike'
-x1 =
-    mkElemVar Variable
-    { variableName =
-        ElementVariableName VariableName
-        { base = generatedId "x1"
-        , counter = mempty
-        }
-    , variableSort = Mock.subSort
-    }
-
-generatedId :: Text -> Id
-generatedId name =
-    Id
-        { getId = name
-        , idLocation = AstLocationGeneratedVariable
-        }
+x1 = mkElemVar (mkElementVariable (testId "x1") Mock.subSort)

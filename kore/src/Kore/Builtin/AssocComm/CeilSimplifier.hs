@@ -65,6 +65,7 @@ import Kore.Internal.TermLike
     , TermLike
     , Void
     , fromVariableName
+    , generatedId
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -176,7 +177,7 @@ generalizeMapElement freeVariables' element =
         TermLike.freeVariables key <> freeVariables'
         & FreeVariables.toNames
     x =
-        TermLike.mkElementVariable "x" (termLikeSort value)
+        TermLike.mkElementVariable (generatedId "x") (termLikeSort value)
         & (fmap . fmap) (fromVariableName @variable)
     variable = refreshElementVariable avoiding x & fromMaybe x
 
