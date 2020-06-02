@@ -244,8 +244,7 @@ variableGen' patternSort variables genId =
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen patternSort = do
     Context { objectVariables } <- Reader.ask
-    let elementVariables =
-            mapMaybe (retract @_ @(ElementVariable _)) objectVariables
+    let elementVariables = mapMaybe retractElementVariable objectVariables
         variables = (fmap . fmap) unElementVariableName elementVariables
     variableGen' patternSort variables idGen
         & (fmap . fmap) ElementVariableName
@@ -253,8 +252,7 @@ elementVariableGen patternSort = do
 setVariableGen :: Sort -> Gen (SetVariable VariableName)
 setVariableGen sort = do
     Context { objectVariables } <- Reader.ask
-    let setVariables =
-            mapMaybe (retract @_ @(SetVariable _)) objectVariables
+    let setVariables = mapMaybe retractSetVariable objectVariables
         variables = (fmap . fmap) unSetVariableName setVariables
     variableGen' sort variables setVarIdGen
         & (fmap . fmap) SetVariableName
