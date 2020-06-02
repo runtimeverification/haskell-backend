@@ -168,8 +168,16 @@ attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
         matchResult <- match left termLike & whileMatch
+        -- traceM
+        --     $ "\n\nMatch result:"
+        --     <> "\nPredicate:\n" <> unparseToString (fst matchResult)
+        --     <> "\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap (snd matchResult)))
         simplifiedResult <-
             simplifyArgumentWithResult argument antiLeft matchResult & lift
+        -- traceM
+        --     $ "\n\nAfter simplification:"
+        --     <> "\nPredicate:\n" <> unparseToString (fst simplifiedResult)
+        --     <> "\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap (snd simplifiedResult)))
         -- traceM
         --     $ "\n\nEquation:\n"
         --         <> (Text.unpack
@@ -183,8 +191,10 @@ attemptEquation sideCondition termLike equation =
         (equation', predicate') <-
             applyMatchResult equationRenamed simplifiedResult
             & whileApplyMatchResult
+        -- traceM "\n\nAfter applyMatchResult"
         let Equation { requires } = equation'
         checkRequires sideCondition predicate' requires & whileCheckRequires
+        -- traceM "\n\nAfter checkRequires"
         let Equation { right, ensures } = equation'
         return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
@@ -216,10 +226,14 @@ attemptEquation sideCondition termLike equation =
         _
         (matchPredicate, matchSubstitution)
       = do
-        let toPattern =
-                OrPattern.toPattern
-                . OrPattern.fromPatterns
-                . fmap Pattern.fromCondition
+        let toPattern x =
+                case x of
+                    [] -> Pattern.bottom
+                    (pat : _) ->
+                        Pattern.fromCondition pat
+                -- OrPattern.toPattern
+                -- . OrPattern.fromPatterns
+                -- . fmap Pattern.fromCondition
         Conditional { predicate, substitution } <-
             Substitution.mergePredicatesAndSubstitutions
                 sideCondition
@@ -266,6 +280,7 @@ applyMatchResult
     ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) = do
+    -- traceM "\n\nInside applyMatchResult"
     case errors of
         x : xs ->
             throwE ApplyMatchResultErrors
@@ -279,6 +294,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         equation' =
             Equation.substitute substitution equation
             & Equation.mapVariables Target.unTargetElement Target.unTargetSet
+    -- traceM "\n\nEnd of applyMatchResult"
     return (equation', predicate')
   where
     equationVariables = freeVariables equation & FreeVariables.toList
@@ -341,6 +357,7 @@ checkRequires
     -> ExceptT (CheckRequiresError variable) simplifier ()
 checkRequires sideCondition predicate requires =
     do
+        -- traceM "\n\nInside checkRequires"
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
             condition :: Condition variable

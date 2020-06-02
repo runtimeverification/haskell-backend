@@ -1310,6 +1310,7 @@ unifyEqualsElementLists
                     result = unifier `andCondition` opaqueCondition
 
                 return (result, [opaqueTerm])
+            -- TODO: use Pretty
             _ -> (error . unlines)
                 [ "Unification case that should be handled somewhere else:"
                 , "attempting normalized unification with a "
@@ -1317,6 +1318,7 @@ unifyEqualsElementLists
                 , "non-function maps could lead to infinite loops."
                 , "first=" ++ unparseToString first
                 , "second=" ++ unparseToString second
+                , "opaque=" ++ unparseToString opaque
                 ]
 
   where
