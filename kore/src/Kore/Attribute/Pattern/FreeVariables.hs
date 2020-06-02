@@ -12,6 +12,7 @@ module Kore.Attribute.Pattern.FreeVariables
     , freeVariable
     , isFreeVariable
     , bindVariable
+    , bindVariables
     , mapFreeVariables
     , traverseFreeVariables
     , getFreeElementVariables
@@ -21,19 +22,19 @@ module Kore.Attribute.Pattern.FreeVariables
 import Prelude.Kore
 
 import Control.DeepSeq
+import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
+import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
 
 newtype FreeVariables variable =
@@ -73,6 +74,10 @@ toList :: FreeVariables variable -> [UnifiedVariable variable]
 toList = Set.toList . getFreeVariables
 {-# INLINE toList #-}
 
+fromList :: Ord variable => [UnifiedVariable variable] -> FreeVariables variable
+fromList = foldMap freeVariable
+{-# INLINE fromList #-}
+
 toSet :: FreeVariables variable -> Set (UnifiedVariable variable)
 toSet = getFreeVariables
 {-# INLINE toSet #-}
@@ -90,6 +95,16 @@ bindVariable variable (FreeVariables freeVars) =
     FreeVariables (Set.delete variable freeVars)
 {-# INLINE bindVariable #-}
 
+bindVariables
+    :: Ord variable
+    => Foldable f
+    => f (UnifiedVariable variable)
+    -> FreeVariables variable
+    -> FreeVariables variable
+bindVariables bound free =
+    Foldable.foldl' (flip bindVariable) free bound
+{-# INLINE bindVariables #-}
+
 isFreeVariable
     :: Ord variable
     => UnifiedVariable variable -> FreeVariables variable -> Bool
@@ -102,24 +117,21 @@ freeVariable variable = FreeVariables (Set.singleton variable)
 {-# INLINE freeVariable #-}
 
 mapFreeVariables
-    :: Ord variable2
-    => (ElementVariable variable1 -> ElementVariable variable2)
-    -> (SetVariable variable1 -> SetVariable variable2)
-    -> FreeVariables variable1 -> FreeVariables variable2
-mapFreeVariables mapElemVar mapSetVar (FreeVariables freeVars) =
-    FreeVariables (Set.map (mapUnifiedVariable mapElemVar mapSetVar) freeVars)
+    ::  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> VariableNameOf variable2)
+    ->  FreeVariables variable1 -> FreeVariables variable2
+mapFreeVariables adj = fromList . map (mapUnifiedVariable adj) . toList
 {-# INLINE mapFreeVariables #-}
 
 traverseFreeVariables
-    :: (Applicative f, Ord variable2)
-    => (ElementVariable variable1 -> f (ElementVariable variable2))
-    -> (SetVariable variable1 -> f (SetVariable variable2))
-    -> FreeVariables variable1 -> f (FreeVariables variable2)
-traverseFreeVariables traverseElemVar traverseSetVar (FreeVariables freeVars) =
-    FreeVariables . Set.fromList
-    <$> Traversable.traverse traversal (Set.toList freeVars)
-  where
-    traversal = traverseUnifiedVariable traverseElemVar traverseSetVar
+    ::  Applicative f
+    =>  (NamedVariable variable1, NamedVariable variable2)
+    =>  AdjSomeVariableName
+            (VariableNameOf variable1 -> f (VariableNameOf variable2))
+    ->  FreeVariables variable1 -> f (FreeVariables variable2)
+traverseFreeVariables adj =
+    fmap fromList . traverse (traverseUnifiedVariable adj) . toList
 {-# INLINE traverseFreeVariables #-}
 
 {- | Extracts the list of free element variables

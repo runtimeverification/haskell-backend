@@ -98,8 +98,6 @@ import Kore.Syntax.Definition hiding
     )
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Pretty
 
 import Test.Kore
@@ -1837,11 +1835,10 @@ mapVariables
     => Pattern Variable
     -> Pattern variable
 mapVariables =
-    Pattern.mapVariables worker worker
+    Pattern.mapVariables (pure worker)
   where
-    worker :: Functor f => f Variable -> f variable
-    worker = fmap $ \v ->
-        fromVariable v { variableCounter = Just (Element 1) }
+    worker :: VariableName -> VariableNameOf variable
+    worker v = fromVariableName v { counter = Just (Element 1) }
 
 mockEvaluator
     :: Monad simplifier

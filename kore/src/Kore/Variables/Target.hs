@@ -13,9 +13,11 @@ module Kore.Variables.Target
     , unTargetSet
     , mkElementTarget
     , mkSetTarget
+    , mkUnifiedTarget
     , isTarget
     , mkElementNonTarget
     , mkSetNonTarget
+    , mkUnifiedNonTarget
     , isNonTarget
     , isUnifiedTarget
     , isUnifiedNonTarget
@@ -24,13 +26,15 @@ module Kore.Variables.Target
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Internal.Variable
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
+    ( NamedVariable (..)
+    , SortedVariable (..)
     )
 import Kore.Unparser
     ( Unparse (..)
@@ -109,6 +113,9 @@ mkSetTarget
     -> SetVariable (Target variable)
 mkSetTarget = fmap Target
 
+mkUnifiedTarget :: AdjSomeVariableName (variable -> Target variable)
+mkUnifiedTarget = pure Target
+
 isTarget :: Target variable -> Bool
 isTarget (Target _) = True
 isTarget (NonTarget _) = False
@@ -128,6 +135,9 @@ mkSetNonTarget
     -> SetVariable (Target variable)
 mkSetNonTarget = fmap NonTarget
 
+mkUnifiedNonTarget :: AdjSomeVariableName (variable -> Target variable)
+mkUnifiedNonTarget = pure NonTarget
+
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
 
@@ -144,7 +154,23 @@ instance
             NonTarget variable -> Target <$> lensVariableSort f variable
     {-# INLINE lensVariableSort #-}
 
-instance VariableName variable => VariableName (Target variable)
+instance NamedVariable variable => NamedVariable (Target variable) where
+    type VariableNameOf (Target variable) = Target (VariableNameOf variable)
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to (Target variable) = Target <$> Lens.view isoVariable1 variable
+        to (NonTarget variable) = NonTarget <$> Lens.view isoVariable1 variable
+        fr Variable1 { variableName1, variableSort1 } =
+            flip fmap variableName1 $ \variableName1' ->
+                Variable1
+                { variableName1 = variableName1'
+                , variableSort1
+                }
+                & Lens.review isoVariable1
+
+instance VariableBase variable => VariableBase (Target variable)
 
 instance From variable1 variable2 => From variable1 (Target variable2) where
     from = Target . from @variable1 @variable2
@@ -189,11 +215,15 @@ instance
     unparse2 (NonTarget var) = unparse2 var
 
 targetIfEqual
-    :: Eq variable
+    :: NamedVariable variable
     => ElementVariable variable
-    -> ElementVariable variable
-    -> ElementVariable (Target variable)
-targetIfEqual boundVariable variable =
-    if boundVariable == variable
-        then mkElementTarget variable
-        else mkElementNonTarget variable
+    -> VariableNameOf variable
+    -> VariableNameOf (Target variable)
+targetIfEqual boundVariable variableName =
+    if boundVariableName == variableName
+        then Target variableName
+        else NonTarget variableName
+  where
+    boundVariableName =
+        Lens.view lensVariableName boundVariable
+        & unElementVariableName

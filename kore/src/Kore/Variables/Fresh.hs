@@ -31,8 +31,8 @@ import Data.Set
 import qualified Data.Set as Set
 
 import Data.Sup
+import Kore.Sort
 import Kore.Syntax.ElementVariable
-import Kore.Syntax.Id
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 

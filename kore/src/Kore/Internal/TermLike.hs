@@ -27,6 +27,7 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
+    , freshSymbolInstance
     , removeEvaluated
     , termLikeSort
     , hasFreeVariable
@@ -181,6 +182,8 @@ module Kore.Internal.TermLike
 import Prelude.Kore
 
 import Data.Align
+    ( alignWith
+    )
 import Data.ByteString
     ( ByteString
     )
@@ -203,6 +206,7 @@ import Data.Set
 import Data.Text
     ( Text
     )
+import qualified Data.Text as Text
 import Data.These
 
 import qualified Kore.Attribute.Pattern as Attribute
@@ -295,6 +299,31 @@ refreshVariables (FreeVariables.toSet -> avoid) term =
     originalFreeVariables = FreeVariables.toSet (freeVariables term)
     subst = mkVar <$> rename
 
+-- | Generates fresh variables as arguments for a symbol to create a pattern.
+freshSymbolInstance
+    :: forall variable
+     . InternalVariable variable
+    => FreeVariables variable
+    -> Symbol
+    -> Text
+    -> TermLike variable
+freshSymbolInstance freeVars sym base =
+    mkApplySymbol sym varTerms
+    & refreshVariables freeVars
+  where
+    sorts = applicationSortsOperands $ symbolSorts sym
+    varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
+    mkVariable :: Integer -> Sort -> ElementVariable variable
+    mkVariable vIdx vSort = ElementVariable . from @Variable @variable
+        $ Variable
+            { variableName = Id
+                { getId = base <> Text.pack (show vIdx)
+                , idLocation = AstLocationGeneratedVariable
+                }
+            , variableCounter = mempty
+            , variableSort = vSort
+            }
+
 {- | Is the 'TermLike' a function pattern?
  -}
 isFunctionPattern :: TermLike variable -> Bool
@@ -370,12 +399,12 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcrete
-    :: Ord variable
+    :: NamedVariable variable
     => TermLike variable
     -> Maybe (TermLike Concrete)
-asConcrete = traverseVariables (\case { _ -> Nothing }) (\case { _ -> Nothing })
+asConcrete = traverseVariables (pure toVoid)
 
-isConcrete :: Ord variable => TermLike variable -> Bool
+isConcrete :: NamedVariable variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
@@ -388,10 +417,10 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcrete
-    :: (FreshPartialOrd variable, SortedVariable variable)
+    :: (FreshPartialOrd variable, NamedVariable variable)
     => TermLike Concrete
     -> TermLike variable
-fromConcrete = mapVariables (\case {}) (\case {})
+fromConcrete = mapVariables (pure $ from @Void)
 
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =

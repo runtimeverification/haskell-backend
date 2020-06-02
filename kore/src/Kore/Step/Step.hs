@@ -268,7 +268,7 @@ toConfigurationVariablesCondition
     => SideCondition variable
     -> SideCondition (Target variable)
 toConfigurationVariablesCondition =
-    SideCondition.mapVariables Target.mkElementNonTarget Target.mkSetNonTarget
+    SideCondition.mapVariables Target.mkUnifiedNonTarget
 
 {- | Apply the remainder predicate to the given initial configuration.
 

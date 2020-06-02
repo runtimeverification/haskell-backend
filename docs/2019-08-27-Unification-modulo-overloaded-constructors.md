@@ -59,7 +59,7 @@ axioms of the form:
 
 Note that, given the pair of overloaded symbols, these axioms can be
 automatically inferred. To assist tooling, the compilation process
-annotates these geenrated axioms with an `overload` attribute
+annotates these generated axioms with an `overload` attribute
 having the two symbols involved as arguments.
 
 Problems
@@ -166,16 +166,80 @@ applying the overloading axioms in a left-to-right fashion.
 - overloaded constructor vs. same overloaded constructor: works the same as for
   other constructors, as overloaded constructors are injective
 - overloaded constructor vs. different (overloaded) constructor: 
-  fail, similarly to the other constructors
+  return bottom, similarly to the other constructors
 - overloaded constructor vs. injection of (overloaded) constructor 
   + If the two constructors form an `overload` pair, then use the sorting
     information for the two overloaded constructors to directly derive the new
     goals (apply the overload axiom right-to-left on the right and retry)
-  + otherwise, fail, as the constructors are incompatible
+  + otherwise, return bottom, as the constructors are incompatible
+- `\inj{S1,injTo}(firstHead(firstChildren)) ∧ \inj{S2,injTo}(secondHead(secondChildren))` 
+  + If there exists a common overloaded constructor `headUnion` overloading both
+    constructors, such that 
+
+        \inj{S1,injTo}(firstHead(firstChildren)) =
+          \inj{S,injTo}(headUnion(inj1(firstChildren)))
+
+    and 
+
+        inj{S2,injTo}(secondHead(secondChildren)) =
+          inj{S,injTo}(headUnion(inj2(secondChildren)))
+
+    then apply the overload axioms right-to-left to get both terms to use
+    the common overloaded constructor and retry with
+
+        \inj{S,injTo}(headUnion(inj1(firstChildren)))
+        ∧
+        \inj{S,injTo}(headUnion(inj2(secondChildren)))
+
+  + otherwise, return bottom, as the constructors are incompatible
+- `c1(overloadingChildren) ∧ \inj{s2,injTo}(x2)`
+  1. Find a constructor `c2'` overloaded by `c1` whose sort `s2'` is at most
+     `s2`, satisfying the overloading equation
+
+         inj{s2',injTo}(c2'(freshVars)) = c1(inj2(freshVars))
+
+     - If there are more, pick the one overloading all the others.
+     - If cannot compute one overloading all the others, we cannot decide which
+       to choose and decide not to handle the case (ambiguity).
+  1. narrow `x2` to `\inj{s2',s2}(c2'(freshVars))` where `freshVars` are
+     fresh
+  1. apply the right-to-left overloading axiom to transform `c2'` into `c1`
+     reducing the unification problem to
+
+         c1(overloadingChildren)  ∧ c1(inj2(freshVars))
+
+  1. hope that the new unification returns bottom; if not build the conjunction
+     of the result with the equality for `x2` and existentially quantify them
+     using `freshVars`
+- `\inj{s1,s}(c1(children1)) ∧ \inj{s2,s}(x2)`
+
+  1. For each constructor `c1'` overloading `c1` whose sort `s1'` is
+     at most `s`, find a constructor `c2'` overloaded by `c1'` whose sort `s2'`
+     is at most `s2` with overloading equations
+     
+         \inj{s1,s}(c1(children1)) = \inj{s1',s}(c1'(inj1(children1)))
+     
+     and
+
+         \inj{s2',s}(c2'(freshVars)) = \inj{s1', s}(c1'(inj2(freshVars)))
+
+     - If there are more such `c2'`, pick the one overloading all the others.
+     - If cannot compute one overloading all the others, we cannot decide which
+       to choose and decide not to handle the case (ambiguity).
+  1. narrow `x2` to `\inj{s2',s2}(c2'(freshVars))` where `freshVars` are fresh
+  1. apply the right-to-left overloading axioms to transform `c1` into `c1'` and
+     `c2'` into `c1'`, reducing the unification problem to
+
+         \inj{s1',s}(c1'(inj1(children1))) ∧ \inj{s1',s}(c1'(inj2(freshVars)))
+
+  1. hope that the new unification returns bottom; if not build the conjunction
+     of the result with the equality for `x2` and existentially quantify them
+     using `freshVars`
+   
 - otherwise, for now, throw an unsupported exception, as this
   would prevent increasing the number of variable and possible decompositions
 
-#### Example
+#### Example 1
 
 Assume we have two subsorted / overloaded lists and a definition of length
 
@@ -199,8 +263,62 @@ This reduces to matching `inj{Ints, Exps}(1,2,.Ints)` with the pattern
 pattern and the list constructor below the inj form an overload pair,
 we can transform the pattern to be matched to 
 `inj{Int,Exp}(1), inj{Ints, Exps}(2, .Ints)`, after which the matching becomes
-possible and generates the substitution 
+possible and generates the substitution In the Name of the Grandfather
+
 ```
 _:Exp = inj{int,Exp}(1)
 Es:Exps = inj{Ints, Exps}(2, .Ints)
 ```
+
+#### Example 2
+
+Assume we have the following list definitions:
+
+```
+  syntax Exp ::= Val
+  syntax Exp ::= Exp "+" Exp             [strict]
+  syntax Exp ::= "[" Exps "]"            [strict]
+  syntax Exps ::= List{Exp,","}          [klabel(_,_), strict]
+
+  syntax Val ::= Int
+  syntax Vals ::= List{Val,","}          [klabel(_,_), strict]
+  syntax Exps ::= Vals
+
+  syntax KResult ::= Val | Vals
+```
+
+and consider the rules for `isKResult`:
+
+```
+isKResult(\inj{KResult, KItem}(R:KResult)) => true
+isKResult(K:KItem) => false [owise]
+```
+
+Suppose now one wants to check whether the list `1, 1 + 1` is a `KResult`.
+
+Its representation in KORE is of the form
+`\inj{Exps, KItem}(ExpsCons(\inj{Val, Exp}(1), ExpsCons(1 + 1, \inj{Vals, Exps}(.Vals))))`
+
+In order to apply the `owise` rule for `KResult`, one must compute 
+
+`\not(\ceil(\inj{Exps, KItem}(ExpsCons(\inj{Int, Exp}(1), ExpsCons(1 + 1, \inj{Vals, Exps}(.Vals)))) ∧ \inj{KResult, KItem}(R:KResult)))`
+
+At this moment, the narrowing kicks in (`unifyOverloadingVsOverloadedVariable`),
+and it could narrow `R:KResult` to `inj{Vals, KResult}(ValsCons(V:Val, Vs:Vals))`,
+then reattempt unification between
+  `inj{Exps, KItem}(ExpsCons(inj{Int, Exp}(1), ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))))` and
+  `inj{Vals, KItem}(ValsCons(V:Val, Vs:Vals))`,
+where the latter can be transformed to 
+  `inj{Exps, KItem}(ExpCons(inj{Val,Exp}(V:Val), inj{Vals, Exps}(Vs:Vals)))`
+This unification reduces to `V =  \inj{Int, Val}(1)` and with
+`ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))` unified to ` inj{Vals, Exps}(Vs:Vals)`
+
+Applying again narrowing (this time `unifyOverloadingInjVsVariable`) we narrow
+`Vs:Vals` to `ValsCons(V':Val, Vs':Vals)` and use overloading to attempt
+unification  between `ExpsCons(1 + 1, inj{Vals, Exps}(.Vals))` and
+`inj{Vals, Exps}(ValsCons(V':Val, Vs':Vals))`, which gets to `1 + 1` being
+unified with `\inj{Val, Exp}(V':Val)`, which fails, returning `\bottom`.
+
+Thus, `\not(\ceil(\inj{Exps, KItem}(ExpsCons(\inj{Val, Exp}(1), ExpsCons(1 + 1, \inj{Vals, Exps}(.Vals)))) ∧ \inj{KResult, KItem}(R:KResult)))`
+simplifies to `\not(\ceil(\bottom))`, which is `\top`, thus making `isKresult`
+evaluate to `false`.

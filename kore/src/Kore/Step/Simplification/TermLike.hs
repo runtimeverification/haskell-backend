@@ -136,6 +136,11 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
+import Kore.Syntax.Variable
+    ( AdjSomeVariableName (..)
+    , ElementVariableName (..)
+    , SetVariableName (..)
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -146,10 +151,8 @@ import Kore.Unparser
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
     ( Target (..)
-    , mkSetNonTarget
     , targetIfEqual
-    , unTargetElement
-    , unTargetSet
+    , unTarget
     )
 import qualified Pretty
 
@@ -404,8 +407,7 @@ simplifyInternal term sideCondition = do
                         (targetSideCondition sideCondition)
                         (targetSimplifiedChildren simplifiedChildren)
                 let unTargetedResults =
-                        Pattern.mapVariables unTargetElement unTargetSet
-                        <$> targetedResults
+                        Pattern.mapVariables (pure unTarget) <$> targetedResults
                 return unTargetedResults
               where
                 refresh = Lens.over Binding.existsBinder refreshElementBinder
@@ -414,8 +416,12 @@ simplifyInternal term sideCondition = do
                     -> SideCondition (Target variable)
                 targetSideCondition =
                     SideCondition.mapVariables
-                        (targetIfEqual . ElementVariable $ boundVar)
-                        mkSetNonTarget
+                        AdjSomeVariableName
+                        { adjSomeVariableNameElement =
+                            ElementVariableName
+                            (targetIfEqual (ElementVariable boundVar))
+                        , adjSomeVariableNameSet = SetVariableName NonTarget
+                        }
                 targetSimplifiedChildren
                     :: TermLike.Exists
                         TermLike.Sort

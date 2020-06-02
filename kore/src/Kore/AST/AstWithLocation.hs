@@ -57,7 +57,7 @@ instance AstWithLocation Sort where
         locationFromAst sortActual
 
 instance AstWithLocation Variable where
-    locationFromAst = locationFromAst . variableName
+    locationFromAst Variable { variableName } = locationFromAst variableName
 
 instance
     AstWithLocation variable => AstWithLocation (ElementVariable variable)

@@ -14,6 +14,21 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.22.0.0] - 2020-05-27
+
+### Added
+
+- A warning is emitted when a total function returns `\bottom`.
+
+### Changed
+
+- Execution does not branch when evaluating the hooked `KEQUAL.eq` function.
+
+### Fixed
+
+- Overloaded symbols are now correctly unified with injected variables.
+- Error messages are no longer duplicated in the log.
+
 ## [0.21.0.0] - 2020-05-13
 
 ### Added

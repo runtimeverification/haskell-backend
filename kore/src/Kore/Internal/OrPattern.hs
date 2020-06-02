@@ -60,6 +60,7 @@ import Kore.Internal.TermLike
     , mkBottom_
     , mkOr
     )
+import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -69,7 +70,6 @@ import Kore.Variables.Binding
 import Kore.Variables.Target
     ( Target (..)
     , mkElementTarget
-    , mkSetNonTarget
     , targetIfEqual
     )
 
@@ -212,12 +212,14 @@ targetBinder
     -> Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
 targetBinder Binder { binderVariable, binderChild } =
     let newVar = mkElementTarget binderVariable
-        targetBoundVariables =
-            targetIfEqual binderVariable
+        targetBoundVariables = targetIfEqual binderVariable
         newChild =
             Pattern.mapVariables
-                targetBoundVariables
-                mkSetNonTarget
+                AdjSomeVariableName
+                { adjSomeVariableNameElement =
+                    ElementVariableName targetBoundVariables
+                , adjSomeVariableNameSet = SetVariableName NonTarget
+                }
             <$> binderChild
      in Binder
          { binderVariable = newVar

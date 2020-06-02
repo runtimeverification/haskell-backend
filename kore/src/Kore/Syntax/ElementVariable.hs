@@ -13,6 +13,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
+import qualified Control.Lens as Lens
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
@@ -21,14 +22,15 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Syntax.Variable
-    ( SortedVariable (..)
-    )
 import Kore.Unparser
 
 -- | Element (singleton) Kore variables
 newtype ElementVariable variable
     = ElementVariable { getElementVariable :: variable }
-    deriving (Eq, GHC.Generic, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (Foldable, Traversable)
+    deriving (GHC.Generic)
 
 instance Hashable variable => Hashable (ElementVariable variable)
 
@@ -58,3 +60,31 @@ instance
   where
     from = fmap (from @variable1 @variable2)
     {-# INLINE from #-}
+
+instance
+    From variable Variable => From (ElementVariable variable) Variable
+  where
+    from = from . getElementVariable
+
+instance
+    From Variable variable => From Variable (ElementVariable variable)
+  where
+    from = ElementVariable . from
+
+instance
+    NamedVariable variable => NamedVariable (ElementVariable variable)
+  where
+    type VariableNameOf (ElementVariable variable) =
+        ElementVariableName (VariableNameOf variable)
+
+    isoVariable1 =
+        Lens.iso to fr
+      where
+        to =
+            getElementVariable
+            >>> Lens.view isoVariable1
+            >>> fmap ElementVariableName
+        fr =
+            fmap unElementVariableName
+            >>> Lens.review isoVariable1
+            >>> ElementVariable

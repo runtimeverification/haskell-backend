@@ -57,8 +57,6 @@ import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Pretty
 
 import Test.Kore
@@ -195,6 +193,7 @@ simplifyAnds
 simplifyAnds =
     SubstitutionSimplifier.simplifyAnds
         (Unification.unificationMakeAnd Not.notSimplifier)
+        SideCondition.top
 
 andSimplifySuccess
     :: HasCallStack
@@ -540,9 +539,7 @@ test_unification =
                 [(ElemVar $ ElementVariable $ mkW "1", war' "2")]
             )
             (Substitution.unwrap
-                . Substitution.mapVariables
-                    (fmap showVar)
-                    (fmap showVar)
+                . Substitution.mapVariables showUnifiedVar
                 . Substitution.wrap
                 . Substitution.mkUnwrappedSubstitution
                 $ [(ElemVar $ ElementVariable $ mkV 1, var' 2)]

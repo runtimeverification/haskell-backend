@@ -133,8 +133,6 @@ import Kore.Unparser
     )
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Kore.Verified as Verified
 import Pretty
     ( Pretty
@@ -183,11 +181,10 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
         }
   where
     avoid = FreeVariables.toSet avoid'
-    rightFreeVariables = freeVariables right & FreeVariables.toSet
-    ensuresFreeVariables = freeVariables ensures & FreeVariables.toSet
-    originalFreeVariables = rightFreeVariables <> ensuresFreeVariables
     bindExistsFreeVariables =
-        foldr Set.delete originalFreeVariables (ElemVar <$> existentials)
+        freeVariables right <> freeVariables ensures
+        & FreeVariables.bindVariables (ElemVar <$> existentials)
+        & FreeVariables.toSet
     rename :: Map (UnifiedVariable variable) (UnifiedVariable variable)
     rename =
         refreshVariables
@@ -893,18 +890,21 @@ instance UnifyingRule RulePattern where
         exVars = Set.fromList $ ElemVar <$> existentials rhs
         originalFreeVariables = freeVariables rule1 & FreeVariables.toSet
 
-    mapRuleVariables mapElemVar mapSetVar rule1@(RulePattern _ _ _ _ _) =
+    mapRuleVariables adj rule1@(RulePattern _ _ _ _ _) =
         rule1
             { left = mapTermLikeVariables left
             , antiLeft = mapTermLikeVariables <$> antiLeft
             , requires = mapPredicateVariables requires
             , rhs = RHS
-                { existentials = mapElemVar <$> existentials
+                { existentials =
+                    Lens.over lensVariableName
+                        (mapElementVariableName adj)
+                    <$> existentials
                 , right = mapTermLikeVariables right
                 , ensures = mapPredicateVariables ensures
                 }
             , attributes =
-                Attribute.mapAxiomVariables mapElemVar mapSetVar attributes
+                Attribute.mapAxiomVariables adj attributes
             }
       where
         RulePattern
@@ -912,8 +912,8 @@ instance UnifyingRule RulePattern where
             , rhs = RHS { existentials, right, ensures }
             , attributes
             } = rule1
-        mapTermLikeVariables = TermLike.mapVariables mapElemVar mapSetVar
-        mapPredicateVariables = Predicate.mapVariables mapElemVar mapSetVar
+        mapTermLikeVariables = TermLike.mapVariables adj
+        mapPredicateVariables = Predicate.mapVariables adj
 
 instance UnifyingRule RewriteRule where
     matchingPattern (RewriteRule rule) = matchingPattern rule
@@ -926,8 +926,8 @@ instance UnifyingRule RewriteRule where
         RewriteRule <$> refreshRule avoiding rule
     {-# INLINE refreshRule #-}
 
-    mapRuleVariables mapElemVar mapSetVar (RewriteRule rule) =
-        RewriteRule (mapRuleVariables mapElemVar mapSetVar rule)
+    mapRuleVariables mapping (RewriteRule rule) =
+        RewriteRule (mapRuleVariables mapping rule)
     {-# INLINE mapRuleVariables #-}
 
 lhsEqualsRhs
