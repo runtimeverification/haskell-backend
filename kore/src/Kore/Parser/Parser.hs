@@ -403,8 +403,8 @@ variableParser :: Parser (SomeVariable VariableName)
 variableParser = do
     c <- ParserUtils.peekChar'
     if c == '@'
-        then inject @(SomeVariable _) <$> setVariableParser
-        else inject @(SomeVariable _) <$> elementVariableParser
+        then mkSomeVariable <$> setVariableParser
+        else mkSomeVariable <$> elementVariableParser
 
 {-| Parses an element variable pattern or application pattern,
 using an open recursion scheme for its children.
