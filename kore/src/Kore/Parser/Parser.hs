@@ -466,7 +466,7 @@ koreVariableOrTermPatternParser = do
         case c of
         '@' -> do
             var <- setVariableParser
-            return $ VariableF $ Const $ inject @(SomeVariable _) var
+            return $ VariableF $ Const $ mkSomeVariable var
         '\\' -> do
             identifier <- symbolIdParser
             symbolOrAliasPatternRemainderParser korePatternParser identifier
