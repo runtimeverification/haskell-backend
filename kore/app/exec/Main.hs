@@ -88,7 +88,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( pattern And_
     , TermLike
-    , Variable
+    , VariableName
     , mkElemVar
     , mkElementVariable
     , mkSort
@@ -527,7 +527,7 @@ koreProve execOptions proveOptions = do
     return exitCode
   where
     failure pat = (ExitFailure 1, pat)
-    success :: (ExitCode, TermLike Variable)
+    success :: (ExitCode, TermLike VariableName)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
     loadProven
@@ -555,7 +555,7 @@ koreProve execOptions proveOptions = do
         withFile outputFile WriteMode
             (`hPutDoc` unparse provenDefinition)
       where
-        specModuleDefinitions :: [Sentence (TermLike Variable)]
+        specModuleDefinitions :: [Sentence (TermLike VariableName)]
         specModuleDefinitions =
             filter isNotAxiomOrClaim (indexedModuleRawSentences specModule)
 
@@ -677,7 +677,7 @@ execute options mainModule worker =
             , SMT.preludeFile = smtPrelude
             }
 
-loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike Variable)
+loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike VariableName)
 loadPattern mainModule (Just fileName) =
     mainPatternParseAndVerify mainModule fileName
 loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
@@ -698,14 +698,14 @@ renderResult KoreExecOptions { outputFileName } doc =
 mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes
     -> String
-    -> Main (TermLike Variable)
+    -> Main (TermLike VariableName)
 mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 
 mainParseSearchPattern
     :: VerifiedModule StepperAttributes
     -> String
-    -> Main (Pattern Variable)
+    -> Main (Pattern VariableName)
 mainParseSearchPattern indexedModule patternFileName = do
     purePattern <- mainPatternParseAndVerify indexedModule patternFileName
     case purePattern of
