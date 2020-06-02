@@ -10,6 +10,10 @@ module Kore.Rewriting.RewritingVariable
     , isRuleVariable
     , isSomeConfigVariable
     , isSomeConfigVariableName
+    , isSomeRuleVariable
+    , isSomeRuleVariableName
+    , isElementRuleVariable
+    , isElementRuleVariableName
     , mkConfigVariable
     , mkRuleVariable
     , mkElementConfigVariable
@@ -257,3 +261,15 @@ isSomeConfigVariable = isSomeConfigVariableName . variableName
 
 isSomeConfigVariableName :: SomeVariableName RewritingVariableName -> Bool
 isSomeConfigVariableName = foldSomeVariableName (pure isConfigVariable)
+
+isSomeRuleVariable :: SomeVariable RewritingVariableName -> Bool
+isSomeRuleVariable = isSomeRuleVariableName . variableName
+
+isSomeRuleVariableName :: SomeVariableName RewritingVariableName -> Bool
+isSomeRuleVariableName = foldSomeVariableName (pure isRuleVariable)
+
+isElementRuleVariable :: ElementVariable RewritingVariableName -> Bool
+isElementRuleVariable = isElementRuleVariableName . variableName
+
+isElementRuleVariableName :: ElementVariableName RewritingVariableName -> Bool
+isElementRuleVariableName = any isRuleVariable
