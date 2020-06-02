@@ -51,9 +51,7 @@ instance NFData variable => NFData (Symbolic variable)
 instance Ord variable => Default (Symbolic variable) where
     def = Symbolic mempty
 
-instance
-    Ord variable => From (Symbolic variable) (Set (SomeVariable variable))
-  where
+instance From (Symbolic variable) (Set (SomeVariable variable)) where
     from = from @(FreeVariables _) . unSymbolic
     {-# INLINE from #-}
 

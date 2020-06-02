@@ -56,9 +56,7 @@ instance NFData variable => NFData (Concrete variable)
 instance Ord variable => Default (Concrete variable) where
     def = Concrete mempty
 
-instance
-    Ord variable => From (Concrete variable) (Set (SomeVariable variable))
-  where
+instance From (Concrete variable) (Set (SomeVariable variable)) where
     from = from @(FreeVariables _) . unConcrete
     {-# INLINE from #-}
 

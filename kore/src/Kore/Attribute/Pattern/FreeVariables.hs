@@ -71,10 +71,7 @@ instance From (FreeVariables variable) [SomeVariable variable] where
     from = toList
     {-# INLINE from #-}
 
-instance
-    Ord variable
-    => From (FreeVariables variable) (Set (SomeVariable variable))
-  where
+instance From (FreeVariables variable) (Set (SomeVariable variable)) where
     from = toSet
     {-# INLINE from #-}
 
@@ -93,11 +90,12 @@ fromList
 fromList = foldMap freeVariable
 {-# INLINE fromList #-}
 
-toSet
-    :: Ord variable
-    => FreeVariables variable
-    -> Set (SomeVariable variable)
-toSet = Set.fromList . toList
+toSet :: FreeVariables variable -> Set (SomeVariable variable)
+toSet =
+    Set.fromDistinctAscList
+    . map (uncurry Variable)
+    . Map.toAscList
+    . getFreeVariables
 {-# INLINE toSet #-}
 
 toNames :: FreeVariables variable -> Set (SomeVariableName variable)
