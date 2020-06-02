@@ -47,7 +47,6 @@ test_parse =
             subseq <- Gen.subsequence shuffled
             let values = [List.intercalate "," subseq]
             return $ "--log-entries" : values
-            --[["--log-entries", entries] | entries <- getEntryTypesAsText]
         debugSolverOptions <- forAllFlags
             [["--solver-transcript", "transcriptFile"]]
         logSQLiteOptions <- forAllFlags [["--sqlog", "sqlogFile"]]
@@ -68,9 +67,9 @@ test_parse =
 
         let arguments = concat
                 [ logType, logLevel, timestampsSwitch, logEntries
-                    , debugSolverOptions, logSQLiteOptions, warningSwitch
-                    , debugApplyEquationOptions, debugAttemptEquationOptions
-                    , debugEquationOptions
+                , debugSolverOptions, logSQLiteOptions, warningSwitch
+                , debugApplyEquationOptions, debugAttemptEquationOptions
+                , debugEquationOptions
                 ]
         let
             expect :: ParserResult KoreLogOptions

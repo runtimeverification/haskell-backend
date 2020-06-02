@@ -182,7 +182,7 @@ import SMT
     )
 import qualified SMT
 import Stats
-import System.IO.Temp
+import qualified System.IO.Temp as Temp
 
 import GlobalMain
 import System.FilePath.Posix
@@ -564,9 +564,7 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions, bugReport } = execOptions
-    canonical <- getCanonicalTemporaryDirectory
-    traceM canonical
-    withSystemTempDirectory
+    Temp.withSystemTempDirectory
         (fromMaybe "report" $ toReport bugReport)
         $ \tempDirectory -> do
             exitCode <-
