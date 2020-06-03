@@ -75,8 +75,7 @@ ln -s hie-cabal.yaml hie.yaml  # for Cabal
 
 For developers so inclined, we provide a `shell.nix` expression with a suitable
 development environment and a binary cache at [kore.cachix.org]. The development
-environment is intended to be used with `nix-shell` and `stack --no-nix
---system-ghc`.
+environment is intended to be used with `nix-shell` and `cabal`.
 
 
 [git]: https://git-scm.com/
