@@ -76,9 +76,9 @@ import System.Exit
     )
 import System.IO
     ( IOMode (WriteMode)
-    , withFile
     , hPutStrLn
     , stderr
+    , withFile
     )
 
 import qualified Data.Limit as Limit
