@@ -13,7 +13,8 @@ shellFor {
   buildInputs =
     with pkgs;
     [
-      ghcid ghcide gnumake yq z3
+      ghcid gnumake yq z3
+      ghcide hie-bios
     ];
   tools = {
     cabal = "3.2.0.0";
