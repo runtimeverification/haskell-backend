@@ -53,9 +53,7 @@ For setting up a development environment, we recommend:
 - [ghcide], an integrated development environment for Haskell
   that is compatible with most editors. Note: [yq] is required to
   run `ghcide` with `hie-bios.sh`.
-- [hlint] and [stylish-haskell] for compliance with project guidelines. Run
-  `stack --stack-yaml global-stack.yaml install hlint stylish-haskell` to
-  install the versions that are used for CI.
+- [hlint] and [stylish-haskell] for compliance with project guidelines.
 
 For integration testing, we also recommend:
 
