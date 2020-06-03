@@ -44,11 +44,11 @@ import Kore.Internal.TermLike
 data Self monad =
     Self
         { recall
-            :: Application Symbol (TermLike Void)
-            -> monad (Maybe (TermLike Void))
+            :: Application Symbol (TermLike Concrete)
+            -> monad (Maybe (TermLike Concrete))
         , record
-            :: Application Symbol (TermLike Void)
-            -> TermLike Void
+            :: Application Symbol (TermLike Concrete)
+            -> TermLike Concrete
             -> monad ()
         }
 
@@ -61,10 +61,10 @@ forgetful :: Applicative monad => Self monad
 forgetful = Self { recall = \_ -> pure Nothing, record = \_ _ -> pure () }
 
 -- | The concrete function pattern used as a @Key@ into the memoization cache.
-type Key = Application Symbol (TermLike Void)
+type Key = Application Symbol (TermLike Concrete)
 
 -- | The memoization @Cache@.
-type Cache = HashMap Key (TermLike Void)
+type Cache = HashMap Key (TermLike Concrete)
 
 {- | The simple memoizer.
 

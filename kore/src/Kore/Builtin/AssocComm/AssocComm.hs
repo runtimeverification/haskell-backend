@@ -18,13 +18,13 @@ module Kore.Builtin.AssocComm.AssocComm
 import Prelude.Kore
 
 import qualified Data.List as List
-import Data.Void
 
 import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
+    ( Concrete
+    , InternalVariable
     , TermLike
     , mkApplySymbol
     )
@@ -32,7 +32,7 @@ import Kore.Internal.TermLike
 {- | Particularizes @Domain.NormalizedAc@ to the most common types.
 -}
 type TermNormalizedAc normalized variable =
-    normalized (TermLike Void) (TermLike variable)
+    normalized (TermLike Concrete) (TermLike variable)
 
 {-| A normalized representation of an associative-commutative structure that
 also allows bottom values.

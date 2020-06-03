@@ -395,8 +395,8 @@ deciding if the result is @Nothing@ or @Just _@.
 asConcrete
     :: Ord variable
     => TermLike variable
-    -> Maybe (TermLike Void)
-asConcrete = traverseVariables (pure toVoid)
+    -> Maybe (TermLike Concrete)
+asConcrete = traverseVariables (pure toConcrete)
 
 isConcrete :: Ord variable => TermLike variable -> Bool
 isConcrete = isJust . asConcrete
@@ -412,9 +412,9 @@ composes with other tree transformations without allocating intermediates.
  -}
 fromConcrete
     :: FreshPartialOrd variable
-    => TermLike Void
+    => TermLike Concrete
     -> TermLike variable
-fromConcrete = mapVariables (pure $ from @Void)
+fromConcrete = mapVariables (pure $ from @Concrete)
 
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
@@ -1031,7 +1031,7 @@ mkCeil_ = updateCallStack . mkCeil predicateSort
 mkBuiltin
     :: HasCallStack
     => InternalVariable variable
-    => Domain.Builtin (TermLike Void) (TermLike variable)
+    => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltin = updateCallStack . synthesize . BuiltinF
 
@@ -1049,7 +1049,7 @@ mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
 mkBuiltinMap
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalMap (TermLike Void) (TermLike variable)
+    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
 
@@ -1058,7 +1058,7 @@ mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
 mkBuiltinSet
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalSet (TermLike Void) (TermLike variable)
+    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
 
@@ -1589,7 +1589,7 @@ pattern DV_
     -> TermLike variable
 
 pattern Builtin_
-    :: Domain.Builtin (TermLike Void) (TermLike variable)
+    :: Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinBool_
@@ -1605,11 +1605,11 @@ pattern BuiltinList_
     -> TermLike variable
 
 pattern BuiltinMap_
-    :: Domain.InternalMap (TermLike Void) (TermLike variable)
+    :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinSet_
-    :: Domain.InternalSet (TermLike Void) (TermLike variable)
+    :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinString_

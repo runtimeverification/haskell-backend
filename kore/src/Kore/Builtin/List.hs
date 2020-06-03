@@ -92,12 +92,12 @@ import Kore.Internal.TermLike
     ( pattern App_
     , Builtin
     , pattern Builtin_
+    , Concrete
     , pattern ElemVar_
     , InternalVariable
     , Sort
     , TermLike
     , pattern Var_
-    , Void
     , mkApplySymbol
     , mkBuiltin
     , mkSort
@@ -229,7 +229,7 @@ expectConcreteBuiltinList
     => Monad m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Seq (TermLike Void))
+    -> MaybeT m (Seq (TermLike Concrete))
 expectConcreteBuiltinList ctx =
     Monad.Trans.Maybe.mapMaybeT (fmap Monad.join)
         . fmap (traverse Builtin.toKey)

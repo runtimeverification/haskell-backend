@@ -337,8 +337,8 @@ deciding if the result is @Nothing@ or @Just _@.
  -}
 asConcretePattern
     :: Pattern variable annotation
-    -> Maybe (Pattern Void annotation)
-asConcretePattern = traverseVariables (pure toVoid)
+    -> Maybe (Pattern Concrete annotation)
+asConcretePattern = traverseVariables (pure toConcrete)
 
 isConcrete :: Pattern variable annotation -> Bool
 isConcrete = isJust . asConcretePattern
@@ -352,5 +352,7 @@ polymorphic in the variable type.
 composes with other tree transformations without allocating intermediates.
 
  -}
-fromConcretePattern :: Pattern Void annotation -> Pattern variable annotation
-fromConcretePattern = mapVariables (pure $ from @Void)
+fromConcretePattern
+    :: Pattern Concrete annotation
+    -> Pattern variable annotation
+fromConcretePattern = mapVariables (pure $ from @Concrete)

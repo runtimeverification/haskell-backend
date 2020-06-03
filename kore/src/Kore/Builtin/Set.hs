@@ -83,9 +83,9 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern Builtin_
+    , Concrete
     , InternalVariable
     , TermLike
-    , Void
     , mkSort
     , termLikeSort
     )
@@ -225,7 +225,7 @@ expectConcreteBuiltinSet
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Map (TermLike Void) (Domain.SetValue (TermLike variable)))
+    -> MaybeT m (Map (TermLike Concrete) (Domain.SetValue (TermLike variable)))
 expectConcreteBuiltinSet ctx _set = do
     _set <- expectBuiltinSet ctx _set
     case Domain.unwrapAc _set of
@@ -242,7 +242,7 @@ as a function result.
 returnConcreteSet
     :: (MonadSimplify m, InternalVariable variable)
     => Sort
-    -> Map (TermLike Void) (Domain.SetValue (TermLike variable))
+    -> Map (TermLike Concrete) (Domain.SetValue (TermLike variable))
     -> m (Pattern variable)
 returnConcreteSet = Ac.returnConcreteAc
 

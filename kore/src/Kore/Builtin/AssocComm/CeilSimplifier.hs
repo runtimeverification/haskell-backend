@@ -60,10 +60,10 @@ import Kore.Internal.SideCondition
     )
 import Kore.Internal.TermLike
     ( Ceil (..)
+    , Concrete
     , ElementVariable
     , InternalVariable
     , TermLike
-    , Void
     , fromVariableName
     , generatedId
     , termLikeSort
@@ -81,7 +81,7 @@ import Kore.Variables.Fresh
     )
 
 type BuiltinAssocComm normalized variable =
-    Domain.InternalAc (TermLike Void) normalized (TermLike variable)
+    Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
 
 type MkBuiltinAssocComm normalized variable =
     BuiltinAssocComm normalized variable -> TermLike variable
@@ -329,7 +329,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
         & MultiAnd.singleton
 
     notMembers
-        :: NormalizedAc normalized (TermLike Void) (TermLike variable)
+        :: NormalizedAc normalized (TermLike Concrete) (TermLike variable)
         -> TermLike variable
         -> MultiAnd (OrCondition variable)
     notMembers normalizedAc termLike =
@@ -339,7 +339,7 @@ foldElements
     ::  AcWrapper collection
     =>  InternalVariable variable
     =>  Lens.Fold
-            (NormalizedAc collection (TermLike Void) (TermLike variable))
+            (NormalizedAc collection (TermLike Concrete) (TermLike variable))
             (Element collection (TermLike variable))
 foldElements =
     Lens.folding $ \normalizedAc ->
@@ -356,7 +356,7 @@ fromElement
     :: AcWrapper normalized
     => InternalVariable variable
     => Element normalized (TermLike variable)
-    -> NormalizedAc normalized (TermLike Void) (TermLike variable)
+    -> NormalizedAc normalized (TermLike Concrete) (TermLike variable)
 fromElement element
   | Just concreteKey <- Builtin.toKey symbolicKey
   = emptyNormalizedAc { concreteElements = Map.singleton concreteKey value }

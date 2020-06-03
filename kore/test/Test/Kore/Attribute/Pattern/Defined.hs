@@ -145,7 +145,7 @@ test_instance_Synthetic =
       | otherwise   = isn't
 
     asSetBuiltin
-        :: Domain.NormalizedAc Domain.NormalizedSet (TermLike Void) Defined
-        -> Domain.Builtin (TermLike Void) Defined
+        :: Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) Defined
+        -> Domain.Builtin (TermLike Concrete) Defined
     asSetBuiltin =
         Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . Domain.wrapAc

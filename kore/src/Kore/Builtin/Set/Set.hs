@@ -123,7 +123,7 @@ isSymbolList2set = Builtin.isSymbol list2setKey
 asTermLike
     :: forall variable
     .  InternalVariable variable
-    => Domain.InternalSet (TermLike Void) (TermLike variable)
+    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
     AssocComm.asTermLike
@@ -164,7 +164,7 @@ asTermLike builtin =
     Domain.NormalizedAc { opaque } = normalizedAc
 
     concreteElement
-        :: (TermLike Void, Domain.SetValue (TermLike variable))
+        :: (TermLike Concrete, Domain.SetValue (TermLike variable))
         -> TermLike variable
     concreteElement (key, value) = element (TermLike.fromConcrete key, value)
 

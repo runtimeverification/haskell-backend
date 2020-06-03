@@ -735,7 +735,7 @@ mkTestSomeVariable = Internal.mkVar . makeTestSomeVariable
 a :: InternalVariable variable => TermLike variable
 a = Internal.mkApplySymbol aSymbol []
 
-aConcrete :: TermLike Void
+aConcrete :: TermLike Concrete
 Just aConcrete = Internal.asConcrete (a :: TermLike VariableName)
 
 aSort0 :: InternalVariable variable => TermLike variable
@@ -762,7 +762,7 @@ aOtherSort = Internal.mkApplySymbol aOtherSortSymbol []
 b :: InternalVariable variable => TermLike variable
 b = Internal.mkApplySymbol bSymbol []
 
-bConcrete :: TermLike Void
+bConcrete :: TermLike Concrete
 Just bConcrete = Internal.asConcrete (b :: TermLike VariableName)
 
 bSort0 :: InternalVariable variable => TermLike variable

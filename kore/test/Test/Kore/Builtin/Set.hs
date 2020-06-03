@@ -166,11 +166,11 @@ elemVars' = [Mock.x, Mock.y, Mock.z]
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
 
-genSetConcreteIntegerPattern :: Gen (Set (TermLike Void))
+genSetConcreteIntegerPattern :: Gen (Set (TermLike Concrete))
 genSetConcreteIntegerPattern =
     Set.map Test.Int.asInternal <$> genSetInteger
 
-genConcreteSet :: Gen (Set (TermLike Void))
+genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
 
 genSetPattern :: Gen (TermLike VariableName)
@@ -1771,7 +1771,7 @@ unifiedBy (termLike1, termLike2) substitution testName =
 -- | Specialize 'Set.asTermLike' to the builtin sort 'setSort'.
 asTermLike
     :: Foldable f
-    => f (TermLike Void)
+    => f (TermLike Concrete)
     -> TermLike VariableName
 asTermLike =
     Reflection.give testMetadataTools Set.asTermLike
@@ -1788,14 +1788,14 @@ asSymbolicTermLike =
     . Foldable.toList
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set (TermLike Void) -> TermLike VariableName
+asInternal :: Set (TermLike Concrete) -> TermLike VariableName
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
     . Map.fromSet (const Domain.SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
-    :: NormalizedAc NormalizedSet (TermLike Void) (TermLike VariableName)
+    :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike VariableName)
     -> TermLike VariableName
 asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
 
@@ -1809,7 +1809,7 @@ normalizedSet
     -- ^ (abstract or concrete) elements
     -> [TermLike VariableName]
     -- ^ opaque terms
-    -> NormalizedSet (TermLike Void) (TermLike VariableName)
+    -> NormalizedSet (TermLike Concrete) (TermLike VariableName)
 normalizedSet elements opaque =
     Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
         { elementsWithVariables = Domain.SetElement <$> elements

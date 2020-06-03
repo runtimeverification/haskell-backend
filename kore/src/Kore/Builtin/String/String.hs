@@ -68,7 +68,7 @@ asInternal internalStringSort internalStringValue =
 asBuiltin
     :: Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
-    -> Domain.Builtin (TermLike Void) (TermLike variable)
+    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
 asBuiltin internalStringSort internalStringValue =
     Domain.BuiltinString Domain.InternalString
         { internalStringSort

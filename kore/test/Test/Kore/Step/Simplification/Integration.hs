@@ -1184,7 +1184,7 @@ axiom left right requires =
         }
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set.Set (TermLike Void) -> TestTerm
+asInternal :: Set.Set (TermLike Concrete) -> TestTerm
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
     . Map.fromSet (const Domain.SetValue)

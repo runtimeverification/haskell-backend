@@ -1071,8 +1071,8 @@ mapSortDecl =
         ]
 
 builtinMap
-    :: [(TermLike Void, TermLike VariableName)]
-    -> InternalMap (TermLike Void) (TermLike VariableName)
+    :: [(TermLike Concrete, TermLike VariableName)]
+    -> InternalMap (TermLike Concrete) (TermLike VariableName)
 builtinMap children =
     InternalAc
         { builtinAcSort = mapSort
@@ -1148,8 +1148,8 @@ testSortDecl :: ParsedSentence
 testSortDecl = sortDecl testSort
 
 builtinSet
-    :: [TermLike Void]
-    -> InternalSet (TermLike Void) (TermLike VariableName)
+    :: [TermLike Concrete]
+    -> InternalSet (TermLike Concrete) (TermLike VariableName)
 builtinSet children =
     InternalAc
         { builtinAcSort = setSort

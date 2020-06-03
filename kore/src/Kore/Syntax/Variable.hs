@@ -52,8 +52,8 @@ module Kore.Syntax.Variable
     -- * Variable sorts
     , unparse2SortedVariable
     -- * Concrete
-    , Void
-    , toVoid
+    , Concrete
+    , toConcrete
     ) where
 
 import Prelude.Kore
@@ -594,9 +594,6 @@ traverseSetVariableName
 traverseSetVariableName adj =
     sequenceA . (<*>) (adjSomeVariableNameSet adj)
 
-toVoid :: any -> Maybe Void
-toVoid = const Nothing
-
 type SomeVariable variable = Variable (SomeVariableName variable)
 
 mkSomeVariable
@@ -673,3 +670,10 @@ expectSetVariable
 expectSetVariable unifiedVariable =
     retractSetVariable unifiedVariable
     & fromMaybe (error "Expected set variable")
+
+{- | 'Concrete' patterns contain no variables.
+ -}
+type Concrete = Void
+
+toConcrete :: any -> Maybe Void
+toConcrete = const Nothing

@@ -86,7 +86,9 @@ import Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
     )
-import Kore.Syntax.Variable
+import Kore.Syntax.Variable hiding
+    ( Concrete
+    )
 import qualified SQL
 
 {- | Attributes specific to Kore axiom sentences.

@@ -83,7 +83,7 @@ genInteger = Gen.integral (Range.linear (-1024) 1024)
 genIntegerPattern :: Gen (TermLike VariableName)
 genIntegerPattern = asInternal <$> genInteger
 
-genConcreteIntegerPattern :: Gen (TermLike Void)
+genConcreteIntegerPattern :: Gen (TermLike Concrete)
 genConcreteIntegerPattern = asInternal <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
@@ -367,7 +367,7 @@ asInternal :: InternalVariable variable => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 -- | Specialize 'asInternal' to the builtin sort 'intSort'.
-asConcretePattern :: Integer -> TermLike Void
+asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = asInternal
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.

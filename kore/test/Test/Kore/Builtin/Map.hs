@@ -139,7 +139,7 @@ genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =
     Gen.map (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
 
-genConcreteMap :: Gen a -> Gen (Map (TermLike Void) a)
+genConcreteMap :: Gen a -> Gen (Map (TermLike Concrete) a)
 genConcreteMap genElement =
     Map.mapKeys Test.Int.asInternal <$> genMapInteger genElement
 
@@ -725,7 +725,7 @@ makeElementSelect keyVar valueVar =
     mkApplySymbol elementMapSymbol [mkElemVar keyVar, mkElemVar valueVar]
 
 makeElementLookup
-    :: TermLike Void -> ElementVariable VariableName -> TermLike VariableName
+    :: TermLike Concrete -> ElementVariable VariableName -> TermLike VariableName
 makeElementLookup key valueVar =
     mkApplySymbol
         elementMapSymbol
@@ -757,7 +757,7 @@ addSelectElement keyVar valueVar mapPattern  =
     element = makeElementSelect keyVar valueVar
 
 addLookupElement
-    :: TermLike Void                 -- ^key
+    :: TermLike Concrete                 -- ^key
     -> ElementVariable VariableName          -- ^value variable
     -> TermLike VariableName
     -> TermLike VariableName
@@ -1262,9 +1262,9 @@ test_renormalize =
     becomes
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Void) (TermLike VariableName)
+        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
         -- ^ original, (possibly) de-normalized map
-        -> NormalizedMap (TermLike Void) (TermLike VariableName)
+        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
         -- ^ expected normalized map
         -> TestTree
     becomes name origin expect =
@@ -1273,14 +1273,14 @@ test_renormalize =
     unchanged
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Void) (TermLike VariableName)
+        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
         -> TestTree
     unchanged name origin = becomes name origin origin
 
     denorm
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Void) (TermLike VariableName)
+        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
         -> TestTree
     denorm name origin =
         testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
@@ -1288,11 +1288,11 @@ test_renormalize =
     mkMap
         :: [(TermLike VariableName, TermLike VariableName)]
         -- ^ abstract elements
-        -> [(TermLike Void, TermLike VariableName)]
+        -> [(TermLike Concrete, TermLike VariableName)]
         -- ^ concrete elements
-        -> [NormalizedMap (TermLike Void) (TermLike VariableName)]
+        -> [NormalizedMap (TermLike Concrete) (TermLike VariableName)]
         -- ^ opaque terms
-        -> NormalizedMap (TermLike Void) (TermLike VariableName)
+        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
     mkMap abstract concrete opaque =
         Domain.wrapAc Domain.NormalizedAc
             { elementsWithVariables = Domain.MapElement <$> abstract
@@ -1425,14 +1425,14 @@ asSymbolicPattern result
     applyConcat map1 map2 = concatMap map1 map2
 
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
-asTermLike :: Map (TermLike Void) (TermLike VariableName) -> TermLike VariableName
+asTermLike :: Map (TermLike Concrete) (TermLike VariableName) -> TermLike VariableName
 asTermLike =
     Reflection.give testMetadataTools Map.asTermLike
     . builtinMap
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map (TermLike Void) (TermLike VariableName) -> Pattern VariableName
+asPattern :: Map (TermLike Concrete) (TermLike VariableName) -> Pattern VariableName
 asPattern concreteMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
@@ -1482,7 +1482,7 @@ asInternal elements =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements
         & partitionEithers
 
-unsafeAsConcrete :: TermLike VariableName -> TermLike Void
+unsafeAsConcrete :: TermLike VariableName -> TermLike Concrete
 unsafeAsConcrete term =
     TermLike.asConcrete term
     & fromMaybe (error "Expected concrete term.")
@@ -1497,7 +1497,7 @@ normalizedMap
     -- ^ (abstract or concrete) elements
     -> [TermLike VariableName]
     -- ^ opaque terms
-    -> NormalizedMap (TermLike Void) (TermLike VariableName)
+    -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
 normalizedMap elements opaque =
     Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
         { elementsWithVariables = Domain.MapElement <$> elements

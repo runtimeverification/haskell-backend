@@ -150,7 +150,7 @@ data BuiltinGenerator = BuiltinGenerator
     , attributes :: !AttributeRequirements
     , generator
         :: (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Void) (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     }
 
 data CollectionSorts = CollectionSorts
@@ -608,8 +608,8 @@ new cases are being added to Domain.Builtin, so that we don't forget to also
 change this file.
 -}
 _checkAllBuiltinImplemented
-    :: Domain.Builtin (TermLike Void) (TermLike variable)
-    -> Domain.Builtin (TermLike Void) (TermLike variable)
+    :: Domain.Builtin (TermLike Concrete) (TermLike variable)
+    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
 _checkAllBuiltinImplemented builtin =
     case builtin of
         Domain.BuiltinBool _ -> builtin
@@ -671,7 +671,7 @@ maybeStringBuiltinGenerator Setup { maybeStringBuiltinSort } =
     stringGenerator
         :: Sort
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Void) (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     stringGenerator stringSort _childGenerator =
         Just . BuiltinString.asBuiltin stringSort <$> stringGen
 
@@ -693,7 +693,7 @@ maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
     boolGenerator
         :: Sort
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Void) (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     boolGenerator boolSort _childGenerator =
         Just . BuiltinBool.asBuiltin boolSort <$> Gen.bool
 
@@ -715,7 +715,7 @@ maybeIntBuiltinGenerator Setup { maybeIntSort } =
     intGenerator
         :: Sort
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Void) (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     intGenerator intSort _childGenerator = do
         value <- Gen.integral (Range.constant 0 2000)
         return (Just (BuiltinInt.asBuiltin intSort value))
@@ -741,7 +741,7 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
         :: Sort
         -> Sort
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Void) (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     listGenerator listSort listElementSort childGenerator = do
         (Setup {metadataTools}, _) <- Reader.ask
         elements <-
@@ -755,7 +755,7 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
 concreteTermGenerator
     :: Sort
     -> (Sort -> Gen (Maybe (TermLike VariableName)))
-    -> Gen (Maybe (TermLike Void))
+    -> Gen (Maybe (TermLike Concrete))
 concreteTermGenerator requestedSort childGenerator = do
     maybeResult <-
         requestConcrete
@@ -828,9 +828,9 @@ acGenerator
         -> Gen (Maybe (Domain.Value normalized (TermLike VariableName)))
         )
     -> (Sort -> Gen (Maybe (TermLike VariableName)))
-    -> Gen (Maybe (Domain.Builtin (TermLike Void) (TermLike VariableName)))
+    -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
 acGenerator mapSort keySort valueGenerator childGenerator = do
-    let concreteKeyGenerator :: Gen (Maybe (TermLike Void))
+    let concreteKeyGenerator :: Gen (Maybe (TermLike Concrete))
         concreteKeyGenerator =
                 requestConstructorLike
                 $ concreteTermGenerator keySort childGenerator
@@ -841,11 +841,11 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             <*> valueGenerator childGenerator
             )
     let concreteMapElem
-            ::  ( Maybe (TermLike Void)
+            ::  ( Maybe (TermLike Concrete)
                 , Maybe (Domain.Value normalized (TermLike VariableName))
                 )
             -> Maybe
-                (TermLike Void, Domain.Value normalized (TermLike VariableName))
+                (TermLike Concrete, Domain.Value normalized (TermLike VariableName))
         concreteMapElem (ma, mb) = (,) <$> ma <*> mb
         concreteMap =
             Map.fromList

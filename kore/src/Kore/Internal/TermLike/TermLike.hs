@@ -499,13 +499,13 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
 
 instance
     (FreshPartialOrd variable)
-    => From (TermLike Void) (TermLike variable)
+    => From (TermLike Concrete) (TermLike variable)
   where
-    from = mapVariables (pure $ from @Void)
+    from = mapVariables (pure $ from @Concrete)
     {-# INLINE from #-}
 
 -- | The type of internal domain values.
-type Builtin = Domain.Builtin (TermLike Void)
+type Builtin = Domain.Builtin (TermLike Concrete)
 
 instance
     ( AstWithLocation variable

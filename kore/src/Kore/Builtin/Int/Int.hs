@@ -80,7 +80,7 @@ asInternal builtinIntSort builtinIntValue =
 asBuiltin
     :: Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> Domain.Builtin (TermLike Void) (TermLike variable)
+    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
 asBuiltin builtinIntSort builtinIntValue =
     Domain.BuiltinInt Domain.InternalInt
         { builtinIntSort

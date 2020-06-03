@@ -23,7 +23,9 @@ import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariable
     )
-import Kore.Syntax.Variable
+import Kore.Syntax.Variable hiding
+    ( Concrete
+    )
 
 import Test.Kore.Attribute.Parser
 import qualified Test.Kore.Step.MockSymbols as Mock

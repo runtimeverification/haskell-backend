@@ -35,7 +35,9 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Error
-import Kore.Syntax.Variable
+import Kore.Syntax.Variable hiding
+    ( Concrete
+    )
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}

@@ -253,7 +253,7 @@ expectConcreteBuiltinMap
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Map (TermLike Void) (Domain.MapValue (TermLike variable)))
+    -> MaybeT m (Map (TermLike Concrete) (Domain.MapValue (TermLike variable)))
 expectConcreteBuiltinMap ctx _map = do
     _map <- expectBuiltinMap ctx _map
     case Domain.unwrapAc _map of
@@ -270,7 +270,7 @@ as a function result.
 returnConcreteMap
     :: (MonadSimplify m, InternalVariable variable)
     => Sort
-    -> Map (TermLike Void) (Domain.MapValue (TermLike variable))
+    -> Map (TermLike Concrete) (Domain.MapValue (TermLike variable))
     -> m (Pattern variable)
 returnConcreteMap = Ac.returnConcreteAc
 

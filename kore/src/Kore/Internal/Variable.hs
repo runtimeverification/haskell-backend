@@ -14,6 +14,8 @@ module Kore.Internal.Variable
 
 import Prelude.Kore
 
+import Data.Void
+
 import Kore.Debug
     ( Debug
     )

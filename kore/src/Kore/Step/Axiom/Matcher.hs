@@ -729,7 +729,7 @@ type Value normalized variable =
     Builtin.Value normalized (TermLike variable)
 
 type NormalizedAc normalized variable =
-    Builtin.NormalizedAc normalized (TermLike Void) (TermLike variable)
+    Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
 
 matchNormalizedAc
     :: forall normalized simplifier variable

@@ -76,10 +76,10 @@ simplifyInternal normalizer tOrPattern = do
 
 simplifyInternalMap
     :: InternalVariable variable
-    => ( InternalMap (TermLike Void) (TermLike variable)
+    => ( InternalMap (TermLike Concrete) (TermLike variable)
         -> NormalizedMapResult variable
        )
-    -> InternalMap (TermLike Void) (OrPattern variable)
+    -> InternalMap (TermLike Concrete) (OrPattern variable)
     -> MultiOr (Conditional variable (TermLike variable))
 simplifyInternalMap normalizer tOrPattern = do
     conditional <- getCompose $ traverse Compose tOrPattern
@@ -87,7 +87,7 @@ simplifyInternalMap normalizer tOrPattern = do
     return normalized
 
 data NormalizedMapResult variable =
-    NormalizedMapResult (InternalMap (TermLike Void) (TermLike variable))
+    NormalizedMapResult (InternalMap (TermLike Concrete) (TermLike variable))
     | SingleOpaqueElemResult (TermLike variable)
     | BottomResult
 
@@ -104,7 +104,7 @@ normalizedMapResultToTerm BottomResult =
 
 normalizeInternalMap
     :: Ord variable
-    => InternalMap (TermLike Void) (TermLike variable)
+    => InternalMap (TermLike Concrete) (TermLike variable)
     -> NormalizedMapResult variable
 normalizeInternalMap map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
@@ -121,7 +121,7 @@ normalizeInternalMap map' =
 
 simplifyInternalSet
     :: InternalVariable variable
-    => Domain.InternalSet (TermLike Void) (OrPattern variable)
+    => Domain.InternalSet (TermLike Concrete) (OrPattern variable)
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalSet =
     (fmap . fmap) Domain.BuiltinSet
@@ -129,8 +129,8 @@ simplifyInternalSet =
 
 normalizeInternalSet
     :: Ord variable
-    => InternalSet (TermLike Void) (TermLike variable)
-    -> Maybe (InternalSet (TermLike Void) (TermLike variable))
+    => InternalSet (TermLike Concrete) (TermLike variable)
+    -> Maybe (InternalSet (TermLike Concrete) (TermLike variable))
 normalizeInternalSet =
     Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
 
