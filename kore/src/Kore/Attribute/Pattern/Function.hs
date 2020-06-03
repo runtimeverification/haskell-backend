@@ -158,9 +158,9 @@ instance Synthetic Function Inhabitant where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
--- | A 'Variable' pattern is always 'Function'.
 instance Synthetic Function (Const (SomeVariable variable)) where
-    synthetic (Const unifiedVariable) = Function (isElementVariable unifiedVariable)
+    synthetic (Const unifiedVariable) =
+        Function (isElementVariable unifiedVariable)
     {-# INLINE synthetic #-}
 
 instance Synthetic Function Inj where

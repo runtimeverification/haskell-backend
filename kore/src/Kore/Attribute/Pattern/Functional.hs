@@ -176,9 +176,9 @@ instance Synthetic Functional (Top sort) where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
--- | A 'Variable' pattern is always 'Functional'.
 instance Synthetic Functional (Const (SomeVariable variable)) where
-    synthetic (Const unifiedVariable) = Functional (isElementVariable unifiedVariable)
+    synthetic (Const unifiedVariable) =
+        Functional (isElementVariable unifiedVariable)
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
