@@ -77,6 +77,8 @@ import System.Exit
 import System.IO
     ( IOMode (WriteMode)
     , withFile
+    , hPutStrLn
+    , stderr
     )
 
 import qualified Data.Limit as Limit
@@ -577,7 +579,7 @@ mainWithOptions execOptions = do
                 `catch` \(_ ::SomeException) ->
                     archiveDirectoryReport tempDirectory reportPath
             archiveDirectoryReport tempDirectory reportPath
-            putStrLn $ "\nCreated " <> reportPath <> ".tar.gz"
+            hPutStrLn stderr $ "\nCreated " <> reportPath <> ".tar.gz"
             exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
