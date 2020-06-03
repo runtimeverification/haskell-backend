@@ -19,17 +19,13 @@ module Kore.Equation.Application
     , debugApplyEquation
     ) where
 
--- import qualified Data.Text as Text
---
--- import Kore.Unparser
---     ( unparseToString
---     )
 import Prelude.Kore
 
 import qualified Branch
 import Control.Error
     ( ExceptT
     , MaybeT (..)
+    , maybeToList
     , noteT
     , runExceptT
     , throwE
@@ -164,34 +160,12 @@ attemptEquation
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
-        matchResult <- match left termLike & whileMatch
-        -- traceM
-        --     $ "\n\nMatch result:"
-        --     <> "\nPredicate:\n" <> unparseToString (fst matchResult)
-        --     <> "\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap (snd matchResult)))
-        simplifiedResult <-
-            simplifyArgumentWithResult argument antiLeft matchResult & lift
-        -- traceM
-        --     $ "\n\nAfter simplification:"
-        --     <> "\nPredicate:\n" <> unparseToString (fst simplifiedResult)
-        --     <> "\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap (snd simplifiedResult)))
-        -- traceM
-        --     $ "\n\nEquation:\n"
-        --         <> (Text.unpack
-        --             . Pretty.renderText
-        --             . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        --             $ Pretty.pretty equation
-        --             -- <> Pretty.pretty (Equation.srcLoc eq)
-        --             )
-        --     <> "\n\nPredicate:\n"  <> unparseToString (fst simplifiedResult)
-        --     <> "\n\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap (snd simplifiedResult)))
         (equation', predicate') <-
-            applyMatchResult equationRenamed simplifiedResult
-            & whileApplyMatchResult
-        -- traceM "\n\nAfter applyMatchResult"
+            applyAndSelectMatchResult
+            =<< simplifyArgumentWithResult argument antiLeft
+            =<< whileMatch (match left termLike)
         let Equation { requires } = equation'
         checkRequires sideCondition predicate' requires & whileCheckRequires
-        -- traceM "\n\nAfter checkRequires"
         let Equation { right, ensures } = equation'
         return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
@@ -205,6 +179,28 @@ attemptEquation sideCondition termLike equation =
         matchIncremental term1 term2
         & MaybeT & noteT matchError
 
+    applyAndSelectMatchResult
+        :: [MatchResult (Target variable)]
+        -> ExceptT
+            (AttemptEquationError variable)
+            simplifier
+            (Equation variable, Predicate variable)
+    applyAndSelectMatchResult [] =
+        whileApplyMatchResult
+        $ applyMatchResult
+            equationRenamed
+            (Predicate.makeFalsePredicate_, mempty)
+    applyAndSelectMatchResult results =
+        Foldable.foldr1
+            takeFirstSuccess
+            ( whileApplyMatchResult
+            . applyMatchResult equationRenamed
+            <$> results
+            )
+    takeFirstSuccess first second =
+        lift (runExceptT first)
+        >>= either (const first) (const second)
+
     whileDebugAttemptEquation'
         :: simplifier (AttemptEquationResult variable)
         -> simplifier (AttemptEquationResult variable)
@@ -214,34 +210,28 @@ attemptEquation sideCondition termLike equation =
         return result
 
     simplifyArgumentWithResult
-        :: Predicate (Target variable)
+        :: MonadTrans t
+        => Predicate (Target variable)
         -> Maybe (Predicate (Target variable))
         -> MatchResult (Target variable)
-        -> simplifier (MatchResult (Target variable))
+        -> t simplifier [MatchResult (Target variable)]
     simplifyArgumentWithResult
         argument
-        _
+        antiLeft
         (matchPredicate, matchSubstitution)
-      = do
-        let toPattern x =
-                case x of
-                    [] -> Pattern.bottom
-                    (pat : _) ->
-                        Pattern.fromCondition pat
-                -- OrPattern.toPattern
-                -- . OrPattern.fromPatterns
-                -- . fmap Pattern.fromCondition
-        Conditional { predicate, substitution } <-
-            Substitution.mergePredicatesAndSubstitutions
-                sideCondition
-                [argument, matchPredicate] -- <> maybeToList antiLeft)
-                [Substitution.fromMap matchSubstitution]
-            & Branch.gather
-            & fmap toPattern
+      =
         -- TODO: toMap is unsafe;
         -- is it impossible to happen (if the frontend generates equations
         -- correctly), or should we add a new AttemptEquationError case?
-        return (predicate, Substitution.toMap substitution)
+        lift
+        $ let toMatchResult Conditional { predicate, substitution } =
+                (predicate, Substitution.toMap substitution)
+         in Substitution.mergePredicatesAndSubstitutions
+                sideCondition
+                ([argument, matchPredicate] <> maybeToList antiLeft)
+                [Substitution.fromMap matchSubstitution]
+            & Branch.gather
+            & (fmap . fmap) toMatchResult
 
 applyEquation
     :: forall simplifier variable
@@ -256,7 +246,6 @@ applyEquation _ equation result = do
     let simplify = return
     debugApplyEquation equation result
     simplify results
-
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 

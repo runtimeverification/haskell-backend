@@ -167,7 +167,6 @@ instance
     InternalVariable variable
     => From (Equation variable) (TermLike variable)
   where
-    -- TODO: implement this
     from equation
       -- \ceil axiom
       | isTop requires
@@ -194,6 +193,7 @@ instance
                 ensures'
             )
 
+      -- function rule with priority
       | not (isTop requires)
       , not (isTop ensures)
       , not (isTop argument)
@@ -214,6 +214,7 @@ instance
                     ensures'
                 )
 
+      -- function rule without priority
       | otherwise =
         TermLike.mkImplies
             (TermLike.mkAnd
@@ -239,12 +240,10 @@ instance
             , ensures
             } = equation
 
-
 instance
     InternalVariable variable
     => HasFreeVariables (Equation variable) variable
   where
-    -- TODO: is this correct?
     freeVariables rule@(Equation _ _ _ _ _ _ _) = case rule of
         Equation { left, argument, antiLeft, requires, right, ensures } ->
             freeVariables left

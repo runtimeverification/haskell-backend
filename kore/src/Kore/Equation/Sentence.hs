@@ -85,6 +85,7 @@ matchEquation attributes termLike
     isConstructorAxiom = (isConstructor . Attribute.constructor) attributes
     isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
 
+    -- function rule without priority
     match
         (TermLike.Implies_ _
             (TermLike.And_ _
@@ -113,6 +114,7 @@ matchEquation attributes termLike
             , attributes
             }
 
+    -- function rule with priority
     match
         (TermLike.Implies_ _
             (TermLike.And_ _
@@ -129,7 +131,6 @@ matchEquation attributes termLike
         )
       = do
         requires' <- makePredicate requires & Bifunctor.first RequiresError
-        -- TODO: should we add any other checks?
         argument' <- makePredicate argument & Bifunctor.first ArgumentError
         antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
         ensures'  <- makePredicate ensures  & Bifunctor.first EnsuresError
