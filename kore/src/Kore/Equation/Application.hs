@@ -19,10 +19,6 @@ module Kore.Equation.Application
     , debugApplyEquation
     ) where
 
-import qualified Data.Text as Text
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import qualified Branch
@@ -227,22 +223,15 @@ attemptEquation sideCondition termLike equation =
         -- TODO: toMap is unsafe;
         -- is it impossible to happen (if the frontend generates equations
         -- correctly), or should we add a new AttemptEquationError case?
-        lift $ do
-            let toMatchResult Conditional { predicate, substitution } =
-                    (predicate, Substitution.toMap substitution)
-            x <-
-                Substitution.mergePredicatesAndSubstitutions
-                    sideCondition
-                    ([argument, matchPredicate] <> maybeToList antiLeft)
-                    [Substitution.fromMap matchSubstitution]
-                    & Branch.gather
-            let y = fmap toMatchResult x
-            -- traceM
-            --     $ foldr
-            --         (\a b -> unparseToString a <> "\n" <> b)
-            --         ""
-            --         x
-            return y
+        lift
+        $ let toMatchResult Conditional { predicate, substitution } =
+                (predicate, Substitution.toMap substitution)
+         in Substitution.mergePredicatesAndSubstitutions
+                sideCondition
+                ([argument, matchPredicate] <> maybeToList antiLeft)
+                [Substitution.fromMap matchSubstitution]
+                & Branch.gather
+                & (fmap . fmap) toMatchResult
 
 applyEquation
     :: forall simplifier variable
@@ -277,7 +266,6 @@ applyMatchResult
     ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) = do
-    -- traceM "\n\nInside applyMatchResult"
     case errors of
         x : xs ->
             throwE ApplyMatchResultErrors
@@ -291,10 +279,6 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         equation' =
             Equation.substitute substitution equation
             & Equation.mapVariables (pure Target.unTarget)
-    traceM
-        $ "\n\nSubstituted equation:\n"
-        <> (Text.unpack . Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions $ Pretty.pretty equation')
-        <> "\n\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap substitution))
     return (equation', predicate')
   where
     equationVariables = freeVariables equation & FreeVariables.toList
@@ -357,7 +341,6 @@ checkRequires
     -> ExceptT (CheckRequiresError variable) simplifier ()
 checkRequires sideCondition predicate requires =
     do
-        -- traceM "\n\nInside checkRequires"
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
             condition :: Condition variable
