@@ -50,9 +50,9 @@ We also recommend (but not require!) the following dependencies.
 For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
-- [ghcide], an integrated development environment for Haskell
-  that is compatible with most editors. Note: [yq] is required to
-  run `ghcide` with `hie-bios.sh`.
+- [ghcide] or [haskell-ide-engine], [language servers] for Haskell that are
+  compatible with most editors. See instructions
+  [below](#running-a-language-server) to run a language server.
 - [hlint] and [stylish-haskell] for compliance with project guidelines.
 
 For integration testing, we also recommend:
@@ -60,6 +60,16 @@ For integration testing, we also recommend:
 - GNU [make]
 - The [K Framework] frontend, or [curl] to fetch an appropriate version.
   The frontend has other dependencies, most notably a Java runtime.
+
+### Running a language server
+
+To run a language server, developers will need to activate the appropriate
+`hie.yaml` file:
+
+```sh
+ln -s hie-stack.yaml hie.yaml  # for Stack
+ln -s hie-cabal.yaml hie.yaml  # for Cabal
+```
 
 ### Developing with Nix
 
@@ -77,7 +87,8 @@ environment is intended to be used with `nix-shell` and `stack --no-nix
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv
 [ghcide]: https://github.com/digital-asset/ghcide
-[yq]: https://github.com/kislyuk/yq
+[haskell-ide-engine]: https://github.com/haskell/haskell-ide-engine
+[language servers]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
 [kore.cachix.org]: https://kore.cachix.org/
