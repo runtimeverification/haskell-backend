@@ -19,6 +19,10 @@ module Kore.Equation.Application
     , debugApplyEquation
     ) where
 
+import qualified Data.Text as Text
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import qualified Branch
@@ -197,9 +201,9 @@ attemptEquation sideCondition termLike equation =
             . applyMatchResult equationRenamed
             <$> results
             )
-    takeFirstSuccess first second =
+    takeFirstSuccess first second = do
         lift (runExceptT first)
-        >>= either (const first) (const second)
+        >>= either (const second) (const first)
 
     whileDebugAttemptEquation'
         :: simplifier (AttemptEquationResult variable)
@@ -223,15 +227,22 @@ attemptEquation sideCondition termLike equation =
         -- TODO: toMap is unsafe;
         -- is it impossible to happen (if the frontend generates equations
         -- correctly), or should we add a new AttemptEquationError case?
-        lift
-        $ let toMatchResult Conditional { predicate, substitution } =
-                (predicate, Substitution.toMap substitution)
-         in Substitution.mergePredicatesAndSubstitutions
-                sideCondition
-                ([argument, matchPredicate] <> maybeToList antiLeft)
-                [Substitution.fromMap matchSubstitution]
-            & Branch.gather
-            & (fmap . fmap) toMatchResult
+        lift $ do
+            let toMatchResult Conditional { predicate, substitution } =
+                    (predicate, Substitution.toMap substitution)
+            x <-
+                Substitution.mergePredicatesAndSubstitutions
+                    sideCondition
+                    ([argument, matchPredicate] <> maybeToList antiLeft)
+                    [Substitution.fromMap matchSubstitution]
+                    & Branch.gather
+            let y = fmap toMatchResult x
+            -- traceM
+            --     $ foldr
+            --         (\a b -> unparseToString a <> "\n" <> b)
+            --         ""
+            --         x
+            return y
 
 applyEquation
     :: forall simplifier variable
@@ -280,6 +291,10 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         equation' =
             Equation.substitute substitution equation
             & Equation.mapVariables (pure Target.unTarget)
+    traceM
+        $ "\n\nSubstituted equation:\n"
+        <> (Text.unpack . Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions $ Pretty.pretty equation')
+        <> "\n\nSubstitution:\n" <> unparseToString (Substitution.toPredicate (Substitution.fromMap substitution))
     return (equation', predicate')
   where
     equationVariables = freeVariables equation & FreeVariables.toList
