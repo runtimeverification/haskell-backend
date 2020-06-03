@@ -1,6 +1,6 @@
 module Test.Kore.BugReport
     ( test_parse
-    )where
+    ) where
 
 import Prelude.Kore
 

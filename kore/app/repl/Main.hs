@@ -32,6 +32,9 @@ import Options.Applicative
     , strOption
     , value
     )
+import System.Directory
+    ( listDirectory
+    )
 import System.Exit
     ( exitFailure
     )
@@ -47,6 +50,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import Kore.Log
     ( KoreLogOptions (..)
+    , createTarGz
     , runLoggerT
     , swappableLogger
     , withLogger
@@ -256,7 +260,8 @@ mainWithOptions
                         scriptModeOutput
                         outputFile
                         mainModuleName
-
+            files <- listDirectory tempDirectory
+            createTarGz (tempDirectory <> ".tar.gz") tempDirectory files
 
   where
     mainModuleName :: ModuleName

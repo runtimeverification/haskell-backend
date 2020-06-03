@@ -10,9 +10,6 @@ import Control.Monad.Catch
     , handle
     , throwM
     )
-import Control.Monad.Extra
-    ( whenM
-    )
 import Control.Monad.Trans
     ( lift
     )
@@ -64,9 +61,9 @@ import Options.Applicative
 import qualified Options.Applicative as Options
 import System.Directory
     ( copyFile
-    , doesDirectoryExist
     , doesFileExist
     , emptyPermissions
+    , listDirectory
     , setOwnerExecutable
     , setOwnerReadable
     , setOwnerSearchable
@@ -566,6 +563,7 @@ mainWithOptions execOptions = do
     Temp.withSystemTempDirectory
         (fromMaybe "report" $ toReport bugReport)
         $ \tempDirectory -> do
+            traceM tempDirectory
             exitCode <-
                 runKoreLog tempDirectory koreLogOptions
                 $ handle (handleSomeException tempDirectory)
@@ -574,10 +572,12 @@ mainWithOptions execOptions = do
             let KoreExecOptions { rtsStatistics } = execOptions
             Foldable.forM_ rtsStatistics $ \filePath ->
                 writeStats filePath =<< getStats
+            let reportPath = maybe tempDirectory ("./" <>) (toReport bugReport)
             writeInReportDirectory tempDirectory
                 `catch` \(_ ::SomeException) ->
-                    archiveDirectoryReport tempDirectory
-            archiveDirectoryReport tempDirectory
+                    archiveDirectoryReport tempDirectory reportPath
+            archiveDirectoryReport tempDirectory reportPath
+            putStrLn $ "\nCreated " <> reportPath <> ".tar.gz"
             exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
@@ -630,10 +630,11 @@ mainWithOptions execOptions = do
             <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
         Foldable.forM_ (outputFileName execOptions)
             $ flip copyFile (tempDirectory <> "/outputFile.kore")
-    archiveDirectoryReport :: FilePath -> IO ()
-    archiveDirectoryReport tempDirectory =
-        whenM (doesDirectoryExist tempDirectory) $
-            createTarGz (tempDirectory <> ".tar.gz") "." [tempDirectory]
+
+    archiveDirectoryReport :: FilePath -> FilePath -> IO ()
+    archiveDirectoryReport tempDirectory dest = do
+        files <- listDirectory tempDirectory
+        createTarGz (dest <> ".tar.gz") tempDirectory files
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
