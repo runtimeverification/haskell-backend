@@ -26,8 +26,12 @@ import Test.Kore.Variables.V
 data W = W { value :: String, counter :: Maybe (Sup Natural) }
     deriving (Show, Eq, Ord, GHC.Generic)
 
-mkW :: String -> W
-mkW value = W { value, counter = Nothing }
+mkW :: String -> Variable W
+mkW value =
+    Variable
+    { variableName = W { value, counter = Nothing }
+    , variableSort = sortVariable
+    }
 
 instance Hashable W
 
@@ -43,31 +47,11 @@ instance Unparse W where
     unparse (W name _) = "W" <> pretty name <> ":" <> unparse sortVariable
     unparse2 = undefined
 
-instance SortedVariable W where
-    lensVariableSort = Lens.lens (const sortVariable) const
-    {-# INLINE lensVariableSort #-}
-
-instance From Variable W where
-    from = error "Not implemented"
-
 instance From VariableName W where
-    from = error "Not implemented"
-
-instance From W Variable where
     from = error "Not implemented"
 
 instance From W VariableName where
     from = error "Not implemented"
-
-instance NamedVariable W where
-    type VariableNameOf W = W
-
-    isoVariable1 =
-        Lens.iso to fr
-      where
-        to variableName1 =
-            Variable1 { variableName1, variableSort1 = sortVariable }
-        fr Variable1 { variableName1 } = variableName1
 
 instance FreshPartialOrd W where
     infVariable w = w { counter = Nothing }
@@ -81,12 +65,10 @@ instance FreshPartialOrd W where
                 Just (Element a) -> Just (Element (succ a))
                 Just Sup -> illegalVariableCounter
 
-instance FreshVariable W
+instance FreshName W
 
 instance SubstitutionOrd W where
     compareSubstitution = compare
-
-instance VariableBase W
 
 showVar :: V -> W
 showVar (V i n) = W (show i) n
@@ -95,4 +77,4 @@ showUnifiedVar :: AdjSomeVariableName (V -> W)
 showUnifiedVar = pure showVar
 
 war' :: String -> TermLike W
-war' = mkElemVar . ElementVariable . mkW
+war' = mkElemVar . fmap ElementVariableName . mkW

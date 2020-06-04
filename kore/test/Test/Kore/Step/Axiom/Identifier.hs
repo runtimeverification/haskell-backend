@@ -7,7 +7,7 @@ import Test.Tasty
 
 import Kore.Internal.TermLike
     ( TermLike
-    , Variable
+    , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Axiom.Identifier
@@ -91,7 +91,7 @@ test_matchAxiomIdentifier =
 match
     :: HasCallStack
     => TestName
-    -> TermLike Variable
+    -> TermLike VariableName
     -> Maybe AxiomIdentifier
     -> TestTree
 match name input expect =
@@ -102,7 +102,7 @@ match name input expect =
 matches
     :: HasCallStack
     => TestName
-    -> TermLike Variable
+    -> TermLike VariableName
     -> AxiomIdentifier
     -> TestTree
 matches name input expect = match ("matches " ++ name) input (Just expect)
@@ -110,6 +110,6 @@ matches name input expect = match ("matches " ++ name) input (Just expect)
 notMatches
     :: HasCallStack
     => TestName
-    -> TermLike Variable
+    -> TermLike VariableName
     -> TestTree
 notMatches name input = match ("does not match " ++ name) input Nothing

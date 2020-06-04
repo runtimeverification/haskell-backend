@@ -45,6 +45,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Variable
     ( InternalVariable
+    , SomeVariableName
     , toVariableName
     )
 import Kore.Rewriting.RewritingVariable
@@ -61,7 +62,6 @@ import Kore.Unification.Error
 import Kore.Unparser
     ( unparse
     )
-import Kore.Variables.UnifiedVariable
 import Log
 import Pretty
     ( Pretty
@@ -71,15 +71,15 @@ import qualified Pretty
 data ErrorRewritesInstantiation =
     ErrorRewritesInstantiation
         { problem :: !(Either UnificationError SubstitutionCoverageError)
-        , configuration :: !(Pattern RewritingVariable)
+        , configuration :: !(Pattern RewritingVariableName)
         , errorCallStack :: !CallStack
         }
     deriving (Show, GHC.Generic)
 
 data SubstitutionCoverageError =
     SubstitutionCoverageError
-        { solution :: !(UnifiedRule RewriteRule RewritingVariable)
-        , missingVariables :: !(Set (UnifiedVariable RewritingVariable))
+        { solution :: !(UnifiedRule RewriteRule RewritingVariableName)
+        , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
         }
     deriving (Show)
 
@@ -175,9 +175,9 @@ checkSubstitutionCoverage
     :: forall monadLog
     .  MonadLog monadLog
     => HasCallStack
-    => Pattern RewritingVariable
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
-    -> UnifiedRule RewriteRule RewritingVariable
+    -> UnifiedRule RewriteRule RewritingVariableName
     -- ^ Unified rule
     -> monadLog ()
 checkSubstitutionCoverage configuration solution
@@ -201,6 +201,4 @@ checkSubstitutionCoverage configuration solution
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     missingVariables = wouldNarrowWith solution
     isCoveringSubstitution = Set.null missingVariables
-    isSymbolic =
-        Foldable.any (foldMapVariable isConfigVariable)
-            substitutionVariables
+    isSymbolic = Foldable.any isSomeConfigVariableName substitutionVariables

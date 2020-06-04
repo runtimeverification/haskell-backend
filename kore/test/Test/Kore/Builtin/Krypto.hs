@@ -286,7 +286,7 @@ test_hashRipemd160 =
                 & evaluate "HASH.ripemd160"
             assertEqual "" expect actual
 
-evaluate :: Text -> TermLike Variable -> IO (Pattern Variable)
+evaluate :: Text -> TermLike VariableName -> IO (Pattern VariableName)
 evaluate builtin termLike = do
     evaluator <-
         Map.lookup builtin Krypto.builtinFunctions

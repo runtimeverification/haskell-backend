@@ -63,7 +63,7 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import Kore.Syntax.Variable
-    ( Variable
+    ( VariableName
     , fromVariableName
     )
 
@@ -74,7 +74,7 @@ import Test.SMT
 import Test.Tasty.HUnit.Ext
 
 class OnePathRuleBase base where
-    rewritesTo :: base Variable -> base Variable -> OnePathRule
+    rewritesTo :: base VariableName -> base VariableName -> OnePathRule
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
@@ -255,18 +255,18 @@ test_simplifyClaimRule =
         [rule2']
     ]
   where
-    rule1, rule2, rule2' :: RulePattern Variable
+    rule1, rule2, rule2' :: RulePattern VariableName
     rule1 = rulePattern (Mock.f Mock.a) Mock.b
     rule1' = rule1 & requireDefined
     rule2 =
-        rulePattern @Variable (Mock.g Mock.a) Mock.b
+        rulePattern @VariableName (Mock.g Mock.a) Mock.b
         & Lens.set (field @"requires") requires
     rule2' =
         rule2
         & requireDefined
         & Lens.set (field @"left") (Mock.f Mock.a)
 
-    requires :: Predicate Variable
+    requires :: Predicate VariableName
     requires = makeEqualsPredicate Mock.testSort Mock.a Mock.b
 
     requireDefined rule =
@@ -283,9 +283,9 @@ test_simplifyClaimRule =
     test
         :: HasCallStack
         => TestName
-        -> [(TermLike Variable, TermLike Variable)]  -- ^ replacements
-        -> RulePattern Variable
-        -> [RulePattern Variable]
+        -> [(TermLike VariableName, TermLike VariableName)]  -- ^ replacements
+        -> RulePattern VariableName
+        -> [RulePattern VariableName]
         -> TestTree
     test name replacements (OnePathRule -> input) (map OnePathRule -> expect) =
         -- Test simplifyClaimRule through the OnePathRule instance.
@@ -330,18 +330,18 @@ test_simplifyClaimRule =
 
         liftPredicate
             :: InternalVariable variable
-            => Predicate Variable
+            => Predicate VariableName
             -> Predicate variable
         liftPredicate = Predicate.mapVariables (pure fromVariableName)
 
         liftTermLike
             :: InternalVariable variable
-            => TermLike Variable
+            => TermLike VariableName
             -> TermLike variable
         liftTermLike = TermLike.mapVariables (pure fromVariableName)
 
         liftReplacement
             :: InternalVariable variable
-            => (TermLike Variable, TermLike Variable)
+            => (TermLike VariableName, TermLike VariableName)
             -> (TermLike variable, TermLike variable)
         liftReplacement = Bifunctor.bimap liftTermLike liftTermLike

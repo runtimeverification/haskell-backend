@@ -36,7 +36,7 @@ import Kore.Internal.TermLike
     ( InternalVariable
     , Symbol
     , TermLike
-    , Variable
+    , VariableName
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -46,8 +46,8 @@ import Kore.Syntax.Sentence
 import qualified Kore.Verified as Verified
 
 fromSentenceAxiom
-    :: (Attribute.Axiom Symbol Variable, Verified.SentenceAxiom)
-    -> Either (MatchEquationError Variable) (Equation Variable)
+    :: (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom)
+    -> Either (MatchEquationError VariableName) (Equation VariableName)
 fromSentenceAxiom (attributes, SentenceAxiom { sentenceAxiomPattern }) =
     matchEquation attributes sentenceAxiomPattern
 

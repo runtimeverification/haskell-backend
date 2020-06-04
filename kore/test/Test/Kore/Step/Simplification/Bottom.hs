@@ -32,5 +32,5 @@ test_bottomSimplification =
         )
     ]
 
-evaluate :: Bottom Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: Bottom Sort (OrPattern VariableName) -> OrPattern VariableName
 evaluate = simplify

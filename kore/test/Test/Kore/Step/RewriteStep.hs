@@ -29,20 +29,8 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiOr
-    ( MultiOr
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
     , makeCeilPredicate
@@ -75,18 +63,29 @@ import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
     ( nextVariable
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
+import Test.Kore.Internal.Condition as Condition
+import Test.Kore.Internal.OrCondition
+    ( OrTestCondition
+    )
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
+type RulePattern' = RulePattern VariableName
+type Conditional' = Conditional VariableName
+type RewriteRule' = RewriteRule VariableName
+type Results' = Step.Results RulePattern VariableName
+
 applyInitialConditions
-    :: Condition Variable
-    -> Condition Variable
-    -> IO [OrCondition Variable]
+    :: TestCondition
+    -> TestCondition
+    -> IO [OrTestCondition]
 applyInitialConditions initial unification =
     Step.applyInitialConditions initial unification
     & runSimplifier Mock.env . Branch.gather
@@ -142,13 +141,9 @@ test_applyInitialConditions =
     ]
 
 unifyRule
-    :: Pattern Variable
-    -> RulePattern Variable
-    -> IO
-        (Either
-            UnificationError
-            [Conditional Variable (RulePattern Variable)]
-        )
+    :: TestPattern
+    -> RulePattern'
+    -> IO (Either UnificationError [Conditional' RulePattern'])
 unifyRule initial rule =
     Step.unifyRule Unification.unificationProcedure initial rule
     & runExceptT . Branch.gather
@@ -171,7 +166,7 @@ test_renameRuleVariables =
                     , attributes = Default.def
                     }
             actual = mkRewritingRule axiom
-            initialFreeVariables :: FreeVariables RewritingVariable
+            initialFreeVariables :: FreeVariables RewritingVariableName
             initialFreeVariables = freeVariables initial
             actualFreeVariables = freeVariables actual
         assertEqual "Expected no common free variables"
@@ -197,7 +192,7 @@ test_unifyRule =
             expect = Right [(pure axiom) { substitution }]
               where
                 substitution =
-                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
+                    Substitution.unsafeWrap [(inject Mock.x, Mock.a)]
         actual <- unifyRule initial axiom
         assertEqual "" expect actual
 
@@ -218,39 +213,28 @@ test_unifyRule =
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
 applyRewriteRule_
-    ::  ( Pattern Variable
-          -> [RewriteRule Variable]
-          -> IO
-            (Either
-                UnificationError
-                (Step.Results RulePattern Variable)
-            )
+    ::  ( TestPattern
+          -> [RewriteRule']
+          -> IO (Either UnificationError Results')
         )
     -- ^ 'RewriteRule'
-    -> Pattern Variable
+    -> TestPattern
     -- ^ Configuration
-    -> RewriteRule Variable
+    -> RewriteRule'
     -- ^ Rewrite rule
-    -> IO (Either UnificationError [OrPattern Variable])
+    -> IO (Either UnificationError [OrTestPattern])
 applyRewriteRule_ applyRewriteRules initial rule =
     applyRewriteRules_ applyRewriteRules initial [rule]
 
 -- | Apply the 'RewriteRule's to the configuration, but discard remainders.
 applyRewriteRules_
-    ::  ( Pattern Variable
-          -> [RewriteRule Variable]
-          -> IO
-            (Either
-                UnificationError
-                (Step.Results RulePattern Variable)
-            )
-        )
+    :: (TestPattern -> [RewriteRule'] -> IO (Either UnificationError Results'))
     -- ^ 'RewriteRule's
-    -> Pattern Variable
+    -> TestPattern
     -- ^ Configuration
-    -> [RewriteRule Variable]
+    -> [RewriteRule']
     -- ^ Rewrite rule
-    -> IO (Either UnificationError [OrPattern Variable])
+    -> IO (Either UnificationError [OrTestPattern])
 applyRewriteRules_ applyRewriteRules initial rules = do
     result <- applyRewriteRules initial rules
     return (Foldable.toList . discardRemainders <$> result)
@@ -287,7 +271,7 @@ test_applyRewriteRule_ =
                 substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [ (ElemVar Mock.x, term) ]
+                    [ (inject Mock.x, term) ]
             initial = Pattern.fromTermLike (Mock.sigma (mkElemVar Mock.x) term)
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -299,7 +283,7 @@ test_applyRewriteRule_ =
                 substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [ (ElemVar Mock.y, mkElemVar Mock.z) ]
+                    [ (inject Mock.y, mkElemVar Mock.z) ]
             fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
             initial = Pattern.fromTermLike (Mock.sigma fy fz)
@@ -313,7 +297,7 @@ test_applyRewriteRule_ =
                 substitution =
                     Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [ (ElemVar Mock.x, mkElemVar Mock.y) ]
+                    [ (inject Mock.x, mkElemVar Mock.y) ]
             xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             yx = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.x)
             yy = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y)
@@ -336,7 +320,7 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            x' = nextVariable Mock.x
+            x' = nextVariable <$> Mock.x
             final = mkElemVar x'
             initial = pure (mkElemVar Mock.y)
             axiom =
@@ -423,7 +407,7 @@ test_applyRewriteRule_ =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, mkElemVar Mock.x)]
+                        [(inject Mock.y, mkElemVar Mock.x)]
                     }
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -440,7 +424,7 @@ test_applyRewriteRule_ =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, fy)]
+                        [(inject Mock.x, fy)]
                     }
                 & Right . pure . OrPattern.fromPattern
             fy = Mock.functional10 (mkElemVar Mock.y)
@@ -451,7 +435,7 @@ test_applyRewriteRule_ =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, mkElemVar Mock.x)]
+                        [(inject Mock.y, mkElemVar Mock.x)]
                     }
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
@@ -482,8 +466,8 @@ test_applyRewriteRule_ =
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
-                                [ (ElemVar Mock.x, zz)
-                                , (ElemVar Mock.y, mkElemVar Mock.z)
+                                [ (inject Mock.x, zz)
+                                , (inject Mock.y, mkElemVar Mock.z)
                                 ]
                             }
                         ]
@@ -512,7 +496,7 @@ test_applyRewriteRule_ =
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
-                                [(ElemVar Mock.x, fb)]
+                                [(inject Mock.x, fb)]
                             }
                         ]
                     ]
@@ -538,8 +522,8 @@ test_applyRewriteRule_ =
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
-                                    [ (ElemVar Mock.x, fz)
-                                    , (ElemVar Mock.y, mkElemVar Mock.z)
+                                    [ (inject Mock.x, fz)
+                                    , (inject Mock.y, mkElemVar Mock.z)
                                     ]
                             }
                         ]
@@ -554,7 +538,7 @@ test_applyRewriteRule_ =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, fz)]
+                        [(inject Mock.x, fz)]
                     }
         actual <- applyRewriteRuleParallel_ initial axiomSigmaXXY
         assertEqual "" expect actual
@@ -611,7 +595,7 @@ test_applyRewriteRule_ =
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
-                                [(ElemVar Mock.x, fb)]
+                                [(inject Mock.x, fb)]
                             }
                         ]
                     ]
@@ -642,7 +626,7 @@ test_applyRewriteRule_ =
                     (Mock.functional10 (mkElemVar Mock.x))
             rhs = (RulePattern.rhs ruleId) { ensures }
             expect :: Either
-                UnificationError [OrPattern Variable]
+                UnificationError [OrTestPattern]
             expect = Right
                 [ OrPattern.fromPatterns
                     [ Conditional
@@ -775,15 +759,11 @@ test_applyRewriteRule_ =
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRulesParallel
-    :: Pattern Variable
+    :: TestPattern
     -- ^ Configuration
-    -> [RewriteRule Variable]
+    -> [RewriteRule']
     -- ^ Rewrite rule
-    -> IO
-      (Either
-          UnificationError
-          (Step.Results RulePattern Variable)
-      )
+    -> IO (Either UnificationError Results')
 applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
         Unification.unificationProcedure
@@ -793,8 +773,8 @@ applyRewriteRulesParallel initial rules =
 
 checkResults
     :: HasCallStack
-    => MultiOr (Pattern Variable)
-    -> Step.Results RulePattern Variable
+    => OrTestPattern
+    -> Results'
     -> Assertion
 checkResults expect actual =
     assertEqual "compare results"
@@ -803,8 +783,8 @@ checkResults expect actual =
 
 checkRemainders
     :: HasCallStack
-    => MultiOr (Pattern Variable)
-    -> Step.Results RulePattern Variable
+    => OrTestPattern
+    -> Results'
     -> Assertion
 checkRemainders expect actual =
     assertEqual "compare remainders"
@@ -834,7 +814,7 @@ test_applyRewriteRulesParallel =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, Mock.a)]
+                        [(inject Mock.x, Mock.a)]
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -881,7 +861,7 @@ test_applyRewriteRulesParallel =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.x, Mock.a)]
+                            [(inject Mock.x, Mock.a)]
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -970,7 +950,7 @@ test_applyRewriteRulesParallel =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, Mock.a)]
+                        [(inject Mock.x, Mock.a)]
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -1025,7 +1005,7 @@ test_applyRewriteRulesParallel =
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.x, Mock.a)]
+                            [(inject Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.cg
@@ -1033,7 +1013,7 @@ test_applyRewriteRulesParallel =
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.x, Mock.b)]
+                            [(inject Mock.x, Mock.b)]
                         }
                     ]
             remainders =
@@ -1085,7 +1065,7 @@ test_applyRewriteRulesParallel =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, Mock.a)]
+                        [(inject Mock.x, Mock.a)]
                     }
             remainders =
                 OrPattern.fromPatterns
@@ -1128,13 +1108,13 @@ test_applyRewriteRulesParallel =
         checkRemainders remainders actual
     ]
 
-axiomIfThen :: RewriteRule Variable
+axiomIfThen :: RewriteRule'
 axiomIfThen =
     RewriteRule $ rulePattern
         (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
         (mkElemVar Mock.y)
 
-axiomSignum :: RewriteRule Variable
+axiomSignum :: RewriteRule'
 axiomSignum =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (mkElemVar Mock.y)
@@ -1144,7 +1124,7 @@ axiomSignum =
         , attributes = def
         }
 
-axiomCaseA :: RewriteRule Variable
+axiomCaseA :: RewriteRule'
 axiomCaseA =
     RewriteRule $ rulePattern
         (Mock.functionalConstr30
@@ -1154,7 +1134,7 @@ axiomCaseA =
         )
         (mkElemVar Mock.y)
 
-axiomCaseB :: RewriteRule Variable
+axiomCaseB :: RewriteRule'
 axiomCaseB =
     RewriteRule $ rulePattern
         (Mock.functionalConstr30
@@ -1164,21 +1144,17 @@ axiomCaseB =
         )
         (mkElemVar Mock.z)
 
-axiomsCase :: [RewriteRule Variable]
+axiomsCase :: [RewriteRule']
 axiomsCase = [axiomCaseA, axiomCaseB]
 
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 applyRewriteRulesSequence
-    :: Pattern Variable
+    :: TestPattern
     -- ^ Configuration
-    -> [RewriteRule Variable]
+    -> [RewriteRule']
     -- ^ Rewrite rule
-    -> IO
-      (Either
-          UnificationError
-          (Step.Results RulePattern Variable)
-      )
+    -> IO (Either UnificationError Results')
 applyRewriteRulesSequence initial rules =
     Step.applyRewriteRulesSequence
         Unification.unificationProcedure
@@ -1222,7 +1198,7 @@ test_applyRewriteRulesSequence =
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.x, Mock.a)]
+                            [(inject Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.cg
@@ -1230,7 +1206,7 @@ test_applyRewriteRulesSequence =
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.x, Mock.b)]
+                            [(inject Mock.x, Mock.b)]
                         }
                     ]
             remainders =

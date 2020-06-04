@@ -43,9 +43,6 @@ import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (ElemVar)
-    )
 import Pair
 
 -- | Overload solution requiring narrowing
@@ -423,7 +420,7 @@ computeNarrowing
             resolveOverloading injUnion headUnion freshTerms
     return Narrowing
         { narrowingSubst =
-            Condition.assign (ElemVar overloadedVar) narrowingTerm
+            Condition.assign (inject overloadedVar) narrowingTerm
         , narrowingVars =
             Attribute.getFreeElementVariables $ freeVariables narrowingTerm
         , overloadPair = Pair (mkInj' first') (mkInj' second')
@@ -431,7 +428,7 @@ computeNarrowing
   | otherwise = error "This should not happen"
   where
     InjectedOverload { overload, injectionHead } = overloaded
-    allVars = Attribute.freeVariable (ElemVar overloadedVar) <> freeVars
+    allVars = Attribute.freeVariable (inject overloadedVar) <> freeVars
     overloadedTerm = freshSymbolInstance allVars overload "x"
     mkInj' = maybeMkInj injection'
     narrowingTerm = maybeMkInj injectionHead overloadedTerm

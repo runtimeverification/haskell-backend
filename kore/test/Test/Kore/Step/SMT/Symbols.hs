@@ -64,12 +64,7 @@ import Kore.Step.SMT.Translate
     ( evalTranslator
     , translatePredicateWith
     )
-import Kore.Syntax.ElementVariable
-    ( ElementVariable (..)
-    )
 import Kore.Syntax.Variable
-    ( Variable (..)
-    )
 import Log
     ( MonadLog (..)
     )
@@ -205,7 +200,7 @@ test_sortDeclaration =
     encodeAndAssertPredicate
         :: MonadSMT m
         => MonadLog m
-        => Predicate Variable
+        => Predicate VariableName
         -> SmtMetadataTools Attribute.Symbol
         -> m ()
     encodeAndAssertPredicate predicate tools = do
@@ -219,7 +214,7 @@ test_sortDeclaration =
         :: MonadSMT m
         => MonadLog m
         => SmtMetadataTools Attribute.Symbol
-        -> Predicate Variable
+        -> Predicate VariableName
         -> m SExpr
     encodePredicate tools predicate = do
         expr <-
@@ -246,8 +241,8 @@ test_sortDeclaration =
     c :: InternalVariable variable => TermLike variable
     c = mkApplySymbol cSymbol []
 
-    x :: ElementVariable Variable
-    x = ElementVariable $ Variable (testId "x") mempty sSort
+    x :: ElementVariable VariableName
+    x = mkElementVariable (testId "x") sSort
 
     declareSymbolsAndSorts
         :: SMT.MonadSMT m

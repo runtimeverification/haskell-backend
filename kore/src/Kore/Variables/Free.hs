@@ -27,13 +27,12 @@ import Data.Set
 import qualified Data.Set as Set
 
 import Kore.Syntax
-import Kore.Variables.UnifiedVariable
 
 -- | The free variables of a pure pattern.
 freePureVariables
     :: Ord variable
     => Pattern variable annotation
-    -> Set (UnifiedVariable variable)
+    -> Set (SomeVariable variable)
 freePureVariables root =
     let (free, ()) =
             Monad.RWS.execRWS
@@ -53,25 +52,25 @@ freePureVariables root =
             ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (ElemVar existsVariable))
+                    (Set.insert (mkSomeVariable existsVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 existsChild)
             ForallF Forall { forallVariable, forallChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (ElemVar forallVariable))
+                    (Set.insert (mkSomeVariable forallVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 forallChild)
             MuF Mu { muVariable, muChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (SetVar muVariable))
+                    (Set.insert (mkSomeVariable muVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 muChild)
             NuF Nu { nuVariable, nuChild } ->
                 Monad.RWS.local
                     -- record the bound variable
-                    (Set.insert (SetVar nuVariable))
+                    (Set.insert (mkSomeVariable nuVariable))
                     -- descend into the bound pattern
                     (freePureVariables1 nuChild)
             p -> mapM_ freePureVariables1 p
@@ -80,19 +79,19 @@ pureMergeVariables
     :: Ord variable
     => Base
         (Pattern variable annotation)
-        (Set.Set (UnifiedVariable variable))
-    -> Set.Set (UnifiedVariable variable)
+        (Set.Set (SomeVariable variable))
+    -> Set.Set (SomeVariable variable)
 pureMergeVariables base =
     case Cofree.tailF base of
         VariableF (Const variable) -> Set.singleton variable
         ExistsF Exists { existsVariable, existsChild } ->
-            Set.insert (ElemVar existsVariable) existsChild
+            Set.insert (mkSomeVariable existsVariable) existsChild
         ForallF Forall { forallVariable, forallChild } ->
-            Set.insert (ElemVar forallVariable) forallChild
+            Set.insert (mkSomeVariable forallVariable) forallChild
         MuF Mu { muVariable, muChild } ->
-            Set.insert (SetVar muVariable) muChild
+            Set.insert (mkSomeVariable muVariable) muChild
         NuF Nu { nuVariable, nuChild } ->
-            Set.insert (SetVar nuVariable) nuChild
+            Set.insert (mkSomeVariable nuVariable) nuChild
         p -> Foldable.foldl' Set.union Set.empty p
 
 {-| 'pureAllVariables' extracts all variables of a given level in a pattern as a
@@ -101,5 +100,5 @@ set, regardless of whether they are quantified or not.
 pureAllVariables
     :: Ord variable
     => Pattern variable annotation
-    -> Set.Set (UnifiedVariable variable)
+    -> Set.Set (SomeVariable variable)
 pureAllVariables = Recursive.fold pureMergeVariables

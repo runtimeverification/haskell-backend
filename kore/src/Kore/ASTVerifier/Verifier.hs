@@ -47,15 +47,13 @@ import qualified Kore.Internal.Symbol as Internal.Symbol
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
-    ( Variable (..)
-    )
 import qualified Kore.Verified as Verified
 
 type ImplicitModule =
     ImplicitIndexedModule
         Verified.Pattern
         Attribute.Symbol
-        (Attribute.Axiom Internal.Symbol.Symbol Variable)
+        (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 
 type VerifiedModule' = VerifiedModule Attribute.Symbol
 

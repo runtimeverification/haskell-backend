@@ -31,7 +31,6 @@ import Kore.Parser.ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore hiding
     ( Gen
@@ -72,13 +71,12 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariableF $ Const $ ElemVar
-                            $ ElementVariable Variable
-                                { variableName = testId "T"
-                                , variableSort = SortVariableSort SortVariable
+                            asParsedPattern $ VariableF $ Const $ inject
+                            $ mkElementVariable
+                                (testId "T")
+                                (SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
-                                , variableCounter = mempty
-                                }
+                                )
                         , inContainingChild =
                             asParsedPattern
                             $ StringLiteralF $ Const
@@ -165,7 +163,7 @@ test_unparse =
             )
             "[\\top{#CharList{}}()]"
         , unparseTest
-            (makeMultipleAndPredicate @Variable
+            (makeMultipleAndPredicate @VariableName
                 [ makeCeilPredicate_ Mock.a
                 , makeCeilPredicate_ Mock.b
                 , makeCeilPredicate_ Mock.c
@@ -180,14 +178,14 @@ test_unparse =
             \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
                     \/* Fl Fn D Sfa Cl */ c{}())\n\
             \))"
-        , unparseTest
+        , unparseTest @(Pattern.Pattern VariableName)
             (Pattern.andCondition
                 (Pattern.topOf Mock.topSort)
                 (Condition.fromSubstitution $ Substitution.wrap
                     $ Substitution.mkUnwrappedSubstitution
-                    [ (ElemVar Mock.x, Mock.a)
-                    , (ElemVar Mock.y, Mock.b)
-                    , (ElemVar Mock.z, Mock.c)
+                    [ (inject Mock.x, Mock.a)
+                    , (inject Mock.y, Mock.b)
+                    , (inject Mock.z, Mock.c)
                     ]
                 )
             )
@@ -217,7 +215,7 @@ test_unparse =
             \        )\n\
             \    ))\n\
             \))"
-        , unparseTest
+        , unparseTest @(Pattern.Pattern VariableName)
             (Pattern.andCondition
                 (Pattern.topOf Mock.topSort)
                 (Condition.andCondition
@@ -229,9 +227,9 @@ test_unparse =
                     )
                     (Condition.fromSubstitution $ Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [ (ElemVar Mock.x, Mock.a)
-                        , (ElemVar Mock.y, Mock.b)
-                        , (ElemVar Mock.z, Mock.c)
+                        [ (inject Mock.x, Mock.a)
+                        , (inject Mock.y, Mock.b)
+                        , (inject Mock.z, Mock.c)
                         ]
                     )
                 )

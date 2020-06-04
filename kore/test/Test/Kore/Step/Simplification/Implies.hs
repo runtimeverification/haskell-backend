@@ -17,27 +17,26 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Implies as Implies
+import Kore.Unparser
 import qualified Pretty
 
-import Kore.Unparser
-
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern
+    ( TestPattern
+    )
+import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Predicate
+    ( TestPredicate
+    )
+import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
@@ -63,8 +62,8 @@ test_simplifyEvaluated =
   where
     becomes_
         :: HasCallStack
-        => ([Pattern Variable], [Pattern Variable])
-        -> [Pattern Variable]
+        => ([TestPattern], [TestPattern])
+        -> [TestPattern]
         -> TestTree
     becomes_ (firsts, seconds) expecteds =
         testCase "becomes" $ do
@@ -89,62 +88,56 @@ test_simplifyEvaluated =
           where
             actuals = Foldable.toList actual
 
-termA :: Pattern Variable
+termA :: TestPattern
 termA = Pattern.fromTermLike Mock.a
 
-termB :: Pattern Variable
+termB :: TestPattern
 termB = Pattern.fromTermLike Mock.b
 
-aImpliesB :: Pattern Variable
+aImpliesB :: TestPattern
 aImpliesB = Conditional
     { term = mkImplies Mock.a Mock.b
     , predicate = Predicate.makeTruePredicate_
     , substitution = mempty
     }
 
-equalsXA :: Pattern Variable
-equalsXA = fromPredicate equalsXA_
+equalsXA :: TestPattern
+equalsXA = Pattern.fromPredicateSorted Mock.testSort equalsXA_
 
-equalsXB :: Pattern Variable
-equalsXB = fromPredicate equalsXB_
+equalsXB :: TestPattern
+equalsXB = Pattern.fromPredicateSorted Mock.testSort equalsXB_
 
-equalsXC :: Pattern Variable
-equalsXC = fromPredicate equalsXC_
+equalsXC :: TestPattern
+equalsXC = Pattern.fromPredicateSorted Mock.testSort equalsXC_
 
-equalsXA_ :: Predicate Variable
+equalsXA_ :: TestPredicate
 equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
 
-equalsXB_ :: Predicate Variable
+equalsXB_ :: TestPredicate
 equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
 
-equalsXC_ :: Predicate Variable
+equalsXC_ :: TestPredicate
 equalsXC_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c
 
-impliesEqualsXAEqualsXB :: Pattern Variable
-impliesEqualsXAEqualsXB = fromPredicate $
+impliesEqualsXAEqualsXB :: TestPattern
+impliesEqualsXAEqualsXB =
     Predicate.makeImpliesPredicate equalsXA_ equalsXB_
+    & Pattern.fromPredicateSorted Mock.testSort
 
-impliesEqualsXAEqualsXC :: Pattern Variable
-impliesEqualsXAEqualsXC = fromPredicate $
+impliesEqualsXAEqualsXC :: TestPattern
+impliesEqualsXAEqualsXC =
     Predicate.makeImpliesPredicate equalsXA_ equalsXC_
+    & Pattern.fromPredicateSorted Mock.testSort
 
-impliesEqualsXBEqualsXC_ :: Condition Variable
-impliesEqualsXBEqualsXC_ = Condition.fromPredicate $
+impliesEqualsXBEqualsXC_ :: Condition VariableName
+impliesEqualsXBEqualsXC_ =
     Predicate.makeImpliesPredicate equalsXB_ equalsXC_
-
-forceTermSort :: Pattern Variable -> Pattern Variable
-forceTermSort = fmap (forceSort Mock.testSort)
-
-fromPredicate :: Predicate Variable -> Pattern Variable
-fromPredicate =
-    forceTermSort
-    . Pattern.fromCondition
-    . Condition.fromPredicate
+    & Condition.fromPredicate
 
 simplifyEvaluated
-    :: OrPattern Variable
-    -> OrPattern Variable
-    -> IO (OrPattern Variable)
+    :: OrTestPattern
+    -> OrTestPattern
+    -> IO OrTestPattern
 simplifyEvaluated first second =
     runSimplifier mockEnv
     $ Implies.simplifyEvaluated SideCondition.top first second

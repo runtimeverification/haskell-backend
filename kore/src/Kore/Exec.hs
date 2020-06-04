@@ -178,15 +178,15 @@ import SMT
     )
 
 -- | Configuration used in symbolic execution.
-type Config = Pattern Variable
+type Config = Pattern VariableName
 
 -- | Semantic rule used during execution.
-type Rewrite = RewriteRule Variable
+type Rewrite = RewriteRule VariableName
 
 -- | Function rule used during execution.
-type Equality = Equation Variable
+type Equality = Equation VariableName
 
-type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
+type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule VariableName)
 
 -- | A collection of rules and simplifiers used during execution.
 newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
@@ -212,9 +212,9 @@ exec
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike Variable
+    -> TermLike VariableName
     -- ^ The input pattern
-    -> smt (TermLike Variable)
+    -> smt (TermLike VariableName)
 exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         execution <- execute breadthLimit verifiedModule' strategy initialTerm
@@ -249,7 +249,7 @@ execGetExitCode
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike Variable
+    -> TermLike VariableName
     -- ^ The final pattern (top cell) to extract the exit code
     -> smt ExitCode
 execGetExitCode indexedModule strategy' finalTerm =
@@ -279,13 +279,13 @@ search
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike Variable
+    -> TermLike VariableName
     -- ^ The input pattern
-    -> Pattern Variable
+    -> Pattern VariableName
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
-    -> smt (TermLike Variable)
+    -> smt (TermLike VariableName)
 search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
   =
     evalSimplifier verifiedModule $ do
@@ -420,7 +420,7 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> smt (Bounded.CheckResult (TermLike Variable))
+    -> smt (Bounded.CheckResult (TermLike VariableName))
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do
         initialized <- initialize definitionModule
@@ -448,7 +448,7 @@ mergeAllRules
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> smt (Either Text [RewriteRule Variable])
+    -> smt (Either Text [RewriteRule VariableName])
 mergeAllRules = mergeRules Rules.mergeRules
 
 -- | Rule merging
@@ -464,7 +464,7 @@ mergeRulesConsecutiveBatches
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> smt (Either Text [RewriteRule Variable])
+    -> smt (Either Text [RewriteRule VariableName])
 mergeRulesConsecutiveBatches batchSize =
     mergeRules (Rules.mergeRulesConsecutiveBatches batchSize)
 
@@ -475,21 +475,21 @@ mergeRules
         , MonadSMT smt
         , MonadIO smt
         )
-    =>  (  NonEmpty (RewriteRule Variable)
-        -> Simplifier.SimplifierT smt [RewriteRule Variable]
+    =>  (  NonEmpty (RewriteRule VariableName)
+        -> Simplifier.SimplifierT smt [RewriteRule VariableName]
         )
     -- ^ The rule merger
     -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> smt (Either Text [RewriteRule Variable])
+    -> smt (Either Text [RewriteRule VariableName])
 mergeRules ruleMerger verifiedModule ruleNames =
     evalSimplifier verifiedModule $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
 
-        let nonEmptyRules :: Either Text (NonEmpty (RewriteRule Variable))
+        let nonEmptyRules :: Either Text (NonEmpty (RewriteRule VariableName))
             nonEmptyRules = do
                 rules <- extractRules rewriteRules ruleNames
                 case rules of
@@ -501,19 +501,19 @@ mergeRules ruleMerger verifiedModule ruleNames =
             (Right rules) -> Right <$> ruleMerger rules
 
 extractRules
-    :: [RewriteRule Variable]
+    :: [RewriteRule VariableName]
     -> [Text]
-    -> Either Text [RewriteRule Variable]
+    -> Either Text [RewriteRule VariableName]
 extractRules rules = foldr addExtractRule (Right [])
   where
     addExtractRule
         :: Text
-        -> Either Text [RewriteRule Variable]
-        -> Either Text [RewriteRule Variable]
+        -> Either Text [RewriteRule VariableName]
+        -> Either Text [RewriteRule VariableName]
     addExtractRule ruleName processedRules =
         (:) <$> extractRule ruleName <*> processedRules
 
-    maybeRuleUniqueId :: RewriteRule Variable -> Maybe Text
+    maybeRuleUniqueId :: RewriteRule VariableName -> Maybe Text
     maybeRuleUniqueId
         (RewriteRule RulePattern
             { attributes = Attribute.Axiom
@@ -523,7 +523,7 @@ extractRules rules = foldr addExtractRule (Right [])
       =
         maybeName
 
-    maybeRuleLabel :: RewriteRule Variable -> Maybe Text
+    maybeRuleLabel :: RewriteRule VariableName -> Maybe Text
     maybeRuleLabel
         (RewriteRule RulePattern
             { attributes = Attribute.Axiom
@@ -533,21 +533,21 @@ extractRules rules = foldr addExtractRule (Right [])
       =
         maybeName
 
-    idRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
+    idRules :: [RewriteRule VariableName] -> [(Text, RewriteRule VariableName)]
     idRules = mapMaybe namedRule
       where
         namedRule rule = do
             name <- maybeRuleUniqueId rule
             return (name, rule)
 
-    labelRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
+    labelRules :: [RewriteRule VariableName] -> [(Text, RewriteRule VariableName)]
     labelRules = mapMaybe namedRule
       where
         namedRule rule = do
             name <- maybeRuleLabel rule
             return (name, rule)
 
-    rulesByName :: Map.Map Text (RewriteRule Variable)
+    rulesByName :: Map.Map Text (RewriteRule VariableName)
     rulesByName = Map.union
         (Map.fromListWith
             (const $ const $ error "duplicate rule")
@@ -558,7 +558,7 @@ extractRules rules = foldr addExtractRule (Right [])
             (labelRules rules)
         )
 
-    extractRule :: Text -> Either Text (RewriteRule Variable)
+    extractRule :: Text -> Either Text (RewriteRule VariableName)
     extractRule ruleName =
         note
             ("Rule not found: '" <> ruleName <> "'.")
@@ -577,8 +577,8 @@ assertSomeClaims claims =
         ++  "on the representation of claims."
 
 makeImplicationRule
-    :: (Attribute.Axiom Symbol Variable, ImplicationRule Variable)
-    -> ImplicationRule Variable
+    :: (Attribute.Axiom Symbol VariableName, ImplicationRule VariableName)
+    -> ImplicationRule VariableName
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
@@ -598,7 +598,7 @@ execute
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike Variable
+    -> TermLike VariableName
     -- ^ The input pattern
     -> simplifier Execution
 execute breadthLimit verifiedModule strategy inputPattern = do

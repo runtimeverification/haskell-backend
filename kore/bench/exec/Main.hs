@@ -28,7 +28,7 @@ import Kore.IndexedModule.IndexedModule
     )
 import Kore.Internal.TermLike
     ( TermLike
-    , Variable
+    , VariableName
     )
 import Kore.Log
     ( emptyLogger
@@ -143,7 +143,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
     envWithCleanup setUp cleanUp $ bench name . nfIO . execution
   where
     name = takeFileName test
-    setUp :: IO (VerifiedModule StepperAttributes, TermLike Variable)
+    setUp :: IO (VerifiedModule StepperAttributes, TermLike VariableName)
     setUp = do
         kompile
         definition <- readFile $ root </> definitionFile
@@ -171,8 +171,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
         return (verifiedModule, verifiedPattern)
     execution
-        :: (VerifiedModule StepperAttributes, TermLike Variable)
-        -> IO (TermLike Variable)
+        :: (VerifiedModule StepperAttributes, TermLike VariableName)
+        -> IO (TermLike VariableName)
     execution (verifiedModule, purePattern) =
         flip runLoggerT emptyLogger
         $ SMT.runSMT SMT.defaultConfig

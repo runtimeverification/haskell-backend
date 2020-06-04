@@ -52,7 +52,7 @@ import Kore.Syntax.Application
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
 import Kore.Syntax.Variable
-    ( Variable (..)
+    ( VariableName (..)
     )
 import qualified Kore.Verified as Verified
 
@@ -148,8 +148,8 @@ verifyAxiomAttributes
     :: forall error attrs
     .  MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
-    -> Attribute.Axiom SymbolOrAlias Variable
-    -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
+    -> Attribute.Axiom SymbolOrAlias VariableName
+    -> error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 verifyAxiomAttributes indexedModule axiom = do
     let overload = axiom Lens.^. field @"overload"
         supersorts = Subsort.supersort <$> getSubsorts (axiom Lens.^. field @"subsorts")

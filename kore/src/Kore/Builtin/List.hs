@@ -95,7 +95,6 @@ import Kore.Internal.TermLike
     , Concrete
     , pattern ElemVar_
     , InternalVariable
-    , NamedVariable
     , Sort
     , TermLike
     , pattern Var_
@@ -226,7 +225,7 @@ expectBuiltinList ctx =
         _ -> empty
 
 expectConcreteBuiltinList
-    :: NamedVariable variable
+    :: Ord variable
     => Monad m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern

@@ -99,11 +99,6 @@ import Kore.Syntax.Id
     , FileLocation (..)
     )
 import Kore.Syntax.Variable
-    ( AdjSomeVariableName
-    , NamedVariable (..)
-    , Variable
-    , toVariableName
-    )
 import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
@@ -112,7 +107,6 @@ import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
-import Kore.Variables.UnifiedVariable
 import Log
     ( Entry (..)
     , MonadLog
@@ -235,12 +229,12 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     errors = concatMap checkVariable equationVariables
 
-    checkVariable variable =
-        case Map.lookup variable substitution of
-            Nothing -> [NotMatched variable]
+    checkVariable Variable { variableName } =
+        case Map.lookup variableName substitution of
+            Nothing -> [NotMatched variableName]
             Just termLike ->
-                checkConcreteVariable variable termLike
-                <> checkSymbolicVariable variable termLike
+                checkConcreteVariable variableName termLike
+                <> checkSymbolicVariable variableName termLike
 
     checkConcreteVariable variable termLike
       | Set.member variable concretes
@@ -358,11 +352,10 @@ data AttemptEquationError variable
     deriving (GHC.Generic)
 
 mapAttemptEquationErrorVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  AttemptEquationError variable1
-    ->  AttemptEquationError variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> AttemptEquationError variable1
+    -> AttemptEquationError variable2
 mapAttemptEquationErrorVariables adj =
     \case
         WhileMatch matchError ->
@@ -437,11 +430,10 @@ instance InternalVariable variable => Pretty (MatchError variable) where
     pretty _ = "equation did not match term"
 
 mapMatchErrorVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  MatchError variable1
-    ->  MatchError variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> MatchError variable1
+    -> MatchError variable2
 mapMatchErrorVariables adj =
     \MatchError { matchTerm, matchEquation } ->
         MatchError
@@ -486,7 +478,7 @@ instance
 
 mapApplyMatchResultErrorsVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> ApplyMatchResultErrors variable1
     -> ApplyMatchResultErrors variable2
 mapApplyMatchResultErrorsVariables adj applyMatchResultErrors =
@@ -501,7 +493,7 @@ mapApplyMatchResultErrorsVariables adj applyMatchResultErrors =
 
 mapMatchResultVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> MatchResult variable1
     -> MatchResult variable2
 mapMatchResultVariables adj (predicate, substitution) =
@@ -510,19 +502,19 @@ mapMatchResultVariables adj (predicate, substitution) =
     )
   where
     mapSubstitutionVariables =
-       Map.mapKeys (mapUnifiedVariable adj)
+       Map.mapKeys (mapSomeVariableName adj)
        . Map.map (TermLike.mapVariables adj)
 
 {- | @ApplyMatchResultError@ represents a reason the match could not be applied.
  -}
 data ApplyMatchResultError variable
-    = NotConcrete (UnifiedVariable variable) (TermLike variable)
+    = NotConcrete (SomeVariableName variable) (TermLike variable)
     -- ^ The variable was matched with a symbolic term where a concrete
     -- term was required.
-    | NotSymbolic (UnifiedVariable variable) (TermLike variable)
+    | NotSymbolic (SomeVariableName variable) (TermLike variable)
     -- ^ The variable was matched with a concrete term where a symbolic
     -- term was required.
-    | NotMatched (UnifiedVariable variable)
+    | NotMatched (SomeVariableName variable)
     -- ^ The variable was not matched.
     deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
@@ -558,22 +550,22 @@ instance
 
 mapApplyMatchResultErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (VariableNameOf variable1 -> VariableNameOf variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> ApplyMatchResultError variable1
     -> ApplyMatchResultError variable2
 mapApplyMatchResultErrorVariables adj applyMatchResultError =
     case applyMatchResultError of
         NotConcrete variable termLike ->
             NotConcrete
-                (mapUnifiedVariable' variable)
+                (mapSomeVariableName' variable)
                 (mapTermLikeVariables termLike)
         NotSymbolic variable termLike ->
             NotSymbolic
-                (mapUnifiedVariable' variable)
+                (mapSomeVariableName' variable)
                 (mapTermLikeVariables termLike)
-        NotMatched variable -> NotMatched (mapUnifiedVariable' variable)
+        NotMatched variable -> NotMatched (mapSomeVariableName' variable)
   where
-    mapUnifiedVariable' = mapUnifiedVariable adj
+    mapSomeVariableName' = mapSomeVariableName adj
     mapTermLikeVariables = TermLike.mapVariables adj
 
 {- | Errors that can occur during 'checkRequires'.
@@ -604,11 +596,10 @@ instance InternalVariable variable => Pretty (CheckRequiresError variable) where
         ]
 
 mapCheckRequiresErrorVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  CheckRequiresError variable1
-    ->  CheckRequiresError variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> CheckRequiresError variable1
+    -> CheckRequiresError variable2
 mapCheckRequiresErrorVariables adj checkRequiresError =
     CheckRequiresError
     { matchPredicate = mapPredicateVariables matchPredicate
@@ -623,11 +614,11 @@ mapCheckRequiresErrorVariables adj checkRequiresError =
 {- | Log entries for all phases of equation application.
  -}
 data DebugAttemptEquation
-    = DebugAttemptEquation (Equation Variable) (TermLike Variable)
+    = DebugAttemptEquation (Equation VariableName) (TermLike VariableName)
     -- ^ Covers the entire scope of 'attemptEquation'.
     | DebugAttemptEquationResult
-        (Equation Variable)
-        (AttemptEquationResult Variable)
+        (Equation VariableName)
+        (AttemptEquationResult VariableName)
     -- ^ Entered into the log when an equation is applicable.
     deriving (Show)
     deriving (GHC.Generic)
@@ -675,11 +666,10 @@ debugAttemptEquationResult equation result =
         (mapAttemptEquationResultVariables (pure toVariableName) result)
 
 mapAttemptEquationResultVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  AttemptEquationResult variable1
-    ->  AttemptEquationResult variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> AttemptEquationResult variable1
+    -> AttemptEquationResult variable2
 mapAttemptEquationResultVariables adj =
     Bifunctor.bimap
         (mapAttemptEquationErrorVariables adj)
@@ -701,7 +691,7 @@ whileDebugAttemptEquation termLike equation =
 {- | Log when an 'Equation' is actually applied.
  -}
 data DebugApplyEquation
-    = DebugApplyEquation (Equation Variable) (Pattern Variable)
+    = DebugApplyEquation (Equation VariableName) (Pattern VariableName)
     -- ^ Entered into the log when an equation's result is actually used.
     deriving (Show)
     deriving (GHC.Generic)
@@ -717,7 +707,7 @@ instance Pretty DebugApplyEquation where
         , Pretty.indent 4 (unparse result)
         ]
 
-srcLoc :: Equation Variable -> Maybe Attribute.SourceLocation
+srcLoc :: Equation VariableName -> Maybe Attribute.SourceLocation
 srcLoc equation
   | (not . isLocEmpty) kLoc = Just kLoc
   | AstLocationFile fileLocation <- locationFromAst equation =

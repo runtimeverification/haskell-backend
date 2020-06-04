@@ -20,10 +20,8 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 {-|'Mu' corresponds to the @μ@ syntactic category from the
@@ -53,8 +51,7 @@ instance
     => Diff (Mu variable child)
 
 instance
-    (SortedVariable variable, Unparse variable, Unparse child) =>
-    Unparse (Mu variable child)
+    (Unparse variable, Unparse child) => Unparse (Mu variable child)
   where
     unparse Mu { muVariable, muChild } =
         "\\mu"
@@ -64,7 +61,7 @@ instance
     unparse2 Mu { muVariable, muChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\mu"
-            , unparse2SortedVariable (getSetVariable muVariable)
+            , unparse2SortedVariable muVariable
             , unparse2 muChild
             ])
 
@@ -73,13 +70,13 @@ instance
     Synthetic (FreeVariables variable) (Mu variable)
   where
     synthetic Mu { muVariable, muChild } =
-        bindVariable (SetVar muVariable) muChild
+        bindVariable (inject muVariable) muChild
     {-# INLINE synthetic #-}
 
-instance SortedVariable variable => Synthetic Sort (Mu variable) where
+instance Synthetic Sort (Mu variable) where
     synthetic Mu { muVariable, muChild } =
         muSort
         & seq (matchSort muSort muChild)
       where
-        muSort = sortedVariableSort (getSetVariable muVariable)
+        Variable { variableSort = muSort } = muVariable
     {-# INLINE synthetic #-}

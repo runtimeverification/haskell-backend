@@ -217,14 +217,16 @@ test_debugPrec =
 test_Debug :: [TestTree]
 test_Debug =
     [ Variable
-        { variableName = testId "v"
-        , variableCounter = mempty
+        { variableName = VariableName { base = testId "v", counter = mempty }
         , variableSort = SortVariableSort (SortVariable (testId "sv"))
         }
         `yields`
         "Variable\n\
-        \{ variableName = Id { getId = \"v\", idLocation = AstLocationTest }\n\
-        \, variableCounter = Nothing\n\
+        \{ variableName =\n\
+        \    VariableName\n\
+        \    { base = Id { getId = \"v\", idLocation = AstLocationTest }\n\
+        \    , counter = Nothing\n\
+        \    }\n\
         \, variableSort =\n\
         \    SortVariableSort\n\
         \        SortVariable\n\
@@ -242,6 +244,12 @@ test_Debug =
         $ "Maybe - Nothing"
     ]
   where
+    yields
+        :: (HasCallStack, Debug a)
+        => a
+        -> String
+        -> TestName
+        -> TestTree
     yields input = Terse.equals (show $ debug input)
 
 test_diff :: [TestTree]

@@ -64,9 +64,12 @@ import Kore.Internal.TermLike
     , pattern Equals_
     , Exists (Exists)
     , InternalVariable
+    , SomeVariableName
     , Sort
     , TermLike
+    , Variable (..)
     , mkExists
+    , retractElementVariable
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -92,10 +95,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    , extractElementVariable
-    )
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -228,7 +227,7 @@ makeEvaluate sideCondition variables original = do
 
     substVariables =
         mapMaybe
-            extractElementVariable
+            retractElementVariable
             $ Foldable.toList
             $ Substitution.variables
                 (Conditional.substitution original)
@@ -246,7 +245,7 @@ matchesToVariableSubstitution
   | Equals_ _sort1 _sort2 first second <-
         Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
-  , not (TermLike.hasFreeVariable (ElemVar variable) term)
+  , not (TermLike.hasFreeVariable (inject $ variableName variable) term)
   = do
     matchResult <- matchIncremental first second
     case matchResult of
@@ -259,7 +258,7 @@ matchesToVariableSubstitution _ _ = return False
 singleVariableSubstitution
     :: InternalVariable variable
     => ElementVariable variable
-    -> Map.Map (UnifiedVariable variable) (TermLike variable)
+    -> Map.Map (SomeVariableName variable) (TermLike variable)
     -> Bool
 singleVariableSubstitution
     variable
@@ -271,11 +270,13 @@ singleVariableSubstitution
         , "substitutions, then the equality should have already been resolved."
         ]
   | Map.size substitution == 1
-  = case Map.lookup (ElemVar variable) substitution of
+  = case Map.lookup someVariableName substitution of
         Nothing -> False
         Just substTerm ->
-            TermLike.withoutFreeVariable (ElemVar variable) substTerm True
+            TermLike.withoutFreeVariable someVariableName substTerm True
   | otherwise = False
+  where
+    someVariableName = inject (variableName variable)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -297,9 +298,9 @@ makeEvaluateBoundLeft
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundLeft sideCondition variable boundTerm normalized
-  = withoutFreeVariable (ElemVar variable) boundTerm $ do
+  = withoutFreeVariable someVariableName boundTerm $ do
         let
-            boundSubstitution = Map.singleton (ElemVar variable) boundTerm
+            boundSubstitution = Map.singleton someVariableName boundTerm
             substituted =
                 normalized
                     { Conditional.term =
@@ -312,6 +313,9 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
         orPattern <-
             lift $ Pattern.simplify sideCondition substituted
         Branch.scatter (MultiOr.extractPatterns orPattern)
+  where
+    someVariableName = inject (variableName variable)
+
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -373,18 +377,18 @@ splitSubstitution variable substitution =
   where
     orderRenamedSubstitution =
         Substitution.orderRenameAndRenormalizeTODO
-            (ElemVar variable)
+            someVariable
             substitution
     (dependent, independent) =
-        Substitution.partition
-            hasVariable
-            orderRenamedSubstitution
+        Substitution.partition hasVariable orderRenamedSubstitution
     hasVariable variable' term =
-        ElemVar variable == variable'
-        || TermLike.hasFreeVariable (ElemVar variable) term
+        someVariable == variable'
+        || TermLike.hasFreeVariable someVariableName term
     bound =
         maybe (Right dependent) Left
-        $ Map.lookup (ElemVar variable) (Substitution.toMap dependent)
+        $ Map.lookup someVariableName (Substitution.toMap dependent)
+    someVariable = inject variable
+    someVariableName = variableName someVariable
 
 {- | Existentially quantify the variable in a 'Pattern'.
 
@@ -415,9 +419,10 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     $ Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
-    quantifyTerm = TermLike.hasFreeVariable (ElemVar variable) term
+    someVariableName = inject (variableName variable)
+    quantifyTerm = TermLike.hasFreeVariable someVariableName term
     predicate' =
         Predicate.makeAndPredicate predicate
         $ Substitution.toPredicate substitution
     quantifyPredicate =
-        Predicate.hasFreeVariable (ElemVar variable) predicate'
+        Predicate.hasFreeVariable someVariableName predicate'

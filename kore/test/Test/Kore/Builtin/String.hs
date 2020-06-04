@@ -366,18 +366,18 @@ test_string2Token =
     ]
 
 -- | Specialize 'String.asInternal' to the builtin sort 'stringSort'.
-asInternal :: Text -> TermLike Variable
+asInternal :: Text -> TermLike VariableName
 asInternal = String.asInternal stringSort
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: Text -> Pattern Variable
+asPattern :: Text -> Pattern VariableName
 asPattern = String.asPattern stringSort
 
 testString
     :: HasCallStack
     => String
     -> Symbol
-    -> [TermLike Variable]
-    -> Pattern Variable
+    -> [TermLike VariableName]
+    -> Pattern VariableName
     -> TestTree
 testString name = testSymbolWithSolver evaluate name

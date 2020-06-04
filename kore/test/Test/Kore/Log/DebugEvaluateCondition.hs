@@ -28,6 +28,6 @@ test_instance_Table_DebugEvaluateCondition =
         sideConditions <- inits predicates
         [DebugEvaluateCondition (predicate :| sideConditions)]
 
-predicate1, predicate2 :: Predicate Variable
+predicate1, predicate2 :: Predicate VariableName
 predicate1 = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
 predicate2 = makeEqualsPredicate_ (Mock.g Mock.a) (Mock.h Mock.c)

@@ -88,7 +88,6 @@ import Kore.Unparser
 import Kore.Variables.Free
     ( freePureVariables
     )
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
@@ -174,7 +173,7 @@ data SentenceAlias (patternType :: *) =
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
         , sentenceAliasLeftPattern
-            :: !(Application SymbolOrAlias (UnifiedVariable Variable))
+            :: !(Application SymbolOrAlias (SomeVariable VariableName))
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }

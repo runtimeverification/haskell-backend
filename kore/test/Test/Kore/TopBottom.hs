@@ -17,7 +17,7 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
-    , Variable
+    , VariableName
     )
 import qualified Kore.Internal.TermLike as AST
 import qualified Kore.TopBottom as TopBottom
@@ -37,13 +37,13 @@ test_TermLike =
     , Tasty.testGroup "mkApp"    $ testIsNeither Mock.a
     ]
   where
-    isTop :: TermLike Variable -> Bool
+    isTop :: TermLike VariableName -> Bool
     isTop = TopBottom.isTop
 
-    isBottom :: TermLike Variable -> Bool
+    isBottom :: TermLike VariableName -> Bool
     isBottom = TopBottom.isBottom
 
-    testIsTop :: TermLike Variable -> [Tasty.TestTree]
+    testIsTop :: TermLike VariableName -> [Tasty.TestTree]
     testIsTop termLike =
         [ satisfies isTop            "satisfies isTop"
         , satisfies (not . isBottom) "satisfies (not . isBottom)"
@@ -51,7 +51,7 @@ test_TermLike =
       where
         satisfies = Terse.satisfies termLike
 
-    testIsBottom :: TermLike Variable -> [Tasty.TestTree]
+    testIsBottom :: TermLike VariableName -> [Tasty.TestTree]
     testIsBottom termLike =
         [ satisfies isBottom         "satisfies isBottom"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
@@ -59,7 +59,7 @@ test_TermLike =
       where
         satisfies = Terse.satisfies termLike
 
-    testIsNeither :: TermLike Variable -> [Tasty.TestTree]
+    testIsNeither :: TermLike VariableName -> [Tasty.TestTree]
     testIsNeither termLike =
         [ satisfies (not . isBottom) "satisfies (not . isBottom)"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
@@ -89,10 +89,10 @@ test_Predicate =
     , Tasty.testGroup "\\implies(\\equals(x, a), \\equals(x, b))" $ testIsNeither implies
     ]
   where
-    isTop :: Predicate Variable -> Bool
+    isTop :: Predicate VariableName -> Bool
     isTop = TopBottom.isTop
 
-    isBottom :: Predicate Variable -> Bool
+    isBottom :: Predicate VariableName -> Bool
     isBottom = TopBottom.isBottom
 
     top     = Predicate.makeTruePredicate_
@@ -110,7 +110,7 @@ test_Predicate =
     iff     = Predicate.makeIffPredicate     equalsA equalsB
     implies = Predicate.makeImpliesPredicate equalsA equalsB
 
-    testIsTop :: Predicate Variable -> [Tasty.TestTree]
+    testIsTop :: Predicate VariableName -> [Tasty.TestTree]
     testIsTop predicate =
         [ satisfies isTop            "satisfies isTop"
         , satisfies (not . isBottom) "satisfies (not . isBottom)"
@@ -118,7 +118,7 @@ test_Predicate =
       where
         satisfies = Terse.satisfies predicate
 
-    testIsBottom :: Predicate Variable -> [Tasty.TestTree]
+    testIsBottom :: Predicate VariableName -> [Tasty.TestTree]
     testIsBottom predicate =
         [ satisfies isBottom         "satisfies isBottom"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"
@@ -126,7 +126,7 @@ test_Predicate =
       where
         satisfies = Terse.satisfies predicate
 
-    testIsNeither :: Predicate Variable -> [Tasty.TestTree]
+    testIsNeither :: Predicate VariableName -> [Tasty.TestTree]
     testIsNeither predicate =
         [ satisfies (not . isBottom) "satisfies (not . isBottom)"
         , satisfies (not . isTop   ) "satisfies (not . isTop)"

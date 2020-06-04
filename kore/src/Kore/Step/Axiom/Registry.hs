@@ -60,7 +60,7 @@ mkEvaluator PartitionedEquations { functionRules, simplificationRules } =
             else Just $ definitionEvaluation functionRules
 
 mkEvaluatorRegistry
-    :: Map AxiomIdentifier [Equation Variable]
+    :: Map AxiomIdentifier [Equation VariableName]
     -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
 mkEvaluatorRegistry =
     mapMaybe (mkEvaluator . partitionEquations)

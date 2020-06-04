@@ -25,9 +25,6 @@ import qualified Kore.Step.Simplification.Forall as Forall
     ( makeEvaluate
     , simplify
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
@@ -89,14 +86,14 @@ test_forallSimplification =
                 Pattern.top
                 (makeEvaluate
                     Mock.x
-                    (Pattern.top :: Pattern Variable)
+                    (Pattern.top :: Pattern VariableName)
                 )
             -- forall(bottom) = bottom
             assertEqual "forall(bottom)"
                 Pattern.bottom
                 (makeEvaluate
                     Mock.x
-                    (Pattern.bottom :: Pattern Variable)
+                    (Pattern.bottom :: Pattern VariableName)
                 )
         )
     , testCase "forall applies substitution if possible"
@@ -126,7 +123,7 @@ test_forallSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
+                            [(inject Mock.x, gOfA), (inject Mock.y, fOfA)]
                     }
             )
         )
@@ -205,7 +202,7 @@ test_forallSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, fOfA)]
+                        [(inject Mock.y, fOfA)]
                     }
             )
         )
@@ -230,7 +227,7 @@ test_forallSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, fOfA)]
+                        [(inject Mock.y, fOfA)]
                     }
             )
         )
@@ -255,7 +252,7 @@ test_forallSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, hOfA)]
+                        [(inject Mock.y, hOfA)]
                     }
             )
         )
@@ -310,8 +307,13 @@ makeForall variable patterns =
 testSort :: Sort
 testSort = Mock.testSort
 
-evaluate :: Forall Sort Variable (OrPattern Variable) -> OrPattern Variable
+evaluate
+    :: Forall Sort VariableName (OrPattern VariableName)
+    -> OrPattern VariableName
 evaluate = Forall.simplify
 
-makeEvaluate :: ElementVariable Variable -> Pattern Variable -> Pattern Variable
+makeEvaluate
+    :: ElementVariable VariableName
+    -> Pattern VariableName
+    -> Pattern VariableName
 makeEvaluate = Forall.makeEvaluate

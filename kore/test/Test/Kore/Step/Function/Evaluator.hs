@@ -27,7 +27,7 @@ import Kore.Internal.TermLike
     ( Application
     , Symbol
     , TermLike
-    , Variable
+    , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as Kore
@@ -54,8 +54,8 @@ test_evaluateApplication =
     evaluates
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike Variable)
-        -> TermLike Variable
+        -> Application Symbol (TermLike VariableName)
+        -> TermLike VariableName
         -> TestTree
     evaluates name origin expect =
         makeTest
@@ -65,8 +65,8 @@ test_evaluateApplication =
     notEvaluates
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike Variable)
-        -> (TermLike Variable -> TermLike Variable)
+        -> Application Symbol (TermLike VariableName)
+        -> (TermLike VariableName -> TermLike VariableName)
         -> TestTree
     notEvaluates name origin mkExpect =
         makeTest
@@ -77,8 +77,8 @@ test_evaluateApplication =
     makeTest
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike Variable)
-        -> OrPattern Variable
+        -> Application Symbol (TermLike VariableName)
+        -> OrPattern VariableName
         -> TestTree
     makeTest name origin expect =
         testCase name $ do
@@ -93,7 +93,7 @@ f, g :: child -> Application Symbol child
 f x = Application fSymbol [x]
 g x = Application gSymbol [x]
 
-mkApplySymbol :: Application Symbol (TermLike Variable) -> TermLike Variable
+mkApplySymbol :: Application Symbol (TermLike VariableName) -> TermLike VariableName
 mkApplySymbol = synthesize . TermLike.ApplySymbolF
 
 fEvaluator :: Kore.BuiltinAndAxiomSimplifier
@@ -107,9 +107,9 @@ fEvaluator =
     x = TermLike.mkElemVar Mock.x
 
 evaluateApplication
-    :: Condition Variable
-    -> Application Symbol (TermLike Variable)
-    -> IO (OrPattern Variable)
+    :: Condition VariableName
+    -> Application Symbol (TermLike VariableName)
+    -> IO (OrPattern VariableName)
 evaluateApplication predicate =
     Test.runSimplifier env
     . Kore.evaluateApplication SideCondition.top predicate

@@ -1,5 +1,8 @@
 module Test.Kore.Internal.Predicate
     ( test_predicate
+    -- * Re-exports
+    , TestPredicate
+    , module Predicate
     ) where
 
 import Prelude.Kore
@@ -25,15 +28,14 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+type TestPredicate = Predicate VariableName
 
 test_predicate :: [TestTree]
 test_predicate =
@@ -54,9 +56,9 @@ test_predicate =
         )
     , let
         makeOr
-            :: Predicate Variable
-            -> Predicate Variable
-            -> Predicate Variable
+            :: Predicate VariableName
+            -> Predicate VariableName
+            -> Predicate VariableName
         makeOr c1 c2 = makeOrPredicate c1 c2
       in
         testCase "Or truth table"
@@ -76,9 +78,9 @@ test_predicate =
             )
     , let
         makeImplies
-            :: Predicate Variable
-            -> Predicate Variable
-            -> Predicate Variable
+            :: Predicate VariableName
+            -> Predicate VariableName
+            -> Predicate VariableName
         makeImplies c1 c2 = makeImpliesPredicate c1 c2
       in
         testCase "Implies truth table"
@@ -98,9 +100,9 @@ test_predicate =
             )
     , let
         makeIff
-            :: Predicate Variable
-            -> Predicate Variable
-            -> Predicate Variable
+            :: Predicate VariableName
+            -> Predicate VariableName
+            -> Predicate VariableName
         makeIff c1 c2 = makeIffPredicate c1 c2
       in
         testCase "Iff truth table"
@@ -119,7 +121,7 @@ test_predicate =
                     (makeIff makeTruePredicate_ makeTruePredicate_)
             )
     , let
-        makeNot :: Predicate Variable -> Predicate Variable
+        makeNot :: Predicate VariableName -> Predicate VariableName
         makeNot p = makeNotPredicate p
       in
         testCase "Not truth table"
@@ -139,9 +141,9 @@ test_predicate =
                     (\_ ->
                         fmap
                             (const "a")
-                            (makeTruePredicate_ :: Predicate Variable)
+                            (makeTruePredicate_ :: Predicate VariableName)
                     )
-                    (makeFalsePredicate_ :: Predicate Variable)
+                    (makeFalsePredicate_ :: Predicate VariableName)
             )
         )
     ,  testCase "Wrapping and predicates without full simplification"
@@ -246,12 +248,12 @@ test_predicate =
     , testCase "isFalsePredicate True"
         (assertEqual ""
             True
-            (Predicate.isFalse (makeFalsePredicate_::Predicate Variable))
+            (Predicate.isFalse (makeFalsePredicate_::Predicate VariableName))
         )
     , testCase "isFalsePredicate False"
         (assertEqual ""
             False
-            (Predicate.isFalse (makeTruePredicate_::Predicate Variable))
+            (Predicate.isFalse (makeTruePredicate_::Predicate VariableName))
         )
     , testCase "isFalsePredicate False for generic predicate"
         (assertEqual ""
@@ -287,25 +289,27 @@ test_predicate =
     , testCase "freeVariables"
         ( do
             assertBool "top has no free variables"
-                $ FreeVariables.nullFreeVariables @Variable
-                $ freeVariables (makeTruePredicate_ :: Predicate Variable)
+                $ FreeVariables.nullFreeVariables @VariableName
+                $ freeVariables (makeTruePredicate_ :: Predicate VariableName)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
-                    [ ElemVar $ a Mock.testSort
-                    , ElemVar $ b Mock.testSort
+                    [ inject @(SomeVariable VariableName) $ a Mock.testSort
+                    , inject $ b Mock.testSort
                     ]
                 )
                 (freeVariables pr1 & FreeVariables.toSet)
             assertBool "quantified variables are not included"
-                $ not . FreeVariables.isFreeVariable (ElemVar $ a Mock.testSort)
-                $ freeVariables
+                $ not
+                $ FreeVariables.isFreeVariable
+                    (inject . variableName $ a Mock.testSort)
+                $ freeVariables @_ @VariableName
                 $ makeExistsPredicate (a Mock.testSort)
                 $ makeEqualsPredicate_
                     (mkElemVar $ a Mock.testSort)
                     (mkElemVar $ b Mock.testSort)
         )
     , let
-        makeExists :: Predicate Variable -> Predicate Variable
+        makeExists :: Predicate VariableName -> Predicate VariableName
         makeExists p = makeExistsPredicate (a Mock.testSort) p
       in
         testCase "Exists truth table"
@@ -318,7 +322,7 @@ test_predicate =
                     (makeExists makeFalsePredicate_)
             )
     , let
-        makeForall :: Predicate Variable -> Predicate Variable
+        makeForall :: Predicate VariableName -> Predicate VariableName
         makeForall p = makeForallPredicate (a Mock.testSort) p
       in
         testCase "Forall truth table"
@@ -386,8 +390,8 @@ data Simplified = IsSimplified | NotSimplified
 
 makesPredicate
     :: HasCallStack
-    => (TermLike Variable, Simplified)
-    -> (Predicate Variable, Simplified)
+    => (TermLike VariableName, Simplified)
+    -> (Predicate VariableName, Simplified)
     -> IO ()
 makesPredicate
     (term, termSimplification)
@@ -405,61 +409,62 @@ makesPredicate
     toBool IsSimplified = True
     toBool NotSimplified = False
 
-makePredicateYieldsWrapPredicate :: String -> TermLike Variable -> IO ()
+makePredicateYieldsWrapPredicate :: String -> TermLike VariableName -> IO ()
 makePredicateYieldsWrapPredicate msg p = do
     p' <- expectRight (makePredicate p)
     assertEqual msg (wrapPredicate p) p'
 
-pr1 :: Predicate Variable
+pr1 :: Predicate VariableName
 pr1 =
     makeEqualsPredicate_
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
-pr2 :: Predicate Variable
+pr2 :: Predicate VariableName
 pr2 =
     makeEqualsPredicate_
         (mkElemVar $ c Mock.testSort)
         (mkElemVar $ d Mock.testSort)
 
-pa1 :: TermLike Variable
+pa1 :: TermLike VariableName
 pa1 =
     mkEquals_
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
-pa2 :: TermLike Variable
+pa2 :: TermLike VariableName
 pa2 =
     mkEquals_
         (mkElemVar $ c Mock.testSort)
         (mkElemVar $ d Mock.testSort)
 
-ceilA :: TermLike Variable
+ceilA :: TermLike VariableName
 ceilA =
     mkCeil_
         (mkElemVar $ a Mock.testSort)
 
-inA :: TermLike Variable
+inA :: TermLike VariableName
 inA =
     mkIn_
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
-floorA :: TermLike Variable
+floorA :: TermLike VariableName
 floorA = mkFloor_ (mkElemVar $ a Mock.testSort)
 
 makeAnd
-    :: Predicate Variable
-    -> Predicate Variable
-    -> Predicate Variable
+    :: Predicate VariableName
+    -> Predicate VariableName
+    -> Predicate VariableName
 makeAnd p1 p2 = makeAndPredicate p1 p2
 
-a, b, c, d :: Sort -> ElementVariable Variable
-a = ElementVariable . Variable (testId "a") mempty
-b = ElementVariable . Variable (testId "b") mempty
-c = ElementVariable . Variable (testId "c") mempty
-d = ElementVariable . Variable (testId "d") mempty
+a, b, c, d :: Sort -> ElementVariable VariableName
+a = mkElementVariable (testId "a")
+b = mkElementVariable (testId "b")
+c = mkElementVariable (testId "c")
+d = mkElementVariable (testId "d")
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)
+    SideCondition.toRepresentation
+    (SideCondition.top :: SideCondition VariableName)

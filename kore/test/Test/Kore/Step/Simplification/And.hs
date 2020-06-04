@@ -34,9 +34,6 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.And
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore.Step.MockSymbols
     ( testSort
@@ -140,7 +137,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.y, fOfX), (ElemVar Mock.z, gOfX)]
+                            [(inject Mock.y, fOfX), (inject Mock.z, gOfX)]
                         }
             actual <-
                 evaluatePatterns
@@ -150,7 +147,7 @@ test_andSimplification =
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.y, fOfX)]
+                            [(inject Mock.y, fOfX)]
                         }
                     Conditional
                         { term = mkTop_
@@ -158,7 +155,7 @@ test_andSimplification =
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar Mock.z, gOfX)]
+                            [(inject Mock.z, gOfX)]
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
@@ -190,7 +187,7 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate = makeEqualsPredicate_ fOfX gOfX
                         , substitution =
-                            Substitution.unsafeWrap [(ElemVar Mock.y, fOfX)]
+                            Substitution.unsafeWrap [(inject Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns
                 Conditional
@@ -199,7 +196,7 @@ test_andSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, fOfX)]
+                        [(inject Mock.y, fOfX)]
                     }
                 Conditional
                     { term = mkTop_
@@ -207,7 +204,7 @@ test_andSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, gOfX)]
+                        [(inject Mock.y, gOfX)]
                     }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
@@ -219,7 +216,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [   ( ElemVar Mock.y
+                            [   ( inject Mock.y
                                 , Mock.functionalConstr10 (mkElemVar Mock.x)
                                 )
                             ]
@@ -229,7 +226,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate_
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [   ( ElemVar Mock.y
+                            [   ( inject Mock.y
                                 , Mock.functionalConstr11 (mkElemVar Mock.x)
                                 )
                             ]
@@ -276,7 +273,7 @@ test_andSimplification =
                         { term = fOfX
                         , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.y, fOfX)]
+                            [(inject Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
             assertEqual "" (MultiOr [expect]) actual
@@ -287,7 +284,7 @@ test_andSimplification =
                         { term = fOfX
                         , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.y, fOfX)]
+                            [(inject Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
             assertEqual "" (MultiOr [expect]) actual
@@ -607,9 +604,9 @@ test_andSimplification =
         }
 
 makeAnd
-    :: [Pattern Variable]
-    -> [Pattern Variable]
-    -> And Sort (OrPattern Variable)
+    :: [Pattern VariableName]
+    -> [Pattern VariableName]
+    -> And Sort (OrPattern VariableName)
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
@@ -617,18 +614,18 @@ makeAnd first second =
         , andSecond = OrPattern.fromPatterns second
         }
 
-findSort :: [Pattern Variable] -> Sort
+findSort :: [Pattern VariableName] -> Sort
 findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
-evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
+evaluate :: And Sort (OrPattern VariableName) -> IO (OrPattern VariableName)
 evaluate =
     runSimplifier Mock.env . simplify Not.notSimplifier SideCondition.top
 
 evaluatePatterns
-    :: Pattern Variable
-    -> Pattern Variable
-    -> IO (OrPattern Variable)
+    :: Pattern VariableName
+    -> Pattern VariableName
+    -> IO (OrPattern VariableName)
 evaluatePatterns first second =
     fmap OrPattern.fromPatterns
     $ runSimplifierBranch Mock.env

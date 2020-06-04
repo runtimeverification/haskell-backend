@@ -37,9 +37,6 @@ import Kore.Step.Simplification.Floor
     ( makeEvaluateFloor
     , simplify
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore
     ( testId
@@ -111,7 +108,7 @@ test_floorSimplification =
                     [ Pattern.top ]
                 )
                 (makeEvaluate
-                    (Pattern.top :: Pattern Variable)
+                    (Pattern.top :: Pattern VariableName)
                 )
             -- floor(bottom) = bottom
             assertEqual "floor(bottom)"
@@ -119,7 +116,7 @@ test_floorSimplification =
                     []
                 )
                 (makeEvaluate
-                    (Pattern.bottom :: Pattern Variable)
+                    (Pattern.bottom :: Pattern VariableName)
                 )
         )
     , testCase "floor with predicates and substitutions"
@@ -136,7 +133,7 @@ test_floorSimplification =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar x, fOfB)]
+                        [(inject x, fOfB)]
                     }
                 ]
             )
@@ -147,7 +144,7 @@ test_floorSimplification =
                     , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(ElemVar x, fOfB)]
+                            [(inject x, fOfB)]
                     }
             )
         )
@@ -165,10 +162,10 @@ test_floorSimplification =
     bSymbol = symbol "b" [] testSort
     fSymbol = symbol "f" [testSort] testSort
     gSymbol = symbol "g" [testSort] testSort
-    x = ElementVariable $ Variable (testId "x") mempty testSort
-    a :: TermLike Variable
+    x = mkElementVariable (testId "x") testSort
+    a :: TermLike VariableName
     a = mkApplySymbol aSymbol []
-    b :: TermLike Variable
+    b :: TermLike VariableName
     b = mkApplySymbol bSymbol []
     fOfA = mkApplySymbol fSymbol [a]
     fOfB = mkApplySymbol fSymbol [b]
@@ -195,8 +192,8 @@ makeFloor patterns =
         , floorChild       = OrPattern.fromPatterns patterns
         }
 
-evaluate :: Floor Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: Floor Sort (OrPattern VariableName) -> OrPattern VariableName
 evaluate = simplify . fmap simplifiedOrPattern
 
-makeEvaluate :: Pattern Variable -> OrPattern Variable
+makeEvaluate :: Pattern VariableName -> OrPattern VariableName
 makeEvaluate = makeEvaluateFloor . simplifiedPattern

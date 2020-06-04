@@ -7,46 +7,44 @@ module Kore.AST.ApplicativeKore
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
+
 import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition
     ( Definition (..)
     , Module (..)
     , Sentence (..)
-    , SentenceAxiom (..)
     )
 import qualified Kore.Verified as Verified
 
 completeDefinition
     :: Definition Verified.Sentence
     -> Definition Verified.Sentence
-completeDefinition Definition { definitionAttributes, definitionModules } =
-    Definition
-    { definitionAttributes
-    , definitionModules = map completeModule definitionModules
-    }
+completeDefinition = Lens.over (field @"definitionModules") (map completeModule)
 
 completeModule :: Module Verified.Sentence -> Module Verified.Sentence
-completeModule Module { moduleName, moduleSentences, moduleAttributes } =
-    Module
-    { moduleName
-    , moduleSentences = concatMap completeSentence moduleSentences
-    , moduleAttributes
-    }
+completeModule =
+    Lens.over (field @"moduleSentences") (concatMap completeSentence)
 
 completeSentence :: Verified.Sentence -> [Verified.Sentence]
 completeSentence (SentenceAxiomSentence sentenceAxiom) =
-    [ SentenceAxiomSentence sentenceAxiom
-        { sentenceAxiomPattern = quantifiedAxiomPattern }
+    [ sentenceAxiom
+        & Lens.over (field @"sentenceAxiomPattern") quantifyFreeVariables
+        & SentenceAxiomSentence
     ]
- where
-   quantifiedAxiomPattern =
-       quantifyFreeVariables (sentenceAxiomPattern sentenceAxiom)
 completeSentence s = [s]
 
-quantifyFreeVariables :: TermLike Variable -> TermLike Variable
+quantifyFreeVariables :: TermLike VariableName -> TermLike VariableName
 quantifyFreeVariables termLike =
     foldr mkForall termLike
-    . getFreeElementVariables
-    . freeVariables
+    . mapMaybe (retract @_ @(ElementVariable _))
+    . FreeVariables.toList
+    . freeVariables @_ @VariableName
     $ termLike

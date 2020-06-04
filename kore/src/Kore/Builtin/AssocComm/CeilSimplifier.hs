@@ -61,10 +61,11 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( Ceil (..)
     , Concrete
-    , ElementVariable (..)
+    , ElementVariable
     , InternalVariable
     , TermLike
-    , Variable (..)
+    , fromVariableName
+    , generatedId
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -75,7 +76,7 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
-import Kore.Variables.UnifiedVariable
+import Kore.Variables.Fresh
     ( refreshElementVariable
     )
 
@@ -174,13 +175,10 @@ generalizeMapElement freeVariables' element =
     element' = Domain.wrapElement (key, MapValue $ TermLike.mkElemVar variable)
     avoiding =
         TermLike.freeVariables key <> freeVariables'
-        & FreeVariables.toSet
+        & FreeVariables.toNames
     x =
-        (ElementVariable . from @Variable @variable) Variable
-            { variableName = "x"
-            , variableCounter = mempty
-            , variableSort = termLikeSort value
-            }
+        TermLike.mkElementVariable (generatedId "x") (termLikeSort value)
+        & (fmap . fmap) (fromVariableName @variable)
     variable = refreshElementVariable avoiding x & fromMaybe x
 
 newBuiltinAssocCommCeilSimplifier

@@ -94,9 +94,6 @@ import Kore.Unification.Error
     )
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Log
 import Pair
 import qualified Pretty
@@ -452,7 +449,7 @@ variableFunctionAndEquals
     (ElemVar_ v1)
     second@(ElemVar_ _)
   =
-      return $ Pattern.assign (ElemVar v1) second
+      return $ Pattern.assign (inject v1) second
 variableFunctionAndEquals
     sideCondition
     simplificationType
@@ -480,7 +477,7 @@ variableFunctionAndEquals
     let result =
             predicate
             <> Condition.fromSingleSubstitution
-                (Substitution.assign (ElemVar v) second)
+                (Substitution.assign (inject v) second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ = empty
 

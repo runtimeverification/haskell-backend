@@ -23,9 +23,6 @@ import Kore.Syntax.Definition
 import Kore.Syntax.PatternF
     ( PatternF (..)
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.
@@ -56,24 +53,28 @@ instance AstWithLocation Sort where
     locationFromAst (SortActualSort sortActual) =
         locationFromAst sortActual
 
-instance AstWithLocation Variable where
-    locationFromAst Variable { variableName } = locationFromAst variableName
+instance AstWithLocation VariableName where
+    locationFromAst = locationFromAst . base
 
 instance
-    AstWithLocation variable => AstWithLocation (ElementVariable variable)
+    AstWithLocation variable => AstWithLocation (ElementVariableName variable)
   where
-    locationFromAst = locationFromAst . getElementVariable
+    locationFromAst = locationFromAst . unElementVariableName
 
 instance
-    AstWithLocation variable => AstWithLocation (SetVariable variable)
+    AstWithLocation variable => AstWithLocation (SetVariableName variable)
   where
-    locationFromAst = locationFromAst . getSetVariable
+    locationFromAst = locationFromAst . unSetVariableName
 
 instance
-    AstWithLocation variable => AstWithLocation (UnifiedVariable variable)
+    AstWithLocation variable => AstWithLocation (SomeVariableName variable)
   where
-    locationFromAst (ElemVar v) = locationFromAst v
-    locationFromAst (SetVar v) = locationFromAst v
+    locationFromAst = foldSomeVariableName (pure locationFromAst)
+
+instance
+    AstWithLocation variable => AstWithLocation (Variable variable)
+  where
+    locationFromAst = locationFromAst . variableName
 
 instance AstWithLocation Alias where
     locationFromAst = locationFromAst . aliasConstructor
@@ -107,12 +108,10 @@ instance
                 locationFromAst impliesSort
             InF In { inResultSort } ->
                 locationFromAst inResultSort
-            MuF Mu { muVariable = SetVariable variable } ->
-                locationFromAst variable
+            MuF Mu { muVariable } -> locationFromAst muVariable
             NextF Next { nextSort } -> locationFromAst nextSort
             NotF Not { notSort } -> locationFromAst notSort
-            NuF Nu { nuVariable = SetVariable variable } ->
-                locationFromAst variable
+            NuF Nu { nuVariable } -> locationFromAst nuVariable
             OrF Or { orSort } -> locationFromAst orSort
             RewritesF Rewrites { rewritesSort } ->
                 locationFromAst rewritesSort

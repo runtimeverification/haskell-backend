@@ -77,7 +77,7 @@ test_simplifiesToSimplified =
     -- Discard exceptions that are normal for randomly generated patterns.
     exceptionHandler
         :: MonadThrow m
-        => TermLike Variable
+        => TermLike VariableName
         -> ErrorCall
         -> PropertyT m a
     exceptionHandler term err@(ErrorCallWithLocation message _location)
@@ -88,16 +88,19 @@ test_simplifiesToSimplified =
         traceM ("Error for input: " ++ unparseToString term)
         throwM err
 
-evaluateT :: MonadTrans t => Pattern Variable -> t SMT.SMT (OrPattern Variable)
+evaluateT
+    :: MonadTrans t
+    => Pattern VariableName
+    -> t SMT.SMT (OrPattern VariableName)
 evaluateT = lift . evaluate
 
-evaluate :: Pattern Variable -> SMT.SMT (OrPattern Variable)
+evaluate :: Pattern VariableName -> SMT.SMT (OrPattern VariableName)
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
-    -> Pattern Variable
-    -> SMT.SMT (OrPattern Variable)
+    -> Pattern VariableName
+    -> SMT.SMT (OrPattern VariableName)
 evaluateWithAxioms axioms =
     Simplification.runSimplifier env . Pattern.simplify SideCondition.top
   where
@@ -111,4 +114,5 @@ evaluateWithAxioms axioms =
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)
+    SideCondition.toRepresentation
+    (SideCondition.top :: SideCondition VariableName)
