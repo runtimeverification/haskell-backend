@@ -18,7 +18,6 @@ import Kore.Internal.TermLike
 import Kore.Syntax hiding
     ( PatternF (..)
     )
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore.Builtin.Builtin
     ( emptyNormalizedSet
@@ -44,10 +43,14 @@ test_instance_Synthetic =
     , testGroup "TopF" [ is $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF $ Const (ElemVar Mock.x) ]
-    , testGroup "MuF" $ map (isn't . MuF) (Mu (SetVariable Mock.x) <$> range)
-    , testGroup "NuF" $ map (isn't . NuF) (Nu (SetVariable Mock.x) <$> range)
-    , testGroup "SetVariableF" [ isn't $ VariableF $ Const (SetVar Mock.setX) ]
+    , testGroup "VariableF"
+        [ is $ VariableF $ Const (mkSomeVariable @VariableName Mock.x) ]
+    , testGroup "MuF"
+        $ map (isn't . MuF) (Mu (SetVariableName <$> Mock.x) <$> range)
+    , testGroup "NuF"
+        $ map (isn't . NuF) (Nu (SetVariableName <$> Mock.x) <$> range)
+    , testGroup "SetVariableF"
+        [ isn't $ VariableF $ Const (mkSomeVariable @VariableName Mock.setX) ]
     -- Interesting cases
     , testGroup "ApplySymbolF"
         [ testGroup "functional" $ do
@@ -135,7 +138,7 @@ test_instance_Synthetic =
     expect
         :: HasCallStack
         => Defined
-        -> TermLikeF Variable Defined
+        -> TermLikeF VariableName Defined
         -> TestTree
     expect x
       | isDefined x = is

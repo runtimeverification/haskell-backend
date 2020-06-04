@@ -103,7 +103,7 @@ normalizedMapResultToTerm BottomResult =
     mkBottom_
 
 normalizeInternalMap
-    :: NamedVariable variable
+    :: Ord variable
     => InternalMap (TermLike Concrete) (TermLike variable)
     -> NormalizedMapResult variable
 normalizeInternalMap map' =
@@ -128,7 +128,7 @@ simplifyInternalSet =
     . simplifyInternal normalizeInternalSet
 
 normalizeInternalSet
-    :: NamedVariable variable
+    :: Ord variable
     => InternalSet (TermLike Concrete) (TermLike variable)
     -> Maybe (InternalSet (TermLike Concrete) (TermLike variable))
 normalizeInternalSet =

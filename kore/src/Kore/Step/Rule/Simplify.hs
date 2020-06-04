@@ -63,7 +63,7 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Syntax.Variable
-    ( Variable
+    ( VariableName
     )
 
 -- | Simplifies the left-hand-side of a rule/claim
@@ -104,7 +104,7 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
                         $ makeAndPredicate predicate requires'
                     }
 
-instance SimplifyRuleLHS (RewriteRule Variable) where
+instance SimplifyRuleLHS (RewriteRule VariableName) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
 

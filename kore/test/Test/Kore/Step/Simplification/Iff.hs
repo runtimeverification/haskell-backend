@@ -28,9 +28,6 @@ import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
     , simplify
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -93,7 +90,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, Mock.a)]
+                        [(inject Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = mkTop_
@@ -101,7 +98,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, Mock.b)]
+                        [(inject Mock.y, Mock.b)]
                     }
             )
         )
@@ -137,7 +134,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.x, Mock.a)]
+                        [(inject Mock.x, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
@@ -145,7 +142,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(ElemVar Mock.y, Mock.b)]
+                        [(inject Mock.y, Mock.b)]
                     }
             )
         )
@@ -179,12 +176,12 @@ nameBool x
     | x = "⊤"
     | otherwise = "⊥"
 
-valueBool :: Bool -> Pattern Variable
+valueBool :: Bool -> Pattern VariableName
 valueBool x
     | x = Pattern.top
     | otherwise = Pattern.bottom
 
-termA :: Pattern Variable
+termA :: Pattern VariableName
 termA =
     Conditional
         { term = Mock.a
@@ -192,7 +189,7 @@ termA =
         , substitution = mempty
         }
 
-termNotA :: Pattern Variable
+termNotA :: Pattern VariableName
 termNotA = mkNot <$> termA
 
 makeIff
@@ -208,8 +205,8 @@ makeIff first second =
         }
 
 simplify
-    :: Iff Sort (OrPattern Variable)
-    -> IO (OrPattern Variable)
+    :: Iff Sort (OrPattern VariableName)
+    -> IO (OrPattern VariableName)
 simplify =
     runSimplifier mockEnv
     . Iff.simplify SideCondition.top
@@ -218,8 +215,8 @@ simplify =
     mockEnv = Mock.env
 
 makeEvaluate
-    :: Pattern Variable
-    -> Pattern Variable
-    -> OrPattern Variable
+    :: Pattern VariableName
+    -> Pattern VariableName
+    -> OrPattern VariableName
 makeEvaluate p1 p2 =
     Iff.makeEvaluate (simplifiedPattern p1) (simplifiedPattern p2)

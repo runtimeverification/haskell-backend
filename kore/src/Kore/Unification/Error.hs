@@ -36,8 +36,8 @@ import qualified Pretty
 -- unification
 data UnificationError = UnsupportedPatterns
     { message :: String
-    , first :: TermLike Variable
-    , second :: TermLike Variable
+    , first :: TermLike VariableName
+    , second :: TermLike VariableName
     }
     deriving (Eq, GHC.Generic, Show)
 

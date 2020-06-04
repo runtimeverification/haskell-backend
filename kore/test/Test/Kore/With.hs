@@ -36,7 +36,8 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Cons
     )
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Concrete
+    , TermLike
     )
 import qualified Kore.Sort as Kore
     ( Sort
@@ -101,9 +102,6 @@ import qualified Kore.Syntax.Sentence as SentenceSort
     )
 import qualified Kore.Syntax.Sentence as SentenceSymbol
     ( SentenceSymbol (..)
-    )
-import Kore.Syntax.Variable
-    ( Concrete
     )
 import qualified SMT.AST as AST
     ( Constructor (Constructor)

@@ -20,9 +20,6 @@ import Kore.Step.RulePattern
 import Kore.Step.Step
     ( refreshRule
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -30,26 +27,27 @@ test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
         let expect =
-                foldMap freeVariable
-                $ ElemVar <$> [Mock.x, Mock.z, Mock.t, Mock.u]
+                foldMap (freeVariable . mkSomeVariable)
+                [Mock.x, Mock.z, Mock.t, Mock.u]
             actual = freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
 test_refreshRulePattern :: TestTree
 test_refreshRulePattern =
     testCase "Rename target variables" $ do
-        let avoiding :: FreeVariables Variable
+        let avoiding :: FreeVariables VariableName
             avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
                 refreshRule avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
-            free' :: FreeVariables Variable
+            free' :: FreeVariables VariableName
             free' = freeVariables rulePattern'
-            notAvoided x = not (FreeVariables.isFreeVariable x avoiding)
+            notAvoided (variableName -> x) =
+                not (FreeVariables.isFreeVariable x avoiding)
         assertEqual
             "Expected to rename all free variables of original RulePattern"
-            (FreeVariables.toList avoiding)
-            (Map.keys renaming)
+            (FreeVariables.toNames avoiding)
+            (Map.keysSet renaming)
         assertBool
             "Expected to renamed variables distinct from original variables"
             (all notAvoided renamed)
@@ -57,7 +55,7 @@ test_refreshRulePattern =
             "Expected no free variables in common with original RulePattern"
             (all notAvoided (FreeVariables.toList free'))
 
-testRulePattern :: RulePattern Variable
+testRulePattern :: RulePattern VariableName
 testRulePattern =
     RulePattern
         { left =

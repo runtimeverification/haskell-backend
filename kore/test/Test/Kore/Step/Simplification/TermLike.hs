@@ -30,7 +30,7 @@ test_simplifyInternal =
       $ simplifyInternalEvaluated $ mkEvaluated $ Mock.f Mock.a
     ]
 
-simplifyInternalEvaluated :: TermLike Variable -> IO (OrPattern Variable)
+simplifyInternalEvaluated :: TermLike VariableName -> IO (OrPattern VariableName)
 simplifyInternalEvaluated original =
     runSimplifier env $ TermLike.simplifyInternal original SideCondition.top
   where

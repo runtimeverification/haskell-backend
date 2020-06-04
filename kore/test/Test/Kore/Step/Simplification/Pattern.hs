@@ -38,7 +38,7 @@ test_Pattern_simplify =
   where
     becomes
         :: HasCallStack
-        => Pattern Variable -> OrPattern Variable -> String -> TestTree
+        => Pattern VariableName -> OrPattern VariableName -> String -> TestTree
     becomes original expect name =
         testCase name $ do
             actual <- simplify original
@@ -64,7 +64,7 @@ test_Pattern_simplifyAndRemoveTopExists =
   where
     becomes
         :: HasCallStack
-        => Pattern Variable -> OrPattern Variable -> String -> TestTree
+        => Pattern VariableName -> OrPattern VariableName -> String -> TestTree
     becomes original expect name =
         testCase name $ do
             actual <- simplifyAndRemoveTopExists original
@@ -76,11 +76,11 @@ test_Pattern_simplifyAndRemoveTopExists =
     existentialuniversal =
         termLike (mkExists Mock.y (mkForall Mock.x unquantified))
 
-termLike :: TermLike Variable -> Pattern Variable
+termLike :: TermLike VariableName -> Pattern VariableName
 termLike = Pattern.fromTermLike
 
 -- | Term is \bottom, but not in a trivial way.
-notTop, orAs, bottomLike :: Pattern Variable
+notTop, orAs, bottomLike :: Pattern VariableName
 notTop = termLike (mkNot mkTop_)
 -- | Lifting disjunction to the top would duplicate terms.
 orAs = termLike (mkOr Mock.a Mock.a)
@@ -88,10 +88,10 @@ orAs = termLike (mkOr Mock.a Mock.a)
 bottomLike =
     (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate_ }
 
-simplify :: Pattern Variable -> IO (OrPattern Variable)
+simplify :: Pattern VariableName -> IO (OrPattern VariableName)
 simplify = runSimplifier Mock.env . Pattern.simplify SideCondition.top
 
-simplifyAndRemoveTopExists :: Pattern Variable -> IO (OrPattern Variable)
+simplifyAndRemoveTopExists :: Pattern VariableName -> IO (OrPattern VariableName)
 simplifyAndRemoveTopExists =
     runSimplifier Mock.env
     . Pattern.simplifyTopConfiguration

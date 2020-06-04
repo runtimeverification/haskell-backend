@@ -69,7 +69,7 @@ import Kore.Syntax.Id
     ( Id (..)
     )
 import Kore.Syntax.Variable
-    ( Variable
+    ( VariableName
     )
 import qualified Log
 import Numeric.Natural
@@ -85,18 +85,18 @@ data CheckResult patt
     -- ^ Result is unknown within the bound.
     deriving (Show)
 
-newtype Axiom = Axiom { unAxiom :: RewriteRule Variable }
+newtype Axiom = Axiom { unAxiom :: RewriteRule VariableName }
 
 bmcStrategy
     :: [Axiom]
     -> CommonModalPattern
-    -> [Strategy (Prim CommonModalPattern (RewriteRule Variable))]
+    -> [Strategy (Prim CommonModalPattern (RewriteRule VariableName))]
 bmcStrategy
     axioms
     goal
   =  repeat (defaultOneStepStrategy goal rewrites)
   where
-    rewrites :: [RewriteRule Variable]
+    rewrites :: [RewriteRule VariableName]
     rewrites = map unwrap axioms
       where
         unwrap (Axiom a) = a
@@ -106,15 +106,15 @@ checkClaim
     .  (MonadSimplify m, MonadThrow m)
     => Limit Natural
     ->  (  CommonModalPattern
-        -> [Strategy (Prim CommonModalPattern (RewriteRule Variable))]
+        -> [Strategy (Prim CommonModalPattern (RewriteRule VariableName))]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
     -> GraphSearchOrder
-    -> (ImplicationRule Variable, Limit Natural)
+    -> (ImplicationRule VariableName, Limit Natural)
     -- a claim to check, together with a maximum number of verification steps
     -- for each.
-    -> m (CheckResult (TermLike Variable))
+    -> m (CheckResult (TermLike VariableName))
 checkClaim
     breadthLimit
     strategyBuilder
@@ -153,14 +153,14 @@ checkClaim
         return finalResult
   where
     transitionRule'
-        :: Prim CommonModalPattern (RewriteRule Variable)
+        :: Prim CommonModalPattern (RewriteRule VariableName)
         -> CommonProofState
         -> ModelChecker.Transition m CommonProofState
     transitionRule' = ModelChecker.transitionRule
 
     checkFinalNodes
         :: [CommonProofState]
-        -> CheckResult (TermLike Variable)
+        -> CheckResult (TermLike VariableName)
     checkFinalNodes nodes
       = Foldable.foldl' checkFinalNodesHelper Proved nodes
       where

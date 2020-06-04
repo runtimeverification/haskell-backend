@@ -541,7 +541,7 @@ isNotApplicableUntilConditionChanges =
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
-type CommonAttemptedAxiom = AttemptedAxiom Variable
+type CommonAttemptedAxiom = AttemptedAxiom VariableName
 
 emptyAttemptedAxiom :: InternalVariable variable => AttemptedAxiom variable
 emptyAttemptedAxiom = Applied mempty

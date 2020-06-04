@@ -61,8 +61,9 @@ import Kore.Internal.Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , NamedVariable
+    ( AdjSomeVariableName
+    , InternalVariable
+    , SomeVariable
     , Sort
     , SubstitutionOrd
     , TermLike
@@ -73,10 +74,6 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( MapVariables
-    , UnifiedVariable
-    )
 import Pretty
     ( Doc
     )
@@ -105,11 +102,11 @@ data Conditional variable child =
     deriving (Foldable, Functor, GHC.Generic, Traversable)
 
 deriving instance
-    (Eq child, NamedVariable variable, SubstitutionOrd variable) =>
+    (Eq child, Ord variable, SubstitutionOrd variable) =>
     Eq (Conditional variable child)
 
 deriving instance
-    (Ord child, NamedVariable variable, SubstitutionOrd variable) =>
+    (Ord child, Ord variable, SubstitutionOrd variable) =>
     Ord (Conditional variable child)
 
 deriving instance
@@ -388,14 +385,14 @@ fromSingleSubstitution
     -> Conditional variable ()
 fromSingleSubstitution = from
 
-{- | A 'Conditional' assigning the 'UnifiedVariable' to the 'TermLike'.
+{- | A 'Conditional' assigning the 'SomeVariable' to the 'TermLike'.
 
 The result has a true 'Predicate'.
 
  -}
 assign
     :: InternalVariable variable
-    => UnifiedVariable variable
+    => SomeVariable variable
     -> TermLike variable
     -> Conditional variable ()
 assign uVar term = fromSingleSubstitution (Substitution.assign uVar term)
@@ -430,12 +427,12 @@ isPredicate Conditional {term} = isTop term
 
 -}
 mapVariables
-    ::  InternalVariable variableFrom
-    =>  InternalVariable variableTo
-    =>  MapVariables variableFrom variableTo termFrom termTo
-    ->  MapVariables variableFrom variableTo
-            (Conditional variableFrom termFrom)
-            (Conditional variableTo   termTo)
+    :: InternalVariable variable1
+    => InternalVariable variable2
+    => (AdjSomeVariableName (variable1 -> variable2) -> term1 -> term2)
+    -> AdjSomeVariableName (variable1 -> variable2)
+    -> Conditional variable1 term1
+    -> Conditional variable2 term2
 mapVariables
     mapTermVariables
     adj

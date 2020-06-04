@@ -40,9 +40,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
@@ -67,8 +64,8 @@ test_predicateSimplification =
                             (Mock.f Mock.a)
                             (Mock.g Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.a)
-                        , (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.x, Mock.a)
+                        , (inject Mock.y, Mock.b)
                         ]
                     }
         actual <-
@@ -80,8 +77,8 @@ test_predicateSimplification =
                             (Mock.f (mkElemVar Mock.x))
                             (Mock.g (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.a)
-                        , (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.x, Mock.a)
+                        , (inject Mock.y, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -95,8 +92,8 @@ test_predicateSimplification =
                             Mock.functional00
                             Mock.functional01
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.functional00)
-                        , (ElemVar Mock.y, Mock.functional01)
+                        [ (inject Mock.x, Mock.functional00)
+                        , (inject Mock.y, Mock.functional01)
                         ]
                     }
         actual <-
@@ -108,8 +105,8 @@ test_predicateSimplification =
                             (Mock.constr10 (mkElemVar Mock.x))
                             (Mock.constr10 (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.functional00)
-                        , (ElemVar Mock.y, Mock.functional01)
+                        [ (inject Mock.x, Mock.functional00)
+                        , (inject Mock.y, Mock.functional01)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -120,8 +117,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate = makeEqualsPredicate_ Mock.functional00 Mock.a
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.functional00)
-                        , (ElemVar Mock.y, Mock.functional01)
+                        [ (inject Mock.x, Mock.functional00)
+                        , (inject Mock.y, Mock.functional01)
                         ]
                     }
         actual <-
@@ -146,8 +143,8 @@ test_predicateSimplification =
                             (Mock.f (mkElemVar Mock.x))
                             (Mock.f (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.functional00)
-                        , (ElemVar Mock.y, Mock.functional01)
+                        [ (inject Mock.x, Mock.functional00)
+                        , (inject Mock.y, Mock.functional01)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -158,8 +155,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.a)
-                        , (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.x, Mock.a)
+                        , (inject Mock.y, Mock.b)
                         ]
                     }
         actual <-
@@ -180,7 +177,7 @@ test_predicateSimplification =
                             (Mock.constr10 (mkElemVar Mock.x))
                             (Mock.f (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.y, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -194,8 +191,8 @@ test_predicateSimplification =
                             (Mock.f Mock.a)
                             (Mock.g Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.a)
-                        , (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.x, Mock.a)
+                        , (inject Mock.y, Mock.b)
                         ]
                     }
         actual <-
@@ -223,7 +220,7 @@ test_predicateSimplification =
                                 (Mock.g Mock.a)
                             )
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.y, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -237,8 +234,8 @@ test_predicateSimplification =
                             (Mock.g Mock.b)
                             (Mock.g Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.a)
-                        , (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.x, Mock.a)
+                        , (inject Mock.y, Mock.b)
                         ]
                     }
         actual <-
@@ -267,7 +264,7 @@ test_predicateSimplification =
                                 (Mock.g Mock.a)
                             )
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.y, Mock.b)
+                        [ (inject Mock.y, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -275,8 +272,8 @@ test_predicateSimplification =
 
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap
-    -> Condition Variable
-    -> IO (OrCondition Variable)
+    -> Condition VariableName
+    -> IO (OrCondition VariableName)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ Test.runSimplifierBranch env

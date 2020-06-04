@@ -35,7 +35,7 @@ import Kore.Internal.TermLike
     )
 import Kore.Step.Simplification.OrPattern
 import Kore.Syntax.Variable
-    ( Variable
+    ( VariableName
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -100,10 +100,10 @@ test_orPatternSimplification =
         assertEqual "" expected actual
     ]
   where
-    x :: TermLike Variable
+    x :: TermLike VariableName
     x = mkElemVar Mock.x
 
-positive :: TermLike Variable -> Predicate Variable
+positive :: TermLike VariableName -> Predicate VariableName
 positive u =
     makeEqualsPredicate Mock.testSort
         (Mock.lessInt
@@ -112,7 +112,7 @@ positive u =
         )
         (Mock.builtinBool False)
 
-negative :: TermLike Variable -> Predicate Variable
+negative :: TermLike VariableName -> Predicate VariableName
 negative u =
     makeEqualsPredicate_
         (Mock.greaterEqInt
@@ -122,9 +122,9 @@ negative u =
         (Mock.builtinBool False)
 
 runSimplifyPredicates
-    :: Predicate Variable
-    -> OrPattern Variable
-    -> IO (OrPattern Variable)
+    :: Predicate VariableName
+    -> OrPattern VariableName
+    -> IO (OrPattern VariableName)
 runSimplifyPredicates predicate orPattern =
     Test.runSimplifier Mock.env
     $ simplifyConditionsWithSmt

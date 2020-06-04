@@ -23,18 +23,17 @@ import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariable
     )
-import Kore.Syntax.Variable
-    ( Variable (..)
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
+import Kore.Syntax.Variable hiding
+    ( Concrete
     )
 
 import Test.Kore.Attribute.Parser
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 parseConcrete
-    :: FreeVariables Variable -> Attributes -> Parser (Concrete Variable)
+    :: FreeVariables VariableName
+    -> Attributes
+    -> Parser (Concrete VariableName)
 parseConcrete freeVariables (Attributes attrs) =
     Foldable.foldlM
         (flip $ parseConcreteAttribute freeVariables )
@@ -47,16 +46,16 @@ test_concrete =
     $ expectSuccess Concrete { unConcrete = freeVars }
     $ parseConcrete freeVars $ Attributes [ concreteAttribute [] ]
   where
-    freeVars = foldMap freeVariable [ElemVar Mock.x, ElemVar Mock.y]
+    freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
 
 test_concrete_select :: TestTree
 test_concrete_select =
     testCase "[concrete{}(x:testSort)] :: Concrete"
     $ expectSuccess Concrete { unConcrete = concreteVars }
-    $ parseConcrete freeVars $ Attributes [ concreteAttribute [ElemVar Mock.x] ]
+    $ parseConcrete freeVars $ Attributes [ concreteAttribute [inject Mock.x] ]
   where
-    freeVars = foldMap freeVariable [ElemVar Mock.x, ElemVar Mock.y]
-    concreteVars = freeVariable (ElemVar Mock.x)
+    freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
+    concreteVars = freeVariable (inject Mock.x)
 
 test_concrete_selectx2 :: TestTree
 test_concrete_selectx2 =
@@ -64,12 +63,12 @@ test_concrete_selectx2 =
     $ expectSuccess Concrete { unConcrete = concreteVars }
     $ parseConcrete freeVars
     $ Attributes
-        [ concreteAttribute [ElemVar Mock.x]
-        , concreteAttribute [ElemVar Mock.z]
+        [ concreteAttribute [inject Mock.x]
+        , concreteAttribute [inject Mock.z]
         ]
   where
-    freeVars = foldMap freeVariable $ ElemVar <$> [Mock.x, Mock.y, Mock.z]
-    concreteVars = foldMap (freeVariable . ElemVar) [Mock.x, Mock.z]
+    freeVars = foldMap freeVariable $ inject <$> [Mock.x, Mock.y, Mock.z]
+    concreteVars = foldMap (freeVariable . inject) [Mock.x, Mock.z]
 
 test_Attributes :: TestTree
 test_Attributes =
@@ -83,9 +82,9 @@ test_notfree =
     testCase "[concrete{}(y:testSort)] -- not free"
     $ expectFailure
     $ parseConcrete freeVars
-    $ Attributes [ concreteAttribute [ElemVar Mock.y] ]
+    $ Attributes [ concreteAttribute [inject Mock.y] ]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_duplicate :: TestTree
 test_duplicate =
@@ -94,16 +93,16 @@ test_duplicate =
     $ parseConcrete freeVars
     $ Attributes [ concreteAttribute [], concreteAttribute []]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_duplicate2 :: TestTree
 test_duplicate2 =
     testCase "[concrete{}(), concrete{}(x:testSort)]"
     $ expectFailure
     $ parseConcrete freeVars
-    $ Attributes [ concreteAttribute [], concreteAttribute [ElemVar Mock.x]]
+    $ Attributes [ concreteAttribute [], concreteAttribute [inject Mock.x]]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_duplicate3 :: TestTree
 test_duplicate3 =
@@ -111,11 +110,11 @@ test_duplicate3 =
     $ expectFailure
     $ parseConcrete freeVars
     $ Attributes
-        [ concreteAttribute [ElemVar Mock.x]
-        , concreteAttribute [ElemVar Mock.x]
+        [ concreteAttribute [inject Mock.x]
+        , concreteAttribute [inject Mock.x]
         ]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_arguments :: TestTree
 test_arguments =
@@ -125,7 +124,7 @@ test_arguments =
   where
     illegalAttribute =
         attributePattern concreteSymbol [attributeString "illegal"]
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_parameters :: TestTree
 test_parameters =
@@ -140,4 +139,4 @@ test_parameters =
                 , symbolOrAliasParams =
                     [ SortVariableSort (SortVariable "illegal") ]
                 }
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)

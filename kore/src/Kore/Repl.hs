@@ -113,7 +113,7 @@ runRepl _ [] _ _ _ _ outputFile _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
     in liftIO . printTerm . unparseToString $ topTerm
   where
-    topTerm :: TermLike Variable
+    topTerm :: TermLike VariableName
     topTerm = mkTop $ mkSortVariable "R"
 
 runRepl

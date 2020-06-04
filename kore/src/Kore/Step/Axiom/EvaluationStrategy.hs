@@ -71,7 +71,7 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [Equation Variable]
+    :: [Equation VariableName]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
     BuiltinAndAxiomSimplifier $ \term condition -> do
@@ -111,7 +111,7 @@ definitionEvaluation equations =
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
-    :: Equation Variable
+    :: Equation VariableName
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do

@@ -52,5 +52,5 @@ aSort =
         , sortActualSorts = []
         }
 
-genElementVariable :: Gen (ElementVariable Variable)
+genElementVariable :: Gen (ElementVariable VariableName)
 genElementVariable = standaloneGen $ elementVariableGen aSort

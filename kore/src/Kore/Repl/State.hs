@@ -154,15 +154,13 @@ import Kore.Syntax.Definition
     , SentenceImport (..)
     )
 import Kore.Syntax.Variable
-    ( Variable
-    )
 
 -- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph Axiom
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
   where
-    extractConfig :: RewriteRule Variable -> CommonProofState
+    extractConfig :: RewriteRule VariableName -> CommonProofState
     extractConfig (RewriteRule RulePattern { left, requires }) =
         Goal $ Conditional left requires mempty
 
@@ -553,10 +551,10 @@ runUnifier
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => SideCondition Variable
-    -> TermLike Variable
-    -> TermLike Variable
-    -> t m (Either ReplOutput (NonEmpty (Condition Variable)))
+    => SideCondition VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+    -> t m (Either ReplOutput (NonEmpty (Condition VariableName)))
 runUnifier sideCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger
@@ -581,7 +579,7 @@ getNodeState graph node =
 nodeToPattern
     :: InnerGraph axiom
     -> Graph.Node
-    -> Maybe (Pattern Variable)
+    -> Maybe (Pattern VariableName)
 nodeToPattern graph node =
     proofState ProofStateTransformer
         { goalTransformer = Just
@@ -666,7 +664,7 @@ substituteAlias
         SimpleArgument str -> str
         QuotedArgument str -> "\"" <> str <> "\""
 
-createClaim :: Claim -> Pattern Variable -> Claim
+createClaim :: Claim -> Pattern VariableName -> Claim
 createClaim claim cpattern =
     fromRulePattern
         claim
@@ -682,10 +680,10 @@ createClaim claim cpattern =
     requires = Condition.toPredicate condition
 
 conjOfClaims
-    :: From claim (TermLike Variable)
+    :: From claim (TermLike VariableName)
     => [claim]
     -> Sort
-    -> TermLike Variable
+    -> TermLike VariableName
 conjOfClaims claims sort =
     foldr
         TermLike.mkAnd
@@ -733,7 +731,7 @@ generateInProgressClaims = do
 claimsWithPatterns
     :: Map ClaimIndex (ExecutionGraph axiom)
     -> [claim]
-    -> [(claim, [Pattern Variable])]
+    -> [(claim, [Pattern VariableName])]
 claimsWithPatterns graphs claims =
     Bifunctor.bimap
         ((claims !!) . unClaimIndex)
@@ -742,7 +740,7 @@ claimsWithPatterns graphs claims =
 
 findTerminalPatterns
     :: InnerGraph axiom
-    -> [Pattern Variable]
+    -> [Pattern VariableName]
 findTerminalPatterns graph =
     mapMaybe (nodeToPattern graph)
     . findLeafNodes
@@ -791,14 +789,14 @@ createNewDefinition
     :: ModuleName
     -> String
     -> [Claim]
-    -> Definition (Sentence (TermLike Variable))
+    -> Definition (Sentence (TermLike VariableName))
 createNewDefinition mainModuleName name claims =
     Definition
         { definitionAttributes = mempty
         , definitionModules = [newModule]
         }
   where
-    newModule :: Module (Sentence (TermLike Variable))
+    newModule :: Module (Sentence (TermLike VariableName))
     newModule =
         Module
             { moduleName = ModuleName . pack $ name
@@ -808,7 +806,7 @@ createNewDefinition mainModuleName name claims =
             , moduleAttributes = Default.def
             }
 
-    importVerification :: Sentence (TermLike Variable)
+    importVerification :: Sentence (TermLike VariableName)
     importVerification =
         SentenceImportSentence
             SentenceImport
@@ -816,7 +814,7 @@ createNewDefinition mainModuleName name claims =
                 , sentenceImportAttributes = mempty
                 }
 
-    claimToSentence :: Claim -> Sentence (TermLike Variable)
+    claimToSentence :: Claim -> Sentence (TermLike VariableName)
     claimToSentence claim =
         SentenceClaimSentence
         . SentenceClaim
@@ -826,7 +824,7 @@ createNewDefinition mainModuleName name claims =
             , sentenceAxiomAttributes = trustedToAttribute claim
             }
 
-    claimToTerm :: Claim -> TermLike Variable
+    claimToTerm :: Claim -> TermLike VariableName
     claimToTerm = from
 
     trustedToAttribute :: Claim -> Syntax.Attributes

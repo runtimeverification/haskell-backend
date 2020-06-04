@@ -39,5 +39,5 @@ test_simplify =
         )
     ]
 
-evaluate :: DomainValue Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: DomainValue Sort (OrPattern VariableName) -> OrPattern VariableName
 evaluate = simplify

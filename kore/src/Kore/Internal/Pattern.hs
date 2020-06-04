@@ -10,6 +10,7 @@ module Kore.Internal.Pattern
     , patternSort
     , fromCondition
     , fromConditionSorted
+    , fromPredicateSorted
     , bottom
     , bottomOf
     , isBottom
@@ -81,7 +82,6 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Variables.UnifiedVariable
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -103,6 +103,13 @@ fromConditionSorted
     -> Condition variable
     -> Pattern variable
 fromConditionSorted sort = (<$) (mkTop sort)
+
+fromPredicateSorted
+    :: InternalVariable variable
+    => Sort
+    -> Predicate variable
+    -> Pattern variable
+fromPredicateSorted sort = fromConditionSorted sort . Condition.fromPredicate
 
 isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =
@@ -132,11 +139,10 @@ freeElementVariables =
 in an Pattern.
 -}
 mapVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Pattern variable1
-    ->  Pattern variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Pattern variable1
+    -> Pattern variable2
 mapVariables adj Conditional { term, predicate, substitution } =
     Conditional
         { term = TermLike.mapVariables adj term
@@ -302,7 +308,7 @@ syncSort patt = coerceSort (patternSort patt) patt
 
 assign
     :: InternalVariable variable
-    => UnifiedVariable variable
+    => SomeVariable variable
     -> TermLike variable
     -> Pattern variable
 assign variable term =

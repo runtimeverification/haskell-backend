@@ -23,7 +23,6 @@ import Kore.Internal.TermLike hiding
     , Symbol
     )
 import Kore.Syntax.Definition
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -387,12 +386,7 @@ sortVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
       where
-        existsVariable =
-            ElementVariable Variable
-                { variableName = testId "var"
-                , variableCounter = mempty
-                , variableSort = sort
-                }
+        existsVariable = mkElementVariable (testId "var") sort
     sortReferenceInAndPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
@@ -479,11 +473,7 @@ sortVisibilityTests =
                             , symbolOrAliasParams = []
                             }
                     , applicationChildren =
-                        [ ElemVar $ ElementVariable Variable
-                            { variableSort = sort
-                            , variableCounter = mempty
-                            , variableName = testId "x"
-                            }
+                        [ mkSomeVariable $ mkElementVariable (testId "x") sort
                         ]
                     }
             , sentenceAliasRightPattern =
@@ -660,14 +650,10 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    Builtin.externalize $ mkExists
-                        (ElementVariable Variable
-                            { variableName = testId "var"
-                            , variableCounter = mempty
-                            , variableSort = defaultSort
-                            }
-                        )
+                    mkExists
+                        (mkElementVariable (testId "var") defaultSort)
                         symbolPattern
+                    & Builtin.externalize
                 , sentenceAxiomAttributes = Attributes []
                 }
     symbolReferenceInNextPatternSentence =
@@ -876,14 +862,10 @@ aliasVisibilityTests =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                Builtin.externalize $ mkExists
-                    (ElementVariable Variable
-                        { variableName = testId "var"
-                        , variableCounter = mempty
-                        , variableSort = defaultSort
-                        }
-                    )
+                mkExists
+                    (mkElementVariable (testId "var") defaultSort)
                     aliasPattern
+                & Builtin.externalize
             , sentenceAxiomAttributes = Attributes []
             }
     aliasReferenceInNextPatternSentence =
@@ -936,13 +918,9 @@ aliasVisibilityTests =
                                 ]
                             }
                     , applicationChildren =
-                        [ SetVar $ SetVariable Variable
-                            { variableName = testId "x"
-                            , variableCounter = mempty
-                            , variableSort =
-                                SortVariableSort
-                                    (SortVariable (testId "sv1"))
-                            }
+                        [ mkSomeVariable
+                            $ mkSetVariable (testId "@x")
+                            $ SortVariableSort (SortVariable (testId "sv1"))
                         ]
                     }
             , sentenceAliasRightPattern =

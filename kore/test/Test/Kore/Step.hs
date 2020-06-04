@@ -73,10 +73,7 @@ import Kore.Step.RulePattern as RulePattern
     , rulePattern
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
-    ( Variable (..)
-    )
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -160,15 +157,15 @@ compareTo (Expect expected) actual =
 
     {- Types used in this file -}
 
-type CommonTermLike = TermLike Variable
+type CommonTermLike = TermLike VariableName
 
 -- Test types
 type TestPattern = CommonTermLike
 newtype Start = Start TestPattern
-newtype Axiom = Axiom { unAxiom :: RewriteRule Variable }
+newtype Axiom = Axiom { unAxiom :: RewriteRule VariableName }
 newtype Expect = Expect TestPattern
 
-type Actual = Pattern Variable
+type Actual = Pattern VariableName
 
 -- Builders -- should these find a better home?
 
@@ -180,10 +177,10 @@ applyConstructorToVariables constr arguments =
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
-    mkElemVar $ ElementVariable $ Variable (testId name) mempty Mock.testSort
+    mkElemVar $ mkElementVariable (testId name) Mock.testSort
 -- can the above be more abstract?
 
-rewritesTo :: TestPattern -> TestPattern -> RewriteRule Variable
+rewritesTo :: TestPattern -> TestPattern -> RewriteRule VariableName
 rewritesTo = (RewriteRule .) . rulePattern
 
 {-
@@ -194,19 +191,19 @@ rewritesTo = (RewriteRule .) . rulePattern
     like `rewriteStep`.
 -}
 
-v1, a1, b1, x1 :: Sort -> ElementVariable Variable
-v1 = ElementVariable . Variable (testId "v1") mempty
-a1 = ElementVariable . Variable (testId "a1") mempty
-b1 = ElementVariable . Variable (testId "b1") mempty
-x1 = ElementVariable . Variable (testId "x1") mempty
+v1, a1, b1, x1 :: Sort -> ElementVariable VariableName
+v1 = mkElementVariable (testId "v1")
+a1 = mkElementVariable (testId "a1")
+b1 = mkElementVariable (testId "b1")
+x1 = mkElementVariable (testId "x1")
 
-rewriteIdentity :: RewriteRule Variable
+rewriteIdentity :: RewriteRule VariableName
 rewriteIdentity =
     RewriteRule $ rulePattern
         (mkElemVar (x1 Mock.testSort))
         (mkElemVar (x1 Mock.testSort))
 
-rewriteImplies :: RewriteRule Variable
+rewriteImplies :: RewriteRule VariableName
 rewriteImplies =
     RewriteRule $ rulePattern
         (mkElemVar (x1 Mock.testSort))
@@ -215,7 +212,7 @@ rewriteImplies =
                 (mkElemVar $ x1 Mock.testSort)
         )
 
-expectTwoAxioms :: [Pattern Variable]
+expectTwoAxioms :: [Pattern VariableName]
 expectTwoAxioms =
     [ Pattern.fromTermLike (mkElemVar $ v1 Mock.testSort)
     , Pattern.fromTermLike
@@ -224,7 +221,7 @@ expectTwoAxioms =
             (mkElemVar $ v1 Mock.testSort)
     ]
 
-actualTwoAxioms :: IO [Pattern Variable]
+actualTwoAxioms :: IO [Pattern VariableName]
 actualTwoAxioms =
     runStep
         Conditional
@@ -236,7 +233,7 @@ actualTwoAxioms =
         , rewriteImplies
         ]
 
-initialFailSimple :: Pattern Variable
+initialFailSimple :: Pattern VariableName
 initialFailSimple =
     Conditional
         { term =
@@ -247,10 +244,10 @@ initialFailSimple =
         , substitution = mempty
         }
 
-expectFailSimple :: [Pattern Variable]
+expectFailSimple :: [Pattern VariableName]
 expectFailSimple = [initialFailSimple]
 
-actualFailSimple :: IO [Pattern Variable]
+actualFailSimple :: IO [Pattern VariableName]
 actualFailSimple =
     runStep
         initialFailSimple
@@ -262,7 +259,7 @@ actualFailSimple =
             (mkElemVar (x1 Mock.testSort))
         ]
 
-initialFailCycle :: Pattern Variable
+initialFailCycle :: Pattern VariableName
 initialFailCycle =
     Conditional
         { term =
@@ -273,10 +270,10 @@ initialFailCycle =
         , substitution = mempty
         }
 
-expectFailCycle :: [Pattern Variable]
+expectFailCycle :: [Pattern VariableName]
 expectFailCycle = [initialFailCycle]
 
-actualFailCycle :: IO [Pattern Variable]
+actualFailCycle :: IO [Pattern VariableName]
 actualFailCycle =
     runStep
         initialFailCycle
@@ -288,7 +285,7 @@ actualFailCycle =
             (mkElemVar (x1 Mock.testSort))
         ]
 
-initialIdentity :: Pattern Variable
+initialIdentity :: Pattern VariableName
 initialIdentity =
     Conditional
         { term = mkElemVar (v1 Mock.testSort)
@@ -296,10 +293,10 @@ initialIdentity =
         , substitution = mempty
         }
 
-expectIdentity :: [Pattern Variable]
+expectIdentity :: [Pattern VariableName]
 expectIdentity = [initialIdentity]
 
-actualIdentity :: IO [Pattern Variable]
+actualIdentity :: IO [Pattern VariableName]
 actualIdentity =
     runStep
         initialIdentity
@@ -338,11 +335,11 @@ predicateStateToBool :: PredicateState -> Bool
 predicateStateToBool PredicatePositive = True
 predicateStateToBool PredicateNegated = False
 
-smtTerm :: TermLike Variable -> TermLike Variable
+smtTerm :: TermLike VariableName -> TermLike VariableName
 smtTerm term = Mock.functionalConstr10 term
 
 smtSyntaxPredicate
-    :: TermLike Variable -> PredicateState -> Predicate Variable
+    :: TermLike VariableName -> PredicateState -> Predicate VariableName
 smtSyntaxPredicate term predicateState =
     makeEqualsPredicate_
         (Mock.lessInt
@@ -351,11 +348,11 @@ smtSyntaxPredicate term predicateState =
         )
         (Mock.builtinBool (predicateStateToBool predicateState))
 
-smtCondition :: TermLike Variable -> PredicateState -> Condition Variable
+smtCondition :: TermLike VariableName -> PredicateState -> Condition VariableName
 smtCondition term predicateState =
     Condition.fromPredicate (smtSyntaxPredicate term predicateState)
 
-smtPattern :: TermLike Variable -> PredicateState -> Pattern Variable
+smtPattern :: TermLike VariableName -> PredicateState -> Pattern VariableName
 smtPattern term predicateState =
     smtTerm term `Pattern.withCondition` smtCondition term predicateState
 
@@ -448,7 +445,7 @@ test_unificationError =
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected unification error"
 
-actualUnificationError :: IO [Pattern Variable]
+actualUnificationError :: IO [Pattern VariableName]
 actualUnificationError =
     runStep
         Conditional
@@ -482,12 +479,12 @@ sigmaSymbol =
     sorts = Symbol.applicationSorts [Mock.testSort, Mock.testSort] Mock.testSort
 
 metaSigma
-    :: TermLike Variable
-    -> TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
 metaSigma p1 p2 = mkApplySymbol sigmaSymbol [p1, p2]
 
-axiomMetaSigmaId :: RewriteRule Variable
+axiomMetaSigmaId :: RewriteRule VariableName
 axiomMetaSigmaId =
     RewriteRule $ rulePattern
         (metaSigma
@@ -508,37 +505,37 @@ symbol name =
 fSymbol :: Symbol
 fSymbol = symbol "#f" & functional & constructor
 
-metaF :: TermLike Variable -> TermLike Variable
+metaF :: TermLike VariableName -> TermLike VariableName
 metaF p = mkApplySymbol fSymbol [p]
 
 
 gSymbol :: Symbol
 gSymbol = symbol "#g" & functional & constructor
 
-metaG :: TermLike Variable -> TermLike Variable
+metaG :: TermLike VariableName -> TermLike VariableName
 metaG p = mkApplySymbol gSymbol [p]
 
 iSymbol :: Symbol
 iSymbol = symbol "#i"
 
-metaI :: TermLike Variable -> TermLike Variable
+metaI :: TermLike VariableName -> TermLike VariableName
 metaI p = mkApplySymbol iSymbol [p]
 
 runStep
-    :: Pattern Variable
+    :: Pattern VariableName
     -- ^left-hand-side of unification
-    -> [RewriteRule Variable]
-    -> IO [Pattern Variable]
+    -> [RewriteRule VariableName]
+    -> IO [Pattern VariableName]
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
     $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
 
 runStepMockEnv
-    :: Pattern Variable
+    :: Pattern VariableName
     -- ^left-hand-side of unification
-    -> [RewriteRule Variable]
-    -> IO [Pattern Variable]
+    -> [RewriteRule VariableName]
+    -> IO [Pattern VariableName]
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env

@@ -64,9 +64,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
@@ -132,7 +129,6 @@ import Kore.Unparser
     , unparse2
     )
 import Kore.Variables.Fresh
-import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 import Pretty
     ( Pretty
@@ -180,16 +176,16 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
         , substitution = mempty
         }
   where
-    avoid = FreeVariables.toSet avoid'
+    avoid = FreeVariables.toNames avoid'
     bindExistsFreeVariables =
         freeVariables right <> freeVariables ensures
-        & FreeVariables.bindVariables (ElemVar <$> existentials)
-        & FreeVariables.toSet
-    rename :: Map (UnifiedVariable variable) (UnifiedVariable variable)
+        & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
+        & FreeVariables.toNames
+    rename :: Map (SomeVariableName variable) (SomeVariable variable)
     rename =
         refreshVariables
             (avoid <> bindExistsFreeVariables)
-            (Set.fromList $ ElemVar <$> existentials)
+            (Set.fromList $ mkSomeVariable <$> existentials)
     subst = TermLike.mkVar <$> rename
 
 {- | Normal rewriting axioms and claims
@@ -385,18 +381,18 @@ isFreeOf
     :: forall variable
     .  InternalVariable variable
     => RulePattern variable
-    -> Set.Set (UnifiedVariable variable)
+    -> Set.Set (SomeVariable variable)
     -> Bool
 isFreeOf rule =
     Set.disjoint
-    $ from @(FreeVariables variable) @(Set (UnifiedVariable _))
+    $ FreeVariables.toSet
     $ freeVariables rule
 
 {- | Apply the substitution to the right-hand-side of a rule.
  -}
 rhsSubstitute
     :: InternalVariable variable
-    => Map (UnifiedVariable variable) (TermLike.TermLike variable)
+    => Map (SomeVariableName variable) (TermLike.TermLike variable)
     -> RHS variable
     -> RHS variable
 rhsSubstitute subst RHS { existentials, right, ensures } =
@@ -406,7 +402,7 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
         , ensures = Predicate.substitute subst' ensures
         }
   where
-    subst' = foldr (Map.delete . ElemVar) subst existentials
+    subst' = foldr (Map.delete . inject . variableName) subst existentials
 
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
 rhsForgetSimplified RHS { existentials, right, ensures } =
@@ -420,7 +416,7 @@ rhsForgetSimplified RHS { existentials, right, ensures } =
  -}
 substitute
     :: InternalVariable variable
-    => Map (UnifiedVariable variable) (TermLike.TermLike variable)
+    => Map (SomeVariableName variable) (TermLike.TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
 substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
@@ -464,20 +460,20 @@ instance HasAttributes RulePattern where
 -- be implemented by types which contain more (or the same amount of)
 -- information as 'RulePattern Variable'.
 class ToRulePattern rule where
-    toRulePattern :: rule -> RulePattern Variable
+    toRulePattern :: rule -> RulePattern VariableName
     default toRulePattern
-        :: Coercible rule (RulePattern Variable)
-        => rule -> RulePattern Variable
+        :: Coercible rule (RulePattern VariableName)
+        => rule -> RulePattern VariableName
     toRulePattern = coerce
 
 -- | We need to know the context when transforming a 'RulePattern Variable'
 -- into a 'rule', hence the first 'rule' argument. In general it can be ignored
 -- when the 'rule' and the 'RulePattern Variable' are representationally equal.
 class FromRulePattern rule where
-    fromRulePattern :: rule -> RulePattern Variable -> rule
+    fromRulePattern :: rule -> RulePattern VariableName -> rule
     default fromRulePattern
-        :: Coercible (RulePattern Variable) rule
-        => rule -> RulePattern Variable -> rule
+        :: Coercible (RulePattern VariableName) rule
+        => rule -> RulePattern VariableName -> rule
     fromRulePattern _ = coerce
 
 {-  | Rewrite-based rule pattern.
@@ -549,7 +545,7 @@ instance
 {-  | One-Path-Claim rule pattern.
 -}
 newtype OnePathRule =
-    OnePathRule { getOnePathRule :: RulePattern Variable }
+    OnePathRule { getOnePathRule :: RulePattern VariableName }
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData OnePathRule
@@ -657,7 +653,7 @@ toSentence rule =
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule =
-    AllPathRule { getAllPathRule :: RulePattern Variable }
+    AllPathRule { getAllPathRule :: RulePattern VariableName }
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData AllPathRule
@@ -700,13 +696,13 @@ instance From AllPathRule Attribute.RuleIndex where
 instance From AllPathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathRule
 
-instance ToRulePattern (RewriteRule Variable)
+instance ToRulePattern (RewriteRule VariableName)
 
 instance ToRulePattern OnePathRule
 
 instance ToRulePattern AllPathRule
 
-instance ToRulePattern (ImplicationRule Variable)
+instance ToRulePattern (ImplicationRule VariableName)
 
 instance ToRulePattern ReachabilityRule where
     toRulePattern (OnePath rule) = toRulePattern rule
@@ -716,7 +712,7 @@ instance FromRulePattern OnePathRule
 
 instance FromRulePattern AllPathRule
 
-instance FromRulePattern (ImplicationRule Variable)
+instance FromRulePattern (ImplicationRule VariableName)
 
 instance FromRulePattern ReachabilityRule where
     fromRulePattern (OnePath _) rulePat =
@@ -740,18 +736,18 @@ rewriteRuleToTerm
         (lhsToTerm left antiLeft requires)
         (rhsToTerm rhs)
 
-instance From OnePathRule (TermLike Variable) where
+instance From OnePathRule (TermLike VariableName) where
     from = onePathRuleToTerm
 
-instance From AllPathRule (TermLike Variable) where
+instance From AllPathRule (TermLike VariableName) where
     from = allPathRuleToTerm
 
-instance From ReachabilityRule (TermLike Variable) where
+instance From ReachabilityRule (TermLike VariableName) where
     from (OnePath claim) = from claim
     from (AllPath claim) = from claim
 
 -- | Converts a 'OnePathRule' into its term representation
-onePathRuleToTerm :: OnePathRule -> TermLike.TermLike Variable
+onePathRuleToTerm :: OnePathRule -> TermLike.TermLike VariableName
 onePathRuleToTerm (OnePathRule (RulePattern left _ requires rhs _)) =
     mkImpliesRule left requires (Just wEF) rhs
 
@@ -772,10 +768,10 @@ left ∧ requires → alias(right)
  -}
 mkImpliesRule
     :: InternalVariable variable
-    => TermLike variable                         -- ^ left-hand term
-    -> Predicate variable                        -- ^ left-hand requires
-    -> Maybe (Sort -> Alias (TermLike Variable)) -- ^ right-hand alias
-    -> RHS variable                              -- ^ right-hand term
+    => TermLike variable                             -- ^ left-hand term
+    -> Predicate variable                            -- ^ left-hand requires
+    -> Maybe (Sort -> Alias (TermLike VariableName)) -- ^ right-hand alias
+    -> RHS variable                                  -- ^ right-hand term
     -> TermLike variable
 mkImpliesRule left requires alias right =
     TermLike.mkImplies
@@ -789,7 +785,7 @@ mkImpliesRule left requires alias right =
     rhsTerm = rhsToTerm right
 
 -- | Converts an 'AllPathRule' into its term representation
-allPathRuleToTerm :: AllPathRule -> TermLike.TermLike Variable
+allPathRuleToTerm :: AllPathRule -> TermLike.TermLike VariableName
 allPathRuleToTerm (AllPathRule (RulePattern left _ requires rhs _)) =
     mkImpliesRule left requires (Just wAF) rhs
 
@@ -805,7 +801,7 @@ implicationRuleToTerm
 
 
 -- | 'Alias' construct for weak exist finally
-wEF :: Sort -> Alias (TermLike.TermLike Variable)
+wEF :: Sort -> Alias (TermLike.TermLike VariableName)
 wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
@@ -821,7 +817,7 @@ wEF sort = Alias
     }
 
 -- | 'Alias' construct for weak always finally
-wAF :: Sort -> Alias (TermLike.TermLike Variable)
+wAF :: Sort -> Alias (TermLike.TermLike VariableName)
 wAF sort = Alias
     { aliasConstructor = Id
         { getId = weakAlwaysFinally
@@ -837,7 +833,7 @@ wAF sort = Alias
     }
 
 -- | 'Alias' construct for all path globally
-aPG :: Sort -> Alias (TermLike.TermLike Variable)
+aPG :: Sort -> Alias (TermLike.TermLike VariableName)
 aPG sort = Alias
     { aliasConstructor = Id
         { getId = allPathGlobally
@@ -870,7 +866,7 @@ instance UnifyingRule RulePattern where
     precondition = requires
 
     refreshRule avoid' rule1@(RulePattern _ _ _ _ _) =
-        let avoid = FreeVariables.toSet avoid'
+        let avoid = FreeVariables.toNames avoid'
             rename = refreshVariables (avoid <> exVars) originalFreeVariables
             subst = TermLike.mkVar <$> rename
             left' = TermLike.substitute subst left
@@ -887,7 +883,7 @@ instance UnifyingRule RulePattern where
         in (rename, rule2)
       where
         RulePattern { left, antiLeft, requires, rhs } = rule1
-        exVars = Set.fromList $ ElemVar <$> existentials rhs
+        exVars = Set.fromList $ inject . variableName <$> existentials rhs
         originalFreeVariables = freeVariables rule1 & FreeVariables.toSet
 
     mapRuleVariables adj rule1@(RulePattern _ _ _ _ _) =
@@ -896,10 +892,7 @@ instance UnifyingRule RulePattern where
             , antiLeft = mapTermLikeVariables <$> antiLeft
             , requires = mapPredicateVariables requires
             , rhs = RHS
-                { existentials =
-                    Lens.over lensVariableName
-                        (mapElementVariableName adj)
-                    <$> existentials
+                { existentials = mapElementVariable adj <$> existentials
                 , right = mapTermLikeVariables right
                 , ensures = mapPredicateVariables ensures
                 }

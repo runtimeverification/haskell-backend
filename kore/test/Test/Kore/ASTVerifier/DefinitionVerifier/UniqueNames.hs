@@ -83,7 +83,7 @@ test_uniqueNames =
     -}
         (simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
-                (variableParsedPattern (VariableName "#a") stringMetaSort)
+                (variableParsedPattern "#a" stringMetaSort)
                 [namedSortVariable (SortVariableName "#a")]
             ]
         )

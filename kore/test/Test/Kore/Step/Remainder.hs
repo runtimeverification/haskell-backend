@@ -25,7 +25,7 @@ test_existentiallyQuantifyTarget =
     becomes original expect =
         equals (Remainder.existentiallyQuantifyRuleVariables original) expect
 
-target :: Predicate RewritingVariable
+target :: Predicate RewritingVariableName
 target =
     Predicate.makeEqualsPredicate_
         (mkElemVar $ mkElementConfigVariable Mock.x)
@@ -34,7 +34,7 @@ target =
             (mkElemVar $ mkElementRuleVariable Mock.z)
         )
 
-quantified :: Predicate RewritingVariable
+quantified :: Predicate RewritingVariableName
 quantified =
     Predicate.makeMultipleExists
         [ mkElementRuleVariable Mock.y

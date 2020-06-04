@@ -53,9 +53,6 @@ import Kore.Sort
     , SortActual (SortActual)
     )
 import qualified Kore.Sort as Sort.DoNotUse
-import Kore.Syntax.ElementVariable
-    ( ElementVariable (ElementVariable)
-    )
 import Kore.Syntax.Id
     ( Id
     )
@@ -64,9 +61,6 @@ import Kore.Syntax.Sentence
     )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Syntax.Variable
-    ( Variable (Variable)
-    )
-import qualified Kore.Syntax.Variable as Variable.DoNotUse
 import qualified Kore.Verified as Verified
     ( SentenceAxiom
     )
@@ -92,7 +86,7 @@ parseNoJunkAxiom (attributes, SentenceAxiom {sentenceAxiomPattern})
   | otherwise = Nothing
 
 parseNoJunkPattern
-    :: TermLike Variable
+    :: TermLike VariableName
     -> Maybe (Id, Constructors)
 parseNoJunkPattern patt = do  -- Maybe
     (name, sortBuilder, constructors) <- parseNoJunkPatternHelper patt
@@ -107,7 +101,7 @@ parseNoJunkPattern patt = do  -- Maybe
     return (name, sortBuilder constructors)
 
 parseNoJunkPatternHelper
-    :: TermLike Variable
+    :: TermLike VariableName
     ->  Maybe
         ( Id
         , [ConstructorLike] -> Constructors
@@ -132,7 +126,7 @@ parseNoJunkPatternHelper (Or_ _ first second) = do  -- Maybe
     return (name, sortBuilder, constructor : constructors)
 parseNoJunkPatternHelper _ = Nothing
 
-parseSMTConstructor :: TermLike Variable -> Maybe ConstructorLike
+parseSMTConstructor :: TermLike VariableName -> Maybe ConstructorLike
 parseSMTConstructor patt =
     case parsedPatt of
         App_ symbol children -> do
@@ -144,8 +138,8 @@ parseSMTConstructor patt =
     (quantifiedVariables, parsedPatt) = parseExists patt
 
     parseExists
-        :: TermLike Variable
-        -> (Set.Set (ElementVariable Variable), TermLike Variable)
+        :: TermLike VariableName
+        -> (Set.Set (ElementVariable VariableName), TermLike VariableName)
     parseExists (Exists_ _ variable child) =
         (Set.insert variable childVars, unquantifiedPatt)
       where
@@ -153,9 +147,9 @@ parseSMTConstructor patt =
     parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
 
     checkOnlyQuantifiedVariablesOnce
-        :: Set.Set (ElementVariable Variable)
-        -> [TermLike Variable]
-        -> Maybe [ElementVariable Variable]
+        :: Set.Set (ElementVariable VariableName)
+        -> [TermLike VariableName]
+        -> Maybe [ElementVariable VariableName]
     checkOnlyQuantifiedVariablesOnce
         allowedVars
         []
@@ -178,7 +172,7 @@ parseSMTConstructor patt =
 
     buildConstructor
         :: Symbol
-        -> [ElementVariable Variable]
+        -> [ElementVariable VariableName]
         -> Maybe ConstructorLike
     buildConstructor
         symbol@Symbol { symbolParams = [] }
@@ -196,14 +190,13 @@ parseSMTConstructor patt =
     buildConstructor _ _ = Nothing
 
     parseVariableSort
-        :: ElementVariable Variable
+        :: ElementVariable VariableName
         -> Maybe Sort
     parseVariableSort
-        (ElementVariable Variable
+        Variable
             { variableSort =
                 sort@(SortActualSort SortActual {sortActualSorts = []})
             }
-        )
       = Just sort
     -- TODO(virgil): Also handle parameterized sorts.
     parseVariableSort _ = Nothing

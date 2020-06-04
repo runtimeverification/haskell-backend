@@ -35,7 +35,7 @@ import SMT.SimpleSMT
 import qualified SQL
 
 data DebugEvaluateCondition
-    = DebugEvaluateCondition (NonEmpty (Predicate Variable))
+    = DebugEvaluateCondition (NonEmpty (Predicate VariableName))
     | DebugEvaluateConditionResult Result
     deriving (Show)
     deriving (GHC.Generic)

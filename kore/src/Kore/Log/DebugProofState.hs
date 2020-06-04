@@ -27,7 +27,7 @@ import qualified Pretty
 data DebugProofState =
     DebugProofState
         { proofState :: ProofState ReachabilityRule
-        , transition :: Prim (RewriteRule RewritingVariable)
+        , transition :: Prim (RewriteRule RewritingVariableName)
         , result :: Maybe (ProofState ReachabilityRule)
         }
     deriving (Show)

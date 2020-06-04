@@ -22,6 +22,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
+    , emptyFreeVariables
     )
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -51,11 +52,8 @@ instance Unparse StringLiteral where
     unparse = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
     unparse2 = unparse
 
-instance
-    Ord variable =>
-    Synthetic (FreeVariables variable) (Const StringLiteral)
-  where
-    synthetic = const mempty
+instance Synthetic (FreeVariables variable) (Const StringLiteral) where
+    synthetic = const emptyFreeVariables
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Const StringLiteral) where

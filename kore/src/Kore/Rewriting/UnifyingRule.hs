@@ -25,7 +25,6 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
     ( InternalVariable
-    , NamedVariable
     , TermLike
     )
 import Kore.Syntax.Variable
@@ -33,17 +32,16 @@ import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 type Renaming variable =
-    Map (UnifiedVariable variable) (UnifiedVariable variable)
+    Map (SomeVariableName variable) (SomeVariable variable)
 
 data InstantiationFailure variable
-    = ConcreteFailure (UnifiedVariable variable) (TermLike variable)
-    | SymbolicFailure (UnifiedVariable variable) (TermLike variable)
-    | UninstantiatedConcrete (UnifiedVariable variable)
-    | UninstantiatedSymbolic (UnifiedVariable variable)
+    = ConcreteFailure (SomeVariable variable) (TermLike variable)
+    | SymbolicFailure (SomeVariable variable) (TermLike variable)
+    | UninstantiatedConcrete (SomeVariable variable)
+    | UninstantiatedSymbolic (SomeVariable variable)
 
 instance InternalVariable variable
     => Pretty.Pretty (InstantiationFailure variable)
@@ -97,18 +95,17 @@ class UnifyingRule rule where
     distinguishing rule variables from configuration variables.
     -}
     mapRuleVariables
-        ::  (NamedVariable variable1, NamedVariable variable2)
-        =>  FreshPartialOrd variable2
-        =>  AdjSomeVariableName
-                (VariableNameOf variable1 -> VariableNameOf variable2)
-        ->  rule variable1
-        ->  rule variable2
+        :: Ord variable1
+        => FreshPartialOrd variable2
+        => AdjSomeVariableName (variable1 -> variable2)
+        -> rule variable1
+        -> rule variable2
 
     -- | Checks whether a given substitution is acceptable for a rule
     checkInstantiation
         :: InternalVariable variable
         => rule variable
-        -> Map.Map (UnifiedVariable variable) (TermLike variable)
+        -> Map.Map (SomeVariable variable) (TermLike variable)
         -> [InstantiationFailure variable]
     checkInstantiation _ _ = []
     {-# INLINE checkInstantiation #-}

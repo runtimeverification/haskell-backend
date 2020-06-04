@@ -105,10 +105,7 @@ import qualified Kore.Step.SMT.Representation.Resolve as SMT
     ( resolve
     )
 import Kore.Syntax.Application
-import Kore.Syntax.ElementVariable
-import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
-import Kore.Variables.UnifiedVariable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
@@ -639,85 +636,107 @@ anywhereSymbol =
         (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
-var_x_0 :: ElementVariable Variable
-var_x_0 = ElementVariable $ Variable (testId "x") (Just (Element 0)) testSort
-var_x_1 :: ElementVariable Variable
-var_x_1 = ElementVariable $ Variable (testId "x") (Just (Element 1)) testSort
-var_y_1 :: ElementVariable Variable
-var_y_1 = ElementVariable $ Variable (testId "y") (Just (Element 1)) testSort
-var_z_1 :: ElementVariable Variable
-var_z_1 = ElementVariable $ Variable (testId "z") (Just (Element 1)) testSort
-x :: ElementVariable Variable
-x = ElementVariable $ Variable (testId "x") mempty testSort
-setX :: SetVariable Variable
-setX = SetVariable $ Variable (testId "@x") mempty testSort
-var_setX_0 :: SetVariable Variable
-var_setX_0 = SetVariable $ Variable (testId "@x") (Just (Element 0)) testSort
-x0 :: ElementVariable Variable
-x0 = ElementVariable $ Variable (testId "x0") mempty testSort0
-y :: ElementVariable Variable
-y = ElementVariable $ Variable (testId "y") mempty testSort
-setY :: SetVariable Variable
-setY = SetVariable $ Variable (testId "@y") mempty testSort
-z :: ElementVariable Variable
-z = ElementVariable $ Variable (testId "z") mempty testSort
-t :: ElementVariable Variable
-t = ElementVariable $ Variable (testId "t") mempty testSort
-u :: ElementVariable Variable
-u = ElementVariable $ Variable (testId "u") mempty testSort
-m :: ElementVariable Variable
-m = ElementVariable $ Variable (testId "m") mempty mapSort
-xSet :: ElementVariable Variable
-xSet = ElementVariable $ Variable (testId "xSet") mempty setSort
-ySet :: ElementVariable Variable
-ySet = ElementVariable $ Variable (testId "ySet") mempty setSort
-xInt :: ElementVariable Variable
-xInt = ElementVariable $ Variable (testId "xInt") mempty intSort
-yInt :: ElementVariable Variable
-yInt = ElementVariable $ Variable (testId "yInt") mempty intSort
-xBool :: ElementVariable Variable
-xBool = ElementVariable $ Variable (testId "xBool") mempty boolSort
-xString :: ElementVariable Variable
-xString = ElementVariable $ Variable (testId "xString") mempty stringSort
-xList :: ElementVariable Variable
-xList = ElementVariable $ Variable (testId "xList") mempty listSort
-xMap :: ElementVariable Variable
-xMap = ElementVariable $ Variable (testId "xMap") mempty mapSort
-xSubSort :: ElementVariable Variable
-xSubSort = ElementVariable $ Variable (testId "xSubSort") mempty subSort
-xSubSubSort :: ElementVariable Variable
+type MockElementVariable = ElementVariable VariableName
+
+pattern MockElementVariable
+    :: Id -> VariableCounter -> Sort -> MockElementVariable
+pattern MockElementVariable base counter variableSort =
+    Variable
+    { variableName = ElementVariableName VariableName { base, counter }
+    , variableSort
+    }
+
+type MockSetVariable = SetVariable VariableName
+
+pattern MockSetVariable
+    :: Id -> VariableCounter -> Sort -> MockSetVariable
+pattern MockSetVariable base counter variableSort =
+    Variable
+    { variableName = SetVariableName VariableName { base, counter }
+    , variableSort
+    }
+
+var_x_0 :: MockElementVariable
+var_x_0 = MockElementVariable (testId "x") (Just (Element 0)) testSort
+var_x_1 :: MockElementVariable
+var_x_1 = MockElementVariable (testId "x") (Just (Element 1)) testSort
+var_y_1 :: MockElementVariable
+var_y_1 = MockElementVariable (testId "y") (Just (Element 1)) testSort
+var_z_1 :: MockElementVariable
+var_z_1 = MockElementVariable (testId "z") (Just (Element 1)) testSort
+x :: MockElementVariable
+x = MockElementVariable (testId "x") mempty testSort
+setX :: MockSetVariable
+setX = MockSetVariable (testId "@x") mempty testSort
+var_setX_0 :: MockSetVariable
+var_setX_0 = MockSetVariable (testId "@x") (Just (Element 0)) testSort
+x0 :: MockElementVariable
+x0 = MockElementVariable (testId "x0") mempty testSort0
+y :: MockElementVariable
+y = MockElementVariable (testId "y") mempty testSort
+setY :: MockSetVariable
+setY = MockSetVariable (testId "@y") mempty testSort
+z :: MockElementVariable
+z = MockElementVariable (testId "z") mempty testSort
+t :: MockElementVariable
+t = MockElementVariable (testId "t") mempty testSort
+u :: MockElementVariable
+u = MockElementVariable (testId "u") mempty testSort
+m :: MockElementVariable
+m = MockElementVariable (testId "m") mempty mapSort
+xSet :: MockElementVariable
+xSet = MockElementVariable (testId "xSet") mempty setSort
+ySet :: MockElementVariable
+ySet = MockElementVariable (testId "ySet") mempty setSort
+xInt :: MockElementVariable
+xInt = MockElementVariable (testId "xInt") mempty intSort
+yInt :: MockElementVariable
+yInt = MockElementVariable (testId "yInt") mempty intSort
+xBool :: MockElementVariable
+xBool = MockElementVariable (testId "xBool") mempty boolSort
+xString :: MockElementVariable
+xString = MockElementVariable (testId "xString") mempty stringSort
+xList :: MockElementVariable
+xList = MockElementVariable (testId "xList") mempty listSort
+xMap :: MockElementVariable
+xMap = MockElementVariable (testId "xMap") mempty mapSort
+xSubSort :: MockElementVariable
+xSubSort = MockElementVariable (testId "xSubSort") mempty subSort
+xSubSubSort :: MockElementVariable
 xSubSubSort =
-    ElementVariable $ Variable (testId "xSubSubSort") mempty subSubsort
-xSubOtherSort :: ElementVariable Variable
+    MockElementVariable (testId "xSubSubSort") mempty subSubsort
+xSubOtherSort :: MockElementVariable
 xSubOtherSort =
-    ElementVariable $ Variable (testId "xSubOtherSort") mempty subOthersort
-xOtherSort :: ElementVariable Variable
-xOtherSort = ElementVariable $ Variable (testId "xOtherSort") mempty otherSort
-xTopSort :: ElementVariable Variable
-xTopSort = ElementVariable $ Variable (testId "xTopSort") mempty topSort
+    MockElementVariable (testId "xSubOtherSort") mempty subOthersort
+xOtherSort :: MockElementVariable
+xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
+xTopSort :: MockElementVariable
+xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
 
-makeUnifiedVariable :: Text -> Sort -> UnifiedVariable Variable
-makeUnifiedVariable v sort
-  | Text.head v == '@' = SetVar (SetVariable v')
-  | otherwise = ElemVar (ElementVariable v')
+makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
+makeSomeVariable name variableSort =
+    Variable
+    { variableSort
+    , variableName
+    }
   where
-    v' = Variable
-        { variableSort = sort
-        , variableName = testId v
-        , variableCounter = mempty
-        }
+    variableName =
+        injectVariableName VariableName { base = testId name, counter = mempty }
+    injectVariableName
+      | Text.head name == '@' = inject . SetVariableName
+      | otherwise = inject . ElementVariableName
 
-makeTestUnifiedVariable :: Text -> UnifiedVariable Variable
-makeTestUnifiedVariable = (`makeUnifiedVariable` testSort)
+makeTestSomeVariable :: Text -> SomeVariable VariableName
+makeTestSomeVariable = (`makeSomeVariable` testSort)
 
-mkTestUnifiedVariable :: Text -> TermLike Variable
-mkTestUnifiedVariable = Internal.mkVar . makeTestUnifiedVariable
+mkTestSomeVariable :: Text -> TermLike VariableName
+mkTestSomeVariable = Internal.mkVar . makeTestSomeVariable
 
 a :: InternalVariable variable => TermLike variable
 a = Internal.mkApplySymbol aSymbol []
 
 aConcrete :: TermLike Concrete
-Just aConcrete = Internal.asConcrete (a :: TermLike Variable)
+Just aConcrete = Internal.asConcrete (a :: TermLike VariableName)
 
 aSort0 :: InternalVariable variable => TermLike variable
 aSort0 = Internal.mkApplySymbol aSort0Symbol []
@@ -744,7 +763,7 @@ b :: InternalVariable variable => TermLike variable
 b = Internal.mkApplySymbol bSymbol []
 
 bConcrete :: TermLike Concrete
-Just bConcrete = Internal.asConcrete (b :: TermLike Variable)
+Just bConcrete = Internal.asConcrete (b :: TermLike VariableName)
 
 bSort0 :: InternalVariable variable => TermLike variable
 bSort0 = Internal.mkApplySymbol bSort0Symbol []

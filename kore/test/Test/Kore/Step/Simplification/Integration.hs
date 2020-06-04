@@ -25,32 +25,6 @@ import Kore.Equation
     ( Equation (..)
     , mkEquation
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeCeilPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate
-    , makeEqualsPredicate_
-    , makeFloorPredicate_
-    , makeIffPredicate
-    , makeImpliesPredicate
-    , makeInPredicate
-    , makeNotPredicate
-    , makeOrPredicate
-    , makeTruePredicate
-    , makeTruePredicate_
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -61,8 +35,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
-import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
 import Kore.Sort
     ( predicateSort
     )
@@ -80,14 +52,26 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
     )
 import Kore.Step.Simplification.Simplify
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern
+    ( Conditional (..)
+    , TestPattern
+    )
+import qualified Test.Kore.Internal.Pattern as Pattern
+import Test.Kore.Internal.Predicate as Predicate
+import Test.Kore.Internal.Substitution as Substitution hiding
+    ( test_substitute
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+type SideCondition' = SideCondition VariableName
 
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =
@@ -187,7 +171,7 @@ test_simplificationIntegration =
                                 )
                             )
                         , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.y, Mock.b)]
+                            [(inject Mock.y, Mock.b)]
                         }
                     ]
         actual <-
@@ -221,7 +205,7 @@ test_simplificationIntegration =
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
                             ,   [ mkEquation
-                                    predicateSort
+                                    Kore.Sort.predicateSort
                                     (Mock.function20MapTest
                                         (Mock.concatMap
                                             (Mock.elementMap
@@ -546,9 +530,33 @@ test_simplificationIntegration =
                 }
         assertEqual "" expected actual
     , testCase "Sort matching" $ do
-        let mx = SetVariable $ Variable (testId "mx") mempty Mock.subOthersort
-            iz = SetVariable $ Variable (testId "iz") mempty Mock.intSort
-            ub = ElementVariable $ Variable (testId "ub") mempty Mock.boolSort
+        let mx =
+                Variable
+                { variableName =
+                    SetVariableName VariableName
+                    { base = testId "mx"
+                    , counter = mempty
+                    }
+                , variableSort = Mock.subOthersort
+                }
+            iz =
+                Variable
+                { variableName =
+                    SetVariableName VariableName
+                    { base = testId "iz"
+                    , counter = mempty
+                    }
+                , variableSort = Mock.intSort
+                }
+            ub =
+                Variable
+                { variableName =
+                    ElementVariableName VariableName
+                    { base = testId "ub"
+                    , counter = mempty
+                    }
+                , variableSort = Mock.boolSort
+                }
 
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -683,8 +691,8 @@ test_simplificationIntegration =
                 }
         assertEqual "" expected actual
     , testCase "Builtin and simplification failure" $ do
-        let m = SetVariable $ Variable (testId "m") mempty Mock.listSort
-            ue = SetVariable $ Variable (testId "ue") mempty Mock.listSort
+        let m = mkSetVariable (testId "m") Mock.listSort
+            ue = mkSetVariable (testId "ue") Mock.listSort
         actual <- evaluate
             Conditional
                 { term = mkAnd
@@ -732,13 +740,10 @@ test_simplificationIntegration =
                 }
         assertEqual "" expected actual
     , testCase "Implies simplification" $ do
-        let zz = ElementVariable
-                $ Variable (testId "zz") mempty Mock.subOthersort
-            mci = ElementVariable
-                $ Variable (testId "mci") mempty Mock.subOthersort
-            mw = ElementVariable
-                $ Variable (testId "mw") mempty Mock.subOthersort
-            k = SetVariable $ Variable (testId "k") mempty Mock.setSort
+        let zz = mkElementVariable (testId "zz") Mock.subOthersort
+            mci = mkElementVariable (testId "mci") Mock.subOthersort
+            mw = mkElementVariable (testId "mw") Mock.subOthersort
+            k = mkSetVariable (testId "k") Mock.setSort
 
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -853,8 +858,8 @@ test_simplificationIntegration =
         assertBool "Expecting simplification"
             (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Equals-in simplification" $ do
-        let gt = SetVariable $ Variable (testId "gt") mempty Mock.stringSort
-            g = SetVariable $ Variable (testId "g") mempty Mock.testSort1
+        let gt = mkSetVariable (testId "gt") Mock.stringSort
+            g = mkSetVariable (testId "g") Mock.testSort1
         actual <- evaluate
             Conditional
                 { term = mkNu gt
@@ -880,7 +885,7 @@ test_simplificationIntegration =
                 }
         assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Distributed equals simplification" $ do
-        let k = SetVariable $ Variable (testId "k") mempty Mock.stringSort
+        let k = mkSetVariable (testId "k") Mock.stringSort
         actual <- evaluate
             Conditional
                 { term = mkMu k
@@ -893,7 +898,7 @@ test_simplificationIntegration =
                 }
         assertBool "" (OrPattern.isSimplified sideRepresentation actual)
     , testCase "nu-floor-in-or simplification" $ do
-        let q = SetVariable $ Variable (testId "q") mempty Mock.otherSort
+        let q = mkSetVariable (testId "q") Mock.otherSort
         actual <- evaluate
             Conditional
                 { term = mkNu q
@@ -965,7 +970,8 @@ conditionalEqualityPattern
     -> TermLike variable
     -> Equation variable
 conditionalEqualityPattern left requires right =
-    mkEquation predicateSort left right & Lens.set (field @"requires") requires
+    mkEquation Kore.Sort.predicateSort left right
+    & Lens.set (field @"requires") requires
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -979,8 +985,8 @@ test_substitute =
                                 (Mock.functionalConstr10 Mock.a)
                         , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, Mock.functionalConstr10 Mock.a)
+                            [ (inject Mock.x, Mock.a)
+                            , (inject Mock.y, Mock.functionalConstr10 Mock.a)
                             ]
                         }
                     ]
@@ -1008,8 +1014,8 @@ test_substitute =
                             Mock.functionalConstr20 Mock.a Mock.a
                         , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, Mock.a)
+                            [ (inject Mock.x, Mock.a)
+                            , (inject Mock.y, Mock.a)
                             ]
                         }
                     ]
@@ -1042,8 +1048,8 @@ test_substituteMap =
                         { term = Mock.functionalConstr20 Mock.a testMapA
                         , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, testMapA)
+                            [ (inject Mock.x, Mock.a)
+                            , (inject Mock.y, testMapA)
                             ]
                         }
                     ]
@@ -1076,8 +1082,8 @@ test_substituteList =
                         { term = Mock.functionalConstr20 Mock.a testListA
                         , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, testListA)
+                            [ (inject Mock.x, Mock.a)
+                            , (inject Mock.y, testListA)
                             ]
                         }
                     ]
@@ -1095,21 +1101,21 @@ test_substituteList =
   where
     mkDomainBuiltinList = Mock.builtinList
 
-evaluate :: Pattern Variable -> IO (OrPattern Variable)
+evaluate :: TestPattern -> IO OrTestPattern
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
-    -> Pattern Variable
-    -> IO (OrPattern Variable)
+    -> TestPattern
+    -> IO OrTestPattern
 evaluateWithAxioms axioms =
     evaluateConditionalWithAxioms axioms SideCondition.top
 
 evaluateConditionalWithAxioms
     :: BuiltinAndAxiomSimplifierMap
-    -> SideCondition Variable
-    -> Pattern Variable
-    -> IO (OrPattern Variable)
+    -> SideCondition'
+    -> TestPattern
+    -> IO OrTestPattern
 evaluateConditionalWithAxioms axioms sideCondition =
     runSimplifier env . Pattern.simplify sideCondition
   where
@@ -1164,10 +1170,10 @@ builtinAxioms =
         ]
 
 axiom
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate.Predicate Variable
-    -> Equation Variable
+    :: TestTerm
+    -> TestTerm
+    -> TestPredicate
+    -> Equation VariableName
 axiom left right requires =
     Equation
         { left
@@ -1178,11 +1184,11 @@ axiom left right requires =
         }
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set.Set (TermLike Concrete) -> TermLike Variable
+asInternal :: Set.Set (TermLike Concrete) -> TestTerm
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
     . Map.fromSet (const Domain.SetValue)
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition')

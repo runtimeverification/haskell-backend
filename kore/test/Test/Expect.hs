@@ -41,6 +41,6 @@ assertTop a
   | isTop a = return ()
   | otherwise = (assertFailure . show) (debug a)
 
-expectBool :: HasCallStack => TermLike Variable -> IO Bool
+expectBool :: HasCallStack => TermLike VariableName -> IO Bool
 expectBool (BuiltinBool_ internalBool) = return (builtinBoolValue internalBool)
 expectBool term = (assertFailure . show) (debug term)

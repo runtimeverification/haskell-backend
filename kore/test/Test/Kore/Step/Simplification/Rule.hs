@@ -33,8 +33,8 @@ test_simplifyRulePattern =
     andBool = Builtin.andBool
     unitList = Builtin.unitList
     sizeList = Builtin.sizeList
-    x = mkElemVar (elemVarS "x" Builtin.boolSort)
-    y = mkElemVar (elemVarS "y" Builtin.boolSort)
+    x = mkElemVar (mkElementVariable "x" Builtin.boolSort)
+    y = mkElemVar (mkElementVariable "y" Builtin.boolSort)
     mkBool = Test.Bool.asInternal
     true = mkBool True
     false = mkBool False
@@ -42,26 +42,26 @@ test_simplifyRulePattern =
 
 withSimplified
     :: TestName
-    -> (RulePattern Variable -> Assertion)
-    -> RulePattern Variable
+    -> (RulePattern VariableName -> Assertion)
+    -> RulePattern VariableName
     -> TestTree
 withSimplified testName check origin =
     testCase testName (check =<< simplifyRulePattern origin)
 
 simplifies
     :: TestName
-    -> RulePattern Variable
-    -> RulePattern Variable
+    -> RulePattern VariableName
+    -> RulePattern VariableName
     -> TestTree
 simplifies testName origin expect =
     withSimplified testName (assertEqual "" expect) origin
 
 notSimplifies
     :: TestName
-    -> RulePattern Variable
+    -> RulePattern VariableName
     -> TestTree
 notSimplifies testName origin =
     withSimplified testName (assertEqual "" origin) origin
 
-simplifyRulePattern :: RulePattern Variable -> IO (RulePattern Variable)
+simplifyRulePattern :: RulePattern VariableName -> IO (RulePattern VariableName)
 simplifyRulePattern = runSimplifier Builtin.testEnv . Kore.simplifyRulePattern

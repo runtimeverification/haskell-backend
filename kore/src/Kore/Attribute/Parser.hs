@@ -113,10 +113,8 @@ import Kore.Syntax.StringLiteral
     ( StringLiteral (StringLiteral)
     )
 import Kore.Syntax.Variable
-    ( Variable
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
+    ( SomeVariable
+    , VariableName
     )
 import SMT.SimpleSMT
     ( SExpr
@@ -321,7 +319,7 @@ getStringLiteral kore =
 
 {- | Accept a string literal.
  -}
-getVariable :: AttributePattern -> Parser (UnifiedVariable Variable)
+getVariable :: AttributePattern -> Parser (SomeVariable VariableName)
 getVariable kore =
     case Recursive.project kore of
         _ :< VariableF (Const var) -> return var

@@ -62,6 +62,7 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
+    , Variable (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugEvaluateCondition
@@ -80,9 +81,6 @@ import Kore.TopBottom
     ( TopBottom
     )
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import Log
 import qualified Pretty
 import SMT
@@ -232,10 +230,12 @@ translateTerm t (UninterpretedTerm (TermLike.ElemVar_ var)) =
     lookupVariable var <|> declareVariable t var
 translateTerm t (UninterpretedTerm pat) = do
     TranslatorState { quantifiedVars, terms } <- State.get
-    let freeVars = TermLike.freeVariables pat & FreeVariables.toSet
+    let freeVars =
+            TermLike.freeVariables @_ @variable pat
+            & FreeVariables.toNames
         boundVarsMap =
             Map.filterWithKey
-                (\k _ -> ElemVar k `Set.member` freeVars)
+                (\k _ -> inject (variableName k) `Set.member` freeVars)
                 quantifiedVars
         boundPat = TermLike.mkExistsN (Map.keys boundVarsMap) pat
     lookupUninterpreted boundPat quantifiedVars terms

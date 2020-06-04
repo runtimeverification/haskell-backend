@@ -32,7 +32,7 @@ import Kore.Step.RulePattern
     , getRewriteRule
     )
 import Kore.Syntax.Variable
-    ( Variable
+    ( VariableName
     )
 import Pretty
 
@@ -40,7 +40,7 @@ import Log
 
 data ErrorRewriteLoop =
     ErrorRewriteLoop
-        { rule :: !(RewriteRule Variable)
+        { rule :: !(RewriteRule VariableName)
         , errorCallStack :: !CallStack
         }
     deriving (Show)
@@ -65,7 +65,7 @@ instance Entry ErrorRewriteLoop where
 
 errorRewriteLoop
     :: HasCallStack
-    => RewriteRule Variable
+    => RewriteRule VariableName
     -> log a
 errorRewriteLoop rule =
     throw ErrorRewriteLoop { rule, errorCallStack = callStack }

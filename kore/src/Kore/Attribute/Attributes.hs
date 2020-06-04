@@ -36,18 +36,17 @@ import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import qualified Pretty
 import qualified SQL
 
 -- | A pure pattern which has only been parsed.
-type ParsedPattern = Pattern Variable Attribute.Null
+type ParsedPattern = Pattern VariableName Attribute.Null
 
 type AttributePattern = ParsedPattern
 
-asAttributePattern :: (PatternF Variable) AttributePattern -> AttributePattern
+asAttributePattern
+    :: (PatternF VariableName) AttributePattern
+    -> AttributePattern
 asAttributePattern = asPattern . (mempty :<)
 
 -- | An 'AttributePattern' of the attribute symbol applied to its arguments.
@@ -73,7 +72,7 @@ attributeString literal =
 attributeInteger :: Integer -> AttributePattern
 attributeInteger = attributeString . Text.pack . show
 
-attributeVariable :: UnifiedVariable Variable -> AttributePattern
+attributeVariable :: SomeVariable VariableName -> AttributePattern
 attributeVariable v = (asAttributePattern . VariableF . Const) v
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.

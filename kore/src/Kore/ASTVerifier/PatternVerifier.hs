@@ -57,7 +57,6 @@ import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 import qualified Kore.Variables.Free as Variables
-import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 import Pretty
     ( (<+>)
@@ -83,15 +82,15 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 verifyAliasLeftPattern
     :: Alias
     -> [Sort]
-    -> Application SymbolOrAlias (UnifiedVariable Variable)
+    -> Application SymbolOrAlias (SomeVariable VariableName)
     -> PatternVerifier
         ( DeclaredVariables
-        , Application SymbolOrAlias (UnifiedVariable Variable)
+        , Application SymbolOrAlias (SomeVariable VariableName)
         )
 verifyAliasLeftPattern alias aliasSorts leftPattern = do
     koreFailWhen (declaredHead /= symbolOrAlias) aliasDeclarationMismatch
     let expect = expectVariable <$> applicationChildren leftPattern
-    verified <- verifyPatternsWithSorts unifiedVariableSort aliasSorts expect
+    verified <- verifyPatternsWithSorts variableSort aliasSorts expect
     declaredVariables <- uniqueDeclaredVariables verified
     let verifiedLeftPattern = leftPattern { applicationChildren = verified }
     return (declaredVariables, verifiedLeftPattern)
@@ -110,8 +109,8 @@ verifyAliasLeftPattern alias aliasSorts leftPattern = do
             , Pretty.indent 4 $ unparse alias
             ]
     expectVariable
-        :: UnifiedVariable Variable
-        -> PatternVerifier (UnifiedVariable Variable)
+        :: SomeVariable VariableName
+        -> PatternVerifier (SomeVariable VariableName)
     expectVariable var = do
         verifyVariableDeclaration var
         return var
@@ -357,7 +356,7 @@ verifyApplyAlias application =
         , applicationChildren      = children
         } = application
 
-    getLeftVariables :: Id -> PatternVerifier [UnifiedVariable Variable]
+    getLeftVariables :: Id -> PatternVerifier [SomeVariable VariableName]
     getLeftVariables aliasId = do
         indexedModule <- Reader.asks indexedModule
         alias <- resolveAlias indexedModule aliasId
@@ -368,17 +367,18 @@ verifyApplyAlias application =
     -- If it was defined using a set variable, we can use it with any argument.
     -- Otherwise, it is a verification error.
     ensureChildIsDeclaredVarType
-        :: (UnifiedVariable Variable, PatternVerifier Verified.Pattern)
+        :: (SomeVariable VariableName, PatternVerifier Verified.Pattern)
         -> PatternVerifier ()
-    ensureChildIsDeclaredVarType (var, mpat) = do
+    ensureChildIsDeclaredVarType (var, mpat)
+      | isElementVariable var = do
         pat <- mpat
-        case (var, pat) of
-            (ElemVar _, Internal.ElemVar_ _) -> pure ()
-            (SetVar  _, _) -> pure ()
+        case pat of
+            Internal.ElemVar_ _ -> pure ()
             _ ->
                 koreFail
                     "The alias was declared with an element variable, but its\
                     \ argument is not an element variable."
+      | otherwise = pure ()
 
 verifyApplySymbol
     :: (child -> Sort)
@@ -407,7 +407,7 @@ verifyApplicationChildren getChildSort application sorts = do
 
 verifyApplication
     ::  Application SymbolOrAlias (PatternVerifier Verified.Pattern)
-    ->  PatternVerifier (TermLikeF Variable Verified.Pattern)
+    ->  PatternVerifier (TermLikeF VariableName Verified.Pattern)
 verifyApplication application = do
     result <- verifyApplyAlias' <|> verifyApplySymbol' & runMaybeT
     maybe (koreFail . noHead $ symbolOrAlias) return result
@@ -423,7 +423,7 @@ verifyApplication application = do
 verifyBinder
     :: Traversable binder
     => (forall a. binder a -> Sort)
-    -> (forall a. binder a -> UnifiedVariable Variable)
+    -> (forall a. binder a -> SomeVariable VariableName)
     -> binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (binder Verified.Pattern)
 verifyBinder binderSort binderVariable = \binder -> do
@@ -442,53 +442,53 @@ verifyBinder binderSort binderVariable = \binder -> do
 {-# INLINE verifyBinder #-}
 
 verifyExists
-    :: Exists Sort Variable (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (Exists Sort Variable Verified.Pattern)
-verifyExists = verifyBinder existsSort (ElemVar . existsVariable)
+    :: Exists Sort VariableName (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (Exists Sort VariableName Verified.Pattern)
+verifyExists = verifyBinder existsSort (inject . existsVariable)
 
 verifyForall
-    :: Forall Sort Variable (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (Forall Sort Variable Verified.Pattern)
-verifyForall = verifyBinder forallSort (ElemVar . forallVariable)
+    :: Forall Sort VariableName (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (Forall Sort VariableName Verified.Pattern)
+verifyForall = verifyBinder forallSort (inject . forallVariable)
 
 verifyMu
-    :: Mu Variable (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (Mu Variable Verified.Pattern)
-verifyMu = verifyBinder muSort (SetVar . muVariable)
+    :: Mu VariableName (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (Mu VariableName Verified.Pattern)
+verifyMu = verifyBinder muSort (inject . muVariable)
   where
-    muSort = variableSort . getSetVariable . muVariable
+    muSort = variableSort . muVariable
 
 verifyNu
-    :: Nu Variable (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (Nu Variable Verified.Pattern)
-verifyNu = verifyBinder nuSort (SetVar . nuVariable)
+    :: Nu VariableName (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (Nu VariableName Verified.Pattern)
+verifyNu = verifyBinder nuSort (inject . nuVariable)
   where
-    nuSort = variableSort . getSetVariable . nuVariable
+    nuSort = variableSort . nuVariable
 
 verifyVariable
-    :: UnifiedVariable Variable
-    -> PatternVerifier (Const (UnifiedVariable Variable) Verified.Pattern)
+    :: SomeVariable VariableName
+    -> PatternVerifier (Const (SomeVariable VariableName) Verified.Pattern)
 verifyVariable var = do
     declaredVariable <- lookupDeclaredVariable varName
-    let declaredSort = foldMapVariable variableSort declaredVariable
+    let declaredSort = variableSort declaredVariable
     koreFailWithLocationsWhen
         (varSort /= declaredSort)
         [ var, declaredVariable ]
         "The declared sort is different."
     return (Const var)
   where
-    varName = foldMapVariable variableName var
-    varSort = foldMapVariable variableSort var
+    varName = variableName var
+    varSort = variableSort var
 
 verifyDomainValue
     :: DomainValue Sort (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (TermLikeF Variable Verified.Pattern)
+    -> PatternVerifier (TermLikeF VariableName Verified.Pattern)
 verifyDomainValue domain = do
     let DomainValue { domainValueSort = patternSort } = domain
     verifyPatternSort patternSort
     verifySortHasDomainValues patternSort
     verified <- Internal.DomainValueF <$> sequence domain
-    let freeVariables' :: FreeVariables Variable =
+    let freeVariables' :: FreeVariables VariableName =
             foldMap freeVariables
                 (Internal.extractAttributes <$> verified)
     unless (nullFreeVariables freeVariables')
@@ -518,7 +518,7 @@ verifyStringLiteral
 verifyStringLiteral = sequence
 
 verifyVariableDeclaration
-    :: UnifiedVariable Variable -> PatternVerifier VerifySuccess
+    :: SomeVariable VariableName -> PatternVerifier VerifySuccess
 verifyVariableDeclaration variable = do
     Context { declaredSortVariables } <- Reader.ask
     verifySort
@@ -526,7 +526,7 @@ verifyVariableDeclaration variable = do
         declaredSortVariables
         varSort
   where
-    varSort = foldMapVariable variableSort variable
+    varSort = variableSort variable
 
 verifyFreeVariables
     :: ParsedPattern
@@ -540,20 +540,19 @@ verifyFreeVariables unifiedPattern =
 
 addFreeVariable
     :: DeclaredVariables
-    -> UnifiedVariable Variable
+    -> SomeVariable VariableName
     -> PatternVerifier DeclaredVariables
 addFreeVariable (getDeclaredVariables -> vars) var = do
     checkVariable var vars
-    return . DeclaredVariables $
-        Map.insert (foldMapVariable variableName var) var vars
+    return . DeclaredVariables $ Map.insert (variableName var) var vars
 
 checkVariable
-    :: UnifiedVariable Variable
-    -> Map.Map Id (UnifiedVariable Variable)
+    :: SomeVariable VariableName
+    -> Map.Map (SomeVariableName VariableName) (SomeVariable VariableName)
     -> PatternVerifier VerifySuccess
 checkVariable var vars =
     maybe verifySuccess inconsistent
-    $ Map.lookup (foldMapVariable variableName var) vars
+    $ Map.lookup (variableName var) vars
   where
     inconsistent v =
         koreFailWithLocations [v, var]
@@ -564,7 +563,7 @@ checkVariable var vars =
             <+> unparse var
             <> Pretty.dot
 
-patternNameForContext :: PatternF Variable p -> Text
+patternNameForContext :: PatternF VariableName p -> Text
 patternNameForContext (AndF _) = "\\and"
 patternNameForContext (ApplicationF application) =
     "symbol or alias '"
@@ -576,14 +575,16 @@ patternNameForContext (CeilF _) = "\\ceil"
 patternNameForContext (DomainValueF _) = "\\dv"
 patternNameForContext (EqualsF _) = "\\equals"
 patternNameForContext (ExistsF exists) =
-    "\\exists '"
-    <> variableNameForContext (getElementVariable $ existsVariable exists)
-    <> "'"
+    (Pretty.renderText . Pretty.layoutOneLine . Pretty.hsep)
+    [ "\\exists"
+    , Pretty.squotes (unparse $ variableName $ existsVariable exists)
+    ]
 patternNameForContext (FloorF _) = "\\floor"
 patternNameForContext (ForallF forall) =
-    "\\forall '"
-    <> variableNameForContext (getElementVariable $ forallVariable forall)
-    <> "'"
+    (Pretty.renderText . Pretty.layoutOneLine . Pretty.hsep)
+    [ "\\forall"
+    , Pretty.squotes (unparse $ variableName $ forallVariable forall)
+    ]
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"
 patternNameForContext (InF _) = "\\in"
@@ -595,11 +596,14 @@ patternNameForContext (OrF _) = "\\or"
 patternNameForContext (RewritesF _) = "\\rewrites"
 patternNameForContext (StringLiteralF _) = "<string>"
 patternNameForContext (TopF _) = "\\top"
-patternNameForContext (VariableF (Const (ElemVar variable))) =
-    "element variable '" <> variableNameForContext (getElementVariable variable) <> "'"
 patternNameForContext (InhabitantF _) = "\\inh"
-patternNameForContext (VariableF (Const (SetVar variable))) =
-    "set variable '" <> variableNameForContext (getSetVariable variable) <> "'"
-
-variableNameForContext :: Variable -> Text
-variableNameForContext variable = getId (variableName variable)
+patternNameForContext (VariableF (Const someVariable)) =
+    (Pretty.renderText . Pretty.layoutOneLine . Pretty.hsep)
+    [ variableClass
+    , Pretty.squotes (unparse $ variableName someVariable)
+    ]
+  where
+    variableClass =
+        case variableName someVariable of
+            SomeVariableNameElement _ -> "element variable"
+            SomeVariableNameSet _ -> "set variable"

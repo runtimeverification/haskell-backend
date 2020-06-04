@@ -59,11 +59,8 @@ instance Unparse Signedness where
     unparse = unparse . toApplication @Void
     unparse2 = unparse2 . toApplication @Void
 
-instance
-    Ord variable
-    => Synthetic (FreeVariables variable) (Const Signedness)
-  where
-    synthetic = const mempty
+instance Synthetic (FreeVariables variable) (Const Signedness) where
+    synthetic = const emptyFreeVariables
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Const Signedness) where

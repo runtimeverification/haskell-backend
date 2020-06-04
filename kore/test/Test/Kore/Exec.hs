@@ -347,19 +347,14 @@ test_searchExceedingBreadthLimit =
                 FINAL -> Set.fromList [b, d]
 
 -- | V:MySort{}
-searchVar :: TermLike Variable
-searchVar =
-    mkElemVar $ ElementVariable Variable
-        { variableName = Id "V" AstLocationTest
-        , variableCounter = mempty
-        , variableSort = mySort
-        }
+searchVar :: TermLike VariableName
+searchVar = mkElemVar $ mkElementVariable (testId "V") mySort
 
 -- |
 --  \and{MySort{}}(
 --      V:MySort{},
 --      \top{MySort{}}())
-searchPattern :: Pattern Variable
+searchPattern :: Pattern VariableName
 searchPattern = Conditional
     { term = searchVar
     , predicate = makeTruePredicate_
@@ -368,7 +363,7 @@ searchPattern = Conditional
 
 -- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is
 -- not a disjunction of "v = ???", return Nothing.
-extractSearchResults :: TermLike Variable -> Maybe (Set (TermLike Variable))
+extractSearchResults :: TermLike VariableName -> Maybe (Set (TermLike VariableName))
 extractSearchResults =
     \case
         Equals_ operandSort resultSort first second
@@ -453,12 +448,8 @@ functionalAxiom name =
         )
             { sentenceAxiomAttributes = Attributes [functionalAttribute] }
   where
-    v = ElementVariable Variable
-        { variableName = Id "V" AstLocationTest
-        , variableCounter = mempty
-        , variableSort = mySort
-        }
-    r = SortVariable $ Id "R" AstLocationTest
+    v = mkElementVariable (testId "V") mySort
+    r = SortVariable (testId "R")
 
 simpleRewriteAxiom :: Text -> Text -> Verified.Sentence
 simpleRewriteAxiom lhs rhs =
@@ -480,7 +471,7 @@ rewriteAxiomPriority
     :: Text
     -> Text
     -> Maybe Integer
-    -> Maybe (TermLike Variable)
+    -> Maybe (TermLike VariableName)
     -> Verified.Sentence
 rewriteAxiomPriority lhsName rhsName priority antiLeft =
     ( Syntax.SentenceAxiomSentence
@@ -511,7 +502,7 @@ axiomWithAttribute attribute axiom =
   where
     currentAttributes = sentenceAxiomAttributes axiom
 
-applyToNoArgs :: Sort -> Text -> TermLike Variable
+applyToNoArgs :: Sort -> Text -> TermLike VariableName
 applyToNoArgs sort name =
     mkApplySymbol
         Symbol
@@ -602,11 +593,7 @@ test_execGetExitCode =
         mkEqualityAxiom
             (mkApplySymbol getExitCodeSym [mkElemVar v]) (mkElemVar v) Nothing
       where
-        v = ElementVariable Variable
-            { variableName = testId "V"
-            , variableCounter = mempty
-            , variableSort = myIntSort
-            }
+        v = mkElementVariable (testId "V") myIntSort
         getExitCodeSym =
             Symbol
                 { symbolConstructor = getExitCodeId
