@@ -34,6 +34,9 @@ import Control.Error
 import Control.Monad
     ( (>=>)
     )
+import Control.Monad.Except
+    ( catchError
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.List.NonEmpty
