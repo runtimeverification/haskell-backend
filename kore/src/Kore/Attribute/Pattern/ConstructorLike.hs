@@ -95,6 +95,11 @@ instance Synthetic ConstructorLike (Application Symbol) where
         , childrenAreConstructorLike =
             ConstructorLike . Just $ ConstructorLikeHead
 
+        | Symbol.isConstructor symbol
+        , childrenAreConstructorLike
+        , childrenAreNotSortInjections =
+            ConstructorLike . Just $ SortInjectionHead
+
         -- Checks that the children of a sort injection are
         -- not sort injections, i.e. that the triangle axiom
         -- for sort injections has been fully applied.
