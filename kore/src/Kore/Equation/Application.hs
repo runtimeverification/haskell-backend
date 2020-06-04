@@ -197,9 +197,7 @@ attemptEquation sideCondition termLike equation =
             . applyMatchResult equationRenamed
             <$> results
             )
-    takeFirstSuccess first second = do
-        lift (runExceptT first)
-        >>= either (const second) (const first)
+    takeFirstSuccess first second = catchError first (const second)
 
     whileDebugAttemptEquation'
         :: simplifier (AttemptEquationResult variable)
