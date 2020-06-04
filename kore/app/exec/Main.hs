@@ -5,8 +5,8 @@ import Prelude.Kore
 import Control.Monad.Catch
     ( MonadCatch
     , SomeException
-    , catch
     , displayException
+    , finally
     , handle
     , throwM
     )
@@ -63,7 +63,6 @@ import System.Directory
     ( copyFile
     , doesFileExist
     , emptyPermissions
-    , listDirectory
     , setOwnerExecutable
     , setOwnerReadable
     , setOwnerSearchable
@@ -76,8 +75,6 @@ import System.Exit
     )
 import System.IO
     ( IOMode (WriteMode)
-    , hPutStrLn
-    , stderr
     , withFile
     )
 
@@ -120,7 +117,7 @@ import Kore.Log
     , LogMessage
     , SomeEntry (..)
     , WithLog
-    , createTarGz
+    , archiveDirectoryReport
     , logEntry
     , parseKoreLogOptions
     , runKoreLog
@@ -575,11 +572,9 @@ mainWithOptions execOptions = do
             Foldable.forM_ rtsStatistics $ \filePath ->
                 writeStats filePath =<< getStats
             let reportPath = maybe tempDirectory ("./" <>) (toReport bugReport)
-            writeInReportDirectory tempDirectory
-                `catch` \(_ ::SomeException) ->
-                    archiveDirectoryReport tempDirectory reportPath
-            archiveDirectoryReport tempDirectory reportPath
-            hPutStrLn stderr $ "\nCreated " <> reportPath <> ".tar.gz"
+            finally
+                (writeInReportDirectory tempDirectory)
+                (archiveDirectoryReport tempDirectory reportPath)
             exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
@@ -632,11 +627,6 @@ mainWithOptions execOptions = do
             <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
         Foldable.forM_ (outputFileName execOptions)
             $ flip copyFile (tempDirectory <> "/outputFile.kore")
-
-    archiveDirectoryReport :: FilePath -> FilePath -> IO ()
-    archiveDirectoryReport tempDirectory dest = do
-        files <- listDirectory tempDirectory
-        createTarGz (dest <> ".tar.gz") tempDirectory files
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
