@@ -1,6 +1,11 @@
 module Test.Kore.Internal.Substitution
     ( test_substitution
     , test_toPredicate
+    -- * Re-exports
+    , TestAssignment
+    , TestSubstitution
+    , module Kore.Internal.Substitution
+    , module Test.Kore.Internal.TermLike
     ) where
 
 import Prelude.Kore hiding
@@ -11,16 +16,7 @@ import Test.Tasty
 
 import qualified Data.Set as Set
 
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeEqualsPredicate_
-    , makeTruePredicate_
-    )
 import Kore.Internal.Substitution
-import Kore.Internal.TermLike hiding
-    ( mapVariables
-    )
 import Kore.TopBottom
     ( isBottom
     , isTop
@@ -29,16 +25,31 @@ import Kore.Variables.Target
     ( mkElementNonTarget
     , mkElementTarget
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore
+import Test.Kore.Internal.Predicate
+    ( TestPredicate
+    , makeAndPredicate
+    , makeEqualsPredicate_
+    , makeTruePredicate_
+    )
+import Test.Kore.Internal.TermLike hiding
+    ( forgetSimplified
+    , isSimplified
+    , mapVariables
+    , simplifiedAttribute
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 import Test.Terse
     ( gives_
     )
+
+
+type TestAssignment = Assignment VariableName
+type TestSubstitution = Substitution VariableName
+
+type ElementVariable' = ElementVariable VariableName
 
 test_substitution :: [TestTree]
 test_substitution =
@@ -62,9 +73,9 @@ propertyTests =
   , null `gives_`         [(mempty, True),  (normalized, False), (unnormalized, False) ]
   ]
   where
-    normalized = unsafeWrap [(ElemVar Mock.x, Mock.a)]
-    unnormalized = wrap [assign (ElemVar Mock.x) Mock.a]
-
+    normalized, unnormalized :: TestSubstitution
+    normalized = unsafeWrap [(inject Mock.x, Mock.a)]
+    unnormalized = wrap [assign (inject Mock.x) Mock.a]
 
 monoidTests:: TestTree
 monoidTests =
@@ -136,11 +147,11 @@ mapVariablesTests =
     [ testCase "map id over empty is empty"
         $ assertEqual ""
             (wrap mempty)
-            . mapVariables @Variable @Variable (pure id) $ emptySubst
+            . mapVariables (pure id) $ emptySubst
     , testCase "map id over wrap empty is normalized empty"
         $ assertEqual ""
             (wrap mempty)
-            . mapVariables @Variable @Variable (pure id) $ wrap emptyRawSubst
+            . mapVariables (pure id) $ wrap emptyRawSubst
     , testCase "map id over singleton == id"
         $ assertEqual ""
             (wrap singletonSubst)
@@ -216,19 +227,19 @@ orderRenameAndRenormalizeTODOTests =
     [ testCase "empty subst unchanged"
         $ assertEqual ""
             emptySubst
-            (orderRenameAndRenormalizeTODO (ElemVar Mock.x) emptySubst)
+            (orderRenameAndRenormalizeTODO (inject Mock.x) emptySubst)
     , testCase "unnormalized without RHS unchanged" $ do
         let
-            subst = wrap [assign (ElemVar Mock.x) Mock.a]
+            subst = wrap [assign (SomeVariableNameElement <$> Mock.x) Mock.a]
         assertEqual ""
             subst
-            (orderRenameAndRenormalizeTODO (ElemVar Mock.x) subst)
+            (orderRenameAndRenormalizeTODO (inject Mock.x) subst)
     , testCase "normalized without RHS unchanged" $ do
         let
-            subst = unsafeWrap [(ElemVar Mock.x, Mock.a)]
+            subst = unsafeWrap [(SomeVariableNameElement <$> Mock.x, Mock.a)]
         assertEqual ""
             subst
-            (orderRenameAndRenormalizeTODO (ElemVar Mock.x) subst)
+            (orderRenameAndRenormalizeTODO (inject Mock.x) subst)
     , testCase "unnormalized reverses RHS" $ do
         let
             expectedSubst =
@@ -259,11 +270,11 @@ orderRenameAndRenormalizeTODOTests =
             )
     , testCase "normalized reverses RHS" $ do
         let
-            expectedSubst = unsafeWrap [(ElemVar Mock.x, mkElemVar Mock.y)]
-            originalSubst = unsafeWrap [(ElemVar Mock.y, mkElemVar Mock.x)]
+            expectedSubst = unsafeWrap [(inject Mock.x, mkElemVar Mock.y)]
+            originalSubst = unsafeWrap [(inject Mock.y, mkElemVar Mock.x)]
         assertEqual ""
             expectedSubst
-            (orderRenameAndRenormalizeTODO (ElemVar Mock.x) originalSubst)
+            (orderRenameAndRenormalizeTODO (inject Mock.x) originalSubst)
     , testCase "unnormalized reverses multiple RHS" $ do
         let
             expectedSubst = wrap . mkUnwrappedSubstitution $
@@ -276,76 +287,76 @@ orderRenameAndRenormalizeTODOTests =
     , testCase "normalized reverses multiple RHS" $ do
         let
             expectedSubst = unsafeWrap
-                [(ElemVar Mock.x, mkElemVar Mock.z), (ElemVar Mock.y, mkElemVar Mock.z)]
+                [(inject Mock.x, mkElemVar Mock.z), (inject Mock.y, mkElemVar Mock.z)]
             originalSubst = unsafeWrap
-                [(ElemVar Mock.y, mkElemVar Mock.x), (ElemVar Mock.z, mkElemVar Mock.x)]
+                [(inject Mock.y, mkElemVar Mock.x), (inject Mock.z, mkElemVar Mock.x)]
         assertEqual ""
             expectedSubst
-            (orderRenameAndRenormalizeTODO (ElemVar Mock.x) originalSubst)
+            (orderRenameAndRenormalizeTODO (inject Mock.x) originalSubst)
     , testCase "unnormalized does not substitute reverse RHS" $ do
         let
             expectedSubst = wrap
-                [ assign (ElemVar Mock.x) (mkElemVar Mock.y)
-                , assign (ElemVar Mock.z) (Mock.f (mkElemVar Mock.x))
+                [ assign (inject Mock.x) (mkElemVar Mock.y)
+                , assign (inject Mock.z) (Mock.f (mkElemVar Mock.x))
                 ]
             originalSubst = wrap
-                [ assign (ElemVar Mock.y) (mkElemVar Mock.x)
-                , assign (ElemVar Mock.z) (Mock.f (mkElemVar Mock.x))
+                [ assign (inject Mock.y) (mkElemVar Mock.x)
+                , assign (inject Mock.z) (Mock.f (mkElemVar Mock.x))
                 ]
         assertEqual ""
             expectedSubst
-            (orderRenameAndRenormalizeTODO (ElemVar Mock.x) originalSubst)
+            (orderRenameAndRenormalizeTODO (inject Mock.x) originalSubst)
     , testCase "normalized substitutes reverse RHS" $ do
         let
             expectedSubst = unsafeWrap
-                [ (ElemVar Mock.x, mkElemVar Mock.z)
-                , (ElemVar Mock.y, mkElemVar Mock.z)
-                , (ElemVar Mock.var_x_1, Mock.f (mkElemVar Mock.z))
+                [ (inject Mock.x, mkElemVar Mock.z)
+                , (inject Mock.y, mkElemVar Mock.z)
+                , (inject Mock.var_x_1, Mock.f (mkElemVar Mock.z))
                 ]
             originalSubst = unsafeWrap
-                [ (ElemVar Mock.y, mkElemVar Mock.x)
-                , (ElemVar Mock.z, mkElemVar Mock.x)
-                , (ElemVar Mock.var_x_1, Mock.f (mkElemVar Mock.x))
+                [ (inject Mock.y, mkElemVar Mock.x)
+                , (inject Mock.z, mkElemVar Mock.x)
+                , (inject Mock.var_x_1, Mock.f (mkElemVar Mock.x))
                 ]
         assertEqual ""
             expectedSubst
-            (orderRenameAndRenormalizeTODO (ElemVar Mock.x) originalSubst)
+            (orderRenameAndRenormalizeTODO (inject Mock.x) originalSubst)
     ]
   where
-    targetVarX = ElemVar . mkElementTarget $ Mock.x
+    targetVarX = inject . mkElementTarget $ Mock.x
     targetPattX = mkElemVar . mkElementTarget $ Mock.x
-    nonTargetVarY = ElemVar . mkElementNonTarget $ Mock.y
+    nonTargetVarY = inject . mkElementNonTarget $ Mock.y
     nonTargetPattY = mkElemVar . mkElementNonTarget $ Mock.y
-    nonTargetVarZ = ElemVar . mkElementNonTarget $ Mock.z
+    nonTargetVarZ = inject . mkElementNonTarget $ Mock.z
     nonTargetPattZ = mkElemVar . mkElementNonTarget $ Mock.z
 
-emptyRawSubst :: [Assignment Variable]
+emptyRawSubst :: [TestAssignment]
 emptyRawSubst = mempty
 
-emptySubst :: Substitution Variable
+emptySubst :: TestSubstitution
 emptySubst = mempty
 
-singletonSubst :: [Assignment Variable]
-singletonSubst = [assign (ElemVar Mock.x) Mock.a]
+singletonSubst :: [TestAssignment]
+singletonSubst = [assign (inject Mock.x) Mock.a]
 
 test_toPredicate :: TestTree
 test_toPredicate =
     testCase "toPredicate" $ do
         assertEqual "null substitutions is top"
             makeTruePredicate_
-            (toPredicate mempty :: Predicate Variable)
+            (toPredicate mempty :: TestPredicate)
         assertEqual "a = b"
             (makeAndPredicate pr1 makeTruePredicate_)
             (toPredicate $ wrap
-                [assign (ElemVar $ a Mock.testSort) (mkElemVar $ b Mock.testSort)]
+                [assign (inject $ a Mock.testSort) (mkElemVar $ b Mock.testSort)]
             )
 
-pr1 :: Predicate Variable
+pr1 :: TestPredicate
 pr1 =
     makeEqualsPredicate_
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
-a, b :: Sort -> ElementVariable Variable
-a = ElementVariable . Variable (testId "a") mempty
-b = ElementVariable . Variable (testId "b") mempty
+a, b :: Sort -> ElementVariable'
+a = fmap ElementVariableName . Variable (VariableName (testId "a") mempty)
+b = fmap ElementVariableName . Variable (VariableName (testId "b") mempty)

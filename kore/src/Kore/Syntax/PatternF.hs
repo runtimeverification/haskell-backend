@@ -59,7 +59,6 @@ import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 
 {- | 'PatternF' is the 'Base' functor of Kore patterns
 
@@ -86,7 +85,7 @@ data PatternF variable child
     | TopF           !(Top Sort child)
     | InhabitantF    !(Inhabitant child)
     | StringLiteralF !(Const StringLiteral child)
-    | VariableF      !(Const (UnifiedVariable variable) child)
+    | VariableF      !(Const (SomeVariable variable) child)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (PatternF variable child)
@@ -106,8 +105,7 @@ instance
 instance (NFData child, NFData variable) => NFData (PatternF variable child)
 
 instance
-    (SortedVariable variable, Unparse variable, Unparse child) =>
-    Unparse (PatternF variable child)
+    (Unparse variable, Unparse child) => Unparse (PatternF variable child)
   where
     unparse = unparseGeneric
     unparse2 = unparse2Generic
@@ -119,11 +117,9 @@ not injective!
 
 -}
 mapVariables
-    ::  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  PatternF variable1 child
-    ->  PatternF variable2 child
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> PatternF variable1 child
+    -> PatternF variable2 child
 mapVariables adj =
     runIdentity . traverseVariables adj'
   where
@@ -137,11 +133,9 @@ traversal is not injective!
 
 -}
 traverseVariables
-    ::  Applicative f
-    =>  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> f (VariableNameOf variable2))
-    ->  PatternF variable1 child -> f (PatternF variable2 child)
+    :: Applicative f
+    => AdjSomeVariableName (variable1 -> f variable2)
+    -> PatternF variable1 child -> f (PatternF variable2 child)
 traverseVariables adj =
     \case
         -- Non-trivial cases
@@ -169,11 +163,11 @@ traverseVariables adj =
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
   where
-    trElemVar = lensVariableName $ traverseElementVariableName adj
-    trSetVar = lensVariableName $ traverseSetVariableName adj
+    trElemVar = traverse $ traverseElementVariableName adj
+    trSetVar = traverse $ traverseSetVariableName adj
     traverseVariable =
         fmap VariableF
-        . Lens.traverseOf _Unwrapped (traverseUnifiedVariable adj)
+        . Lens.traverseOf _Unwrapped (traverseSomeVariable adj)
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
         Exists existsSort
         <$> trElemVar existsVariable

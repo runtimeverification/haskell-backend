@@ -49,9 +49,6 @@ import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify (..)
     )
-import Kore.Variables.UnifiedVariable
-    ( foldMapVariable
-    )
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 
@@ -63,7 +60,7 @@ The resulting predicate has the 'Target' variables unwrapped.
 See also: 'remainder\''
 
  -}
-remainder :: MultiOr (Condition RewritingVariable) -> Predicate Variable
+remainder :: MultiOr (Condition RewritingVariableName) -> Predicate VariableName
 remainder = getRemainderPredicate . remainder'
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
@@ -73,8 +70,8 @@ by any applied rule.
 
  -}
 remainder'
-    :: MultiOr (Condition RewritingVariable)
-    -> Predicate RewritingVariable
+    :: MultiOr (Condition RewritingVariableName)
+    -> Predicate RewritingVariableName
 remainder' results =
     mkMultiAndPredicate $ mkNotExists conditions
   where
@@ -83,14 +80,13 @@ remainder' results =
 
 -- | Existentially-quantify target (axiom) variables in the 'Condition'.
 existentiallyQuantifyRuleVariables
-    :: Predicate RewritingVariable
-    -> Predicate RewritingVariable
+    :: Predicate RewritingVariableName
+    -> Predicate RewritingVariableName
 existentiallyQuantifyRuleVariables predicate =
     Predicate.makeMultipleExists freeRuleVariables predicate
   where
     freeRuleVariables =
-        filter (isRuleVariable . getElementVariable)
-        . Predicate.freeElementVariables
+        filter isElementRuleVariable . Predicate.freeElementVariables
         $ predicate
 
 {- | Negate a disjunction of many terms.
@@ -119,16 +115,13 @@ mkMultiAndPredicate =
 {- | Represent the unification solution as a conjunction of predicates.
  -}
 unificationConditions
-    :: Condition RewritingVariable
+    :: Condition RewritingVariableName
     -- ^ Unification solution
-    -> MultiAnd (Predicate RewritingVariable)
+    -> MultiAnd (Predicate RewritingVariableName)
 unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
-    substitution' =
-        Substitution.filter
-            (foldMapVariable isConfigVariable)
-            substitution
+    substitution' = Substitution.filter isSomeConfigVariable substitution
 
 substitutionConditions
     :: InternalVariable variable

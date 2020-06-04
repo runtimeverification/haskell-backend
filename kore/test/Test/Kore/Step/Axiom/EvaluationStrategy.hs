@@ -568,31 +568,31 @@ failingEvaluator =
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluatorWithRequires
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> Predicate VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluatorWithRequires left right requires =
     simplificationEvaluation (axiom left right requires)
 
 axiomEvaluator
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate_)
 
 evaluate
     :: BuiltinAndAxiomSimplifier
-    -> TermLike Variable
+    -> TermLike VariableName
     -> IO CommonAttemptedAxiom
 evaluate simplifier term =
     evaluateWithPredicate simplifier term makeTruePredicate_
 
 evaluateWithPredicate
     :: BuiltinAndAxiomSimplifier
-    -> TermLike Variable
-    -> Predicate Variable
+    -> TermLike VariableName
+    -> Predicate VariableName
     -> IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifier Mock.env

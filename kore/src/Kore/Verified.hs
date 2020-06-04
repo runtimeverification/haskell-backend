@@ -22,11 +22,11 @@ import qualified Kore.Internal.Alias as Internal
     )
 import Kore.Internal.TermLike
     ( TermLike
-    , Variable
+    , VariableName
     )
 import qualified Kore.Syntax.Sentence as Syntax
 
-type Pattern = TermLike Variable
+type Pattern = TermLike VariableName
 
 type Alias = Internal.Alias Pattern
 

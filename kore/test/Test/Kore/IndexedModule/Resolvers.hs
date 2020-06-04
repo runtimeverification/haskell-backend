@@ -56,7 +56,7 @@ axiomA' =
     $ TermLike.mkEquals sortR (TermLike.mkElemVar x)
     $ TermLike.applySymbol_ objectA []
   where
-    x = TermLike.elemVarS "x" objectS1
+    x = TermLike.mkElementVariable "x" objectS1
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
 

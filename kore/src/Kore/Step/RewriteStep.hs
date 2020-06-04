@@ -89,11 +89,11 @@ See also: 'applyInitialConditions'
 finalizeAppliedRule
     :: forall simplifier
     .  MonadSimplify simplifier
-    => RulePattern RewritingVariable
+    => RulePattern RewritingVariableName
     -- ^ Applied rule
-    -> OrCondition RewritingVariable
+    -> OrCondition RewritingVariableName
     -- ^ Conditions of applied rule
-    -> simplifier (OrPattern RewritingVariable)
+    -> simplifier (OrPattern RewritingVariableName)
 finalizeAppliedRule renamedRule appliedConditions =
     MultiOr.gather
     $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
@@ -129,12 +129,12 @@ finalizeAppliedRule renamedRule appliedConditions =
 
 finalizeRule
     :: MonadSimplify simplifier
-    => FreeVariables RewritingVariable
-    -> Pattern RewritingVariable
+    => FreeVariables RewritingVariableName
+    -> Pattern RewritingVariableName
     -- ^ Initial conditions
-    -> UnifiedRule RulePattern RewritingVariable
+    -> UnifiedRule RulePattern RewritingVariableName
     -- ^ Rewriting axiom
-    -> simplifier [Result RulePattern Variable]
+    -> simplifier [Result RulePattern VariableName]
 finalizeRule initialVariables initial unifiedRule =
     Branch.gather $ do
         let initialCondition = Conditional.withoutTerm initial
@@ -149,10 +149,10 @@ finalizeRule initialVariables initial unifiedRule =
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer simplifier =
         MonadSimplify simplifier
-    =>  FreeVariables RewritingVariable
-    ->  Pattern RewritingVariable
-    ->  [UnifiedRule RulePattern RewritingVariable]
-    ->  simplifier (Results RulePattern Variable)
+    =>  FreeVariables RewritingVariableName
+    ->  Pattern RewritingVariableName
+    ->  [UnifiedRule RulePattern RewritingVariableName]
+    ->  simplifier (Results RulePattern VariableName)
 
 finalizeRulesParallel :: forall simplifier. Finalizer simplifier
 finalizeRulesParallel initialVariables initial unifiedRules = do
@@ -201,11 +201,11 @@ applyRulesWithFinalizer
     .  MonadSimplify simplifier
     => Finalizer simplifier
     -> UnificationProcedure simplifier
-    -> [RulePattern RewritingVariable]
+    -> [RulePattern RewritingVariableName]
     -- ^ Rewrite rules
-    -> Pattern RewritingVariable
+    -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern Variable)
+    -> simplifier (Results RulePattern VariableName)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     results <- unifyRules unificationProcedure initial rules
     debugAppliedRewriteRules initial results
@@ -222,11 +222,11 @@ applyRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> [RulePattern RewritingVariable]
+    -> [RulePattern RewritingVariableName]
     -- ^ Rewrite rules
-    -> Pattern RewritingVariable
+    -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern Variable)
+    -> simplifier (Results RulePattern VariableName)
 applyRulesParallel = applyRulesWithFinalizer finalizeRulesParallel
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -238,11 +238,11 @@ applyRewriteRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> [RewriteRule RewritingVariable]
+    -> [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
-    -> Pattern Variable
+    -> Pattern VariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern Variable)
+    -> simplifier (Results RulePattern VariableName)
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
@@ -262,11 +262,11 @@ applyRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> [RulePattern RewritingVariable]
+    -> [RulePattern RewritingVariableName]
     -- ^ Rewrite rules
-    -> Pattern RewritingVariable
+    -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern Variable)
+    -> simplifier (Results RulePattern VariableName)
 applyRulesSequence = applyRulesWithFinalizer finalizeRulesSequence
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -278,11 +278,11 @@ applyRewriteRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> Pattern Variable
+    -> Pattern VariableName
     -- ^ Configuration being rewritten
-    -> [RewriteRule RewritingVariable]
+    -> [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
-    -> simplifier (Results RulePattern Variable)
+    -> simplifier (Results RulePattern VariableName)
 applyRewriteRulesSequence
     unificationProcedure
     (mkRewritingPattern -> initialConfig)

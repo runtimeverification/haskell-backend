@@ -286,49 +286,25 @@ test_patternToAxiomPatternAndBack =
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
 
-leftP, antiLeftP, rightP, initialRhs :: TermLike Variable
+leftP, antiLeftP, rightP, initialRhs :: TermLike VariableName
 leftP = mkElemVar Mock.x
 antiLeftP = mkElemVar Mock.u
 rightP = mkExists Mock.y (mkElemVar Mock.y)
 initialRhs = mkAnd (Predicate.unwrapPredicate ensuresP) rightP
 
-requiresP, ensuresP :: Predicate.Predicate Variable
+requiresP, ensuresP :: Predicate.Predicate VariableName
 requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
 ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
 
-attributesWithPriority :: Ord variable => Attribute.Axiom symbol variable
+attributesWithPriority :: Attribute.Axiom symbol variable
 attributesWithPriority =
     def & setField @"priority" (Attribute.Priority (Just 0))
 
-varI1, varI2, varKRemainder, varStateCell :: TermLike Variable
-
-varI1 =
-    mkElemVar $ ElementVariable Variable
-        { variableName = testId "VarI1"
-        , variableCounter = mempty
-        , variableSort = sortAInt
-        }
-
-varI2 =
-    mkElemVar $ ElementVariable Variable
-        { variableName = testId "VarI2"
-        , variableCounter = mempty
-        , variableSort = sortAInt
-        }
-
-varKRemainder =
-    mkElemVar $ ElementVariable Variable
-        { variableName = testId "VarDotVar1"
-        , variableCounter = mempty
-        , variableSort = sortK
-        }
-
-varStateCell =
-    mkElemVar $ ElementVariable Variable
-        { variableName = testId "VarDotVar0"
-        , variableCounter = mempty
-        , variableSort = sortStateCell
-        }
+varI1, varI2, varKRemainder, varStateCell :: TermLike VariableName
+varI1 = mkElemVar $ mkElementVariable (testId "VarI1") sortAInt
+varI2 = mkElemVar $ mkElementVariable (testId "VarI2") sortAInt
+varKRemainder = mkElemVar $ mkElementVariable (testId "VarDotVar1") sortK
+varStateCell = mkElemVar $ mkElementVariable (testId "VarDotVar0") sortStateCell
 
 sortABool, sortAInt, sortAExp, sortBExp :: Sort
 sortABool = simpleSort (SortName "ABool")
@@ -336,7 +312,7 @@ sortAInt = simpleSort (SortName "AInt")
 sortAExp = simpleSort (SortName "AExp")
 sortBExp = simpleSort (SortName "BExp")
 
-applyAliasLHS :: TermLike Variable
+applyAliasLHS :: TermLike VariableName
 applyAliasLHS =
     mkApplyAlias ruleLHS []
   where
@@ -357,8 +333,8 @@ applyAliasLHS =
 
 applyInj
     :: Sort  -- ^ destination sort
-    -> TermLike Variable  -- ^ argument
-    -> TermLike Variable
+    -> TermLike VariableName  -- ^ argument
+    -> TermLike VariableName
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
   where
@@ -377,7 +353,7 @@ sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     asSentence sentence
   where
-    sentence :: SentenceSort (TermLike Variable)
+    sentence :: SentenceSort (TermLike VariableName)
     sentence =
         SentenceSort
             { sentenceSortName = testId "AInt"
@@ -389,7 +365,7 @@ sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     asSentence sentence
   where
-    sentence :: SentenceSort (TermLike Variable)
+    sentence :: SentenceSort (TermLike VariableName)
     sentence =
         SentenceSort
             { sentenceSortName = testId "KItem"
@@ -397,7 +373,7 @@ sortSentenceKItem =
             , sentenceSortAttributes = Attributes []
             }
 
-symbolSentenceInj :: Sentence (TermLike Variable)
+symbolSentenceInj :: Sentence (TermLike VariableName)
 symbolSentenceInj = asSentence symbolInj
 
 extractIndexedModule
@@ -413,26 +389,26 @@ extractIndexedModule name eModules =
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
 
-symbolLeqAInt :: SentenceSymbol (TermLike Variable)
+symbolLeqAInt :: SentenceSymbol (TermLike VariableName)
 symbolLeqAInt = mkSymbol_ (testId "leqAInt") [sortAInt, sortAInt] sortABool
 
 applyLeqAInt
-    :: TermLike Variable
-    -> TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
 applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
 
-symbolLeqAExp :: SentenceSymbol (TermLike Variable)
+symbolLeqAExp :: SentenceSymbol (TermLike VariableName)
 symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
 
 applyLeqAExp
-    :: TermLike Variable
-    -> TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
 applyLeqAExp child1 child2 =
     applySymbol_ symbolLeqAExp [child1, child2]
 
-symbolKSeq, symbolInj :: SentenceSymbol (TermLike Variable)
+symbolKSeq, symbolInj :: SentenceSymbol (TermLike VariableName)
 symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
 
 symbolInj =
@@ -442,26 +418,26 @@ symbolInj =
         [sortParamSort "From"]
         (sortParamSort "To")
 
-symbolTCell, symbolKCell :: SentenceSymbol (TermLike Variable)
+symbolTCell, symbolKCell :: SentenceSymbol (TermLike VariableName)
 symbolTCell = mkSymbol_ (testId "T") [sortKCell, sortStateCell] sortTCell
 -- symbol T{}(KCell{}, StateCell{}) : TCell{} []
 applyTCell
-    :: TermLike Variable  -- ^ K cell
-    -> TermLike Variable  -- ^ State cell
-    -> TermLike Variable
+    :: TermLike VariableName  -- ^ K cell
+    -> TermLike VariableName  -- ^ State cell
+    -> TermLike VariableName
 applyTCell kCell stateCell =
     applySymbol_ symbolTCell [kCell, stateCell]
 
 symbolKCell = mkSymbol_ (testId "k") [sortK] sortKCell
 applyKCell
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
 applyKCell child = applySymbol_ symbolKCell [child]
 
 applyKSeq
-    :: TermLike Variable  -- ^ head
-    -> TermLike Variable  -- ^ tail
-    -> TermLike Variable
+    :: TermLike VariableName  -- ^ head
+    -> TermLike VariableName  -- ^ tail
+    -> TermLike VariableName
 applyKSeq kHead kTail =
     applySymbol_ symbolKSeq [kHead, kTail]
 
@@ -472,10 +448,10 @@ sortParamSort :: Text -> Sort
 sortParamSort = SortVariableSort . sortParam
 
 mkRewriteAxiomPattern
-    :: TermLike Variable  -- ^ left-hand side
-    -> TermLike Variable  -- ^ right-hand side
-    -> Maybe (Sort -> TermLike Variable)  -- ^ requires clause
-    -> Rewrites Sort (TermLike Variable)
+    :: TermLike VariableName  -- ^ left-hand side
+    -> TermLike VariableName  -- ^ right-hand side
+    -> Maybe (Sort -> TermLike VariableName)  -- ^ requires clause
+    -> Rewrites Sort (TermLike VariableName)
 mkRewriteAxiomPattern lhs rhs requires =
     Rewrites
         patternSort
@@ -485,9 +461,9 @@ mkRewriteAxiomPattern lhs rhs requires =
     patternSort = termLikeSort lhs
 
 mkAliasAxiomPattern
-    :: TermLike Variable  -- ^ left-hand side
-    -> TermLike Variable  -- ^ right-hand side
-    -> Rewrites Sort (TermLike Variable)
+    :: TermLike VariableName  -- ^ left-hand side
+    -> TermLike VariableName  -- ^ right-hand side
+    -> Rewrites Sort (TermLike VariableName)
 mkAliasAxiomPattern aliasLhs rhs =
     Rewrites
         patternSort

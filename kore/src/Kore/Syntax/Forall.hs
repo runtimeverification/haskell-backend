@@ -20,10 +20,8 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
@@ -63,8 +61,7 @@ instance
     => Diff (Forall sort variable child)
 
 instance
-    (SortedVariable variable, Unparse variable, Unparse child) =>
-    Unparse (Forall Sort variable child)
+    (Unparse variable, Unparse child) => Unparse (Forall Sort variable child)
   where
     unparse Forall { forallSort, forallVariable, forallChild } =
         "\\forall"
@@ -74,7 +71,7 @@ instance
     unparse2 Forall { forallVariable, forallChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\forall"
-            , unparse2SortedVariable (getElementVariable forallVariable)
+            , unparse2SortedVariable forallVariable
             , unparse2 forallChild
             ])
 
@@ -83,7 +80,7 @@ instance
     Synthetic (FreeVariables variable) (Forall sort variable)
   where
     synthetic Forall { forallVariable, forallChild } =
-        bindVariable (ElemVar forallVariable) forallChild
+        bindVariable (inject forallVariable) forallChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Forall Sort variable) where

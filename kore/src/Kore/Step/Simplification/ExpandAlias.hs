@@ -28,16 +28,15 @@ import Kore.Internal.TermLike
     ( pattern ApplyAlias_
     , InternalVariable
     , TermLike
-    , Variable
+    , Variable (..)
+    , VariableName
     , fromVariableName
+    , mapSomeVariableName
     , mapVariables
     , substitute
     )
 import Kore.Unification.Unify
     ( MonadUnify
-    )
-import Kore.Variables.UnifiedVariable
-    ( mapUnifiedVariable
     )
 
 expandAlias
@@ -70,7 +69,7 @@ expandSingleAlias =
 -- handle things like \mu.
 substituteInAlias
     :: InternalVariable variable
-    => Alias (TermLike Variable)
+    => Alias (TermLike VariableName)
     -> [TermLike variable]
     -> TermLike variable
 substituteInAlias Alias { aliasLeft, aliasRight } children =
@@ -78,5 +77,7 @@ substituteInAlias Alias { aliasLeft, aliasRight } children =
     $ substitute substitutionMap
     $ mapVariables (pure fromVariableName) aliasRight
   where
-    aliasLeft' = mapUnifiedVariable (pure fromVariableName) <$> aliasLeft
+    aliasLeft' =
+        mapSomeVariableName (pure fromVariableName) . variableName
+        <$> aliasLeft
     substitutionMap = Map.fromList $ zip aliasLeft' children

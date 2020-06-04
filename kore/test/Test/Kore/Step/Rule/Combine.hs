@@ -39,8 +39,6 @@ import Kore.Step.Simplification.Data
     ( runSimplifier
     )
 import Kore.Syntax.Variable
-    ( Variable
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
@@ -49,7 +47,7 @@ import Test.SMT
 import Test.Tasty.HUnit.Ext
 
 class RewriteRuleBase base where
-    rewritesTo :: base Variable -> base Variable -> RewriteRule Variable
+    rewritesTo :: base VariableName -> base VariableName -> RewriteRule VariableName
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
@@ -158,9 +156,9 @@ test_combineRulesPredicate =
 
     ]
   where
-    x :: TermLike Variable
+    x :: TermLike VariableName
     x = mkElemVar Mock.x
-    x_0 :: TermLike Variable
+    x_0 :: TermLike VariableName
     x_0 = mkElemVar Mock.var_x_0
 
 test_combineRules :: [TestTree]
@@ -304,8 +302,8 @@ test_combineRulesGrouped =
     z = mkElemVar Mock.z
 
 runMergeRules
-    :: [RewriteRule Variable]
-    -> IO [RewriteRule Variable]
+    :: [RewriteRule VariableName]
+    -> IO [RewriteRule VariableName]
 runMergeRules (rule : rules) =
     runNoSMT
     $ runSimplifier Mock.env
@@ -313,8 +311,8 @@ runMergeRules (rule : rules) =
 runMergeRules [] = error "Unexpected empty list of rules."
 
 runMergeRulesGrouped
-    :: [RewriteRule Variable]
-    -> IO [RewriteRule Variable]
+    :: [RewriteRule VariableName]
+    -> IO [RewriteRule VariableName]
 runMergeRulesGrouped (rule : rules) =
     runNoSMT
     $ runSimplifier Mock.env

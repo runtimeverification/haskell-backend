@@ -86,15 +86,12 @@ import Kore.Variables.Target
     , mkSetNonTarget
     , mkSetTarget
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
 data Context =
     Context
-        { objectVariables :: ![UnifiedVariable Variable]
+        { objectVariables :: ![SomeVariable VariableName]
         , objectSortVariables :: ![SortVariable]
         , symbols :: !(Maybe [Internal.Symbol])
         , sorts :: !(Maybe [Sort])
@@ -113,11 +110,11 @@ standaloneGen :: Gen a -> Hedgehog.Gen a
 standaloneGen generator =
     Reader.runReaderT generator emptyContext
 
-addVariable :: UnifiedVariable Variable -> Context -> Context
+addVariable :: SomeVariable VariableName -> Context -> Context
 addVariable var ctx@Context { objectVariables } =
     ctx { objectVariables = var : objectVariables }
 
-addVariables :: [UnifiedVariable Variable] -> Context -> Context
+addVariables :: [SomeVariable VariableName] -> Context -> Context
 addVariables vars = \ctx -> foldr addVariable ctx vars
 
 addSortVariable :: SortVariable -> Context -> Context
@@ -225,7 +222,11 @@ sortGen = do
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
 
-variableGen' :: Sort -> [Variable] -> Gen Id -> Gen Variable
+variableGen'
+    :: Sort
+    -> [Variable VariableName]
+    -> Gen Id
+    -> Gen (Variable VariableName)
 variableGen' patternSort variables genId =
     case filter bySort variables of
         [] -> freshVariable
@@ -236,49 +237,48 @@ variableGen' patternSort variables genId =
                 ]
   where
     bySort Variable { variableSort } = variableSort == patternSort
-    freshVariable =
-        Variable <$> genId <*> pure mempty <*> pure patternSort
+    freshVariable = do
+        variableName <- VariableName <$> genId <*> pure mempty
+        pure Variable { variableName, variableSort = patternSort }
 
-elementVariableGen :: Sort -> Gen (ElementVariable Variable)
+elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen patternSort = do
     Context { objectVariables } <- Reader.ask
-    ElementVariable <$>
-        variableGen'
-            patternSort
-            [getElementVariable v | ElemVar v <- objectVariables]
-            idGen
+    let elementVariables = mapMaybe retractElementVariable objectVariables
+        variables = (fmap . fmap) unElementVariableName elementVariables
+    variableGen' patternSort variables idGen
+        & (fmap . fmap) ElementVariableName
 
-setVariableGen :: Sort -> Gen (SetVariable Variable)
+setVariableGen :: Sort -> Gen (SetVariable VariableName)
 setVariableGen sort = do
     Context { objectVariables } <- Reader.ask
-    SetVariable <$>
-        variableGen'
-            sort
-            [getSetVariable v | SetVar v <- objectVariables]
-            setVarIdGen
+    let setVariables = mapMaybe retractSetVariable objectVariables
+        variables = (fmap . fmap) unSetVariableName setVariables
+    variableGen' sort variables setVarIdGen
+        & (fmap . fmap) SetVariableName
 
-unifiedVariableGen :: Sort -> Gen (UnifiedVariable Variable)
+unifiedVariableGen :: Sort -> Gen (SomeVariable VariableName)
 unifiedVariableGen sort = Gen.choice
-    [ ElemVar <$> elementVariableGen sort
-    , SetVar <$> setVariableGen sort
+    [ fmap inject <$> elementVariableGen sort
+    , fmap inject <$> setVariableGen sort
     ]
 
-elementTargetVariableGen :: Sort -> Gen (ElementVariable (Target Variable))
+elementTargetVariableGen :: Sort -> Gen (ElementVariable (Target VariableName))
 elementTargetVariableGen sort = Gen.choice
     [ mkElementTarget    <$> elementVariableGen sort
     , mkElementNonTarget <$> elementVariableGen sort
     ]
 
-setTargetVariableGen :: Sort -> Gen (SetVariable (Target Variable))
+setTargetVariableGen :: Sort -> Gen (SetVariable (Target VariableName))
 setTargetVariableGen sort = Gen.choice
     [ mkSetTarget    <$> setVariableGen sort
     , mkSetNonTarget <$> setVariableGen sort
     ]
 
-unifiedTargetVariableGen :: Sort -> Gen (UnifiedVariable (Target Variable))
+unifiedTargetVariableGen :: Sort -> Gen (SomeVariable (Target VariableName))
 unifiedTargetVariableGen sort = Gen.choice
-    [ ElemVar <$> elementTargetVariableGen sort
-    , SetVar  <$> setTargetVariableGen     sort
+    [ fmap inject <$> elementTargetVariableGen sort
+    , fmap inject <$> setTargetVariableGen     sort
     ]
 
 unaryOperatorGen
@@ -321,7 +321,7 @@ equalsInGen constructor childGen resultSort = do
         <*> Gen.small (childGen operandSort)
 
 existsForallGen
-    :: (Sort -> ElementVariable Variable -> child -> q child)
+    :: (Sort -> ElementVariable VariableName -> child -> q child)
     -> (Sort -> Gen child)
     -> Sort
     -> Gen (q child)
@@ -330,7 +330,7 @@ existsForallGen constructor childGen patternSort = do
     var <- Gen.small (elementVariableGen varSort)
     child <-
         Gen.small
-            (Reader.local (addVariable (ElemVar var)) $ childGen patternSort)
+            (Reader.local (addVariable (inject var)) $ childGen patternSort)
     return (constructor patternSort var child)
 
 topBottomGen :: (Sort -> t child) -> Sort -> Gen (t child)
@@ -416,13 +416,13 @@ genInternalString internalStringSort =
     Domain.InternalString internalStringSort
     <$> Gen.text (Range.linear 0 1024) (Reader.lift Gen.unicode)
 
-existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
+existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort VariableName child)
 existsGen = existsForallGen Exists
 
 floorGen :: (Sort -> Gen child) -> Sort -> Gen (Floor Sort child)
 floorGen = ceilFloorGen Floor
 
-forallGen :: (Sort -> Gen child) -> Sort -> Gen (Forall Sort Variable child)
+forallGen :: (Sort -> Gen child) -> Sort -> Gen (Forall Sort VariableName child)
 forallGen = existsForallGen Forall
 
 iffGen :: (Sort -> Gen child) -> Sort -> Gen (Iff Sort child)
@@ -452,7 +452,7 @@ topGen = topBottomGen Top
 patternGen
     :: (Sort -> Gen child)
     -> Sort
-    -> Gen (Syntax.PatternF Variable child)
+    -> Gen (Syntax.PatternF VariableName child)
 patternGen childGen patternSort =
     Gen.frequency
         [ (1, Syntax.AndF <$> andGen childGen patternSort)
@@ -530,16 +530,16 @@ korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen
 
 predicateGen
-    :: Gen (TermLike Variable)
-    -> Hedgehog.Gen (Predicate Variable)
+    :: Gen (TermLike VariableName)
+    -> Hedgehog.Gen (Predicate VariableName)
 predicateGen childGen =
     standaloneGen (predicateChildGen childGen Nothing =<< sortGen)
 
 predicateChildGen
-    :: Gen (TermLike Variable)
+    :: Gen (TermLike VariableName)
     -> Maybe Sort
     -> Sort
-    -> Gen (Predicate Variable)
+    -> Gen (Predicate VariableName)
 predicateChildGen childGen quantifierSort patternSort' =
     Gen.recursive
         Gen.choice
@@ -595,7 +595,7 @@ predicateChildGen childGen quantifierSort patternSort' =
         var <- elementVariableGen varSort
         child <-
             Reader.local
-                (addVariable (ElemVar var))
+                (addVariable (inject var))
                 (go patternSort')
         return (Predicate.makeExistsPredicate var child)
     predicateChildGenForall = do
@@ -603,7 +603,7 @@ predicateChildGen childGen quantifierSort patternSort' =
         var <- elementVariableGen varSort
         child <-
             Reader.local
-                (addVariable (ElemVar var))
+                (addVariable (inject var))
                 (go patternSort')
         return (Predicate.makeForallPredicate var child)
 

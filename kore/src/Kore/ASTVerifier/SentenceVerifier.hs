@@ -94,11 +94,6 @@ import Kore.Step.RulePattern
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
-    ( Variable (..)
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -418,7 +413,7 @@ verifyClaimSentence sentence =
             Right (AllPathClaimPattern (AllPathRule rulePattern))
               | rejectRulePattern rulePattern -> True
             _ -> False
-    rejectRulePattern :: RulePattern Variable -> Bool
+    rejectRulePattern :: RulePattern VariableName -> Bool
     rejectRulePattern
         RulePattern
             { left
@@ -429,7 +424,7 @@ verifyClaimSentence sentence =
       =
         not $ Set.isSubsetOf rightVars leftVars
           where
-            rightVars, leftVars :: Set (UnifiedVariable Variable)
+            rightVars, leftVars :: Set (SomeVariable VariableName)
             rightVars = freeVariables rhs & FreeVariables.toSet
             lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
             leftVars = foldMap freeVariables lhs & FreeVariables.toSet
@@ -499,9 +494,9 @@ parseAttributes' =
 parseAndVerifyAxiomAttributes
     :: MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
-    -> FreeVariables Variable
+    -> FreeVariables VariableName
     -> Attributes
-    -> error (Attribute.Axiom Internal.Symbol.Symbol Variable)
+    -> error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 parseAndVerifyAxiomAttributes indexModule freeVars attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
   where

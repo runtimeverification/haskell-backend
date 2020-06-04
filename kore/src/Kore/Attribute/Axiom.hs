@@ -153,7 +153,7 @@ instance
 
 instance (NFData symbol, NFData variable) => NFData (Axiom symbol variable)
 
-instance Ord variable => Default (Axiom symbol variable) where
+instance Default (Axiom symbol variable) where
     def =
         Axiom
             { heatCool = def
@@ -179,7 +179,10 @@ instance Ord variable => Default (Axiom symbol variable) where
             , owise = def
             }
 
-instance From symbol SymbolOrAlias => From (Axiom symbol Variable) Attributes where
+instance
+    From symbol SymbolOrAlias
+    => From (Axiom symbol VariableName) Attributes
+  where
     from =
         mconcat . sequence
             [ from . heatCool
@@ -207,13 +210,13 @@ instance From symbol SymbolOrAlias => From (Axiom symbol Variable) Attributes wh
 instance From (Axiom symbol variable) (Priority, Owise) where
     from Axiom { priority, owise } = (priority, owise)
 
-instance SQL.Column (Axiom SymbolOrAlias Variable) where
+instance SQL.Column (Axiom SymbolOrAlias VariableName) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn tableName _ =
         SQL.defineColumn tableName (Proxy @AttributePattern)
     toColumn = SQL.toColumn . toAttributes
 
-instance SQL.Column (Axiom Symbol Variable) where
+instance SQL.Column (Axiom Symbol VariableName) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn tableName _ =
         SQL.defineColumn tableName (Proxy @AttributePattern)
@@ -226,10 +229,10 @@ axiomSymbolToSymbolOrAlias axiom =
     axiom & field @"overload" Lens.%~ fmap toSymbolOrAlias
 
 parseAxiomAttribute
-    :: FreeVariables Variable
+    :: FreeVariables VariableName
     -> AttributePattern
-    -> Axiom SymbolOrAlias Variable
-    -> Parser (Axiom SymbolOrAlias Variable)
+    -> Axiom SymbolOrAlias VariableName
+    -> Parser (Axiom SymbolOrAlias VariableName)
 parseAxiomAttribute freeVariables attr =
         typed @HeatCool (parseAttribute attr)
         Monad.>=> typed @ProductionID (parseAttribute attr)
@@ -240,10 +243,10 @@ parseAxiomAttribute freeVariables attr =
         Monad.>=> typed @Idem (parseAttribute attr)
         Monad.>=> typed @Trusted (parseAttribute attr)
         Monad.>=>
-            typed @(Concrete Variable)
+            typed @(Concrete VariableName)
                 (parseConcreteAttribute freeVariables attr)
         Monad.>=>
-            typed @(Symbolic Variable)
+            typed @(Symbolic VariableName)
                 (parseSymbolicAttribute freeVariables attr)
         Monad.>=> typed @Simplification (parseAttribute attr)
         Monad.>=> typed @(Overload SymbolOrAlias) (parseAttribute attr)
@@ -257,18 +260,17 @@ parseAxiomAttribute freeVariables attr =
         Monad.>=> typed @Owise (parseAttribute attr)
 
 parseAxiomAttributes
-    :: FreeVariables Variable
+    :: FreeVariables VariableName
     -> Attributes
-    -> Parser (Axiom SymbolOrAlias Variable)
+    -> Parser (Axiom SymbolOrAlias VariableName)
 parseAxiomAttributes freeVariables (Attributes attrs) =
     Foldable.foldlM (flip $ parseAxiomAttribute freeVariables) Default.def attrs
 
 mapAxiomVariables
-    ::  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Axiom symbol variable1
-    ->  Axiom symbol variable2
+    :: Ord variable2
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Axiom symbol variable1
+    -> Axiom symbol variable2
 mapAxiomVariables adj axiom@Axiom { concrete, symbolic } =
     axiom
         { concrete = mapConcreteVariables adj concrete

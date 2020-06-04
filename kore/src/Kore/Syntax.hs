@@ -27,8 +27,6 @@ module Kore.Syntax
     , PatternF (..)
     , module Kore.Syntax.Pattern
     , module Kore.Syntax.Rewrites
-    , module Kore.Syntax.ElementVariable
-    , module Kore.Syntax.SetVariable
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
     , module Kore.Syntax.Variable
@@ -44,7 +42,6 @@ import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 -- TODO (thomas.tuegel): export Kore.Syntax.Definition here
 import Kore.Syntax.DomainValue
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
 import Kore.Syntax.Floor
@@ -64,7 +61,6 @@ import Kore.Syntax.PatternF
     , PatternF (..)
     )
 import Kore.Syntax.Rewrites
-import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable

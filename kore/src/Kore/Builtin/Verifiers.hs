@@ -153,7 +153,7 @@ newtype ApplicationVerifier patternType =
     ApplicationVerifier
         { runApplicationVerifier
             :: Application Symbol Verified.Pattern
-            -> PatternVerifier (TermLikeF Variable Verified.Pattern)
+            -> PatternVerifier (TermLikeF VariableName Verified.Pattern)
         }
 
 {- | @SymbolKey@ names builtin functions and constructors.
@@ -208,7 +208,7 @@ applicationPatternVerifierHooks applicationVerifiers =
 domainValuePatternVerifierHook
     ::  Text
     ->  (   DomainValue Sort Verified.Pattern
-        ->  PatternVerifier (TermLikeF Variable Verified.Pattern)
+        ->  PatternVerifier (TermLikeF VariableName Verified.Pattern)
         )
     ->  PatternVerifierHook
 domainValuePatternVerifierHook hook verifier =

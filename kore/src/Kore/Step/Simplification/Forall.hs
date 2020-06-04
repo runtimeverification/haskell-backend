@@ -47,7 +47,9 @@ import Kore.Internal.TermLike
     , Forall (Forall)
     , InternalVariable
     , Sort
+    , Variable (..)
     , mkForall
+    , mkSomeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( hasFreeVariable
@@ -56,9 +58,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.TopBottom
     ( TopBottom (..)
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
     )
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
@@ -135,8 +134,9 @@ makeEvaluate variable patt
     $ Pattern.toTermLike patt
   where
     (term, predicate) = Pattern.splitTerm patt
-    unifiedVariable = ElemVar variable
-    variableInTerm = TermLike.hasFreeVariable unifiedVariable term
-    variableInCondition = Condition.hasFreeVariable unifiedVariable predicate
+    someVariable = mkSomeVariable variable
+    someVariableName = variableName someVariable
+    variableInTerm = TermLike.hasFreeVariable someVariableName term
+    variableInCondition = Condition.hasFreeVariable someVariableName predicate
     termIsBoolean = isTop term || isBottom term
     predicateIsBoolean = isTop predicate || isBottom predicate

@@ -629,7 +629,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
-                        (simpleExistsParsedPattern variableName1 sort)
+                        (simpleExistsParsedPattern variableName sort)
                         sortVariables
                     : additionalSentences
                     )
@@ -654,7 +654,7 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         ( simpleExistsEqualsParsedPattern
-                            variableName1
+                            variableName
                             (OperandSort sort)
                             (ResultSort additionalSort)
                         )
@@ -682,7 +682,7 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         ( simpleExistsEqualsParsedPattern
-                            variableName1
+                            variableName
                             (OperandSort additionalSort)
                             (ResultSort sort)
                         )
@@ -729,7 +729,7 @@ unfilteredTestExamplesForSort
     rawAliasName = identifierPrefix <> "_alias"
     aliasName = AliasName rawAliasName
     rawVariableName = identifierPrefix <> "_variable"
-    variableName1 = VariableName rawVariableName
+    variableName = rawVariableName
     sortVariableName1 = identifierPrefix <> "_sortVariable"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     additionalSortName = SortName additionalSortRawName
@@ -790,7 +790,7 @@ unfilteredTestExamplesForObjectSort
         }
     ]
   where
-    sortVariableName1 = namePrefix <> "_sortVariable1"
+    sortVariableName1 = namePrefix <> "_sortVariable"
     sortVariableName2 = namePrefix <> "_sortVariable2"
     additionalSortRawName = getId (sortActualName additionalSortActual)
     differentAdditionalSortRawName = additionalSortRawName <> "1"

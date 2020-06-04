@@ -114,20 +114,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
-import Kore.Syntax.ElementVariable
-    ( ElementVariable (ElementVariable)
-    )
-import Kore.Syntax.SetVariable
-    ( SetVariable (SetVariable)
-    )
 import Kore.Syntax.Variable
-    ( Concrete
-    , Variable (Variable)
-    )
-import qualified Kore.Syntax.Variable as Variable.DoNotUse
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore
     ( idGen
@@ -149,9 +136,9 @@ data TermGenerator = TermGenerator
     , sort :: !SortRequirements
     , attributes :: !AttributeRequirements
     , generator
-        :: (Sort -> Gen (Maybe (TermLike Variable)))
+        :: (Sort -> Gen (Maybe (TermLike VariableName)))
         -> Sort
-        -> Gen (Maybe (TermLike Variable))
+        -> Gen (Maybe (TermLike VariableName))
     }
 
 termGeneratorSort :: TermGenerator -> SortRequirements
@@ -162,8 +149,8 @@ data BuiltinGenerator = BuiltinGenerator
     , sort :: !SortRequirements
     , attributes :: !AttributeRequirements
     , generator
-        :: (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
+        :: (Sort -> Gen (Maybe (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     }
 
 data CollectionSorts = CollectionSorts
@@ -178,8 +165,8 @@ data MapSorts = MapSorts
     }
 
 data Context = Context
-    { availableElementVariables :: !(Set.Set (ElementVariable Variable))
-    , availableSetVariables :: !(Set.Set (SetVariable Variable))
+    { availableElementVariables :: !(Set.Set (ElementVariable VariableName))
+    , availableSetVariables :: !(Set.Set (SetVariable VariableName))
     , onlyConstructorLike :: !Bool
     , onlyConcrete :: !Bool
     }
@@ -188,9 +175,9 @@ data Context = Context
 data Setup = Setup
     { allSorts :: ![Sort]
     , allSymbols :: ![Internal.Symbol]
-    , allAliases :: ![Internal.Alias (TermLike Variable)]
-    , freeElementVariables :: !(Set.Set (ElementVariable Variable))
-    , freeSetVariables :: !(Set.Set (SetVariable Variable))
+    , allAliases :: ![Internal.Alias (TermLike VariableName)]
+    , freeElementVariables :: !(Set.Set (ElementVariable VariableName))
+    , freeSetVariables :: !(Set.Set (SetVariable VariableName))
     , maybeIntSort :: !(Maybe Sort)
     , maybeBoolSort :: !(Maybe Sort)
     , maybeListSorts :: !(Maybe CollectionSorts)
@@ -217,14 +204,14 @@ runTermGen
         , onlyConcrete = False
         }
 
-addQuantifiedSetVariable :: SetVariable Variable -> Context -> Context
+addQuantifiedSetVariable :: SetVariable VariableName -> Context -> Context
 addQuantifiedSetVariable
     variable
     context@Context {availableSetVariables}
   =
     context {availableSetVariables = Set.insert variable availableSetVariables}
 
-addQuantifiedElementVariable :: ElementVariable Variable -> Context -> Context
+addQuantifiedElementVariable :: ElementVariable VariableName -> Context -> Context
 addQuantifiedElementVariable
     variable
     context@Context {availableElementVariables}
@@ -246,7 +233,7 @@ requestConcrete :: Gen a -> Gen a
 requestConcrete  =
     localContext (\context -> context {onlyConcrete = True})
 
-termLikeGen :: Gen (TermLike Variable)
+termLikeGen :: Gen (TermLike VariableName)
 termLikeGen = do
     topSort <- sortGen
     maybeResult <- Gen.scale limitTermDepth $
@@ -259,7 +246,7 @@ termLikeGen = do
       | s < 10 = Range.Size s
       | otherwise = Range.Size 10
 
-termLikeGenImpl :: Range.Size -> Sort -> Gen (Maybe (TermLike Variable))
+termLikeGenImpl :: Range.Size -> Sort -> Gen (Maybe (TermLike VariableName))
 termLikeGenImpl (Range.Size size) requestedSort = do
     allGenerators <- termGenerators
     let allSortGenerators :: [TermGenerator]
@@ -272,7 +259,7 @@ termLikeGenImpl (Range.Size size) requestedSort = do
         actualGenerators =
             if size == 0 then nullaryGenerators else allSortGenerators
 
-        nextGenerator :: Sort -> Gen (Maybe (TermLike Variable))
+        nextGenerator :: Sort -> Gen (Maybe (TermLike VariableName))
         nextGenerator =
             if size > 0
                 then termLikeGenImpl (Range.Size $ size - 1)
@@ -309,7 +296,7 @@ termLikeGenImpl (Range.Size size) requestedSort = do
 new cases are being added to TermLikeF, so that we don't forget to also
 change this file.
 -}
-_checkTermImplemented :: TermLike Variable -> TermLike Variable
+_checkTermImplemented :: TermLike VariableName -> TermLike VariableName
 _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF termF
   where
@@ -403,7 +390,7 @@ withContext
 withContext context = Reader.local (\(r, _) -> (r, context))
 
 nullaryFreeSortOperatorGenerator
-    :: (Sort -> TermLike Variable)
+    :: (Sort -> TermLike VariableName)
     -> TermGenerator
 nullaryFreeSortOperatorGenerator builder =
     TermGenerator
@@ -420,7 +407,7 @@ nullaryFreeSortOperatorGenerator builder =
         return (Just (builder resultSort))
 
 unaryOperatorGenerator
-    :: (TermLike Variable -> TermLike Variable)
+    :: (TermLike VariableName -> TermLike VariableName)
     -> TermGenerator
 unaryOperatorGenerator builder =
     TermGenerator
@@ -439,7 +426,7 @@ unaryOperatorGenerator builder =
             (builder <$> child) -- Maybe functor
 
 unaryFreeSortOperatorGenerator
-    :: (Sort -> TermLike Variable -> TermLike Variable)
+    :: (Sort -> TermLike VariableName -> TermLike VariableName)
     -> TermGenerator
 unaryFreeSortOperatorGenerator builder =
     TermGenerator
@@ -459,7 +446,7 @@ unaryFreeSortOperatorGenerator builder =
             (builder resultSort <$> child)  -- Maybe functor
 
 unaryQuantifiedElementOperatorGenerator
-    :: (ElementVariable Variable -> TermLike Variable -> TermLike Variable)
+    :: (ElementVariable VariableName -> TermLike VariableName -> TermLike VariableName)
     -> TermGenerator
 unaryQuantifiedElementOperatorGenerator builder =
     TermGenerator
@@ -484,7 +471,7 @@ unaryQuantifiedElementOperatorGenerator builder =
             (builder quantifiedVariable <$> child)  -- Maybe functor
 
 muNuOperatorGenerator
-    :: (SetVariable Variable -> TermLike Variable -> TermLike Variable)
+    :: (SetVariable VariableName -> TermLike VariableName -> TermLike VariableName)
     -> TermGenerator
 muNuOperatorGenerator builder =
     TermGenerator
@@ -506,7 +493,7 @@ muNuOperatorGenerator builder =
                 (builder quantifiedVariable <$> child)  -- Maybe functor
 
 binaryFreeSortOperatorGenerator
-    :: (Sort -> TermLike Variable -> TermLike Variable -> TermLike Variable)
+    :: (Sort -> TermLike VariableName -> TermLike VariableName -> TermLike VariableName)
     -> TermGenerator
 binaryFreeSortOperatorGenerator builder =
     TermGenerator
@@ -527,7 +514,7 @@ binaryFreeSortOperatorGenerator builder =
             (builder resultSort <$> child1 <*> child2) -- Maybe applicative
 
 binaryOperatorGenerator
-    :: (TermLike Variable -> TermLike Variable -> TermLike Variable)
+    :: (TermLike VariableName -> TermLike VariableName -> TermLike VariableName)
     -> TermGenerator
 binaryOperatorGenerator builder =
     TermGenerator
@@ -683,8 +670,8 @@ maybeStringBuiltinGenerator Setup { maybeStringBuiltinSort } =
   where
     stringGenerator
         :: Sort
-        -> (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
+        -> (Sort -> Gen (Maybe (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     stringGenerator stringSort _childGenerator =
         Just . BuiltinString.asBuiltin stringSort <$> stringGen
 
@@ -705,8 +692,8 @@ maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
   where
     boolGenerator
         :: Sort
-        -> (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
+        -> (Sort -> Gen (Maybe (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     boolGenerator boolSort _childGenerator =
         Just . BuiltinBool.asBuiltin boolSort <$> Gen.bool
 
@@ -727,8 +714,8 @@ maybeIntBuiltinGenerator Setup { maybeIntSort } =
   where
     intGenerator
         :: Sort
-        -> (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
+        -> (Sort -> Gen (Maybe (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     intGenerator intSort _childGenerator = do
         value <- Gen.integral (Range.constant 0 2000)
         return (Just (BuiltinInt.asBuiltin intSort value))
@@ -753,8 +740,8 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
     listGenerator
         :: Sort
         -> Sort
-        -> (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
+        -> (Sort -> Gen (Maybe (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
     listGenerator listSort listElementSort childGenerator = do
         (Setup {metadataTools}, _) <- Reader.ask
         elements <-
@@ -767,7 +754,7 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
 
 concreteTermGenerator
     :: Sort
-    -> (Sort -> Gen (Maybe (TermLike Variable)))
+    -> (Sort -> Gen (Maybe (TermLike VariableName)))
     -> Gen (Maybe (TermLike Concrete))
 concreteTermGenerator requestedSort childGenerator = do
     maybeResult <-
@@ -804,8 +791,8 @@ maybeMapBuiltinGenerator Setup { maybeMapSorts } =
   where
     valueGenerator
         :: Sort
-        -> (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.MapValue (TermLike Variable)))
+        -> (Sort -> Gen (Maybe (TermLike VariableName)))
+        -> Gen (Maybe (Domain.MapValue (TermLike VariableName)))
     valueGenerator valueSort childGenerator = do
         maybeValue <- childGenerator valueSort
         return (Domain.MapValue <$> maybeValue)
@@ -829,7 +816,7 @@ maybeSetBuiltinGenerator Setup { maybeSetSorts } =
                     acGenerator collectionSort elementSort valueGenerator
                 }
   where
-    valueGenerator :: a -> Gen (Maybe (Domain.SetValue (TermLike Variable)))
+    valueGenerator :: a -> Gen (Maybe (Domain.SetValue (TermLike VariableName)))
     valueGenerator _ = return (Just Domain.SetValue)
 
 acGenerator
@@ -837,11 +824,11 @@ acGenerator
     .  AssociativeCommutative.TermWrapper normalized
     => Sort
     -> Sort
-    ->  (  (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Value normalized (TermLike Variable)))
+    ->  (  (Sort -> Gen (Maybe (TermLike VariableName)))
+        -> Gen (Maybe (Domain.Value normalized (TermLike VariableName)))
         )
-    -> (Sort -> Gen (Maybe (TermLike Variable)))
-    -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
+    -> (Sort -> Gen (Maybe (TermLike VariableName)))
+    -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike VariableName)))
 acGenerator mapSort keySort valueGenerator childGenerator = do
     let concreteKeyGenerator :: Gen (Maybe (TermLike Concrete))
         concreteKeyGenerator =
@@ -855,10 +842,10 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             )
     let concreteMapElem
             ::  ( Maybe (TermLike Concrete)
-                , Maybe (Domain.Value normalized (TermLike Variable))
+                , Maybe (Domain.Value normalized (TermLike VariableName))
                 )
             -> Maybe
-                (TermLike Concrete, Domain.Value normalized (TermLike Variable))
+                (TermLike Concrete, Domain.Value normalized (TermLike VariableName))
         concreteMapElem (ma, mb) = (,) <$> ma <*> mb
         concreteMap =
             Map.fromList
@@ -867,13 +854,13 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
         requestConstructorLike
         $ Gen.set (Range.constant 0 5)
             (childGenerator keySort)
-    let variableKeys :: [TermLike Variable]
+    let variableKeys :: [TermLike VariableName]
         variableKeys =
             filter
                 (not . nullFreeVariables . freeVariables')
                 (catMaybes (Set.toList mixedKeys))
     maybeVariablePairs <- mapM variablePair variableKeys
-    let variablePairs :: [Domain.Element normalized (TermLike Variable)]
+    let variablePairs :: [Domain.Element normalized (TermLike VariableName)]
         variablePairs = catMaybes maybeVariablePairs
     (Setup {metadataTools}, _) <- Reader.ask
     return $ Just $
@@ -888,11 +875,11 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
                 }
             )
   where
-    freeVariables' ::  TermLike Variable -> FreeVariables Variable
+    freeVariables' ::  TermLike VariableName -> FreeVariables VariableName
     freeVariables' = freeVariables
     variablePair
-        :: TermLike Variable
-        -> Gen (Maybe (Domain.Element normalized (TermLike Variable)))
+        :: TermLike VariableName
+        -> Gen (Maybe (Domain.Element normalized (TermLike VariableName)))
     variablePair key = do
         maybeValue <- valueGenerator childGenerator
         return $ do  -- maybe monad
@@ -952,7 +939,7 @@ aliasGenerators = do
     (Setup {allAliases}, _) <- Reader.ask
     filterGeneratorsAndGroup (map aliasGenerator allAliases)
 
-aliasGenerator :: Internal.Alias (TermLike Variable) -> TermGenerator
+aliasGenerator :: Internal.Alias (TermLike VariableName) -> TermGenerator
 aliasGenerator
     alias@Internal.Alias
         { aliasParams = []
@@ -972,9 +959,9 @@ aliasGenerator
         }
   where
     applicationGenerator
-        :: (Sort -> Gen (Maybe (TermLike Variable)))
+        :: (Sort -> Gen (Maybe (TermLike VariableName)))
         -> Sort
-        -> Gen (Maybe (TermLike Variable))
+        -> Gen (Maybe (TermLike VariableName))
     applicationGenerator termGenerator sort = do
         when (sort /= applicationSortsResult) (error "Sort mismatch.")
         maybeTerms <- mapM termGenerator applicationSortsOperands
@@ -989,15 +976,15 @@ aliasGenerator
     error "Not implemented."
 
 {- The only purpose of this function is to produce an error message when
-new cases are being added to UnifiedVariable, so that we don't forget to also
+new cases are being added to SomeVariable, so that we don't forget to also
 change this file.
 -}
 _checkAllVariableImplemented
-    :: UnifiedVariable Variable -> UnifiedVariable Variable
+    :: SomeVariable VariableName -> SomeVariable VariableName
 _checkAllVariableImplemented variable =
-    case variable of
-        SetVar _ -> variable
-        ElemVar _ -> variable
+    case variableName variable of
+        SomeVariableNameSet _ -> variable
+        SomeVariableNameElement _ -> variable
 
 allVariableGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 allVariableGenerators = do
@@ -1016,11 +1003,11 @@ elementVariableGenerators = do
             map generatorForVariable (Set.toList availableElementVariables)
     filterGeneratorsGroupAndPickOne generators
   where
-    generatorForVariable :: ElementVariable Variable -> TermGenerator
+    generatorForVariable :: ElementVariable VariableName -> TermGenerator
     generatorForVariable variable =
         TermGenerator
             { arity = 0
-            , sort = SpecificSort (extractSort variable)
+            , sort = SpecificSort (variableSort variable)
             , attributes = AttributeRequirements
                 { isConstructorLike = False
                 , isConcrete = False
@@ -1029,11 +1016,8 @@ elementVariableGenerators = do
             }
 
     variableGenerator variable _termGenerator sort = do
-        when (sort /= extractSort variable) (error "Sort mismatch.")
+        when (sort /= variableSort variable) (error "Sort mismatch.")
         return (Just (mkElemVar variable))
-
-    extractSort :: ElementVariable Variable -> Sort
-    extractSort (ElementVariable Variable {variableSort}) = variableSort
 
 setVariableGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 setVariableGenerators = do
@@ -1041,11 +1025,11 @@ setVariableGenerators = do
     let generators = map generatorForVariable (Set.toList availableSetVariables)
     filterGeneratorsGroupAndPickOne generators
   where
-    generatorForVariable :: SetVariable Variable -> TermGenerator
+    generatorForVariable :: SetVariable VariableName -> TermGenerator
     generatorForVariable variable =
         TermGenerator
             { arity = 0
-            , sort = SpecificSort (extractSort variable)
+            , sort = SpecificSort (variableSort variable)
             , attributes = AttributeRequirements
                 { isConstructorLike = False
                 , isConcrete = False
@@ -1054,10 +1038,8 @@ setVariableGenerators = do
             }
 
     variableGenerator variable _termGenerator sort = do
-        when (sort /= extractSort variable) (error "Sort mismatch.")
+        when (sort /= variableSort variable) (error "Sort mismatch.")
         return (Just (mkSetVar variable))
-
-    extractSort (SetVariable Variable {variableSort}) = variableSort
 
 filterGeneratorsGroupAndPickOne
     :: [TermGenerator] -> Gen (Map.Map SortRequirements TermGenerator)
@@ -1104,17 +1086,14 @@ sortGen = do
     (Setup { allSorts }, _) <- Reader.ask
     Gen.element allSorts
 
-setVariableGen :: Sort -> Gen (SetVariable Variable)
-setVariableGen sort = SetVariable <$> variableGen sort
+setVariableGen :: Sort -> Gen (SetVariable VariableName)
+setVariableGen sort = (fmap . fmap) SetVariableName (variableGen sort)
 
-elementVariableGen :: Sort -> Gen (ElementVariable Variable)
-elementVariableGen sort = ElementVariable <$> variableGen sort
+elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
+elementVariableGen sort = (fmap . fmap) ElementVariableName (variableGen sort)
 
-variableGen :: Sort -> Gen Variable
+variableGen :: Sort -> Gen (Variable VariableName)
 variableGen variableSort = do
-    variableName <- idGen
-    return Variable
-        { variableName
-        , variableCounter = Nothing
-        , variableSort
-        }
+    base <- idGen
+    let variableName = VariableName { base, counter = mempty }
+    return Variable { variableName, variableSort }

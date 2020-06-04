@@ -15,7 +15,6 @@ import Kore.Internal.TermLike
 import Kore.Syntax hiding
     ( PatternF (..)
     )
-import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -53,7 +52,7 @@ test_instance_Synthetic =
     , testGroup "TopF" [ isn't $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF $ Const (ElemVar Mock.x) ]
+    , testGroup "VariableF" [ is $ VariableF $ Const (inject Mock.x) ]
     , testGroup "MuF" $ map (isn't . MuF) (Mu Mock.setX <$> range)
     , testGroup "NuF" $ map (isn't . NuF) (Nu Mock.setX <$> range)
     ]
@@ -70,23 +69,23 @@ test_instance_Synthetic =
         :: HasCallStack
         => TestName
         -> (Function -> Bool)
-        -> TermLikeF Variable Function
+        -> TermLikeF VariableName Function
         -> TestTree
     check name checking termLikeF =
         testCase name $ do
             let actual = synthetic termLikeF
             assertBool "" (checking actual)
 
-    is :: HasCallStack => TermLikeF Variable Function -> TestTree
+    is :: HasCallStack => TermLikeF VariableName Function -> TestTree
     is = check "Function pattern" isFunction
 
-    isn't :: HasCallStack => TermLikeF Variable Function -> TestTree
+    isn't :: HasCallStack => TermLikeF VariableName Function -> TestTree
     isn't = check "Non-functional pattern" (not . isFunction)
 
     expect
         :: HasCallStack
         => Function
-        -> TermLikeF Variable Function
+        -> TermLikeF VariableName Function
         -> TestTree
     expect x
       | isFunction x = is

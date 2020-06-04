@@ -30,5 +30,5 @@ test_topSimplification =
         )
     ]
 
-evaluate :: Top Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: Top Sort (OrPattern VariableName) -> OrPattern VariableName
 evaluate = simplify

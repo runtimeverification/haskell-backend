@@ -30,6 +30,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Reflection as Reflection
 import Data.Sequence
@@ -46,9 +49,6 @@ import Kore.Internal.Predicate
     ( makeTruePredicate
     )
 import Kore.Internal.TermLike
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore
     ( testId
@@ -230,11 +230,7 @@ test_concatUnitSymbolic =
   where
     prop = do
         let patUnit = mkApplySymbol unitListSymbol []
-            patSymbolic = mkElemVar $ ElementVariable Variable
-                { variableName = testId "x"
-                , variableCounter = mempty
-                , variableSort = listSort
-                }
+            patSymbolic = mkElemVar $ mkElementVariable (testId "x") listSort
             patConcat1 = mkApplySymbol concatListSymbol [ patUnit, patSymbolic ]
             patConcat2 = mkApplySymbol concatListSymbol [ patSymbolic, patUnit ]
             predicate1 = mkEquals_ patSymbolic patConcat1
@@ -297,9 +293,10 @@ test_concatSymbolic =
                         { term = patConcatY
                         , predicate = makeTruePredicate listSort
                         , substitution =
-                            from $ Map.fromList
-                                [ (ElemVar elemVarX, patSymbolicY)
-                                , (ElemVar elemVarXs, patSymbolicYs)
+                            from @(Map (SomeVariable VariableName) _)
+                            $ Map.fromList
+                                [ (inject elemVarX, patSymbolicY)
+                                , (inject elemVarXs, patSymbolicYs)
                                 ]
                         }
         unified <- evaluateT patUnifiedXY
@@ -313,9 +310,10 @@ test_concatSymbolic =
                         { term = patConcatY'
                         , predicate = makeTruePredicate listSort
                         , substitution =
-                            from $ Map.fromList
-                                [ (ElemVar elemVarX, patSymbolicY)
-                                , (ElemVar elemVarXs, patSymbolicYs)
+                            from @(Map (SomeVariable VariableName) _)
+                            $ Map.fromList
+                                [ (inject elemVarX, patSymbolicY)
+                                , (inject elemVarXs, patSymbolicYs)
                                 ]
                         }
         unified' <- evaluateT patUnifiedXY'
@@ -353,9 +351,10 @@ test_concatSymbolicDifferentLengths =
                         (patElemX2 `concatList` patSymbolicXs)
                     , predicate = makeTruePredicate listSort
                     , substitution =
-                        from $ Map.fromList
-                            [ (ElemVar elemVarX1, patSymbolicY)
-                            ,   ( ElemVar elemVarYs
+                        from @(Map (SomeVariable VariableName) _)
+                        $ Map.fromList
+                            [ (inject elemVarX1, patSymbolicY)
+                            ,   ( inject elemVarYs
                                 , patElemX2 `concatList` patSymbolicXs
                                 )
                             ]
@@ -363,26 +362,15 @@ test_concatSymbolicDifferentLengths =
         unified <- evaluateT patUnifiedXY
         expect === unified
 
-ofSort :: Text -> Sort -> ElementVariable Variable
-ofSort name sort =
-    ElementVariable
-        Variable
-            { variableName = testId name
-            , variableCounter = mempty
-            , variableSort = sort
-            }
+ofSort :: Text -> Sort -> ElementVariable VariableName
+ofSort name sort = mkElementVariable (testId name) sort
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
 test_simplify =
     testPropertyWithSolver "simplify elements" $ do
         let
-            x =
-                mkElemVar $ ElementVariable Variable
-                    { variableName = testId "x"
-                    , variableCounter = mempty
-                    , variableSort = intSort
-                    }
+            x = mkElemVar $ mkElementVariable (testId "x") intSort
             original = asInternal [mkAnd x mkTop_]
             expected = asPattern [x]
         (===) expected =<< evaluateT original
@@ -430,14 +418,14 @@ test_size =
         (===) Pattern.top    =<< evaluateT predicate
     ]
 
-mkInt :: Integer -> TermLike Variable
+mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asTermLike
     :: Foldable f
-    => f (TermLike Variable)
-    -> TermLike Variable
+    => f (TermLike VariableName)
+    -> TermLike VariableName
 asTermLike =
     Reflection.give testMetadataTools List.asTermLike
     . builtinList
@@ -446,8 +434,8 @@ asTermLike =
 -- | Specialize 'List.asInternal' to the builtin sort 'listSort'.
 asInternal
     :: Foldable f
-    => f (TermLike Variable)
-    -> TermLike Variable
+    => f (TermLike VariableName)
+    -> TermLike VariableName
 asInternal =
     List.asInternal testMetadataTools listSort
     . Seq.fromList
@@ -456,8 +444,8 @@ asInternal =
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern
     :: Foldable f
-    => f (TermLike Variable)
-    -> Pattern Variable
+    => f (TermLike VariableName)
+    -> Pattern VariableName
 asPattern =
     Reflection.give testMetadataTools List.asPattern listSort
     . Seq.fromList

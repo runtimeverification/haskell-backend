@@ -115,9 +115,6 @@ import Kore.Internal.TermLike hiding
     , substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Syntax.Variable
-    ( Variable
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -125,7 +122,6 @@ import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshPartialOrd
     )
-import Kore.Variables.UnifiedVariable
 import Pretty
     ( Pretty (..)
     )
@@ -156,7 +152,7 @@ instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isBottom (GenericPredicate patt) = isBottom patt
 
 instance
-    InternalVariable variable
+    (Ord variable, From variable VariableName)
     => Unparse (GenericPredicate (TermLike variable))
   where
     unparse predicate =
@@ -732,12 +728,11 @@ isPredicate = Either.isRight . makePredicate
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
 mapVariables
-    ::  (NamedVariable variable1, NamedVariable variable2)
-    =>  FreshPartialOrd variable2
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Predicate variable1
-    ->  Predicate variable2
+    :: Ord variable1
+    => FreshPartialOrd variable2
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Predicate variable1
+    -> Predicate variable2
 mapVariables adj = fmap (TermLike.mapVariables adj)
 
 instance HasFreeVariables (Predicate variable) variable where
@@ -799,7 +794,7 @@ forgetSimplified (GenericPredicate termLike) =
 isFreeOf
     :: Ord variable
     => Predicate variable
-    -> Set (UnifiedVariable variable)
+    -> Set (SomeVariable variable)
     -> Bool
 isFreeOf predicate =
     Set.disjoint (FreeVariables.toSet $ freeVariables predicate)
@@ -809,10 +804,10 @@ freeElementVariables = getFreeElementVariables . freeVariables
 
 hasFreeVariable
     :: Ord variable
-    => UnifiedVariable variable
+    => SomeVariableName variable
     -> Predicate variable
     -> Bool
-hasFreeVariable variable = isFreeVariable variable . freeVariables
+hasFreeVariable variableName = isFreeVariable variableName . freeVariables
 
 {- | Traverse the predicate from the top down and apply substitutions.
 
@@ -822,7 +817,7 @@ contain none of the targeted variables.
  -}
 substitute
     :: InternalVariable variable
-    => Map (UnifiedVariable variable) (TermLike variable)
+    => Map (SomeVariableName variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable
 substitute subst (GenericPredicate termLike) =
@@ -837,7 +832,7 @@ capturing the resulting 'Variable's.
 externalizeFreshVariables
     :: InternalVariable variable
     => Predicate variable
-    -> Predicate Variable
+    -> Predicate VariableName
 externalizeFreshVariables predicate =
     TermLike.externalizeFreshVariables
     . TermLike.mapVariables (pure toVariableName)

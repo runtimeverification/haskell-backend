@@ -17,7 +17,6 @@ import Kore.Sort
 import Kore.Syntax hiding
     ( PatternF (..)
     )
-import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -97,7 +96,7 @@ test_instance_Synthetic =
         , failure $ ForallF (Forall sort Mock.x sort0)
         ]
     , testGroup "VariableF"
-        [ success $ VariableF (Const (ElemVar Mock.x))
+        [ success $ VariableF (Const (inject Mock.x))
         ]
     , testGroup "MuF"
         [ success $ MuF (Mu Mock.setX sort)
@@ -115,7 +114,7 @@ test_instance_Synthetic =
     expected = sort
     success
         :: HasCallStack
-        => TermLikeF Variable Sort
+        => TermLikeF VariableName Sort
         -> TestTree
     success termLikeF =
         testCase "Sorts match" $ do
@@ -123,7 +122,7 @@ test_instance_Synthetic =
             assertEqual "" expected actual
     failure
         :: HasCallStack
-        => TermLikeF Variable Sort
+        => TermLikeF VariableName Sort
         -> TestTree
     failure termLikeF =
         testCase "Sorts mismatch" $ do

@@ -30,9 +30,6 @@ import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -181,9 +178,9 @@ test_SubstitutionSimplifier =
     test
         :: HasCallStack
         => TestName
-        -> [(UnifiedVariable Variable, TermLike Variable)]
+        -> [(SomeVariable VariableName, TermLike VariableName)]
         -- ^ Test input
-        -> [Normalization Variable]
+        -> [Normalization VariableName]
         -- ^ Expected normalized, denormalized outputs
         -> TestTree
     test
@@ -239,25 +236,25 @@ test_SubstitutionSimplifier =
                 let sort = Condition.conditionSort first
                 in map (Condition.coerceSort sort) expect
 
-x, y, z, xs, ys :: UnifiedVariable Variable
-x = ElemVar Mock.x
-y = ElemVar Mock.y
-z = ElemVar Mock.z
-xs = SetVar Mock.setX
-ys = SetVar Mock.setY
+x, y, z, xs, ys :: SomeVariable VariableName
+x = inject Mock.x
+y = inject Mock.y
+z = inject Mock.z
+xs = inject Mock.setX
+ys = inject Mock.setY
 
-a, b, c :: TermLike Variable
+a, b, c :: TermLike VariableName
 a = Mock.a
 b = Mock.b
 c = Mock.c
 
-f, g, h, constr1 :: TermLike Variable -> TermLike Variable
+f, g, h, constr1 :: TermLike VariableName -> TermLike VariableName
 f = Mock.f
 g = Mock.g
 h = Mock.h
 constr1 = Mock.constr10
 
-sigma :: TermLike Variable -> TermLike Variable -> TermLike Variable
+sigma :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 sigma = Mock.sigma
 
 testSort :: Sort

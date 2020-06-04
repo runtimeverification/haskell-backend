@@ -269,8 +269,8 @@ hprop_Builtin_Set :: Property
     test
         :: HasCallStack
         => TestName
-        -> TermLike Variable
-        -> [Predicate Variable]
+        -> TermLike VariableName
+        -> [Predicate VariableName]
         -> TestTree
     test testName original expect =
         testCase testName $ do
@@ -280,11 +280,11 @@ hprop_Builtin_Set :: Property
 propertyBuiltinAssocComm
     :: Show element
     => Gen [element]
-    -> Gen [TermLike Variable]
-    -> (element -> TermLike Variable)
-    -> (element -> [Predicate Variable])
-    -> (element -> TermLike Variable -> Predicate Variable)
-    -> ([element] -> [TermLike Variable] -> TermLike Variable)
+    -> Gen [TermLike VariableName]
+    -> (element -> TermLike VariableName)
+    -> (element -> [Predicate VariableName])
+    -> (element -> TermLike VariableName -> Predicate VariableName)
+    -> ([element] -> [TermLike VariableName] -> TermLike VariableName)
     -> Property
 propertyBuiltinAssocComm
     genElements
@@ -337,13 +337,13 @@ propertyBuiltinAssocComm
     zipWithTails f (x : xs) = map (f x) xs ++ zipWithTails f xs
 
 makeNotEqualsPredicate
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> Predicate VariableName
 makeNotEqualsPredicate x y =
     (makeNotPredicate . uncurry makeEqualsPredicate_) (minMax x y)
 
-makeEvaluate :: TermLike Variable -> IO (MultiAnd (Predicate Variable))
+makeEvaluate :: TermLike VariableName -> IO (MultiAnd (Predicate VariableName))
 makeEvaluate termLike = do
     actualPattern <-
         makeEvaluate' termLike

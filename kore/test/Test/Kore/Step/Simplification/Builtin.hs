@@ -64,8 +64,8 @@ test_simplify =
     becomes
         :: HasCallStack
         => TestName
-        -> Builtin (OrPattern Variable)
-        -> [Pattern Variable]
+        -> Builtin (OrPattern VariableName)
+        -> [Pattern VariableName]
         -> TestTree
     becomes name origin expect =
         testCase name
@@ -111,5 +111,5 @@ mkList children =
         , builtinListChild = Seq.fromList children
         }
 
-evaluate :: Builtin (OrPattern Variable) -> OrPattern Variable
+evaluate :: Builtin (OrPattern VariableName) -> OrPattern VariableName
 evaluate = simplify

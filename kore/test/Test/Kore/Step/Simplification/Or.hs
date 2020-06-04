@@ -17,11 +17,6 @@ import Data.Text
     ( Text
     )
 
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate_
@@ -38,11 +33,13 @@ import Kore.Step.Simplification.Or
     , simplifyEvaluated
     )
 import qualified Kore.Unparser as Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Pretty
 
+import Test.Kore.Internal.OrPattern
+    ( OrTestPattern
+    )
+import qualified Test.Kore.Internal.OrPattern as OrPattern
+import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Terse
 
@@ -93,16 +90,16 @@ test_simplify =
             (simplifyEvaluated          orPattern1 orPattern2 )
         ]
   where
-    orPattern1 :: OrPattern Variable
+    orPattern1 :: OrTestPattern
     orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: OrPattern Variable
+    orPattern2 :: OrTestPattern
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: OrPattern Variable
-      -> OrPattern Variable
-      -> Or Sort (OrPattern Variable)
+      :: OrTestPattern
+      -> OrTestPattern
+      -> Or Sort OrTestPattern
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -121,13 +118,11 @@ Key for variable names:
             named `pm` and `pM` are expected to be unequal.
 -}
 
-{- | Short-hand for: @Pattern Variable@
+{- | Short-hand for: @TestPattern@
 
 See also: 'orChild'
  -}
 type TestConfig = (TestTerm, TestPredicate, TestSubstitution)
-
-type TestTerm = TermLike Variable
 
 tT :: TestTerm
 tT = mkTop Mock.testSort
@@ -141,10 +136,18 @@ tM = mkElemVar Mock.y
 t_ :: TestTerm
 t_ = mkBottom Mock.testSort
 
-testVar :: Text -> ElementVariable Variable
-testVar ident = ElementVariable $ Variable (testId ident) mempty Mock.testSort
+testVar :: Text -> ElementVariable VariableName
+testVar ident =
+    Variable
+    { variableName =
+        ElementVariableName VariableName
+        { base = testId ident
+        , counter = mempty
+        }
+    , variableSort = Mock.testSort
+    }
 
-type TestPredicate = Predicate Variable
+type TestPredicate = Predicate VariableName
 
 pT :: TestPredicate
 pT = makeTruePredicate_
@@ -164,7 +167,7 @@ pM =
 p_ :: TestPredicate
 p_ = makeFalsePredicate_
 
-type TestSubstitution = Substitution Variable
+type TestSubstitution = Substitution VariableName
 
 sT :: TestSubstitution
 sT = mempty
@@ -173,13 +176,13 @@ sm :: TestSubstitution
 sm =
     Substitution.wrap
     $ Substitution.mkUnwrappedSubstitution
-    [(ElemVar Mock.x, Mock.a)] -- I'd rather these were meaningful
+    [(inject Mock.x, Mock.a)] -- I'd rather these were meaningful
 
 sM :: TestSubstitution
 sM =
     Substitution.wrap
     $ Substitution.mkUnwrappedSubstitution
-    [(ElemVar Mock.y, Mock.b)] -- I'd rather these were meaningful
+    [(inject Mock.y, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
 test_valueProperties =
@@ -209,7 +212,7 @@ test_valueProperties =
 becomes
   :: HasCallStack
   => (TestConfig, TestConfig)
-  -> [Pattern Variable]
+  -> [TestPattern]
   -> TestTree
 becomes
     (orChild -> or1, orChild -> or2)
@@ -252,8 +255,8 @@ simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
 -- * Support Functions
 
 prettyOr
-    :: Pattern Variable
-    -> Pattern Variable
+    :: TestPattern
+    -> TestPattern
     -> Pretty.Doc a
 prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
@@ -266,7 +269,7 @@ stateIntention actualAndSoOn =
 
 orChild
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> Pattern Variable
+    -> TestPattern
 orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
 
@@ -274,5 +277,5 @@ orChild (term, predicate, substitution) =
 -- during conversion of a Conditional into an OrPattern
 wrapInOrPattern
     :: (TestTerm, TestPredicate, TestSubstitution)
-    -> OrPattern Variable
+    -> OrTestPattern
 wrapInOrPattern tuple = OrPattern.fromPatterns [orChild tuple]

@@ -23,6 +23,10 @@ import Control.Exception
     ( ErrorCall
     , catch
     )
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import Data.Reflection
     ( Given
     , give
@@ -60,9 +64,6 @@ import Kore.Syntax.Sentence
     )
 import qualified Kore.Syntax.Sentence as SentenceAxiom
     ( SentenceAxiom (..)
-    )
-import Kore.Syntax.Variable
-    ( Variable (Variable)
     )
 import SMT
     ( SMT
@@ -244,7 +245,7 @@ constructorAxiom sortName constructors =
             (mkApplySymbol symbol (map mkElemVar argumentVariables))
             argumentVariables
       where
-        argumentVariables :: [ElementVariable Variable]
+        argumentVariables :: [ElementVariable VariableName]
         argumentVariables = zipWith makeVariable [1..] argumentSorts
 
         symbol =
@@ -256,13 +257,11 @@ constructorAxiom sortName constructors =
                     applicationSorts (map makeSort argumentSorts) sort
                 }
 
-makeVariable :: Natural -> Text -> ElementVariable Variable
-makeVariable varIndex sortName = ElementVariable
-    Variable
-        { variableName = testId "var"
-        , variableCounter = Just (Element varIndex)
-        , variableSort = makeSort sortName
-        }
+makeVariable :: Natural -> Text -> ElementVariable VariableName
+makeVariable varIndex sortName =
+    mkElementVariable (testId "var") (makeSort sortName)
+    & Lens.set (field @"variableName" . Lens.mapped . field @"counter")
+        (Just (Element varIndex))
 
 makeSort :: Text -> Sort
 makeSort name =

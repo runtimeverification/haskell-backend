@@ -103,8 +103,6 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
-    ( Variable
-    )
 import Kore.Unification.Error
 import Kore.Unification.UnifierT
     ( MonadUnify
@@ -484,10 +482,10 @@ data Config m = Config
         -> m (ExecutionGraph Axiom)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
-        :: SideCondition Variable
-        -> TermLike Variable
-        -> TermLike Variable
-        -> UnifierWithExplanation m (Condition Variable)
+        :: SideCondition VariableName
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> UnifierWithExplanation m (Condition VariableName)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
