@@ -21,7 +21,7 @@ parseBugReport =
     BugReport
         <$> optional
             ( strOption
-                ( metavar "REPRT FILE"
+                ( metavar "REPORT FILE"
                 <> long "bug-report"
                 <> help "Whether to report a bug"
                 )
