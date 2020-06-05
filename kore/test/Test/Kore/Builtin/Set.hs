@@ -4,6 +4,7 @@ module Test.Kore.Builtin.Set
     ( test_unit
     , test_getUnit
     , test_inElement
+    , test_inUnitSymbolic
     , test_inElementSymbolic
     , test_inConcat
     , test_inConcatSymbolic
@@ -149,10 +150,16 @@ import Test.SMT hiding
 import Test.Tasty.HUnit.Ext
 
 genKeys :: Gen [TermLike VariableName]
-genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
+genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)
 
 genKey :: Gen (TermLike VariableName)
-genKey = Gen.element (concreteKeys <> symbolicKeys)
+genKey = Gen.element (concreteKeys <> symbolicKeys <> functionalKeys)
+
+genFunctionalKey :: Gen (TermLike VariableName)
+genFunctionalKey = Gen.element (functionalKeys <> concreteKeys)
+
+functionalKeys :: [TermLike VariableName]
+functionalKeys = Mock.functional10 . mkElemVar <$> elemVars'
 
 concreteKeys :: [TermLike VariableName]
 concreteKeys = [Mock.a, Mock.b, Mock.c]
@@ -233,6 +240,24 @@ test_inElement =
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
             (===) Pattern.top                =<< evaluateT predicate
+        )
+
+test_inUnitSymbolic :: TestTree
+test_inUnitSymbolic =
+    testPropertyWithSolver
+        "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
+        (do
+            patKey <- forAll genFunctionalKey
+            let patIn =
+                    mkApplySymbol
+                        inSetSymbolTestSort
+                        [ patKey
+                        , mkApplySymbol unitSetSymbol []
+                        ]
+                patFalse = Test.Bool.asInternal False
+                predicate = mkEquals_ patFalse patIn
+            (===) (Test.Bool.asPattern False) =<< evaluateT patIn
+            (===) Pattern.top                 =<< evaluateT predicate
         )
 
 test_inElementSymbolic :: TestTree
