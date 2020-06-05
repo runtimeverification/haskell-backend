@@ -1,3 +1,5 @@
+Parameter var : Type.
+
 Lemma combine_direct
   (p1 q1 p2 q2 : var -> Prop)
   (i j : nat)
@@ -63,3 +65,99 @@ Proof.
     + apply combine_reverse2 with p1 q1 i j; assumption.
 Qed.
 
+
+Lemma exists_or_direct
+  (p q : var -> Prop)
+  (He : exists x, exists c, (c = 1 /\ p x) \/ (c = 2 /\ q x))
+  : (exists x, p x) \/ (exists x, q x) 
+  .
+Proof.
+  destruct He as [x [c [[Hc Hp] | [Hc Hq]]]]; subst.
+  - left. exists x. assumption.
+  - right. exists x. assumption.
+Qed.
+
+Lemma exists_or_reverse
+  (p q : var -> Prop)
+  (He : (exists x, p x) \/ (exists x, q x))
+  : exists x, exists c, (c = 1 /\ p x) \/ (c = 2 /\ q x) 
+  .
+Proof.
+  destruct He as [[x Hp] | [x Hq]]; subst; exists x.
+  - exists 1. left. split; auto.
+  - exists 2. right. split; auto.
+Qed.
+
+Theorem exists_or
+  (p q : var -> Prop)
+  :
+  (exists x, exists c, (c = 1 /\ p x) \/ (c = 2 /\ q x))
+  <->
+  ((exists x, p x) \/ (exists x, q x))
+  .
+Proof.
+  split.
+  - apply exists_or_direct.
+  - apply exists_or_reverse.
+Qed.
+
+Lemma distribute_hypothesis_direct
+  (p1 p2 : var -> var -> Prop)  
+  (q : var -> Prop)
+  (H : forall x z,
+     (p1 x z \/ p2 x z) -> q x)
+  : (forall x z, p1 x z -> q x)
+    /\
+    (forall x z, p2 x z -> q x)
+  .
+Proof.
+  split; intros; specialize (H x z); apply H.
+  - left. assumption.
+  - right. assumption.
+Qed.
+
+Lemma distribute_hypothesis_reverse
+  (p1 p2 : var -> var -> Prop)  
+  (q : var -> Prop)
+  (H : (forall x z, p1 x z -> q x)
+    /\
+    (forall x z, p2 x z -> q x)
+  )
+  : forall x z,
+     (p1 x z \/ p2 x z) -> q x
+  .
+Proof.
+  destruct H as [H1 H2]. intros. specialize (H1 x z). specialize (H2 x z).
+  destruct H as [Hi1 | Hi2].
+  - apply H1. assumption.
+  - apply H2. assumption.
+Qed.
+
+Theorem distribute_hypothesis
+  (p1 p2 : var -> var -> Prop)  
+  (q : var -> Prop)
+  : (forall x z,
+     (p1 x z \/  p2 x z) -> q x)
+  <->
+    ((forall x z, p1 x z -> q x)
+    /\
+    (forall x z, p2 x z -> q x)
+    )
+  .
+Proof.
+  split.
+  - apply distribute_hypothesis_direct.
+  - apply distribute_hypothesis_reverse.
+Qed.
+
+
+Theorem remove_quantifier
+  (p : Prop)
+  (Hvi : inhabited var)
+  : (forall x : var, p) <-> p.
+Proof.
+  split; intros.
+  -  destruct Hvi. apply H. exact X.
+  - exact H.
+Qed. 
+  
