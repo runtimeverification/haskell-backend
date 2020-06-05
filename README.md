@@ -68,7 +68,10 @@ To run a language server, developers will need to activate the appropriate
 
 ```sh
 ln -s hie-stack.yaml hie.yaml  # for Stack
+# or
 ln -s hie-cabal.yaml hie.yaml  # for Cabal
+# or
+ln -s hie-bios.yaml hie.yaml  # if all else fails
 ```
 
 ### Developing with Nix
