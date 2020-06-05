@@ -236,6 +236,15 @@ expectConcreteBuiltinSet ctx _set = do
             } -> return concreteElements
         _ -> empty
 
+expectEmptySet
+    :: MonadSimplify m
+    => Text  -- ^ Context for error message
+    -> TermLike variable  -- ^ Operand pattern
+    -> MaybeT m ()
+expectEmptySet cxt _set = do
+    _set <- expectConcreteBuiltinSet cxt _set
+    Monad.guard (Map.null _set)
+
 {- | Converts a @Set@ of concrete elements to a @NormalizedSet@ and returns it
 as a function result.
 -}
@@ -275,13 +284,17 @@ evalIn resultSort [_elem, _set] = do
             _set' <- expectBuiltinSet Set.inKey _set
             let result = Domain.isSymbolicKeyOfAc _elem _set'
             returnIfTrueAndDefined result _set
+        emptySet = do
+            expectEmptySet Set.inKey _set
+            Monad.guard (TermLike.isFunctionalPattern _elem)
+            return $ asExpandedBoolPattern False
         bothConcrete = do
             _elem <- hoistMaybe $ Builtin.toKey _elem
             _set <- expectConcreteBuiltinSet Set.inKey _set
             Map.member _elem _set
                 & asExpandedBoolPattern
                 & return
-    setSymbolic <|> bothSymbolic <|> bothConcrete
+    setSymbolic <|> bothSymbolic <|> emptySet <|> bothConcrete
   where
     asExpandedBoolPattern = Bool.asPattern resultSort
     returnIfTrueAndDefined result setTerm

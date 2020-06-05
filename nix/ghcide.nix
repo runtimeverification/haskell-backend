@@ -18,15 +18,17 @@ let
           packages.haskell-lsp.doHaddock = false;
         })];
       };
+  project = mkPackages {
+    # Compiler should be the same as LTS Haskell.
+    ghc = pkgs.haskell-nix.compiler.ghc865;
+    stackYaml = "stack.yaml";
+  };
   mkHieCore = args@{...}:
     let packages = mkPackages args;
     in packages.ghcide.components.exes.ghcide // { inherit packages; };
 in
 
 {
-  ghcide = mkHieCore {
-    # Compiler should be the same as LTS Haskell.
-    ghc = pkgs.haskell-nix.compiler.ghc865;
-    stackYaml = "stack.yaml";
-  };
+  inherit (project.ghcide.components.exes) ghcide;
+  inherit (project.hie-bios.components.exes) hie-bios;
 }
