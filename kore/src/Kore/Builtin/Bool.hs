@@ -14,6 +14,7 @@ module Kore.Builtin.Bool
     , extractBoolDomainValue
     , parse
     , termAndEquals
+    , termOrEquals
     , termNotBool
     , matchBool
       -- * Keys
@@ -205,11 +206,47 @@ termAndEquals unifyChildren a b =
       , value1
       , Just BoolAnd { operand1, operand2 } <- matchBoolAnd termLike2
       , isFunctionPattern termLike2
-      = lift $ do
-        unification1 <- unifyChildren' termLike1 operand1
-        unification2 <- unifyChildren' termLike1 operand2
-        let conditions = unification1 <> unification2
-        pure (Pattern.withCondition termLike1 conditions)
+      = unifyBothWith unifyChildren' termLike1 operand1 operand2
+    worker _ _ = empty
+
+unifyBothWith
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    =>  (TermLike variable
+        -> TermLike variable
+        -> unifier (Pattern.Condition variable)
+        )
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyBothWith unify termLike1 operand1 operand2 = lift $ do
+    unification1 <- unify termLike1 operand1
+    unification2 <- unify termLike1 operand2
+    let conditions = unification1 <> unification2
+    pure (Pattern.withCondition termLike1 conditions)
+
+
+termOrEquals
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termOrEquals unifyChildren a b =
+    worker a b <|> worker b a
+  where
+    unifyChildren' term1 term2 =
+        Pattern.withoutTerm <$> unifyChildren term1 term2
+    worker termLike1 termLike2
+      | Just value1 <- matchBool termLike1
+      , not value1
+      , Just BoolOr { operand1, operand2 } <- matchBoolOr termLike2
+      , isFunctionPattern termLike2
+      = unifyBothWith unifyChildren' termLike1 operand1 operand2
     worker _ _ = empty
 
 termNotBool
@@ -255,6 +292,23 @@ matchBoolAnd (App_ symbol [operand1, operand2]) = do
     Monad.guard (hook2 == andKey)
     return BoolAnd { symbol, operand1, operand2 }
 matchBoolAnd _ = Nothing
+
+{- | The @BOOL.or@ hooked symbol applied to @term@-type arguments.
+ -}
+data BoolOr term =
+    BoolOr
+        { symbol :: !Symbol
+        , operand1, operand2 :: !term
+        }
+
+{- | Match the @BOOL.or@ hooked symbol.
+ -}
+matchBoolOr :: TermLike variable -> Maybe (BoolOr (TermLike variable))
+matchBoolOr (App_ symbol [operand1, operand2]) = do
+    hook2 <- (getHook . symbolHook) symbol
+    Monad.guard (hook2 == orKey)
+    return BoolOr { symbol, operand1, operand2 }
+matchBoolOr _ = Nothing
 
 {- | The @BOOL.not@ hooked symbol applied to a @term@-type argument.
  -}

@@ -10,6 +10,7 @@ module Test.Kore.Builtin.Bool
     , test_implies
     , hprop_unparse
     , test_termAndEquals
+    , test_termOrEquals
     --
     , asPattern
     , asInternal
@@ -26,6 +27,7 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
+import Control.Monad.Trans.Maybe
 import qualified Data.Text as Text
 
 import qualified Kore.Builtin.Bool as Bool
@@ -33,12 +35,18 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
-    ( runSimplifier
+    ( SimplifierT
+    , runSimplifier
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.UnifierT
-    ( runUnifierT
+import Kore.Unification.Error
+    ( UnificationError
     )
+import Kore.Unification.UnifierT
+    ( UnifierT
+    , runUnifierT
+    )
+import qualified SMT
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -146,11 +154,7 @@ test_termAndEquals =
             test "BOOL.and - false" term1 term2 result
     ]
   where
-    _True  = asInternal True
-    _False = asInternal False
     literals = [(_True, True), (_False, False)]
-    x = inject (mkElementVariable "x" boolSort)
-    y = inject (mkElementVariable "y" boolSort)
 
     test
         :: HasCallStack
@@ -168,25 +172,74 @@ test_termAndEquals =
         run (Bool.termAndEquals termSimplifier term1 term2)
         >>= expectRight
 
-    run =
-        runNoSMT
-        . runSimplifier testEnv
-        . runUnifierT Not.notSimplifier
-        . runMaybeT
+test_termOrEquals :: [TestTree]
+test_termOrEquals =
+    [   let term1 = _False
+            term2 = orBool (mkVar x) (mkVar y)
+            condition =
+                Condition.assign x _False
+                <> Condition.assign y _False
+            result = [Just (Pattern.withCondition _False condition)]
+        in
+            test "BOOL.or - false" term1 term2 result
+    ,
+        let term1 = _True
+            term2 = andBool (mkVar x) (mkVar y)
+            result = [Nothing]
+        in
+            test "BOOL.or - true" term1 term2 result
+    ]
+  where
+    test
+        :: HasCallStack
+        => TestName
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> [Maybe (Pattern VariableName)]
+        -> TestTree
+    test testName term1 term2 expected =
+        testCase testName $ do
+            actual <- unify term1 term2
+            assertEqual "" expected actual
 
-    expectRight (Right r) = return r
-    expectRight (Left  _) = assertFailure "Expected Right"
+    unify term1 term2 =
+        run (Bool.termOrEquals termSimplifier term1 term2)
+        >>= expectRight
 
-    termSimplifier = \term1 term2 ->
-        runMaybeT (worker term1 term2 <|> worker term2 term1)
-        >>= maybe (fallback term1 term2) return
-      where
-        worker term1 term2
-          | ElemVar_ var <- term1 =
-            Pattern.assign (inject var) term2
-            & return
-          | otherwise = empty
-        fallback term1 term2 =
-            mkAnd term1 term2
-            & Pattern.fromTermLike
-            & return
+run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a
+    -> IO (Either UnificationError [Maybe a])
+run =
+    runNoSMT
+    . runSimplifier testEnv
+    . runUnifierT Not.notSimplifier
+    . runMaybeT
+
+expectRight :: Either a1 a2 -> IO a2
+expectRight (Right r) = return r
+expectRight (Left  _) = assertFailure "Expected Right"
+
+termSimplifier
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> UnifierT (SimplifierT SMT.NoSMT) (Pattern VariableName)
+termSimplifier = \term1 term2 ->
+    runMaybeT (worker term1 term2 <|> worker term2 term1)
+    >>= maybe (fallback term1 term2) return
+  where
+    worker term1 term2
+      | ElemVar_ var <- term1 =
+        Pattern.assign (inject var) term2
+        & return
+      | otherwise = empty
+    fallback term1 term2 =
+        mkAnd term1 term2
+        & Pattern.fromTermLike
+        & return
+
+_True, _False :: TermLike VariableName
+_True  = asInternal True
+_False = asInternal False
+
+x, y :: SomeVariable VariableName
+x = inject (mkElementVariable "x" boolSort)
+y = inject (mkElementVariable "y" boolSort)

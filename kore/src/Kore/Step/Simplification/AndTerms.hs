@@ -236,6 +236,7 @@ andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
     , (BothT,   \_ _ s -> Builtin.Bool.termAndEquals s, "Builtin.Bool.termAndEquals")
+    , (BothT,   \_ _ s -> Builtin.Bool.termOrEquals s, "Builtin.Bool.termOrEquals")
     , (BothT,   \_ _ s -> Builtin.Bool.termNotBool s, "Builtin.Bool.termNotBool")
     , (EqualsT, \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier, "Builtin.KEqual.termKEquals")
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s, "Builtin.KEqual.unifyIfThenElse")
