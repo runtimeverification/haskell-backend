@@ -50,12 +50,10 @@ We also recommend (but not require!) the following dependencies.
 For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
-- [ghcide], an integrated development environment for Haskell
-  that is compatible with most editors. Note: [yq] is required to
-  run `ghcide` with `hie-bios.sh`.
-- [hlint] and [stylish-haskell] for compliance with project guidelines. Run
-  `stack --stack-yaml global-stack.yaml install hlint stylish-haskell` to
-  install the versions that are used for CI.
+- [ghcide] or [haskell-ide-engine], [language servers] for Haskell that are
+  compatible with most editors. See instructions
+  [below](#running-a-language-server) to run a language server.
+- [hlint] and [stylish-haskell] for compliance with project guidelines.
 
 For integration testing, we also recommend:
 
@@ -63,12 +61,33 @@ For integration testing, we also recommend:
 - The [K Framework] frontend, or [curl] to fetch an appropriate version.
   The frontend has other dependencies, most notably a Java runtime.
 
+### Running a language server
+
+To run a language server, developers will need to activate the appropriate
+`hie.yaml` file:
+
+```sh
+ln -s hie-stack.yaml hie.yaml  # for Stack
+# or
+ln -s hie-cabal.yaml hie.yaml  # for Cabal
+# or
+ln -s hie-bios.yaml hie.yaml  # if all else fails
+```
+
+The project's dependencies must be installed before starting the language
+server:
+
+```sh
+stack build --test --bench --only-dependencies
+# or
+cabal build --enable-tests --enable-benchmarks --only-dependencies kore
+```
+
 ### Developing with Nix
 
 For developers so inclined, we provide a `shell.nix` expression with a suitable
 development environment and a binary cache at [kore.cachix.org]. The development
-environment is intended to be used with `nix-shell` and `stack --no-nix
---system-ghc`.
+environment is intended to be used with `nix-shell` and `cabal`.
 
 
 [git]: https://git-scm.com/
@@ -79,7 +98,8 @@ environment is intended to be used with `nix-shell` and `stack --no-nix
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv
 [ghcide]: https://github.com/digital-asset/ghcide
-[yq]: https://github.com/kislyuk/yq
+[haskell-ide-engine]: https://github.com/haskell/haskell-ide-engine
+[language servers]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
 [kore.cachix.org]: https://kore.cachix.org/
