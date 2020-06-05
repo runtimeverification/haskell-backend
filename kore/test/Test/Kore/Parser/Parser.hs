@@ -304,7 +304,8 @@ applicationPatternParserTests =
                         { symbolOrAliasConstructor = testId "c" :: Id
                         , symbolOrAliasParams =
                             [ sortVariableSort "s1"
-                            , sortVariableSort "s2" ]
+                            , sortVariableSort "s2"
+                            ]
                         }
                 , applicationChildren =
                     [ mkElementVariable (testId "v") (sortVariableSort "s1")
@@ -313,7 +314,7 @@ applicationPatternParserTests =
                             (Just (Element 1))
                         & inject & Const & VariableF
                         & asParsedPattern
-                    , mkElementVariable (testId "v") (sortVariableSort "s1")
+                    , mkElementVariable (testId "v") (sortVariableSort "s2")
                         & Lens.set
                             (Lens.mapped . Lens.mapped . field @"counter")
                             (Just (Element 2))
