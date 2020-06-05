@@ -74,6 +74,15 @@ ln -s hie-cabal.yaml hie.yaml  # for Cabal
 ln -s hie-bios.yaml hie.yaml  # if all else fails
 ```
 
+The project's dependencies must be installed before starting the language
+server:
+
+```sh
+stack build --test --bench --only-dependencies
+# or
+cabal build --enable-tests --enable-benchmarks --only-dependencies kore
+```
+
 ### Developing with Nix
 
 For developers so inclined, we provide a `shell.nix` expression with a suitable
