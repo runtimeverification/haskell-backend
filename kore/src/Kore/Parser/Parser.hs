@@ -30,6 +30,7 @@ module Kore.Parser.Parser
     , inCurlyBracesListParser
     , elementVariableParser
     , setVariableParser
+    , parseVariableCounter
     ) where
 
 import Prelude.Kore hiding
