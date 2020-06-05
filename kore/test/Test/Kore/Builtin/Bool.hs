@@ -9,8 +9,9 @@ module Test.Kore.Builtin.Bool
     , test_not
     , test_implies
     , hprop_unparse
-    , test_termAndEquals
-    , test_termOrEquals
+    , test_unifyBoolValues
+    , test_unifyBoolAnd
+    , test_unifyBoolOr
     --
     , asPattern
     , asInternal
@@ -128,8 +129,8 @@ testUnary symb impl =
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)
 
-test_termAndEquals :: [TestTree]
-test_termAndEquals =
+test_unifyBoolValues :: [TestTree]
+test_unifyBoolValues =
     [ testGroup "literals" $ do
         (term1, value1) <- literals
         (term2, value2) <- literals
@@ -137,21 +138,6 @@ test_termAndEquals =
               | value1 == value2 = [Just (Pattern.fromTermLike term1)]
               | otherwise        = []
         [test "" term1 term2 result]
-    ,
-        let term1 = _True
-            term2 = andBool (mkVar x) (mkVar y)
-            condition =
-                Condition.assign x _True
-                <> Condition.assign y _True
-            result = [Just (Pattern.withCondition _True condition)]
-        in
-            test "BOOL.and - true" term1 term2 result
-    ,
-        let term1 = _False
-            term2 = andBool (mkVar x) (mkVar y)
-            result = [Nothing]
-        in
-            test "BOOL.and - false" term1 term2 result
     ]
   where
     literals = [(_True, True), (_False, False)]
@@ -169,11 +155,46 @@ test_termAndEquals =
             assertEqual "" expected actual
 
     unify term1 term2 =
-        run (Bool.termAndEquals termSimplifier term1 term2)
+        run (Bool.unifyBoolValues term1 term2)
         >>= expectRight
 
-test_termOrEquals :: [TestTree]
-test_termOrEquals =
+test_unifyBoolAnd :: [TestTree]
+test_unifyBoolAnd =
+    [
+        let term1 = _True
+            term2 = andBool (mkVar x) (mkVar y)
+            condition =
+                Condition.assign x _True
+                <> Condition.assign y _True
+            result = [Just (Pattern.withCondition _True condition)]
+        in
+            test "BOOL.and - true" term1 term2 result
+    ,
+        let term1 = _False
+            term2 = andBool (mkVar x) (mkVar y)
+            result = [Nothing]
+        in
+            test "BOOL.and - false" term1 term2 result
+    ]
+  where
+    test
+        :: HasCallStack
+        => TestName
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> [Maybe (Pattern VariableName)]
+        -> TestTree
+    test testName term1 term2 expected =
+        testCase testName $ do
+            actual <- unify term1 term2
+            assertEqual "" expected actual
+
+    unify term1 term2 =
+        run (Bool.unifyBoolAnd termSimplifier term1 term2)
+        >>= expectRight
+
+test_unifyBoolOr :: [TestTree]
+test_unifyBoolOr =
     [   let term1 = _False
             term2 = orBool (mkVar x) (mkVar y)
             condition =
@@ -203,7 +224,7 @@ test_termOrEquals =
             assertEqual "" expected actual
 
     unify term1 term2 =
-        run (Bool.termOrEquals termSimplifier term1 term2)
+        run (Bool.unifyBoolOr termSimplifier term1 term2)
         >>= expectRight
 
 run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a
