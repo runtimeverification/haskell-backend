@@ -155,7 +155,6 @@ genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)
 genKey :: Gen (TermLike VariableName)
 genKey = Gen.element (concreteKeys <> symbolicKeys <> functionalKeys)
 
-
 genFunctionalKey :: Gen (TermLike VariableName)
 genFunctionalKey = Gen.element (functionalKeys <> concreteKeys)
 
