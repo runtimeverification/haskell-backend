@@ -1,4 +1,6 @@
-module Test.Kore.Parser.Parser (test_koreParser) where
+module Test.Kore.Parser.Parser
+    ( test_koreParser
+    ) where
 
 import Prelude.Kore
 
@@ -7,10 +9,15 @@ import Test.Tasty
     , testGroup
     )
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import Data.Text
     ( Text
     )
 
+import Data.Sup
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Parser.Parser
@@ -206,7 +213,32 @@ objectSymbolParserTests =
 variableParserTests :: [TestTree]
 variableParserTests =
     parseTree elementVariableParser
-        [ success "v:s" $ mkElementVariable (testId "v") (sortVariableSort "s")
+        [ success "v:s"
+            (mkElementVariable (testId "v") (sortVariableSort "s"))
+        , success "v0:s"
+            (mkElementVariable (testId "v") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 0))
+            )
+        , success "v1:s"
+            (mkElementVariable (testId "v") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 1))
+            )
+        , success "v00:s"
+            (mkElementVariable (testId "v0") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 0))
+            )
+        , success "v01:s"
+            (mkElementVariable (testId "v0") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 1))
+            )
         , success "v:s1{s2}"
             $ mkElementVariable (testId "v")
             $ SortActualSort SortActual
@@ -272,13 +304,22 @@ applicationPatternParserTests =
                         { symbolOrAliasConstructor = testId "c" :: Id
                         , symbolOrAliasParams =
                             [ sortVariableSort "s1"
-                            , sortVariableSort "s2" ]
+                            , sortVariableSort "s2"
+                            ]
                         }
                 , applicationChildren =
-                    [ asParsedPattern $ VariableF $ Const $ inject $
-                        mkElementVariable (testId "v1") (sortVariableSort "s1")
-                    , asParsedPattern $ VariableF $ Const $ inject $
-                        mkElementVariable (testId "v2") (sortVariableSort "s2")
+                    [ mkElementVariable (testId "v") (sortVariableSort "s1")
+                        & Lens.set
+                            (Lens.mapped . Lens.mapped . field @"counter")
+                            (Just (Element 1))
+                        & inject & Const & VariableF
+                        & asParsedPattern
+                    , mkElementVariable (testId "v") (sortVariableSort "s2")
+                        & Lens.set
+                            (Lens.mapped . Lens.mapped . field @"counter")
+                            (Just (Element 2))
+                        & inject & Const & VariableF
+                        & asParsedPattern
                     ]
                 }
             )

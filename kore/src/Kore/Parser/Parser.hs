@@ -30,6 +30,7 @@ module Kore.Parser.Parser
     , inCurlyBracesListParser
     , elementVariableParser
     , setVariableParser
+    , parseVariableCounter
     ) where
 
 import Prelude.Kore hiding
@@ -39,10 +40,13 @@ import Prelude.Kore hiding
 import Control.Arrow
     ( (&&&)
     )
+import qualified Data.Char as Char
+import qualified Data.Text as Text
 import Text.Megaparsec
     ( some
     )
 
+import Data.Sup
 import Kore.AST.Common
 import Kore.Parser.Lexeme
 import Kore.Parser.ParserUtils
@@ -51,6 +55,7 @@ import Kore.Parser.ParserUtils
 import qualified Kore.Parser.ParserUtils as ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Numeric.Natural
 
 asParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
@@ -356,13 +361,36 @@ Always starts with @:@.
 variableRemainderParser
     :: Id  -- ^ The already parsed prefix.
     -> Parser (Variable VariableName)
-variableRemainderParser base = do
+variableRemainderParser identifier = do
+    let (base, counter) = parseVariableCounter identifier
     colonParser
     variableSort <- sortParser
-    return Variable
-        { variableName = VariableName { base, counter = mempty }
+    pure Variable
+        { variableName = VariableName { base, counter }
         , variableSort
         }
+
+parseVariableCounter :: Id -> (Id, Maybe (Sup Natural))
+parseVariableCounter identifier@Id { getId, idLocation }
+  -- Cases:
+  -- suffix is empty: no counter, Id is not changed
+  | Text.null suffix = (identifier, Nothing)
+  -- suffix is all zeros: counter is zero, Id has final zero stripped
+  | Text.null nonZeros =
+    ( Id { idLocation, getId = base <> Text.init zeros }
+    , Just (Element 0)
+    )
+  -- suffix is some zeros followed by non-zeros:
+  --   read the counter from the non-zeros, Id is base + zeros
+  | otherwise =
+    ( Id { idLocation, getId = base <> zeros }
+    , (Just . Element) (read $ Text.unpack nonZeros)
+    )
+  where
+    base = Text.dropWhileEnd Char.isDigit getId
+    suffix = Text.drop (Text.length base) getId
+    zeros = Text.takeWhile (== '0') suffix
+    nonZeros = Text.drop (Text.length zeros) suffix
 
 {- | Parses an element variable
 

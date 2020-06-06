@@ -9,8 +9,7 @@ Please refer to Section 9 (The Kore Language) of the
 {-# LANGUAGE EmptyDataDeriving #-}
 
 module Kore.Syntax.Variable
-    ( isOriginalVariableName
-    , illegalVariableCounter
+    ( illegalVariableCounter
     , externalizeFreshVariableName
     , Variable (..)
     , SomeVariable
@@ -91,11 +90,6 @@ import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
-
-{- | Is the variable original (as opposed to generated)?
- -}
-isOriginalVariableName :: VariableName -> Bool
-isOriginalVariableName = isNothing . counter
 
 {- | Error thrown when 'variableCounter' takes an illegal value.
  -}

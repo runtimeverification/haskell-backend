@@ -1436,7 +1436,6 @@ formatUnificationMessage docOrCondition =
         . Foldable.toList
     unparseUnifier c =
         unparse
-        . TermLike.externalizeFreshVariables
         . Pattern.toTermLike
         $ TermLike.mkTop (TermLike.mkSortVariable "UNKNOWN") <$ c
 
