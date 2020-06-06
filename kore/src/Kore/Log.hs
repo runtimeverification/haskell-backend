@@ -15,12 +15,15 @@ module Kore.Log
     , Colog.logTextStderr
     , Colog.logTextHandle
     , runKoreLog
+    , archiveDirectoryReport
     , module Log
     , module KoreLogOptions
     ) where
 
 import Prelude.Kore
 
+import qualified Codec.Archive.Tar as Tar
+import qualified Codec.Compression.GZip as GZip
 import Colog
     ( LogAction (..)
     )
@@ -50,6 +53,7 @@ import Control.Monad.Cont
     ( ContT (..)
     , runContT
     )
+import qualified Data.ByteString.Lazy as BS
 import Data.Foldable
     ( toList
     )
@@ -89,6 +93,17 @@ import Kore.Log.Registry
     )
 import Kore.Log.SQLite
 import Log
+import System.Directory
+    ( listDirectory
+    )
+import System.FilePath.Posix
+    ( (<.>)
+    , (</>)
+    )
+import System.IO
+    ( hPutStrLn
+    , stderr
+    )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp ActualEntry LocalTime
@@ -96,11 +111,12 @@ data WithTimestamp = WithTimestamp ActualEntry LocalTime
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
 -- the CPS style because some outputters require cleanup (e.g. files).
 withLogger
-    :: KoreLogOptions
+    :: FilePath
+    -> KoreLogOptions
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
-withLogger koreLogOptions = runContT $ do
-    mainLogger <- ContT $ withMainLogger koreLogOptions
+withLogger reportDirectory koreLogOptions = runContT $ do
+    mainLogger <- ContT $ withMainLogger reportDirectory koreLogOptions
     let KoreLogOptions { debugSolverOptions } = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
     let KoreLogOptions { logSQLiteOptions } = koreLogOptions
@@ -108,24 +124,25 @@ withLogger koreLogOptions = runContT $ do
     return $ mainLogger <> smtSolverLogger <> logSQLite
 
 withMainLogger
-    :: KoreLogOptions
+    :: FilePath
+    -> KoreLogOptions
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
-withMainLogger
-    koreLogOptions@KoreLogOptions { logType, timestampsSwitch, exeName }
-    continue
-  =
-    case logType of
-        LogStdErr -> continue
-            $ koreLogTransformer koreLogOptions
-            $ koreLogFilters koreLogOptions
-                (stderrLogger exeName timestampsSwitch)
-        LogFileText filename ->
-            Colog.withLogTextFile filename
-            $ continue
-            . koreLogTransformer koreLogOptions
-            . koreLogFilters koreLogOptions
-            . makeKoreLogger exeName timestampsSwitch
+withMainLogger reportDirectory koreLogOptions = runContT $ do
+    let KoreLogOptions { exeName } = koreLogOptions
+        bugReportLogFile = reportDirectory </> getExeName exeName <.> "log"
+    bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
+    userLogAction <-
+        case logType koreLogOptions of
+            LogStdErr -> pure Colog.logTextStderr
+            LogFileText logFile -> ContT $ Colog.withLogTextFile logFile
+    let KoreLogOptions { timestampsSwitch } = koreLogOptions
+        logAction =
+            userLogAction <> bugReportLogAction
+            & makeKoreLogger exeName timestampsSwitch
+            & koreLogFilters koreLogOptions
+            & koreLogTransformer koreLogOptions
+    pure logAction
 
 withSmtSolverLogger
     :: DebugSolverOptions -> (LogAction IO ActualEntry -> IO a) -> IO a
@@ -194,9 +211,9 @@ filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
-runKoreLog :: KoreLogOptions -> LoggerT IO a -> IO a
-runKoreLog options loggerT =
-    withLogger options $ \logAction ->
+runKoreLog :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLog reportDirectory options loggerT =
+    withLogger reportDirectory options $ \logAction ->
     withAsyncLogger logAction $ \asyncLogAction ->
         runLoggerT loggerT asyncLogAction
 
@@ -319,3 +336,13 @@ swappableLogger mvar =
     acquire = liftIO $ takeMVar mvar
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
+
+archiveDirectoryReport
+    :: FilePath   -- ^ Path of the \".tar.gz\" file to write.
+    -> FilePath   -- ^ Directory to archive
+    -> IO ()
+archiveDirectoryReport tar base = do
+    contents <- listDirectory base
+    BS.writeFile (tar <> ".tar.gz") . GZip.compress . Tar.write
+        =<< Tar.pack base contents
+    hPutStrLn stderr $ "\nCreated " <> tar <> ".tar.gz"

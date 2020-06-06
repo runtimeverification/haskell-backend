@@ -14,6 +14,7 @@ import qualified Data.Limit as Limit
 module Data.Limit
     ( Limit (..)
     , enumFromLimit
+    , maybeLimit
     , replicate
     , takeWithin
     , withinLimit
@@ -30,7 +31,7 @@ data Limit a
     -- ^ No limit
     | Limit !a
     -- ^ Limit @a@ by the given (inclusive) upper bound
-    deriving (Eq, Read, Show)
+    deriving (Eq, Read, Show, Foldable)
 
 instance Ord a => Ord (Limit a) where
     compare =
@@ -82,3 +83,6 @@ takeWithin :: (Enum a, Ord a) => Limit a -> [b] -> [b]
 takeWithin limit bs = zipWith const bs limiting
   where
     limiting = enumFromLimit limit (toEnum 1)
+
+maybeLimit :: b -> (a -> b) -> Limit a -> b
+maybeLimit b f = foldr (\a _ -> f a) b

@@ -18,11 +18,14 @@ module Kore.Log.KoreLogOptions
     , selectDebugAttemptEquation
     , DebugEquationOptions (..)
     , selectDebugEquation
+    , unparseKoreLogOptions
     ) where
 
 import Prelude.Kore
 
+import qualified Data.Char as Char
 import Data.Default
+import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
     )
@@ -30,6 +33,9 @@ import Data.HashSet
     ( HashSet
     )
 import qualified Data.HashSet as HashSet
+import Data.List
+    ( intercalate
+    )
 import Data.Set
     ( Set
     )
@@ -56,7 +62,7 @@ import Kore.Equation
     )
 import qualified Kore.Equation as Equation
 import Kore.Log.DebugSolver
-    ( DebugSolverOptions
+    ( DebugSolverOptions (..)
     , parseDebugSolverOptions
     )
 import Kore.Log.Registry
@@ -64,7 +70,7 @@ import Kore.Log.Registry
     , parseEntryType
     )
 import Kore.Log.SQLite
-    ( LogSQLiteOptions
+    ( LogSQLiteOptions (..)
     , parseLogSQLiteOptions
     )
 import Log
@@ -363,3 +369,65 @@ selectDebugEquation DebugEquationOptions { selected } =
     [ selectDebugApplyEquation DebugApplyEquationOptions { selected }
     , selectDebugAttemptEquation DebugAttemptEquationOptions { selected }
     ]
+
+unparseKoreLogOptions :: KoreLogOptions -> [String]
+unparseKoreLogOptions
+    ( KoreLogOptions
+        logType
+        logLevel
+        timestampsSwitch
+        logEntries
+        debugSolverOptions
+        _
+        logSQLiteOptions
+        warningSwitch
+        debugApplyEquationOptions
+        debugAttemptEquationOptions
+        debugEquationOptions
+    )
+  =
+    concat
+        [ koreLogTypeFlag logType
+        , ["--log-level", fmap Char.toLower (show logLevel)]
+        , timestampsSwitchFlag timestampsSwitch
+        , logEntriesFlag logEntries
+        , debugSolverOptionsFlag debugSolverOptions
+        , logSQLiteOptionsFlag logSQLiteOptions
+        , ["--warnings-to-errors" | AsError <- [warningSwitch] ]
+        , debugApplyEquationOptionsFlag debugApplyEquationOptions
+        , debugAttemptEquationOptionsFlag debugAttemptEquationOptions
+        , debugEquationOptionsFlag debugEquationOptions
+        ]
+  where
+    koreLogTypeFlag LogStdErr = []
+    koreLogTypeFlag (LogFileText file) = ["--log", file]
+
+    timestampsSwitchFlag TimestampsEnable = ["--enable-log-timestamps"]
+    timestampsSwitchFlag TimestampsDisable = ["--disable-log-timestamps"]
+
+    logEntriesFlag entries
+      | Set.null entries = []
+      | otherwise
+      = [ "--log-entries"
+        , intercalate "," (fmap show (Foldable.toList entries))
+        ]
+
+    debugSolverOptionsFlag (DebugSolverOptions Nothing) = []
+    debugSolverOptionsFlag (DebugSolverOptions (Just file)) =
+        ["--solver-transcript", file]
+
+    logSQLiteOptionsFlag (LogSQLiteOptions Nothing) = []
+    logSQLiteOptionsFlag (LogSQLiteOptions (Just file)) =
+        ["--sqlog", file]
+
+    debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) = concat $
+        ("--debug-apply-equation" :) . (:[]) . Text.unpack
+            <$> Foldable.toList set
+
+    debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) = concat $
+        ("--debug-attempt-equation" :) . (:[]) . Text.unpack
+            <$> Foldable.toList set
+
+    debugEquationOptionsFlag (DebugEquationOptions set) = concat $
+        ("--debug-equation" :) . (:[]) . Text.unpack
+            <$> Foldable.toList set

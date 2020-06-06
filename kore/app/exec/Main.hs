@@ -5,6 +5,8 @@ import Prelude.Kore
 import Control.Monad.Catch
     ( MonadCatch
     , SomeException
+    , displayException
+    , finally
     , handle
     , throwM
     )
@@ -18,6 +20,7 @@ import Data.Default
 import qualified Data.Foldable as Foldable
 import Data.Limit
     ( Limit (..)
+    , maybeLimit
     )
 import Data.List
     ( intercalate
@@ -28,6 +31,7 @@ import Data.Semigroup
     )
 import Data.Text
     ( Text
+    , unpack
     )
 import qualified Data.Text as Text
     ( null
@@ -56,7 +60,14 @@ import Options.Applicative
     )
 import qualified Options.Applicative as Options
 import System.Directory
-    ( doesFileExist
+    ( copyFile
+    , doesFileExist
+    , emptyPermissions
+    , setOwnerExecutable
+    , setOwnerReadable
+    , setOwnerSearchable
+    , setOwnerWritable
+    , setPermissions
     )
 import System.Exit
     ( ExitCode (..)
@@ -69,6 +80,10 @@ import System.IO
 
 import qualified Data.Limit as Limit
 import Kore.Attribute.Symbol as Attribute
+import Kore.BugReport
+    ( BugReport (..)
+    , parseBugReport
+    )
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
@@ -102,9 +117,11 @@ import Kore.Log
     , LogMessage
     , SomeEntry (..)
     , WithLog
+    , archiveDirectoryReport
     , logEntry
     , parseKoreLogOptions
     , runKoreLog
+    , unparseKoreLogOptions
     )
 import Kore.Log.ErrorException
     ( errorException
@@ -131,6 +148,9 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Stuck (..)
@@ -138,7 +158,7 @@ import Kore.Strategies.Verification
 import Kore.Syntax.Definition
     ( Definition (Definition)
     , Module (Module)
-    , ModuleName (ModuleName)
+    , ModuleName (..)
     , Sentence (..)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
@@ -154,11 +174,16 @@ import Pretty
     )
 import SMT
     ( MonadSMT
+    , TimeOut (..)
     )
 import qualified SMT
 import Stats
+import qualified System.IO.Temp as Temp
 
 import GlobalMain
+import System.FilePath.Posix
+    ( (</>)
+    )
 
 {-
 Main module to run kore-exec
@@ -203,7 +228,7 @@ parseKoreSearchOptions =
 
 parseSum :: String -> String -> String -> [(String, value)] -> Parser value
 parseSum metaName longName helpMsg options =
-    option (readSum longName options)
+    option (snd <$> readSum longName options)
         (  metavar metaName
         <> long longName
         <> help (helpMsg <> ": " <> knownOptions)
@@ -211,11 +236,11 @@ parseSum metaName longName helpMsg options =
   where
     knownOptions = intercalate ", " (map fst options)
 
-readSum :: String -> [(String, value)] -> Options.ReadM value
+readSum :: String -> [(String, value)] -> Options.ReadM (String, value)
 readSum longName options = do
     opt <- str
     case lookup opt options of
-        Just val -> pure val
+        Just val -> pure (opt, val)
         _ -> readerError (unknown opt ++ known)
   where
     knownOptions = intercalate ", " (map fst options)
@@ -232,7 +257,7 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         { koreSearchOptions
         , strategy =
             -- Search relies on exploring the entire space of states.
-            priorityAllStrategy
+            ("all", priorityAllStrategy)
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
@@ -250,7 +275,7 @@ data Solver = Z3 | None
 
 parseSolver :: Parser Solver
 parseSolver =
-    option (readSum longName options)
+    option (snd <$> readSum longName options)
     $  metavar "SOLVER"
     <> long longName
     <> help ("SMT solver for checking constraints: " <> knownOptions)
@@ -275,12 +300,13 @@ data KoreExecOptions = KoreExecOptions
     , smtSolver           :: !Solver
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
-    , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
+    , strategy            :: !(String, [Rewrite] -> Strategy (Prim Rewrite))
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
     , koreMergeOptions    :: !(Maybe KoreMergeOptions)
     , rtsStatistics       :: !(Maybe FilePath)
+    , bugReport           :: !BugReport
     }
 
 -- | Command Line Argument Parser
@@ -334,6 +360,7 @@ parseKoreExecOptions =
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
         <*> optional parseRtsStatistics
+        <*> parseBugReport
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
@@ -348,7 +375,7 @@ parseKoreExecOptions =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value priorityAnyStrategy
+            <> value ("any", priorityAnyStrategy)
             <> help "Select rewrites using STRATEGY."
             )
       where
@@ -392,6 +419,135 @@ parserInfoModifiers =
                 \in PATTERN_FILE."
     <> header "kore-exec - an interpreter for Kore definitions"
 
+unparseKoreSearchOptions :: KoreSearchOptions -> [String]
+unparseKoreSearchOptions (KoreSearchOptions _ bound searchType) =
+    [ "--search searchFile.kore"
+    , maybeLimit "" (\limit -> "--bound " <> show limit) bound
+    , "--searchType " <> show searchType
+    ]
+
+unparseKoreMergeOptions :: KoreMergeOptions -> [String]
+unparseKoreMergeOptions (KoreMergeOptions _ maybeBatchSize) =
+    [ "--merge-rules mergeRules.kore"]
+    <> maybe mempty ((:[]) . ("--merge-batch-size " <>) . show) maybeBatchSize
+
+unparseKoreProveOptions :: KoreProveOptions -> [String]
+unparseKoreProveOptions
+    ( KoreProveOptions
+        _
+        (ModuleName moduleName)
+        graphSearch
+        bmc
+        saveProofs
+    )
+  =
+    [ "--prove spec.kore"
+    , "--spec-module " <> unpack moduleName
+    , "--graph-search "
+        <> if graphSearch == DepthFirst then "depth-first" else "breadth-first"
+    , if bmc then "--bmc" else ""
+    , maybe "" ("--save-proofs " <>) saveProofs
+    ]
+
+koreExecSh :: KoreExecOptions -> String
+koreExecSh
+    ( KoreExecOptions
+        _
+        patternFileName
+        outputFileName
+        mainModuleName
+        (TimeOut timeout)
+        smtPrelude
+        smtSolver
+        breadthLimit
+        depthLimit
+        strategy
+        koreLogOptions
+        koreSearchOptions
+        koreProveOptions
+        koreMergeOptions
+        rtsStatistics
+        _
+    )
+  =
+    unlines $
+        [ "#!/bin/sh"
+        , "exec kore-exec \\"
+        ]
+        <> (fmap (<> " \\") . filter (not . null)) options
+  where
+    options =
+        [ if isJust koreProveOptions then "vdefinition.kore"
+            else "definition.kore"
+        , if isJust patternFileName then "--pattern pgm.kore" else ""
+        , if isJust outputFileName then "--output result.kore" else ""
+        , "--module " <> unpack (getModuleName mainModuleName)
+        , maybeLimit "" (("--smt-timeout " <>) . show) timeout
+        , maybe "" ("--smt-prelude " <>) smtPrelude
+        , "--smt " <> fmap Char.toLower (show smtSolver)
+        , maybeLimit "" (("--breadth " <>) . show) breadthLimit
+        , maybeLimit "" (("--depth " <>) . show) depthLimit
+        , "--strategy " <> fst strategy
+        ]
+        <> unparseKoreLogOptions koreLogOptions
+        <> maybe mempty unparseKoreSearchOptions koreSearchOptions
+        <> maybe mempty unparseKoreProveOptions koreProveOptions
+        <> maybe mempty unparseKoreMergeOptions koreMergeOptions
+        <> maybe mempty ((:[]) . ("--rts-statistics " <>)) rtsStatistics
+
+writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
+writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
+    copyFile searchFileName $ reportFile <> "/searchFile.kore"
+
+writeKoreMergeFiles :: FilePath -> KoreMergeOptions -> IO ()
+writeKoreMergeFiles reportFile KoreMergeOptions { rulesFileName } =
+    copyFile rulesFileName $ reportFile <> "/mergeRules.kore"
+
+writeKoreProveFiles :: FilePath -> KoreProveOptions -> IO ()
+writeKoreProveFiles reportFile KoreProveOptions { specFileName, saveProofs } = do
+    copyFile specFileName $ reportFile <> "/spec.kore"
+    Foldable.forM_ saveProofs $ flip copyFile (reportFile <> "/saveProofs.kore")
+
+writeOptionsAndKoreFiles :: FilePath -> KoreExecOptions -> IO ()
+writeOptionsAndKoreFiles
+    reportDirectory
+    opts@KoreExecOptions
+        { definitionFileName
+        , patternFileName
+        , koreSearchOptions
+        , koreProveOptions
+        , koreMergeOptions
+        }
+  = do
+    let shellScript = reportDirectory </> "kore-exec.sh"
+    writeFile shellScript
+        . koreExecSh
+        $ opts
+    let allPermissions =
+            setOwnerReadable True
+            . setOwnerWritable True
+            . setOwnerExecutable True
+            . setOwnerSearchable True
+    setPermissions shellScript $ allPermissions emptyPermissions
+    copyFile
+        definitionFileName
+        (  reportDirectory
+        </> if isJust koreProveOptions
+            then "vdefinition.kore"
+            else "definition.kore"
+        )
+    Foldable.forM_ patternFileName
+        $ flip copyFile (reportDirectory </> "pgm.kore")
+    Foldable.forM_
+        koreSearchOptions
+        (writeKoreSearchFiles reportDirectory)
+    Foldable.forM_
+        koreMergeOptions
+        (writeKoreMergeFiles reportDirectory)
+    Foldable.forM_
+        koreProveOptions
+        (writeKoreProveFiles reportDirectory)
+
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
@@ -402,16 +558,24 @@ main = do
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <-
-        runKoreLog koreLogOptions
-        $ handle handleSomeException
-        $ handle handleSomeEntry
-        $ handle handleWithConfiguration go
-    let KoreExecOptions { rtsStatistics } = execOptions
-    Foldable.forM_ rtsStatistics $ \filePath ->
-        writeStats filePath =<< getStats
-    exitWith exitCode
+    let KoreExecOptions { koreLogOptions, bugReport } = execOptions
+    Temp.withSystemTempDirectory
+        (fromMaybe "report" $ toReport bugReport)
+        $ \tempDirectory -> do
+            traceM tempDirectory
+            exitCode <-
+                runKoreLog tempDirectory koreLogOptions
+                $ handle (handleSomeException tempDirectory)
+                $ handle handleSomeEntry
+                $ handle handleWithConfiguration go
+            let KoreExecOptions { rtsStatistics } = execOptions
+            Foldable.forM_ rtsStatistics $ \filePath ->
+                writeStats filePath =<< getStats
+            let reportPath = maybe tempDirectory ("./" <>) (toReport bugReport)
+            finally
+                (writeInReportDirectory tempDirectory)
+                (archiveDirectoryReport tempDirectory reportPath)
+            exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
@@ -423,9 +587,13 @@ mainWithOptions execOptions = do
         logEntry entry
         return $ ExitFailure 1
 
-    handleSomeException :: SomeException -> Main ExitCode
-    handleSomeException someException = do
+    handleSomeException :: FilePath -> SomeException -> Main ExitCode
+    handleSomeException tempDirectory someException = do
         errorException someException
+        lift
+            $ writeFile
+                (tempDirectory <> "/error.log")
+                (displayException someException)
         return $ ExitFailure 1
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
@@ -453,6 +621,13 @@ mainWithOptions execOptions = do
       | otherwise =
         koreRun execOptions
 
+    writeInReportDirectory :: FilePath -> IO ()
+    writeInReportDirectory tempDirectory = do
+        when . isJust . toReport . bugReport
+            <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
+        Foldable.forM_ (outputFileName execOptions)
+            $ flip copyFile (tempDirectory <> "/outputFile.kore")
+
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
     let KoreExecOptions { definitionFileName } = execOptions
@@ -472,7 +647,7 @@ koreSearch execOptions searchOptions = do
     KoreSearchOptions { bound, searchType } = searchOptions
     config = Search.Config { bound, searchType }
     KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . strategy
+    strategy' = Limit.replicate depthLimit . snd strategy
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
@@ -490,7 +665,7 @@ koreRun execOptions = do
     return exitCode
   where
     KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . strategy
+    strategy' = Limit.replicate depthLimit . snd strategy
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
