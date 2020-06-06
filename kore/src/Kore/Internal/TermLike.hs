@@ -38,7 +38,6 @@ module Kore.Internal.TermLike
     , isConcrete
     , fromConcrete
     , Substitute.substitute
-    , externalizeFreshVariables
     , refreshElementBinder
     , refreshSetBinder
     , depth

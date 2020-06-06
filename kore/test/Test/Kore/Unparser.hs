@@ -272,18 +272,23 @@ test_unparse =
 
 test_parse :: TestTree
 test_parse =
-    testGroup
-        "Parse"
+    testGroup "Parse"
         [ testProperty "Generic testId" $ roundtrip idGen idParser
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
-        , testProperty "Object Symbol" $
+        , testProperty "ElementVariable" $ do
+            let gen = standaloneGen (elementVariableGen =<< sortGen)
+            roundtrip gen elementVariableParser
+        , testProperty "SetVariable" $ do
+            let gen = standaloneGen (setVariableGen =<< sortGen)
+            roundtrip gen setVariableParser
+        , testProperty "Symbol" $
             roundtrip symbolGen symbolParser
-        , testProperty "Object Alias" $
+        , testProperty "Alias" $
             roundtrip aliasGen aliasParser
-        , testProperty "Object SortVariable" $
+        , testProperty "SortVariable" $
             roundtrip sortVariableGen sortVariableParser
-        , testProperty "Object Sort" $
+        , testProperty "Sort" $
             roundtrip (standaloneGen sortGen) sortParser
         , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser

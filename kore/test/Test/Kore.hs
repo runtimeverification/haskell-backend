@@ -77,6 +77,9 @@ import Kore.Parser
     ( ParsedPattern
     , asParsedPattern
     )
+import Kore.Parser.Parser
+    ( parseVariableCounter
+    )
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Variables.Target
@@ -238,7 +241,8 @@ variableGen' patternSort variables genId =
   where
     bySort Variable { variableSort } = variableSort == patternSort
     freshVariable = do
-        variableName <- VariableName <$> genId <*> pure mempty
+        (base, counter) <- parseVariableCounter <$> genId
+        let variableName = VariableName { base, counter }
         pure Variable { variableName, variableSort = patternSort }
 
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)

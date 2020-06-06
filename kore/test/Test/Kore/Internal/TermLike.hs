@@ -2,7 +2,6 @@
 
 module Test.Kore.Internal.TermLike
     ( test_substitute
-    , test_externalizeFreshVariables
     , test_refreshVariables
     , test_hasConstructorLikeTop
     , test_renaming
@@ -269,39 +268,6 @@ test_substitute =
             ]
     ]
 
-test_externalizeFreshVariables :: [TestTree]
-test_externalizeFreshVariables =
-    [ becomes (mkElemVar x_0) (mkElemVar x0) "Append counter"
-    , testGroup "No aliasing"
-        [ becomes (mk (mkElemVar x0) (mkElemVar x_0)) (mk (mkElemVar x0) (mkElemVar x1)) comment
-        | (mk, comment) <- binaryPatterns
-        ]
-    , testGroup "No capturing - Original free"
-        [ becomes (mk x_0 $ mkElemVar x0) (mk x1 $ mkElemVar x0) comment
-        | (mk, comment) <- quantifiers
-        ]
-    , testGroup "No capturing - Generated free"
-        [ becomes (mk x0 $ mkElemVar x_0) (mk x00 $ mkElemVar x0) comment
-        | (mk, comment) <- quantifiers
-        ]
-    ]
-  where
-    binaryPatterns =
-        [ (mkAnd, "And")
-        , (mkEquals_, "Equals")
-        , (mkIff, "Iff")
-        , (mkImplies, "Implies")
-        , (mkIn_, "In")
-        , (mkOr, "Or")
-        , (mkRewrites, "Rewrites")
-        ]
-    quantifiers =
-        [ (mkExists, "Exists")
-        , (mkForall, "Forall")
-        ]
-    becomes original expected =
-        equals (externalizeFreshVariables original) expected
-
 test_refreshVariables :: [TestTree]
 test_refreshVariables =
     [ (Mock.a, [Mock.x]) `becomes` Mock.a
@@ -375,15 +341,6 @@ setVariableName = Lens.mapped . Lens.mapped
 
 x_0 :: ElementVariable'
 x_0 = Lens.set (setVariableName . field @"counter") (Just (Element 0)) x
-
-x0 :: ElementVariable'
-x0 = Lens.set (setVariableName . field @"base") (testId "x0") x
-
-x00 :: ElementVariable'
-x00 = Lens.set (setVariableName . field @"base") (testId "x00") x
-
-x1 :: ElementVariable'
-x1 = Lens.set (setVariableName . field @"base") (testId "x1") x
 
 test_renaming :: [TestTree]
 test_renaming =
