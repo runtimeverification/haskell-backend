@@ -34,11 +34,13 @@ import Options.Applicative
     )
 import System.Exit
     ( exitFailure
+    , exitWith
     )
 
 import Data.Limit
     ( Limit (..)
     )
+import Kore.BugReport
 import Kore.Exec
     ( proveWithRepl
     )
@@ -47,7 +49,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import Kore.Log
     ( KoreLogOptions (..)
-    , archiveDirectoryReport
     , runLoggerT
     , swappableLogger
     , withLogger
@@ -61,7 +62,6 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import qualified SMT
-import qualified System.IO.Temp as Temp
 
 import GlobalMain
 
@@ -205,60 +205,59 @@ mainWithOptions
         , outputFile
         , koreLogOptions
         }
-  =
-    Temp.withSystemTempDirectory
-        "report"
-        $ \tempDirectory ->
-            withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
-            mvarLogAction <- newMVar actualLogAction
-            let swapLogAction = swappableLogger mvarLogAction
-            flip runLoggerT swapLogAction $ do
-                definition <- loadDefinitions [definitionFileName, specFile]
-                indexedModule <- loadModule mainModuleName definition
-                specDefIndexedModule <- loadModule specModule definition
+  = do
+    exitCode <- withBugReport (BugReport Nothing) $ \tempDirectory ->
+        withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
+        mvarLogAction <- newMVar actualLogAction
+        let swapLogAction = swappableLogger mvarLogAction
+        flip runLoggerT swapLogAction $ do
+            definition <- loadDefinitions [definitionFileName, specFile]
+            indexedModule <- loadModule mainModuleName definition
+            specDefIndexedModule <- loadModule specModule definition
 
-                let
-                    smtConfig =
-                        SMT.defaultConfig
-                            { SMT.timeOut = smtTimeOut
-                            , SMT.preludeFile = smtPrelude
-                            }
+            let
+                smtConfig =
+                    SMT.defaultConfig
+                        { SMT.timeOut = smtTimeOut
+                        , SMT.preludeFile = smtPrelude
+                        }
 
-                when
-                    (  replMode == RunScript
-                    && isNothing (unReplScript replScript)
-                    )
-                    $ lift $ do
-                        putStrLn
-                            "You must supply the path to the repl script\
-                            \ in order to run the repl in run-script mode."
-                        exitFailure
+            when
+                (  replMode == RunScript
+                && isNothing (unReplScript replScript)
+                )
+                $ lift $ do
+                    putStrLn
+                        "You must supply the path to the repl script\
+                        \ in order to run the repl in run-script mode."
+                    exitFailure
 
-                when
-                    (  replMode == Interactive
-                    && scriptModeOutput == EnableOutput
-                    )
-                    $ lift $ do
-                        putStrLn
-                            "The --save-run-output flag is only available\
-                            \ when running the repl in run-script mode."
-                        exitFailure
+            when
+                (  replMode == Interactive
+                && scriptModeOutput == EnableOutput
+                )
+                $ lift $ do
+                    putStrLn
+                        "The --save-run-output flag is only available\
+                        \ when running the repl in run-script mode."
+                    exitFailure
 
-                SMT.runSMT smtConfig $ do
-                    give (MetadataTools.build indexedModule)
-                        $ declareSMTLemmas indexedModule
-                    proveWithRepl
-                        indexedModule
-                        specDefIndexedModule
-                        Nothing
-                        mvarLogAction
-                        replScript
-                        replMode
-                        scriptModeOutput
-                        outputFile
-                        mainModuleName
-            archiveDirectoryReport tempDirectory tempDirectory
+            SMT.runSMT smtConfig $ do
+                give (MetadataTools.build indexedModule)
+                    $ declareSMTLemmas indexedModule
+                proveWithRepl
+                    indexedModule
+                    specDefIndexedModule
+                    Nothing
+                    mvarLogAction
+                    replScript
+                    replMode
+                    scriptModeOutput
+                    outputFile
+                    mainModuleName
 
+            pure ExitSuccess
+    exitWith exitCode
   where
     mainModuleName :: ModuleName
     mainModuleName = moduleName definitionModule

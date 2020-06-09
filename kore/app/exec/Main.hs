@@ -6,7 +6,6 @@ import Control.Monad.Catch
     ( MonadCatch
     , SomeException
     , displayException
-    , finally
     , handle
     , throwM
     )
@@ -73,6 +72,9 @@ import System.Exit
     ( ExitCode (..)
     , exitWith
     )
+import System.FilePath
+    ( (</>)
+    )
 import System.IO
     ( IOMode (WriteMode)
     , withFile
@@ -81,9 +83,6 @@ import System.IO
 import qualified Data.Limit as Limit
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
-    ( BugReport (..)
-    , parseBugReport
-    )
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
@@ -117,7 +116,6 @@ import Kore.Log
     , LogMessage
     , SomeEntry (..)
     , WithLog
-    , archiveDirectoryReport
     , logEntry
     , parseKoreLogOptions
     , runKoreLog
@@ -178,12 +176,8 @@ import SMT
     )
 import qualified SMT
 import Stats
-import qualified System.IO.Temp as Temp
 
 import GlobalMain
-import System.FilePath.Posix
-    ( (</>)
-    )
 
 {-
 Main module to run kore-exec
@@ -559,23 +553,18 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions, bugReport } = execOptions
-    Temp.withSystemTempDirectory
-        (fromMaybe "report" $ toReport bugReport)
-        $ \tempDirectory -> do
-            traceM tempDirectory
-            exitCode <-
-                runKoreLog tempDirectory koreLogOptions
-                $ handle (handleSomeException tempDirectory)
-                $ handle handleSomeEntry
-                $ handle handleWithConfiguration go
-            let KoreExecOptions { rtsStatistics } = execOptions
-            Foldable.forM_ rtsStatistics $ \filePath ->
-                writeStats filePath =<< getStats
-            let reportPath = maybe tempDirectory ("./" <>) (toReport bugReport)
-            finally
-                (writeInReportDirectory tempDirectory)
-                (archiveDirectoryReport tempDirectory reportPath)
-            exitWith exitCode
+    exitCode <-
+        withBugReport bugReport $ \tmpDir -> do
+            writeOptionsAndKoreFiles tmpDir execOptions
+            go
+                & handle handleWithConfiguration
+                & handle handleSomeEntry
+                & handle (handleSomeException tmpDir)
+                & runKoreLog tmpDir koreLogOptions
+    let KoreExecOptions { rtsStatistics } = execOptions
+    Foldable.forM_ rtsStatistics $ \filePath ->
+        writeStats filePath =<< getStats
+    exitWith exitCode
   where
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
@@ -620,13 +609,6 @@ mainWithOptions execOptions = do
 
       | otherwise =
         koreRun execOptions
-
-    writeInReportDirectory :: FilePath -> IO ()
-    writeInReportDirectory tempDirectory = do
-        when . isJust . toReport . bugReport
-            <*> writeOptionsAndKoreFiles tempDirectory $ execOptions
-        Foldable.forM_ (outputFileName execOptions)
-            $ flip copyFile (tempDirectory <> "/outputFile.kore")
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do

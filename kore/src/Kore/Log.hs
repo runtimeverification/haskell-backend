@@ -15,15 +15,12 @@ module Kore.Log
     , Colog.logTextStderr
     , Colog.logTextHandle
     , runKoreLog
-    , archiveDirectoryReport
     , module Log
     , module KoreLogOptions
     ) where
 
 import Prelude.Kore
 
-import qualified Codec.Archive.Tar as Tar
-import qualified Codec.Compression.GZip as GZip
 import Colog
     ( LogAction (..)
     )
@@ -53,7 +50,6 @@ import Control.Monad.Cont
     ( ContT (..)
     , runContT
     )
-import qualified Data.ByteString.Lazy as BS
 import Data.Foldable
     ( toList
     )
@@ -93,16 +89,9 @@ import Kore.Log.Registry
     )
 import Kore.Log.SQLite
 import Log
-import System.Directory
-    ( listDirectory
-    )
 import System.FilePath
     ( (<.>)
     , (</>)
-    )
-import System.IO
-    ( hPutStrLn
-    , stderr
     )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
@@ -336,13 +325,3 @@ swappableLogger mvar =
     acquire = liftIO $ takeMVar mvar
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
-
-archiveDirectoryReport
-    :: FilePath   -- ^ Path of the \".tar.gz\" file to write.
-    -> FilePath   -- ^ Directory to archive
-    -> IO ()
-archiveDirectoryReport tar base = do
-    contents <- listDirectory base
-    BS.writeFile (tar <> ".tar.gz") . GZip.compress . Tar.write
-        =<< Tar.pack base contents
-    hPutStrLn stderr $ "\nCreated " <> tar <> ".tar.gz"
