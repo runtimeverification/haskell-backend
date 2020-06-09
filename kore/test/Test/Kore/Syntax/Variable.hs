@@ -1,6 +1,8 @@
 module Test.Kore.Syntax.Variable
     ( test_isSetVariable
     , test_isElementVariable
+    , hprop_instance_Injection_SomeVariableName_ElementVariableName
+    , hprop_instance_Injection_SomeVariableName_SetVariableName
     -- * Re-exports
     , module Kore.Syntax.Variable
     ) where
@@ -11,6 +13,7 @@ import Test.Tasty
 
 import Kore.Syntax.Variable
 
+import Test.Injection
 import Test.Kore
     ( testId
     )
@@ -54,3 +57,11 @@ test_isElementVariable =
         testCase name $ do
             let actual = isElementVariable input
             assertEqual "" expect actual
+
+hprop_instance_Injection_SomeVariableName_ElementVariableName :: Property
+hprop_instance_Injection_SomeVariableName_ElementVariableName =
+    hpropInjection @(SomeVariableName Int8) (ElementVariableName <$> genInt8)
+
+hprop_instance_Injection_SomeVariableName_SetVariableName :: Property
+hprop_instance_Injection_SomeVariableName_SetVariableName =
+    hpropInjection @(SomeVariableName Int8) (SetVariableName <$> genInt8)
