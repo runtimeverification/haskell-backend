@@ -70,7 +70,7 @@ simplifyConditionsWithSmt
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyConditionsWithSmt sideCondition unsimplified =
-    OrPattern.observeAll $ do
+    OrPattern.observeAllT $ do
         unsimplified1 <- Logic.scatter unsimplified
         simplifyAndPrune unsimplified1
   where
@@ -129,7 +129,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                 (makeNotPredicate $ Condition.toPredicate condition)
             & Condition.fromPredicate
             & simplifyCondition SideCondition.top
-            & OrCondition.observeAll
+            & OrCondition.observeAllT
         filteredConditions <- SMT.Evaluator.filterMultiOr implicationNegation
         if isTop filteredConditions
             then return (Just False)
@@ -141,7 +141,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     rejectCondition condition = do
         simplifiedConditions <-
             simplifyCondition SideCondition.top (addPredicate condition)
-            & OrCondition.observeAll
+            & OrCondition.observeAllT
         filteredConditions <- SMT.Evaluator.filterMultiOr simplifiedConditions
         if isBottom filteredConditions
             then return (Just False)

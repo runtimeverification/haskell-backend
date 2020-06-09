@@ -95,7 +95,7 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> simplifier (OrPattern RewritingVariableName)
 finalizeAppliedRule renamedRule appliedConditions =
-    MultiOr.observeAll
+    MultiOr.observeAllT
     $ finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
   where
     ruleRHS = Rule.rhs renamedRule

@@ -11,7 +11,7 @@ module Kore.Internal.OrCondition
     , fromCondition
     , fromPredicate
     , MultiOr.gather
-    , MultiOr.observeAll
+    , MultiOr.observeAllT
     , bottom
     , top
     , isFalse

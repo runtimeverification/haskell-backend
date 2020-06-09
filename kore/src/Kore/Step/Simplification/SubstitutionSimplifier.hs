@@ -134,7 +134,7 @@ substitutionSimplifier =
         -> Substitution variable
         -> simplifier (OrCondition variable)
     wrapper sideCondition substitution =
-        OrCondition.observeAll $ do
+        OrCondition.observeAllT $ do
             (predicate, result) <- worker substitution & maybeT empty return
             let condition = Condition.fromNormalizationSimplified result
             let condition' = Condition.fromPredicate predicate <> condition

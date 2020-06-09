@@ -96,5 +96,5 @@ makeEvaluateIn sideCondition first second
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise =
     And.makeEvaluate Not.notSimplifier sideCondition first second
-        & OrPattern.observeAll
+        & OrPattern.observeAllT
     >>= Ceil.simplifyEvaluated sideCondition

@@ -21,7 +21,7 @@ module Kore.Internal.MultiOr
     , flattenGeneric
     , fullCrossProduct
     , gather
-    , observeAll
+    , observeAllT
     , make
     , merge
     , mergeAll
@@ -353,5 +353,5 @@ crossProductGeneric joiner (MultiOr first) (MultiOr second) =
 gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
 gather act = make <$> Logic.gather act
 
-observeAll :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
-observeAll act = make <$> Logic.observeAllT act
+observeAllT :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
+observeAllT act = make <$> Logic.observeAllT act

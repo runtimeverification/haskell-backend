@@ -179,7 +179,7 @@ makeEvaluate
 makeEvaluate sideCondition variables original = do
     let sortedVariables = sortBy substVariablesFirst variables
     foldM (flip makeEvaluateWorker) original sortedVariables
-        & OrPattern.observeAll
+        & OrPattern.observeAllT
   where
     makeEvaluateWorker
         :: ElementVariable variable

@@ -109,7 +109,7 @@ simplifyEvaluated
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated sideCondition simplified =
-    OrPattern.observeAll $ do
+    OrPattern.observeAllT $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
         mkMultiAndPattern sideCondition andPattern
@@ -119,7 +119,7 @@ simplifyEvaluatedPredicate
     => OrCondition variable
     -> simplifier (OrCondition variable)
 simplifyEvaluatedPredicate notChild =
-    OrCondition.observeAll $ do
+    OrCondition.observeAllT $ do
         let not' = Not { notChild = notChild, notSort = () }
         andPredicate <-
             scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')

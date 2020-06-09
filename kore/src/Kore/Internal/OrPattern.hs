@@ -23,7 +23,7 @@ module Kore.Internal.OrPattern
     , MultiOr.flatten
     , MultiOr.filterOr
     , MultiOr.gather
-    , MultiOr.observeAll
+    , MultiOr.observeAllT
     ) where
 
 import Prelude.Kore

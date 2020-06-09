@@ -199,7 +199,7 @@ simplifyEvaluated notSimplifier sideCondition first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isTrue second  = return first
   | otherwise                =
-    OrPattern.observeAll $ do
+    OrPattern.observeAllT $ do
         first1 <- scatter first
         second1 <- scatter second
         makeEvaluate notSimplifier sideCondition first1 second1

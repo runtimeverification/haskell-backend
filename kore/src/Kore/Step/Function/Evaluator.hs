@@ -353,7 +353,7 @@ reevaluateFunctions
     -> simplifier (OrPattern variable)
 reevaluateFunctions sideCondition rewriting = do
     let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
-    OrPattern.observeAll $ do
+    OrPattern.observeAllT $ do
         simplifiedTerm <- simplifyConditionalTerm sideCondition rewritingTerm
         simplifyCondition sideCondition
             $ Pattern.andCondition simplifiedTerm rewritingCondition
@@ -383,10 +383,10 @@ mergeWithConditionAndSubstitution
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    evaluatedResults <- OrPattern.observeAll $ do
+    evaluatedResults <- OrPattern.observeAllT $ do
         result <- Logic.scatter results
         simplifyCondition sideCondition $ Pattern.andCondition result toMerge
-    evaluatedRemainders <- OrPattern.observeAll $ do
+    evaluatedRemainders <- OrPattern.observeAllT $ do
         remainder <- Logic.scatter remainders
         simplifyCondition sideCondition (Pattern.andCondition remainder toMerge)
     return $ AttemptedAxiom.Applied AttemptedAxiomResults

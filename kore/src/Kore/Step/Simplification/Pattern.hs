@@ -70,7 +70,7 @@ simplify
     -> Pattern variable
     -> simplifier (OrPattern variable)
 simplify sideCondition pattern' =
-    OrPattern.observeAll $ do
+    OrPattern.observeAllT $ do
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
