@@ -96,7 +96,7 @@ import Log
 import System.Directory
     ( listDirectory
     )
-import System.FilePath.Posix
+import System.FilePath
     ( (<.>)
     , (</>)
     )
