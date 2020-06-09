@@ -5,13 +5,16 @@ module Test.Injection
     , hprop_Injection_Maybe
     , hprop_Injection_Dynamic
     -- * Re-exports
+    , module Hedgehog
     , Int8
     , genInt8
     ) where
 
 import Prelude
 
-import Hedgehog
+import Hedgehog hiding
+    ( test
+    )
 import qualified Hedgehog.Gen as Gen
 
 import Data.Dynamic
