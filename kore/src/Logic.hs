@@ -1,3 +1,9 @@
+{- |
+Copyright   : (c) Runtime Verification, 2020
+License     : NCSA
+
+-}
+
 module Logic
     ( module Control.Monad.Logic
     , gather
