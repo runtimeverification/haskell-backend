@@ -545,19 +545,21 @@ writeOptionsAndKoreFiles
         koreProveOptions
         (writeKoreProveFiles reportDirectory)
 
+exeName :: ExeName
+exeName = ExeName "kore-exec"
+
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    options <-
-        mainGlobal (ExeName "kore-exec") parseKoreExecOptions parserInfoModifiers
+    options <- mainGlobal Main.exeName parseKoreExecOptions parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions, bugReport } = execOptions
     exitCode <-
-        withBugReport bugReport $ \tmpDir -> do
+        withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
             go
                 & handle handleWithConfiguration

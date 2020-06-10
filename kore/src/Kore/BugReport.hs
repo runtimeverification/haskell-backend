@@ -44,6 +44,10 @@ import System.IO.Temp
     , getCanonicalTemporaryDirectory
     )
 
+import Kore.Log.KoreLogOptions
+    ( ExeName (..)
+    )
+
 newtype BugReport = BugReport { toReport :: Maybe FilePath }
     deriving Show
 
@@ -77,19 +81,22 @@ The bug report will be saved as an archive if that was requested by the user, or
 if there is an error in the inner action.
 
  -}
-withBugReport :: BugReport -> (FilePath -> IO ExitCode) -> IO ExitCode
-withBugReport bugReport act =
-    do
-        (exitCode, _) <-
-            generalBracket
-                acquireTempDirectory
-                releaseTempDirectory
-                act
-        pure exitCode
+withBugReport
+    :: ExeName
+    -> BugReport
+    -> (FilePath -> IO ExitCode)
+    -> IO ExitCode
+withBugReport exeName bugReport act = do
+    (exitCode, _) <-
+        generalBracket
+            acquireTempDirectory
+            releaseTempDirectory
+            act
+    pure exitCode
   where
     acquireTempDirectory = do
         tmp <- getCanonicalTemporaryDirectory
-        createTempDirectory tmp "kore-exec"
+        createTempDirectory tmp (getExeName exeName)
     releaseTempDirectory tmpDir exitCase = do
         case exitCase of
             ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
@@ -101,7 +108,7 @@ withBugReport bugReport act =
         removePathForcibly tmpDir
     alwaysWriteBugReport tmpDir =
         writeBugReportArchive tmpDir
-            (fromMaybe "kore-exec" $ toReport bugReport)
+            (fromMaybe (getExeName exeName) (toReport bugReport))
     optionalWriteBugReport tmpDir =
         Foldable.traverse_
             (writeBugReportArchive tmpDir)
