@@ -34,11 +34,13 @@ import Options.Applicative
     )
 import System.Exit
     ( exitFailure
+    , exitWith
     )
 
 import Data.Limit
     ( Limit (..)
     )
+import Kore.BugReport
 import Kore.Exec
     ( proveWithRepl
     )
@@ -47,7 +49,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import Kore.Log
     ( KoreLogOptions (..)
-    , archiveDirectoryReport
     , runLoggerT
     , swappableLogger
     , withLogger
@@ -61,7 +62,6 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import qualified SMT
-import qualified System.IO.Temp as Temp
 
 import GlobalMain
 
@@ -185,10 +185,12 @@ parserInfoModifiers =
     <> progDesc "REPL debugger for proofs"
     <> header "kore-repl - a repl for Kore proofs"
 
+exeName :: ExeName
+exeName = ExeName "kore-repl"
+
 main :: IO ()
 main = do
-    options <-
-        mainGlobal (ExeName "kore-repl") parseKoreReplOptions parserInfoModifiers
+    options <- mainGlobal Main.exeName parseKoreReplOptions parserInfoModifiers
     case localOptions options of
         Nothing -> pure ()
         Just koreReplOptions -> mainWithOptions koreReplOptions
@@ -205,10 +207,9 @@ mainWithOptions
         , outputFile
         , koreLogOptions
         }
-  =
-    Temp.withSystemTempDirectory
-        "report"
-        $ \tempDirectory ->
+  = do
+    exitCode <-
+        withBugReport Main.exeName (BugReport Nothing) $ \tempDirectory ->
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
             mvarLogAction <- newMVar actualLogAction
             let swapLogAction = swappableLogger mvarLogAction
@@ -257,8 +258,9 @@ mainWithOptions
                         scriptModeOutput
                         outputFile
                         mainModuleName
-            archiveDirectoryReport tempDirectory tempDirectory
 
+                pure ExitSuccess
+    exitWith exitCode
   where
     mainModuleName :: ModuleName
     mainModuleName = moduleName definitionModule
