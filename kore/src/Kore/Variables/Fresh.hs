@@ -180,10 +180,9 @@ defaultRefreshName
     -> variable
     -> Maybe variable
 defaultRefreshName avoiding original = do
+    Monad.guard (Set.member original avoiding)
     let sup = supVariable original
     largest <- Set.lookupLT sup avoiding
-    -- assignSort must not change the order with respect to sup.
-    assert (largest < sup) $ Monad.guard (largest >= infVariable original)
     let next = nextVariable largest
     -- nextVariable must yield a variable greater than largest.
     assert (next > largest) $ pure next
