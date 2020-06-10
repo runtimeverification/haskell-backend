@@ -14,6 +14,20 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.23.0.0] - 2020-06-10
+
+### Added
+
+- `kore-exec` and `kore-repl` save the information necessary to reproduce a bug
+  with the option `--bug-report`.
+- The hook `BOOL.or` is simplified to `\and` when possible.
+- The hook `SET.in` is simplified to `\and` when possible.
+
+### Fixed
+
+- The error message thrown when a rewrite rule cannot be instantiated uses
+  variable names consistently.
+
 ## [0.22.0.0] - 2020-05-27
 
 ### Added
