@@ -33,9 +33,6 @@ import Data.Reflection
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import Branch
-    ( BranchT
-    )
 import qualified Control.Monad.Counter as Counter
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
@@ -82,6 +79,9 @@ import Kore.TopBottom
     )
 import Kore.Unparser
 import Log
+import Logic
+    ( LogicT
+    )
 import qualified Pretty
 import SMT
     ( Result (..)
@@ -138,7 +138,7 @@ filterBranch
     .  MonadSimplify simplifier
     => Evaluable thing
     => thing
-    -> BranchT simplifier thing
+    -> LogicT simplifier thing
 filterBranch thing =
     evaluate thing >>= \case
         Just False -> empty

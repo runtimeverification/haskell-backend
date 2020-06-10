@@ -18,7 +18,6 @@ import Control.Error
     ( ExceptT
     )
 
-import qualified Branch as BranchT
 import Kore.Internal.Condition
     ( Condition
     )
@@ -52,6 +51,9 @@ import Kore.Unification.Unify
     , MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
+import Logic
+    ( lowerLogicT
+    )
 
 -- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
 -- @t2@ are terms (functional patterns) to a substitution.
@@ -74,7 +76,7 @@ unificationProcedureWorker sideCondition p1 p2
     let (term, conditions) = Conditional.splitTerm pat
     orCeil <- Ceil.makeEvaluateTerm sideCondition term
     ceil' <- Monad.Unify.scatter orCeil
-    BranchT.alternate . simplifyCondition sideCondition
+    lowerLogicT . simplifyCondition sideCondition
         $ Conditional.andCondition ceil' conditions
   where
     p1Sort = termLikeSort p1

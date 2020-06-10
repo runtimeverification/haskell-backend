@@ -43,7 +43,6 @@ import Data.Text
     ( Text
     )
 
-import qualified Branch
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
     ( VerifyError
@@ -127,6 +126,7 @@ import Kore.Unparser
 import Log
     ( MonadLog
     )
+import qualified Logic
 import SMT
     ( MonadSMT
     , SMT
@@ -260,7 +260,7 @@ simplify =
     id
     . runNoSMT
     . runSimplifier testEnv
-    . Branch.gather
+    . Logic.observeAllT
     . simplifyConditionalTerm SideCondition.top
 
 evaluate

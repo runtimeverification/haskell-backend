@@ -891,7 +891,7 @@ type Deriver monad =
 -- | Apply 'Rule's to the goal in parallel.
 deriveWith
     :: forall m goal
-    .  (MonadCatch m, MonadSimplify m)
+    .  MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
@@ -925,8 +925,7 @@ deriveSeq lensRulePattern mkRule =
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
 deriveResults
-    :: MonadSimplify simplifier
-    => (RewriteRule RewritingVariableName -> Rule goal)
+    :: (RewriteRule RewritingVariableName -> Rule goal)
     -> Step.Results RulePattern VariableName
     -> Strategy.TransitionT (Rule goal) simplifier
         (ProofState.ProofState (Pattern VariableName))

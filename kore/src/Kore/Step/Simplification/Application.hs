@@ -14,10 +14,6 @@ module Kore.Step.Simplification.Application
 
 import Prelude.Kore
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
@@ -46,6 +42,10 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
     )
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 
 type ExpandedApplication variable =
     Conditional variable (Application Symbol (TermLike variable))
@@ -105,10 +105,12 @@ makeAndEvaluateSymbolApplications
     -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications sideCondition symbol children = do
     expandedApplications <-
-        Branch.gather $ makeExpandedApplication sideCondition symbol children
-    orResults <- traverse
-        (evaluateApplicationFunction sideCondition)
-        expandedApplications
+        makeExpandedApplication sideCondition symbol children
+        & Logic.observeAllT
+    orResults <-
+        traverse
+            (evaluateApplicationFunction sideCondition)
+            expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
@@ -132,7 +134,7 @@ makeExpandedApplication
     => SideCondition variable
     -> Symbol
     -> [Pattern variable]
-    -> BranchT simplifier (ExpandedApplication variable)
+    -> LogicT simplifier (ExpandedApplication variable)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions

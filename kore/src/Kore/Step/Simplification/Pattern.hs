@@ -10,7 +10,6 @@ module Kore.Step.Simplification.Pattern
 
 import Prelude.Kore
 
-import Branch
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -42,6 +41,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Substitute
     ( substitute
     )
+import Logic
 
 {-| Simplifies the pattern without a side-condition (i.e. it's top)
 and removes the exists quantifiers at the top.
@@ -70,7 +70,7 @@ simplify
     -> Pattern variable
     -> simplifier (OrPattern variable)
 simplify sideCondition pattern' =
-    fmap OrPattern.fromPatterns . Branch.gather $ do
+    OrPattern.observeAllT $ do
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
@@ -78,7 +78,7 @@ simplify sideCondition pattern' =
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition
         orSimplifiedTerms <- simplifyConditionalTermToOr termSideCondition term'
-        simplifiedTerm <- Branch.scatter orSimplifiedTerms
+        simplifiedTerm <- Logic.scatter orSimplifiedTerms
         simplifyCondition
             sideCondition
             (Conditional.andCondition simplifiedTerm simplifiedCondition)

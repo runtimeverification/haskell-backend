@@ -26,10 +26,6 @@ import Data.List
     ( foldl'
     )
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch as BranchT
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -87,6 +83,10 @@ import Kore.Unification.UnifierT
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 
@@ -398,7 +398,7 @@ termEquals
     -> TermLike variable
     -> MaybeT simplifier (OrCondition variable)
 termEquals first second = MaybeT $ do
-    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
+    maybeResults <- Logic.observeAllT $ runMaybeT $ termEqualsAnd first second
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results -> return $ Just $
@@ -410,13 +410,13 @@ termEqualsAnd
     => HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> MaybeT (BranchT simplifier) (Pattern variable)
+    -> MaybeT (LogicT simplifier) (Pattern variable)
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where
     run it =
         (runUnifierT Not.notSimplifier . runMaybeT) it
-        >>= either missingCase BranchT.scatter
+        >>= either missingCase Logic.scatter
     missingCase = const (return Nothing)
 
     maybeTermEqualsWorker
@@ -443,7 +443,7 @@ termEqualsAnd p1 p2 =
         scatterResults =
             maybe
                 (return equalsPredicate) -- default if no results
-                (BranchT.alternate . BranchT.scatter)
+                Logic.scatter
             . sequence
         equalsPredicate =
             Conditional

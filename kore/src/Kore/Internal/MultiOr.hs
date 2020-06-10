@@ -21,6 +21,7 @@ module Kore.Internal.MultiOr
     , flattenGeneric
     , fullCrossProduct
     , gather
+    , observeAllT
     , make
     , merge
     , mergeAll
@@ -44,14 +45,15 @@ import GHC.Exts
     )
 import qualified GHC.Generics as GHC
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch as BranchT
 import Kore.Debug
 import Kore.TopBottom
     ( TopBottom (..)
     )
+import Logic
+    ( LogicT
+    , MonadLogic
+    )
+import qualified Logic
 
 {-| 'MultiOr' is a Matching logic or of its children
 
@@ -348,7 +350,8 @@ crossProductGeneric
 crossProductGeneric joiner (MultiOr first) (MultiOr second) =
     MultiOr $ joiner <$> first <*> second
 
-gather
-    :: (Ord a, TopBottom a, Monad m)
-    => BranchT m a -> m (MultiOr a)
-gather branched = make <$> BranchT.gather branched
+gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
+gather act = make <$> Logic.gather act
+
+observeAllT :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
+observeAllT act = make <$> Logic.observeAllT act

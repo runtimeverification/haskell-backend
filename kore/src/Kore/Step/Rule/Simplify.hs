@@ -14,10 +14,6 @@ import Control.Monad
     ( (>=>)
     )
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -65,6 +61,10 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Syntax.Variable
     ( VariableName
     )
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 
 -- | Simplifies the left-hand-side of a rule/claim
 class SimplifyRuleLHS rule where
@@ -129,19 +129,19 @@ simplifyClaimRule
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyClaimRule =
-    fmap MultiAnd.make . Branch.gather . worker
+    fmap MultiAnd.make . Logic.observeAllT . worker
   where
     simplify, filterWithSolver
         :: Pattern variable
-        -> BranchT simplifier (Pattern variable)
+        -> LogicT simplifier (Pattern variable)
     simplify =
         (return . Pattern.requireDefined)
         >=> Pattern.simplifyTopConfiguration
-        >=> Branch.scatter
+        >=> Logic.scatter
         >=> filterWithSolver
     filterWithSolver = SMT.Evaluator.filterBranch
 
-    worker :: RulePattern variable -> BranchT simplifier (RulePattern variable)
+    worker :: RulePattern variable -> LogicT simplifier (RulePattern variable)
     worker rulePattern = do
         let lhs = Lens.view RulePattern.leftPattern rulePattern
         simplified <- simplify lhs

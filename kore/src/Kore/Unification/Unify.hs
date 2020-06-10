@@ -4,7 +4,10 @@ License     : NCSA
 -}
 
 module Kore.Unification.Unify
-    ( MonadUnify (..), InternalVariable
+    ( MonadUnify (..)
+    -- * Re-exports
+    , InternalVariable
+    , module Logic
     ) where
 
 import Prelude.Kore
@@ -21,6 +24,7 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
     )
 import Kore.Unification.Error
+import Logic
 import Pretty
     ( Doc
     )
@@ -32,7 +36,7 @@ import Pretty
 -- 'MonadUnify' chooses its error/left type to 'UnificationError'
 -- and provides functions to throw these errors. The point of this is to be able
 -- to display information about unification failures through 'explainFailure'.
-class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
+class (MonadLogic unifier, MonadSimplify unifier) => MonadUnify unifier where
     throwUnificationError
         :: UnificationError
         -> unifier a
@@ -41,11 +45,6 @@ class (Alternative unifier, MonadSimplify unifier) => MonadUnify unifier where
         => UnificationError -> unifier a
     throwUnificationError = lift . throwUnificationError
     {-# INLINE throwUnificationError #-}
-
-    -- TODO: This is ugly and not type-safe
-    gather :: unifier a -> unifier [a]
-
-    scatter :: Traversable t => t a -> unifier a
 
     explainBottom
         :: InternalVariable variable

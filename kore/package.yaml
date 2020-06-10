@@ -67,6 +67,7 @@ dependencies:
   - haskeline >=0.7
   - integer-gmp >=1.0
   - lens >=4.17
+  - logict >=0.7
   - megaparsec >= 7.0.4
   - memory >=0.14
   - mmorph >=1.1
