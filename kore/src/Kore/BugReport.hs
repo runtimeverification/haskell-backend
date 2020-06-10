@@ -20,8 +20,6 @@ import Control.Monad.Catch
     ( ExitCase (..)
     , displayException
     , generalBracket
-    , handleAll
-    , throwM
     )
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import qualified Data.Foldable as Foldable
@@ -88,7 +86,6 @@ withBugReport bugReport act =
                 releaseTempDirectory
                 act
         pure exitCode
-    & handleAll (\_ -> pure (ExitFailure 1))
   where
     acquireTempDirectory = do
         tmp <- getCanonicalTemporaryDirectory
@@ -100,7 +97,6 @@ withBugReport bugReport act =
                 let message = displayException someException
                 writeFile (tmpDir </> "error" <.> "log") message
                 alwaysWriteBugReport tmpDir
-                throwM someException
             ExitCaseAbort -> alwaysWriteBugReport tmpDir
         removePathForcibly tmpDir
     alwaysWriteBugReport tmpDir =
