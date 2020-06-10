@@ -19,6 +19,10 @@ module Kore.Equation.Application
     , debugApplyEquation
     ) where
 
+import qualified Data.Text as Text
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import qualified Branch
@@ -163,12 +167,42 @@ attemptEquation
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
-        (equation', predicate') <-
-            applyAndSelectMatchResult
-            =<< simplifyArgumentWithResult argument antiLeft
-            =<< whileMatch (match left termLike)
+        -- traceM $ "\n\nMatch predicate:\n" <> unparseToString x
+        -- if not (isTop x)
+        --     then
+        --         traceM
+        --             $ "\n\nEquation:\n"
+        --             <>
+        --             (Text.unpack
+        --             . Pretty.renderText
+        --             . Pretty.layoutPretty Pretty.defaultLayoutOptions
+        --             . Pretty.pretty
+        --             )
+        --             equation
+        --             <> "\n\nMatch predicate:\n" <> unparseToString x
+        --     else return ()
+        (equation', predicate) <-
+            if (Equation.isSimplificationRule equation) || (isTop argument)
+                then do
+                    matchResult@(x, y) <- match left termLike & whileMatch
+                    -- traceM
+                    --     $ "\n\nSubstitution:\n"
+                    --     <> unparseToString (Substitution.toPredicate . Substitution.fromMap $ y)
+                    applyMatchResult equationRenamed matchResult
+                        & whileApplyMatchResult
+                else
+                    applyAndSelectMatchResult
+                    =<< simplifyArgumentWithResult argument antiLeft
+                    =<< whileMatch (match left termLike)
+        -- (equation', predicate) <-
+        --     applyMatchResult equationRenamed matchResult
+        --     & whileApplyMatchResult
+        -- (equation', predicate') <-
+        --     applyAndSelectMatchResult
+        --     =<< simplifyArgumentWithResult argument antiLeft
+        --     =<< whileMatch (match left termLike)
         let Equation { requires } = equation'
-        checkRequires sideCondition predicate' requires & whileCheckRequires
+        checkRequires sideCondition predicate requires equation' & whileCheckRequires
         let Equation { right, ensures } = equation'
         return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
@@ -224,15 +258,26 @@ attemptEquation sideCondition termLike equation =
         -- TODO: toMap is unsafe;
         -- is it impossible to happen (if the frontend generates equations
         -- correctly), or should we add a new AttemptEquationError case?
-        lift
-        $ let toMatchResult Conditional { predicate, substitution } =
-                (predicate, Substitution.toMap substitution)
-         in Substitution.mergePredicatesAndSubstitutions
-                sideCondition
-                ([argument, matchPredicate] <> maybeToList antiLeft)
-                [Substitution.fromMap matchSubstitution]
-                & Branch.gather
-                & (fmap . fmap) toMatchResult
+        lift $ do
+            let toMatchResult Conditional { predicate, substitution } =
+                    (predicate, Substitution.toMap substitution)
+            x <-
+                Substitution.mergePredicatesAndSubstitutions
+                    -- SideCondition.top
+                    -- [argument]
+                    -- [Substitution.fromMap matchSubstitution]
+                    sideCondition
+                    ([argument, matchPredicate] <> maybeToList antiLeft)
+                    [Substitution.fromMap matchSubstitution]
+                    & Branch.gather
+                    & (fmap . fmap) toMatchResult
+            -- traceM
+            --     $ "\n\nBefore simplification:\n"
+            --     <> unparseToString (Substitution.toPredicate . Substitution.fromMap $ matchSubstitution)
+            --     <> "\n\nAfter simplification:\n"
+            --     <> foldl (\a b -> a <> "\n" <> unparseToString (Substitution.toPredicate . Substitution.fromMap $ b)) "" (fmap snd x)
+            return x
+            -- return [(matchPredicate, matchSubstitution)]
 
 applyEquation
     :: forall simplifier variable
@@ -339,14 +384,15 @@ checkRequires
     => SideCondition (Target variable)
     -> Predicate variable  -- ^ requires from matching
     -> Predicate variable  -- ^ requires from 'Equation'
+    -> Equation variable
     -> ExceptT (CheckRequiresError variable) simplifier ()
-checkRequires sideCondition predicate requires =
+checkRequires sideCondition predicate requires equation =
     do
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
             condition :: Condition variable
             condition = from @(Predicate _) (makeNotPredicate requires')
-        return condition
+        x <- return condition
             -- First try to refute 'condition' without user-defined axioms:
             >>= withoutAxioms . simplifyCondition
             -- Next try to refute 'condition' including user-defined axioms:
@@ -355,6 +401,20 @@ checkRequires sideCondition predicate requires =
             -- external solver:
             >>= SMT.filterBranch . withSideCondition
             >>= return . snd
+        -- traceM
+        --     $ "\n\nEquation:\n"
+        --     <>
+        --         (Text.unpack
+        --         . Pretty.renderText
+        --         . Pretty.layoutPretty Pretty.defaultLayoutOptions
+        --         . Pretty.pretty
+        --         )
+        --         equation
+        --     <> "\n\nSideCondition:\n" <> unparseToString sideCondition
+        --     <> "\n\nPredicate:\n" <> unparseToString predicate
+        --     <> "\n\nNegated condition:\n" <> unparseToString condition
+        --     <> "\n\nSimplified negated condition with side condition:\n" <> unparseToString x
+        return x
     -- Collect the simplified results. If they are \bottom, then \and(predicate,
     -- requires) is valid; otherwise, the required pre-conditions are not met
     -- and the rule will not be applied.
