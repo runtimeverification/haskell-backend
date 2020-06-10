@@ -75,15 +75,11 @@ test_TermLike =
     ]
   where
     domainValue =
-        mkDomainValue
-            ( DomainValue
-                Mock.testSort
-                (mkStringLiteral "testDV")
-            )
+        mkDomainValue $ DomainValue Mock.testSort (mkStringLiteral "testDV")
 
 shouldBeConstructorLike
     :: HasCallStack
-    => TermLike Variable
+    => TermLike VariableName
     -> Bool
     -> IO ()
 shouldBeConstructorLike term expected = do

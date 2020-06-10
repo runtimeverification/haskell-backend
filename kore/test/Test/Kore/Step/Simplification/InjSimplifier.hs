@@ -18,10 +18,10 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Kore.Step.MockSymbols
 import Test.Tasty.HUnit.Ext
 
-mkInj :: Sort -> TermLike Variable -> TermLike Variable
+mkInj :: Sort -> TermLike VariableName -> TermLike VariableName
 mkInj = sortInjection
 
-inj :: Sort -> TermLike Variable -> Inj (TermLike Variable)
+inj :: Sort -> TermLike VariableName -> Inj (TermLike VariableName)
 inj injTo injChild = inj' (termLikeSort injChild) injTo injChild
 
 inj' :: Sort -> Sort -> child -> Inj child
@@ -50,20 +50,20 @@ inj' injFrom injTo injChild =
 
  -}
 
-ctorSub, ctorSubSub, ctorOther, ctorTest1, ctorTest2 :: TermLike Variable
+ctorSub, ctorSubSub, ctorOther, ctorTest1, ctorTest2 :: TermLike VariableName
 ctorSub = aSubsort
 ctorSubSub = aSubSubsort
 ctorOther = aOtherSort
 ctorTest1 = cf
 ctorTest2 = cg
 
-simplSub, simplOther, simpl0 :: TermLike Variable
+simplSub, simplOther, simpl0 :: TermLike VariableName
 simplSub = plain00Subsort
 simplOther = plain00OtherSort
 simpl0 = plain00Sort0
 
-xSub :: TermLike Variable
-xSub = mkElemVar (elemVarS "xSub" subSort)
+xSub :: TermLike VariableName
+xSub = mkElemVar (mkElementVariable "xSub" subSort)
 
 test_unifyInj :: [TestTree]
 test_unifyInj =
@@ -141,9 +141,9 @@ test_unifyInj =
     test
         :: HasCallStack
         => TestName
-        -> Inj (TermLike Variable)
-        -> Inj (TermLike Variable)
-        -> Either Distinct (Inj (Pair (TermLike Variable)))
+        -> Inj (TermLike VariableName)
+        -> Inj (TermLike VariableName)
+        -> Either Distinct (Inj (Pair (TermLike VariableName)))
         -> TestTree
     test testName inj1 inj2 expect =
         testCase testName (assertEqual "" expect (unifyInj inj1 inj2))
@@ -159,8 +159,8 @@ test_normalize =
     test
         :: HasCallStack
         => TestName
-        -> TermLike Variable
-        -> TermLike Variable
+        -> TermLike VariableName
+        -> TermLike VariableName
         -> TestTree
     test testName original expect =
         let actual = normalize injSimplifier original

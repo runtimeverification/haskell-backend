@@ -100,7 +100,7 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
-type SortDescription = SentenceSort (Pattern Variable Attribute.Null)
+type SortDescription = SentenceSort (Pattern VariableName Attribute.Null)
 
 data IndexModuleError
 
@@ -325,7 +325,7 @@ type VerifiedModule declAtts
     = IndexedModule
         Verified.Pattern
         declAtts
-        (Attribute.Axiom Internal.Symbol.Symbol Variable)
+        (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 
 {- | Convert a 'IndexedModule' back into a 'Module'.
 

@@ -58,16 +58,16 @@ import qualified Kore.Verified as Verified
  -}
 extractEquations
     :: VerifiedModule StepperAttributes
-    -> Map AxiomIdentifier [Equation Variable]
+    -> Map AxiomIdentifier [Equation VariableName]
 extractEquations =
     Foldable.foldl' moduleWorker Map.empty
     . indexedModulesInScope
   where
     -- | Update the map of function axioms with all the axioms in one module.
     moduleWorker
-        :: Map AxiomIdentifier [Equation Variable]
+        :: Map AxiomIdentifier [Equation VariableName]
         -> VerifiedModule StepperAttributes
-        -> Map AxiomIdentifier [Equation Variable]
+        -> Map AxiomIdentifier [Equation VariableName]
     moduleWorker axioms imod =
         Foldable.foldl' sentenceWorker axioms sentences
       where
@@ -77,23 +77,25 @@ extractEquations =
     -- axioms with it. The map is returned unmodified in case the sentence is
     -- not a function axiom.
     sentenceWorker
-        :: Map AxiomIdentifier [Equation Variable]
-        -> (Attribute.Axiom Symbol Variable, Verified.SentenceAxiom)
-        -> Map AxiomIdentifier [Equation Variable]
+        :: Map AxiomIdentifier [Equation VariableName]
+        -> (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom)
+        -> Map AxiomIdentifier [Equation VariableName]
     sentenceWorker axioms sentence =
         Foldable.foldl' insertAxiom axioms (identifyEquation sentence)
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom
-        :: Map AxiomIdentifier [Equation Variable]
-        -> (AxiomIdentifier, Equation Variable)
-        -> Map AxiomIdentifier [Equation Variable]
+        :: Map AxiomIdentifier [Equation VariableName]
+        -> (AxiomIdentifier, Equation VariableName)
+        -> Map AxiomIdentifier [Equation VariableName]
     insertAxiom axioms (name, patt) =
         Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 identifyEquation
-    :: (Attribute.Axiom Symbol Variable, SentenceAxiom (TermLike Variable))
-    -> Maybe (AxiomIdentifier, Equation Variable)
+    ::  ( Attribute.Axiom Symbol VariableName
+        , SentenceAxiom (TermLike VariableName)
+        )
+    ->  Maybe (AxiomIdentifier, Equation VariableName)
 identifyEquation axiom = do
     equation@Equation { left } <- hush $ Equation.fromSentenceAxiom axiom
     identifier <- AxiomIdentifier.matchAxiomIdentifier left
@@ -101,15 +103,15 @@ identifyEquation axiom = do
 
 data PartitionedEquations =
     PartitionedEquations
-        { functionRules       :: ![Equation Variable]
-        , simplificationRules :: ![Equation Variable]
+        { functionRules       :: ![Equation VariableName]
+        , simplificationRules :: ![Equation VariableName]
         }
 
 -- | Filters and partitions a list of 'EqualityRule's to
 -- simplification rules and function rules. The function rules
 -- are also sorted in order of priority.
 partitionEquations
-    :: [Equation Variable]
+    :: [Equation VariableName]
     -> PartitionedEquations
 partitionEquations equations =
     PartitionedEquations
@@ -133,7 +135,7 @@ evaluation or simplification, such as if it is an associativity or commutativity
 axiom.
 
  -}
-ignoreEquation :: Equation Variable -> Bool
+ignoreEquation :: Equation VariableName -> Bool
 ignoreEquation Equation { attributes }
   | isAssoc = True
   | isComm = True
@@ -152,7 +154,7 @@ ignoreEquation Equation { attributes }
 
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
-ignoreDefinition :: Equation Variable -> Bool
+ignoreDefinition :: Equation VariableName -> Bool
 ignoreDefinition Equation { left } =
     assert isLeftFunctionLike False
   where

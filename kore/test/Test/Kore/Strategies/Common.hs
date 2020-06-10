@@ -47,9 +47,9 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
 simpleRewrite
-    :: TermLike Variable
-    -> TermLike Variable
-    -> RewriteRule RewritingVariable
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> RewriteRule RewritingVariableName
 simpleRewrite left right =
     mkRewritingRule $ RewriteRule $ rulePattern left right
 
@@ -59,7 +59,7 @@ runVerificationToPattern
     -> [Rule ReachabilityRule]
     -> [ReachabilityRule]
     -> [ReachabilityRule]
-    -> IO (Either (Pattern Variable) ())
+    -> IO (Either (Pattern VariableName) ())
 runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
     do
         stuck <- runVerification

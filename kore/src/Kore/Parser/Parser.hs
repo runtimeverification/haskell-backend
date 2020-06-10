@@ -30,6 +30,7 @@ module Kore.Parser.Parser
     , inCurlyBracesListParser
     , elementVariableParser
     , setVariableParser
+    , parseVariableCounter
     ) where
 
 import Prelude.Kore hiding
@@ -39,10 +40,13 @@ import Prelude.Kore hiding
 import Control.Arrow
     ( (&&&)
     )
+import qualified Data.Char as Char
+import qualified Data.Text as Text
 import Text.Megaparsec
     ( some
     )
 
+import Data.Sup
 import Kore.AST.Common
 import Kore.Parser.Lexeme
 import Kore.Parser.ParserUtils
@@ -51,9 +55,9 @@ import Kore.Parser.ParserUtils
 import qualified Kore.Parser.ParserUtils as ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Variables.UnifiedVariable
+import Numeric.Natural
 
-asParsedPattern :: (PatternF Variable) ParsedPattern -> ParsedPattern
+asParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
 
 {-| Parses a @sort-variable@.
@@ -206,7 +210,7 @@ BNF fragments:
 -}
 existsForallRemainderParser
     :: Parser child
-    -> (Sort -> ElementVariable Variable -> child -> m child)
+    -> (Sort -> ElementVariable VariableName -> child -> m child)
     -- ^ Element constructor.
     -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
@@ -228,7 +232,7 @@ BNF fragment:
 -}
 muNuRemainderParser
     :: Parser child
-    -> (SetVariable Variable -> child -> m child)
+    -> (SetVariable VariableName -> child -> m child)
     -- ^ Element constructor.
     -> Parser (m child)
 muNuRemainderParser childParser constructor = do
@@ -317,7 +321,7 @@ Always starts with @{@.
 symbolOrAliasPatternRemainderParser
     :: Parser child
     -> Id  -- ^ The already parsed prefix.
-    -> Parser (PatternF Variable child)
+    -> Parser (PatternF VariableName child)
 symbolOrAliasPatternRemainderParser childParser identifier =
     ApplicationF
     <$> (   Application
@@ -356,15 +360,37 @@ Always starts with @:@.
 -}
 variableRemainderParser
     :: Id  -- ^ The already parsed prefix.
-    -> Parser Variable
+    -> Parser (Variable VariableName)
 variableRemainderParser identifier = do
+    let (base, counter) = parseVariableCounter identifier
     colonParser
-    sort <- sortParser
-    return Variable
-        { variableName = identifier
-        , variableSort = sort
-        , variableCounter = mempty
+    variableSort <- sortParser
+    pure Variable
+        { variableName = VariableName { base, counter }
+        , variableSort
         }
+
+parseVariableCounter :: Id -> (Id, Maybe (Sup Natural))
+parseVariableCounter identifier@Id { getId, idLocation }
+  -- Cases:
+  -- suffix is empty: no counter, Id is not changed
+  | Text.null suffix = (identifier, Nothing)
+  -- suffix is all zeros: counter is zero, Id has final zero stripped
+  | Text.null nonZeros =
+    ( Id { idLocation, getId = base <> Text.init zeros }
+    , Just (Element 0)
+    )
+  -- suffix is some zeros followed by non-zeros:
+  --   read the counter from the non-zeros, Id is base + zeros
+  | otherwise =
+    ( Id { idLocation, getId = base <> zeros }
+    , (Just . Element) (read $ Text.unpack nonZeros)
+    )
+  where
+    base = Text.dropWhileEnd Char.isDigit getId
+    suffix = Text.drop (Text.length base) getId
+    zeros = Text.takeWhile (== '0') suffix
+    nonZeros = Text.drop (Text.length zeros) suffix
 
 {- | Parses an element variable
 
@@ -373,9 +399,10 @@ variableRemainderParser identifier = do
   ::= <element-variable-id> ":" <sort>
 @
 -}
-elementVariableParser :: Parser (ElementVariable Variable)
+elementVariableParser :: Parser (ElementVariable VariableName)
 elementVariableParser =
-    ElementVariable <$> (elementVariableIdParser >>= variableRemainderParser)
+    (fmap . fmap) ElementVariableName
+    $ elementVariableIdParser >>= variableRemainderParser
 
 
 {- | Parses an set variable
@@ -385,9 +412,10 @@ elementVariableParser =
   ::= <set-variable-id> ":" <sort>
 @
 -}
-setVariableParser :: Parser (SetVariable Variable)
+setVariableParser :: Parser (SetVariable VariableName)
 setVariableParser =
-    SetVariable <$> (setVariableIdParser >>= variableRemainderParser)
+    (fmap . fmap) SetVariableName
+    $ setVariableIdParser >>= variableRemainderParser
 
 {- | Parses a variable.
 
@@ -399,12 +427,12 @@ setVariableParser =
 
 Set variables always start with @\@@, while element variables do not.
 -}
-variableParser :: Parser (UnifiedVariable Variable)
+variableParser :: Parser (SomeVariable VariableName)
 variableParser = do
     c <- ParserUtils.peekChar'
     if c == '@'
-        then SetVar  <$> setVariableParser
-        else ElemVar <$> elementVariableParser
+        then mkSomeVariable <$> setVariableParser
+        else mkSomeVariable <$> elementVariableParser
 
 {-| Parses an element variable pattern or application pattern,
 using an open recursion scheme for its children.
@@ -423,14 +451,16 @@ BNF definitions:
 -}
 elemVarOrTermPatternParser
     :: Parser child
-    -> Parser (PatternF Variable child)
+    -> Parser (PatternF VariableName child)
 elemVarOrTermPatternParser childParser = do
     identifier <- idParser
     c <- ParserUtils.peekChar'
     if c == ':'
         then do
             var <- variableRemainderParser identifier
-            return $ VariableF $ Const $ ElemVar $ ElementVariable var
+            return
+                $ VariableF $ Const
+                $ mkSomeVariable $ ElementVariableName <$> var
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
@@ -464,7 +494,7 @@ koreVariableOrTermPatternParser = do
         case c of
         '@' -> do
             var <- setVariableParser
-            return $ VariableF $ Const $ SetVar var
+            return $ VariableF $ Const $ mkSomeVariable var
         '\\' -> do
             identifier <- symbolIdParser
             symbolOrAliasPatternRemainderParser korePatternParser identifier
@@ -547,7 +577,7 @@ mlConstructorRemainderParser
     :: Parser child
     -> Parser (DomainValue Sort child)
     -> MLPatternType
-    -> Parser (PatternF Variable child)
+    -> Parser (PatternF VariableName child)
 mlConstructorRemainderParser childParser domainValueParser' patternType =
     case patternType of
         AndPatternType -> AndF <$>

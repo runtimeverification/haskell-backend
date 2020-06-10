@@ -99,21 +99,21 @@ test_internalize =
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
-    l = mkElemVar (elemVarS "l" listSort)
+    l = mkElemVar (mkElementVariable "l" listSort)
 
     mapSort = Builtin.mapSort
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
     mkMap = Map.asInternal
-    m = mkElemVar (elemVarS "m" mapSort)
+    m = mkElemVar (mkElementVariable "m" mapSort)
 
     setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
     mkSet = Set.asInternal . Data.Set.fromList
-    s = mkElemVar (elemVarS "s" setSort)
+    s = mkElemVar (mkElementVariable "s" setSort)
 
     mkInt :: InternalVariable variable => Integer -> TermLike variable
     mkInt = Int.asInternal
@@ -121,13 +121,13 @@ test_internalize =
     zero, one :: InternalVariable variable => TermLike variable
     zero = mkInt 0
     one = mkInt 1
-    x = mkElemVar (elemVarS "x" intSort)
-    y = mkElemVar (elemVarS "y" intSort)
+    x = mkElemVar (mkElementVariable "x" intSort)
+    y = mkElemVar (mkElementVariable "y" intSort)
 
 withInternalized
-    :: (TermLike Variable -> Assertion)
+    :: (TermLike VariableName -> Assertion)
     -> TestName
-    -> TermLike Variable
+    -> TermLike VariableName
     -> TestTree
 withInternalized check name origin =
     testCase name (check $ Kore.internalize metadata origin)
@@ -135,8 +135,8 @@ withInternalized check name origin =
 internalizes
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> TermLike Variable
+    -> TermLike VariableName
+    -> TermLike VariableName
     -> TestTree
 internalizes name origin expect =
     withInternalized (assertEqual "" expect) name origin
@@ -144,7 +144,7 @@ internalizes name origin expect =
 notInternalizes
     :: HasCallStack
     => TestName
-    -> TermLike Variable
+    -> TermLike VariableName
     -> TestTree
 notInternalizes name origin =
     withInternalized (assertEqual "" origin) name origin

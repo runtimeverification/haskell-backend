@@ -70,11 +70,11 @@ test_fromSentenceAxiom =
   where
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
-    toTermLike = from @(Equation Variable) @(TermLike Variable)
+    toTermLike = from @(Equation VariableName) @(TermLike VariableName)
     assertions
         :: HasCallStack
-        => TermLike Variable
-        -> Equation Variable
+        => TermLike VariableName
+        -> Equation VariableName
         -> Assertion
     assertions original equation = do
         actual <- expectRight $ test original
@@ -82,17 +82,6 @@ test_fromSentenceAxiom =
         assertEqual "Expected original pattern" original (toTermLike actual)
     test original = fromSentenceAxiom (def, mkAxiom [sortVariableR] original)
 
-varI1, varI2 :: TermLike Variable
-varI1 =
-    mkElemVar $ ElementVariable Variable
-        { variableName = testId "VarI1"
-        , variableCounter = mempty
-        , variableSort = Mock.intSort
-        }
-
-varI2 =
-    mkElemVar $ ElementVariable Variable
-        { variableName = testId "VarI2"
-        , variableCounter = mempty
-        , variableSort = Mock.intSort
-        }
+varI1, varI2 :: TermLike VariableName
+varI1 = mkElemVar $ mkElementVariable (testId "VarI1") Mock.intSort
+varI2 = mkElemVar $ mkElementVariable (testId "VarI2") Mock.intSort

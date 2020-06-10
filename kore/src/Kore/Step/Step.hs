@@ -68,6 +68,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
+    , SomeVariableName
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -88,21 +89,18 @@ import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import qualified Pretty
 
 type UnifiedRule rule variable = Conditional variable (rule variable)
 
 type Result rule variable =
     Step.Result
-        (UnifiedRule rule RewritingVariable)
+        (UnifiedRule rule RewritingVariableName)
         (Pattern variable)
 
 type Results rule variable =
     Step.Results
-        (UnifiedRule rule RewritingVariable)
+        (UnifiedRule rule RewritingVariableName)
         (Pattern variable)
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
@@ -110,11 +108,11 @@ unifyRules
     :: MonadSimplify simplifier
     => UnifyingRule rule
     => UnificationProcedure simplifier
-    -> Pattern RewritingVariable
+    -> Pattern RewritingVariableName
     -- ^ Initial configuration
-    -> [rule RewritingVariable]
+    -> [rule RewritingVariableName]
     -- ^ Rule
-    -> simplifier [UnifiedRule rule RewritingVariable]
+    -> simplifier [UnifiedRule rule RewritingVariableName]
 unifyRules unificationProcedure initial rules =
     Branch.gather $ do
         rule <- Branch.scatter rules
@@ -169,11 +167,13 @@ wouldNarrowWith
     .  Ord variable
     => UnifyingRule rule
     => UnifiedRule rule variable
-    -> Set (UnifiedVariable variable)
+    -> Set (SomeVariableName variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where
-    leftAxiomVariables = TermLike.freeVariables leftAxiom & FreeVariables.toSet
+    leftAxiomVariables =
+        TermLike.freeVariables leftAxiom
+        & FreeVariables.toNames
       where
         Conditional { term = axiom } = unified
         leftAxiom = matchingPattern axiom
@@ -185,7 +185,7 @@ assertFunctionLikeResults
     :: InternalVariable variable
     => Monad m
     => UnifyingRule rule
-    => Eq (rule RewritingVariable)
+    => Eq (rule RewritingVariableName)
     => TermLike variable
     -> Results rule variable'
     -> m ()

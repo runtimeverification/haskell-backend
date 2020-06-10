@@ -43,15 +43,12 @@ import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
 import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
 
-assertNormalized :: Condition Variable -> IO ()
+assertNormalized :: Condition VariableName -> IO ()
 assertNormalized expect = do
     actual <- normalizeExcept expect
     assertEqual
@@ -76,7 +73,7 @@ test_simplifyCondition =
                 $ Predicate.makeNotPredicate existsPredicate
         assertNormalized expect
     , testCase "x = f(x)" $ do
-        let x = ElemVar Mock.x
+        let x = inject Mock.x
             expect =
                 Predicate.makeEqualsPredicate_ (mkVar x) (Mock.f (mkVar x))
                 & Right . OrCondition.fromPredicate
@@ -88,7 +85,7 @@ test_simplifyCondition =
         actual <- normalizeExcept input
         assertEqual "Expected SubstitutionError" expect actual
     , testCase "x = id(x)" $ do
-        let x = ElemVar Mock.x
+        let x = inject Mock.x
             expect = Right (OrCondition.fromCondition Condition.top)
             input =
                 ( Condition.fromSubstitution
@@ -113,15 +110,15 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Right
                     [ Condition.fromSubstitution $ Substitution.unsafeWrap
-                        [ ( ElemVar Mock.x , Mock.constr10 Mock.a ) ]
+                        [ ( inject Mock.x , Mock.constr10 Mock.a ) ]
                     ]
             actual <-
                 merge
-                    [( ElemVar Mock.x
+                    [( inject Mock.x
                      , Mock.constr10 Mock.a
                      )
                     ]
-                    [( ElemVar Mock.x
+                    [( inject Mock.x
                      , Mock.constr10 Mock.a
                      )
                     ]
@@ -133,15 +130,15 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Right
                     [ Condition.fromSubstitution $ Substitution.unsafeWrap
-                        [(ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))]
+                        [(inject Mock.x, Mock.constr10 (mkElemVar Mock.y))]
                     ]
             actual <-
                 merge
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
@@ -154,11 +151,11 @@ test_mergeAndNormalizeSubstitutions =
             let expect = Right []
             actual <-
                 merge
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 (Mock.constr10 Mock.a)
                         )
                     ]
@@ -174,11 +171,11 @@ test_mergeAndNormalizeSubstitutions =
                     (mkElemVar Mock.y)
             actual <-
                 merge
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 (Mock.constr10 (mkElemVar Mock.y))
                         )
                     ]
@@ -197,7 +194,7 @@ test_mergeAndNormalizeSubstitutions =
                                     Mock.a
                                     (Mock.f Mock.a)
                             , substitution = Substitution.unsafeWrap
-                                [   ( ElemVar Mock.x
+                                [   ( inject Mock.x
                                     , Mock.constr10 Mock.a
                                     )
                                 ]
@@ -205,11 +202,11 @@ test_mergeAndNormalizeSubstitutions =
                         ]
             actual <-
                 merge
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 Mock.a
                         )
                     ]
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 (Mock.f Mock.a)
                         )
                     ]
@@ -224,7 +221,7 @@ test_mergeAndNormalizeSubstitutions =
                 Predicate.makeEqualsPredicate_ y (f y)
                 & Condition.fromPredicate
             substCondition =
-                Substitution.assign (ElemVar Mock.x) (ctor (f y))
+                Substitution.assign (inject Mock.x) (ctor (f y))
                 & Condition.fromSingleSubstitution
         let
             expect =
@@ -232,8 +229,8 @@ test_mergeAndNormalizeSubstitutions =
                 & Right . pure
         actual <-
             merge
-                [(ElemVar Mock.x, ctor    y )]
-                [(ElemVar Mock.x, ctor (f y))]
+                [(inject Mock.x, ctor    y )]
+                [(inject Mock.x, ctor (f y))]
         assertEqual "" expect actual
         assertNormalizedPredicates actual
 
@@ -246,11 +243,11 @@ test_mergeAndNormalizeSubstitutions =
                     (mkElemVar Mock.y)
             actual <-
                 merge
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , mkElemVar Mock.y
                         )
                     ]
-                    [   ( ElemVar Mock.x
+                    [   ( inject Mock.x
                         , Mock.constr10 (mkElemVar Mock.x)
                         )
                     ]
@@ -264,18 +261,18 @@ test_mergeAndNormalizeSubstitutions =
                     (Mock.f (mkElemVar Mock.y))
                 & Condition.fromPredicate
             substCondition =
-                Substitution.assign (ElemVar Mock.x) (mkElemVar Mock.y)
+                Substitution.assign (inject Mock.x) (mkElemVar Mock.y)
                 & Condition.fromSingleSubstitution
         let expect =
                 denormCondition <> substCondition
                 & Right . pure
         actual <-
             merge
-                [   ( ElemVar Mock.x
+                [   ( inject Mock.x
                     , mkElemVar Mock.y
                     )
                 ]
-                [   ( ElemVar Mock.y
+                [   ( inject Mock.y
                     , Mock.f (mkElemVar Mock.x)
                     )
                 ]
@@ -286,8 +283,8 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect =
                     [ Condition.fromSubstitution $ Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.constr10 Mock.a)
-                        , (ElemVar Mock.y, Mock.a)
+                        [ (inject Mock.x, Mock.constr10 Mock.a)
+                        , (inject Mock.y, Mock.a)
                         ]
                     ]
             actual <-
@@ -295,8 +292,8 @@ test_mergeAndNormalizeSubstitutions =
                 $ Condition.fromSubstitution
                 $ Substitution.wrap
                 $ Substitution.mkUnwrappedSubstitution
-                    [ (ElemVar Mock.x, Mock.constr10 Mock.a)
-                    , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
+                    [ (inject Mock.x, Mock.constr10 Mock.a)
+                    , (inject Mock.x, Mock.constr10 (mkElemVar Mock.y))
                     ]
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
@@ -309,7 +306,7 @@ test_mergeAndNormalizeSubstitutions =
                         , predicate =
                             Predicate.makeEqualsPredicate_ Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.constr10 Mock.cf) ]
+                            [ (inject Mock.x, Mock.constr10 Mock.cf) ]
                         }
                     ]
             actual <-
@@ -319,8 +316,8 @@ test_mergeAndNormalizeSubstitutions =
                         , predicate = Predicate.makeTruePredicate_
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [ (ElemVar Mock.x, Mock.constr10 Mock.cf)
-                            , (ElemVar Mock.x, Mock.constr10 Mock.cg)
+                            [ (inject Mock.x, Mock.constr10 Mock.cf)
+                            , (inject Mock.x, Mock.constr10 Mock.cg)
                             ]
                         }
             assertEqual "" expect actual
@@ -335,8 +332,8 @@ test_mergeAndNormalizeSubstitutions =
                             Predicate.makeCeilPredicate_
                             $ Mock.f Mock.a
                         , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.constr10 Mock.a)
-                            , (ElemVar Mock.y, Mock.a)
+                            [ (inject Mock.x, Mock.constr10 Mock.a)
+                            , (inject Mock.y, Mock.a)
                             ]
                         }
                     ]
@@ -349,8 +346,8 @@ test_mergeAndNormalizeSubstitutions =
                             $ Mock.f (mkElemVar Mock.y)
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [ (ElemVar Mock.x, Mock.constr10 Mock.a)
-                            , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
+                            [ (inject Mock.x, Mock.constr10 Mock.a)
+                            , (inject Mock.x, Mock.constr10 (mkElemVar Mock.y))
                             ]
                         }
             assertEqual "" expect actual
@@ -358,9 +355,9 @@ test_mergeAndNormalizeSubstitutions =
     ]
 
 merge
-    :: [(UnifiedVariable Variable, TermLike Variable)]
-    -> [(UnifiedVariable Variable, TermLike Variable)]
-    -> IO (Either UnificationError [Condition Variable])
+    :: [(SomeVariable VariableName, TermLike VariableName)]
+    -> [(SomeVariable VariableName, TermLike VariableName)]
+    -> IO (Either UnificationError [Condition VariableName])
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2)
@@ -373,8 +370,8 @@ merge
     <$> [s1, s2]
   where
     simplifiedAssignment
-        :: Assignment Variable
-        -> Assignment Variable
+        :: Assignment VariableName
+        -> Assignment VariableName
     simplifiedAssignment =
         Substitution.mapAssignedTerm Test.simplifiedTerm
 
@@ -385,7 +382,7 @@ merge
         . mconcat
     mockEnv = Mock.env
 
-normalize :: Conditional Variable term -> IO [Conditional Variable term]
+normalize :: Conditional VariableName term -> IO [Conditional VariableName term]
 normalize =
     Test.runSimplifierBranch mockEnv
     . Condition.simplifyCondition SideCondition.top
@@ -393,11 +390,11 @@ normalize =
     mockEnv = Mock.env
 
 normalizeExcept
-    :: Conditional Variable ()
+    :: Conditional VariableName ()
     -> IO
         (Either
             UnificationError
-            (MultiOr (Conditional Variable ()))
+            (MultiOr (Conditional VariableName ()))
         )
 normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
@@ -422,18 +419,19 @@ normalizeExcept predicated =
 
 
 -- | Check that 'Condition.substitution' is normalized for all arguments.
-assertNormalizedPredicates :: Foldable f => f [Condition Variable] -> Assertion
+assertNormalizedPredicates
+    :: Foldable f => f [Condition VariableName] -> Assertion
 assertNormalizedPredicates =
     Foldable.traverse_ assertNormalizedPredicatesMulti
 
 -- | Check that 'Condition.substitution' is normalized for all arguments.
 assertNormalizedPredicatesMulti
-    :: Foldable f => f (Condition Variable) -> Assertion
+    :: Foldable f => f (Condition VariableName) -> Assertion
 assertNormalizedPredicatesMulti =
     Foldable.traverse_ assertNormalizedPredicatesSingle
 
 -- | Check that 'Condition.substitution' is normalized for all arguments.
-assertNormalizedPredicatesSingle :: Condition Variable -> Assertion
+assertNormalizedPredicatesSingle :: Condition VariableName -> Assertion
 assertNormalizedPredicatesSingle =
     assertBool "Substitution is normalized"
     . Substitution.isNormalized

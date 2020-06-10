@@ -35,7 +35,7 @@ import SMT.SimpleSMT
 import qualified SQL
 
 data DebugEvaluateCondition
-    = DebugEvaluateCondition (NonEmpty (Predicate Variable))
+    = DebugEvaluateCondition (NonEmpty (Predicate VariableName))
     | DebugEvaluateConditionResult Result
     deriving (Show)
     deriving (GHC.Generic)
@@ -75,7 +75,9 @@ whileDebugEvaluateCondition
     -> log a
     -> log a
 whileDebugEvaluateCondition =
-    logWhile . DebugEvaluateCondition . fmap Predicate.externalizeFreshVariables
+    logWhile
+    . DebugEvaluateCondition
+    . fmap (Predicate.mapVariables (pure toVariableName))
 
 debugEvaluateConditionResult :: MonadLog log => Result -> log ()
 debugEvaluateConditionResult = logEntry . DebugEvaluateConditionResult

@@ -17,7 +17,7 @@ import qualified GHC.Generics as GHC
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
-    , Variable
+    , VariableName
     , toVariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -31,7 +31,7 @@ import Pretty
 import qualified Pretty
 
 data InfoAttemptUnification =
-    InfoAttemptUnification { term1, term2 :: TermLike Variable }
+    InfoAttemptUnification { term1, term2 :: TermLike VariableName }
     deriving (Show)
     deriving (GHC.Generic)
 

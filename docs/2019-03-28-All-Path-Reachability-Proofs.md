@@ -52,9 +52,9 @@ from `z` are substituted with the corresponding term in `t`.
 Definitions
 -----------
 
-### Weak always
+### Weak always finally
 
-Given a formula `φ`, let `[w]φ` denote the formula “weak always” `φ`,
+Given a formula `φ`, let `[w]φ` denote the formula “weak always finally” `φ`,
 defined by:
 
 ```
@@ -122,7 +122,7 @@ is equivalent to `∀x.φ ∧ ¬pᵢ[tᵢ/xᵢ] → [w]∃z.ψ`.
 
 ### Algorithm `derivePar`
 
-__Input:__: goal `∀x.φ → [w]∃z.ψ` and set of tuples { (xᵢ,φᵢ,zᵢ,ψᵢ) : 1 ≤ i ≤ n }` representing either
+__Input:__: goal `∀x.φ → [w]∃z.ψ` and set of tuples `{ (xᵢ,φᵢ,zᵢ,ψᵢ) : 1 ≤ i ≤ n }` representing either
 
 * claims `{ ∀xᵢ.φᵢ → [w]∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`, or
 * axioms `{ ∀xᵢ.φᵢ → •∃zᵢ.ψᵢ : 1 ≤ i ≤ n }`

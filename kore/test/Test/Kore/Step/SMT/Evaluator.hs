@@ -41,9 +41,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import Kore.Syntax.Variable
-    ( Variable
-    )
 import SMT
     ( SMT
     )
@@ -63,7 +60,7 @@ import qualified Test.Kore.Step.Simplification as Test
 import Test.SMT
 import Test.Tasty.HUnit.Ext
 
-contradictoryPredicate :: Predicate Variable
+contradictoryPredicate :: Predicate VariableName
 contradictoryPredicate =
     makeAndPredicate
         (makeEqualsPredicate_
@@ -161,18 +158,18 @@ test_evaluableMultiOr =
     ]
 
 evaluatePredicate
-    :: Predicate Variable
+    :: Predicate VariableName
     -> IO (Maybe Bool)
 evaluatePredicate = evaluate
 
 evaluateConditional
-    :: Pattern Variable
+    :: Pattern VariableName
     -> IO (Maybe Bool)
 evaluateConditional = evaluate
 
 evaluateMultiOr
-    :: MultiOr (Conditional Variable (TermLike Variable))
-    -> IO (MultiOr (Conditional Variable (TermLike Variable)))
+    :: MultiOr (Conditional VariableName (TermLike VariableName))
+    -> IO (MultiOr (Conditional VariableName (TermLike VariableName)))
 evaluateMultiOr =
     runSimplifier Mock.env . SMT.Evaluator.filterMultiOr
 
@@ -206,29 +203,29 @@ test_andNegation =
     expected = Just False
 
 evaluateSMT
-    :: Predicate Variable
+    :: Predicate VariableName
     -> PropertyT SMT (Maybe Bool)
 evaluateSMT = lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates
 
-vInt :: Id -> TermLike Variable
-vInt s = mkElemVar (elemVarS s Builtin.intSort)
+vInt :: Id -> TermLike VariableName
+vInt s = mkElemVar (mkElementVariable s Builtin.intSort)
 
-a, b, c :: TermLike Variable
+a, b, c :: TermLike VariableName
 a = vInt (testId "a")
 b = vInt (testId "b")
 c = vInt (testId "c")
 
-vBool :: Id -> TermLike Variable
-vBool s = mkElemVar (elemVarS s Builtin.boolSort)
+vBool :: Id -> TermLike VariableName
+vBool s = mkElemVar (mkElementVariable s Builtin.boolSort)
 
-p, q :: TermLike Variable
+p, q :: TermLike VariableName
 p = vBool (testId "p")
 q = vBool (testId "q")
 
-assertRefuted :: HasCallStack => Predicate Variable -> Assertion
+assertRefuted :: HasCallStack => Predicate VariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
@@ -236,11 +233,11 @@ assertRefuted prop = do
         & Test.runSimplifier testEnv
     assertEqual "" expect actual
 
-true, false :: TermLike Variable
+true, false :: TermLike VariableName
 true = Builtin.Bool.asInternal True
 false = Builtin.Bool.asInternal False
 
-int :: Integer -> TermLike Variable
+int :: Integer -> TermLike VariableName
 int = Builtin.Int.intLiteral
 
 test_Int_contradictions :: [TestTree]

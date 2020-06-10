@@ -12,6 +12,7 @@ module Kore.Log.Registry
     , textToType
     , getEntryTypesAsText
     , typeOfSomeEntry
+    , entryTypeReps
     ) where
 
 import Prelude.Kore

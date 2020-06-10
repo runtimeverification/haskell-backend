@@ -62,7 +62,6 @@ import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 import Pretty
     ( (<+>)
@@ -71,7 +70,11 @@ import qualified Pretty
 
 newtype DeclaredVariables =
     DeclaredVariables
-        { getDeclaredVariables :: Map.Map Id (UnifiedVariable Variable) }
+        { getDeclaredVariables
+            ::  Map.Map
+                    (SomeVariableName VariableName)
+                    (SomeVariable VariableName)
+        }
     deriving (Monoid, Semigroup)
 
 emptyDeclaredVariables :: DeclaredVariables
@@ -192,23 +195,29 @@ lookupSymbol symbolOrAlias = do
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
 
-lookupDeclaredVariable :: Id -> PatternVerifier (UnifiedVariable Variable)
+lookupDeclaredVariable
+    :: SomeVariableName VariableName
+    -> PatternVerifier (SomeVariable VariableName)
 lookupDeclaredVariable varId = do
     variables <- Reader.asks (getDeclaredVariables . declaredVariables)
     maybe errorUnquantified return $ Map.lookup varId variables
   where
-    errorUnquantified :: PatternVerifier (UnifiedVariable Variable)
+    errorUnquantified :: PatternVerifier (SomeVariable VariableName)
     errorUnquantified =
         koreFailWithLocations [varId]
-            ("Unquantified variable: '" <> getId varId <> "'.")
+        $ Pretty.renderText . Pretty.layoutOneLine
+        $ Pretty.hsep
+        [ "Unquantified variable:"
+        , Pretty.squotes (unparse varId)
+        ]
 
 addDeclaredVariable
-    :: UnifiedVariable Variable
+    :: SomeVariable VariableName
     -> DeclaredVariables
     -> DeclaredVariables
 addDeclaredVariable variable (getDeclaredVariables -> variables) =
     DeclaredVariables $ Map.insert
-        (foldMapVariable variableName variable)
+        (variableName variable)
         variable
         variables
 
@@ -219,7 +228,7 @@ The new variable must not already be declared.
  -}
 newDeclaredVariable
     :: DeclaredVariables
-    -> UnifiedVariable Variable
+    -> SomeVariable VariableName
     -> PatternVerifier DeclaredVariables
 newDeclaredVariable declared variable = do
     let declaredVariables = getDeclaredVariables declared
@@ -227,15 +236,17 @@ newDeclaredVariable declared variable = do
         Just variable' -> alreadyDeclared variable'
         Nothing -> return (addDeclaredVariable variable declared)
   where
-    name = foldMapVariable variableName variable
+    name = variableName variable
     alreadyDeclared
-        :: UnifiedVariable Variable -> PatternVerifier DeclaredVariables
+        :: SomeVariable VariableName -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
-            (  "Variable '"
-            <> getId name
-            <> "' was already declared."
-            )
+        $ Pretty.renderText . Pretty.layoutOneLine
+        $ Pretty.hsep
+        [ "Variable"
+        , Pretty.squotes (unparse name)
+        , "was already declared."
+        ]
 
 {- | Collect 'DeclaredVariables'.
 
@@ -246,7 +257,7 @@ See also: 'newDeclaredVariable'
  -}
 uniqueDeclaredVariables
     :: Foldable f
-    => f (UnifiedVariable Variable)
+    => f (SomeVariable VariableName)
     -> PatternVerifier DeclaredVariables
 uniqueDeclaredVariables =
     Foldable.foldlM newDeclaredVariable emptyDeclaredVariables

@@ -4,6 +4,7 @@ module Test.Kore.Builtin.Set
     ( test_unit
     , test_getUnit
     , test_inElement
+    , test_inUnitSymbolic
     , test_inElementSymbolic
     , test_inConcat
     , test_inConcatSymbolic
@@ -118,18 +119,8 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Syntax.Id
     ( Id
     )
-import Kore.Syntax.Variable
-    ( Concrete
-    , Variable (Variable, variableName)
-    )
-import qualified Kore.Syntax.Variable as DoNotUse
-    ( Variable (..)
-    )
 import Kore.Unification.UnifierT
     ( runUnifierT
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
     )
 import SMT
     ( SMT
@@ -158,19 +149,25 @@ import Test.SMT hiding
     )
 import Test.Tasty.HUnit.Ext
 
-genKeys :: Gen [TermLike Variable]
-genKeys = Gen.subsequence (concreteKeys <> symbolicKeys)
+genKeys :: Gen [TermLike VariableName]
+genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)
 
-genKey :: Gen (TermLike Variable)
-genKey = Gen.element (concreteKeys <> symbolicKeys)
+genKey :: Gen (TermLike VariableName)
+genKey = Gen.element (concreteKeys <> symbolicKeys <> functionalKeys)
 
-concreteKeys :: [TermLike Variable]
+genFunctionalKey :: Gen (TermLike VariableName)
+genFunctionalKey = Gen.element (functionalKeys <> concreteKeys)
+
+functionalKeys :: [TermLike VariableName]
+functionalKeys = Mock.functional10 . mkElemVar <$> elemVars'
+
+concreteKeys :: [TermLike VariableName]
 concreteKeys = [Mock.a, Mock.b, Mock.c]
 
-symbolicKeys :: [TermLike Variable]
+symbolicKeys :: [TermLike VariableName]
 symbolicKeys = Mock.f . mkElemVar <$> elemVars'
 
-elemVars' :: [ElementVariable Variable]
+elemVars' :: [ElementVariable VariableName]
 elemVars' = [Mock.x, Mock.y, Mock.z]
 
 genSetInteger :: Gen (Set Integer)
@@ -183,10 +180,10 @@ genSetConcreteIntegerPattern =
 genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
 
-genSetPattern :: Gen (TermLike Variable)
+genSetPattern :: Gen (TermLike VariableName)
 genSetPattern = asTermLike <$> genSetConcreteIntegerPattern
 
-intSetToSetPattern :: Set Integer -> TermLike Variable
+intSetToSetPattern :: Set Integer -> TermLike VariableName
 intSetToSetPattern intSet =
     asTermLike (Set.map Test.Int.asInternal intSet)
 
@@ -198,11 +195,11 @@ test_unit =
         $ "concat(x:Set, unit()) === x:Set"
     ]
   where
-    xSet = elemVarS "xSet" setSort
+    xSet = mkElementVariable "xSet" setSort
     becomes
         :: HasCallStack
-        => TermLike Variable
-        -> TermLike Variable
+        => TermLike VariableName
+        -> TermLike VariableName
         -> TestName
         -> TestTree
     becomes original expect name =
@@ -243,6 +240,24 @@ test_inElement =
                 predicate = mkEquals_ patIn patTrue
             (===) (Test.Bool.asPattern True) =<< evaluateT patIn
             (===) Pattern.top                =<< evaluateT predicate
+        )
+
+test_inUnitSymbolic :: TestTree
+test_inUnitSymbolic =
+    testPropertyWithSolver
+        "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
+        (do
+            patKey <- forAll genFunctionalKey
+            let patIn =
+                    mkApplySymbol
+                        inSetSymbolTestSort
+                        [ patKey
+                        , mkApplySymbol unitSetSymbol []
+                        ]
+                patFalse = Test.Bool.asInternal False
+                predicate = mkEquals_ patFalse patIn
+            (===) (Test.Bool.asPattern False) =<< evaluateT patIn
+            (===) Pattern.top                 =<< evaluateT predicate
         )
 
 test_inElementSymbolic :: TestTree
@@ -488,7 +503,7 @@ test_list2set =
         (===) expect      =<< evaluateT original
         (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
 
-setVariableGen :: Sort -> Gen (Set (ElementVariable Variable))
+setVariableGen :: Sort -> Gen (Set (ElementVariable VariableName))
 setVariableGen sort =
     Gen.set (Range.linear 0 32) (standaloneGen $ elementVariableGen sort)
 
@@ -513,8 +528,8 @@ test_symbolic =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Set (TermLike Variable)
-    -> TermLike Variable
+    :: Set (TermLike VariableName)
+    -> TermLike VariableName
 asSymbolicPattern result
     | Set.null result =
         applyUnit
@@ -582,7 +597,7 @@ test_unifyFramingVariable =
                     , predicate = makeTruePredicate setSort
                     , substitution =
                         Substitution.unsafeWrap
-                            [(ElemVar frameVar, asInternal remainder)]
+                            [(inject frameVar, asInternal remainder)]
                     }
             actual <- lift $
                 evaluateToList (mkAnd patConcreteSet patFramedSet)
@@ -595,17 +610,17 @@ test_unifyFramingVariable =
 -- `SetItem(absInt(X:Int)) Rest:Set`, or
 -- `Rest:Set SetItem(absInt(X:Int))`, respectively.
 selectFunctionPattern
-    :: ElementVariable Variable         -- ^element variable
-    -> ElementVariable Variable         -- ^set variable
+    :: ElementVariable VariableName         -- ^element variable
+    -> ElementVariable VariableName         -- ^set variable
     -> (forall a . [a] -> [a])          -- ^scrambling function
-    -> TermLike Variable
+    -> TermLike VariableName
 selectFunctionPattern elementVar setVar permutation  =
     mkApplySymbol concatSetSymbol $ permutation [singleton, mkElemVar setVar]
   where
     element = mkApplySymbol absIntSymbol  [mkElemVar elementVar]
     singleton = mkApplySymbol elementSetSymbol [ element ]
 
-makeElementVariable :: ElementVariable Variable -> TermLike Variable
+makeElementVariable :: ElementVariable VariableName -> TermLike VariableName
 makeElementVariable var =
     mkApplySymbol elementSetSymbol [mkElemVar var]
 
@@ -613,24 +628,24 @@ makeElementVariable var =
 -- @id@ or @reverse@, produces a pattern of the form
 -- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
 selectPattern
-    :: ElementVariable Variable           -- ^element variable
-    -> ElementVariable Variable           -- ^set variable
+    :: ElementVariable VariableName           -- ^element variable
+    -> ElementVariable VariableName           -- ^set variable
     -> (forall a . [a] -> [a])            -- ^scrambling function
-    -> TermLike Variable
+    -> TermLike VariableName
 selectPattern elementVar setVar permutation  =
     mkApplySymbol concatSetSymbol
     $ permutation [makeElementVariable elementVar, mkElemVar setVar]
 
 addSelectElement
-    :: ElementVariable Variable   -- ^element variable
-    -> TermLike Variable          -- ^existingPattern
-    -> TermLike Variable
+    :: ElementVariable VariableName   -- ^element variable
+    -> TermLike VariableName          -- ^existingPattern
+    -> TermLike VariableName
 addSelectElement elementVar setPattern  =
     mkApplySymbol concatSetSymbol [makeElementVariable elementVar, setPattern]
 
-distinctVars :: [ElementVariable Variable] -> Bool
+distinctVars :: [ElementVariable VariableName] -> Bool
 distinctVars vars = varNames == List.nub varNames
-  where varNames = map (variableName . getElementVariable) vars
+  where varNames = map variableName vars
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
@@ -638,9 +653,7 @@ test_unifySelectFromEmpty =
         elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
         setVar <- forAll (standaloneGen $ elementVariableGen setSort)
         when
-            ( variableName (getElementVariable elementVar)
-            == variableName (getElementVariable setVar)
-            )
+            (variableName elementVar == variableName setVar)
             discard
         let selectPat       = selectPattern elementVar setVar id
             selectPatRev    = selectPattern elementVar setVar reverse
@@ -674,8 +687,8 @@ test_unifySelectFromSingleton =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             when
-                ( variableName (getElementVariable elementVar)
-                == variableName (getElementVariable setVar)
+                ( unElementVariableName (variableName elementVar)
+                == unElementVariableName (variableName setVar)
                 )
                 discard
             let selectPat       = selectPattern elementVar setVar id
@@ -688,8 +701,8 @@ test_unifySelectFromSingleton =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar setVar, asInternal Set.empty)
-                                , (ElemVar elementVar, elemStepPattern)
+                                [ (inject setVar, asInternal Set.empty)
+                                , (inject elementVar, elemStepPattern)
                                 ]
                         }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
@@ -716,7 +729,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar, elemStepPattern) ]
+                                [ (inject elementVar, elemStepPattern) ]
                         }
             -- { 5 } /\ SetItem(X:Int)
             (singleton `unifiesWith` selectPat) expect
@@ -735,8 +748,8 @@ test_unifySelectFromTwoElementSet =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             when
-                ( variableName (getElementVariable elementVar)
-                == variableName (getElementVariable setVar)
+                ( unElementVariableName (variableName elementVar)
+                == unElementVariableName (variableName setVar)
                 )
                 discard
 
@@ -751,10 +764,10 @@ test_unifySelectFromTwoElementSet =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( ElemVar setVar
+                                [   ( inject setVar
                                     , asInternal (Set.fromList [concreteElem2])
                                     )
-                                , (ElemVar elementVar, elemStepPattern1)
+                                , (inject elementVar, elemStepPattern1)
                                 ]
                         }
                 expect2 =
@@ -763,10 +776,10 @@ test_unifySelectFromTwoElementSet =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( ElemVar setVar
+                                [   ( inject setVar
                                     , asInternal (Set.fromList [concreteElem1])
                                     )
-                                , (ElemVar elementVar, elemStepPattern2)
+                                , (inject elementVar, elemStepPattern2)
                                 ]
                         }
             -- { 5 } /\ SetItem(X:Int) Rest:Set
@@ -814,9 +827,9 @@ test_unifySelectTwoFromTwoElementSet =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar setVar, asInternal Set.empty)
-                                , (ElemVar elementVar1, elementUnifier1)
-                                , (ElemVar elementVar2, elementUnifier2)
+                                [ (inject setVar, asInternal Set.empty)
+                                , (inject elementVar1, elementUnifier1)
+                                , (inject elementVar2, elementUnifier2)
                                 ]
                         }
             -- { 5, 6 } /\ SetItem(X:Int) SetItem(Y:Int) Rest:Set
@@ -861,8 +874,8 @@ test_unifyConcatElemVarVsElemSet =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar setVar, setUnifier)
-                                , (ElemVar elementVar1, elemUnifier)
+                                [ (inject setVar, setUnifier)
+                                , (inject elementVar1, elemUnifier)
                                 ]
                         }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
@@ -908,8 +921,8 @@ test_unifyConcatElemVarVsElemElem =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar setVar, setUnifier)
-                                , (ElemVar elementVar1, elemUnifier)
+                                [ (inject setVar, setUnifier)
+                                , (inject elementVar1, elemUnifier)
                                 ]
                         }
             -- { Y:Int, 6 } /\ SetItem(X:Int) Rest:Set
@@ -951,8 +964,8 @@ test_unifyConcatElemElemVsElemConcrete =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, elemUnifier1)
-                                , (ElemVar elementVar2, elemUnifier2)
+                                [ (inject elementVar1, elemUnifier1)
+                                , (inject elementVar2, elemUnifier2)
                                 ]
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, 6 }
@@ -993,8 +1006,8 @@ test_unifyConcatElemElemVsElemElem =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, elemUnifier1)
-                                , (ElemVar elementVar2, elemUnifier2)
+                                [ (inject elementVar1, elemUnifier1)
+                                , (inject elementVar2, elemUnifier2)
                                 ]
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int }
@@ -1048,9 +1061,9 @@ test_unifyConcatElemConcatVsElemConcrete =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, elemUnifier1)
-                                , (ElemVar elementVar2, elemUnifier2)
-                                , (ElemVar elementVar3, elemStepPattern1)
+                                [ (inject elementVar1, elemUnifier1)
+                                , (inject elementVar2, elemUnifier2)
+                                , (inject elementVar3, elemStepPattern1)
                                 ]
                         }
             -- SetItem(X:Int) SetItem(Y:Int) {5} /\ { Z:Int, 6, 7 }
@@ -1085,7 +1098,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, mkElemVar elementVar2) ]
+                                [ (inject elementVar1, mkElemVar elementVar2) ]
                         }
                     ]
             -- { X:Int, 6 } /\ { Y:Int, 6 }
@@ -1123,8 +1136,8 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, elemStepPattern2)
-                                , (ElemVar elementVar2, elemStepPattern1)
+                                [ (inject elementVar1, elemStepPattern2)
+                                , (inject elementVar2, elemStepPattern1)
                                 ]
                         }
                     ]
@@ -1169,8 +1182,8 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, elemStepPattern3)
-                                , (ElemVar elementVar2, elemStepPattern2)
+                                [ (inject elementVar1, elemStepPattern3)
+                                , (inject elementVar2, elemStepPattern2)
                                 ]
                         }
                     ]
@@ -1244,7 +1257,7 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, mkElemVar elementVar2) ]
+                                [ (inject elementVar1, mkElemVar elementVar2) ]
                         }
                     ]
             -- { X:Int, 5, 6 } /\ { Y:Int, 5, 6 }
@@ -1274,7 +1287,7 @@ test_unifyConcatElemVsElem =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, mkElemVar elementVar2) ]
+                                [ (inject elementVar1, mkElemVar elementVar2) ]
                         }
                     ]
             -- { X:Int } /\ { Y:Int }
@@ -1305,7 +1318,7 @@ test_unifyConcatElemVsElemConcrete1 =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, mkElemVar elementVar2) ]
+                                [ (inject elementVar1, mkElemVar elementVar2) ]
                         }
                     ]
             -- { X:Int } /\ { Y:Int, {} }
@@ -1412,8 +1425,8 @@ test_unifyConcatElemVsElemVar =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar setVar, asInternal Set.empty)
-                                , (ElemVar elementVar1, mkElemVar elementVar2)
+                                [ (inject setVar, asInternal Set.empty)
+                                , (inject elementVar1, mkElemVar elementVar2)
                                 ]
                         }
                     ]
@@ -1492,9 +1505,9 @@ test_unifyConcatElemElemVsElemConcatSet =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, firstUnifier)
-                                , (ElemVar elementVar2, secondUnifier)
-                                , (ElemVar setVar, asInternal Set.empty)
+                                [ (inject elementVar1, firstUnifier)
+                                , (inject elementVar2, secondUnifier)
+                                , (inject setVar, asInternal Set.empty)
                                 ]
                         }
             -- { X:Int, Y:Int } /\ { Z:Int, T:Int, U:Set }
@@ -1511,9 +1524,7 @@ test_unifyFnSelectFromSingleton =
             elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
             when
-                ( variableName (getElementVariable elementVar)
-                == variableName (getElementVariable setVar)
-                )
+                (variableName elementVar == variableName setVar)
                 discard
             let fnSelectPat    = selectFunctionPattern elementVar setVar id
                 fnSelectPatRev = selectFunctionPattern elementVar setVar reverse
@@ -1529,10 +1540,7 @@ test_unifyFnSelectFromSingleton =
                                 elementVarPatt
                         , substitution =
                             Substitution.unsafeWrap
-                                [   ( ElemVar setVar
-                                    , asInternal Set.empty
-                                    )
-                                ]
+                                [(inject setVar, asInternal Set.empty)]
                         }
                     ]
             -- { 5 } /\ SetItem(absInt(X:Int)) Rest:Set
@@ -1547,11 +1555,11 @@ test_unify_concat_xSet_unit_unit_vs_unit :: [TestTree]
 test_unify_concat_xSet_unit_unit_vs_unit =
     [ (concatSet (mkElemVar xSet) unitSet, internalUnit)
         `unifiedBy`
-        [(ElemVar xSet, internalUnit)]
+        [(inject xSet, internalUnit)]
         $ "concat(xSet:Set, unit()) ~ unit()"
     ]
   where
-    xSet = elemVarS "xSet" setSort
+    xSet = mkElementVariable "xSet" setSort
     internalUnit = asInternal Set.empty
 
 
@@ -1612,8 +1620,8 @@ test_unifyMultipleIdenticalOpaqueSets =
                         , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
-                                [ (ElemVar elementVar1, mkElemVar elementVar2)
-                                , (ElemVar setVar3, asInternal Set.empty)
+                                [ (inject elementVar1, mkElemVar elementVar2)
+                                , (inject setVar3, asInternal Set.empty)
                                 ]
                         }
                     ]
@@ -1640,12 +1648,7 @@ test_concretizeKeys =
         actual <- evaluate original
         assertEqual "" expected actual
   where
-    x =
-        ElementVariable Variable
-            { variableName = testId "x"
-            , variableCounter = mempty
-            , variableSort = intSort
-            }
+    x = mkElementVariable (testId "x") intSort
     key = 1
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
@@ -1663,7 +1666,7 @@ test_concretizeKeys =
                     (asInternal $ Set.fromList [concreteKey])
             , predicate = Predicate.makeTruePredicate (termLikeSort original)
             , substitution = Substitution.unsafeWrap
-                [ (ElemVar x, symbolicKey) ]
+                [ (inject x, symbolicKey) ]
             }
 
 {- | Unify a concrete Set with symbolic-keyed Set in an axiom
@@ -1734,9 +1737,9 @@ hprop_unparse = hpropUnparse (asInternal <$> genConcreteSet)
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
-    => TermLike Variable
-    -> TermLike Variable
-    -> Pattern Variable
+    => TermLike VariableName
+    -> TermLike VariableName
+    -> Pattern VariableName
     -> PropertyT SMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
@@ -1744,9 +1747,9 @@ unifiesWith pat1 pat2 expected =
 -- use as (pat1 `unifiesWithMulti` pat2) expect
 unifiesWithMulti
     :: HasCallStack
-    => TermLike Variable
-    -> TermLike Variable
-    -> [Pattern Variable]
+    => TermLike VariableName
+    -> TermLike VariableName
+    -> [Pattern VariableName]
     -> PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
@@ -1776,8 +1779,8 @@ unifiesWithMulti pat1 pat2 expectedResults = do
 
 unifiedBy
     :: HasCallStack
-    => (TermLike Variable, TermLike Variable)
-    -> [(UnifiedVariable Variable, TermLike Variable)]
+    => (TermLike VariableName, TermLike VariableName)
+    -> [(SomeVariable VariableName, TermLike VariableName)]
     -> TestName
     -> TestTree
 unifiedBy (termLike1, termLike2) substitution testName =
@@ -1794,7 +1797,7 @@ unifiedBy (termLike1, termLike2) substitution testName =
 asTermLike
     :: Foldable f
     => f (TermLike Concrete)
-    -> TermLike Variable
+    -> TermLike VariableName
 asTermLike =
     Reflection.give testMetadataTools Set.asTermLike
     . builtinSet
@@ -1802,23 +1805,23 @@ asTermLike =
 
 asSymbolicTermLike
     :: Foldable f
-    => f (TermLike Variable)
-    -> TermLike Variable
+    => f (TermLike VariableName)
+    -> TermLike VariableName
 asSymbolicTermLike =
     Reflection.give testMetadataTools Set.asTermLike
     . builtinSymbolicSet
     . Foldable.toList
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set (TermLike Concrete) -> TermLike Variable
+asInternal :: Set (TermLike Concrete) -> TermLike VariableName
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
     . Map.fromSet (const Domain.SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
-    :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike Variable)
-    -> TermLike Variable
+    :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike VariableName)
+    -> TermLike VariableName
 asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
 
 {- | Construct a 'NormalizedSet' from a list of elements and opaque terms.
@@ -1827,11 +1830,11 @@ It is an error if the collection cannot be normalized.
 
  -}
 normalizedSet
-    :: [TermLike Variable]
+    :: [TermLike VariableName]
     -- ^ (abstract or concrete) elements
-    -> [TermLike Variable]
+    -> [TermLike VariableName]
     -- ^ opaque terms
-    -> NormalizedSet (TermLike Concrete) (TermLike Variable)
+    -> NormalizedSet (TermLike Concrete) (TermLike VariableName)
 normalizedSet elements opaque =
     Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
         { elementsWithVariables = Domain.SetElement <$> elements
@@ -1841,11 +1844,8 @@ normalizedSet elements opaque =
 
 -- * Constructors
 
-mkIntVar :: Id -> TermLike Variable
-mkIntVar variableName =
-    mkElemVar $ ElementVariable
-        Variable
-            { variableName, variableCounter = mempty, variableSort = intSort }
+mkIntVar :: Id -> TermLike VariableName
+mkIntVar variableName = mkElemVar $ mkElementVariable variableName intSort
 
 setIntersectionsAreEmpty :: Ord a => [Set a] -> Bool
 setIntersectionsAreEmpty [] = True

@@ -97,7 +97,6 @@ import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 import qualified Pretty
 
 import Test.Kore
@@ -381,10 +380,10 @@ test_functionIntegration =
                     { term = Mock.f Mock.e
                     , predicate = makeTruePredicate Mock.testSort
                     , substitution = Substitution.unsafeWrap
-                        [   ( ElemVar Mock.var_x_1
+                        [   ( inject Mock.var_x_1
                             , Mock.a
                             )
-                        ,   ( ElemVar Mock.var_z_1
+                        ,   ( inject Mock.var_z_1
                             , Mock.a
                             )
                         ]
@@ -397,7 +396,7 @@ test_functionIntegration =
                             { term = Mock.cg
                             , predicate = makeTruePredicate_
                             , substitution = Substitution.unsafeWrap
-                                [   ( ElemVar Mock.x
+                                [   ( inject Mock.x
                                     , mkElemVar Mock.z
                                     )
                                 ]
@@ -408,7 +407,7 @@ test_functionIntegration =
                             { term = Mock.e
                             , predicate = makeTruePredicate_
                             , substitution = Substitution.unsafeWrap
-                                [   ( ElemVar Mock.x
+                                [   ( inject Mock.x
                                     , Mock.a
                                     )
                                 ]
@@ -433,8 +432,8 @@ test_functionIntegration =
                             (Mock.plain10 Mock.cf)
                         )
                     , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.var_x_1, Mock.cf)
-                        , (ElemVar Mock.var_y_1, Mock.b)
+                        [ (inject Mock.var_x_1, Mock.cf)
+                        , (inject Mock.var_y_1, Mock.b)
                         ]
                     }
         actual <-
@@ -458,7 +457,7 @@ test_functionIntegration =
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
-                                [(ElemVar Mock.x, Mock.cf)]
+                                [(inject Mock.x, Mock.cf)]
                             }
                         )
                     ]
@@ -599,8 +598,8 @@ test_functionIntegration =
   where
     evaluate
         :: BuiltinAndAxiomSimplifierMap
-        -> TermLike Variable
-        -> IO (Pattern Variable)
+        -> TermLike VariableName
+        -> IO (Pattern VariableName)
     evaluate functionIdToEvaluator patt =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
         $ TermLike.simplify patt SideCondition.top
@@ -939,8 +938,8 @@ test_functionIntegrationNEW =
   where
     evaluate
         :: BuiltinAndAxiomSimplifierMap
-        -> TermLike Variable
-        -> IO (Pattern Variable)
+        -> TermLike VariableName
+        -> IO (Pattern VariableName)
     evaluate functionIdToEvaluator patt =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
         $ TermLike.simplify patt SideCondition.top
@@ -950,14 +949,14 @@ test_Nat =
     [ matches "plus(0, N) matches plus(0, 1)"
         (plus zero varN)
         (plus zero one)
-        [(ElemVar natN, one)]
+        [(inject natN, one)]
     , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
         (plus (succ varM) varN)
         (plus zero one)
     , matches "plus(succ(M), N) matches plus(1, 1)"
         (plus (succ varM) varN)
         (plus one one)
-        [(ElemVar natM, zero), (ElemVar natN, one)]
+        [(inject natM, zero), (inject natN, one)]
     , applies            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
         (plus zero one)
@@ -995,14 +994,14 @@ test_NatNEW =
     [ matches "plus(0, N) matches plus(0, 1)"
         (plus zero varN)
         (plus zero one)
-        [(ElemVar natN, one)]
+        [(inject natN, one)]
     , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
         (plus (succ varM) varN)
         (plus zero one)
     , matches "plus(succ(M), N) matches plus(1, 1)"
         (plus (succ varM) varN)
         (plus one one)
-        [(ElemVar natM, zero), (ElemVar natN, one)]
+        [(inject natM, zero), (inject natN, one)]
     , appliesNEW            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
         (plus zero one)
@@ -1039,8 +1038,8 @@ test_NatNEW =
 equals
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> [TermLike Variable]
+    -> TermLike VariableName
+    -> [TermLike VariableName]
     -> TestTree
 equals comment term results =
     testCase comment $ do
@@ -1051,8 +1050,8 @@ equals comment term results =
 equalsNEW
     :: HasCallStack
     => TestName
-    -> TermLike Variable
-    -> [TermLike Variable]
+    -> TermLike VariableName
+    -> [TermLike VariableName]
     -> TestTree
 equalsNEW comment term results =
     testCase comment $ do
@@ -1060,15 +1059,15 @@ equalsNEW comment term results =
         let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
         assertEqual "" expect actual
 
-simplify :: TermLike Variable -> IO (OrPattern Variable)
+simplify :: TermLike VariableName -> IO (OrPattern VariableName)
 simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
 
-simplifyNEW :: TermLike Variable -> IO (OrPattern Variable)
+simplifyNEW :: TermLike VariableName -> IO (OrPattern VariableName)
 simplifyNEW = runSimplifier testEnvNEW . TermLike.simplifyToOr SideCondition.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
-    -> TermLike Variable
+    -> TermLike VariableName
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
@@ -1076,7 +1075,7 @@ evaluateWith simplifier patt =
 
 evaluateWithNEW
     :: BuiltinAndAxiomSimplifier
-    -> TermLike Variable
+    -> TermLike VariableName
     -> IO CommonAttemptedAxiom
 evaluateWithNEW simplifier patt =
     runSimplifier testEnvNEW
@@ -1086,8 +1085,8 @@ evaluateWithNEW simplifier patt =
 withApplied
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> [Equation Variable]
-    -> TermLike Variable
+    -> [Equation VariableName]
+    -> TermLike VariableName
     -> TestTree
 withApplied check comment rules term =
     testCase comment $ do
@@ -1097,8 +1096,8 @@ withApplied check comment rules term =
 withAppliedNEW
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> [Equation Variable]
-    -> TermLike Variable
+    -> [Equation VariableName]
+    -> TermLike VariableName
     -> TestTree
 withAppliedNEW check comment rules term =
     testCase comment $ do
@@ -1107,8 +1106,8 @@ withAppliedNEW check comment rules term =
 
 applies, notApplies, appliesNEW, notAppliesNEW
     :: TestName
-    -> [Equation Variable]
-    -> TermLike Variable
+    -> [Equation VariableName]
+    -> TermLike VariableName
     -> TestTree
 applies =
     withApplied $ \attempted -> do
@@ -1152,11 +1151,11 @@ natSort =
         , sortActualSorts = []
         }
 
-natM, natN :: ElementVariable Variable
-natM = elemVarS "M" natSort
-natN = elemVarS "N" natSort
+natM, natN :: ElementVariable VariableName
+natM = mkElementVariable "M" natSort
+natN = mkElementVariable "N" natSort
 
-varM, varN :: TermLike Variable
+varM, varN :: TermLike VariableName
 varM = mkElemVar natM
 varN = mkElemVar natN
 
@@ -1172,28 +1171,28 @@ fibonacciSymbol, factorialSymbol :: Symbol
 fibonacciSymbol = Mock.symbol "fibonacci" [natSort] natSort & function
 factorialSymbol = Mock.symbol "factorial" [natSort] natSort & function
 
-zero :: TermLike Variable
+zero :: TermLike VariableName
 zero = mkApplySymbol zeroSymbol []
 
-one, two :: TermLike Variable
+one, two :: TermLike VariableName
 one = succ zero
 two = succ one
 
-succ, fibonacci, factorial :: TermLike Variable -> TermLike Variable
+succ, fibonacci, factorial :: TermLike VariableName -> TermLike VariableName
 succ n = mkApplySymbol succSymbol [n]
 fibonacci n = mkApplySymbol fibonacciSymbol [n]
 factorial n = mkApplySymbol factorialSymbol [n]
 
 plus, times
-    :: TermLike Variable
-    -> TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
 plus n1 n2 = mkApplySymbol plusSymbol [n1, n2]
 times n1 n2 = mkApplySymbol timesSymbol [n1, n2]
 
 functionEvaluator
     :: Symbol
-    -> [Equation Variable]  -- ^ Function definition rules
+    -> [Equation VariableName]  -- ^ Function definition rules
     -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 functionEvaluator symb rules =
     (AxiomIdentifier.Application ident, definitionEvaluation rules)
@@ -1202,7 +1201,7 @@ functionEvaluator symb rules =
 
 functionSimplifier
     :: Symbol
-    -> [Equation Variable]  -- ^ Function simplification rule
+    -> [Equation VariableName]  -- ^ Function simplification rule
     -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 functionSimplifier symb rules =
     ( AxiomIdentifier.Application ident
@@ -1211,12 +1210,12 @@ functionSimplifier symb rules =
   where
     ident = symbolConstructor symb
 
-plusZeroRule, plusSuccRule :: Equation Variable
+plusZeroRule, plusSuccRule :: Equation VariableName
 plusZeroRule = axiom_ (plus zero varN) varN
 plusSuccRule = axiom_ (plus (succ varM) varN) (succ (plus varM varN))
 
 
-plusRules :: [Equation Variable]
+plusRules :: [Equation VariableName]
 plusRules = [plusZeroRule, plusSuccRule]
 
 plusEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1255,7 +1254,7 @@ natSimplifiers =
         , factorialEvaluator
         ]
 
-plusZeroRuleNEW, plusSuccRuleNEW :: Equation Variable
+plusZeroRuleNEW, plusSuccRuleNEW :: Equation VariableName
 plusZeroRuleNEW =
     functionAxiom_NEW plusSymbol [zero, varN] varN
 plusSuccRuleNEW =
@@ -1265,7 +1264,7 @@ plusSuccRuleNEW =
         (succ (plus varM varN))
 
 
-plusRulesNEW :: [Equation Variable]
+plusRulesNEW :: [Equation VariableName]
 plusRulesNEW = [plusZeroRuleNEW, plusSuccRuleNEW]
 
 plusEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1314,7 +1313,7 @@ natSimplifiersNEW =
         ]
 
 -- | Add an unsatisfiable requirement to the 'Equation'.
-requiresBottom :: Equation Variable -> Equation Variable
+requiresBottom :: Equation VariableName -> Equation VariableName
 requiresBottom equation = equation { requires = makeEqualsPredicate_ zero one }
 
 {- | Add an unsatisfiable @\\equals@ requirement to the 'Equation'.
@@ -1323,7 +1322,7 @@ In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
 requirement which results in a fatal error when evaluated.
 
  -}
-requiresFatalEquals :: Equation Variable -> Equation Variable
+requiresFatalEquals :: Equation VariableName -> Equation VariableName
 requiresFatalEquals equation =
     equation
         { requires =
@@ -1338,7 +1337,7 @@ In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
 requirement which results in a fatal error when evaluated.
 
  -}
-requiresFatalIn :: Equation Variable -> Equation Variable
+requiresFatalIn :: Equation VariableName -> Equation VariableName
 requiresFatalIn equation =
     equation
         { requires =
@@ -1379,7 +1378,7 @@ evaluated.
 fatalSymbol :: Symbol
 fatalSymbol = Mock.symbol "fatal" [natSort] natSort & function
 
-fatal :: TermLike Variable -> TermLike Variable
+fatal :: TermLike VariableName -> TermLike VariableName
 fatal x = mkApplySymbol fatalSymbol [x]
 
 fatalEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1451,58 +1450,58 @@ listSort = Builtin.listSort
 intSort = Builtin.intSort
 mapSort = Builtin.mapSort
 
-mkList :: [TermLike Variable] -> TermLike Variable
+mkList :: [TermLike VariableName] -> TermLike VariableName
 mkList = List.asInternal
 
-mkInt :: Integer -> TermLike Variable
+mkInt :: Integer -> TermLike VariableName
 mkInt = Int.asInternal
 
 mkMap
-    :: [(TermLike Variable, TermLike Variable)]
-    -> [TermLike Variable]
-    -> TermLike Variable
+    :: [(TermLike VariableName, TermLike VariableName)]
+    -> [TermLike VariableName]
+    -> TermLike VariableName
 mkMap elements opaques =
     Ac.asInternal Builtin.testMetadataTools Builtin.mapSort
     $ Map.normalizedMap elements opaques
 
-removeMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
+removeMap :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 removeMap = Builtin.removeMap
 
-addInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
+addInt :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 addInt = Builtin.addInt
 
-unitList :: TermLike Variable
+unitList :: TermLike VariableName
 unitList = mkList []
 
-varX, varY, varL, mMapTerm :: TermLike Variable
+varX, varY, varL, mMapTerm :: TermLike VariableName
 varX = mkElemVar xInt
 varY = mkElemVar yInt
-varL = mkElemVar (elemVarS (testId "lList") listSort)
+varL = mkElemVar (mkElementVariable (testId "lList") listSort)
 mMapTerm = mkElemVar mMap
 
-mMap :: ElementVariable Variable
-mMap = elemVarS (testId "mMap") mapSort
+mMap :: ElementVariable VariableName
+mMap = mkElementVariable (testId "mMap") mapSort
 
 lengthListSymbol :: Symbol
 lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function
 
-lengthList :: TermLike Variable -> TermLike Variable
+lengthList :: TermLike VariableName -> TermLike VariableName
 lengthList l = mkApplySymbol lengthListSymbol [l]
 
-concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+concatList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 concatList = Builtin.concatList
 
-consList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+consList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 consList x xs = concatList (mkList [x]) xs
 
-lengthListUnitRule, lengthListConsRule :: Equation Variable
+lengthListUnitRule, lengthListConsRule :: Equation VariableName
 lengthListUnitRule = axiom_ (lengthList unitList) (mkInt 0)
 lengthListConsRule =
     axiom_
         (lengthList (consList varX varL))
         (addInt (mkInt 1) (lengthList varL))
 
-lengthListRules :: [Equation Variable]
+lengthListRules :: [Equation VariableName]
 lengthListRules = [ lengthListUnitRule , lengthListConsRule ]
 
 lengthListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1512,17 +1511,17 @@ removeListSymbol :: Symbol
 removeListSymbol =
     Mock.symbol "removeList" [listSort, mapSort] mapSort & function
 
-removeList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+removeList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 removeList l m = mkApplySymbol removeListSymbol [l, m]
 
-removeListUnitRule, removeListConsRule :: Equation Variable
+removeListUnitRule, removeListConsRule :: Equation VariableName
 removeListUnitRule = axiom_ (removeList unitList mMapTerm) mMapTerm
 removeListConsRule =
     axiom_
         (removeList (consList varX varL) mMapTerm)
         (removeMap mMapTerm varX)
 
-removeListRules :: [Equation Variable]
+removeListRules :: [Equation VariableName]
 removeListRules = [removeListUnitRule, removeListConsRule]
 
 removeListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1606,20 +1605,20 @@ test_updateList =
         )
     ]
 
-singletonList :: TermLike Variable
+singletonList :: TermLike VariableName
 singletonList = Builtin.elementList (mkInt 0)
 
-twoElementList :: TermLike Variable
+twoElementList :: TermLike VariableName
 twoElementList = Builtin.concatList singletonList singletonList
 
 updateList
-    :: TermLike Variable -- ^ List
-    -> TermLike Variable -- ^ Index
-    -> TermLike Variable -- ^ Value
-    -> TermLike Variable
+    :: TermLike VariableName -- ^ List
+    -> TermLike VariableName -- ^ Index
+    -> TermLike VariableName -- ^ Value
+    -> TermLike VariableName
 updateList = Builtin.updateList
 
-updateListSimplifier :: Equation Variable
+updateListSimplifier :: Equation VariableName
 updateListSimplifier =
     axiom
         (updateList (updateList varL u v) x y)
@@ -1645,13 +1644,13 @@ test_lookupMap =
 lookupMapSymbol :: Symbol
 lookupMapSymbol = Builtin.lookupMapSymbol
 
-lookupMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
+lookupMap :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 lookupMap = Builtin.lookupMap
 
-lookupMapRule :: Equation Variable
+lookupMapRule :: Equation VariableName
 lookupMapRule = axiom_ (lookupMap (mkMap [(varX, varY)] [mMapTerm]) varX) varY
 
-lookupMapRules :: [Equation Variable]
+lookupMapRules :: [Equation VariableName]
 lookupMapRules = [lookupMapRule]
 
 lookupMapEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1704,13 +1703,13 @@ test_updateMap =
     ]
 
 updateMap
-    :: TermLike Variable  -- ^ Map
-    -> TermLike Variable  -- ^ Key
-    -> TermLike Variable  -- ^ Value
-    -> TermLike Variable
+    :: TermLike VariableName  -- ^ Map
+    -> TermLike VariableName  -- ^ Key
+    -> TermLike VariableName  -- ^ Value
+    -> TermLike VariableName
 updateMap = Builtin.updateMap
 
-updateMapSimplifier :: Equation Variable
+updateMapSimplifier :: Equation VariableName
 updateMapSimplifier =
     axiom
         (updateMap (updateMap mMapTerm u v) x y)
@@ -1720,11 +1719,11 @@ updateMapSimplifier =
     [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
     injK = Builtin.inj Builtin.kSort
 
-dummyIntSimplifier :: Equation Variable
+dummyIntSimplifier :: Equation VariableName
 dummyIntSimplifier =
     axiom_ (Builtin.dummyInt (mkElemVar xInt)) (mkElemVar xInt)
 
-mkBool :: Bool -> TermLike Variable
+mkBool :: Bool -> TermLike VariableName
 mkBool = Bool.asInternal
 
 mapSimplifiers :: BuiltinAndAxiomSimplifierMap
@@ -1735,14 +1734,14 @@ mapSimplifiers =
         , functionEvaluator Builtin.dummyIntSymbol [dummyIntSimplifier]
         ]
 
-uInt, vInt, xInt, yInt :: ElementVariable Variable
-uInt = elemVarS (testId "uInt") intSort
-vInt = elemVarS (testId "vInt") intSort
-xInt = elemVarS (testId "xInt") intSort
-yInt = elemVarS (testId "yInt") intSort
+uInt, vInt, xInt, yInt :: ElementVariable VariableName
+uInt = mkElementVariable (testId "uInt") intSort
+vInt = mkElementVariable (testId "vInt") intSort
+xInt = mkElementVariable (testId "xInt") intSort
+yInt = mkElementVariable (testId "yInt") intSort
 
-xsInt :: SetVariable Variable
-xsInt = setVarS (testId "xsInt") intSort
+xsInt :: SetVariable VariableName
+xsInt = mkSetVariable (testId "xsInt") intSort
 
 test_Ceil :: [TestTree]
 test_Ceil =
@@ -1757,13 +1756,13 @@ test_Ceil =
         (mkCeil_ $ Builtin.dummyInt $ mkElemVar yInt)
     ]
 
-ceilDummyRule :: Equation Variable
+ceilDummyRule :: Equation VariableName
 ceilDummyRule =
     axiom_
         (mkCeil_ $ Builtin.dummyInt $ mkElemVar xInt)
         (mkEquals_ (Builtin.eqInt (mkElemVar xInt) (mkInt 0)) (mkBool False))
 
-ceilDummySetRule :: Equation Variable
+ceilDummySetRule :: Equation VariableName
 ceilDummySetRule =
     axiom_
         (mkCeil_ $ Builtin.dummyInt $ mkSetVar xsInt)
@@ -1773,8 +1772,8 @@ ceilDummySetRule =
 withSimplified
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> Equation Variable
-    -> TermLike Variable
+    -> Equation VariableName
+    -> TermLike VariableName
     -> TestTree
 withSimplified check comment rule term =
     testCase comment $ do
@@ -1783,8 +1782,8 @@ withSimplified check comment rule term =
 
 simplifies, notSimplifies
     :: TestName
-    -> Equation Variable
-    -> TermLike Variable
+    -> Equation VariableName
+    -> TermLike VariableName
     -> TestTree
 simplifies =
     withSimplified $ \attempted -> do
@@ -1803,23 +1802,23 @@ notSimplifies =
     withSimplified (assertBool "Expected NotApplicable" . isNotApplicable)
 
 axiomEvaluator
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike VariableName
+    -> TermLike VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate_)
 
 axiomEvaluatorNEW
     :: Symbol
-    -> [TermLike Variable]
-    -> TermLike Variable
+    -> [TermLike VariableName]
+    -> TermLike VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluatorNEW symbol args right =
     simplificationEvaluation
         (functionAxiomNEW symbol args right makeTruePredicate_)
 
 appliedMockEvaluator
-    :: Pattern Variable -> BuiltinAndAxiomSimplifier
+    :: Pattern VariableName -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
     BuiltinAndAxiomSimplifier
     $ mockEvaluator
@@ -1832,12 +1831,12 @@ appliedMockEvaluator result =
 mapVariables
     :: forall variable
     .  InternalVariable variable
-    => Pattern Variable
+    => Pattern VariableName
     -> Pattern variable
 mapVariables =
     Pattern.mapVariables (pure worker)
   where
-    worker :: VariableName -> VariableNameOf variable
+    worker :: VariableName -> variable
     worker v = fromVariableName v { counter = Just (Element 1) }
 
 mockEvaluator

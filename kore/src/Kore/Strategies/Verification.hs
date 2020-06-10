@@ -83,17 +83,15 @@ import Kore.Strategies.ProofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
-    ( Variable
-    )
 import Kore.Unparser
 import ListT
     ( ListT (..)
     )
 
--- TODO (thomas.tuegel): (Pattern Variable) should be ReachabilityRule.
-type CommonProofState = ProofState.ProofState (Pattern Variable)
+-- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
+type CommonProofState = ProofState.ProofState (Pattern VariableName)
 
-commonProofStateTransformer :: ProofStateTransformer (Pattern Variable) (Pattern Variable)
+commonProofStateTransformer :: ProofStateTransformer (Pattern VariableName) (Pattern VariableName)
 commonProofStateTransformer =
     ProofStateTransformer
         { goalTransformer = id
@@ -106,10 +104,10 @@ commonProofStateTransformer =
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
 The action may throw an exception if the proof fails; the exception is a single
-@'Pattern' 'Variable'@, the first unprovable configuration.
+@'Pattern' 'VariableName'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (Pattern Variable) m
+type Verifier m = ExceptT (Pattern VariableName) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -122,7 +120,7 @@ If the verification succeeds, it returns ().
 -}
 data Stuck =
     Stuck
-    { stuckPattern :: !(Pattern Variable)
+    { stuckPattern :: !(Pattern VariableName)
     , provenClaims :: ![ReachabilityRule]
     }
     deriving (Eq, GHC.Generic, Show)
@@ -205,7 +203,7 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
             verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
-        wrapStuckPattern :: Pattern Variable -> Stuck
+        wrapStuckPattern :: Pattern VariableName -> Stuck
         wrapStuckPattern stuckPattern = Stuck { stuckPattern, provenClaims }
 
 verifyClaim
@@ -216,7 +214,7 @@ verifyClaim
     -> AllClaims ReachabilityRule
     -> Axioms ReachabilityRule
     -> (ReachabilityRule, Limit Natural)
-    -> ExceptT (Pattern Variable) simplifier ()
+    -> ExceptT (Pattern VariableName) simplifier ()
 verifyClaim
     breadthLimit
     searchOrder
@@ -259,7 +257,7 @@ verifyClaim
         done = return ()
 
     throwUnprovenOrElse
-        :: ProofState.ProofState (Pattern Variable)
+        :: ProofState.ProofState (Pattern VariableName)
         -> Verifier simplifier ()
         -> Verifier simplifier ()
     throwUnprovenOrElse proofState acts = do
@@ -324,7 +322,7 @@ transitionRule'
     :: forall simplifier
     .  (MonadCatch simplifier, MonadSimplify simplifier)
     => ReachabilityRule
-    -> RHS Variable
+    -> RHS VariableName
     -> Prim ReachabilityRule
     -> CommonProofState
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState

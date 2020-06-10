@@ -96,10 +96,8 @@ import Kore.Internal.TermLike
     ( pattern App_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
-    , Concrete
     , pattern ElemVar_
     , InternalVariable
-    , NamedVariable
     , TermLike
     , mkApplySymbol
     , mkBuiltin
@@ -111,12 +109,7 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Syntax.ElementVariable
-    ( ElementVariable (getElementVariable)
-    )
 import Kore.Syntax.Variable
-    ( sortedVariableSort
-    )
 import Kore.Unification.Unify
     ( MonadUnify
     )
@@ -159,7 +152,7 @@ class
     @
     -}
     toNormalized
-        :: NamedVariable variable
+        :: Ord variable
         => TermLike variable
         -> NormalizedOrBottom normalized variable
 
@@ -356,7 +349,7 @@ deriving instance
 {- | The semigroup defined by the `concat` operation.
 -}
 instance
-    (NamedVariable variable, TermWrapper normalized)
+    (Ord variable, TermWrapper normalized)
     => Semigroup (NormalizedOrBottom normalized variable)
   where
     Bottom <> _ = Bottom
@@ -366,7 +359,7 @@ instance
 
 concatNormalized
     :: forall normalized variable
-    .  (TermWrapper normalized, NamedVariable variable)
+    .  (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
@@ -407,7 +400,7 @@ internal representations themselves; this "flattening" step also recurses to
 
  -}
 renormalize
-    :: (TermWrapper normalized, NamedVariable variable)
+    :: (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 renormalize = normalizeAbstractElements >=> flattenOpaque
@@ -458,7 +451,7 @@ Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
-    :: (TermWrapper normalized, NamedVariable variable)
+    :: (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
@@ -479,7 +472,7 @@ normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
 -- remains abstract.
 extractConcreteElement
     ::  Domain.AcWrapper collection
-    =>  NamedVariable variable
+    =>  Ord variable
     =>  Domain.Element collection (TermLike variable)
     ->  Either
             (TermLike Concrete, Domain.Value collection (TermLike variable))
@@ -495,7 +488,7 @@ extractConcreteElement element =
 
  -}
 flattenOpaque
-    :: (TermWrapper normalized, NamedVariable variable)
+    :: (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 flattenOpaque (Domain.unwrapAc -> normalized) = do
@@ -510,7 +503,7 @@ flattenOpaque (Domain.unwrapAc -> normalized) = do
 {- | The monoid defined by the `concat` and `unit` operations.
 -}
 instance
-    (NamedVariable variable, TermWrapper normalized)
+    (Ord variable, TermWrapper normalized)
     => Monoid (NormalizedOrBottom normalized variable)
   where
     mempty = Normalized $ Domain.wrapAc Domain.emptyNormalizedAc
@@ -681,7 +674,7 @@ disjointMap input =
 
 splitVariableConcrete
     :: forall variable a
-    .  NamedVariable variable
+    .  Ord variable
     =>  [(TermLike variable, a)]
     -> ([(TermLike variable, a)], [(TermLike Concrete, a)])
 splitVariableConcrete terms =
@@ -1371,7 +1364,7 @@ unifyOpaqueVariable
                 then noCheckUnifyOpaqueChildren unifyChildren v1 secondTerm
                 else empty
   where
-    sort = sortedVariableSort (getElementVariable v1)
+    sort = variableSort v1
     pairs = map fromConcreteOrWithVariable concreteOrVariableTerms
 
 noCheckUnifyOpaqueChildren
@@ -1433,14 +1426,14 @@ unifyEqualsConcreteOrWithVariable
   = unifyEqualsPair unifier concrete1 withVariable2
 unifyEqualsConcreteOrWithVariable
     unifier
-    (WithVariablePat withVariable1)
+    (WithVariablePat withVariable)
     (ConcretePat concrete2)
-  = unifyEqualsPair unifier concrete2 withVariable1
+  = unifyEqualsPair unifier concrete2 withVariable
 unifyEqualsConcreteOrWithVariable
     unifier
-    (WithVariablePat withVariable1)
+    (WithVariablePat withVariable)
     (WithVariablePat withVariable2)
-  = unifyEqualsPair unifier withVariable1 withVariable2
+  = unifyEqualsPair unifier withVariable withVariable2
 
 unifyEqualsPair
     :: forall normalized unifier variable

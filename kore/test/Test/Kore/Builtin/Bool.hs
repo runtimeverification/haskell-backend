@@ -9,7 +9,9 @@ module Test.Kore.Builtin.Bool
     , test_not
     , test_implies
     , hprop_unparse
-    , test_termAndEquals
+    , test_unifyBoolValues
+    , test_unifyBoolAnd
+    , test_unifyBoolOr
     --
     , asPattern
     , asInternal
@@ -26,6 +28,7 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
+import Control.Monad.Trans.Maybe
 import qualified Data.Text as Text
 
 import qualified Kore.Builtin.Bool as Bool
@@ -33,13 +36,18 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
-    ( runSimplifier
+    ( SimplifierT
+    , runSimplifier
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.UnifierT
-    ( runUnifierT
+import Kore.Unification.Error
+    ( UnificationError
     )
-import Kore.Variables.UnifiedVariable
+import Kore.Unification.UnifierT
+    ( UnifierT
+    , runUnifierT
+    )
+import qualified SMT
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -78,11 +86,11 @@ test_implies = testBinary impliesBoolSymbol implies
     implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
-asInternal :: Bool -> TermLike Variable
+asInternal :: Bool -> TermLike VariableName
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> Pattern Variable
+asPattern :: Bool -> Pattern VariableName
 asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
@@ -121,8 +129,8 @@ testUnary symb impl =
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)
 
-test_termAndEquals :: [TestTree]
-test_termAndEquals =
+test_unifyBoolValues :: [TestTree]
+test_unifyBoolValues =
     [ testGroup "literals" $ do
         (term1, value1) <- literals
         (term2, value2) <- literals
@@ -130,7 +138,29 @@ test_termAndEquals =
               | value1 == value2 = [Just (Pattern.fromTermLike term1)]
               | otherwise        = []
         [test "" term1 term2 result]
-    ,
+    ]
+  where
+    literals = [(_True, True), (_False, False)]
+
+    test
+        :: HasCallStack
+        => TestName
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> [Maybe (Pattern VariableName)]
+        -> TestTree
+    test testName term1 term2 expected =
+        testCase testName $ do
+            actual <- unify term1 term2
+            assertEqual "" expected actual
+
+    unify term1 term2 =
+        run (Bool.unifyBoolValues term1 term2)
+        >>= expectRight
+
+test_unifyBoolAnd :: [TestTree]
+test_unifyBoolAnd =
+    [
         let term1 = _True
             term2 = andBool (mkVar x) (mkVar y)
             condition =
@@ -147,18 +177,12 @@ test_termAndEquals =
             test "BOOL.and - false" term1 term2 result
     ]
   where
-    _True  = asInternal True
-    _False = asInternal False
-    literals = [(_True, True), (_False, False)]
-    x = ElemVar (elemVarS "x" boolSort)
-    y = ElemVar (elemVarS "y" boolSort)
-
     test
         :: HasCallStack
         => TestName
-        -> TermLike Variable
-        -> TermLike Variable
-        -> [Maybe (Pattern Variable)]
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> [Maybe (Pattern VariableName)]
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
@@ -166,28 +190,77 @@ test_termAndEquals =
             assertEqual "" expected actual
 
     unify term1 term2 =
-        run (Bool.termAndEquals termSimplifier term1 term2)
+        run (Bool.unifyBoolAnd termSimplifier term1 term2)
         >>= expectRight
 
-    run =
-        runNoSMT
-        . runSimplifier testEnv
-        . runUnifierT Not.notSimplifier
-        . runMaybeT
+test_unifyBoolOr :: [TestTree]
+test_unifyBoolOr =
+    [   let term1 = _False
+            term2 = orBool (mkVar x) (mkVar y)
+            condition =
+                Condition.assign x _False
+                <> Condition.assign y _False
+            result = [Just (Pattern.withCondition _False condition)]
+        in
+            test "BOOL.or - false" term1 term2 result
+    ,
+        let term1 = _True
+            term2 = andBool (mkVar x) (mkVar y)
+            result = [Nothing]
+        in
+            test "BOOL.or - true" term1 term2 result
+    ]
+  where
+    test
+        :: HasCallStack
+        => TestName
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> [Maybe (Pattern VariableName)]
+        -> TestTree
+    test testName term1 term2 expected =
+        testCase testName $ do
+            actual <- unify term1 term2
+            assertEqual "" expected actual
 
-    expectRight (Right r) = return r
-    expectRight (Left  _) = assertFailure "Expected Right"
+    unify term1 term2 =
+        run (Bool.unifyBoolOr termSimplifier term1 term2)
+        >>= expectRight
 
-    termSimplifier = \term1 term2 ->
-        runMaybeT (worker term1 term2 <|> worker term2 term1)
-        >>= maybe (fallback term1 term2) return
-      where
-        worker term1 term2
-          | ElemVar_ var <- term1 =
-            Pattern.assign (ElemVar var) term2
-            & return
-          | otherwise = empty
-        fallback term1 term2 =
-            mkAnd term1 term2
-            & Pattern.fromTermLike
-            & return
+run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a
+    -> IO (Either UnificationError [Maybe a])
+run =
+    runNoSMT
+    . runSimplifier testEnv
+    . runUnifierT Not.notSimplifier
+    . runMaybeT
+
+expectRight :: Either a1 a2 -> IO a2
+expectRight (Right r) = return r
+expectRight (Left  _) = assertFailure "Expected Right"
+
+termSimplifier
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> UnifierT (SimplifierT SMT.NoSMT) (Pattern VariableName)
+termSimplifier = \term1 term2 ->
+    runMaybeT (worker term1 term2 <|> worker term2 term1)
+    >>= maybe (fallback term1 term2) return
+  where
+    worker term1 term2
+      | ElemVar_ var <- term1 =
+        Pattern.assign (inject var) term2
+        & return
+      | otherwise = empty
+    fallback term1 term2 =
+        mkAnd term1 term2
+        & Pattern.fromTermLike
+        & return
+
+_True, _False :: TermLike VariableName
+_True  = asInternal True
+_False = asInternal False
+
+x, y :: SomeVariable VariableName
+x = inject (mkElementVariable "x" boolSort)
+y = inject (mkElementVariable "y" boolSort)

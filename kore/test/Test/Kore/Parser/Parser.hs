@@ -1,4 +1,6 @@
-module Test.Kore.Parser.Parser (test_koreParser) where
+module Test.Kore.Parser.Parser
+    ( test_koreParser
+    ) where
 
 import Prelude.Kore
 
@@ -7,16 +9,20 @@ import Test.Tasty
     , testGroup
     )
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import Data.Text
     ( Text
     )
 
+import Data.Sup
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Parser.Parser
 import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Variables.UnifiedVariable
 
 import Test.Kore hiding
     ( sortVariable
@@ -208,20 +214,36 @@ variableParserTests :: [TestTree]
 variableParserTests =
     parseTree elementVariableParser
         [ success "v:s"
-            $ ElementVariable Variable
-                { variableName = testId "v"
-                , variableSort = sortVariableSort "s"
-                , variableCounter = mempty
-                }
+            (mkElementVariable (testId "v") (sortVariableSort "s"))
+        , success "v0:s"
+            (mkElementVariable (testId "v") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 0))
+            )
+        , success "v1:s"
+            (mkElementVariable (testId "v") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 1))
+            )
+        , success "v00:s"
+            (mkElementVariable (testId "v0") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 0))
+            )
+        , success "v01:s"
+            (mkElementVariable (testId "v0") (sortVariableSort "s")
+                & Lens.set
+                    (Lens.mapped . Lens.mapped . field @"counter")
+                    (Just (Element 1))
+            )
         , success "v:s1{s2}"
-            $ ElementVariable Variable
-                { variableName = testId "v"
-                , variableSort =
-                    SortActualSort SortActual
-                        { sortActualName = testId "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                , variableCounter = mempty
+            $ mkElementVariable (testId "v")
+            $ SortActualSort SortActual
+                { sortActualName = testId "s1"
+                , sortActualSorts = [ sortVariableSort "s2" ]
                 }
         , FailureWithoutMessage ["", "var", "v:", ":s", "@v:s"]
         ]
@@ -229,21 +251,12 @@ variableParserTests =
 setVariableParserTests :: [TestTree]
 setVariableParserTests =
     parseTree setVariableParser
-        [ success "@v:s"
-            $ SetVariable Variable
-                { variableName = testId "@v"
-                , variableSort = sortVariableSort "s"
-                , variableCounter = mempty
-                }
+        [ success "@v:s" $ mkSetVariable (testId "@v") (sortVariableSort "s")
         , success "@v:s1{s2}"
-            $ SetVariable Variable
-                { variableName = testId "@v"
-                , variableSort =
-                    SortActualSort SortActual
-                        { sortActualName = testId "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                , variableCounter = mempty
+            $ mkSetVariable (testId "@v")
+            $ SortActualSort SortActual
+                { sortActualName = testId "s1"
+                , sortActualSorts = [ sortVariableSort "s2" ]
                 }
         , FailureWithoutMessage ["", "@var", "@v:", ":s", "v:s"]
         ]
@@ -273,23 +286,15 @@ applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree korePatternParser
         [ success "@v:Char"
-            ( asParsedPattern . VariableF . Const . SetVar $ SetVariable
-                Variable
-                    { variableName = testId "@v"
-                    , variableSort = sortVariableSort "Char"
-                    , variableCounter = mempty
-                    }
+            ( asParsedPattern . VariableF . Const . inject
+                $ mkSetVariable (testId "@v") (sortVariableSort "Char")
             )
         , success "v:s1{s2}"
-            ( asParsedPattern $ VariableF . Const . ElemVar $ ElementVariable
-                Variable
-                    { variableName = testId "v" :: Id
-                    , variableSort =
-                        SortActualSort SortActual
-                            { sortActualName = testId "s1"
-                            , sortActualSorts = [ sortVariableSort "s2" ]
-                            }
-                    , variableCounter = mempty
+            ( asParsedPattern $ VariableF . Const . inject
+                $ mkElementVariable (testId "v")
+                $ SortActualSort SortActual
+                    { sortActualName = testId "s1"
+                    , sortActualSorts = [ sortVariableSort "s2" ]
                     }
             )
         , success "c{s1,s2}(v1:s1, v2:s2)"
@@ -299,21 +304,22 @@ applicationPatternParserTests =
                         { symbolOrAliasConstructor = testId "c" :: Id
                         , symbolOrAliasParams =
                             [ sortVariableSort "s1"
-                            , sortVariableSort "s2" ]
+                            , sortVariableSort "s2"
+                            ]
                         }
                 , applicationChildren =
-                    [ asParsedPattern $ VariableF $ Const $ ElemVar $
-                        ElementVariable Variable
-                            { variableName = testId "v1" :: Id
-                            , variableSort = sortVariableSort "s1"
-                            , variableCounter = mempty
-                            }
-                    , asParsedPattern $ VariableF $ Const $ ElemVar $
-                        ElementVariable Variable
-                            { variableName = testId "v2" :: Id
-                            , variableSort = sortVariableSort "s2"
-                            , variableCounter = mempty
-                            }
+                    [ mkElementVariable (testId "v") (sortVariableSort "s1")
+                        & Lens.set
+                            (Lens.mapped . Lens.mapped . field @"counter")
+                            (Just (Element 1))
+                        & inject & Const & VariableF
+                        & asParsedPattern
+                    , mkElementVariable (testId "v") (sortVariableSort "s2")
+                        & Lens.set
+                            (Lens.mapped . Lens.mapped . field @"counter")
+                            (Just (Element 2))
+                        & inject & Const & VariableF
+                        & asParsedPattern
                     ]
                 }
             )
@@ -408,11 +414,7 @@ existsPatternParserTests =
             (asParsedPattern $ ExistsF Exists
                     { existsSort = sortVariableSort "s" :: Sort
                     , existsVariable =
-                        ElementVariable Variable
-                            { variableName = testId "v"
-                            , variableSort = sortVariableSort "Char"
-                            , variableCounter = mempty
-                            }
+                        mkElementVariable (testId "v") (sortVariableSort "Char")
                     , existsChild =
                         asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
@@ -459,11 +461,7 @@ forallPatternParserTests =
             ( asParsedPattern $ ForallF Forall
                     { forallSort = sortVariableSort "s" :: Sort
                     , forallVariable =
-                        ElementVariable Variable
-                            { variableName = testId "v"
-                            , variableSort = sortVariableSort "s1"
-                            , variableCounter = mempty
-                            }
+                        mkElementVariable (testId "v") (sortVariableSort "s1")
                     , forallChild =
                         asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
@@ -531,11 +529,8 @@ memPatternParserTests =
                     { inOperandSort = sortVariableSort "s1" :: Sort
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild = asParsedPattern $
-                        VariableF $ Const $ ElemVar $ ElementVariable Variable
-                            { variableName = testId "v" :: Id
-                            , variableSort = sortVariableSort "s3"
-                            , variableCounter = mempty
-                            }
+                        VariableF $ Const $ inject
+                        $ mkElementVariable (testId "v") (sortVariableSort "s3")
                     , inContainingChild =
                         asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
@@ -571,11 +566,7 @@ muPatternParserTests =
         [ success "\\mu{}(@v:s, \\top{s}())"
             (asParsedPattern $ MuF Mu
                     { muVariable =
-                        SetVariable Variable
-                            { variableName = testId "@v"
-                            , variableSort = sortVariableSort "s"
-                            , variableCounter = mempty
-                            }
+                        mkSetVariable (testId "@v") (sortVariableSort "s")
                     , muChild =
                         asParsedPattern $ TopF (Top (sortVariableSort "s"))
                     }
@@ -643,11 +634,7 @@ nuPatternParserTests =
         [ success "\\nu{}(@v:s, \\top{s}())"
             (asParsedPattern $ NuF Nu
                     { nuVariable =
-                        SetVariable Variable
-                            { variableName = testId "@v"
-                            , variableSort = sortVariableSort "s"
-                            , variableCounter = mempty
-                            }
+                        mkSetVariable (testId "@v") (sortVariableSort "s")
                     , nuChild =
                         asParsedPattern $ TopF (Top (sortVariableSort "s"))
                     }
@@ -734,22 +721,15 @@ variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
     parseTree korePatternParser
         [ success "v:s"
-            ( asParsedPattern $ VariableF $ Const $ ElemVar $
-                ElementVariable Variable
-                    { variableName = testId "v" :: Id
-                    , variableSort = sortVariableSort "s"
-                    , variableCounter = mempty
-                    }
+            ( asParsedPattern $ VariableF $ Const $ inject $
+                mkElementVariable (testId "v") (sortVariableSort "s")
             )
         , success "v:s1{s2}"
-            ( asParsedPattern $ VariableF $ Const $ ElemVar $
-                ElementVariable Variable
-                    { variableName = testId "v" :: Id
-                    , variableSort = SortActualSort SortActual
-                        { sortActualName=testId "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                    , variableCounter = mempty
+            ( asParsedPattern $ VariableF $ Const $ inject
+                $ mkElementVariable (testId "v")
+                $ SortActualSort SortActual
+                    { sortActualName = testId "s1"
+                    , sortActualSorts = [ sortVariableSort "s2" ]
                     }
             )
             , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
@@ -776,11 +756,9 @@ sentenceAliasParserTests =
                                     [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
-                            [ ElemVar $ ElementVariable Variable
-                                { variableName = testId "X" :: Id
-                                , variableSort = sortVariableSort "s2"
-                                , variableCounter = mempty
-                                }
+                            [ inject $ mkElementVariable
+                                (testId "X")
+                                (sortVariableSort "s2")
                             ]
                         }
                     , sentenceAliasRightPattern =
@@ -826,16 +804,12 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ ElemVar $ ElementVariable Variable
-                                    { variableName = testId "X" :: Id
-                                    , variableSort = sortVariableSort "s3"
-                                    , variableCounter = mempty
-                                    }
-                                , ElemVar $ ElementVariable Variable
-                                    { variableName = testId "Y" :: Id
-                                    , variableSort = sortVariableSort "s4"
-                                    , variableCounter = mempty
-                                    }
+                                [ inject $ mkElementVariable
+                                    (testId "X")
+                                    (sortVariableSort "s3")
+                                , inject $ mkElementVariable
+                                    (testId "Y")
+                                    (sortVariableSort "s4")
                                 ]
                             }
                     , sentenceAliasRightPattern =
@@ -850,17 +824,13 @@ sentenceAliasParserTests =
                                     }
                             , applicationChildren =
                                 [ asParsedPattern $ VariableF $ Const
-                                    $ ElemVar $ ElementVariable Variable
-                                    { variableName = testId "X" :: Id
-                                    , variableSort = sortVariableSort "s3"
-                                    , variableCounter = mempty
-                                    }
+                                    $ inject $ mkElementVariable
+                                        (testId "X")
+                                        (sortVariableSort "s3")
                                 , asParsedPattern $ VariableF $ Const
-                                    $ ElemVar $ ElementVariable Variable
-                                    { variableName = testId "Y" :: Id
-                                    , variableSort = sortVariableSort "s4"
-                                    , variableCounter = mempty
-                                    }
+                                    $ inject $ mkElementVariable
+                                        (testId "Y")
+                                        (sortVariableSort "s4")
                                 ]
                             }
                     , sentenceAliasAttributes =
@@ -952,12 +922,7 @@ sentenceAliasParserTests =
                             { symbolOrAliasConstructor = aliasId
                             , symbolOrAliasParams = [resultSort]
                             }
-                    var name =
-                        ElementVariable Variable
-                            { variableName = testId name
-                            , variableSort = resultSort
-                            , variableCounter = mempty
-                            }
+                    var name = mkElementVariable (testId name) resultSort
                     argument name = Internal.mkElemVar (var name)
                     varA = var "a"
                     varB = var "b"
@@ -973,7 +938,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias = aliasHead
-                            , applicationChildren = ElemVar <$> [varA, varB]
+                            , applicationChildren = inject <$> [varA, varB]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalize
@@ -994,12 +959,7 @@ sentenceAliasParserTests =
                             { symbolOrAliasConstructor = aliasId
                             , symbolOrAliasParams = [resultSort]
                             }
-                    var =
-                        ElementVariable Variable
-                            { variableName = testId "a"
-                            , variableSort = resultSort
-                            , variableCounter = mempty
-                            }
+                    var = mkElementVariable (testId "a") resultSort
                     arg = Internal.mkElemVar var
                 in SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
@@ -1011,7 +971,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias  = aliasHead
-                            , applicationChildren = [ElemVar var]
+                            , applicationChildren = [inject var]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalize $ Internal.mkNext arg

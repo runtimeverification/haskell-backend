@@ -52,7 +52,7 @@ test_verify =
         :: HasCallStack
         => TestName
         -> Symbol
-        -> TermLike Variable
+        -> TermLike VariableName
         -> TestTree
     test name symbol expect =
         testCase name $ do
@@ -87,9 +87,9 @@ test_unify =
     unifies
         :: HasCallStack
         => TestName
-        -> TermLike Variable
-        -> TermLike Variable
-        -> [Assignment Variable]
+        -> TermLike VariableName
+        -> TermLike VariableName
+        -> [Assignment VariableName]
         -> TestTree
     unifies name term1 term2 solution =
         testCase name $ do
@@ -101,8 +101,8 @@ test_unify =
     doesn'tUnify
         :: HasCallStack
         => TestName
-        -> TermLike Variable
-        -> TermLike Variable
+        -> TermLike VariableName
+        -> TermLike VariableName
         -> TestTree
     doesn'tUnify name term1 term2 =
         testCase name $ do
@@ -111,9 +111,9 @@ test_unify =
 
 unify
     :: HasCallStack
-    => TermLike Variable
-    -> TermLike Variable
-    -> IO (Either UnificationError [Pattern Variable])
+    => TermLike VariableName
+    -> TermLike VariableName
+    -> IO (Either UnificationError [Pattern VariableName])
 unify term1 term2 =
     runNoSMT
     $ runSimplifier testEnv

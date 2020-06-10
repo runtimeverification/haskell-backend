@@ -24,17 +24,14 @@ import Kore.Attribute.Pattern.FreeVariables
     ( freeVariable
     )
 import Kore.Syntax.Variable
-    ( Variable (..)
-    )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import Test.Kore.Attribute.Parser
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 parseSymbolic
-    :: FreeVariables Variable -> Attributes -> Parser (Symbolic Variable)
+    :: FreeVariables VariableName
+    -> Attributes
+    -> Parser (Symbolic VariableName)
 parseSymbolic freeVariables (Attributes attrs) =
     Foldable.foldlM
         (flip $ parseSymbolicAttribute freeVariables )
@@ -47,16 +44,16 @@ test_symbolic =
     $ expectSuccess Symbolic { unSymbolic = freeVars }
     $ parseSymbolic freeVars $ Attributes [ symbolicAttribute [] ]
   where
-    freeVars = foldMap freeVariable [ElemVar Mock.x, ElemVar Mock.y]
+    freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
 
 test_symbolic_select :: TestTree
 test_symbolic_select =
     testCase "[symbolic{}(x:testSort)] :: Symbolic"
     $ expectSuccess Symbolic { unSymbolic = symbolicVars }
-    $ parseSymbolic freeVars $ Attributes [ symbolicAttribute [ElemVar Mock.x] ]
+    $ parseSymbolic freeVars $ Attributes [ symbolicAttribute [inject Mock.x] ]
   where
-    freeVars = foldMap freeVariable [ElemVar Mock.x, ElemVar Mock.y]
-    symbolicVars = freeVariable (ElemVar Mock.x)
+    freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
+    symbolicVars = freeVariable (inject Mock.x)
 
 test_symbolic_selectx2 :: TestTree
 test_symbolic_selectx2 =
@@ -64,12 +61,12 @@ test_symbolic_selectx2 =
     $ expectSuccess Symbolic { unSymbolic = symbolicVars }
     $ parseSymbolic freeVars
     $ Attributes
-        [ symbolicAttribute [ElemVar Mock.x]
-        , symbolicAttribute [ElemVar Mock.z]
+        [ symbolicAttribute [inject Mock.x]
+        , symbolicAttribute [inject Mock.z]
         ]
   where
-    freeVars = foldMap freeVariable $ ElemVar <$> [Mock.x, Mock.y, Mock.z]
-    symbolicVars = foldMap (freeVariable . ElemVar) [Mock.x, Mock.z]
+    freeVars = foldMap freeVariable $ inject <$> [Mock.x, Mock.y, Mock.z]
+    symbolicVars = foldMap (freeVariable . inject) [Mock.x, Mock.z]
 
 test_Attributes :: TestTree
 test_Attributes =
@@ -83,9 +80,9 @@ test_notfree =
     testCase "[symbolic{}(y:testSort)] -- not free"
     $ expectFailure
     $ parseSymbolic freeVars
-    $ Attributes [ symbolicAttribute [ElemVar Mock.y] ]
+    $ Attributes [ symbolicAttribute [inject Mock.y] ]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_duplicate :: TestTree
 test_duplicate =
@@ -94,16 +91,16 @@ test_duplicate =
     $ parseSymbolic freeVars
     $ Attributes [ symbolicAttribute [], symbolicAttribute []]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_duplicate2 :: TestTree
 test_duplicate2 =
     testCase "[symbolic{}(), symbolic{}(x:testSort)]"
     $ expectFailure
     $ parseSymbolic freeVars
-    $ Attributes [ symbolicAttribute [], symbolicAttribute [ElemVar Mock.x]]
+    $ Attributes [ symbolicAttribute [], symbolicAttribute [inject Mock.x]]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_duplicate3 :: TestTree
 test_duplicate3 =
@@ -111,11 +108,11 @@ test_duplicate3 =
     $ expectFailure
     $ parseSymbolic freeVars
     $ Attributes
-        [ symbolicAttribute [ElemVar Mock.x]
-        , symbolicAttribute [ElemVar Mock.x]
+        [ symbolicAttribute [inject Mock.x]
+        , symbolicAttribute [inject Mock.x]
         ]
   where
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_arguments :: TestTree
 test_arguments =
@@ -125,7 +122,7 @@ test_arguments =
   where
     illegalAttribute =
         attributePattern symbolicSymbol [attributeString "illegal"]
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)
 
 test_parameters :: TestTree
 test_parameters =
@@ -140,4 +137,4 @@ test_parameters =
                 , symbolOrAliasParams =
                     [ SortVariableSort (SortVariable "illegal") ]
                 }
-    freeVars = freeVariable (ElemVar Mock.x)
+    freeVars = freeVariable (inject Mock.x)

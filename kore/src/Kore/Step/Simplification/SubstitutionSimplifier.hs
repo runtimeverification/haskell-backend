@@ -40,15 +40,13 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Monoid
-    ( Any (..)
-    )
 import qualified GHC.Generics as GHC
 
 import Branch
     ( BranchT
     )
 import qualified Branch
+import Debug
 import Kore.Internal.Condition
     ( Condition
     )
@@ -86,8 +84,12 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
     , InternalVariable
+    , SomeVariable
+    , SomeVariableName (..)
     , TermLike
     , TermLikeF (..)
+    , Variable (..)
+    , isSetVariable
     , mkAnd
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -100,10 +102,7 @@ import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    , isSetVar
-    )
+import qualified Pretty
 
 newtype SubstitutionSimplifier simplifier =
     SubstitutionSimplifier
@@ -214,28 +213,30 @@ deduplicateSubstitution
     ->  Substitution variable
     ->  monad
             ( Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
+            , Map (SomeVariable variable) (TermLike variable)
             )
 deduplicateSubstitution sideCondition makeAnd' =
     worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
   where
     checkSetVars m
-      | isProblematic m = error
-        "Found SetVar key with non-singleton list of assignments as value."
+      | problems <- getProblems m, (not . null) problems =
+        (error . show . Pretty.vsep)
+        [ "Cannot reconcile multiple assignments of a set variable:"
+        , Pretty.indent 4 (debug problems)
+        ]
       | otherwise = m
-        where
-            isProblematic = getAny . Map.foldMapWithKey
-                (\k v -> Any $ isSetVar k && isNotSingleton v)
-            isNotSingleton = isNothing . getSingleton
+      where
+        getProblems = Map.filterWithKey (\k v -> isSetVariable k && isNotSingleton v)
+        isNotSingleton = isNothing . getSingleton
 
     simplifyAnds' = simplifyAnds sideCondition makeAnd'
 
     worker
         ::  Predicate variable
-        ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
+        ->  Map (SomeVariable variable) (NonEmpty (TermLike variable))
         ->  monad
                 ( Predicate variable
-                , Map (UnifiedVariable variable) (TermLike variable)
+                , Map (SomeVariable variable) (TermLike variable)
                 )
     worker predicate substitutions
       | Just deduplicated <- traverse getSingleton substitutions
@@ -340,9 +341,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         :: Assignment variable
         -> Impl variable simplifier (Assignment variable)
     simplifySingleSubstitution subst@(Assignment uVar termLike) =
-        case uVar of
-            SetVar _ -> return subst
-            ElemVar _
+        case variableName uVar of
+            SomeVariableNameSet _ -> return subst
+            SomeVariableNameElement _
               | isSimplified -> return subst
               | otherwise -> do
                 termLike' <- simplifyTermLike termLike
@@ -370,7 +371,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     deduplicate
         ::  Substitution variable
         ->  Impl variable simplifier
-                (Map (UnifiedVariable variable) (TermLike variable))
+                (Map (SomeVariable variable) (TermLike variable))
     deduplicate substitution = do
         (predicate, substitution') <-
             deduplicateSubstitution makeAnd' sideCondition substitution

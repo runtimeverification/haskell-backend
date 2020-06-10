@@ -139,7 +139,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                 ),
                 /* Fl Fn D Spa */
                 Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* Fl Fn D Sfa */ VarDotVar00:SortInt{}
+                    /* Fl Fn D Sfa */ VarDotVar3:SortInt{}
                 )
             )
         ),
@@ -200,7 +200,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                 ),
                 /* Fl Fn D Spa */
                 Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* Fl Fn D Sfa */ VarDotVar00:SortInt{}
+                    /* Fl Fn D Sfa */ VarDotVar3:SortInt{}
                 )
             )
         )

@@ -464,7 +464,7 @@ See also: 'Kore.Proof.Value.Value'
 
  -}
 toKey
-    :: NamedVariable variable
+    :: Ord variable
     => TermLike variable -> Maybe (TermLike Concrete)
 toKey purePattern = do
     p <- TermLike.asConcrete purePattern

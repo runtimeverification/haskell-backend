@@ -94,9 +94,6 @@ import Kore.Unification.Error
     )
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Log
 import Pair
 import qualified Pretty
@@ -238,8 +235,10 @@ andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
-    , (BothT,   \_ _ s -> Builtin.Bool.termAndEquals s, "Builtin.Bool.termAndEquals")
-    , (BothT,   \_ _ s -> Builtin.Bool.termNotBool s, "Builtin.Bool.termNotBool")
+    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues, "Builtin.Bool.unifyBoolValues")
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s, "Builtin.Bool.unifyBoolAnd")
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s, "Builtin.Bool.unifyBoolOr")
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s, "Builtin.Bool.unifyBoolNot")
     , (EqualsT, \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier, "Builtin.KEqual.termKEquals")
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s, "Builtin.KEqual.unifyIfThenElse")
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
@@ -452,7 +451,7 @@ variableFunctionAndEquals
     (ElemVar_ v1)
     second@(ElemVar_ _)
   =
-      return $ Pattern.assign (ElemVar v1) second
+      return $ Pattern.assign (inject v1) second
 variableFunctionAndEquals
     sideCondition
     simplificationType
@@ -480,7 +479,7 @@ variableFunctionAndEquals
     let result =
             predicate
             <> Condition.fromSingleSubstitution
-                (Substitution.assign (ElemVar v) second)
+                (Substitution.assign (inject v) second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ = empty
 

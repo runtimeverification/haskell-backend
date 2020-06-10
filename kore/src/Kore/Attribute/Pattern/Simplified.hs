@@ -62,7 +62,7 @@ import Kore.Syntax
     , StringLiteral
     , Top
     )
-import Kore.Variables.UnifiedVariable
+import Kore.Syntax.Variable
 
 {- | How well simplified is a pattern.
 -}
@@ -320,7 +320,7 @@ instance Synthetic Simplified (Const InternalBytes) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
-instance Synthetic Simplified (Const (UnifiedVariable variable)) where
+instance Synthetic Simplified (Const (SomeVariable variable)) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 

@@ -19,34 +19,22 @@ module Kore.Variables.Target
     , mkSetNonTarget
     , mkUnifiedNonTarget
     , isNonTarget
-    , isUnifiedTarget
-    , isUnifiedNonTarget
     , targetIfEqual
     ) where
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Internal.Variable
-import Kore.Syntax.Variable
-    ( NamedVariable (..)
-    , SortedVariable (..)
-    )
 import Kore.Unparser
     ( Unparse (..)
     )
 import Kore.Variables.Fresh
-    ( FreshPartialOrd (..)
-    , FreshVariable (..)
-    )
-import Kore.Variables.UnifiedVariable
-    ( ElementVariable
-    , SetVariable
-    , UnifiedVariable (..)
+    ( FreshName (..)
+    , FreshPartialOrd (..)
     )
 
 {- | Distinguish variables by their source.
@@ -98,20 +86,20 @@ unTarget (NonTarget variable) = variable
 {-# INLINE unTarget #-}
 
 unTargetElement :: ElementVariable (Target variable) -> ElementVariable variable
-unTargetElement = fmap unTarget
+unTargetElement = (fmap . fmap) unTarget
 
 unTargetSet :: SetVariable (Target variable) -> SetVariable variable
-unTargetSet = fmap unTarget
+unTargetSet = (fmap . fmap) unTarget
 
 mkElementTarget
     :: ElementVariable variable
     -> ElementVariable (Target variable)
-mkElementTarget = fmap Target
+mkElementTarget = (fmap . fmap) Target
 
 mkSetTarget
     :: SetVariable variable
     -> SetVariable (Target variable)
-mkSetTarget = fmap Target
+mkSetTarget = (fmap . fmap) Target
 
 mkUnifiedTarget :: AdjSomeVariableName (variable -> Target variable)
 mkUnifiedTarget = pure Target
@@ -120,57 +108,21 @@ isTarget :: Target variable -> Bool
 isTarget (Target _) = True
 isTarget (NonTarget _) = False
 
-isUnifiedTarget :: UnifiedVariable (Target variable) -> Bool
-isUnifiedTarget (ElemVar (ElementVariable (Target _))) = True
-isUnifiedTarget (SetVar (SetVariable (Target _))) = True
-isUnifiedTarget _ = False
-
 mkElementNonTarget
     :: ElementVariable variable
     -> ElementVariable (Target variable)
-mkElementNonTarget = fmap NonTarget
+mkElementNonTarget = (fmap . fmap) NonTarget
 
 mkSetNonTarget
     :: SetVariable variable
     -> SetVariable (Target variable)
-mkSetNonTarget = fmap NonTarget
+mkSetNonTarget = (fmap . fmap) NonTarget
 
 mkUnifiedNonTarget :: AdjSomeVariableName (variable -> Target variable)
 mkUnifiedNonTarget = pure NonTarget
 
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
-
-isUnifiedNonTarget :: UnifiedVariable (Target variable) -> Bool
-isUnifiedNonTarget = not . isUnifiedTarget
-
-instance
-    SortedVariable variable
-    => SortedVariable (Target variable)
-  where
-    lensVariableSort f =
-        \case
-            Target variable -> Target <$> lensVariableSort f variable
-            NonTarget variable -> Target <$> lensVariableSort f variable
-    {-# INLINE lensVariableSort #-}
-
-instance NamedVariable variable => NamedVariable (Target variable) where
-    type VariableNameOf (Target variable) = Target (VariableNameOf variable)
-
-    isoVariable1 =
-        Lens.iso to fr
-      where
-        to (Target variable) = Target <$> Lens.view isoVariable1 variable
-        to (NonTarget variable) = NonTarget <$> Lens.view isoVariable1 variable
-        fr Variable1 { variableName1, variableSort1 } =
-            flip fmap variableName1 $ \variableName1' ->
-                Variable1
-                { variableName1 = variableName1'
-                , variableSort1
-                }
-                & Lens.review isoVariable1
-
-instance VariableBase variable => VariableBase (Target variable)
 
 instance From variable1 variable2 => From variable1 (Target variable2) where
     from = Target . from @variable1 @variable2
@@ -201,9 +153,7 @@ instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance
-    (FreshPartialOrd variable, SortedVariable variable)
-    => FreshVariable (Target variable)
+instance FreshPartialOrd variable => FreshName (Target variable)
 
 instance
     Unparse variable =>
@@ -214,16 +164,8 @@ instance
     unparse2 (Target var) = unparse2 var
     unparse2 (NonTarget var) = unparse2 var
 
-targetIfEqual
-    :: NamedVariable variable
-    => ElementVariable variable
-    -> VariableNameOf variable
-    -> VariableNameOf (Target variable)
-targetIfEqual boundVariable variableName =
+targetIfEqual :: Eq variable => variable -> variable -> Target variable
+targetIfEqual boundVariableName variableName =
     if boundVariableName == variableName
         then Target variableName
         else NonTarget variableName
-  where
-    boundVariableName =
-        Lens.view lensVariableName boundVariable
-        & unElementVariableName

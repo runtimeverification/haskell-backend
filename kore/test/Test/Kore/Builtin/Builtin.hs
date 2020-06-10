@@ -141,16 +141,16 @@ emptyNormalizedSet = emptyNormalizedAc
 mkPair
     :: Sort
     -> Sort
-    -> TermLike Variable
-    -> TermLike Variable
-    -> TermLike Variable
+    -> TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
 mkPair lSort rSort l r = mkApplySymbol (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithSolver
     ::  ( HasCallStack
-        , p ~ TermLike Variable
-        , expanded ~ Pattern Variable
+        , p ~ TermLike VariableName
+        , expanded ~ Pattern VariableName
         )
     => (p -> SMT expanded)
     -- ^ evaluator function for the builtin
@@ -204,8 +204,8 @@ indexedModule =
 
 verifyPattern
     :: Maybe Sort  -- ^ Expected sort
-    -> TermLike Variable
-    -> Either (Error VerifyError) (TermLike Variable)
+    -> TermLike VariableName
+    -> Either (Error VerifyError) (TermLike VariableName)
 verifyPattern expectedSort termLike =
     runPatternVerifier context
     $ verifyStandalonePattern expectedSort parsedPattern
@@ -255,7 +255,7 @@ testEnv =
         , overloadSimplifier = testOverloadSimplifier
         }
 
-simplify :: TermLike Variable -> IO [Pattern Variable]
+simplify :: TermLike VariableName -> IO [Pattern VariableName]
 simplify =
     id
     . runNoSMT
@@ -265,39 +265,39 @@ simplify =
 
 evaluate
     :: (MonadSMT smt, MonadProfiler smt, MonadLog smt)
-    => TermLike Variable
-    -> smt (Pattern Variable)
+    => TermLike VariableName
+    -> smt (Pattern VariableName)
 evaluate = runSimplifier testEnv . (`TermLike.simplify` SideCondition.top)
 
 evaluateT
     :: MonadTrans t
     => (MonadSMT smt, MonadProfiler smt, MonadLog smt)
-    => TermLike Variable
-    -> t smt (Pattern Variable)
+    => TermLike VariableName
+    -> t smt (Pattern VariableName)
 evaluateT = lift . evaluate
 
-evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
+evaluateToList :: TermLike VariableName -> SMT [Pattern VariableName]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
     . TermLike.simplifyToOr SideCondition.top
 
 runStep
-    :: Pattern Variable
+    :: Pattern VariableName
     -- ^ configuration
-    -> RewriteRule Variable
+    -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Either UnificationError (OrPattern Variable))
+    -> SMT (Either UnificationError (OrPattern VariableName))
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return (Step.gatherResults <$> results)
 
 runStepResult
-    :: Pattern Variable
+    :: Pattern VariableName
     -- ^ configuration
-    -> RewriteRule Variable
+    -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Either UnificationError (Step.Results RulePattern Variable))
+    -> SMT (Either UnificationError (Step.Results RulePattern VariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
@@ -312,7 +312,7 @@ unificationProcedure = Unification.unificationProcedure
 
 -- | Test unparsing internalized patterns.
 hpropUnparse
-    :: Hedgehog.Gen (TermLike Variable)
+    :: Hedgehog.Gen (TermLike VariableName)
     -- ^ Generate patterns with internal representations
     -> Hedgehog.Property
 hpropUnparse gen = Hedgehog.property $ do

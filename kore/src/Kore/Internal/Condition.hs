@@ -63,7 +63,6 @@ import qualified Kore.Internal.TermLike as TermLike
     )
 import Kore.Internal.Variable
 import Kore.Syntax
-import Kore.Variables.UnifiedVariable
 
 -- | A predicate and substitution without an accompanying term.
 type Condition variable = Conditional variable ()
@@ -134,10 +133,10 @@ bottomCondition = bottom
 
 hasFreeVariable
     :: InternalVariable variable
-    => UnifiedVariable variable
+    => SomeVariableName variable
     -> Condition variable
     -> Bool
-hasFreeVariable variable = isFreeVariable variable . freeVariables
+hasFreeVariable name = isFreeVariable name . freeVariables
 
 {- | Extract the set of free set variables from a predicate and substitution.
 
@@ -159,11 +158,10 @@ toPredicate
 toPredicate = from
 
 mapVariables
-    ::  (InternalVariable variable1, InternalVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Condition variable1
-    ->  Condition variable2
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Condition variable1
+    -> Condition variable2
 mapVariables = Conditional.mapVariables (\_ () -> ())
 
 {- | Create a new 'Condition' from the 'Normalization' of a substitution.

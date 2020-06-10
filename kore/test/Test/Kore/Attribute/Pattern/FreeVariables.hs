@@ -20,9 +20,6 @@ import Kore.Internal.TermLike
 import Kore.Syntax hiding
     ( PatternF (..)
     )
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -76,15 +73,15 @@ test_instance_Synthetic_TermLike =
     , ExistsF      (Exists sort Mock.x y)     `gives'` y  $ "ExistsF - Free"
     , ForallF      (Forall sort Mock.x xy)    `gives'` y  $ "ForallF - Bound"
     , ForallF      (Forall sort Mock.x y)     `gives'` y  $ "ForallF - Free"
-    , (VariableF . Const) (ElemVar Mock.x)    `gives'` x  $ "Elem VariableF"
+    , (VariableF . Const) (inject Mock.x)    `gives'` x  $ "Elem VariableF"
     , MuF          (Mu Mock.setX sxy)         `gives'` sy $ "MuF - Bound"
     , MuF          (Mu Mock.setX sy)          `gives'` sy $ "MuF - Free"
     , NuF          (Nu Mock.setX sxy)         `gives'` sy $ "NuF - Bound"
     , NuF          (Nu Mock.setX sy)          `gives'` sy $ "NuF - Free"
-    , (VariableF . Const) (SetVar Mock.setX)  `gives'` sx $ "Set VariableF"
+    , (VariableF . Const) (inject Mock.setX)  `gives'` sx $ "Set VariableF"
     ]
   where
-    gives' = gives @(TermLikeF Variable)
+    gives' = gives @(TermLikeF VariableName)
 
 sort :: Sort
 sort = Mock.testSort
@@ -92,18 +89,18 @@ sort = Mock.testSort
 sigma :: Symbol
 sigma = Mock.sigmaSymbol
 
-x, y, xy, sx, sy, sxy :: FreeVariables Variable
-x = FreeVariables.freeVariable (ElemVar Mock.x)
-y = FreeVariables.freeVariable (ElemVar Mock.y)
+x, y, xy, sx, sy, sxy :: FreeVariables VariableName
+x = FreeVariables.freeVariable (inject Mock.x)
+y = FreeVariables.freeVariable (inject Mock.y)
 xy = x <> y
-sx = FreeVariables.freeVariable (SetVar Mock.setX)
-sy = FreeVariables.freeVariable (SetVar Mock.setY)
+sx = FreeVariables.freeVariable (inject Mock.setX)
+sy = FreeVariables.freeVariable (inject Mock.setY)
 sxy = sx <> sy
 
 gives
-    :: (Synthetic (FreeVariables Variable) base, HasCallStack)
-    => base (FreeVariables Variable)
-    -> FreeVariables Variable
+    :: (Synthetic (FreeVariables VariableName) base, HasCallStack)
+    => base (FreeVariables VariableName)
+    -> FreeVariables VariableName
     -> String
     -> TestTree
 gives original expected name =

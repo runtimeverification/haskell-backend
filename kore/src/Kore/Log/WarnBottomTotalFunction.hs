@@ -31,7 +31,7 @@ import qualified SQL
 
 newtype WarnBottomTotalFunction =
     WarnBottomTotalFunction
-        { term :: TermLike Variable
+        { term :: TermLike VariableName
         }
     deriving (Show)
     deriving (GHC.Generic)

@@ -26,7 +26,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
-    ( Variable (..)
+    ( VariableName
     , toVariableName
     )
 import Kore.Rewriting.RewritingVariable
@@ -49,8 +49,8 @@ import qualified Pretty
 
 data DebugAppliedRewriteRules =
     DebugAppliedRewriteRules
-        { configuration :: Pattern Variable
-        , appliedRewriteRules :: [UnifiedRule RewriteRule Variable]
+        { configuration :: Pattern VariableName
+        , appliedRewriteRules :: [UnifiedRule RewriteRule VariableName]
         }
     deriving (Show)
 
@@ -80,8 +80,8 @@ instance Entry DebugAppliedRewriteRules where
 
 debugAppliedRewriteRules
     :: MonadLog log
-    => Pattern RewritingVariable
-    -> [UnifiedRule RulePattern RewritingVariable]
+    => Pattern RewritingVariableName
+    -> [UnifiedRule RulePattern RewritingVariableName]
     -> log ()
 debugAppliedRewriteRules initial rules =
     logEntry DebugAppliedRewriteRules

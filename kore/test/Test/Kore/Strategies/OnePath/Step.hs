@@ -78,25 +78,25 @@ import Kore.Syntax.Module
     ( ModuleName (ModuleName)
     )
 import Kore.Syntax.Variable
-    ( Variable (..)
-    )
-import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
+type TermLike' = TermLike VariableName
+type Pattern' = Pattern VariableName
+type Predicate' = Predicate VariableName
 
 makeOnePathRule
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike'
+    -> TermLike'
     -> OnePathRule
 makeOnePathRule term dest =
     OnePathRule $ rulePattern term dest
 
 makeOnePathRuleFromPatterns
-    :: Pattern Variable
-    -> Pattern Variable
+    :: Pattern'
+    -> Pattern'
     -> OnePathRule
 makeOnePathRuleFromPatterns
     configuration
@@ -120,8 +120,8 @@ makeOnePathRuleFromPatterns
         }
 
 makeReachabilityOnePathRule
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike'
+    -> TermLike'
     -> ReachabilityRule
 makeReachabilityOnePathRule term dest =
     OnePath (makeOnePathRule term dest)
@@ -762,7 +762,7 @@ test_onePathStrategy =
             left' =
                 Pattern.withCondition
                     Mock.a
-                    (Condition.assign (ElemVar Mock.x) Mock.a)
+                    (Condition.assign (inject Mock.x) Mock.a)
             right =
                 Pattern.withCondition
                     (TermLike.mkElemVar Mock.x)
@@ -784,8 +784,8 @@ test_onePathStrategy =
     ]
 
 simpleRewrite
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike'
+    -> TermLike'
     -> Rule OnePathRule
 simpleRewrite left right =
     OnePathRewriteRule . mkRewritingRule
@@ -798,16 +798,16 @@ simpleRewrite left right =
         }
 
 simpleReachabilityRewrite
-    :: TermLike Variable
-    -> TermLike Variable
+    :: TermLike'
+    -> TermLike'
     -> Rule ReachabilityRule
 simpleReachabilityRewrite left right =
     coerce (simpleRewrite left right)
 
 rewriteWithPredicate
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
+    :: TermLike'
+    -> TermLike'
+    -> Predicate'
     -> Rule OnePathRule
 rewriteWithPredicate left right predicate =
     OnePathRewriteRule . mkRewritingRule
@@ -820,9 +820,9 @@ rewriteWithPredicate left right predicate =
         }
 
 rewriteReachabilityWithPredicate
-    :: TermLike Variable
-    -> TermLike Variable
-    -> Predicate Variable
+    :: TermLike'
+    -> TermLike'
+    -> Predicate'
     -> Rule ReachabilityRule
 rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)

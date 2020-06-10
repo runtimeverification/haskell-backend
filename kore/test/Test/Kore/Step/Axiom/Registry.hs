@@ -493,5 +493,5 @@ test_functionRegistry =
         )
     ]
   where
-    makePattern :: TermLike Variable -> Pattern Variable
+    makePattern :: TermLike VariableName -> Pattern VariableName
     makePattern = Pattern.fromTermLike

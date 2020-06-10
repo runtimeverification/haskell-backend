@@ -254,8 +254,8 @@ test_substr =
     testSubstrBytes
         :: HasCallStack
         => TestName
-        -> [TermLike Variable]  -- ^ arguments of @substrBytes@ symbol
-        -> Pattern Variable  -- ^ expected result
+        -> [TermLike VariableName]  -- ^ arguments of @substrBytes@ symbol
+        -> Pattern VariableName  -- ^ expected result
         -> TestTree
     testSubstrBytes testName = testBytes testName substrBytesSymbol
 
@@ -610,17 +610,17 @@ test_InternalBytes =
 
 -- * Helpers
 
-asInternal :: ByteString -> TermLike Variable
+asInternal :: ByteString -> TermLike VariableName
 asInternal = InternalBytes.asInternal bytesSort
 
-asPattern :: ByteString -> Pattern Variable
+asPattern :: ByteString -> Pattern VariableName
 asPattern = InternalBytes.asPattern bytesSort
 
 testBytes
     :: HasCallStack
     => String
     -> Symbol
-    -> [TermLike Variable]
-    -> Pattern Variable
+    -> [TermLike VariableName]
+    -> Pattern VariableName
     -> TestTree
 testBytes name = testSymbolWithSolver evaluate name

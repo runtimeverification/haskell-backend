@@ -7,7 +7,7 @@ License     : NCSA
 module Kore.Variables.Binding
     ( Binding (..)
     , matchWith
-    , UnifiedVariableType
+    , SomeVariableType
     , ElementVariableType
     , SetVariableType
     -- * Binders
@@ -33,17 +33,11 @@ import Data.Monoid
     )
 import qualified GHC.Generics as GHC
 
-import Kore.Syntax.ElementVariable
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
-import Kore.Syntax.SetVariable
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    , expectElemVar
-    , expectSetVar
-    )
+import Kore.Syntax.Variable
 
 {- | @Binding@ defines traversals for patterns with binders.
 
@@ -58,20 +52,20 @@ class Binding binding where
     traverseBinder
         ::  Lens.Traversal'
                 binding
-                (Binder (UnifiedVariableType binding) binding)
+                (Binder (SomeVariableType binding) binding)
     traverseBinder traversal binding =
         fromMaybe (pure binding) (matchElem <|> matchSet)
       where
         matchSet = matchWith traverseSetBinder traversalSet binding
         matchElem = matchWith traverseElementBinder traversalElem binding
         traversalSet =
-            fmap (field @"binderVariable" %~ expectSetVar)
+            fmap (field @"binderVariable" %~ expectSetVariable)
             . traversal
-            . (field @"binderVariable" %~ SetVar)
+            . (field @"binderVariable" %~ inject)
         traversalElem =
-            fmap (field @"binderVariable" %~ expectElemVar)
+            fmap (field @"binderVariable" %~ expectElementVariable)
             . traversal
-            . (field @"binderVariable" %~ ElemVar)
+            . (field @"binderVariable" %~ inject)
 
     -- | Traverse the element variable binder at the top of a pattern.
     traverseElementBinder
@@ -86,24 +80,21 @@ class Binding binding where
                 (Binder (SetVariableType binding) binding)
 
     -- | Traverse the variable at the top of a pattern.
-    traverseVariable :: Lens.Traversal' binding (UnifiedVariableType binding)
-    traverseVariable traversal binding =
-        fromMaybe (pure binding) (matchElem <|> matchSet)
-      where
-        matchSet = matchWith traverseSetVariable traversalSet binding
-        matchElem = matchWith traverseElementVariable traversalElem binding
-        traversalSet = fmap expectSetVar . traversal . SetVar
-        traversalElem = fmap expectElemVar . traversal . ElemVar
+    traverseVariable :: Lens.Traversal' binding (SomeVariableType binding)
 
     -- | Traverse the element variable at the top of a pattern.
     traverseElementVariable
         :: Lens.Traversal' binding (ElementVariableType binding)
+    traverseElementVariable = traverseVariable . injection
+    {-# INLINE traverseElementVariable #-}
 
     -- | Traverse the element variable at the top of a pattern.
     traverseSetVariable
         :: Lens.Traversal' binding (SetVariableType binding)
+    traverseSetVariable = traverseVariable . injection
+    {-# INLINE traverseSetVariable #-}
 
-type UnifiedVariableType binding = UnifiedVariable (VariableType binding)
+type SomeVariableType    binding = SomeVariable    (VariableType binding)
 type ElementVariableType binding = ElementVariable (VariableType binding)
 type SetVariableType     binding = SetVariable     (VariableType binding)
 

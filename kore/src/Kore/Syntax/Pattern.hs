@@ -129,7 +129,7 @@ instance
     => Diff (Pattern variable annotation)
 
 instance
-    (SortedVariable variable, Unparse variable) =>
+    (Unparse variable) =>
     Unparse (Pattern variable annotation)
   where
     unparse (Recursive.project -> _ :< pat) = unparse pat
@@ -248,7 +248,7 @@ instance TopBottom (Pattern variable annotation) where
     isBottom _ = False
 
 instance
-    (SortedVariable variable, Unparse variable)
+    (Unparse variable)
     => SQL.Column (Pattern variable annotation)
   where
     defineColumn tableName _ = SQL.defineColumn tableName (SQL.Proxy @Text)
@@ -285,13 +285,11 @@ See also: 'mapVariables'
 
  -}
 traverseVariables
-    ::  forall m variable1 variable2 annotation
-    .   Monad m
-    =>  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> m (VariableNameOf variable2))
-    ->  Pattern variable1 annotation
-    ->  m (Pattern variable2 annotation)
+    :: forall m variable1 variable2 annotation
+    .  Monad m
+    => AdjSomeVariableName (variable1 -> m variable2)
+    -> Pattern variable1 annotation
+    -> m (Pattern variable2 annotation)
 traverseVariables adj =
     Recursive.fold traverseVariablesWorker
   where
@@ -317,11 +315,9 @@ See also: 'traverseVariables'
 
  -}
 mapVariables
-    ::  (NamedVariable variable1, NamedVariable variable2)
-    =>  AdjSomeVariableName
-            (VariableNameOf variable1 -> VariableNameOf variable2)
-    ->  Pattern variable1 annotation
-    ->  Pattern variable2 annotation
+    :: AdjSomeVariableName (variable1 -> variable2)
+    -> Pattern variable1 annotation
+    -> Pattern variable2 annotation
 mapVariables adj =
     Recursive.ana (mapVariablesWorker . Recursive.project)
   where
@@ -340,12 +336,11 @@ deciding if the result is @Nothing@ or @Just _@.
 
  -}
 asConcretePattern
-    :: NamedVariable variable
-    => Pattern variable annotation
+    :: Pattern variable annotation
     -> Maybe (Pattern Concrete annotation)
-asConcretePattern = traverseVariables (pure toVoid)
+asConcretePattern = traverseVariables (pure toConcrete)
 
-isConcrete :: NamedVariable variable => Pattern variable annotation -> Bool
+isConcrete :: Pattern variable annotation -> Bool
 isConcrete = isJust . asConcretePattern
 
 {- | Construct a 'Pattern' from a 'ConcretePattern'.
@@ -358,7 +353,6 @@ composes with other tree transformations without allocating intermediates.
 
  -}
 fromConcretePattern
-    :: NamedVariable variable
-    => Pattern Concrete annotation
+    :: Pattern Concrete annotation
     -> Pattern variable annotation
-fromConcretePattern = mapVariables (pure $ from @Void)
+fromConcretePattern = mapVariables (pure $ from @Concrete)
