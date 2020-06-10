@@ -134,7 +134,7 @@ termUnification notSimplifier =
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
-        Error.maybeT undefined pure maybeTermUnification
+        Error.maybeT empty pure maybeTermUnification
 
 maybeTermEquals
     :: InternalVariable variable
