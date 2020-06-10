@@ -224,12 +224,10 @@ attemptEquation sideCondition termLike equation =
         -- TODO: toMap is unsafe;
         -- is it impossible to happen (if the frontend generates equations
         -- correctly), or should we add a new AttemptEquationError case?
-        lift $ do
+        lift $
             let toMatchResult Conditional { predicate, substitution } =
                     (predicate, Substitution.toMap substitution)
-            -- TODO: matchSubstitution should be transformed
-            -- into a Substitution
-            Substitution.mergePredicatesAndSubstitutions
+             in Substitution.mergePredicatesAndSubstitutions
                     sideCondition
                     ([argument, matchPredicate] <> maybeToList antiLeft)
                     [mkSubstitution matchSubstitution]
