@@ -10,6 +10,8 @@ module Test.Kore.Variables.Fresh
     , testFreshPartialOrd
     , relatedVariableNameGen
     , someVariableNameGen
+    -- * Re-exports
+    , module Kore.Variables.Fresh
     ) where
 
 import Prelude.Kore
