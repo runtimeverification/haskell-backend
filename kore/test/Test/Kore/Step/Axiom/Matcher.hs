@@ -1033,14 +1033,15 @@ matchSimplification = matchDefinition
 type MatchResult =
     Maybe
         ( Predicate VariableName
-        , Map.Map (SomeVariableName VariableName) (TermLike VariableName)
+        , Map.Map (SomeVariable VariableName) (TermLike VariableName)
         )
 
 mkMatchResult
-    :: (Predicate VariableName, Map (SomeVariable VariableName) (TermLike VariableName))
+    :: (Predicate VariableName
+        , Map (SomeVariable VariableName) (TermLike VariableName)
+       )
     -> MatchResult
-mkMatchResult (predicate, substitution) =
-    Just (predicate, Map.mapKeys variableName substitution)
+mkMatchResult = Just
 
 match
     :: TermLike VariableName
