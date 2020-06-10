@@ -89,9 +89,6 @@ import Kore.Syntax.PatternF
     ( Const (..)
     )
 import Kore.TopBottom
-import Kore.Unification.Error
-    ( unsupportedPatterns
-    )
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import qualified Log
@@ -137,14 +134,7 @@ termUnification notSimplifier =
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
-            unsupportedPatternsError =
-                throwUnificationError
-                    (unsupportedPatterns
-                        "Unknown unification case."
-                        pat1
-                        pat2
-                    )
-        Error.maybeT unsupportedPatternsError pure maybeTermUnification
+        Error.maybeT undefined pure maybeTermUnification
 
 maybeTermEquals
     :: InternalVariable variable

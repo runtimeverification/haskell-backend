@@ -40,9 +40,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
     )
-import Kore.Log.ErrorRewritesInstantiation
-    ( errorRewritesInstantiation
-    )
 import Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     )
@@ -222,27 +219,23 @@ transitionRule
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
     transitionComputeWeakNextHelper rules config = do
-        eitherResults <-
+        results <-
             Step.applyRewriteRulesParallel
                 unificationProcedure
                 (mkRewritingRule <$> rules)
                 config
-            & lift . lift . runExceptT
-        case eitherResults of
-            Left unificationError ->
-                errorRewritesInstantiation config unificationError
-            Right results -> do
-                let
-                    mapRules =
-                        StepResult.mapRules
-                        $ RewriteRule
-                        . Step.unRewritingRule
-                        . Step.withoutUnification
-                    mapConfigs =
-                        StepResult.mapConfigs
-                            GoalLHS
-                            GoalRemLHS
-                StepResult.transitionResults (mapConfigs $ mapRules results)
+            & lift . lift
+        let
+            mapRules =
+                StepResult.mapRules
+                $ RewriteRule
+                . Step.unRewritingRule
+                . Step.withoutUnification
+            mapConfigs =
+                StepResult.mapConfigs
+                    GoalLHS
+                    GoalRemLHS
+        StepResult.transitionResults (mapConfigs $ mapRules results)
 
 defaultOneStepStrategy
     :: patt

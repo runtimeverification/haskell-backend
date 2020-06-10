@@ -104,7 +104,6 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
-import Kore.Unification.Error
 import Kore.Unification.UnifierT
     ( MonadUnify
     , UnifierT (..)
@@ -538,9 +537,6 @@ instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
         $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    throwUnificationError =
-        UnifierWithExplanation . Monad.Unify.throwUnificationError
-
     explainBottom info first second =
         UnifierWithExplanation
         . Monad.Trans.lift

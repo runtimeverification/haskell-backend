@@ -6,7 +6,6 @@ License     : NCSA
 
 module Kore.Log.ErrorRewritesInstantiation
     ( ErrorRewritesInstantiation (..)
-    , errorRewritesInstantiation
     , checkSubstitutionCoverage
     ) where
 
@@ -58,7 +57,6 @@ import Kore.Step.Step
     ( UnifiedRule
     , wouldNarrowWith
     )
-import Kore.Unification.Error
 import Kore.Unparser
     ( unparse
     )
@@ -70,7 +68,7 @@ import qualified Pretty
 
 data ErrorRewritesInstantiation =
     ErrorRewritesInstantiation
-        { problem :: !(Either UnificationError SubstitutionCoverageError)
+        { problem :: !SubstitutionCoverageError
         , configuration :: !(Pattern RewritingVariableName)
         , errorCallStack :: !CallStack
         }
@@ -99,25 +97,8 @@ instance Entry ErrorRewritesInstantiation where
 instance Pretty ErrorRewritesInstantiation where
     pretty
         ErrorRewritesInstantiation
-            { problem = Left unificationError
-            , configuration
-            , errorCallStack
-            }
-      =
-        Pretty.vsep $
-            [ "While rewriting the configuration:"
-            , Pretty.indent 4 (unparse configuration)
-            , Pretty.indent 2 "unification error:"
-            , Pretty.indent 4 (Pretty.pretty unificationError)
-            , Pretty.indent 2
-                "The unification error above prevented instantiation of \
-                \a semantic rule, so execution cannot continue."
-            ]
-            <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
-    pretty
-        ErrorRewritesInstantiation
             { problem =
-                Right SubstitutionCoverageError { solution, missingVariables }
+                SubstitutionCoverageError { solution, missingVariables }
             , configuration
             , errorCallStack
             }
@@ -137,23 +118,6 @@ instance Pretty ErrorRewritesInstantiation where
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
       where
         location = sourceLocation . attributes . getRewriteRule . term $ solution
-
-errorRewritesInstantiation
-    :: HasCallStack
-    => InternalVariable variable
-    => Pattern variable
-    -> UnificationError
-    -> log a
-errorRewritesInstantiation configuration' unificationError =
-    throw
-        ErrorRewritesInstantiation
-        { problem = Left unificationError
-        , configuration
-        , errorCallStack = callStack
-        }
-  where
-    mapVariables = Pattern.mapVariables (pure toVariableName)
-    configuration = mkRewritingPattern $ mapVariables configuration'
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -189,7 +153,7 @@ checkSubstitutionCoverage configuration solution
     -- something has gone horribly wrong.
     throw
         ErrorRewritesInstantiation
-        { problem = Right substitutionCoverageError
+        { problem = substitutionCoverageError
         , configuration
         , errorCallStack = callStack
         }

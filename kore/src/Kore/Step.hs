@@ -118,25 +118,14 @@ transitionRule =
         Foldable.asum (pure <$> filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
-        eitherResults <-
+        results <-
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
                 [mkRewritingRule rule]
                 config
-            & lift . runExceptT
-        case eitherResults of
-            Left err ->
-                (error . show . Pretty.vsep)
-                    [ "Could not apply the axiom:"
-                    , unparse rule
-                    , "to the configuration:"
-                    , unparse config
-                    , "Un-implemented unification case; aborting execution."
-                    , "err=" <> Pretty.pretty err
-                    ]
-            Right results ->
-                Foldable.asum
-                    (pure <$> Step.gatherResults results)
+            & lift
+        Foldable.asum
+            (pure <$> Step.gatherResults results)
 
 
 {- | A strategy that applies all the rewrites in parallel.

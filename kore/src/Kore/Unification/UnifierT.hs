@@ -8,9 +8,7 @@ License     : NCSA
 
 module Kore.Unification.UnifierT
     ( UnifierT (..)
-    , lowerExceptT
     , runUnifierT
-    , maybeUnifierT
     , evalEnvUnifierT
     , substitutionSimplifier
     -- * Re-exports
@@ -46,7 +44,6 @@ import Kore.Step.Simplification.Simplify
     , InternalVariable
     , MonadSimplify (..)
     )
-import Kore.Unification.Error
 import Kore.Unification.SubstitutionSimplifier
     ( substitutionSimplifier
     )
@@ -63,13 +60,13 @@ newtype UnifierT (m :: * -> *) a =
         { getUnifierT
             :: ReaderT
                 (ConditionSimplifier (UnifierT m))
-                (LogicT (ExceptT UnificationError m))
+                (LogicT m)
                 a
         }
     deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
 
 instance MonadTrans UnifierT where
-    lift = UnifierT . lift . lift . lift
+    lift = UnifierT . lift . lift
     {-# INLINE lift #-}
 
 deriving instance MonadLog m => MonadLog (UnifierT m)
@@ -87,7 +84,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
         UnifierT $
             mapReaderT
                 (mapLogicT
-                    (Morph.hoist (localSimplifierTermLike locally))
+                    (localSimplifierTermLike locally)
                 )
                 readerT
     {-# INLINE localSimplifierTermLike #-}
@@ -96,7 +93,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
         UnifierT $
             mapReaderT
                 (mapLogicT
-                    (Morph.hoist (localSimplifierAxioms locally))
+                    (localSimplifierAxioms locally)
                 )
                 readerT
     {-# INLINE localSimplifierAxioms #-}
@@ -107,43 +104,21 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     {-# INLINE simplifyCondition #-}
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
-    throwUnificationError = UnifierT . lift . lift . Error.throwError
-    {-# INLINE throwUnificationError #-}
-
--- | Lower an 'ExceptT UnificationError' into a 'MonadUnify'.
-lowerExceptT
-    :: MonadUnify unifier
-    => ExceptT UnificationError unifier a
-    -> unifier a
-lowerExceptT e = runExceptT e >>= either throwUnificationError pure
 
 runUnifierT
     :: MonadSimplify m
     => NotSimplifier (UnifierT m)
     -> UnifierT m a
-    -> m (Either UnificationError [a])
+    -> m [a]
 runUnifierT notSimplifier =
-    runExceptT
-    . observeAllT
-    . evalEnvUnifierT notSimplifier
-
-{- | Run a 'Unifier', returning 'Nothing' upon error.
- -}
-maybeUnifierT
-    :: MonadSimplify m
-    => NotSimplifier (UnifierT m)
-    -> UnifierT m a
-    -> MaybeT m [a]
-maybeUnifierT notSimplifier =
-    hushT
-    . observeAllT
+    observeAllT
     . evalEnvUnifierT notSimplifier
 
 evalEnvUnifierT
     :: MonadSimplify m
     => NotSimplifier (UnifierT m)
     -> UnifierT m a
-    -> LogicT (ExceptT UnificationError m) a
+    -> LogicT m a
 evalEnvUnifierT notSimplifier =
     flip runReaderT conditionSimplifier
     . getUnifierT

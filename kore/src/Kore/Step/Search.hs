@@ -130,6 +130,7 @@ searchGraph Config { searchType, bound } match executionGraph = do
             STAR -> Strategy.pickStar
             FINAL -> Strategy.pickFinal
 
+-- TODO: should this MaybeT be removed?
 matchWith
     :: forall variable m
     .  (InternalVariable variable, MonadSimplify m)
@@ -138,12 +139,10 @@ matchWith
     -> Pattern variable
     -> MaybeT m (OrCondition variable)
 matchWith sideCondition e1 e2 = do
-    eitherUnifiers <-
+    unifiers <-
         lift $ Unifier.runUnifierT Not.notSimplifier
         $ unificationProcedureWorker sideCondition t1 t2
     let
-        maybeUnifiers :: Maybe [Condition variable]
-        maybeUnifiers = hush eitherUnifiers
         mergeAndEvaluate
             :: Condition variable
             -> m (OrCondition variable)
@@ -178,15 +177,12 @@ matchWith sideCondition e1 e2 = do
                         (Condition.fromSubstitution
                             (Conditional.substitution merged)
                         )
-    case maybeUnifiers of
-        Nothing -> nothing
-        Just unifiers -> do
-            results <- lift $ traverse mergeAndEvaluate unifiers
-            let
-                orResults :: OrCondition variable
-                orResults = MultiOr.mergeAll results
-            guardAgainstBottom orResults
-            return orResults
+    results <- lift $ traverse mergeAndEvaluate unifiers
+    let
+        orResults :: OrCondition variable
+        orResults = MultiOr.mergeAll results
+    guardAgainstBottom orResults
+    return orResults
   where
     t1 = Conditional.term e1
     t2 = Conditional.term e2

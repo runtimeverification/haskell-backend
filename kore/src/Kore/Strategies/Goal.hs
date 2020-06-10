@@ -107,9 +107,6 @@ import Kore.Internal.TermLike
     , retractElementVariable
     )
 import Kore.Log.DebugProofState
-import Kore.Log.ErrorRewritesInstantiation
-    ( errorRewritesInstantiation
-    )
 import Kore.Log.InfoReachability
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
@@ -171,7 +168,6 @@ import Kore.TopBottom
     ( isBottom
     , isTop
     )
-import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
     ( unparse
@@ -886,7 +882,7 @@ derivePar lensRulePattern mkRule =
 type Deriver monad =
         [RewriteRule RewritingVariableName]
     ->  Pattern VariableName
-    ->  ExceptT UnificationError monad (Step.Results RulePattern VariableName)
+    ->  monad (Step.Results RulePattern VariableName)
 
 -- | Apply 'Rule's to the goal in parallel.
 deriveWith
@@ -903,12 +899,8 @@ deriveWith lensRulePattern mkRule takeStep rewrites goal =
     (\x -> getCompose $ x goal)
     $ Lens.traverseOf (lensRulePattern . RulePattern.leftPattern)
     $ \config -> Compose $ withConfiguration config $ do
-        results <- takeStep rewrites config & assertInstantiated config
+        results <- takeStep rewrites config & lift
         deriveResults mkRule results
-  where
-    assertInstantiated config act =
-        (lift . runExceptT) act
-        >>= either (errorRewritesInstantiation config) return
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq

@@ -41,7 +41,6 @@ import Kore.Step.Simplification.Simplify
     , simplifyCondition
     )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Error
 import Kore.Unification.UnificationProcedure
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT
@@ -84,7 +83,7 @@ unificationProcedureWorker sideCondition p1 p2
 
 unificationProcedure
     :: MonadSimplify simplifier
-    => UnificationProcedure (ExceptT UnificationError simplifier)
+    => UnificationProcedure simplifier
 unificationProcedure =
     UnificationProcedure $ \sideCondition term1 term2 ->
         unificationProcedureWorker sideCondition term1 term2
