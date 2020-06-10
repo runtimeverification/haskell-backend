@@ -232,9 +232,19 @@ attemptEquation sideCondition termLike equation =
             Substitution.mergePredicatesAndSubstitutions
                     sideCondition
                     ([argument, matchPredicate] <> maybeToList antiLeft)
-                    [Substitution.fromMap undefined]
+                    [mkSubstitution matchSubstitution]
                     & Branch.gather
                     & (fmap . fmap) toMatchResult
+
+    mkSubstitution =
+        Substitution.fromMap
+        . Map.fromList
+        . fmap
+            (\(variableName, term)->
+                let variableSort = TermLike.termLikeSort term
+                 in (Variable { variableName, variableSort }, term)
+            )
+        . Map.toList
 
 applyEquation
     :: forall simplifier variable
