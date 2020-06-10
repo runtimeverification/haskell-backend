@@ -88,6 +88,7 @@ import Control.Monad.Counter
     ( CounterT
     )
 import Log.Entry
+import Logic
 import Pretty
     ( Pretty
     )
@@ -221,6 +222,10 @@ instance MonadLog log => MonadLog (CounterT log)
 instance MonadLog log => MonadLog (ExceptT error log)
 
 instance MonadLog log => MonadLog (IdentityT log)
+
+instance MonadLog log => MonadLog (LogicT log) where
+    logWhile entry = mapLogicT (logWhile entry)
+    {-# INLINE logWhile #-}
 
 instance MonadLog log => MonadLog (MaybeT log)
 

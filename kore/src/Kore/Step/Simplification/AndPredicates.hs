@@ -15,10 +15,6 @@ import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch as BranchT
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
@@ -47,6 +43,10 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     )
 import qualified Kore.Step.Substitution as Substitution
+import Logic
+    ( LogicT
+    )
+import qualified Logic as LogicT
 
 simplifyEvaluatedMultiPredicate
     :: forall variable simplifier
@@ -60,12 +60,12 @@ simplifyEvaluatedMultiPredicate sideCondition predicates = do
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
-    orResults <- BranchT.gather (traverse andConditions crossProduct)
+    orResults <- LogicT.observeAllT (traverse andConditions crossProduct)
     return (MultiOr.mergeAll orResults)
   where
     andConditions
         :: [Condition variable]
-        -> BranchT simplifier (Condition variable)
+        -> LogicT simplifier (Condition variable)
     andConditions predicates' =
         fmap markSimplified
         $ Substitution.normalize sideCondition (Foldable.fold predicates')

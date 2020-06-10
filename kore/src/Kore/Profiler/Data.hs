@@ -57,10 +57,10 @@ import System.Clock
     )
 
 import Control.Monad.Counter
-import ListT
-    ( ListT (..)
-    , mapListT
+import Logic
+    ( LogicT
     )
+import qualified Logic
 
 {- | Monad that can also handle profiling events.
 -}
@@ -274,8 +274,8 @@ instance MonadProfiler m => MonadProfiler (ExceptT e m)
 
 instance MonadProfiler m => MonadProfiler (IdentityT m)
 
-instance MonadProfiler m => MonadProfiler (ListT m) where
-    profile a = mapListT (profile a)
+instance MonadProfiler m => MonadProfiler (LogicT m) where
+    profile a = Logic.mapLogicT (profile a)
     {-# INLINE profile #-}
 
 instance MonadProfiler m => MonadProfiler (MaybeT m)

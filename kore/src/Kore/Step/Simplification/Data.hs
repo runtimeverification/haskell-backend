@@ -32,7 +32,6 @@ import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
 
-import Branch
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -63,6 +62,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Log
+import Logic
 import SMT
     ( MonadSMT (..)
     , SMT (..)
@@ -154,10 +154,10 @@ instance
 runSimplifierBranch
     :: Monad smt
     => Env (SimplifierT smt)
-    -> BranchT (SimplifierT smt) a
+    -> LogicT (SimplifierT smt) a
     -- ^ simplifier computation
     -> smt [a]
-runSimplifierBranch env = runSimplifier env . gather
+runSimplifierBranch env = runSimplifier env . observeAllT
 
 {- | Run a simplification, returning the result of only one branch.
 

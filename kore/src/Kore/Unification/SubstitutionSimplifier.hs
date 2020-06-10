@@ -18,7 +18,6 @@ import Control.Error
     , maybeT
     )
 
-import qualified Branch as BranchT
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrCondition
     ( OrCondition
@@ -58,6 +57,7 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
+import qualified Logic
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -119,4 +119,4 @@ unificationMakeAnd notSimplifier =
     makeAnd termLike1 termLike2 sideCondition = do
         unified <- termUnification notSimplifier termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified
-            & BranchT.alternate
+            & Logic.lowerLogicT

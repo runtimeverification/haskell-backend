@@ -12,7 +12,6 @@ module Kore.Step.Simplification.Condition
 
 import Prelude.Kore
 
-import Branch
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
@@ -35,6 +34,7 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
+import Logic
 import qualified Pretty
 
 {- | Create a 'ConditionSimplifier' using 'simplify'.
@@ -63,7 +63,7 @@ simplify
     =>  SubstitutionSimplifier simplifier
     ->  SideCondition variable
     ->  Conditional variable any
-    ->  BranchT simplifier (Conditional variable any)
+    ->  LogicT simplifier (Conditional variable any)
 simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
     normalize initial >>= worker
   where
@@ -89,12 +89,12 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
     normalize
         ::  forall any'
         .   Conditional variable any'
-        ->  BranchT simplifier (Conditional variable any')
+        ->  LogicT simplifier (Conditional variable any')
     normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- lift $
             simplifySubstitution sideCondition substitution
-        predicate' <- Branch.scatter predicates'
+        predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 
 {- | Simplify the 'Predicate' once.
@@ -112,7 +112,7 @@ simplifyPredicate
         )
     =>  SideCondition variable
     ->  Predicate variable
-    ->  BranchT simplifier (Condition variable)
+    ->  LogicT simplifier (Condition variable)
 simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift

@@ -19,7 +19,6 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 
-import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -70,6 +69,7 @@ import Kore.Step.Step
     , mkRewritingPattern
     , unifyRules
     )
+import qualified Logic
 
 withoutUnification :: UnifiedRule rule variable -> rule variable
 withoutUnification = Conditional.term
@@ -95,8 +95,8 @@ finalizeAppliedRule
     -- ^ Conditions of applied rule
     -> simplifier (OrPattern RewritingVariableName)
 finalizeAppliedRule renamedRule appliedConditions =
-    MultiOr.gather
-    $ finalizeAppliedRuleWorker =<< Branch.scatter appliedConditions
+    MultiOr.observeAllT
+    $ finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
   where
     ruleRHS = Rule.rhs renamedRule
     finalizeAppliedRuleWorker appliedCondition = do
@@ -117,7 +117,7 @@ finalizeAppliedRule renamedRule appliedConditions =
                         ensuresCondition
                 simplifyCondition SideCondition.top
                     (appliedCondition <> partial)
-            & Branch.alternate
+            & Logic.lowerLogicT
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
@@ -136,7 +136,7 @@ finalizeRule
     -- ^ Rewriting axiom
     -> simplifier [Result RulePattern VariableName]
 finalizeRule initialVariables initial unifiedRule =
-    Branch.gather $ do
+    Logic.observeAllT $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
@@ -161,11 +161,13 @@ finalizeRulesParallel initialVariables initial unifiedRules = do
         & fmap Foldable.fold
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-    remainders' <- applyRemainder initial remainder & Branch.gather
+    remainders <-
+        applyRemainder initial remainder
+        & Logic.observeAllT
+        & fmap (OrPattern.fromPatterns . map getRemainderPattern)
     return Step.Results
         { results = Seq.fromList results
-        , remainders =
-            OrPattern.fromPatterns $ getRemainderPattern <$> remainders'
+        , remainders
         }
 
 finalizeRulesSequence :: forall simplifier. Finalizer simplifier
@@ -174,11 +176,13 @@ finalizeRulesSequence initialVariables initial unifiedRules = do
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- applyRemainder initial remainder & Branch.gather
+    remainders <-
+        applyRemainder initial remainder
+        & Logic.observeAllT
+        & fmap (OrPattern.fromPatterns . map getRemainderPattern)
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
-        , remainders =
-            OrPattern.fromPatterns $ getRemainderPattern <$> remainders'
+        , remainders
         }
   where
     initialTerm = Conditional.term initial
