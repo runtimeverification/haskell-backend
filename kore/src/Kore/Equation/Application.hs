@@ -226,13 +226,13 @@ attemptEquation sideCondition termLike equation =
         -- correctly), or should we add a new AttemptEquationError case?
         lift $ do
             let toMatchResult Conditional { predicate, substitution } =
-                    (predicate, Substitution.toMap' substitution)
+                    (predicate, Substitution.toMap substitution)
             -- TODO: matchSubstitution should be transformed
             -- into a Substitution
             Substitution.mergePredicatesAndSubstitutions
                     sideCondition
                     ([argument, matchPredicate] <> maybeToList antiLeft)
-                    [Substitution.fromMap matchSubstitution]
+                    [Substitution.fromMap undefined]
                     & Branch.gather
                     & (fmap . fmap) toMatchResult
 
@@ -277,23 +277,21 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
                 }
         _      -> return ()
     let predicate' =
-            Predicate.substitute substitution' predicate
+            Predicate.substitute substitution predicate
             & Predicate.mapVariables (pure Target.unTarget)
         equation' =
-            Equation.substitute substitution' equation
+            Equation.substitute substitution equation
             & Equation.mapVariables (pure Target.unTarget)
     return (equation', predicate')
   where
     equationVariables = freeVariables equation & FreeVariables.toList
-
-    substitution' = Map.mapKeys variableName substitution
 
     errors =
         concatMap checkVariable equationVariables
         <> checkNonTargetVariables
 
     checkVariable Variable { variableName } =
-        case Map.lookup variableName substitution' of
+        case Map.lookup variableName substitution of
             Nothing -> [NotMatched variableName]
             Just termLike ->
                 checkConcreteVariable variableName termLike
@@ -313,9 +311,10 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
       | otherwise
       = empty
 
+    -- TODO: isUnifiedNonTarget
     checkNonTargetVariables
       | Just variable <-
-          Foldable.find Target.isUnifiedNonTarget (Map.keys substitution')
+          Foldable.find Target.isUnifiedNonTarget (Map.keys substitution)
       = [NonTargetSubstitution variable]
       | otherwise
       = mempty
@@ -572,7 +571,7 @@ mapMatchResultVariables adj (predicate, substitution) =
     )
   where
     mapSubstitutionVariables =
-       Map.mapKeys (mapSomeVariable adj)
+       Map.mapKeys (mapSomeVariableName adj)
        . Map.map (TermLike.mapVariables adj)
 
 {- | @ApplyMatchResultError@ represents a reason the match could not be applied.

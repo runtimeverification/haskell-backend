@@ -20,7 +20,6 @@ module Kore.Internal.Substitution
     , mkUnwrappedSubstitution
     , unwrap
     , toMap
-    , toMap'
     , toMultiMap
     , normalOrder
     , fromMap
@@ -314,15 +313,6 @@ toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) =
     Map.mapKeys variableName norm
-
-toMap'
-    :: HasCallStack
-    => Ord variable
-    => Substitution variable
-    -> Map (SomeVariable variable) (TermLike variable)
-toMap' (Substitution _) =
-    error "Cannot convert a denormalized substitution to a map!"
-toMap' (NormalizedSubstitution norm) = norm
 
 toMultiMap
     :: InternalVariable variable

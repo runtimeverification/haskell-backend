@@ -232,6 +232,8 @@ makeEvaluate sideCondition variables original = do
             $ Substitution.variables
                 (Conditional.substitution original)
 
+
+
 matchesToVariableSubstitution
     :: (InternalVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
@@ -248,11 +250,7 @@ matchesToVariableSubstitution
     matchResult <- matchIncremental first second
     case matchResult of
         Just (Predicate.PredicateTrue, results) ->
-            return
-                (singleVariableSubstitution
-                    variable
-                    (Map.mapKeys variableName results)
-                )
+            return (singleVariableSubstitution variable results)
         _ -> return False
 
 matchesToVariableSubstitution _ _ = return False

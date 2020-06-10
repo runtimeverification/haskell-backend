@@ -149,7 +149,7 @@ instance Ord variable => Ord (Constraint variable) where
 
 type MatchResult variable =
     ( Predicate variable
-    , Map.Map (SomeVariable variable) (TermLike variable)
+    , Map.Map (SomeVariableName variable) (TermLike variable)
     )
 
 {- | Dispatch a single matching constraint.
@@ -425,7 +425,7 @@ data MatcherState variable =
         , deferred :: !(Seq (Pair (TermLike variable)))
         -- ^ Unsolvable matching constraints; may become solvable with more
         -- information.
-        , substitution :: !(Map (SomeVariable variable) (TermLike variable))
+        , substitution :: !(Map (SomeVariableName variable) (TermLike variable))
         -- ^ Matching solution: Substitutions for target variables.
         , predicate :: !(MultiAnd (Predicate variable))
         -- ^ Matching solution: Additional constraints.
@@ -515,15 +515,14 @@ substitute eVariable termLike = do
         -- Apply the substitution to the accumulated matching solution.
         >>= (field @"substitution" . traverse) substitute1
         >>= Monad.State.put
-    field @"predicate" . Lens.mapped %= Predicate.substitute substNames
+    field @"predicate" . Lens.mapped %= Predicate.substitute subst
 
     return ()
   where
     variable = inject eVariable
     Variable { variableName } = variable
     isIndependent = not . any (hasFreeVariable variableName)
-    subst = Map.singleton variable termLike
-    substNames = Map.singleton variableName termLike
+    subst = Map.singleton variableName termLike
 
     substitute2
         :: Constraint variable
@@ -537,7 +536,7 @@ substitute eVariable termLike = do
     substitute1 termLike' = do
         injSimplifier <- Simplifier.askInjSimplifier
         termLike'
-            & TermLike.substitute substNames
+            & TermLike.substitute subst
             -- Injected Map and Set keys must be properly normalized before
             -- calling Builtin.renormalize.
             & InjSimplifier.normalize injSimplifier
@@ -576,18 +575,17 @@ setSubstitute sVariable termLike = do
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
-    field @"predicate" . Lens.mapped %= Predicate.substitute substNames
+    field @"predicate" . Lens.mapped %= Predicate.substitute subst
 
     return ()
   where
     variable = inject sVariable
     Variable { variableName } = variable
     isIndependent = not . any (hasFreeVariable variableName)
-    subst = Map.singleton variable termLike
-    substNames = Map.singleton variableName termLike
+    subst = Map.singleton variableName termLike
     substitute2 :: Constraint variable -> Constraint variable
     substitute2 (Constraint pair) = Constraint $ fmap substitute1 pair
-    substitute1 = substituteTermLike substNames
+    substitute1 = substituteTermLike subst
 
 transformQueue
     :: Functor f
