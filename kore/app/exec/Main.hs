@@ -9,9 +9,7 @@ import Control.Monad.Catch
     , handle
     , throwM
     )
-import Control.Monad.Trans
-    ( lift
-    )
+import Control.Monad.Extra as Monad
 import qualified Data.Char as Char
 import Data.Default
     ( def
@@ -498,9 +496,14 @@ writeKoreMergeFiles reportFile KoreMergeOptions { rulesFileName } =
     copyFile rulesFileName $ reportFile <> "/mergeRules.kore"
 
 writeKoreProveFiles :: FilePath -> KoreProveOptions -> IO ()
-writeKoreProveFiles reportFile KoreProveOptions { specFileName, saveProofs } = do
-    copyFile specFileName $ reportFile <> "/spec.kore"
-    Foldable.forM_ saveProofs $ flip copyFile (reportFile <> "/saveProofs.kore")
+writeKoreProveFiles reportFile koreProveOptions = do
+    let KoreProveOptions { specFileName } = koreProveOptions
+    copyFile specFileName (reportFile </> "spec.kore")
+    let KoreProveOptions { saveProofs } = koreProveOptions
+    Foldable.forM_ saveProofs $ \filePath ->
+        Monad.whenM
+            (doesFileExist filePath)
+            (copyFile filePath (reportFile </> "save-proofs.kore"))
 
 writeOptionsAndKoreFiles :: FilePath -> KoreExecOptions -> IO ()
 writeOptionsAndKoreFiles
