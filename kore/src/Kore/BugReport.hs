@@ -21,6 +21,7 @@ import Control.Monad.Catch
     , displayException
     , generalBracket
     , handleAll
+    , throwM
     )
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import qualified Data.Foldable as Foldable
@@ -96,10 +97,10 @@ withBugReport bugReport act =
         case exitCase of
             ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
             ExitCaseException someException -> do
-                writeFile
-                    (tmpDir </> "error" <.> "log")
-                    (displayException someException)
+                let message = displayException someException
+                writeFile (tmpDir </> "error" <.> "log") message
                 alwaysWriteBugReport tmpDir
+                throwM someException
             ExitCaseAbort -> alwaysWriteBugReport tmpDir
         removePathForcibly tmpDir
     alwaysWriteBugReport tmpDir =
