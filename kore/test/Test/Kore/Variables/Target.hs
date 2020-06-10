@@ -13,6 +13,7 @@ import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 import Test.Tasty.Hedgehog
 
+import qualified Control.Monad as Monad
 import qualified Data.Set as Set
 
 import Kore.Internal.Variable
@@ -62,7 +63,7 @@ test_FreshName :: TestTree
 test_FreshName =
     testGroup "instance FreshName (Target VariableName)"
     [ testProperty "Target avoids Target" $ Hedgehog.property $ do
-        Pair x y <- forAll relatedVariableNameGen
+        Pair x y <- forAll variableNameGen
         let actual = refreshName (Set.singleton (Target y)) (Target x)
         case actual of
             Nothing -> x /== y
@@ -71,7 +72,7 @@ test_FreshName =
                 x === y
                 Hedgehog.assert (isTarget x')
     , testProperty "Target avoids NonTarget" $ Hedgehog.property $ do
-        Pair x y <- forAll relatedVariableNameGen
+        Pair x y <- forAll variableNameGen
         let actual = refreshName (Set.singleton (NonTarget y)) (Target x)
         case actual of
             Nothing -> x /== y
@@ -80,7 +81,7 @@ test_FreshName =
                 x === y
                 Hedgehog.assert (isTarget x')
     , testProperty "NonTarget avoids Target" $ Hedgehog.property $ do
-        Pair x y <- forAll relatedVariableNameGen
+        Pair x y <- forAll variableNameGen
         let actual = refreshName (Set.singleton (Target y)) (NonTarget x)
         case actual of
             Nothing -> x /== y
@@ -89,7 +90,7 @@ test_FreshName =
                 x === y
                 Hedgehog.assert (isNonTarget x')
     , testProperty "NonTarget avoids NonTarget" $ Hedgehog.property $ do
-        Pair x y <- forAll relatedVariableNameGen
+        Pair x y <- forAll variableNameGen
         let actual = refreshName (Set.singleton (NonTarget y)) (NonTarget x)
         case actual of
             Nothing -> x /== y
@@ -110,6 +111,13 @@ targetVariableNameGen gen = do
         , Pair (NonTarget x) (Target y)
         , Pair (NonTarget x) (NonTarget y)
         ]
+
+variableNameGen :: Gen (Pair VariableName)
+variableNameGen = do
+    xy@(Pair x y) <- relatedVariableNameGen
+    Monad.guard (x < supVariable x)
+    Monad.guard (y < supVariable y)
+    pure xy
 
 aSort :: Sort
 aSort =
