@@ -35,6 +35,7 @@ import Kore.Unparser
 import Kore.Variables.Fresh
     ( FreshName (..)
     , FreshPartialOrd (..)
+    , defaultRefreshName
     )
 
 {- | Distinguish variables by their source.
@@ -153,7 +154,12 @@ instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
-instance FreshPartialOrd variable => FreshName (Target variable)
+instance FreshPartialOrd variable => FreshName (Target variable) where
+    refreshName stale target = do
+        target' <- defaultRefreshName stale target
+        -- Ensure that the refreshed name and the original name use the same
+        -- constructor.
+        pure (target $> unTarget target')
 
 instance
     Unparse variable =>
