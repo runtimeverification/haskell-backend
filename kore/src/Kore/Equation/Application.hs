@@ -314,7 +314,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
     -- TODO: isUnifiedNonTarget
     checkNonTargetVariables
       | Just variable <-
-          Foldable.find undefined (Map.keys substitution)
+          Foldable.find Target.isUnifiedNonTarget (Map.keys substitution)
       = [NonTargetSubstitution variable]
       | otherwise
       = mempty
