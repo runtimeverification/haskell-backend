@@ -63,30 +63,33 @@ prop> maxBoundName x == maxBoundName (maxBoundName x)
 
 Monotonicity:
 
-prop> x < maxBoundName x ==> x < nextName x
+prop> x < maxBoundName x ==> Just x < nextName x x
 
 Bounding:
 
-prop> x < maxBoundName x ==> minBoundName x < nextName x
+prop> x < maxBoundName x ==> Just (minBoundName x) < nextName x x
 
-prop> x < maxBoundName x ==> nextName x < maxBoundName x
+prop> x < maxBoundName x ==> nextName x x < Just (maxBoundName x)
 
  -}
-class Ord variable => FreshPartialOrd variable where
-    minBoundName :: variable -> variable
+class Ord name => FreshPartialOrd name where
+    minBoundName :: name -> name
 
-    {- | @maxBoundName x@ is the greatest variable related to @x@.
+    {- | @maxBoundName x@ is the greatest name related to @x@.
 
     In the typical implementation, the counter has type
     @'Maybe' ('Sup' 'Natural')@
     so that @maxBoundName x@ has a counter @'Just' 'Sup'@.
 
      -}
-    maxBoundName :: variable -> variable
+    maxBoundName :: name -> name
 
-    {- | @nextName@ increments the counter attached to a variable.
+    {- | @nextName a b@ is the least name greater than @a@ and @b@.
+
+    The result shares any properties (besides its name) with the first argument.
+
      -}
-    nextName :: variable -> variable
+    nextName :: name -> name -> Maybe name
 
 instance FreshPartialOrd VariableName where
     minBoundName variable = variable { counter = Nothing }
@@ -95,13 +98,15 @@ instance FreshPartialOrd VariableName where
     maxBoundName variable = variable { counter = Just Sup }
     {-# INLINE maxBoundName #-}
 
-    nextName =
-        Lens.over (field @"counter") incrementCounter
-        . Lens.set (field @"base" . field @"idLocation") generated
+    nextName name1 name2 =
+        name1
+        & Lens.set (field @"counter") counter'
+        & Lens.set (field @"base" . field @"idLocation") generated
+        & Just
       where
         generated = AstLocationGeneratedVariable
-        incrementCounter counter =
-            case counter of
+        counter' =
+            case Lens.view (field @"counter") name2 of
                 Nothing          -> Just (Element 0)
                 Just (Element n) -> Just (Element (succ n))
                 Just Sup         -> illegalVariableCounter
@@ -122,7 +127,8 @@ instance
     maxBoundName = fmap maxBoundName
     {-# INLINE maxBoundName #-}
 
-    nextName = fmap nextName
+    nextName name1 (ElementVariableName name2) =
+        traverse (flip nextName name2) name1
     {-# INLINE nextName #-}
 
 instance
@@ -135,7 +141,8 @@ instance
     maxBoundName = fmap maxBoundName
     {-# INLINE maxBoundName #-}
 
-    nextName = fmap nextName
+    nextName name1 (SetVariableName name2) =
+        traverse (flip nextName name2) name1
     {-# INLINE nextName #-}
 
 instance
@@ -148,7 +155,11 @@ instance
     maxBoundName = fmap maxBoundName
     {-# INLINE maxBoundName #-}
 
-    nextName = fmap nextName
+    nextName (SomeVariableNameElement name1) (SomeVariableNameElement name2) =
+        SomeVariableNameElement <$> nextName name1 name2
+    nextName (SomeVariableNameSet name1) (SomeVariableNameSet name2) =
+        SomeVariableNameSet <$> nextName name1 name2
+    nextName _ _ = Nothing
     {-# INLINE nextName #-}
 
 {- | A @FreshName@ can be renamed to avoid colliding with a set of names.
@@ -183,7 +194,7 @@ defaultRefreshName avoiding original = do
     Monad.guard (Set.member original avoiding)
     let sup = maxBoundName original
     largest <- Set.lookupLT sup avoiding
-    let next = nextName largest
+    next <- nextName original largest
     -- nextName must yield a variable greater than largest.
     assert (next > largest) $ pure next
 {-# INLINE defaultRefreshName #-}

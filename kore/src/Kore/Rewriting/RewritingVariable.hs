@@ -100,10 +100,11 @@ instance FreshPartialOrd RewritingVariableName where
             ConfigVariableName var -> ConfigVariableName (maxBoundName var)
     {-# INLINE maxBoundName #-}
 
-    nextName =
-        \case
-            RuleVariableName var   -> RuleVariableName (nextName var)
-            ConfigVariableName var -> ConfigVariableName (nextName var)
+    nextName (RuleVariableName name1) (RuleVariableName name2) =
+        RuleVariableName <$> nextName name1 name2
+    nextName (ConfigVariableName name1) (ConfigVariableName name2) =
+        ConfigVariableName <$> nextName name1 name2
+    nextName _ _ = Nothing
     {-# INLINE nextName #-}
 
 instance Unparse RewritingVariableName where

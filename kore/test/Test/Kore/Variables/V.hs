@@ -54,11 +54,11 @@ instance From V VariableName where
 instance FreshPartialOrd V where
     minBoundName v = v { counter = Nothing }
     maxBoundName v = v { counter = Just Sup }
-    nextName =
-        Lens.over (field @"counter") increment
+    nextName v1 v2 =
+        Just $ Lens.set (field @"counter") counter' v1
       where
-        increment =
-            \case
+        counter' =
+            case Lens.view (field @"counter") v2 of
                 Nothing -> Just (Element 0)
                 Just (Element a) -> Just (Element (succ a))
                 Just Sup -> illegalVariableCounter

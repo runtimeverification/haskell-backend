@@ -173,14 +173,14 @@ testFreshPartialOrd gen =
         Pair x _ <- forAll gen
         let inf = minBoundName x
             sup = maxBoundName x
-            next = nextName x
+            next = nextName x x
         unless (x < sup) discard
         annotateShow inf
         annotateShow sup
         annotateShow next
-        Hedgehog.assert (inf < next)
-        Hedgehog.assert (x < next)
-        Hedgehog.assert (next < sup)
+        Hedgehog.assert (Just inf < next)
+        Hedgehog.assert (Just x < next)
+        Hedgehog.assert (next < Just sup)
     ]
 
 counterGen :: MonadGen gen => gen (Maybe (Sup Natural))
