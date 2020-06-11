@@ -258,6 +258,7 @@ mainWithOptions
                         scriptModeOutput
                         outputFile
                         mainModuleName
+                        koreLogOptions
 
                 pure ExitSuccess
     exitWith exitCode
