@@ -4,7 +4,6 @@ module Test.Kore.Variables.Target
     , test_Hashable
     , test_FreshPartialOrd
     , test_FreshName
-    , test_FreshNameSomeVariableName
     ) where
 
 import Prelude.Kore
@@ -60,95 +59,59 @@ test_FreshPartialOrd =
     $ testFreshPartialOrd
     $ targetVariableNameGen relatedVariableNameGen
 
-test_FreshName :: TestTree
+test_FreshName :: [TestTree]
 test_FreshName =
-    testGroup "instance FreshName (Target VariableName)"
-    [ testProperty "Target avoids Target" $ Hedgehog.property $ do
-        Pair x y <- forAll variableNameGen
-        let actual = refreshName (Set.singleton (Target y)) (Target x)
-        case actual of
-            Nothing -> x /== y
-            Just x' -> do
-                Hedgehog.annotateShow x'
-                x === y
-                Hedgehog.assert (isTarget x')
-    , testProperty "Target avoids NonTarget" $ Hedgehog.property $ do
-        Pair x y <- forAll variableNameGen
-        let actual = refreshName (Set.singleton (NonTarget y)) (Target x)
-        case actual of
-            Nothing -> x /== y
-            Just x' -> do
-                Hedgehog.annotateShow x'
-                x === y
-                Hedgehog.assert (isTarget x')
-    , testProperty "NonTarget avoids Target" $ Hedgehog.property $ do
-        Pair x y <- forAll variableNameGen
-        let actual = refreshName (Set.singleton (Target y)) (NonTarget x)
-        case actual of
-            Nothing -> x /== y
-            Just x' -> do
-                Hedgehog.annotateShow x'
-                x === y
-                Hedgehog.assert (isNonTarget x')
-    , testProperty "NonTarget avoids NonTarget" $ Hedgehog.property $ do
-        Pair x y <- forAll variableNameGen
-        let actual = refreshName (Set.singleton (NonTarget y)) (NonTarget x)
-        case actual of
-            Nothing -> x /== y
-            Just x' -> do
-                Hedgehog.annotateShow x'
-                x === y
-                Hedgehog.assert (isNonTarget x')
+    [ testGroup "instance FreshName (Target VariableName)"
+        [ testProperty "Target avoids Target"
+            (prop genTargetTarget isTarget)
+        , testProperty "Target avoids NonTarget"
+            (prop genTargetNonTarget isTarget)
+        , testProperty "NonTarget avoids Target"
+            (prop genNonTargetTarget isNonTarget)
+        , testProperty "NonTarget avoids NonTarget"
+            (prop genNonTargetNonTarget isNonTarget)
+        ]
+    , testGroup "instance FreshName (SomeVariableName (Target VariableName))"
+        [ testProperty "Target avoids Target"
+            (prop (genSomeElement genTargetTarget) isSomeTargetName)
+        , testProperty "Target avoids NonTarget"
+            (prop (genSomeElement genTargetNonTarget) isSomeTargetName)
+        , testProperty "NonTarget avoids Target"
+            (prop (genSomeElement genNonTargetTarget) isSomeNonTargetName)
+        , testProperty "NonTarget avoids NonTarget"
+            (prop (genSomeElement genNonTargetNonTarget) isSomeNonTargetName)
+        ]
     ]
+  where
+    genTargetTarget = fmap Target <$> variableNameGen
 
-test_FreshNameSomeVariableName :: TestTree
-test_FreshNameSomeVariableName =
-    testGroup "instance FreshName (SomeVariableName (Target VariableName))"
-    [ testProperty "Target avoids Target" $ Hedgehog.property $ do
-        Pair x' y' <- forAll variableNameGen
-        let x = SomeVariableNameElement (ElementVariableName (Target x'))
-            y = SomeVariableNameElement (ElementVariableName (Target y'))
-            actual = refreshName (Set.singleton y) x
-        case actual of
-            Nothing -> x /== y
-            Just x'' -> do
-                Hedgehog.annotateShow x''
-                x === y
-                Hedgehog.assert (isSomeTargetName x'')
-    , testProperty "Target avoids NonTarget" $ Hedgehog.property $ do
-        Pair x' y' <- forAll variableNameGen
-        let x = SomeVariableNameElement (ElementVariableName (Target x'))
-            y = SomeVariableNameElement (ElementVariableName (NonTarget y'))
+    genNonTargetNonTarget = fmap NonTarget <$> variableNameGen
+
+    genTargetNonTarget = do
+        Pair x y <- variableNameGen
+        pure (Pair (Target x) (NonTarget y))
+
+    genNonTargetTarget = do
+        Pair x y <- variableNameGen
+        pure (Pair (NonTarget x) (Target y))
+
+    genSomeElement :: Gen (Pair name) -> Gen (Pair (SomeVariableName name))
+    genSomeElement gen = fmap (inject . ElementVariableName) <$> gen
+
+    prop
+        :: (FreshName x, Show x)
+        => Gen (Pair x)
+        -> (x -> Bool)
+        -> Property
+    prop gen assertion = Hedgehog.property $ do
+        Pair x y <- forAll gen
         let actual = refreshName (Set.singleton y) x
         case actual of
             Nothing -> x /== y
-            Just x'' -> do
-                Hedgehog.annotateShow x''
+            Just x' -> do
+                Hedgehog.annotateShow x'
                 x === y
-                Hedgehog.assert (isSomeTargetName x'')
-    , testProperty "NonTarget avoids Target" $ Hedgehog.property $ do
-        Pair x' y' <- forAll variableNameGen
-        let x = SomeVariableNameElement (ElementVariableName (NonTarget x'))
-            y = SomeVariableNameElement (ElementVariableName (Target y'))
-        let actual = refreshName (Set.singleton y) x
-        case actual of
-            Nothing -> x /== y
-            Just x'' -> do
-                Hedgehog.annotateShow x''
-                x === y
-                Hedgehog.assert (isSomeNonTargetName x'')
-    , testProperty "NonTarget avoids NonTarget" $ Hedgehog.property $ do
-        Pair x' y' <- forAll variableNameGen
-        let x = SomeVariableNameElement (ElementVariableName (NonTarget x'))
-            y = SomeVariableNameElement (ElementVariableName (NonTarget y'))
-        let actual = refreshName (Set.singleton y) x
-        case actual of
-            Nothing -> x /== y
-            Just x'' -> do
-                Hedgehog.annotateShow x''
-                x === y
-                Hedgehog.assert (isSomeNonTargetName x'')
-    ]
+                Hedgehog.assert (assertion x')
 
 targetVariableNameGen
     :: Gen (Pair variable)
