@@ -61,7 +61,7 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
-    ( nextVariable
+    ( nextName
     )
 
 import Test.Kore.Internal.Condition as Condition
@@ -320,7 +320,7 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            x' = nextVariable <$> Mock.x
+            x' = nextName <$> Mock.x
             final = mkElemVar x'
             initial = pure (mkElemVar Mock.y)
             axiom =

@@ -143,8 +143,8 @@ testFreshPartialOrd
 testFreshPartialOrd gen =
     [ testProperty "exclusive bounds" $ property $ do
         xy <- forAll gen
-        let Pair infX infY = infVariable <$> xy
-            Pair supX supY = supVariable <$> xy
+        let Pair infX infY = minBoundName <$> xy
+            Pair supX supY = maxBoundName <$> xy
         annotateShow infX
         annotateShow supX
         annotateShow infY
@@ -154,8 +154,8 @@ testFreshPartialOrd gen =
         infY /== supX
     , testProperty "lower and upper bound" $ property $ do
         Pair x _ <- forAll gen
-        let inf = infVariable x
-            sup = supVariable x
+        let inf = minBoundName x
+            sup = maxBoundName x
         annotateShow inf
         annotateShow sup
         Hedgehog.assert (inf <= x)
@@ -163,17 +163,17 @@ testFreshPartialOrd gen =
         Hedgehog.assert (inf < sup)
     , testProperty "idempotence" $ property $ do
         Pair x _ <- forAll gen
-        let inf1 = infVariable x
-            inf2 = infVariable inf1
-            sup1 = supVariable x
-            sup2 = supVariable sup1
+        let inf1 = minBoundName x
+            inf2 = minBoundName inf1
+            sup1 = maxBoundName x
+            sup2 = maxBoundName sup1
         inf1 === inf2
         sup1 === sup2
-    , testProperty "nextVariable" $ property $ do
+    , testProperty "nextName" $ property $ do
         Pair x _ <- forAll gen
-        let inf = infVariable x
-            sup = supVariable x
-            next = nextVariable x
+        let inf = minBoundName x
+            sup = maxBoundName x
+            next = nextName x
         unless (x < sup) discard
         annotateShow inf
         annotateShow sup

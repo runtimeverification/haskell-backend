@@ -145,23 +145,23 @@ instance From variable1 variable2 => From (Target variable1) variable2 where
     {-# INLINE from #-}
 
 instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
-    infVariable =
+    minBoundName =
         \case
-            Target var    -> Target (infVariable var)
-            NonTarget var -> NonTarget (infVariable var)
-    {-# INLINE infVariable #-}
+            Target var    -> Target (minBoundName var)
+            NonTarget var -> NonTarget (minBoundName var)
+    {-# INLINE minBoundName #-}
 
-    supVariable =
+    maxBoundName =
         \case
-            Target var    -> Target (supVariable var)
-            NonTarget var -> NonTarget (supVariable var)
-    {-# INLINE supVariable #-}
+            Target var    -> Target (maxBoundName var)
+            NonTarget var -> NonTarget (maxBoundName var)
+    {-# INLINE maxBoundName #-}
 
-    nextVariable =
+    nextName =
         \case
-            Target var    -> Target (nextVariable var)
-            NonTarget var -> NonTarget (nextVariable var)
-    {-# INLINE nextVariable #-}
+            Target var    -> Target (nextName var)
+            NonTarget var -> NonTarget (nextName var)
+    {-# INLINE nextName #-}
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}

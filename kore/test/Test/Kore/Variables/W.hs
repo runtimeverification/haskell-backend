@@ -54,9 +54,9 @@ instance From W VariableName where
     from = error "Not implemented"
 
 instance FreshPartialOrd W where
-    infVariable w = w { counter = Nothing }
-    supVariable w = w { counter = Just Sup }
-    nextVariable =
+    minBoundName w = w { counter = Nothing }
+    maxBoundName w = w { counter = Just Sup }
+    nextName =
         Lens.over (field @"counter") increment
       where
         increment =

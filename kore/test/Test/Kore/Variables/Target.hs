@@ -165,8 +165,8 @@ targetVariableNameGen gen = do
 variableNameGen :: Gen (Pair VariableName)
 variableNameGen = do
     xy@(Pair x y) <- relatedVariableNameGen
-    Monad.guard (x < supVariable x)
-    Monad.guard (y < supVariable y)
+    Monad.guard (x < maxBoundName x)
+    Monad.guard (y < maxBoundName y)
     pure xy
 
 aSort :: Sort

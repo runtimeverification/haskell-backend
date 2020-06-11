@@ -38,64 +38,64 @@ import Kore.Syntax.Variable
 
 {- | @FreshPartialOrder@ defines a partial order for renaming variables.
 
-Two variables @x@ and @y@ are related under the partial order if @infVariable@
-and @supVariable@ give the same value on @x@ and @y@.
+Two variables @x@ and @y@ are related under the partial order if @minBoundName@
+and @maxBoundName@ give the same value on @x@ and @y@.
 
 Disjoint:
 
-prop> infVariable x /= supVariable y
+prop> minBoundName x /= maxBoundName y
 
-prop> (infVariable x == infVariable y) == (supVariable x == supVariable y)
+prop> (minBoundName x == minBoundName y) == (maxBoundName x == maxBoundName y)
 
 Order:
 
-prop> infVariable x <= x
+prop> minBoundName x <= x
 
-prop> x <= supVariable x
+prop> x <= maxBoundName x
 
-prop> infVariable x < supVariable x
+prop> minBoundName x < maxBoundName x
 
 Idempotence:
 
-prop> infVariable x == infVariable (infVariable x)
+prop> minBoundName x == minBoundName (minBoundName x)
 
-prop> supVariable x == supVariable (supVariable x)
+prop> maxBoundName x == maxBoundName (maxBoundName x)
 
 Monotonicity:
 
-prop> x < supVariable x ==> x < nextVariable x
+prop> x < maxBoundName x ==> x < nextName x
 
 Bounding:
 
-prop> x < supVariable x ==> infVariable x < nextVariable x
+prop> x < maxBoundName x ==> minBoundName x < nextName x
 
-prop> x < supVariable x ==> nextVariable x < supVariable x
+prop> x < maxBoundName x ==> nextName x < maxBoundName x
 
  -}
 class Ord variable => FreshPartialOrd variable where
-    infVariable :: variable -> variable
+    minBoundName :: variable -> variable
 
-    {- | @supVariable x@ is the greatest variable related to @x@.
+    {- | @maxBoundName x@ is the greatest variable related to @x@.
 
     In the typical implementation, the counter has type
     @'Maybe' ('Sup' 'Natural')@
-    so that @supVariable x@ has a counter @'Just' 'Sup'@.
+    so that @maxBoundName x@ has a counter @'Just' 'Sup'@.
 
      -}
-    supVariable :: variable -> variable
+    maxBoundName :: variable -> variable
 
-    {- | @nextVariable@ increments the counter attached to a variable.
+    {- | @nextName@ increments the counter attached to a variable.
      -}
-    nextVariable :: variable -> variable
+    nextName :: variable -> variable
 
 instance FreshPartialOrd VariableName where
-    infVariable variable = variable { counter = Nothing }
-    {-# INLINE infVariable #-}
+    minBoundName variable = variable { counter = Nothing }
+    {-# INLINE minBoundName #-}
 
-    supVariable variable = variable { counter = Just Sup }
-    {-# INLINE supVariable #-}
+    maxBoundName variable = variable { counter = Just Sup }
+    {-# INLINE maxBoundName #-}
 
-    nextVariable =
+    nextName =
         Lens.over (field @"counter") incrementCounter
         . Lens.set (field @"base" . field @"idLocation") generated
       where
@@ -105,51 +105,51 @@ instance FreshPartialOrd VariableName where
                 Nothing          -> Just (Element 0)
                 Just (Element n) -> Just (Element (succ n))
                 Just Sup         -> illegalVariableCounter
-    {-# INLINE nextVariable #-}
+    {-# INLINE nextName #-}
 
 instance FreshPartialOrd Void where
-    infVariable = \case {}
-    supVariable = \case {}
-    nextVariable = \case {}
+    minBoundName = \case {}
+    maxBoundName = \case {}
+    nextName = \case {}
 
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (ElementVariableName variable)
   where
-    infVariable = fmap infVariable
-    {-# INLINE infVariable #-}
+    minBoundName = fmap minBoundName
+    {-# INLINE minBoundName #-}
 
-    supVariable = fmap supVariable
-    {-# INLINE supVariable #-}
+    maxBoundName = fmap maxBoundName
+    {-# INLINE maxBoundName #-}
 
-    nextVariable = fmap nextVariable
-    {-# INLINE nextVariable #-}
+    nextName = fmap nextName
+    {-# INLINE nextName #-}
 
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (SetVariableName variable)
   where
-    infVariable = fmap infVariable
-    {-# INLINE infVariable #-}
+    minBoundName = fmap minBoundName
+    {-# INLINE minBoundName #-}
 
-    supVariable = fmap supVariable
-    {-# INLINE supVariable #-}
+    maxBoundName = fmap maxBoundName
+    {-# INLINE maxBoundName #-}
 
-    nextVariable = fmap nextVariable
-    {-# INLINE nextVariable #-}
+    nextName = fmap nextName
+    {-# INLINE nextName #-}
 
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (SomeVariableName variable)
   where
-    infVariable = fmap infVariable
-    {-# INLINE infVariable #-}
+    minBoundName = fmap minBoundName
+    {-# INLINE minBoundName #-}
 
-    supVariable = fmap supVariable
-    {-# INLINE supVariable #-}
+    maxBoundName = fmap maxBoundName
+    {-# INLINE maxBoundName #-}
 
-    nextVariable = fmap nextVariable
-    {-# INLINE nextVariable #-}
+    nextName = fmap nextName
+    {-# INLINE nextName #-}
 
 {- | A @FreshName@ can be renamed to avoid colliding with a set of names.
 -}
@@ -181,10 +181,10 @@ defaultRefreshName
     -> Maybe variable
 defaultRefreshName avoiding original = do
     Monad.guard (Set.member original avoiding)
-    let sup = supVariable original
+    let sup = maxBoundName original
     largest <- Set.lookupLT sup avoiding
-    let next = nextVariable largest
-    -- nextVariable must yield a variable greater than largest.
+    let next = nextName largest
+    -- nextName must yield a variable greater than largest.
     assert (next > largest) $ pure next
 {-# INLINE defaultRefreshName #-}
 
