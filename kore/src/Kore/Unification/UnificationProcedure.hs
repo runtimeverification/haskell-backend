@@ -7,9 +7,6 @@ module Kore.Unification.UnificationProcedure
     ( UnificationProcedure (..)
     ) where
 
-import Branch
-    ( BranchT
-    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -19,6 +16,9 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
+    )
+import Logic
+    ( LogicT
     )
 
 -- | Unifies two 'TermLike' patterns under the given 'SideCondition'.
@@ -30,5 +30,5 @@ newtype UnificationProcedure unifier =
             => SideCondition variable
             -> TermLike variable
             -> TermLike variable
-            -> BranchT unifier (Condition variable)
+            -> LogicT unifier (Condition variable)
         }

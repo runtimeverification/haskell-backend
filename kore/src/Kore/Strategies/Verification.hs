@@ -84,9 +84,10 @@ import Kore.Strategies.ProofState
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
 import Kore.Unparser
-import ListT
-    ( ListT (..)
+import Logic
+    ( LogicT
     )
+import qualified Logic
 
 -- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
 type CommonProofState = ProofState.ProofState (Pattern VariableName)
@@ -241,7 +242,7 @@ verifyClaim
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
-        >=> Strategy.applyBreadthLimit breadthLimit
+        >=> lift . Strategy.applyBreadthLimit breadthLimit
         >=> profileQueueLength
 
     profileQueueLength queue = do
@@ -249,10 +250,10 @@ verifyClaim
         pure queue
 
     throwUnproven
-        :: ListT (Verifier simplifier) CommonProofState
+        :: LogicT (Verifier simplifier) CommonProofState
         -> Verifier simplifier ()
     throwUnproven acts =
-        foldListT acts throwUnprovenOrElse done
+        Logic.runLogicT acts throwUnprovenOrElse done
       where
         done = return ()
 

@@ -46,14 +46,13 @@ import Kore.Profiler.Data
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
     )
-import ListT
-    ( ListT
-    , mapListT
-    )
-import qualified ListT
 import Log
     ( MonadLog (..)
     )
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 import SMT
     ( MonadSMT (..)
     )
@@ -71,7 +70,7 @@ separate record of applied rules after the branch.
 
  -}
 newtype TransitionT rule m a =
-    TransitionT { getTransitionT :: AccumT (Seq rule) (ListT m) a }
+    TransitionT { getTransitionT :: AccumT (Seq rule) (LogicT m) a }
     deriving
         ( Alternative
         , Applicative
@@ -124,7 +123,7 @@ instance MonadCatch m => MonadCatch (TransitionT rule m) where
         handler' e = runTransitionT (handler e)
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
-runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
+runTransitionT (TransitionT edge) = Logic.observeAllT (runAccumT edge mempty)
 
 tryTransitionT
     :: Monad m
@@ -138,11 +137,11 @@ mapTransitionT
     -> TransitionT rule m a
     -> TransitionT rule n a
 mapTransitionT mapping =
-    TransitionT . mapAccumT (mapListT mapping) . getTransitionT
+    TransitionT . mapAccumT (Logic.mapLogicT mapping) . getTransitionT
 
 scatter :: [(a, Seq rule)] -> TransitionT rule m a
 scatter edges = do
-    (a, rules) <- TransitionT (lift (ListT.scatter edges))
+    (a, rules) <- TransitionT (lift (Logic.scatter edges))
     addRules rules
     return a
 

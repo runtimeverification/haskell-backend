@@ -15,10 +15,6 @@ import qualified Control.Lens.Combinators as Lens
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
-import qualified Branch as BranchT
-    ( gather
-    , scatter
-    )
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
@@ -154,6 +150,7 @@ import Kore.Variables.Target
     , targetIfEqual
     , unTarget
     )
+import qualified Logic
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -262,8 +259,8 @@ simplifyInternal term sideCondition = do
                 termLike
                 (OrPattern.toPatterns termOr)
                 (do
-                    termPredicateList <- BranchT.gather $ do
-                        termOrElement <- BranchT.scatter termOr
+                    termPredicateList <- Logic.observeAllT $ do
+                        termOrElement <- Logic.scatter termOr
                         simplified <-
                             simplifyCondition sideCondition termOrElement
                         return (applyTermSubstitution simplified)

@@ -87,10 +87,6 @@ import Kore.Profiler.Data
     ( MonadProfiler (..)
     , profileEvent
     )
-import ListT
-    ( ListT
-    , mapListT
-    )
 import Log
     ( LogAction
     , LoggerT
@@ -98,6 +94,10 @@ import Log
     , SomeEntry
     )
 import qualified Log
+import Logic
+    ( LogicT
+    , mapLogicT
+    )
 import SMT.SimpleSMT
     ( Constructor (..)
     , ConstructorArgument (..)
@@ -345,8 +345,8 @@ instance MonadProfiler SMT
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 
-instance MonadSMT m => MonadSMT (ListT m) where
-    withSolver = mapListT withSolver
+instance MonadSMT m => MonadSMT (LogicT m) where
+    withSolver = mapLogicT withSolver
     {-# INLINE withSolver #-}
 
 instance MonadSMT m => MonadSMT (ReaderT r m)

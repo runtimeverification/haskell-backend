@@ -23,7 +23,6 @@ import Control.Error
     )
 import qualified Data.Foldable as Foldable
 
-import qualified Branch as BranchT
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -72,6 +71,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     )
 import Kore.TopBottom
 import Kore.Unparser
+import qualified Logic
 import qualified Pretty
 
 {-| Evaluates functions on an application pattern.
@@ -353,11 +353,10 @@ reevaluateFunctions
     -> simplifier (OrPattern variable)
 reevaluateFunctions sideCondition rewriting = do
     let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
-    orResults <- BranchT.gather $ do
+    OrPattern.observeAllT $ do
         simplifiedTerm <- simplifyConditionalTerm sideCondition rewritingTerm
         simplifyCondition sideCondition
             $ Pattern.andCondition simplifiedTerm rewritingCondition
-    return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
@@ -384,11 +383,11 @@ mergeWithConditionAndSubstitution
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    evaluatedResults <- OrPattern.gather $ do
-        result <- BranchT.scatter results
+    evaluatedResults <- OrPattern.observeAllT $ do
+        result <- Logic.scatter results
         simplifyCondition sideCondition $ Pattern.andCondition result toMerge
-    evaluatedRemainders <- OrPattern.gather $ do
-        remainder <- BranchT.scatter remainders
+    evaluatedRemainders <- OrPattern.observeAllT $ do
+        remainder <- Logic.scatter remainders
         simplifyCondition sideCondition (Pattern.andCondition remainder toMerge)
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = evaluatedResults
