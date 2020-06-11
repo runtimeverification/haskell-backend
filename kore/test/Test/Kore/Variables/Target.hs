@@ -4,6 +4,7 @@ module Test.Kore.Variables.Target
     , test_Hashable
     , test_FreshPartialOrd
     , test_FreshName
+    , test_FreshNameSomeVariableName
     ) where
 
 import Prelude.Kore
@@ -98,6 +99,55 @@ test_FreshName =
                 Hedgehog.annotateShow x'
                 x === y
                 Hedgehog.assert (isNonTarget x')
+    ]
+
+test_FreshNameSomeVariableName :: TestTree
+test_FreshNameSomeVariableName =
+    testGroup "instance FreshName (SomeVariableName (Target VariableName))"
+    [ testProperty "Target avoids Target" $ Hedgehog.property $ do
+        Pair x' y' <- forAll variableNameGen
+        let x = SomeVariableNameElement (ElementVariableName (Target x'))
+            y = SomeVariableNameElement (ElementVariableName (Target y'))
+            actual = refreshName (Set.singleton y) x
+        case actual of
+            Nothing -> x /== y
+            Just x'' -> do
+                Hedgehog.annotateShow x''
+                x === y
+                Hedgehog.assert (isSomeTargetName x'')
+    , testProperty "Target avoids NonTarget" $ Hedgehog.property $ do
+        Pair x' y' <- forAll variableNameGen
+        let x = SomeVariableNameElement (ElementVariableName (Target x'))
+            y = SomeVariableNameElement (ElementVariableName (NonTarget y'))
+        let actual = refreshName (Set.singleton y) x
+        case actual of
+            Nothing -> x /== y
+            Just x'' -> do
+                Hedgehog.annotateShow x''
+                x === y
+                Hedgehog.assert (isSomeTargetName x'')
+    , testProperty "NonTarget avoids Target" $ Hedgehog.property $ do
+        Pair x' y' <- forAll variableNameGen
+        let x = SomeVariableNameElement (ElementVariableName (NonTarget x'))
+            y = SomeVariableNameElement (ElementVariableName (Target y'))
+        let actual = refreshName (Set.singleton y) x
+        case actual of
+            Nothing -> x /== y
+            Just x'' -> do
+                Hedgehog.annotateShow x''
+                x === y
+                Hedgehog.assert (isSomeNonTargetName x'')
+    , testProperty "NonTarget avoids NonTarget" $ Hedgehog.property $ do
+        Pair x' y' <- forAll variableNameGen
+        let x = SomeVariableNameElement (ElementVariableName (NonTarget x'))
+            y = SomeVariableNameElement (ElementVariableName (NonTarget y'))
+        let actual = refreshName (Set.singleton y) x
+        case actual of
+            Nothing -> x /== y
+            Just x'' -> do
+                Hedgehog.annotateShow x''
+                x === y
+                Hedgehog.assert (isSomeNonTargetName x'')
     ]
 
 targetVariableNameGen

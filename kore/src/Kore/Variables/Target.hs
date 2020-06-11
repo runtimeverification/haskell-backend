@@ -20,6 +20,8 @@ module Kore.Variables.Target
     , mkUnifiedNonTarget
     , isNonTarget
     , targetIfEqual
+    , isSomeTargetName
+    , isSomeNonTargetName
     ) where
 
 import Prelude.Kore
@@ -124,6 +126,15 @@ mkUnifiedNonTarget = pure NonTarget
 
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
+
+isSomeTargetName :: SomeVariableName (Target variable) -> Bool
+isSomeTargetName (SomeVariableNameElement (ElementVariableName variable)) =
+    isTarget variable
+isSomeTargetName (SomeVariableNameSet (SetVariableName variable)) =
+    isTarget variable
+
+isSomeNonTargetName :: SomeVariableName (Target variable) -> Bool
+isSomeNonTargetName = not . isSomeTargetName
 
 instance From variable1 variable2 => From variable1 (Target variable2) where
     from = Target . from @variable1 @variable2
