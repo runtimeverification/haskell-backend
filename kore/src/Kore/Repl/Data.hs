@@ -589,16 +589,14 @@ runUnifierWithExplanation
     => UnifierWithExplanation m a
     -> m (Either ReplOutput (NonEmpty a))
 runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    either explainError failWithExplanation <$> unificationResults
+    failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  m (Either UnificationError ([a], First ReplOutput))
+        ::  m ([a], First ReplOutput)
     unificationResults =
-        fmap (\(r, ex) -> flip (,) ex <$> r)
-        . flip runAccumT mempty
+        flip runAccumT mempty
         . Monad.Unify.runUnifierT Not.notSimplifier
         $ unifier
-    explainError = Left . makeAuxReplOutput . show . Pretty.pretty
     failWithExplanation
         :: ([a], First ReplOutput)
         -> Either ReplOutput (NonEmpty a)
