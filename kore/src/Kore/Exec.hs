@@ -99,6 +99,9 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
+import Kore.Log.KoreLogOptions
+    ( KoreLogOptions (..)
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -376,6 +379,7 @@ proveWithRepl
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
     -> ModuleName
+    -> KoreLogOptions
     -> SMT ()
 proveWithRepl
     definitionModule
@@ -387,6 +391,7 @@ proveWithRepl
     scriptModeOutput
     outputFile
     mainModuleName
+    logOptions
   =
     evalSimplifier definitionModule $ do
         initialized <-
@@ -404,6 +409,7 @@ proveWithRepl
             scriptModeOutput
             outputFile
             mainModuleName
+            logOptions
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
