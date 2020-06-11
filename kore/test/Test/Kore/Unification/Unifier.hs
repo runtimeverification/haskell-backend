@@ -40,7 +40,6 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Unification.Error
 import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -192,7 +191,7 @@ andSimplifySuccess
     -> Assertion
 andSimplifySuccess term1 term2 results = do
     let expect = map unificationResult results
-    Right subst' <-
+    subst' <-
         runNoSMT
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT Not.notSimplifier
@@ -215,11 +214,22 @@ andSimplifyFailure
     :: HasCallStack
     => UnificationTerm
     -> UnificationTerm
-    -> UnificationError
+    -- ^ terms to unify
+    -> TestTerm
+    -> TestTerm
+    -- ^ expected failure results
     -> Assertion
-andSimplifyFailure term1 term2 err = do
-    let expect :: Either UnificationError TestPattern
-        expect = Left err
+andSimplifyFailure
+    term1
+    term2
+    fail1
+    fail2
+  = do
+    let expect :: TestPattern
+        expect =
+            Monad.Unify.unificationPredicate fail1 fail2
+            & Condition.fromPredicate
+            & Pattern.fromCondition
     actual <-
         runNoSMT
         $ runSimplifier testEnv
@@ -263,7 +273,7 @@ unificationProcedureSuccessWithSimplifiers
   =
     testCase message $ do
         let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
-        Right results <-
+        results <-
             unificationProcedureWorker
                 SideCondition.topTODO
                 term1
@@ -466,29 +476,20 @@ test_unification =
         andSimplifyFailure
             (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm a3)
-            (unsupportedPatterns
-                "Unknown unification case."
-                (mkElemVar Mock.x)
-                a3
-            )
+            (mkElemVar Mock.x)
+            a3
     , testCase "SetVariable w. constructor" $
         andSimplifyFailure
             (UnificationTerm (f (Mock.mkTestSomeVariable "@x")))
             (UnificationTerm (f a))
-            (unsupportedPatterns
-                "Unknown unification case."
-                (Mock.mkTestSomeVariable "@x")
-                a
-            )
+            (Mock.mkTestSomeVariable "@x")
+            a
     , testCase "SetVariable" $
         andSimplifyFailure
             (UnificationTerm (Mock.mkTestSomeVariable "@x"))
             (UnificationTerm a)
-            (unsupportedPatterns
-                "Unknown unification case."
-                (Mock.mkTestSomeVariable "@x")
-                a
-            )
+            (Mock.mkTestSomeVariable "@x")
+            a
     , testCase "non-constructor symbolHead right" $
         andSimplifySuccess
             (UnificationTerm a)
@@ -655,11 +656,8 @@ test_unsupportedConstructs =
         andSimplifyFailure
             (UnificationTerm (f a))
             (UnificationTerm (f (mkImplies a (mkNext a1))))
-            (unsupportedPatterns
-                "Unknown unification case."
-                a
-                (mkImplies a (mkNext a1))
-            )
+            a
+            (mkImplies a (mkNext a1))
 
 injUnificationTests :: [TestTree]
 injUnificationTests =
