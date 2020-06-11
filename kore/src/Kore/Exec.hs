@@ -150,9 +150,7 @@ import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Rule as Rule
 import Kore.Step.Simplification.Simplify
-    ( BuiltinAndAxiomSimplifierMap
-    , MonadSimplify
-    , TermLikeSimplifier
+    ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
@@ -180,27 +178,14 @@ import SMT
     , SMT
     )
 
--- | Configuration used in symbolic execution.
-type Config = Pattern VariableName
-
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule VariableName
 
 -- | Function rule used during execution.
 type Equality = Equation VariableName
 
-type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule VariableName)
-
 -- | A collection of rules and simplifiers used during execution.
 newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
-
--- | The products of execution: an execution graph, and assorted simplifiers.
-data Execution =
-    Execution
-        { simplifier :: !TermLikeSimplifier
-        , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
-        , executionGraph :: !ExecutionGraph
-        }
 
 -- | Symbolic execution
 exec
@@ -220,9 +205,20 @@ exec
     -> smt (TermLike VariableName)
 exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
-        execution <- execute breadthLimit verifiedModule' strategy initialTerm
+        initialized <- initialize verifiedModule
+        let Initialized { rewriteRules } = initialized
+        simplifiedPatterns <-
+            Pattern.simplify SideCondition.top
+            $ Pattern.fromTermLike initialTerm
         let
-            Execution { executionGraph } = execution
+            initialPattern =
+                case MultiOr.extractPatterns simplifiedPatterns of
+                    [] -> Pattern.bottomOf (termLikeSort initialTerm)
+                    (config : _) -> config
+            runStrategy' =
+                runStrategy breadthLimit transitionRule (strategy rewriteRules)
+        executionGraph <- runStrategy' initialPattern
+        let
             finalConfig = pickLongest executionGraph
             finalTerm =
                 forceSort patternSort
@@ -292,9 +288,20 @@ search
 search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
   =
     evalSimplifier verifiedModule $ do
-        execution <- execute breadthLimit verifiedModule strategy termLike
+        initialized <- initialize verifiedModule
+        let Initialized { rewriteRules } = initialized
+        simplifiedPatterns <-
+            Pattern.simplify SideCondition.top
+            $ Pattern.fromTermLike termLike
         let
-            Execution { executionGraph } = execution
+            initialPattern =
+                case MultiOr.extractPatterns simplifiedPatterns of
+                    [] -> Pattern.bottomOf (termLikeSort termLike)
+                    (config : _) -> config
+            runStrategy' =
+                runStrategy breadthLimit transitionRule (strategy rewriteRules)
+        executionGraph <- runStrategy' initialPattern
+        let
             match target config = Search.matchWith target config
         solutionsLists <-
             searchGraph
@@ -595,41 +602,6 @@ simplifyReachabilityRule
 simplifyReachabilityRule rule = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
     return (Goal.fromRulePattern rule . getRewriteRule $ rule')
-
--- | Construct an execution graph for the given input pattern.
-execute
-    :: (MonadSimplify simplifier, MonadThrow simplifier)
-    => Limit Natural
-    -> VerifiedModule StepperAttributes
-    -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike VariableName
-    -- ^ The input pattern
-    -> simplifier Execution
-execute breadthLimit verifiedModule strategy inputPattern = do
-    initialized <- initialize verifiedModule
-    let Initialized { rewriteRules } = initialized
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-    simplifiedPatterns <-
-        Pattern.simplify SideCondition.top
-        $ Pattern.fromTermLike inputPattern
-    let
-        initialPattern =
-            case MultiOr.extractPatterns simplifiedPatterns of
-                [] -> Pattern.bottomOf patternSort
-                (config : _) -> config
-          where
-            patternSort = termLikeSort inputPattern
-        runStrategy' =
-            runStrategy breadthLimit transitionRule (strategy rewriteRules)
-    executionGraph <- runStrategy' initialPattern
-    return Execution
-        { simplifier
-        , axiomIdToSimplifier
-        , executionGraph
-        }
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
