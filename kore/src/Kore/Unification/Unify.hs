@@ -5,6 +5,7 @@ License     : NCSA
 
 module Kore.Unification.Unify
     ( MonadUnify (..)
+    , unificationPredicate
     -- * Re-exports
     , InternalVariable
     , module Logic
@@ -16,9 +17,14 @@ import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
 
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeCeilPredicate_
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
+    , mkAnd
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
@@ -31,10 +37,6 @@ import Pretty
 -- | @MonadUnify@ is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationError'
 -- running in a 'Simplifier' monad.
---
--- 'MonadUnify' chooses its error/left type to 'UnificationError'
--- and provides functions to throw these errors. The point of this is to be able
--- to display information about unification failures through 'explainFailure'.
 class (MonadLogic unifier, MonadSimplify unifier) => MonadUnify unifier where
     explainBottom
         :: InternalVariable variable
@@ -53,3 +55,14 @@ class (MonadLogic unifier, MonadSimplify unifier) => MonadUnify unifier where
     explainAndReturnBottom message first second = do
         explainBottom message first second
         empty
+
+-- | 'MonadUnify' chooses its error/left type to 'UnificationError'
+-- and provides functions to throw these errors. The point of this is to be able
+-- to display information about unification failures through 'explainFailure'.
+unificationPredicate
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> Predicate variable
+unificationPredicate term1 term2 =
+    makeCeilPredicate_ (mkAnd term1 term2)

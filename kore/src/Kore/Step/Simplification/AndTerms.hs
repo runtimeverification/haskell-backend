@@ -134,11 +134,13 @@ termUnification notSimplifier =
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
-        Error.maybeT (unificationCondition pat1 pat2) pure maybeTermUnification
+        Error.maybeT (unificationCondition' pat1 pat2) pure maybeTermUnification
 
-    unificationCondition pat1 pat2 =
-        mkCeil_ (mkAnd pat1 pat2)
-        & Pattern.fromTermLike & return
+    unificationCondition' term1 term2 =
+        return
+        . Pattern.fromCondition
+        . Condition.fromPredicate
+        $ unificationPredicate term1 term2
 
 maybeTermEquals
     :: InternalVariable variable

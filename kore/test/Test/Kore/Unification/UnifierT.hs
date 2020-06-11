@@ -23,6 +23,7 @@ import Kore.Internal.MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
@@ -40,7 +41,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Unification.Error
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import qualified Logic
 
@@ -53,9 +53,9 @@ assertNormalized expect = do
     actual <- normalizeExcept expect
     assertEqual
         "Expected original result"
-        (Right $ MultiOr.make [expect])
+        (MultiOr.make [expect])
         actual
-    Foldable.traverse_ assertNormalizedPredicatesMulti actual
+    assertNormalizedPredicatesMulti actual
 
 test_simplifyCondition :: [TestTree]
 test_simplifyCondition =
@@ -76,7 +76,7 @@ test_simplifyCondition =
         let x = inject Mock.x
             expect =
                 Predicate.makeEqualsPredicate_ (mkVar x) (Mock.f (mkVar x))
-                & Right . OrCondition.fromPredicate
+                & OrCondition.fromPredicate
             denormalized =
                 Substitution.mkUnwrappedSubstitution
                 [(x, Mock.f (mkVar x))]
@@ -86,7 +86,7 @@ test_simplifyCondition =
         assertEqual "Expected SubstitutionError" expect actual
     , testCase "x = id(x)" $ do
         let x = inject Mock.x
-            expect = Right (OrCondition.fromCondition Condition.top)
+            expect = OrCondition.fromCondition Condition.top
             input =
                 ( Condition.fromSubstitution
                 . Substitution.wrap
@@ -108,7 +108,7 @@ test_mergeAndNormalizeSubstitutions =
     [ testCase "Constructor normalization"
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         $ do
-            let expect = Right
+            let expect =
                     [ Condition.fromSubstitution $ Substitution.unsafeWrap
                         [ ( inject Mock.x , Mock.constr10 Mock.a ) ]
                     ]
@@ -123,12 +123,12 @@ test_mergeAndNormalizeSubstitutions =
                      )
                     ]
             assertEqual "" expect actual
-            assertNormalizedPredicates actual
+            assertNormalizedPredicatesMulti actual
 
     , testCase "Constructor normalization with variables"
         -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
         $ do
-            let expect = Right
+            let expect =
                     [ Condition.fromSubstitution $ Substitution.unsafeWrap
                         [(inject Mock.x, Mock.constr10 (mkElemVar Mock.y))]
                     ]
@@ -143,12 +143,12 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqual "" expect actual
-            assertNormalizedPredicates actual
+            assertNormalizedPredicatesMulti actual
 
     , testCase "Double constructor is bottom"
         -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
         $ do
-            let expect = Right []
+            let expect = []
             actual <-
                 merge
                     [   ( inject Mock.x
@@ -160,15 +160,17 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqual "" expect actual
-            assertNormalizedPredicates actual
+            assertNormalizedPredicatesMulti actual
 
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         $ do
-            let expect = Left $ unsupportedPatterns
-                    "Unknown unification case."
-                    (Mock.constr10 (mkElemVar Mock.y))
-                    (mkElemVar Mock.y)
+            let expect =
+                    [ Monad.Unify.unificationPredicate
+                        (Mock.constr10 (mkElemVar Mock.y))
+                        (mkElemVar Mock.y)
+                    & Condition.fromPredicate
+                    ]
             actual <-
                 merge
                     [   ( inject Mock.x
@@ -180,26 +182,25 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqual "" expect actual
-            assertNormalizedPredicates actual
+            assertNormalizedPredicatesMulti actual
 
     , testCase "Constructor and constructor of function"
         -- [x=constructor(a)] + [x=constructor(f(a))]
         $ do
             let expect =
-                    Right
-                        [ Conditional
-                            { term = ()
-                            , predicate =
-                                Predicate.makeEqualsPredicate_
-                                    Mock.a
-                                    (Mock.f Mock.a)
-                            , substitution = Substitution.unsafeWrap
-                                [   ( inject Mock.x
-                                    , Mock.constr10 Mock.a
-                                    )
-                                ]
-                            }
-                        ]
+                    [ Conditional
+                        { term = ()
+                        , predicate =
+                            Predicate.makeEqualsPredicate_
+                                Mock.a
+                                (Mock.f Mock.a)
+                        , substitution = Substitution.unsafeWrap
+                            [   ( inject Mock.x
+                                , Mock.constr10 Mock.a
+                                )
+                            ]
+                        }
+                    ]
             actual <-
                 merge
                     [   ( inject Mock.x
@@ -211,7 +212,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqual "" expect actual
-            assertNormalizedPredicates actual
+            assertNormalizedPredicatesMulti actual
 
     , testCase "Constructor and constructor of function with variables" $ do
         let ctor = Mock.constr10
@@ -226,21 +227,23 @@ test_mergeAndNormalizeSubstitutions =
         let
             expect =
                 denormCondition <> substCondition
-                & Right . pure
+                & pure
         actual <-
             merge
                 [(inject Mock.x, ctor    y )]
                 [(inject Mock.x, ctor (f y))]
         assertEqual "" expect actual
-        assertNormalizedPredicates actual
+        assertNormalizedPredicatesMulti actual
 
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
-            let expect = Left $ unsupportedPatterns
-                    "Unknown unification case."
-                    (Mock.constr10 (mkElemVar Mock.x))
-                    (mkElemVar Mock.y)
+            let expect =
+                    [ Monad.Unify.unificationPredicate
+                        (Mock.constr10 (mkElemVar Mock.x))
+                        (mkElemVar Mock.y)
+                    & Condition.fromPredicate
+                    ]
             actual <-
                 merge
                     [   ( inject Mock.x
@@ -252,7 +255,7 @@ test_mergeAndNormalizeSubstitutions =
                         )
                     ]
             assertEqual "" expect actual
-            assertNormalizedPredicates actual
+            assertNormalizedPredicatesMulti actual
 
     , testCase "Non-ctor circular dependency" $ do
         let denormCondition =
@@ -265,7 +268,7 @@ test_mergeAndNormalizeSubstitutions =
                 & Condition.fromSingleSubstitution
         let expect =
                 denormCondition <> substCondition
-                & Right . pure
+                & pure
         actual <-
             merge
                 [   ( inject Mock.x
@@ -277,7 +280,7 @@ test_mergeAndNormalizeSubstitutions =
                     )
                 ]
         assertEqual "" expect actual
-        assertNormalizedPredicates actual
+        assertNormalizedPredicatesMulti actual
 
     , testCase "Normalizes substitution"
         $ do
@@ -357,7 +360,7 @@ test_mergeAndNormalizeSubstitutions =
 merge
     :: [(SomeVariable VariableName, TermLike VariableName)]
     -> [(SomeVariable VariableName, TermLike VariableName)]
-    -> IO (Either UnificationError [Condition VariableName])
+    -> IO [Condition VariableName]
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2)
@@ -391,13 +394,9 @@ normalize =
 
 normalizeExcept
     :: Conditional VariableName ()
-    -> IO
-        (Either
-            UnificationError
-            (MultiOr (Conditional VariableName ()))
-        )
+    -> IO (MultiOr (Conditional VariableName ()))
 normalizeExcept predicated =
-    (fmap . fmap) MultiOr.make
+    fmap MultiOr.make
     $ Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT Not.notSimplifier
     $ Logic.lowerLogicT
@@ -416,13 +415,6 @@ normalizeExcept predicated =
                     ]
                 )
             ]
-
-
--- | Check that 'Condition.substitution' is normalized for all arguments.
-assertNormalizedPredicates
-    :: Foldable f => f [Condition VariableName] -> Assertion
-assertNormalizedPredicates =
-    Foldable.traverse_ assertNormalizedPredicatesMulti
 
 -- | Check that 'Condition.substitution' is normalized for all arguments.
 assertNormalizedPredicatesMulti
