@@ -28,6 +28,9 @@ import Control.Concurrent.MVar
 import Control.Error.Util
     ( note
     )
+import Control.Monad
+    ( (>=>)
+    )
 import Control.Monad.Catch
     ( MonadCatch
     , MonadThrow
@@ -153,6 +156,9 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
+import Kore.Step.Transition
+    ( runTransitionT
+    )
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
@@ -173,6 +179,7 @@ import Log
     ( MonadLog
     )
 import qualified Log
+import qualified Logic
 import SMT
     ( MonadSMT
     , SMT
@@ -207,24 +214,34 @@ exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-        simplifiedPatterns <-
-            Pattern.simplify SideCondition.top
-            $ Pattern.fromTermLike initialTerm
-        let
-            initialPattern =
-                case MultiOr.extractPatterns simplifiedPatterns of
-                    [] -> Pattern.bottomOf (termLikeSort initialTerm)
-                    (config : _) -> config
-            runStrategy' =
-                runStrategy breadthLimit transitionRule (strategy rewriteRules)
-        executionGraph <- runStrategy' initialPattern
-        let
-            finalConfig = pickLongest executionGraph
-            finalTerm =
-                forceSort patternSort
-                $ Pattern.toTermLike finalConfig
+        finalConfig <-
+            getFinalConfigOf $ do
+                initialConfig <-
+                    Pattern.simplify SideCondition.top
+                        (Pattern.fromTermLike initialTerm)
+                    >>= Logic.scatter
+                let
+                    updateQueue = \as ->
+                        Strategy.unfoldDepthFirst as
+                        >=> lift . Strategy.applyBreadthLimit breadthLimit
+                    transit instr config =
+                        Strategy.transitionRule transitionRule instr config
+                        & runTransitionT
+                        & fmap (map fst)
+                        & lift
+                Strategy.leavesM
+                    updateQueue
+                    (Strategy.unfoldTransition transit)
+                    (strategy rewriteRules, initialConfig)
+        let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return finalTerm
   where
+    -- Get the first final configuration of an execution graph.
+    getFinalConfigOf act =
+        Logic.runLogicT act takeFirstResult elseBottom
+      where
+        takeFirstResult (_, config) _ = pure config
+        elseBottom = pure (Pattern.bottomOf initialSort)
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -234,7 +251,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
     -- because MetadataTools doesn't retain any knowledge of the patterns which
     -- are internalized.
     metadataTools = MetadataTools.build verifiedModule
-    patternSort = termLikeSort initialTerm
+    initialSort = termLikeSort initialTerm
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
