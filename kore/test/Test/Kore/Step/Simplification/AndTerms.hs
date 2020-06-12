@@ -13,7 +13,6 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Control.Error as Error
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
@@ -156,7 +155,10 @@ test_andTermsSimplification =
                                 (Mock.injective11 gOfA)
                             )
                         ]
-                    , undefined
+                    , [ unificationCondition
+                        (Mock.injective10 fOfA)
+                        (Mock.injective11 gOfA)
+                      ]
                     )
             actual <-
                 simplifyUnify
@@ -197,7 +199,10 @@ test_andTermsSimplification =
         , testCase "different head, simplifiable subsort" $ do
             let sub = Mock.sortInjection Mock.topSort Mock.plain00Subsort
                 other = Mock.sortInjection Mock.topSort Mock.plain00OtherSort
-                expect = ([Pattern.fromTermLike $ mkAnd sub other], undefined)
+                expect =
+                    ( [Pattern.fromTermLike $ mkAnd sub other]
+                    , [unificationCondition sub other]
+                    )
             actual <- simplifyUnify sub other
             assertEqual "" expect actual
         , testCase "different head, subsort first" $ do
@@ -1318,3 +1323,12 @@ sideRepresentation :: SideCondition.Representation
 sideRepresentation =
     SideCondition.toRepresentation
     (SideCondition.top :: SideCondition VariableName)
+
+unificationCondition
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> Pattern VariableName
+unificationCondition t1 t2 =
+    Monad.Unify.unificationPredicate t1 t2
+    & Condition.fromPredicate
+    & Pattern.fromCondition
