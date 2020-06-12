@@ -20,6 +20,8 @@ module Kore.Variables.Target
     , mkUnifiedNonTarget
     , isNonTarget
     , targetIfEqual
+    , isSomeTargetName
+    , isSomeNonTargetName
     ) where
 
 import Prelude.Kore
@@ -124,6 +126,15 @@ mkUnifiedNonTarget = pure NonTarget
 isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
 
+isSomeTargetName :: SomeVariableName (Target variable) -> Bool
+isSomeTargetName (SomeVariableNameElement (ElementVariableName variable)) =
+    isTarget variable
+isSomeTargetName (SomeVariableNameSet (SetVariableName variable)) =
+    isTarget variable
+
+isSomeNonTargetName :: SomeVariableName (Target variable) -> Bool
+isSomeNonTargetName = not . isSomeTargetName
+
 instance From variable1 variable2 => From variable1 (Target variable2) where
     from = Target . from @variable1 @variable2
     {-# INLINE from #-}
@@ -133,32 +144,26 @@ instance From variable1 variable2 => From (Target variable1) variable2 where
     {-# INLINE from #-}
 
 instance FreshPartialOrd variable => FreshPartialOrd (Target variable) where
-    infVariable =
+    minBoundName =
         \case
-            Target var    -> Target (infVariable var)
-            NonTarget var -> NonTarget (infVariable var)
-    {-# INLINE infVariable #-}
+            Target var    -> Target (minBoundName var)
+            NonTarget var -> NonTarget (minBoundName var)
+    {-# INLINE minBoundName #-}
 
-    supVariable =
+    maxBoundName =
         \case
-            Target var    -> Target (supVariable var)
-            NonTarget var -> NonTarget (supVariable var)
-    {-# INLINE supVariable #-}
+            Target var    -> Target (maxBoundName var)
+            NonTarget var -> NonTarget (maxBoundName var)
+    {-# INLINE maxBoundName #-}
 
-    nextVariable =
-        \case
-            Target var    -> Target (nextVariable var)
-            NonTarget var -> NonTarget (nextVariable var)
-    {-# INLINE nextVariable #-}
+    nextName name1 name2 = traverse (flip nextName (unTarget name2)) name1
+    {-# INLINE nextName #-}
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
 instance FreshPartialOrd variable => FreshName (Target variable)
 
-instance
-    Unparse variable =>
-    Unparse (Target variable)
-  where
+instance Unparse variable => Unparse (Target variable) where
     unparse (Target var) = unparse var
     unparse (NonTarget var) = unparse var
     unparse2 (Target var) = unparse2 var
