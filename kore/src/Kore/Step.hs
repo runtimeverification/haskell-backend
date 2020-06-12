@@ -103,10 +103,10 @@ transitionRule
     :: forall m
     .  HasCallStack
     => MonadSimplify m
-    => Prim (RewriteRule VariableName)
+    => Prim (RewriteRule RewritingVariableName)
     -> Pattern VariableName
     -- ^ Configuration being rewritten
-    -> TransitionT (RewriteRule VariableName) m (Pattern VariableName)
+    -> TransitionT (RewriteRule RewritingVariableName) m (Pattern VariableName)
 transitionRule =
     \case
         Simplify -> transitionSimplify
@@ -121,7 +121,7 @@ transitionRule =
         eitherResults <-
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
-                [mkRewritingRule rule]
+                [rule]
                 config
             & lift . runExceptT
         case eitherResults of
@@ -192,19 +192,17 @@ priorityAnyStrategy rewrites =
 -- rules must have side conditions if encoded as \rewrites, or they must be
 -- \equals rules, which are not handled by this strategy.
 heatingCooling
-    :: ([RewriteRule VariableName] -> Strategy (Prim (RewriteRule VariableName)))
+    :: From rule Attribute.HeatCool
+    => ([rule] -> Strategy (Prim rule))
     -- ^ 'allRewrites' or 'anyRewrite'
-    -> [RewriteRule VariableName]
-    -> Strategy (Prim (RewriteRule VariableName))
+    -> [rule]
+    -> Strategy (Prim rule)
 heatingCooling rewriteStrategy rewrites =
     Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
   where
-    heatingRules = filter isHeating rewrites
-    isHeating (RewriteRule rule) = isHeatingRule rule
+    heatingRules = filter isHeatingRule rewrites
     heat = rewriteStrategy heatingRules
-    normalRules = filter isNormal rewrites
-    isNormal (RewriteRule rule) = isNormalRule rule
+    normalRules = filter isNormalRule rewrites
     normal = rewriteStrategy normalRules
-    coolingRules = filter isCooling rewrites
-    isCooling (RewriteRule rule) = isCoolingRule rule
+    coolingRules = filter isCoolingRule rewrites
     cool = rewriteStrategy coolingRules

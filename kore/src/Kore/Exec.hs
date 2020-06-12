@@ -205,7 +205,7 @@ exec
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
+    -> ([RewriteRule RewritingVariableName] -> [Strategy (Prim (RewriteRule RewritingVariableName))])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
@@ -214,6 +214,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
+            rewriteRules' = mkRewritingRule <$> rewriteRules
         finalConfig <-
             getFinalConfigOf $ do
                 initialConfig <-
@@ -232,7 +233,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    (strategy rewriteRules, initialConfig)
+                    (strategy rewriteRules', initialConfig)
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return finalTerm
   where
@@ -263,7 +264,7 @@ execGetExitCode
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
+    -> ([RewriteRule RewritingVariableName] -> [Strategy (Prim (RewriteRule RewritingVariableName))])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The final pattern (top cell) to extract the exit code
@@ -293,7 +294,7 @@ search
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
+    -> ([RewriteRule RewritingVariableName] -> [Strategy (Prim (RewriteRule RewritingVariableName))])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
@@ -307,6 +308,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
     evalSimplifier verifiedModule $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
+            rewriteRules' = mkRewritingRule <$> rewriteRules
         simplifiedPatterns <-
             Pattern.simplify SideCondition.top
             $ Pattern.fromTermLike termLike
@@ -316,7 +318,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             runStrategy' =
-                runStrategy breadthLimit transitionRule (strategy rewriteRules)
+                runStrategy breadthLimit transitionRule (strategy rewriteRules')
         executionGraph <- runStrategy' initialPattern
         let
             match target config = Search.matchWith target config

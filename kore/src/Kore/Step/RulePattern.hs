@@ -251,6 +251,9 @@ instance TopBottom (RulePattern variable) where
 instance From (RulePattern variable) (Attribute.Priority, Attribute.Owise) where
     from = from @(Attribute.Axiom _ _) . attributes
 
+instance From (RulePattern variable) Attribute.HeatCool where
+    from = from @(Attribute.Axiom _ _) . attributes
+
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern
     :: InternalVariable variable
@@ -283,25 +286,25 @@ leftPattern =
 
 {- | Does the axiom pattern represent a heating rule?
  -}
-isHeatingRule :: RulePattern variable -> Bool
-isHeatingRule RulePattern { attributes } =
-    case Attribute.heatCool attributes of
+isHeatingRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
+isHeatingRule rule =
+    case from @rule @Attribute.HeatCool rule of
         Attribute.Heat -> True
         _ -> False
 
 {- | Does the axiom pattern represent a cooling rule?
  -}
-isCoolingRule :: RulePattern variable -> Bool
-isCoolingRule RulePattern { attributes } =
-    case Attribute.heatCool attributes of
+isCoolingRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
+isCoolingRule rule =
+    case from @rule @Attribute.HeatCool rule of
         Attribute.Cool -> True
         _ -> False
 
 {- | Does the axiom pattern represent a normal rule?
  -}
-isNormalRule :: RulePattern variable -> Bool
-isNormalRule RulePattern { attributes } =
-    case Attribute.heatCool attributes of
+isNormalRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
+isNormalRule rule =
+    case from @rule @Attribute.HeatCool rule of
         Attribute.Normal -> True
         _ -> False
 
@@ -516,6 +519,9 @@ instance
     {-# INLINE freeVariables #-}
 
 instance From (RewriteRule variable) (Attribute.Priority, Attribute.Owise) where
+    from = from @(RulePattern _) . getRewriteRule
+
+instance From (RewriteRule variable) Attribute.HeatCool where
     from = from @(RulePattern _) . getRewriteRule
 
 {-  | Implication-based pattern.
