@@ -22,6 +22,9 @@ import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Set as Set
 
 import Kore.Attribute.Pattern.FreeVariables
@@ -60,7 +63,7 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
-    ( nextVariable
+    ( nextName
     )
 import qualified Logic
 
@@ -320,7 +323,9 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            x' = nextVariable <$> Mock.x
+            x' =
+                traverse (nextName (variableName Mock.x)) Mock.x
+                & fromJust
             final = mkElemVar x'
             initial = pure (mkElemVar Mock.y)
             axiom =
