@@ -16,9 +16,6 @@ import Prelude.Kore
 
 import qualified Data.Functor.Foldable as Recursive
 
-import Branch
-    ( BranchT
-    )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( fullySimplified
     , setSimplified
@@ -62,6 +59,9 @@ import Kore.Step.Simplification.Data
     , SimplifierT
     )
 import qualified Kore.Step.Simplification.Data as Kore
+import Logic
+    ( LogicT
+    )
 import SMT
     ( NoSMT
     )
@@ -74,7 +74,7 @@ runSimplifier env = Test.runSMT . Kore.runSimplifier env
 runSimplifierNoSMT :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
 runSimplifierNoSMT env = Test.runNoSMT . Kore.runSimplifier env
 
-runSimplifierBranch :: Env Simplifier -> BranchT Simplifier a -> IO [a]
+runSimplifierBranch :: Env Simplifier -> LogicT Simplifier a -> IO [a]
 runSimplifierBranch env = Test.runSMT . Kore.runSimplifierBranch env
 
 simplifiedTerm :: TermLike variable -> TermLike variable

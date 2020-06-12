@@ -58,7 +58,6 @@ import Data.Reflection
     )
 import qualified Data.Reflection as Reflection
 
-import Branch
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified
     )
@@ -119,6 +118,7 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Kore.Unparser as Unparser
+import Logic
 import Pretty
     ( Doc
     )
@@ -978,7 +978,7 @@ unifyEqualsNormalizedAc
 
     simplify :: TermLike variable -> unifier (Pattern variable)
     simplify term =
-        alternate $ simplifyConditionalTerm SideCondition.topTODO term
+        lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
     simplifyPair
         :: (TermLike variable, Domain.Value normalized (TermLike variable))
@@ -1017,7 +1017,7 @@ unifyEqualsNormalizedAc
       where
         simplifyTermLike :: TermLike variable -> unifier (Pattern variable)
         simplifyTermLike term =
-            alternate $ simplifyConditionalTerm SideCondition.topTODO term
+            lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
 buildResultFromUnifiers
     :: forall normalized unifier variable

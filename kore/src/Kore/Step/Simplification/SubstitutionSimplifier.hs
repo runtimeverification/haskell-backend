@@ -42,10 +42,6 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch
 import Debug
 import Kore.Internal.Condition
     ( Condition
@@ -102,6 +98,9 @@ import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
+import Logic
+    ( LogicT
+    )
 import qualified Pretty
 
 newtype SubstitutionSimplifier simplifier =
@@ -135,7 +134,7 @@ substitutionSimplifier =
         -> Substitution variable
         -> simplifier (OrCondition variable)
     wrapper sideCondition substitution =
-        fmap OrCondition.fromConditions . Branch.gather $ do
+        OrCondition.observeAllT $ do
             (predicate, result) <- worker substitution & maybeT empty return
             let condition = Condition.fromNormalizationSimplified result
             let condition' = Condition.fromPredicate predicate <> condition
@@ -161,7 +160,7 @@ newtype MakeAnd monad =
         }
 
 simplificationMakeAnd
-    :: MonadSimplify simplifier => MakeAnd (BranchT simplifier)
+    :: MonadSimplify simplifier => MakeAnd (LogicT simplifier)
 simplificationMakeAnd =
     MakeAnd { makeAnd }
   where

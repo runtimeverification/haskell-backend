@@ -10,7 +10,6 @@ import Test.Tasty
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 
-import qualified Branch
 import qualified Kore.Equation as Equation
 import Kore.Internal.Condition
     ( Condition
@@ -43,6 +42,7 @@ import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
 import qualified Kore.Unification.UnifierT as Monad.Unify
+import qualified Logic
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
@@ -376,7 +376,7 @@ merge
         Substitution.mapAssignedTerm Test.simplifiedTerm
 
     mergeSubstitutionsExcept =
-        Branch.alternate
+        Logic.lowerLogicT
         . Simplifier.simplifyCondition SideCondition.top
         . Condition.fromSubstitution
         . mconcat
@@ -400,7 +400,7 @@ normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT Not.notSimplifier
-    $ Branch.alternate
+    $ Logic.lowerLogicT
     $ Simplifier.simplifyCondition SideCondition.top predicated
   where
     mockEnv = Mock.env { simplifierAxioms }

@@ -122,7 +122,7 @@ import System.Directory
     , findExecutable
     )
 import System.Exit
-import System.FilePath.Posix
+import System.FilePath
     ( splitFileName
     , (<.>)
     )

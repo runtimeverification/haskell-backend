@@ -21,7 +21,6 @@ module Kore.Equation.Application
 
 import Prelude.Kore
 
-import qualified Branch
 import Control.Error
     ( ExceptT
     , MaybeT (..)
@@ -122,6 +121,7 @@ import Log
     , logEntry
     , logWhile
     )
+import qualified Logic
 import Pretty
     ( Pretty (..)
     )
@@ -231,7 +231,7 @@ attemptEquation sideCondition termLike equation =
                     sideCondition
                     ([argument, matchPredicate] <> maybeToList antiLeft)
                     [mkSubstitution matchSubstitution]
-                    & Branch.gather
+                    & Logic.observeAllT
                     & (fmap . fmap) toMatchResult
 
     mkSubstitution =
@@ -319,10 +319,11 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
       | otherwise
       = empty
 
-    -- TODO: isUnifiedNonTarget
     checkNonTargetVariables
       | Just variable <-
-          Foldable.find Target.isUnifiedNonTarget (Map.keys substitution)
+          Foldable.find
+            Target.isSomeNonTargetName
+            (Map.keys substitution)
       = [NonTargetSubstitution variable]
       | otherwise
       = mempty
@@ -369,7 +370,7 @@ checkRequires sideCondition predicate requires =
     -- Collect the simplified results. If they are \bottom, then \and(predicate,
     -- requires) is valid; otherwise, the required pre-conditions are not met
     -- and the rule will not be applied.
-    & (OrCondition.gather >=> assertBottom)
+    & (OrCondition.observeAllT >=> assertBottom)
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition'
 

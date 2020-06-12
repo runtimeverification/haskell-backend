@@ -88,23 +88,24 @@ instance SubstitutionOrd RewritingVariableName where
         on compareSubstitution toVariableName variable1 variable2
 
 instance FreshPartialOrd RewritingVariableName where
-    infVariable =
+    minBoundName =
         \case
-            RuleVariableName var   -> RuleVariableName (infVariable var)
-            ConfigVariableName var -> ConfigVariableName (infVariable var)
-    {-# INLINE infVariable #-}
+            RuleVariableName var   -> RuleVariableName (minBoundName var)
+            ConfigVariableName var -> ConfigVariableName (minBoundName var)
+    {-# INLINE minBoundName #-}
 
-    supVariable =
+    maxBoundName =
         \case
-            RuleVariableName var   -> RuleVariableName (supVariable var)
-            ConfigVariableName var -> ConfigVariableName (supVariable var)
-    {-# INLINE supVariable #-}
+            RuleVariableName var   -> RuleVariableName (maxBoundName var)
+            ConfigVariableName var -> ConfigVariableName (maxBoundName var)
+    {-# INLINE maxBoundName #-}
 
-    nextVariable =
-        \case
-            RuleVariableName var   -> RuleVariableName (nextVariable var)
-            ConfigVariableName var -> ConfigVariableName (nextVariable var)
-    {-# INLINE nextVariable #-}
+    nextName (RuleVariableName name1) (RuleVariableName name2) =
+        RuleVariableName <$> nextName name1 name2
+    nextName (ConfigVariableName name1) (ConfigVariableName name2) =
+        ConfigVariableName <$> nextName name1 name2
+    nextName _ _ = Nothing
+    {-# INLINE nextName #-}
 
 instance Unparse RewritingVariableName where
     unparse (ConfigVariableName variable) = "Config" <> unparse variable

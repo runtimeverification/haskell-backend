@@ -22,9 +22,11 @@ import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Set as Set
 
-import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -61,8 +63,9 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
-    ( nextVariable
+    ( nextName
     )
+import qualified Logic
 
 import Test.Kore.Internal.Condition as Condition
 import Test.Kore.Internal.OrCondition
@@ -88,7 +91,7 @@ applyInitialConditions
     -> IO [OrTestCondition]
 applyInitialConditions initial unification =
     Step.applyInitialConditions initial unification
-    & runSimplifier Mock.env . Branch.gather
+    & runSimplifier Mock.env . Logic.observeAllT
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -146,7 +149,7 @@ unifyRule
     -> IO (Either UnificationError [Conditional' RulePattern'])
 unifyRule initial rule =
     Step.unifyRule Unification.unificationProcedure initial rule
-    & runExceptT . Branch.gather
+    & runExceptT . Logic.observeAllT
     & runSimplifier Mock.env
 
 test_renameRuleVariables :: [TestTree]
@@ -320,7 +323,9 @@ test_applyRewriteRule_ =
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
                 Right [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
-            x' = nextVariable <$> Mock.x
+            x' =
+                traverse (nextName (variableName Mock.x)) Mock.x
+                & fromJust
             final = mkElemVar x'
             initial = pure (mkElemVar Mock.y)
             axiom =

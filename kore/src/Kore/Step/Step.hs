@@ -40,10 +40,6 @@ import Data.Set
     )
 import qualified Data.Set as Set
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Condition
     ( Condition
@@ -89,6 +85,10 @@ import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 import qualified Pretty
 
 type UnifiedRule rule variable = Conditional variable (rule variable)
@@ -114,8 +114,8 @@ unifyRules
     -- ^ Rule
     -> simplifier [UnifiedRule rule RewritingVariableName]
 unifyRules unificationProcedure initial rules =
-    Branch.gather $ do
-        rule <- Branch.scatter rules
+    Logic.observeAllT $ do
+        rule <- Logic.scatter rules
         unifyRule unificationProcedure initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
@@ -140,7 +140,7 @@ unifyRule
     -- ^ Initial configuration
     -> rule variable
     -- ^ Rule
-    -> BranchT simplifier (UnifiedRule rule variable)
+    -> LogicT simplifier (UnifiedRule rule variable)
 unifyRule unificationProcedure initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition = SideCondition.fromCondition initialCondition
@@ -241,8 +241,8 @@ applyInitialConditions
     -- ^ Initial conditions
     -> Condition variable
     -- ^ Unification conditions
-    -> BranchT simplifier (OrCondition variable)
-    -- TODO(virgil): This should take advantage of the BranchT and not return
+    -> LogicT simplifier (OrCondition variable)
+    -- TODO(virgil): This should take advantage of the LogicT and not return
     -- an OrCondition.
 applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions. The axiom
@@ -281,7 +281,7 @@ applyRemainder
     -- ^ Initial configuration
     -> Condition variable
     -- ^ Remainder
-    -> BranchT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
 applyRemainder initial remainder = do
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level

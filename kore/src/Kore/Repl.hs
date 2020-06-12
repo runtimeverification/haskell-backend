@@ -37,7 +37,6 @@ import Control.Monad.State.Strict
     , StateT
     , evalStateT
     )
-import qualified Data.Default as Default
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -108,8 +107,9 @@ runRepl
     -> OutputFile
     -- ^ optional output file
     -> ModuleName
+    -> Log.KoreLogOptions
     -> m ()
-runRepl _ [] _ _ _ _ outputFile _ =
+runRepl _ [] _ _ _ _ outputFile _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
     in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -125,6 +125,7 @@ runRepl
     scriptModeOutput
     outputFile
     mainModuleName
+    logOptions
     = do
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
@@ -177,7 +178,7 @@ runRepl
             , labels         = Map.empty
             , aliases        = Map.empty
             , koreLogOptions =
-                (Default.def @Log.KoreLogOptions)
+                logOptions
                     { Log.exeName = Log.ExeName "kore-repl" }
             }
 

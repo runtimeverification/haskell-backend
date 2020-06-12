@@ -122,14 +122,14 @@ gatherResults = Foldable.fold . fmap result . results
 
 {- | Distribute the 'Result' over a transition rule.
  -}
-transitionResult :: Monad m => Result rule config -> TransitionT rule m config
+transitionResult :: Result rule config -> TransitionT rule m config
 transitionResult Result { appliedRule, result } = do
     Transition.addRule appliedRule
     Foldable.asum (return <$> result)
 
 {- | Distribute the 'Results' over a transition rule.
  -}
-transitionResults :: Monad m => Results rule config -> TransitionT rule m config
+transitionResults :: Results rule config -> TransitionT rule m config
 transitionResults Results { results, remainders } =
     transitionResultsResults <|> transitionResultsRemainders
   where
