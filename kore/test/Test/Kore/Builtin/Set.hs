@@ -1707,7 +1707,7 @@ test_concretizeKeysAxiom =
             , rhs = injectTermIntoRHS x
             , attributes = Default.def
             }
-    expected = Right $ MultiOr
+    expected = MultiOr
         [ Conditional
             { term = symbolicKey
             , predicate = makeTruePredicate intSort
@@ -1785,7 +1785,7 @@ unifiedBy
     -> TestTree
 unifiedBy (termLike1, termLike2) substitution testName =
     testCase testName $ do
-        Right actual <-
+        actual <-
             runSimplifier testEnv
             $ runUnifierT Not.notSimplifier
             $ termUnification Not.notSimplifier termLike1 termLike2
