@@ -67,6 +67,12 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Log.DebugUnificationUnified
+    ( debugUnificationUnified
+    )
+import Kore.Log.DebugUnificationUnknown
+    ( debugUnificationUnknown
+    )
 import Kore.Step.Simplification.CeilSimplifier
     ( CeilSimplifier (..)
     )
@@ -94,7 +100,6 @@ import Kore.Unification.Error
     )
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
-import qualified Log
 import Pair
 import qualified Pretty
 
@@ -270,29 +275,10 @@ andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
             mresult <- getResult
             case mresult of
                 Nothing -> do
-                    Log.logDebug . Text.pack . show
-                        $ Pretty.hsep
-                            [ "Evaluator"
-                            , Pretty.pretty fnName
-                            , "does not apply."
-                            ]
+                    debugUnificationUnknown (Text.pack fnName) t1 t2
                     return mresult
                 Just result -> do
-                    Log.logDebug . Text.pack . show
-                        $ Pretty.vsep
-                            [ Pretty.hsep
-                                [ "Evaluator"
-                                , Pretty.pretty fnName
-                                ]
-                            , Pretty.indent 4 $ Pretty.vsep
-                                [ "First:"
-                                , Pretty.indent 4 $ unparse t1
-                                , "Second:"
-                                , Pretty.indent 4 $ unparse t2
-                                , "Result:"
-                                , Pretty.indent 4 $ unparse result
-                                ]
-                            ]
+                    debugUnificationUnified (Text.pack fnName) t1 t2 result
                     return mresult
             )
             $ termTransformation predicate sType ts t1 t2
