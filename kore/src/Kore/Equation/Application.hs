@@ -85,6 +85,9 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
@@ -231,19 +234,9 @@ attemptEquation sideCondition termLike equation =
              in Substitution.mergePredicatesAndSubstitutions
                     sideCondition
                     ([argument, matchPredicate] <> maybeToList antiLeft)
-                    [mkSubstitution matchSubstitution]
+                    [from @_ @(Substitution _) matchSubstitution]
                     & Logic.observeAllT
                     & (fmap . fmap) toMatchResult
-
-    mkSubstitution =
-        Substitution.fromMap
-        . Map.fromList
-        . fmap
-            (\(variableName, term)->
-                let variableSort = TermLike.termLikeSort term
-                 in (Variable { variableName, variableSort }, term)
-            )
-        . Map.toList
 
 applyEquation
     :: forall simplifier variable

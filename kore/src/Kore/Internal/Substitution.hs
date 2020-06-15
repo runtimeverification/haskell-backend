@@ -284,6 +284,19 @@ instance
         . fmap singleSubstitutionToPredicate
         . unwrap
 
+instance
+    InternalVariable variable =>
+    From
+        (Map (SomeVariableName variable) (TermLike variable))
+        (Substitution variable)
+  where
+    from =
+        fromMap . Map.fromAscList . fmap toVariable . Map.toAscList
+      where
+        toVariable (variableName, term) =
+            let variableSort = TermLike.termLikeSort term
+             in (Variable { variableName, variableSort }, term)
+
 type UnwrappedSubstitution variable = [Assignment variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
