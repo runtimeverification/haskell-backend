@@ -85,7 +85,7 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             left' = TermLike.substitute subst term
             requires' = TermLike.substitute subst <$> requires
             argument' = TermLike.substitute subst <$> argument
-            antiLeft' = (fmap . fmap ) (TermLike.substitute subst) antiLeft
+            antiLeft' = (fmap . fmap) (TermLike.substitute subst) antiLeft
             right' = TermLike.substitute subst right
             ensures' = TermLike.substitute subst <$> ensures
         return Equation
