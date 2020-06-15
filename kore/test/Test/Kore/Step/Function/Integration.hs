@@ -2,9 +2,9 @@
 
 module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
-    , test_functionIntegrationNEW
+    , test_functionIntegrationUnification
     , test_Nat
-    , test_NatNEW
+    , test_NatUnification
     , test_short_circuit
     , test_List
     , test_lookupMap
@@ -109,8 +109,8 @@ import qualified Test.Kore.Builtin.Map as Map
 import Test.Kore.Equation.Application
     ( axiom
     , axiom_
-    , functionAxiomNEW
-    , functionAxiom_NEW
+    , functionAxiomUnification
+    , functionAxiomUnification_
     )
 import Test.Kore.Step.Axiom.Matcher
     ( doesn'tMatch
@@ -604,8 +604,8 @@ test_functionIntegration =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
         $ TermLike.simplify patt SideCondition.top
 
-test_functionIntegrationNEW :: [TestTree]
-test_functionIntegrationNEW =
+test_functionIntegrationUnification :: [TestTree]
+test_functionIntegrationUnification =
     [ testCase "Simple evaluation" $ do
         let expect =
                 Conditional
@@ -617,7 +617,7 @@ test_functionIntegrationNEW =
             evaluate
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    (axiomEvaluatorNEW
+                    (axiomEvaluatorUnification
                         Mock.functional10Symbol
                         [mkElemVar Mock.x]
                         (Mock.g (mkElemVar Mock.x))
@@ -637,7 +637,7 @@ test_functionIntegrationNEW =
             evaluate
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    (builtinEvaluation $ axiomEvaluatorNEW
+                    (builtinEvaluation $ axiomEvaluatorUnification
                         Mock.functional10Symbol
                         [mkElemVar Mock.x]
                         (Mock.g (mkElemVar Mock.x))
@@ -659,12 +659,12 @@ test_functionIntegrationNEW =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
                     (simplifierWithFallback
-                        (builtinEvaluation $ axiomEvaluatorNEW
+                        (builtinEvaluation $ axiomEvaluatorUnification
                             Mock.functional10Symbol
                             [mkElemVar Mock.x]
                             (Mock.g (mkElemVar Mock.x))
                         )
-                        ( axiomEvaluatorNEW
+                        ( axiomEvaluatorUnification
                             Mock.functional10Symbol
                             [mkElemVar Mock.x]
                             (mkElemVar Mock.x)
@@ -690,7 +690,7 @@ test_functionIntegrationNEW =
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier $ \_ _ ->
                             notApplicableAxiomEvaluator
                         )
-                        ( axiomEvaluatorNEW
+                        ( axiomEvaluatorUnification
                             Mock.functional10Symbol
                             [mkElemVar Mock.x]
                             (Mock.g (mkElemVar Mock.x))
@@ -711,7 +711,7 @@ test_functionIntegrationNEW =
             evaluate
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    ( axiomEvaluatorNEW
+                    ( axiomEvaluatorUnification
                         Mock.functional10Symbol
                         [mkElemVar Mock.x]
                         (Mock.functional11 (mkElemVar Mock.x))
@@ -734,7 +734,7 @@ test_functionIntegrationNEW =
             evaluate
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    ( axiomEvaluatorNEW
+                    ( axiomEvaluatorUnification
                         Mock.functional10Symbol
                         [mkElemVar Mock.x]
                         (Mock.functional11 (mkElemVar Mock.x))
@@ -764,7 +764,7 @@ test_functionIntegrationNEW =
             evaluate
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    ( axiomEvaluatorNEW
+                    ( axiomEvaluatorUnification
                         Mock.functional10Symbol
                         [mkElemVar Mock.x]
                         (Mock.functional11 (mkElemVar Mock.x))
@@ -806,7 +806,7 @@ test_functionIntegrationNEW =
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.functional10Id
-                        , axiomEvaluatorNEW
+                        , axiomEvaluatorUnification
                             Mock.functional10Symbol
                             [mkElemVar Mock.x]
                             (Mock.functional11 (mkElemVar Mock.x))
@@ -828,7 +828,7 @@ test_functionIntegrationNEW =
             evaluate
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cfId
-                        , axiomEvaluatorNEW Mock.cfSymbol [] Mock.cg
+                        , axiomEvaluatorUnification Mock.cfSymbol [] Mock.cg
                         )
                     ,   ( AxiomIdentifier.Application Mock.cgId
                         , appliedMockEvaluator Conditional
@@ -857,7 +857,7 @@ test_functionIntegrationNEW =
                         , simplifierWithFallback
                             (appliedMockEvaluator (Pattern.fromTermLike Mock.b))
                             (definitionEvaluation
-                                [functionAxiom_NEW Mock.fSymbol [mkElemVar Mock.y] Mock.a]
+                                [functionAxiomUnification_ Mock.fSymbol [mkElemVar Mock.y] Mock.a]
                             )
                         )
                     ]
@@ -878,7 +878,7 @@ test_functionIntegrationNEW =
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (firstFullEvaluation
-                                [ axiomEvaluatorNEW
+                                [ axiomEvaluatorUnification
                                     Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
                                     Mock.c
                                 ,  appliedMockEvaluator Conditional
@@ -894,7 +894,7 @@ test_functionIntegrationNEW =
                                 ]
                             )
                             (definitionEvaluation
-                                [ functionAxiomNEW
+                                [ functionAxiomUnification
                                     Mock.fSymbol [mkElemVar Mock.y]
                                     Mock.a
                                     makeTruePredicate_
@@ -918,12 +918,12 @@ test_functionIntegrationNEW =
                 (Map.fromList
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
-                            (axiomEvaluatorNEW
+                            (axiomEvaluatorUnification
                                 Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
                                 Mock.b
                             )
                             (definitionEvaluation
-                                [ functionAxiomNEW
+                                [ functionAxiomUnification
                                     Mock.fSymbol [mkElemVar Mock.y]
                                     Mock.a
                                     makeTruePredicate_
@@ -989,8 +989,8 @@ test_Nat =
     , equals "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
     ]
 
-test_NatNEW :: [TestTree]
-test_NatNEW =
+test_NatUnification :: [TestTree]
+test_NatUnification =
     [ matches "plus(0, N) matches plus(0, 1)"
         (plus zero varN)
         (plus zero one)
@@ -1002,36 +1002,36 @@ test_NatNEW =
         (plus (succ varM) varN)
         (plus one one)
         [(inject natM, zero), (inject natN, one)]
-    , appliesNEW            "plus(0, N) => ... ~ plus (0, 1)"
+    , appliesUnification            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
         (plus zero one)
-    , notAppliesNEW         "plus(0, N) => ... ~ plus (1, 1)"
+    , notAppliesUnification         "plus(0, N) => ... ~ plus (1, 1)"
         [plusZeroRule]
         (plus one one)
-    , notAppliesNEW         "plus(Succ(M), N) => ... ~ plus (0, 1)"
+    , notAppliesUnification         "plus(Succ(M), N) => ... ~ plus (0, 1)"
         [plusSuccRule]
         (plus zero one)
-    , appliesNEW            "plus(Succ(M), N) => ... ~ plus (1, 1)"
+    , appliesUnification            "plus(Succ(M), N) => ... ~ plus (1, 1)"
         [plusSuccRule]
         (plus one one)
-    , appliesNEW            "plus(0, 1) => ..."
+    , appliesUnification            "plus(0, 1) => ..."
         plusRules
         (plus zero one)
-    , appliesNEW            "plus(1, 1) => ..."
+    , appliesUnification            "plus(1, 1) => ..."
         plusRules
         (plus one one)
-    , equalsNEW "0 + 1 = 1 : Nat" (plus zero one) [one]
-    , equalsNEW "0 + 1 = 1 : Nat" (plus one one) [two]
-    , equalsNEW "0 * 1 = 0 : Nat" (times zero one) [zero]
-    , equalsNEW "1 * 1 = 1 : Nat" (times one one) [one]
-    , equalsNEW "1 * 2 = 2 : Nat" (times one two) [two]
-    , equalsNEW "2 * 1 = 2 : Nat" (times two one) [two]
-    , equalsNEW "0! = 1 : Nat" (factorial zero) [one]
-    , equalsNEW "1! = 1 : Nat" (factorial one) [one]
-    , equalsNEW "2! = 2 : Nat" (factorial two) [two]
-    , equalsNEW "fibonacci(0) = 1 : Nat" (fibonacci zero) [one]
-    , equalsNEW "fibonacci(1) = 1 : Nat" (fibonacci one) [one]
-    , equalsNEW "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
+    , equalsUnification "0 + 1 = 1 : Nat" (plus zero one) [one]
+    , equalsUnification "0 + 1 = 1 : Nat" (plus one one) [two]
+    , equalsUnification "0 * 1 = 0 : Nat" (times zero one) [zero]
+    , equalsUnification "1 * 1 = 1 : Nat" (times one one) [one]
+    , equalsUnification "1 * 2 = 2 : Nat" (times one two) [two]
+    , equalsUnification "2 * 1 = 2 : Nat" (times two one) [two]
+    , equalsUnification "0! = 1 : Nat" (factorial zero) [one]
+    , equalsUnification "1! = 1 : Nat" (factorial one) [one]
+    , equalsUnification "2! = 2 : Nat" (factorial two) [two]
+    , equalsUnification "fibonacci(0) = 1 : Nat" (fibonacci zero) [one]
+    , equalsUnification "fibonacci(1) = 1 : Nat" (fibonacci one) [one]
+    , equalsUnification "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
     ]
 
 -- Evaluation tests: check the result of evaluating the term
@@ -1047,23 +1047,23 @@ equals comment term results =
         let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
         assertEqual "" expect actual
 
-equalsNEW
+equalsUnification
     :: HasCallStack
     => TestName
     -> TermLike VariableName
     -> [TermLike VariableName]
     -> TestTree
-equalsNEW comment term results =
+equalsUnification comment term results =
     testCase comment $ do
-        actual <- simplifyNEW term
+        actual <- simplifyUnification term
         let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
         assertEqual "" expect actual
 
 simplify :: TermLike VariableName -> IO (OrPattern VariableName)
 simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
 
-simplifyNEW :: TermLike VariableName -> IO (OrPattern VariableName)
-simplifyNEW = runSimplifier testEnvNEW . TermLike.simplifyToOr SideCondition.top
+simplifyUnification :: TermLike VariableName -> IO (OrPattern VariableName)
+simplifyUnification = runSimplifier testEnvUnification . TermLike.simplifyToOr SideCondition.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -1073,12 +1073,12 @@ evaluateWith simplifier patt =
     runSimplifier testEnv
     $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
-evaluateWithNEW
+evaluateWithUnification
     :: BuiltinAndAxiomSimplifier
     -> TermLike VariableName
     -> IO CommonAttemptedAxiom
-evaluateWithNEW simplifier patt =
-    runSimplifier testEnvNEW
+evaluateWithUnification simplifier patt =
+    runSimplifier testEnvUnification
     $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
@@ -1093,18 +1093,18 @@ withApplied check comment rules term =
         actual <- evaluateWith (definitionEvaluation rules) term
         check actual
 
-withAppliedNEW
+withAppliedUnification
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
     -> [Equation VariableName]
     -> TermLike VariableName
     -> TestTree
-withAppliedNEW check comment rules term =
+withAppliedUnification check comment rules term =
     testCase comment $ do
-        actual <- evaluateWithNEW (definitionEvaluation rules) term
+        actual <- evaluateWithUnification (definitionEvaluation rules) term
         check actual
 
-applies, notApplies, appliesNEW, notAppliesNEW
+applies, notApplies, appliesUnification, notAppliesUnification
     :: TestName
     -> [Equation VariableName]
     -> TermLike VariableName
@@ -1126,8 +1126,8 @@ notApplies =
     withApplied $ \r ->
         assertBool "Expected NotApplicable"
         $ isNotApplicable r || isNotApplicableUntilConditionChanges r
-appliesNEW =
-    withAppliedNEW $ \attempted -> do
+appliesUnification =
+    withAppliedUnification $ \attempted -> do
         results <- expectApplied attempted
         expectNoRemainders results
   where
@@ -1139,8 +1139,8 @@ appliesNEW =
         assertBool "Expected no remainders"
         . isBottom
         . Lens.view (field @"remainders")
-notAppliesNEW =
-    withAppliedNEW $ \r ->
+notAppliesUnification =
+    withAppliedUnification $ \r ->
         assertBool "Expected NotApplicable"
         $ isNotApplicable r || isNotApplicableUntilConditionChanges r
 
@@ -1254,62 +1254,62 @@ natSimplifiers =
         , factorialEvaluator
         ]
 
-plusZeroRuleNEW, plusSuccRuleNEW :: Equation VariableName
-plusZeroRuleNEW =
-    functionAxiom_NEW plusSymbol [zero, varN] varN
-plusSuccRuleNEW =
-    functionAxiom_NEW
+plusZeroRuleUnification, plusSuccRuleUnification :: Equation VariableName
+plusZeroRuleUnification =
+    functionAxiomUnification_ plusSymbol [zero, varN] varN
+plusSuccRuleUnification =
+    functionAxiomUnification_
         plusSymbol
         [succ varM, varN]
         (succ (plus varM varN))
 
 
-plusRulesNEW :: [Equation VariableName]
-plusRulesNEW = [plusZeroRuleNEW, plusSuccRuleNEW]
+plusRulesUnification :: [Equation VariableName]
+plusRulesUnification = [plusZeroRuleUnification, plusSuccRuleUnification]
 
-plusEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-plusEvaluatorNEW = functionEvaluator plusSymbol plusRulesNEW
+plusEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+plusEvaluatorUnification = functionEvaluator plusSymbol plusRulesUnification
 
-timesEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-timesEvaluatorNEW =
+timesEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+timesEvaluatorUnification =
     functionEvaluator timesSymbol
-        [ functionAxiom_NEW timesSymbol [zero, varN] zero
-        , functionAxiom_NEW
+        [ functionAxiomUnification_ timesSymbol [zero, varN] zero
+        , functionAxiomUnification_
             timesSymbol
             [succ varM, varN]
             (plus varN (times varM varN))
         ]
 
-fibonacciEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-fibonacciEvaluatorNEW =
+fibonacciEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+fibonacciEvaluatorUnification =
     functionEvaluator fibonacciSymbol
-        [ functionAxiom_NEW fibonacciSymbol [zero] one
-        , functionAxiom_NEW fibonacciSymbol [one]  one
-        , functionAxiom_NEW
+        [ functionAxiomUnification_ fibonacciSymbol [zero] one
+        , functionAxiomUnification_ fibonacciSymbol [one]  one
+        , functionAxiomUnification_
             fibonacciSymbol [succ (succ varN)]
             (plus (fibonacci (succ varN)) (fibonacci varN))
         ]
 
-factorialEvaluatorNEW :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-factorialEvaluatorNEW =
+factorialEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+factorialEvaluatorUnification =
     functionEvaluator factorialSymbol
-        [ functionAxiom_NEW
+        [ functionAxiomUnification_
             factorialSymbol
             [zero]
             (succ zero)
-        , functionAxiom_NEW
+        , functionAxiomUnification_
             factorialSymbol
             [succ varN]
             (times (succ varN) (factorial varN))
         ]
 
-natSimplifiersNEW :: BuiltinAndAxiomSimplifierMap
-natSimplifiersNEW =
+natSimplifiersUnification :: BuiltinAndAxiomSimplifierMap
+natSimplifiersUnification =
     Map.fromList
-        [ plusEvaluatorNEW
-        , timesEvaluatorNEW
-        , fibonacciEvaluatorNEW
-        , factorialEvaluatorNEW
+        [ plusEvaluatorUnification
+        , timesEvaluatorUnification
+        , fibonacciEvaluatorUnification
+        , factorialEvaluatorUnification
         ]
 
 -- | Add an unsatisfiable requirement to the 'Equation'.
@@ -1808,14 +1808,14 @@ axiomEvaluator
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate_)
 
-axiomEvaluatorNEW
+axiomEvaluatorUnification
     :: Symbol
     -> [TermLike VariableName]
     -> TermLike VariableName
     -> BuiltinAndAxiomSimplifier
-axiomEvaluatorNEW symbol args right =
+axiomEvaluatorUnification symbol args right =
     simplificationEvaluation
-        (functionAxiomNEW symbol args right makeTruePredicate_)
+        (functionAxiomUnification symbol args right makeTruePredicate_)
 
 appliedMockEvaluator
     :: Pattern VariableName -> BuiltinAndAxiomSimplifier
@@ -1952,13 +1952,13 @@ testEnv =
         , overloadSimplifier = Mock.overloadSimplifier
         }
 
-testEnvNEW :: Env Simplifier
-testEnvNEW =
+testEnvUnification :: Env Simplifier
+testEnvUnification =
     testEnv
         { simplifierAxioms =
             mconcat
                 [ testEvaluators
-                , natSimplifiersNEW
+                , natSimplifiersUnification
                 , listSimplifiers
                 , mapSimplifiers
                 , fatalSimplifiers

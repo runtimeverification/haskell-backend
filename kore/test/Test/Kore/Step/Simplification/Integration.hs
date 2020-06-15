@@ -56,8 +56,8 @@ import Kore.Step.Simplification.Simplify
 
 import Test.Kore
 import Test.Kore.Equation.Application
-    ( functionAxiomNEW
-    , functionAxiom_NEW
+    ( functionAxiomUnification
+    , functionAxiomUnification_
     )
 import Test.Kore.Internal.OrPattern
     ( OrTestPattern
@@ -982,7 +982,7 @@ test_simplificationIntegrationNEW =
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ functionAxiom_NEW
+                            ,   [ functionAxiomUnification_
                                     Mock.function20MapTestSymbol
                                     [Mock.concatMap
                                         (Mock.elementMap
@@ -1013,7 +1013,7 @@ test_simplificationIntegrationNEW =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ functionAxiomNEW
+                          , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
@@ -1044,12 +1044,12 @@ test_simplificationIntegrationNEW =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.functional10Id
-                            ,   [ functionAxiomNEW
+                            ,   [ functionAxiomUnification
                                     Mock.functional10Symbol
                                     [mkElemVar Mock.x]
                                     (mkElemVar Mock.x)
                                     (makeEqualsPredicate_ Mock.cf Mock.a)
-                                , functionAxiomNEW
+                                , functionAxiomUnification
                                     Mock.functional10Symbol
                                     [mkElemVar Mock.x]
                                     (mkElemVar Mock.x)
@@ -1087,7 +1087,7 @@ test_simplificationIntegrationNEW =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ functionAxiomNEW
+                          , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
@@ -1122,7 +1122,7 @@ test_simplificationIntegrationNEW =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ functionAxiomNEW
+                          , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
@@ -1156,7 +1156,7 @@ test_simplificationIntegrationNEW =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ functionAxiomNEW
+                          , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
@@ -1190,7 +1190,7 @@ test_simplificationIntegrationNEW =
                 ( mkEvaluatorRegistry
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
-                          , [ functionAxiomNEW
+                          , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)

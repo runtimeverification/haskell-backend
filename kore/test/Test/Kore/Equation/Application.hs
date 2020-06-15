@@ -5,8 +5,8 @@ module Test.Kore.Equation.Application
     , symbolic
     , axiom
     , axiom_
-    , functionAxiomNEW
-    , functionAxiom_NEW
+    , functionAxiomUnification
+    , functionAxiomUnification_
     ) where
 
 import Prelude.Kore
@@ -354,58 +354,58 @@ test_attemptEquation =
 test_attemptEquationNEW :: [TestTree]
 test_attemptEquationNEW =
     [ applies "Σ(X, X) => X applies to Σ(f(X), f(X))"
-        (functionAxiom_NEW sigmaSymbol [x, x] x)
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f x) (f x))
         (Pattern.fromTermLike $ f x)
 
     , notInstantiated "merge configuration patterns"
-        (functionAxiom_NEW sigmaSymbol [x, x] x)
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
 
     , notInstantiated "substitution with symbol matching"
-        (functionAxiom_NEW sigmaSymbol [x, x] x)
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f y) (f z))
 
     , notInstantiated "merge multiple variables"
-        (functionAxiom_NEW sigmaSymbol [sigma x x, sigma y y] (sigma x y))
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, sigma y y] (sigma x y))
         SideCondition.top
         (sigma (sigma x y) (sigma y x))
 
     , notInstantiated "symbol clash"
-        (functionAxiom_NEW sigmaSymbol [x, x] x)
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f x) (g x))
 
     , notInstantiated "impossible substitution"
-        (functionAxiom_NEW sigmaSymbol [sigma x x, sigma y y] (sigma x y))
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, sigma y y] (sigma x y))
         SideCondition.top
         (sigma (sigma x (f y)) (sigma x y))
 
     , notInstantiated "circular dependency error"
-        (functionAxiom_NEW sigmaSymbol [x, x] x)
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
 
     , notInstantiated "non-function substitution error"
-        (functionAxiom_NEW sigmaSymbol [x, x] x)
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f y))
 
     , notInstantiated "unify all children"
-        (functionAxiom_NEW sigmaSymbol [x, x] x)
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (sigma x x) (sigma (sigma y z) (sigma y y)))
 
     , notInstantiated "normalize substitution"
-        (functionAxiom_NEW sigmaSymbol [sigma x x, y] (sigma x y))
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, y] (sigma x y))
         SideCondition.top
         (sigma (sigma x (f b)) x)
 
     , notInstantiated "merge substitution with initial"
-        (functionAxiom_NEW sigmaSymbol [sigma x x, y] (sigma x y))
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, y] (sigma x y))
         SideCondition.top
         (sigma (sigma (f z) (f y)) (f z))
 
@@ -418,66 +418,76 @@ test_attemptEquationNEW =
             >>= expectRight >>= assertEqual "" expect
 
     , applies "F(x) => G(x) applies to F(x)"
-        (functionAxiom_NEW fSymbol [x] (g x))
+        (functionAxiomUnification_ fSymbol [x] (g x))
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
     , applies "F(x) => G(x) [symbolic(x)] applies to F(x)"
-        (functionAxiom_NEW fSymbol [x] (g x) & symbolic [x])
+        (functionAxiomUnification_ fSymbol [x] (g x) & symbolic [x])
         SideCondition.top
         (f x)
         (Pattern.fromTermLike $ g x)
     , notInstantiated "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
-        (functionAxiom_NEW fSymbol [x] (g x) & concrete [x])
+        (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f x)
     , notInstantiated "F(x) => G(x) [concrete] doesn't apply to f(cf)"
-        (functionAxiom_NEW fSymbol [x] (g x) & concrete [x])
+        (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f cf)
     , notMatched "F(x) => G(x) doesn't apply to F(top)"
-        (functionAxiom_NEW fSymbol [x] (g x))
+        (functionAxiomUnification_ fSymbol [x] (g x))
         SideCondition.top
         (f mkTop_)
     , applies "F(x) => G(x) [concrete] applies to F(a)"
-        (functionAxiom_NEW fSymbol [x] (g x) & concrete [x])
+        (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
         SideCondition.top
         (f a)
         (Pattern.fromTermLike $ g a)
     , applies
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (functionAxiom_NEW sigmaSymbol [x, y] a & symbolic [x] & concrete [y])
+        (functionAxiomUnification_
+            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        )
         SideCondition.top
         (sigma x a)
         (Pattern.fromTermLike a)
     , notInstantiated
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (functionAxiom_NEW sigmaSymbol [x, y] a & symbolic [x] & concrete [y])
+        (functionAxiomUnification_
+            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        )
         SideCondition.top
         (sigma a a)
     , notInstantiated
         "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
-        (functionAxiom_NEW sigmaSymbol [x, y] a & symbolic [x] & concrete [y])
+        (functionAxiomUnification_
+            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        )
         SideCondition.top
         (sigma x x)
     , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
-        (functionAxiomNEW fSymbol [x] (g x) (makeFalsePredicate sortR))
+        (functionAxiomUnification fSymbol [x] (g x) (makeFalsePredicate sortR))
         SideCondition.top
         (f x)
     , notInstantiated "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
-        (functionAxiom_NEW sigmaSymbol [x, x] (g x))
+        (functionAxiomUnification_ sigmaSymbol [x, x] (g x))
         SideCondition.top
         (sigma y z)
     , requiresNotMet
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 and not Y > 0) doesn't apply to Σ(Z, Z)"
-        (functionAxiomNEW sigmaSymbol [x, y] a (positive x `andNot` positive y))
+        (functionAxiomUnification
+            sigmaSymbol [x, y] a (positive x `andNot` positive y)
+        )
         SideCondition.top
         (sigma z z)
     , applies
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
-        (functionAxiomNEW sigmaSymbol [x, y] a (positive x `orNot` positive y))
+        (functionAxiomUnification
+            sigmaSymbol [x, y] a (positive x `orNot` positive y)
+        )
         (SideCondition.fromPredicate $ positive a)
         (sigma a a)
         -- SMT not used to simplify trivial constraints
@@ -485,18 +495,18 @@ test_attemptEquationNEW =
     , requiresNotMet
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
-        (functionAxiomNEW fSymbol [x] a (positive x))
+        (functionAxiomUnification fSymbol [x] a (positive x))
         (SideCondition.fromPredicate $ makeNotPredicate (positive z))
         (f z)
     , applies
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
-        (functionAxiomNEW fSymbol [x] a (positive x))
+        (functionAxiomUnification fSymbol [x] a (positive x))
         (SideCondition.fromPredicate $ positive z)
         (f z)
         (Pattern.fromTermLike a)
     , notInstantiated "does not introduce variables"
-        (functionAxiom_NEW fSymbol [a] (g x))
+        (functionAxiomUnification_ fSymbol [a] (g x))
         SideCondition.top
         (f a)
     ]
@@ -588,13 +598,13 @@ axiom_
     -> Equation'
 axiom_ left right = axiom left right (makeTruePredicate sortR)
 
-functionAxiomNEW
+functionAxiomUnification
     :: Symbol
     -> [TestTerm]
     -> TestTerm
     -> TestPredicate
     -> Equation'
-functionAxiomNEW symbol args right requires =
+functionAxiomUnification symbol args right requires =
     case args of
         [] -> (mkEquation sortR (mkApplySymbol symbol []) right) { requires }
         _  -> (mkEquation sortR left right) { requires, argument }
@@ -620,13 +630,13 @@ functionAxiomNEW symbol args right requires =
             , variableSort
             }
 
-functionAxiom_NEW
+functionAxiomUnification_
     :: Symbol
     -> [TestTerm]
     -> TestTerm
     -> Equation'
-functionAxiom_NEW symbol args right =
-    functionAxiomNEW symbol args right (makeTruePredicate sortR)
+functionAxiomUnification_ symbol args right =
+    functionAxiomUnification symbol args right (makeTruePredicate sortR)
 
 concrete :: [TestTerm] -> Equation' -> Equation'
 concrete vars =
