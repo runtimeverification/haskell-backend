@@ -195,10 +195,7 @@ attemptEquation sideCondition termLike equation =
             simplifier
             (Equation variable, Predicate variable)
     applyAndSelectMatchResult [] =
-        whileApplyMatchResult
-        $ applyMatchResult
-            equationRenamed
-            (Predicate.makeFalsePredicate_, mempty)
+        throwE (WhileMatch matchError)
     applyAndSelectMatchResult results =
         Foldable.foldr1
             takeFirstSuccess
@@ -218,25 +215,27 @@ attemptEquation sideCondition termLike equation =
 
     simplifyArgumentWithResult
         :: HasCallStack
-        => MonadTrans t
         => Predicate (Target variable)
         -> Maybe (Predicate (Target variable))
         -> MatchResult (Target variable)
-        -> t simplifier [MatchResult (Target variable)]
+        -> ExceptT
+            (MatchError (Target variable))
+            simplifier
+            [MatchResult (Target variable)]
     simplifyArgumentWithResult
         argument
         antiLeft
         (matchPredicate, matchSubstitution)
       =
-        lift $
+        lift $ do
             let toMatchResult Conditional { predicate, substitution } =
                     (predicate, Substitution.toMap substitution)
-             in Substitution.mergePredicatesAndSubstitutions
-                    sideCondition
-                    ([argument, matchPredicate] <> maybeToList antiLeft)
-                    [from @_ @(Substitution _) matchSubstitution]
-                    & Logic.observeAllT
-                    & (fmap . fmap) toMatchResult
+            Substitution.mergePredicatesAndSubstitutions
+                sideCondition
+                ([argument, matchPredicate] <> maybeToList antiLeft)
+                [from @_ @(Substitution _) matchSubstitution]
+                & Logic.observeAllT
+                & (fmap . fmap) toMatchResult
 
 applyEquation
     :: forall simplifier variable
