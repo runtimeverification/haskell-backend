@@ -56,6 +56,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
 import Kore.Step
     ( Prim (..)
     , priorityAllStrategy
@@ -287,7 +288,7 @@ test_searchExceedingBreadthLimit =
 
     assertion searchType =
         catch (shouldExceedBreadthLimit searchType)
-        $ \(_ :: LimitExceeded ([Strategy (Prim Rewrite)], Graph.Node)) ->
+        $ \(_ :: LimitExceeded ([Strategy (Prim (RewriteRule RewritingVariableName))], Graph.Node)) ->
             pure ()
 
     shouldExceedBreadthLimit :: SearchType -> IO ()
