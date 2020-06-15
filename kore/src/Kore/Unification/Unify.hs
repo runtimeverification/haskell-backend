@@ -19,12 +19,13 @@ import Control.Monad.Trans.Class
 
 import Kore.Internal.Predicate
     ( Predicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     , mkAnd
+    , termLikeSort
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
@@ -65,4 +66,4 @@ unificationPredicate
     -> TermLike variable
     -> Predicate variable
 unificationPredicate term1 term2 =
-    makeCeilPredicate_ (mkAnd term1 term2)
+    makeCeilPredicate (termLikeSort term2) (mkAnd term1 term2)

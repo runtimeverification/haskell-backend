@@ -11,9 +11,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Error
-    ( runExceptT
-    )
 import qualified Control.Exception as Exception
 import Data.Default as Default
     ( def
