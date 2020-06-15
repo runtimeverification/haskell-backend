@@ -1,6 +1,6 @@
 module Test.Kore.Step.Simplification.Integration
     ( test_simplificationIntegration
-    , test_simplificationIntegrationNEW
+    , test_simplificationIntegrationUnification
     , test_substituteMap
     , test_substituteList
     , test_substitute
@@ -968,8 +968,8 @@ test_simplificationIntegration =
         assertEqual "" expected actual
     ]
 
-test_simplificationIntegrationNEW :: [TestTree]
-test_simplificationIntegrationNEW =
+test_simplificationIntegrationUnification :: [TestTree]
+test_simplificationIntegrationUnification =
     [ testCase "map function, non-matching" $ do
         let
             initial =

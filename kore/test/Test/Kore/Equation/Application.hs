@@ -1,6 +1,6 @@
 module Test.Kore.Equation.Application
     ( test_attemptEquation
-    , test_attemptEquationNEW
+    , test_attemptEquationUnification
     , concrete
     , symbolic
     , axiom
@@ -351,8 +351,8 @@ test_attemptEquation =
         (f a)
     ]
 
-test_attemptEquationNEW :: [TestTree]
-test_attemptEquationNEW =
+test_attemptEquationUnification :: [TestTree]
+test_attemptEquationUnification =
     [ applies "Σ(X, X) => X applies to Σ(f(X), f(X))"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
