@@ -197,12 +197,9 @@ attemptEquation sideCondition termLike equation =
     applyAndSelectMatchResult [] =
         throwE (WhileMatch matchError)
     applyAndSelectMatchResult results =
-        Foldable.foldr1
+        whileApplyMatchResult $ Foldable.foldr1
             takeFirstSuccess
-            ( whileApplyMatchResult
-            . applyMatchResult equationRenamed
-            <$> results
-            )
+            (applyMatchResult equationRenamed <$> results)
     takeFirstSuccess first second = catchError first (const second)
 
     whileDebugAttemptEquation'
