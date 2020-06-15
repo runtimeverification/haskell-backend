@@ -148,7 +148,8 @@ applicable.
  -}
 attemptEquation
     :: forall simplifier variable
-    .  MonadSimplify simplifier
+    .  HasCallStack
+    => MonadSimplify simplifier
     => InternalVariable variable
     => SideCondition (Target variable)
     -> TermLike (Target variable)
@@ -163,10 +164,12 @@ attemptEquation sideCondition termLike equation =
                     matchResult <- match left termLike & whileMatch
                     applyMatchResult equationRenamed matchResult
                         & whileApplyMatchResult
-                else
-                    applyAndSelectMatchResult
-                    =<< simplifyArgumentWithResult argument antiLeft
-                    =<< whileMatch (match left termLike)
+                else do
+                    matchResults <-
+                        whileMatch
+                        $ match left termLike
+                        >>= simplifyArgumentWithResult argument antiLeft
+                    applyAndSelectMatchResult matchResults
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires
         let Equation { right, ensures } = equation'
@@ -211,7 +214,8 @@ attemptEquation sideCondition termLike equation =
         return result
 
     simplifyArgumentWithResult
-        :: MonadTrans t
+        :: HasCallStack
+        => MonadTrans t
         => Predicate (Target variable)
         -> Maybe (Predicate (Target variable))
         -> MatchResult (Target variable)
@@ -221,9 +225,6 @@ attemptEquation sideCondition termLike equation =
         antiLeft
         (matchPredicate, matchSubstitution)
       =
-        -- TODO: toMap is unsafe;
-        -- is it impossible to happen (if the frontend generates equations
-        -- correctly), or should we add a new AttemptEquationError case?
         lift $
             let toMatchResult Conditional { predicate, substitution } =
                     (predicate, Substitution.toMap substitution)
