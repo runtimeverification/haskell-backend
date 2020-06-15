@@ -319,14 +319,9 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
       | otherwise
       = empty
 
-    checkNonTargetVariables
-      | Just variable <-
-          Foldable.find
-            Target.isSomeNonTargetName
-            (Map.keys substitution)
-      = [NonTargetSubstitution variable]
-      | otherwise
-      = mempty
+    checkNonTargetVariables =
+        NonMatchingSubstitution
+        <$> filter Target.isSomeNonTargetName (Map.keys substitution)
 
     Equation { attributes } = equation
     concretes =
@@ -594,8 +589,8 @@ data ApplyMatchResultError variable
     -- term was required.
     | NotMatched (SomeVariableName variable)
     -- ^ The variable was not matched.
-    | NonTargetSubstitution (SomeVariableName variable)
-    -- ^ The variable should not be substituted.
+    | NonMatchingSubstitution (SomeVariableName variable)
+    -- ^ The variable is not part of the matching solution.
     deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
@@ -627,7 +622,7 @@ instance
         ]
     pretty (NotMatched variable) =
         Pretty.hsep ["variable", unparse variable, "was not matched"]
-    pretty (NonTargetSubstitution variable) =
+    pretty (NonMatchingSubstitution variable) =
         Pretty.hsep
         [ "variable"
         , unparse variable
@@ -650,8 +645,8 @@ mapApplyMatchResultErrorVariables adj applyMatchResultError =
                 (mapSomeVariableName' variable)
                 (mapTermLikeVariables termLike)
         NotMatched variable -> NotMatched (mapSomeVariableName' variable)
-        NonTargetSubstitution variable ->
-            NonTargetSubstitution (mapSomeVariableName' variable)
+        NonMatchingSubstitution variable ->
+            NonMatchingSubstitution (mapSomeVariableName' variable)
   where
     mapSomeVariableName' = mapSomeVariableName adj
     mapTermLikeVariables = TermLike.mapVariables adj
