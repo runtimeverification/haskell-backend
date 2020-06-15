@@ -359,7 +359,7 @@ test_attemptEquationUnification =
         (sigma (f x) (f x))
         (Pattern.fromTermLike $ f x)
 
-    , notInstantiated "merge configuration patterns"
+    , notMatched "merge configuration patterns"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
@@ -374,17 +374,17 @@ test_attemptEquationUnification =
         SideCondition.top
         (sigma (sigma x y) (sigma y x))
 
-    , notInstantiated "symbol clash"
+    , notMatched "symbol clash"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma (f x) (g x))
 
-    , notInstantiated "impossible substitution"
+    , notMatched "impossible substitution"
         (functionAxiomUnification_ sigmaSymbol [sigma x x, sigma y y] (sigma x y))
         SideCondition.top
         (sigma (sigma x (f y)) (sigma x y))
 
-    , notInstantiated "circular dependency error"
+    , notMatched "circular dependency error"
         (functionAxiomUnification_ sigmaSymbol [x, x] x)
         SideCondition.top
         (sigma x (f x))
