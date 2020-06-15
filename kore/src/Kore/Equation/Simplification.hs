@@ -84,14 +84,14 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         let subst = Substitution.toMap substitution
             left' = TermLike.substitute subst term
             requires' = TermLike.substitute subst <$> requires
-            argument' = TermLike.substitute subst <$> argument
+            argument' = (fmap . fmap) (TermLike.substitute subst) argument
             antiLeft' = (fmap . fmap) (TermLike.substitute subst) antiLeft
             right' = TermLike.substitute subst right
             ensures' = TermLike.substitute subst <$> ensures
         return Equation
             { left = TermLike.forgetSimplified left'
             , requires = Predicate.forgetSimplified requires'
-            , argument = Predicate.forgetSimplified argument'
+            , argument = Predicate.forgetSimplified <$> argument'
             , antiLeft = Predicate.forgetSimplified <$> antiLeft'
             , right = TermLike.forgetSimplified right'
             , ensures = Predicate.forgetSimplified ensures'

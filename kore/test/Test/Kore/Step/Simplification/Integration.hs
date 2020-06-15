@@ -1423,7 +1423,7 @@ axiom left right requires =
     Equation
         { left
         , requires
-        , argument = Predicate.makeTruePredicate_
+        , argument = Nothing
         , antiLeft = Nothing
         , right
         , ensures = Predicate.makeTruePredicate_

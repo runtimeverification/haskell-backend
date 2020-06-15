@@ -605,7 +605,8 @@ functionAxiomNEW symbol args right requires =
     generateVariables n sorts' =
         fmap makeElementVariable (zip [0..n - 1] sorts')
     argument =
-        foldr1 makeAndPredicate
+        Just
+        $ foldr1 makeAndPredicate
         $ fmap (uncurry (makeInPredicate sortR))
         $ zip variables args
     makeElementVariable (num, sort) =

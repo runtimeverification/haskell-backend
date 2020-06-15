@@ -162,16 +162,16 @@ attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
         (equation', predicate) <-
-            if isTop argument
-                then do
+            case argument of
+                Nothing -> do
                     matchResult <- match left termLike & whileMatch
                     applyMatchResult equationRenamed matchResult
                         & whileApplyMatchResult
-                else do
+                Just argument' -> do
                     matchResults <-
                         whileMatch
                         $ match left termLike
-                        >>= simplifyArgumentWithResult argument antiLeft
+                        >>= simplifyArgumentWithResult argument' antiLeft
                     applyAndSelectMatchResult matchResults
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires

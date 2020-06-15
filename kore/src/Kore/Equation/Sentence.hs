@@ -106,7 +106,7 @@ matchEquation attributes termLike
         ensures'  <- makePredicate ensures  & Bifunctor.first EnsuresError
         pure Equation
             { requires = requires'
-            , argument = argument'
+            , argument = Just argument'
             , antiLeft = Nothing
             , left
             , right
@@ -136,7 +136,7 @@ matchEquation attributes termLike
         ensures'  <- makePredicate ensures  & Bifunctor.first EnsuresError
         pure Equation
             { requires = requires'
-            , argument = argument'
+            , argument = Just argument'
             , antiLeft = Just antiLeft'
             , left
             , right
@@ -148,7 +148,7 @@ matchEquation attributes termLike
         (TermLike.Implies_ _
             requires
             (TermLike.And_ _
-                (TermLike.Equals_ _ sort left right)
+                (TermLike.Equals_ _ _ left right)
                 ensures
             )
         )
@@ -157,7 +157,7 @@ matchEquation attributes termLike
         ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
         pure Equation
             { requires = requires'
-            , argument = Predicate.makeTruePredicate sort
+            , argument = Nothing
             , antiLeft = Nothing
             , left
             , right
@@ -168,7 +168,7 @@ matchEquation attributes termLike
     match (TermLike.Equals_ _ sort left right) =
         pure Equation
             { requires = Predicate.makeTruePredicate sort
-            , argument = Predicate.makeTruePredicate sort
+            , argument = Nothing
             , antiLeft = Nothing
             , left
             , right
@@ -179,7 +179,7 @@ matchEquation attributes termLike
     match left@(TermLike.Ceil_ _ sort _) =
         pure Equation
             { requires = Predicate.makeTruePredicate sort
-            , argument = Predicate.makeTruePredicate sort
+            , argument = Nothing
             , antiLeft = Nothing
             , left
             , right = TermLike.mkTop sort
