@@ -270,7 +270,7 @@ parseDebugApplyEquationOptions =
                 \which may be the name of a symbol or a rule. \
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
-                \occurs on the left-hand side. \n\
+                \occurs on the left-hand side. \
                 \For multiple equations, use the flag before each identifier."
             ]
 
@@ -309,7 +309,7 @@ parseDebugAttemptEquationOptions =
                 \which may be the name of a symbol or a rule. \
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
-                \occurs on the left-hand side. \n\
+                \occurs on the left-hand side. \
                 \For multiple equations, use the flag before each identifier."
             ]
 
@@ -353,7 +353,7 @@ parseDebugEquationOptions =
                 \which may be the name of a symbol or a rule. \
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
-                \occurs on the left-hand side. \n\
+                \occurs on the left-hand side. \
                 \For multiple equations, use the flag before each identifier."
             ]
 
