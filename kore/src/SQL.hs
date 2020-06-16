@@ -106,6 +106,13 @@ instance (Column a, Typeable a) => Column [a] where
     toColumn = toForeignKeyColumn
     {-# INLINE toColumn #-}
 
+instance (Column a, Typeable a) => Column (Maybe a) where
+    defineColumn = defineForeignKeyColumn
+    {-# INLINE defineColumn #-}
+
+    toColumn = toForeignKeyColumn
+    {-# INLINE toColumn #-}
+
 instance (Column a, Typeable a) => Column (NonEmpty a) where
     defineColumn = defineForeignKeyColumn
     {-# INLINE defineColumn #-}
