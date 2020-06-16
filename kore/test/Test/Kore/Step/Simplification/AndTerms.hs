@@ -1137,7 +1137,7 @@ test_andTermsSimplification =
                 left = applyAlias' alias $ mkTop Mock.testSort
             actual <- simplifyUnify left $ Mock.injective10 gOfA
             assertEqual "" ([expect], [expect]) actual
-        , testGroup "TESTING unhandled cases with aliases"
+        , testGroup "unhandled cases with aliases"
             [ testCase "top level" $ do
                 let
                     expect =

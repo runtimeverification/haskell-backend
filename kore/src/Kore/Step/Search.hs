@@ -126,7 +126,6 @@ searchGraph Config { searchType, bound } match executionGraph = do
             STAR -> Strategy.pickStar
             FINAL -> Strategy.pickFinal
 
--- TODO: should this MaybeT be removed?
 matchWith
     :: forall variable m
     .  (InternalVariable variable, MonadSimplify m)
