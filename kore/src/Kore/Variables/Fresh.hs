@@ -38,118 +38,129 @@ import Kore.Syntax.Variable
 
 {- | @FreshPartialOrder@ defines a partial order for renaming variables.
 
-Two variables @x@ and @y@ are related under the partial order if @infVariable@
-and @supVariable@ give the same value on @x@ and @y@.
+Two variables @x@ and @y@ are related under the partial order if @minBoundName@
+and @maxBoundName@ give the same value on @x@ and @y@.
 
 Disjoint:
 
-prop> infVariable x /= supVariable y
+prop> minBoundName x /= maxBoundName y
 
-prop> (infVariable x == infVariable y) == (supVariable x == supVariable y)
+prop> (minBoundName x == minBoundName y) == (maxBoundName x == maxBoundName y)
 
 Order:
 
-prop> infVariable x <= x
+prop> minBoundName x <= x
 
-prop> x <= supVariable x
+prop> x <= maxBoundName x
 
-prop> infVariable x < supVariable x
+prop> minBoundName x < maxBoundName x
 
 Idempotence:
 
-prop> infVariable x == infVariable (infVariable x)
+prop> minBoundName x == minBoundName (minBoundName x)
 
-prop> supVariable x == supVariable (supVariable x)
+prop> maxBoundName x == maxBoundName (maxBoundName x)
 
 Monotonicity:
 
-prop> x < supVariable x ==> x < nextVariable x
+prop> x < maxBoundName x ==> Just x < nextName x x
 
 Bounding:
 
-prop> x < supVariable x ==> infVariable x < nextVariable x
+prop> x < maxBoundName x ==> Just (minBoundName x) < nextName x x
 
-prop> x < supVariable x ==> nextVariable x < supVariable x
+prop> x < maxBoundName x ==> nextName x x < Just (maxBoundName x)
 
  -}
-class Ord variable => FreshPartialOrd variable where
-    infVariable :: variable -> variable
+class Ord name => FreshPartialOrd name where
+    minBoundName :: name -> name
 
-    {- | @supVariable x@ is the greatest variable related to @x@.
+    {- | @maxBoundName x@ is the greatest name related to @x@.
 
     In the typical implementation, the counter has type
     @'Maybe' ('Sup' 'Natural')@
-    so that @supVariable x@ has a counter @'Just' 'Sup'@.
+    so that @maxBoundName x@ has a counter @'Just' 'Sup'@.
 
      -}
-    supVariable :: variable -> variable
+    maxBoundName :: name -> name
 
-    {- | @nextVariable@ increments the counter attached to a variable.
+    {- | @nextName a b@ is the least name greater than @a@ and @b@.
+
+    The result shares any properties (besides its name) with the first argument.
+
      -}
-    nextVariable :: variable -> variable
+    nextName :: name -> name -> Maybe name
 
 instance FreshPartialOrd VariableName where
-    infVariable variable = variable { counter = Nothing }
-    {-# INLINE infVariable #-}
+    minBoundName variable = variable { counter = Nothing }
+    {-# INLINE minBoundName #-}
 
-    supVariable variable = variable { counter = Just Sup }
-    {-# INLINE supVariable #-}
+    maxBoundName variable = variable { counter = Just Sup }
+    {-# INLINE maxBoundName #-}
 
-    nextVariable =
-        Lens.over (field @"counter") incrementCounter
-        . Lens.set (field @"base" . field @"idLocation") generated
+    nextName name1 name2 =
+        name1
+        & Lens.set (field @"counter") counter'
+        & Lens.set (field @"base" . field @"idLocation") generated
+        & Just
       where
         generated = AstLocationGeneratedVariable
-        incrementCounter counter =
-            case counter of
+        counter' =
+            case Lens.view (field @"counter") name2 of
                 Nothing          -> Just (Element 0)
                 Just (Element n) -> Just (Element (succ n))
                 Just Sup         -> illegalVariableCounter
-    {-# INLINE nextVariable #-}
+    {-# INLINE nextName #-}
 
 instance FreshPartialOrd Void where
-    infVariable = \case {}
-    supVariable = \case {}
-    nextVariable = \case {}
+    minBoundName = \case {}
+    maxBoundName = \case {}
+    nextName = \case {}
 
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (ElementVariableName variable)
   where
-    infVariable = fmap infVariable
-    {-# INLINE infVariable #-}
+    minBoundName = fmap minBoundName
+    {-# INLINE minBoundName #-}
 
-    supVariable = fmap supVariable
-    {-# INLINE supVariable #-}
+    maxBoundName = fmap maxBoundName
+    {-# INLINE maxBoundName #-}
 
-    nextVariable = fmap nextVariable
-    {-# INLINE nextVariable #-}
+    nextName name1 (ElementVariableName name2) =
+        traverse (flip nextName name2) name1
+    {-# INLINE nextName #-}
 
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (SetVariableName variable)
   where
-    infVariable = fmap infVariable
-    {-# INLINE infVariable #-}
+    minBoundName = fmap minBoundName
+    {-# INLINE minBoundName #-}
 
-    supVariable = fmap supVariable
-    {-# INLINE supVariable #-}
+    maxBoundName = fmap maxBoundName
+    {-# INLINE maxBoundName #-}
 
-    nextVariable = fmap nextVariable
-    {-# INLINE nextVariable #-}
+    nextName name1 (SetVariableName name2) =
+        traverse (flip nextName name2) name1
+    {-# INLINE nextName #-}
 
 instance
     FreshPartialOrd variable
     => FreshPartialOrd (SomeVariableName variable)
   where
-    infVariable = fmap infVariable
-    {-# INLINE infVariable #-}
+    minBoundName = fmap minBoundName
+    {-# INLINE minBoundName #-}
 
-    supVariable = fmap supVariable
-    {-# INLINE supVariable #-}
+    maxBoundName = fmap maxBoundName
+    {-# INLINE maxBoundName #-}
 
-    nextVariable = fmap nextVariable
-    {-# INLINE nextVariable #-}
+    nextName (SomeVariableNameElement name1) (SomeVariableNameElement name2) =
+        SomeVariableNameElement <$> nextName name1 name2
+    nextName (SomeVariableNameSet name1) (SomeVariableNameSet name2) =
+        SomeVariableNameSet <$> nextName name1 name2
+    nextName _ _ = Nothing
+    {-# INLINE nextName #-}
 
 {- | A @FreshName@ can be renamed to avoid colliding with a set of names.
 -}
@@ -180,12 +191,11 @@ defaultRefreshName
     -> variable
     -> Maybe variable
 defaultRefreshName avoiding original = do
-    let sup = supVariable original
+    Monad.guard (Set.member original avoiding)
+    let sup = maxBoundName original
     largest <- Set.lookupLT sup avoiding
-    -- assignSort must not change the order with respect to sup.
-    assert (largest < sup) $ Monad.guard (largest >= infVariable original)
-    let next = nextVariable largest
-    -- nextVariable must yield a variable greater than largest.
+    next <- nextName original largest
+    -- nextName must yield a variable greater than largest.
     assert (next > largest) $ pure next
 {-# INLINE defaultRefreshName #-}
 

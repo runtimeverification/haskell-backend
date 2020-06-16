@@ -54,13 +54,13 @@ instance From W VariableName where
     from = error "Not implemented"
 
 instance FreshPartialOrd W where
-    infVariable w = w { counter = Nothing }
-    supVariable w = w { counter = Just Sup }
-    nextVariable =
-        Lens.over (field @"counter") increment
+    minBoundName w = w { counter = Nothing }
+    maxBoundName w = w { counter = Just Sup }
+    nextName w1 w2 =
+        Just $ Lens.set (field @"counter") counter' w1
       where
-        increment =
-            \case
+        counter' =
+            case Lens.view (field @"counter") w2 of
                 Nothing -> Just (Element 0)
                 Just (Element a) -> Just (Element (succ a))
                 Just Sup -> illegalVariableCounter

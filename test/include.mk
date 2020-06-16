@@ -66,6 +66,7 @@ $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 
 %.$(EXT).out: $(TEST_DIR)/%.$(EXT) $(TEST_DEPS)
 	@echo ">>>" $(CURDIR) "krun" $<
+	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ 2>/dev/null
 	$(DIFF) $@.golden $@ || $(FAILED)
@@ -99,6 +100,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
 	@echo ">>>" $(CURDIR) "kprove" $<
+	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
 	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) 2>/dev/null >$@ || true

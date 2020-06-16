@@ -57,9 +57,6 @@ class (MonadLogic unifier, MonadSimplify unifier) => MonadUnify unifier where
         explainBottom message first second
         empty
 
--- | 'MonadUnify' chooses its error/left type to 'UnificationError'
--- and provides functions to throw these errors. The point of this is to be able
--- to display information about unification failures through 'explainFailure'.
 unificationPredicate
     :: InternalVariable variable
     => TermLike variable

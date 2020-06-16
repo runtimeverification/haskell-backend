@@ -19,6 +19,9 @@ import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Set as Set
 
 import Kore.Attribute.Pattern.FreeVariables
@@ -53,7 +56,7 @@ import qualified Kore.Step.RulePattern as RulePattern
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
-    ( nextVariable
+    ( nextName
     )
 import qualified Logic
 
