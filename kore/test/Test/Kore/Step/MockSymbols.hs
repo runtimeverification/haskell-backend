@@ -1054,17 +1054,6 @@ sortInjection
     -> TermLike variable
     -> TermLike variable
 sortInjection injTo termLike =
-    sortInjection' injFrom injTo termLike
-  where
-    injFrom = Internal.termLikeSort termLike
-
-sortInjection'
-    :: InternalVariable variable
-    => Sort
-    -> Sort
-    -> TermLike variable
-    -> TermLike variable
-sortInjection' injFrom injTo termLike =
     (synthesize . Internal.InjF) Internal.Inj
         { injConstructor
         , injFrom
@@ -1073,6 +1062,7 @@ sortInjection' injFrom injTo termLike =
         , injAttributes
         }
   where
+    injFrom = Internal.termLikeSort termLike
     Symbol { symbolConstructor = injConstructor } = symbol'
     Symbol { symbolAttributes = injAttributes } = symbol'
     symbol' = sortInjectionSymbol injFrom injTo
