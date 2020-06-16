@@ -215,27 +215,20 @@ andSimplifyFailure
     => UnificationTerm
     -> UnificationTerm
     -- ^ terms to unify
-    -> TestTerm
-    -> TestTerm
+    -> [TestPattern]
     -- ^ expected failure results
     -> Assertion
 andSimplifyFailure
     term1
     term2
-    fail1
-    fail2
+    expected
   = do
-    let expect :: TestPattern
-        expect =
-            Monad.Unify.unificationPredicate fail1 fail2
-            & Condition.fromPredicate
-            & Pattern.fromCondition
     actual <-
         runNoSMT
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT Not.notSimplifier
         $ simplifyAnds (unificationProblem term1 term2 :| [])
-    assertEqual "" (show expect) (show actual)
+    assertEqual "" expected actual
 
 andSimplifyException
     :: HasCallStack
@@ -476,20 +469,50 @@ test_unification =
         andSimplifyFailure
             (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm a3)
-            (mkElemVar Mock.x)
-            a3
+            [ Monad.Unify.unificationPredicate a3 (mkElemVar Mock.x)
+                & Condition.fromPredicate
+                & Pattern.fromCondition
+            ]
     , testCase "SetVariable w. constructor" $
         andSimplifyFailure
             (UnificationTerm (f (Mock.mkTestSomeVariable "@x")))
             (UnificationTerm (f a))
-            (Mock.mkTestSomeVariable "@x")
-            a
+            [ Conditional
+                { term = f (mkTop Mock.testSort)
+                , predicate =
+                    Predicate.makeAndPredicate
+                        (Predicate.makeCeilPredicate Mock.testSort
+                            (mkAnd
+                                a
+                                (Mock.mkTestSomeVariable "@x")
+                            )
+                        )
+                        (Predicate.makeCeilPredicate Mock.testSort
+                            (Mock.mkTestSomeVariable "@x")
+                        )
+                , substitution = mempty
+                }
+            ]
     , testCase "SetVariable" $
         andSimplifyFailure
             (UnificationTerm (Mock.mkTestSomeVariable "@x"))
             (UnificationTerm a)
-            (Mock.mkTestSomeVariable "@x")
-            a
+            [ Conditional
+                { term = mkTop_
+                , predicate =
+                    Predicate.makeAndPredicate
+                        (Predicate.makeCeilPredicate Mock.testSort
+                            (mkAnd
+                                a
+                                (Mock.mkTestSomeVariable "@x")
+                            )
+                        )
+                        (Predicate.makeCeilPredicate Mock.testSort
+                            (Mock.mkTestSomeVariable "@x")
+                        )
+                , substitution = mempty
+                }
+            ]
     , testCase "non-constructor symbolHead right" $
         andSimplifySuccess
             (UnificationTerm a)
@@ -656,8 +679,22 @@ test_unsupportedConstructs =
         andSimplifyFailure
             (UnificationTerm (f a))
             (UnificationTerm (f (mkImplies a (mkNext a1))))
-            a
-            (mkImplies a (mkNext a1))
+            [ Conditional
+                { term = f (mkTop Mock.testSort)
+                , predicate =
+                    Predicate.makeAndPredicate
+                        (Predicate.makeCeilPredicate Mock.testSort
+                            (mkAnd
+                                a
+                                (mkImplies a (mkNext a1))
+                            )
+                        )
+                        (Predicate.makeCeilPredicate Mock.testSort
+                            (mkImplies a (mkNext a1))
+                        )
+                , substitution = mempty
+                }
+            ]
 
 injUnificationTests :: [TestTree]
 injUnificationTests =

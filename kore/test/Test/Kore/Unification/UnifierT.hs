@@ -3,9 +3,6 @@ module Test.Kore.Unification.UnifierT
     , test_simplifyCondition
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Test.Tasty
@@ -168,10 +165,21 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         $ do
             let expect =
-                    [ Monad.Unify.unificationPredicate
-                        (Mock.constr10 (mkElemVar Mock.y))
-                        (mkElemVar Mock.y)
-                    & Condition.fromPredicate
+                    [ Conditional
+                        { term = ()
+                        , predicate =
+                            Predicate.makeCeilPredicate_
+                            (mkAnd
+                                (Mock.constr10 (mkElemVar Mock.y))
+                                (mkElemVar Mock.y)
+                            )
+                        , substitution =
+                            [ Substitution.assign
+                                (inject Mock.x)
+                                (Mock.constr10 mkTop_)
+                            ]
+                            & Substitution.wrap
+                        }
                     ]
             actual <-
                 merge
@@ -237,7 +245,7 @@ test_mergeAndNormalizeSubstitutions =
         assertEqual "" expect actual
         assertNormalizedPredicatesMulti actual
 
-    , testCase "TESTING Constructor circular dependency?"
+    , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
             let expect =
@@ -264,8 +272,6 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkElemVar Mock.x)
                         )
                     ]
-            traceM
-                $ foldl (\a b -> a <> "\n" <> unparseToString b) "" actual
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
 

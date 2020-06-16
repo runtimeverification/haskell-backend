@@ -52,9 +52,6 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.RulePattern as RulePattern
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.Unify
-    ( unificationPredicate
-    )
 import Kore.Variables.Fresh
     ( nextVariable
     )
@@ -430,20 +427,6 @@ test_applyRewriteRule_ =
                         $ Substitution.mkUnwrappedSubstitution
                         [(inject Mock.y, mkElemVar Mock.x)]
                     }
-        actual <- applyRewriteRuleParallel_ initial axiomSigmaId
-        assertEqual "" expect actual
-
-    -- sigma(x, x) -> x
-    -- vs
-    -- sigma(a, i(b)) with substitution b=a
-    , testCase "non-function substitution error" $ do
-        let expect =
-                [ unificationOrPattern
-                    (Mock.plain10 (mkElemVar Mock.y))
-                    (mkElemVar Mock.x)
-                ]
-            initial = pure $
-                Mock.sigma (mkElemVar Mock.x) (Mock.plain10 (mkElemVar Mock.y))
         actual <- applyRewriteRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
 
@@ -1250,13 +1233,3 @@ test_applyRewriteRulesSequence =
         checkResults results actual
         checkRemainders remainders actual
     ]
-
-unificationOrPattern
-    :: TestTerm
-    -> TestTerm
-    -> OrTestPattern
-unificationOrPattern term1 term2 =
-    unificationPredicate term1 term2
-    & Condition.fromPredicate
-    & Pattern.fromCondition
-    & OrPattern.fromPattern
