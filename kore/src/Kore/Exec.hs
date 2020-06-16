@@ -186,7 +186,7 @@ import SMT
     )
 
 -- | Semantic rule used during execution.
-type Rewrite = RewriteRule VariableName
+type Rewrite = RewriteRule RewritingVariableName
 
 -- | Function rule used during execution.
 type Equality = Equation VariableName
@@ -205,7 +205,7 @@ exec
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([RewriteRule RewritingVariableName] -> [Strategy (Prim (RewriteRule RewritingVariableName))])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
@@ -214,7 +214,6 @@ exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-            rewriteRules' = mkRewritingRule <$> rewriteRules
         finalConfig <-
             getFinalConfigOf $ do
                 initialConfig <-
@@ -233,7 +232,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    (strategy rewriteRules', initialConfig)
+                    (strategy rewriteRules, initialConfig)
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return finalTerm
   where
@@ -264,7 +263,7 @@ execGetExitCode
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([RewriteRule RewritingVariableName] -> [Strategy (Prim (RewriteRule RewritingVariableName))])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The final pattern (top cell) to extract the exit code
@@ -294,7 +293,7 @@ search
     => Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([RewriteRule RewritingVariableName] -> [Strategy (Prim (RewriteRule RewritingVariableName))])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
@@ -308,7 +307,6 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
     evalSimplifier verifiedModule $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-            rewriteRules' = mkRewritingRule <$> rewriteRules
         simplifiedPatterns <-
             Pattern.simplify SideCondition.top
             $ Pattern.fromTermLike termLike
@@ -318,7 +316,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             runStrategy' =
-                runStrategy breadthLimit transitionRule (strategy rewriteRules')
+                runStrategy breadthLimit transitionRule (strategy rewriteRules)
         executionGraph <- runStrategy' initialPattern
         let
             match target config = Search.matchWith target config
@@ -460,7 +458,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
         assertSingleClaim specClaims
-        let axioms = fmap Bounded.Axiom rewriteRules
+        let axioms = fmap (Bounded.Axiom . unRewritingRule) rewriteRules
             claims = fmap makeImplicationRule specClaims
 
         Bounded.checkClaim
@@ -523,7 +521,8 @@ mergeRules ruleMerger verifiedModule ruleNames =
 
         let nonEmptyRules :: Either Text (NonEmpty (RewriteRule VariableName))
             nonEmptyRules = do
-                rules <- extractRules rewriteRules ruleNames
+                let rewriteRules' = unRewritingRule <$> rewriteRules
+                rules <- extractRules rewriteRules' ruleNames
                 case rules of
                     [] -> Left "Empty rule list."
                     (r : rs) -> Right (r :| rs)
@@ -642,7 +641,7 @@ initialize verifiedModule = do
         $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
-    pure Initialized { rewriteRules = concat rewriteAxioms }
+    pure Initialized { rewriteRules = mkRewritingRule <$> concat rewriteAxioms }
 
 data InitializedProver =
     InitializedProver
@@ -694,7 +693,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     simplifiedSpecClaims <- mapM simplifyToList specClaims
     claims <- Profiler.initialization "simplifyRuleOnSecond"
         $ traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
-    let axioms = coerce . mkRewritingRule <$> rewriteRules
+    let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where
