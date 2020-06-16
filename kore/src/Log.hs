@@ -4,8 +4,6 @@ License     : NCSA
 
 -}
 
-{-# OPTIONS_GHC -fno-prof-auto #-}
-
 module Log
     (
     -- * Entries
