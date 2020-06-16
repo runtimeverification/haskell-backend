@@ -106,8 +106,8 @@ data SimplificationTarget = AndT | EqualsT | BothT
 We want to keep the terms because substitution relies on the result not being
 @\\bottom@.
 
-Unlike 'termAnd', @termUnification@ does not make an @\\and@ term when a
-particular case is not implemented; otherwise, the two are the same.
+When a case is not implemented, @termUnification@ will create a @\\ceil@ of
+the conjunction of the two terms.
 
 The comment for 'Kore.Step.Simplification.And.simplify' describes all
 the special cases handled by this.
@@ -134,13 +134,12 @@ termUnification notSimplifier =
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
-        Error.maybeT (unificationCondition' pat1 pat2) pure maybeTermUnification
+        Error.maybeT (unificationPattern pat1 pat2) pure maybeTermUnification
 
-    unificationCondition' term1 term2 =
+    unificationPattern term1 term2 =
         return
-        . Pattern.fromCondition
-        . Condition.fromPredicate
-        $ unificationPredicate term1 term2
+        . Pattern.fromTermLike
+        $ mkCeil (termLikeSort term2) (mkAnd term1 term2)
 
 maybeTermEquals
     :: InternalVariable variable

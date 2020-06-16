@@ -28,8 +28,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
     )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
+    ( makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeTruePredicate
@@ -156,10 +155,14 @@ test_andTermsSimplification =
                                 (Mock.injective11 gOfA)
                             )
                         ]
-                    , [ unificationCondition
-                        (Mock.injective10 fOfA)
-                        (Mock.injective11 gOfA)
-                      ]
+                    ,   [ Pattern.fromTermLike
+                            (mkCeil Mock.testSort
+                                (mkAnd
+                                    (Mock.injective10 fOfA)
+                                    (Mock.injective11 gOfA)
+                                )
+                            )
+                        ]
                     )
             actual <-
                 simplifyUnify
@@ -202,7 +205,10 @@ test_andTermsSimplification =
                 other = Mock.sortInjection Mock.topSort Mock.plain00OtherSort
                 expect =
                     ( [Pattern.fromTermLike $ mkAnd sub other]
-                    , [unificationCondition sub other]
+                    , [ Pattern.fromTermLike
+                        $ mkCeil Mock.topSort
+                            (mkAnd sub other)
+                      ]
                     )
             actual <- simplifyUnify sub other
             assertEqual "" expect actual
@@ -218,20 +224,18 @@ test_andTermsSimplification =
                                 )
                             )
                         ]
-                    , [ Conditional
-                        { term = Mock.sortInjection' Mock.subSort Mock.topSort  mkTop_
-                        , predicate =
-                            makeCeilPredicate
-                                Mock.topSort
-                                (mkAnd
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.plain00SubSubsort
+                    ,   [ Pattern.fromTermLike
+                            (Mock.sortInjectionSubToTop
+                                (mkCeil Mock.subSort
+                                    (mkAnd
+                                        (Mock.sortInjectionSubSubToSub
+                                            Mock.plain00SubSubsort
+                                        )
+                                        Mock.plain00Subsort
                                     )
-                                    Mock.plain00Subsort
                                 )
-                        , substitution = mempty
-                        }
-                      ]
+                            )
+                        ]
                     )
             actual <-
                 simplifyUnifySorts
@@ -250,20 +254,18 @@ test_andTermsSimplification =
                                 )
                             )
                         ]
-                    , [ Conditional
-                        { term = Mock.sortInjection' Mock.subSort Mock.topSort  mkTop_
-                        , predicate =
-                            makeCeilPredicate
-                                Mock.topSort
-                                (mkAnd
-                                    Mock.plain00Subsort
-                                    (Mock.sortInjectionSubSubToSub
-                                        Mock.plain00SubSubsort
+                    ,   [ Pattern.fromTermLike
+                            (Mock.sortInjectionSubToTop
+                                (mkCeil Mock.subSort
+                                    (mkAnd
+                                        Mock.plain00Subsort
+                                        (Mock.sortInjectionSubSubToSub
+                                            Mock.plain00SubSubsort
+                                        )
                                     )
                                 )
-                        , substitution = mempty
-                        }
-                      ]
+                            )
+                        ]
                     )
             actual <-
                 simplifyUnifySorts
@@ -541,7 +543,10 @@ test_andTermsSimplification =
         [ testCase "top level" $ do
             let expect =
                     ( [ Pattern.fromTermLike (mkAnd plain0OfA plain1OfA) ]
-                    , [ unificationCondition plain0OfA plain1OfA ]
+                    , [ Pattern.fromTermLike
+                            $ mkCeil Mock.testSort
+                                (mkAnd plain0OfA plain1OfA)
+                      ]
                     )
             actual <- simplifyUnify plain0OfA plain1OfA
             assertEqual "" expect actual
@@ -551,12 +556,12 @@ test_andTermsSimplification =
                     (   [ Pattern.fromTermLike
                             (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                         ]
-                    , [ Conditional
-                        { term = Mock.constr10 (mkTop Mock.testSort)
-                        , predicate =
-                            Monad.Unify.unificationPredicate plain0OfA plain1OfA
-                        , substitution = mempty
-                        }
+                    , [ Pattern.fromTermLike
+                            (Mock.constr10
+                                (mkCeil Mock.testSort
+                                    (mkAnd plain0OfA plain1OfA)
+                                )
+                            )
                       ]
                     )
             actual <-
@@ -571,14 +576,15 @@ test_andTermsSimplification =
                                 (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                             )
                         ]
-                    , [ Conditional
-                        { term =
-                            Mock.constr10 (Mock.constr10 (mkTop Mock.testSort))
-                        , predicate =
-                            Monad.Unify.unificationPredicate plain0OfA plain1OfA
-                        , substitution = mempty
-                        }
-                      ]
+                    ,   [ Pattern.fromTermLike
+                            (Mock.constr10
+                                (Mock.constr10
+                                    (mkCeil Mock.testSort
+                                        (mkAnd plain0OfA plain1OfA)
+                                    )
+                                )
+                            )
+                        ]
                     )
             actual <-
                 simplifyUnify
@@ -595,16 +601,12 @@ test_andTermsSimplification =
                             (mkAnd plain0OfB plain1OfB)
                         )
                     ]
-                , [ Conditional
-                    { term =
-                        Mock.functionalConstr20 (mkTop Mock.testSort) (mkTop Mock.testSort)
-                    , predicate =
-                            makeAndPredicate
-                                (Monad.Unify.unificationPredicate plain0OfA plain1OfA)
-                                (Monad.Unify.unificationPredicate plain0OfB plain1OfB)
-                    , substitution = mempty
-                    }
-                  ]
+                ,   [ Pattern.fromTermLike
+                        (Mock.functionalConstr20
+                            (mkCeil Mock.testSort (mkAnd plain0OfA plain1OfA))
+                            (mkCeil Mock.testSort (mkAnd plain0OfB plain1OfB))
+                        )
+                    ]
                 )
         actual <-
             simplifyUnify
@@ -1142,7 +1144,10 @@ test_andTermsSimplification =
                 let
                     expect =
                         ( [ Pattern.fromTermLike (mkAnd left plain1OfA) ]
-                        , [ unificationCondition left plain1OfA ]
+                        , [ Pattern.fromTermLike
+                                $ mkCeil Mock.testSort
+                                    (mkAnd left plain1OfA)
+                          ]
                         )
                     x = mkVariable "x"
                     alias = mkAlias' "alias1" x plain0OfA
@@ -1156,13 +1161,13 @@ test_andTermsSimplification =
                         (   [ Pattern.fromTermLike
                                 (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                             ]
-                        , [ Conditional
-                            { term = Mock.constr10 (mkTop Mock.testSort)
-                            , predicate =
-                                Monad.Unify.unificationPredicate plain0OfA plain1OfA
-                            , substitution = mempty
-                            }
-                          ]
+                        ,   [ Pattern.fromTermLike
+                                (Mock.constr10
+                                    (mkCeil Mock.testSort
+                                        (mkAnd plain0OfA plain1OfA)
+                                    )
+                                )
+                            ]
                         )
                     x = mkVariable "x"
                     alias = mkAlias' "alias1" x $ Mock.constr10 plain0OfA
@@ -1378,12 +1383,3 @@ sideRepresentation :: SideCondition.Representation
 sideRepresentation =
     SideCondition.toRepresentation
     (SideCondition.top :: SideCondition VariableName)
-
-unificationCondition
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> Pattern VariableName
-unificationCondition t1 t2 =
-    Monad.Unify.unificationPredicate t1 t2
-    & Condition.fromPredicate
-    & Pattern.fromCondition

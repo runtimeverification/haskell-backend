@@ -5,7 +5,6 @@ License     : NCSA
 
 module Kore.Unification.Unify
     ( MonadUnify (..)
-    , unificationPredicate
     -- * Re-exports
     , InternalVariable
     , module Logic
@@ -17,15 +16,9 @@ import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
 
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeCeilPredicate
-    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
-    , mkAnd
-    , termLikeSort
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
@@ -56,11 +49,3 @@ class (MonadLogic unifier, MonadSimplify unifier) => MonadUnify unifier where
     explainAndReturnBottom message first second = do
         explainBottom message first second
         empty
-
-unificationPredicate
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> Predicate variable
-unificationPredicate term1 term2 =
-    makeCeilPredicate (termLikeSort term2) (mkAnd term1 term2)

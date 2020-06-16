@@ -18,6 +18,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiOr
     ( MultiOr
     )
@@ -165,22 +166,19 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         $ do
             let expect =
-                    [ Conditional
-                        { term = ()
-                        , predicate =
-                            Predicate.makeCeilPredicate_
-                            (mkAnd
-                                (Mock.constr10 (mkElemVar Mock.y))
-                                (mkElemVar Mock.y)
+                    [ Substitution.assign
+                        (inject Mock.x)
+                        ( Mock.constr10
+                            (mkCeil Mock.testSort
+                                (mkAnd
+                                    (Mock.constr10 (mkElemVar Mock.y))
+                                    (mkElemVar Mock.y)
+                                )
                             )
-                        , substitution =
-                            [ Substitution.assign
-                                (inject Mock.x)
-                                (Mock.constr10 mkTop_)
-                            ]
-                            & Substitution.wrap
-                        }
+                        )
                     ]
+                    & Substitution.wrap
+                    & Conditional.fromSubstitution
             actual <-
                 merge
                     [   ( inject Mock.x
@@ -191,7 +189,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 (mkElemVar Mock.y))
                         )
                     ]
-            assertEqual "" expect actual
+            assertEqual "" [expect] actual
             assertNormalizedPredicatesMulti actual
 
     , testCase "Constructor and constructor of function"
@@ -258,7 +256,7 @@ test_mergeAndNormalizeSubstitutions =
                                     (mkElemVar Mock.y)
                                 )
                         , substitution =
-                            [Substitution.assign (inject Mock.x) mkTop_]
+                            [Substitution.assign (inject Mock.x) (mkTop Mock.testSort)]
                             & Substitution.wrap
                         }
                     ]
