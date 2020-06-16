@@ -31,10 +31,6 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import Control.Error
-    ( ExceptT
-    , runExceptT
-    )
 import Data.Map.Strict
     ( Map
     )

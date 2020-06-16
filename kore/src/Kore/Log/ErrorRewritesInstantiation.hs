@@ -40,12 +40,9 @@ import Kore.Internal.Conditional
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Variable
-    ( InternalVariable
-    , SomeVariableName
-    , toVariableName
+    ( SomeVariableName
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern

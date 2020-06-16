@@ -27,9 +27,6 @@ module Kore.Step
 
 import Prelude.Kore
 
-import Control.Error
-    ( runExceptT
-    )
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
@@ -67,9 +64,6 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unparser
-import qualified Pretty
-
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -101,8 +95,7 @@ rewriteStep a =
  -}
 transitionRule
     :: forall m
-    .  HasCallStack
-    => MonadSimplify m
+    .  MonadSimplify m
     => Prim (RewriteRule VariableName)
     -> Pattern VariableName
     -- ^ Configuration being rewritten

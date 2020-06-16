@@ -14,10 +14,6 @@ module Kore.Unification.Procedure
 
 import Prelude.Kore
 
-import Control.Error
-    ( ExceptT
-    )
-
 import Kore.Internal.Condition
     ( Condition
     )

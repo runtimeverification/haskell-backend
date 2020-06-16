@@ -17,9 +17,6 @@ module Kore.ModelChecker.Step
 
 import Prelude.Kore
 
-import Control.Error
-    ( runExceptT
-    )
 import Control.Monad
     ( when
     )

@@ -16,10 +16,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT (..)
-    , nothing
-    )
-import Control.Error.Util
-    ( hush
     )
 import Control.Monad.Trans.Class
     ( lift

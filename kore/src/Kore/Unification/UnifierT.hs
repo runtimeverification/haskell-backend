@@ -17,12 +17,9 @@ module Kore.Unification.UnifierT
 
 import Prelude.Kore
 
-import Control.Error
 import Control.Monad
     ( MonadPlus
     )
-import qualified Control.Monad.Except as Error
-import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( MonadReader (..)
     )
