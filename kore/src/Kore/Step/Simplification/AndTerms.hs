@@ -139,7 +139,7 @@ termUnification notSimplifier =
     unificationPattern term1 term2 =
         return
         . Pattern.fromTermLike
-        $ mkCeil (termLikeSort term2) (mkAnd term1 term2)
+        $ mkAnd term1 term2
 
 maybeTermEquals
     :: InternalVariable variable

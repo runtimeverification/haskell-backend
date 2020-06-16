@@ -169,11 +169,9 @@ test_mergeAndNormalizeSubstitutions =
                     [ Substitution.assign
                         (inject Mock.x)
                         ( Mock.constr10
-                            (mkCeil Mock.testSort
-                                (mkAnd
-                                    (Mock.constr10 (mkElemVar Mock.y))
-                                    (mkElemVar Mock.y)
-                                )
+                            (mkAnd
+                                (Mock.constr10 (mkElemVar Mock.y))
+                                (mkElemVar Mock.y)
                             )
                         )
                     ]
@@ -247,18 +245,13 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=y] + [y=constructor(x)]  === error
         $ do
             let expect =
-                    [ Conditional
-                        { term = ()
-                        , predicate =
-                            Predicate.makeCeilPredicate_
-                                (mkAnd
-                                    (Mock.constr10 mkTop_)
-                                    (mkElemVar Mock.y)
-                                )
-                        , substitution =
-                            [Substitution.assign (inject Mock.x) (mkTop Mock.testSort)]
-                            & Substitution.wrap
-                        }
+                    [ Predicate.makeEqualsPredicate_
+                        (mkElemVar Mock.x)
+                        (mkAnd
+                            (Mock.constr10 (mkElemVar Mock.x))
+                            (mkElemVar Mock.y)
+                        )
+                        & Condition.fromPredicate
                     ]
             actual <-
                 merge

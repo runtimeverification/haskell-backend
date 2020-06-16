@@ -228,8 +228,6 @@ andSimplifyFailure
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT Not.notSimplifier
         $ simplifyAnds (unificationProblem term1 term2 :| [])
-    traceM
-        $ foldl (\x y -> x <> "\n" <> unparseToString y) "" actual
     assertEqual "" expected actual
 
 andSimplifyException
@@ -471,25 +469,21 @@ test_unification =
         andSimplifyFailure
             (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm a3)
-            [ mkCeil Mock.testSort (mkAnd (mkElemVar Mock.x) a3)
+            [ mkAnd (mkElemVar Mock.x) a3
                 & Pattern.fromTermLike
             ]
     , testCase "SetVariable w. constructor" $
         andSimplifyFailure
             (UnificationTerm (f (Mock.mkTestSomeVariable "@x")))
             (UnificationTerm (f a))
-            [ f
-                (mkCeil Mock.testSort
-                    (mkAnd (Mock.mkTestSomeVariable "@x") a)
-                )
+            [ f (mkAnd (Mock.mkTestSomeVariable "@x") a)
                 & Pattern.fromTermLike
             ]
     , testCase "SetVariable" $
         andSimplifyFailure
             (UnificationTerm (Mock.mkTestSomeVariable "@x"))
             (UnificationTerm a)
-            [ mkCeil Mock.testSort
-                (mkAnd (Mock.mkTestSomeVariable "@x") a)
+            [ mkAnd (Mock.mkTestSomeVariable "@x") a
                 & Pattern.fromTermLike
             ]
     , testCase "non-constructor symbolHead right" $
@@ -658,9 +652,7 @@ test_unsupportedConstructs =
         andSimplifyFailure
             (UnificationTerm (f a))
             (UnificationTerm (f (mkImplies a (mkNext a1))))
-            [ f (mkCeil Mock.testSort
-                    (mkAnd a (mkImplies a (mkNext a1)))
-                )
+            [ f (mkAnd a (mkImplies a (mkNext a1)))
                 & Pattern.fromTermLike
             ]
 

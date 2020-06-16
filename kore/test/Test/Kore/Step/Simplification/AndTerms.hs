@@ -156,11 +156,9 @@ test_andTermsSimplification =
                             )
                         ]
                     ,   [ Pattern.fromTermLike
-                            (mkCeil Mock.testSort
-                                (mkAnd
-                                    (Mock.injective10 fOfA)
-                                    (Mock.injective11 gOfA)
-                                )
+                            (mkAnd
+                                (Mock.injective10 fOfA)
+                                (Mock.injective11 gOfA)
                             )
                         ]
                     )
@@ -205,10 +203,7 @@ test_andTermsSimplification =
                 other = Mock.sortInjection Mock.topSort Mock.plain00OtherSort
                 expect =
                     ( [Pattern.fromTermLike $ mkAnd sub other]
-                    , [ Pattern.fromTermLike
-                        $ mkCeil Mock.topSort
-                            (mkAnd sub other)
-                      ]
+                    , [Pattern.fromTermLike $ mkAnd sub other]
                     )
             actual <- simplifyUnify sub other
             assertEqual "" expect actual
@@ -226,13 +221,11 @@ test_andTermsSimplification =
                         ]
                     ,   [ Pattern.fromTermLike
                             (Mock.sortInjectionSubToTop
-                                (mkCeil Mock.subSort
-                                    (mkAnd
-                                        (Mock.sortInjectionSubSubToSub
-                                            Mock.plain00SubSubsort
-                                        )
-                                        Mock.plain00Subsort
+                                (mkAnd
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.plain00SubSubsort
                                     )
+                                    Mock.plain00Subsort
                                 )
                             )
                         ]
@@ -256,12 +249,10 @@ test_andTermsSimplification =
                         ]
                     ,   [ Pattern.fromTermLike
                             (Mock.sortInjectionSubToTop
-                                (mkCeil Mock.subSort
-                                    (mkAnd
-                                        Mock.plain00Subsort
-                                        (Mock.sortInjectionSubSubToSub
-                                            Mock.plain00SubSubsort
-                                        )
+                                (mkAnd
+                                    Mock.plain00Subsort
+                                    (Mock.sortInjectionSubSubToSub
+                                        Mock.plain00SubSubsort
                                     )
                                 )
                             )
@@ -543,10 +534,7 @@ test_andTermsSimplification =
         [ testCase "top level" $ do
             let expect =
                     ( [ Pattern.fromTermLike (mkAnd plain0OfA plain1OfA) ]
-                    , [ Pattern.fromTermLike
-                            $ mkCeil Mock.testSort
-                                (mkAnd plain0OfA plain1OfA)
-                      ]
+                    , [ Pattern.fromTermLike (mkAnd plain0OfA plain1OfA) ]
                     )
             actual <- simplifyUnify plain0OfA plain1OfA
             assertEqual "" expect actual
@@ -556,13 +544,9 @@ test_andTermsSimplification =
                     (   [ Pattern.fromTermLike
                             (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                         ]
-                    , [ Pattern.fromTermLike
-                            (Mock.constr10
-                                (mkCeil Mock.testSort
-                                    (mkAnd plain0OfA plain1OfA)
-                                )
-                            )
-                      ]
+                    ,   [ Pattern.fromTermLike
+                            (Mock.constr10 (mkAnd plain0OfA plain1OfA))
+                        ]
                     )
             actual <-
                 simplifyUnify
@@ -578,11 +562,7 @@ test_andTermsSimplification =
                         ]
                     ,   [ Pattern.fromTermLike
                             (Mock.constr10
-                                (Mock.constr10
-                                    (mkCeil Mock.testSort
-                                        (mkAnd plain0OfA plain1OfA)
-                                    )
-                                )
+                                (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                             )
                         ]
                     )
@@ -603,8 +583,8 @@ test_andTermsSimplification =
                     ]
                 ,   [ Pattern.fromTermLike
                         (Mock.functionalConstr20
-                            (mkCeil Mock.testSort (mkAnd plain0OfA plain1OfA))
-                            (mkCeil Mock.testSort (mkAnd plain0OfB plain1OfB))
+                            (mkAnd plain0OfA plain1OfA)
+                            (mkAnd plain0OfB plain1OfB)
                         )
                     ]
                 )
@@ -1144,10 +1124,7 @@ test_andTermsSimplification =
                 let
                     expect =
                         ( [ Pattern.fromTermLike (mkAnd left plain1OfA) ]
-                        , [ Pattern.fromTermLike
-                                $ mkCeil Mock.testSort
-                                    (mkAnd left plain1OfA)
-                          ]
+                        , [ Pattern.fromTermLike (mkAnd left plain1OfA) ]
                         )
                     x = mkVariable "x"
                     alias = mkAlias' "alias1" x plain0OfA
@@ -1162,11 +1139,7 @@ test_andTermsSimplification =
                                 (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                             ]
                         ,   [ Pattern.fromTermLike
-                                (Mock.constr10
-                                    (mkCeil Mock.testSort
-                                        (mkAnd plain0OfA plain1OfA)
-                                    )
-                                )
+                                (Mock.constr10 (mkAnd plain0OfA plain1OfA))
                             ]
                         )
                     x = mkVariable "x"
