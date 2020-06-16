@@ -271,8 +271,7 @@ parseDebugApplyEquationOptions =
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
                 \occurs on the left-hand side. \
-                \The name of a rule is given with the K module name \
-                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+                \For multiple equations, use the flag before each identifier."
             ]
 
 selectDebugApplyEquation
@@ -311,8 +310,7 @@ parseDebugAttemptEquationOptions =
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
                 \occurs on the left-hand side. \
-                \The name of a rule is given with the K module name \
-                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+                \For multiple equations, use the flag before each identifier."
             ]
 
 selectDebugAttemptEquation
@@ -356,8 +354,7 @@ parseDebugEquationOptions =
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
                 \occurs on the left-hand side. \
-                \The name of a rule is given with the K module name \
-                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+                \For multiple equations, use the flag before each identifier."
             ]
 
 selectDebugEquation
