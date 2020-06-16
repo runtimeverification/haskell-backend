@@ -412,10 +412,10 @@ helpText =
     <> intercalate "\n    " Log.getEntryTypesAsText
     <> "\n\n\
     \For logging the applied or (just attempted) equations, launch kore-repl\n\
-    \with one of the flags:\n
-    \--debug-apply-equation EQUATION_IDENTIFIER\n
-    \--debug-attempt-equation EQUATION_IDENTIFIER\n
-    \--debug-equation EQUATION_IDENTIFIER;\n
+    \with one of the flags:\n\
+    \--debug-apply-equation EQUATION_IDENTIFIER\n\
+    \--debug-attempt-equation EQUATION_IDENTIFIER\n\
+    \--debug-equation EQUATION_IDENTIFIER;\n\
     \Fore more details run: kore-repl --help"
 
 -- | Determines whether the command needs to be stored or not. Commands that
