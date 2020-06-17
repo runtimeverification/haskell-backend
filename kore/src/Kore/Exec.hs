@@ -25,8 +25,9 @@ module Kore.Exec
 import Prelude.Kore
 
 import Control.Concurrent.MVar
-import Control.Error.Util
+import Control.Error
     ( note
+    , runMaybeT
     )
 import Control.Monad
     ( (>=>)
@@ -237,11 +238,12 @@ exec breadthLimit verifiedModule strategy initialTerm =
         return finalTerm
   where
     -- Get the first final configuration of an execution graph.
-    getFinalConfigOf act =
-        Logic.runLogicT act takeFirstResult elseBottom
+    getFinalConfigOf = takeFirstResult >=> orElseBottom
       where
-        takeFirstResult (_, config) _ = pure config
-        elseBottom = pure (Pattern.bottomOf initialSort)
+        takeResult = snd
+        takeFirstResult act =
+            Logic.observeT (takeResult <$> lift act) & runMaybeT
+        orElseBottom = pure . fromMaybe (Pattern.bottomOf initialSort)
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
