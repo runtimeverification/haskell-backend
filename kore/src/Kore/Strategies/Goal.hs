@@ -103,7 +103,7 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( isElementVariable
     , isFunctionPattern
-    , mkAnd
+    , mkIn_
     , retractElementVariable
     )
 import Kore.Log.DebugProofState
@@ -967,7 +967,7 @@ removalPredicate
   = do
     -- TODO (thomas.tuegel): Use unification here, not simplification.
     unifiedConfigs <-
-        simplifyConditionalTermToOr sideCondition (mkAnd configTerm destTerm)
+        simplifyConditionalTermToOr sideCondition (mkIn_ configTerm destTerm)
     case OrPattern.toPatterns unifiedConfigs of
         _ | OrPattern.isFalse unifiedConfigs ->
             return Predicate.makeTruePredicate_
