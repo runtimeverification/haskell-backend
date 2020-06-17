@@ -6,8 +6,11 @@ License     : NCSA
 
 module Kore.Log.DebugUnification
     ( DebugUnification (..)
-    , debugUnificationResult
-    , debugUnificationUnknown
+    , WhileDebugUnification (..)
+    , UnificationSolved (..)
+    , UnificationUnsolved (..)
+    , debugUnificationSolved
+    , debugUnificationUnsolved
     , whileDebugUnification
     ) where
 
@@ -29,21 +32,22 @@ import qualified Pretty
 
 data DebugUnification
     = DebugUnificationWhile !WhileDebugUnification
-    | DebugUnificationResult !UnificationResult
-    | DebugUnificationUnknown
+    | DebugUnificationSolved !UnificationSolved
+    | DebugUnificationUnsolved !UnificationUnsolved
     deriving Show
 
 instance Pretty DebugUnification where
-    pretty (DebugUnificationWhile dbg) = Pretty.pretty dbg
-    pretty (DebugUnificationResult dbg) = Pretty.pretty dbg
-    pretty DebugUnificationUnknown = "Unknown unification problem"
+    pretty (DebugUnificationWhile x) = Pretty.pretty x
+    pretty (DebugUnificationSolved x) = Pretty.pretty x
+    pretty (DebugUnificationUnsolved x) = Pretty.pretty x
 
 instance Entry DebugUnification where
     entrySeverity _ = Debug
 
+{- | @WhileDebugUnification@ encloses the context of unification log entries.
+ -}
 data WhileDebugUnification =
-    WhileDebugUnification
-    { term1, term2 :: TermLike VariableName }
+    WhileDebugUnification { term1, term2 :: TermLike VariableName }
     deriving Show
 
 instance Pretty WhileDebugUnification where
@@ -55,15 +59,32 @@ instance Pretty WhileDebugUnification where
         , Pretty.indent 4 (unparse term2)
         ]
 
-data UnificationResult =
-    UnificationResult
+{- | @UnificationUnsolved@ represents an unsolved unification problem.
+ -}
+data UnificationUnsolved =
+    UnificationUnsolved { term1, term2 :: TermLike VariableName }
+    deriving Show
+
+instance Pretty UnificationUnsolved where
+    pretty UnificationUnsolved { term1, term2 } =
+        Pretty.vsep
+        [ "Unification unknown:"
+        , Pretty.indent 4 (unparse term1)
+        , Pretty.indent 2 "and:"
+        , Pretty.indent 4 (unparse term2)
+        ]
+
+{- | @UnificationSolved@ represents the solution of a unification problem.
+ -}
+data UnificationSolved =
+    UnificationSolved
     { evaluator :: Text
     , result :: Pattern VariableName
     }
     deriving Show
 
-instance Pretty UnificationResult where
-    pretty UnificationResult { evaluator, result } =
+instance Pretty UnificationSolved where
+    pretty UnificationSolved { evaluator, result } =
         Pretty.vsep
         [ "Unified by" <+> Pretty.pretty evaluator <> Pretty.colon
         , Pretty.indent 4 (unparse result)
@@ -82,16 +103,25 @@ whileDebugUnification term1' term2' =
     term1 = TermLike.mapVariables (pure toVariableName) term1'
     term2 = TermLike.mapVariables (pure toVariableName) term2'
 
-debugUnificationResult
+debugUnificationSolved
     :: MonadLog m
     => InternalVariable variable
     => Text
     -> Pattern variable
     -> m ()
-debugUnificationResult evaluator result' =
-    logEntry $ DebugUnificationResult UnificationResult { evaluator, result }
+debugUnificationSolved evaluator result' =
+    logEntry $ DebugUnificationSolved UnificationSolved { evaluator, result }
   where
     result = Pattern.mapVariables (pure toVariableName) result'
 
-debugUnificationUnknown :: MonadLog m => m ()
-debugUnificationUnknown = logEntry DebugUnificationUnknown
+debugUnificationUnsolved
+    :: MonadLog m
+    => InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> m ()
+debugUnificationUnsolved term1' term2' =
+    logEntry $ DebugUnificationUnsolved UnificationUnsolved { term1, term2 }
+  where
+    term1 = TermLike.mapVariables (pure toVariableName) term1'
+    term2 = TermLike.mapVariables (pure toVariableName) term2'

@@ -66,8 +66,8 @@ import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnification
-    ( debugUnificationResult
-    , debugUnificationUnknown
+    ( debugUnificationSolved
+    , debugUnificationUnsolved
     , whileDebugUnification
     )
 import Kore.Step.Simplification.CeilSimplifier
@@ -130,7 +130,7 @@ termUnification
 termUnification notSimplifier = \term1 term2 ->
     whileDebugUnification term1 term2 $ do
         result <- termUnificationWorker term1 term2
-        debugUnificationResult "" result
+        debugUnificationSolved "" result
         pure result
   where
     termUnificationWorker
@@ -143,7 +143,7 @@ termUnification notSimplifier = \term1 term2 ->
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
             unsupportedPatternsError = do
-                debugUnificationUnknown
+                debugUnificationUnsolved pat1 pat2
                 throwUnificationError
                     (unsupportedPatterns
                         "Unknown unification case."
