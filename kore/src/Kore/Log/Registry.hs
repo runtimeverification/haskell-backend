@@ -59,11 +59,8 @@ import Kore.Log.DebugSolver
 import Kore.Log.DebugSubstitutionSimplifier
     ( DebugSubstitutionSimplifier
     )
-import Kore.Log.DebugUnificationUnified
-    ( DebugUnificationUnified
-    )
-import Kore.Log.DebugUnificationUnknown
-    ( DebugUnificationUnknown
+import Kore.Log.DebugUnification
+    ( DebugUnification
     )
 import Kore.Log.ErrorException
     ( ErrorException
@@ -147,8 +144,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @ErrorRewritesInstantiation
     , mk $ Proxy @DebugAttemptEquation
     , mk $ Proxy @DebugApplyEquation
-    , mk $ Proxy @DebugUnificationUnknown
-    , mk $ Proxy @DebugUnificationUnified
+    , mk $ Proxy @DebugUnification
     ]
   where
     mk proxy =
