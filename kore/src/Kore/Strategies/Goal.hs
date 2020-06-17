@@ -79,21 +79,20 @@ import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
     )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTrueCondition
     )
@@ -139,6 +138,10 @@ import Kore.Step.Simplification.Data
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Exists as Exists
+import qualified Kore.Step.Simplification.Not as Not
+import Kore.Step.Simplification.OrPattern
+    ( simplifyConditionsWithSmt
+    )
 import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     )
@@ -812,10 +815,12 @@ removeDestination lensRulePattern mkState goal =
         do
             removal <- removalPredicate destination configuration
             when (isTop removal) (succeed . mkState $ rulePattern)
+            let removalInConjuctionWithConfig =
+                    fmap (configuration <*) removal
             simplifiedRemoval <-
-                return (Conditional.andPredicate configuration removal)
-                >>= simplifyTopConfiguration
-                >>= SMT.Evaluator.filterMultiOr
+                simplifyConditionsWithSmt
+                    SideCondition.top
+                    removalInConjuctionWithConfig
             when (isBottom simplifiedRemoval) (succeed Proven)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
@@ -952,51 +957,29 @@ withConfiguration configuration =
  -}
 removalPredicate
     :: forall variable m
-    .  InternalVariable variable
+    .  HasCallStack
+    => InternalVariable variable
     => MonadSimplify m
     => Pattern variable
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> m (Predicate variable)
+    -> m (OrPattern variable)
 removalPredicate
     destination
     configuration
   | isFunctionPattern configTerm
   , isFunctionPattern destTerm
   = do
-    -- TODO (thomas.tuegel): Use unification here, not simplification.
     unifiedConfigs <-
         simplifyConditionalTermToOr sideCondition (mkIn_ configTerm destTerm)
-    case OrPattern.toPatterns unifiedConfigs of
-        _ | OrPattern.isFalse unifiedConfigs ->
-            return Predicate.makeTruePredicate_
-        [substPattern] -> do
-            let extraElemVariables =
-                    getExtraElemVariables configuration substPattern
-                remainderPattern =
-                    Pattern.fromCondition
-                    . Conditional.withoutTerm
-                    $ (const <$> destination <*> substPattern)
-            evaluatedRemainder <-
-                Exists.makeEvaluate
-                    sideCondition extraElemVariables remainderPattern
-            return
-                . Predicate.makeNotPredicate
-                . Condition.toPredicate
-                . Conditional.withoutTerm
-                . OrPattern.toPattern
-                $ evaluatedRemainder
-        _ ->
-            error . show . Pretty.vsep $
-            [ "Unifying the terms of the configuration and the\
-            \ destination has unexpectedly produced more than one\
-            \ unification case."
-            , Pretty.indent 2 "Unification cases:"
-            ]
-            <> fmap
-                (Pretty.indent 4 . unparse)
-                (Foldable.toList unifiedConfigs)
+    if isBottom unifiedConfigs
+        then return OrPattern.top
+        else do
+            existentialRemainders <-
+                OrPattern.flatten
+                <$> traverse evaluateMultipleExists unifiedConfigs
+            Not.simplifyEvaluated sideCondition existentialRemainders
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
@@ -1008,6 +991,15 @@ removalPredicate
           , Pretty.indent 4 (unparse destTerm)
           ]
   where
+    evaluateMultipleExists substPattern = do
+        let extraElemVariables =
+                getExtraElemVariables configuration substPattern
+            remainderPattern =
+                Pattern.fromCondition
+                . Conditional.withoutTerm
+                $ (const <$> destination <*> substPattern)
+        Exists.makeEvaluate
+            sideCondition extraElemVariables remainderPattern
     Conditional { term = destTerm } = destination
     (configTerm, configPredicate) = Pattern.splitTerm configuration
     sideCondition = SideCondition.assumeTrueCondition configPredicate
