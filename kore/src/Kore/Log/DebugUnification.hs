@@ -72,14 +72,14 @@ instance Pretty UnificationUnsolved where
 {- | @UnificationSolved@ represents the solution of a unification problem.
  -}
 data UnificationSolved =
-    UnificationSolved { result :: Pattern VariableName }
+    UnificationSolved { solution :: Pattern VariableName }
     deriving Show
 
 instance Pretty UnificationSolved where
-    pretty UnificationSolved { result } =
+    pretty UnificationSolved { solution } =
         Pretty.vsep
         [ "Unification solution:"
-        , Pretty.indent 4 (unparse result)
+        , Pretty.indent 4 (unparse solution)
         ]
 
 whileDebugUnification
@@ -100,10 +100,10 @@ debugUnificationSolved
     => InternalVariable variable
     => Pattern variable
     -> m ()
-debugUnificationSolved result' =
-    logEntry $ DebugUnificationSolved UnificationSolved { result }
+debugUnificationSolved solution' =
+    logEntry $ DebugUnificationSolved UnificationSolved { solution }
   where
-    result = Pattern.mapVariables (pure toVariableName) result'
+    solution = Pattern.mapVariables (pure toVariableName) solution'
 
 debugUnificationUnsolved
     :: MonadLog m
