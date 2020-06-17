@@ -30,11 +30,8 @@ import Kore.Step.Simplification.Data
     ( runSimplifierBranch
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.Error
-    ( UnificationError
-    )
 import Kore.Unification.UnifierT
-    ( runUnifierT
+    ( evalEnvUnifierT
     )
 import SMT
     ( SMT
@@ -174,7 +171,7 @@ test_KEqualSimplification =
                 keqBool
                     (kseq (inj kItemSort dvX) dotk)
                     (kseq (inj kItemSort dvT) dotk)
-            expect = [Right [Just Pattern.top]]
+            expect = [Just Pattern.top]
         actual <- runKEqualSimplification term1 term2
         assertEqual' "" expect actual
 
@@ -195,10 +192,10 @@ dvX =
 runKEqualSimplification
     :: TermLike VariableName
     -> TermLike VariableName
-    -> SMT [Either UnificationError [Maybe (Pattern VariableName)]]
+    -> SMT [Maybe (Pattern VariableName)]
 runKEqualSimplification term1 term2 =
     runSimplifierBranch testEnv
-    . runUnifierT Not.notSimplifier
+    . evalEnvUnifierT Not.notSimplifier
     . runMaybeT
     $ KEqual.termKEquals
         (termUnification Not.notSimplifier)

@@ -40,9 +40,6 @@ import Kore.Step.Simplification.Data
     , runSimplifier
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.Error
-    ( UnificationError
-    )
 import Kore.Unification.UnifierT
     ( UnifierT
     , runUnifierT
@@ -156,7 +153,6 @@ test_unifyBoolValues =
 
     unify term1 term2 =
         run (Bool.unifyBoolValues term1 term2)
-        >>= expectRight
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
@@ -191,7 +187,6 @@ test_unifyBoolAnd =
 
     unify term1 term2 =
         run (Bool.unifyBoolAnd termSimplifier term1 term2)
-        >>= expectRight
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
@@ -225,19 +220,13 @@ test_unifyBoolOr =
 
     unify term1 term2 =
         run (Bool.unifyBoolOr termSimplifier term1 term2)
-        >>= expectRight
 
-run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a
-    -> IO (Either UnificationError [Maybe a])
+run :: MaybeT (UnifierT (SimplifierT SMT.NoSMT)) a -> IO [Maybe a]
 run =
     runNoSMT
     . runSimplifier testEnv
     . runUnifierT Not.notSimplifier
     . runMaybeT
-
-expectRight :: Either a1 a2 -> IO a2
-expectRight (Right r) = return r
-expectRight (Left  _) = assertFailure "Expected Right"
 
 termSimplifier
     :: TermLike VariableName

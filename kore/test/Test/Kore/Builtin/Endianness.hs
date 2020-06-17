@@ -24,9 +24,6 @@ import Kore.Step.Simplification.Data
     ( runSimplifier
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.Error
-    ( UnificationError
-    )
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
@@ -97,7 +94,7 @@ test_unify =
                     Pattern.withCondition term1
                     $ mconcat (Condition.fromSingleSubstitution <$> solution)
             actual <- unify term1 term2
-            assertEqual "expected unification solution" (Right [expect]) actual
+            assertEqual "expected unification solution" [expect] actual
     doesn'tUnify
         :: HasCallStack
         => TestName
@@ -107,13 +104,13 @@ test_unify =
     doesn'tUnify name term1 term2 =
         testCase name $ do
             actual <- unify term1 term2
-            assertEqual "expected bottom" (Right []) actual
+            assertEqual "expected bottom" [] actual
 
 unify
     :: HasCallStack
     => TermLike VariableName
     -> TermLike VariableName
-    -> IO (Either UnificationError [Pattern VariableName])
+    -> IO [Pattern VariableName]
 unify term1 term2 =
     runNoSMT
     $ runSimplifier testEnv

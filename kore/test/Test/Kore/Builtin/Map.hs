@@ -1223,7 +1223,7 @@ test_concretizeKeysAxiom =
             , rhs = injectTermIntoRHS v
             , attributes = Default.def
             }
-    expected = Right $ MultiOr
+    expected = MultiOr
         [ Conditional
             { term = val
             , predicate = makeTruePredicate intSort

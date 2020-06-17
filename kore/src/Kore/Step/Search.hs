@@ -16,10 +16,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT (..)
-    , nothing
-    )
-import Control.Error.Util
-    ( hush
     )
 import Control.Monad.Trans.Class
     ( lift
@@ -138,12 +134,10 @@ matchWith
     -> Pattern variable
     -> MaybeT m (OrCondition variable)
 matchWith sideCondition e1 e2 = do
-    eitherUnifiers <-
+    unifiers <-
         lift $ Unifier.runUnifierT Not.notSimplifier
         $ unificationProcedureWorker sideCondition t1 t2
     let
-        maybeUnifiers :: Maybe [Condition variable]
-        maybeUnifiers = hush eitherUnifiers
         mergeAndEvaluate
             :: Condition variable
             -> m (OrCondition variable)
@@ -178,15 +172,12 @@ matchWith sideCondition e1 e2 = do
                         (Condition.fromSubstitution
                             (Conditional.substitution merged)
                         )
-    case maybeUnifiers of
-        Nothing -> nothing
-        Just unifiers -> do
-            results <- lift $ traverse mergeAndEvaluate unifiers
-            let
-                orResults :: OrCondition variable
-                orResults = MultiOr.mergeAll results
-            guardAgainstBottom orResults
-            return orResults
+    results <- lift $ traverse mergeAndEvaluate unifiers
+    let
+        orResults :: OrCondition variable
+        orResults = MultiOr.mergeAll results
+    guardAgainstBottom orResults
+    return orResults
   where
     t1 = Conditional.term e1
     t2 = Conditional.term e2
