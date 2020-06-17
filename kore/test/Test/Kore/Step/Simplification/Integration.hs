@@ -1,5 +1,6 @@
 module Test.Kore.Step.Simplification.Integration
     ( test_simplificationIntegration
+    , test_simplificationIntegrationUnification
     , test_substituteMap
     , test_substituteList
     , test_substitute
@@ -54,6 +55,10 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 
 import Test.Kore
+import Test.Kore.Equation.Application
+    ( functionAxiomUnification
+    , functionAxiomUnification_
+    )
 import Test.Kore.Internal.OrPattern
     ( OrTestPattern
     )
@@ -963,6 +968,246 @@ test_simplificationIntegration =
         assertEqual "" expected actual
     ]
 
+test_simplificationIntegrationUnification :: [TestTree]
+test_simplificationIntegrationUnification =
+    [ testCase "map function, non-matching" $ do
+        let
+            initial =
+                Pattern.fromTermLike
+                $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
+            expect = OrPattern.fromPattern initial
+        actual <-
+            evaluateWithAxioms
+                (mkEvaluatorRegistry
+                    (Map.fromList
+                        [   ( AxiomIdentifier.Application
+                                Mock.function20MapTestId
+                            ,   [ functionAxiomUnification_
+                                    Mock.function20MapTestSymbol
+                                    [Mock.concatMap
+                                        (Mock.elementMap
+                                            (mkElemVar Mock.x)
+                                            (mkElemVar Mock.y)
+                                        )
+                                        (mkElemVar Mock.m)
+                                    , mkElemVar Mock.x
+                                    ]
+                                    (mkElemVar Mock.y)
+                                ]
+                            )
+                        ]
+                    )
+                )
+                initial
+        assertEqual "" expect actual
+    , testCase "function application with top predicate" $ do
+        let requirement =
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.b)
+            expect =
+                OrPattern.fromTermLike
+                $ Mock.functionalConstr11 $ Mock.g Mock.a
+        actual <-
+            evaluateConditionalWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.x]
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                (from @(Predicate _) @(SideCondition _) requirement)
+                (Pattern.fromTermLike
+                    $ mkExists Mock.z
+                    $ Mock.functionalConstr11
+                    $ Mock.functionalConstr10 (mkElemVar Mock.x)
+                )
+        assertEqual "" expect actual
+    , testCase "no function branching" $ do
+        let expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = Mock.functional10 (mkElemVar Mock.x)
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [   (AxiomIdentifier.Application Mock.functional10Id
+                            ,   [ functionAxiomUnification
+                                    Mock.functional10Symbol
+                                    [mkElemVar Mock.x]
+                                    (mkElemVar Mock.x)
+                                    (makeEqualsPredicate_ Mock.cf Mock.a)
+                                , functionAxiomUnification
+                                    Mock.functional10Symbol
+                                    [mkElemVar Mock.x]
+                                    (mkElemVar Mock.x)
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate_ Mock.cf Mock.a)
+                                    )
+                                ]
+                            )
+                       ]
+                    )
+                )
+                Conditional
+                    { term = Mock.functional10 (mkElemVar Mock.x)
+                    , predicate = makeTruePredicate_
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+
+    , testCase "simplification with top predicate (exists variable capture)"
+      $ do
+        let requirement =
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.b)
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkExists Mock.var_x_0 (mkElemVar Mock.var_x_0)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.x]
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = mkExists Mock.x (mkElemVar Mock.x)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    , testCase "simplification with top predicate (forall variable capture)"
+      $ do
+        let requirement =
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.b)
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkForall Mock.var_x_0 (mkElemVar Mock.var_x_0)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.x]
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = mkForall Mock.x (mkElemVar Mock.x)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    , testCase "simplification with top predicate (nu variable capture)" $ do
+        let requirement =
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkSetVar Mock.setX))
+                    (Mock.g Mock.b)
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkNu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.x]
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = mkNu Mock.setX (mkSetVar Mock.setX)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    , testCase "simplification with top predicate (mu variable capture)" $ do
+        let requirement =
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkSetVar Mock.setX))
+                    (Mock.g Mock.b)
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkMu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( mkEvaluatorRegistry
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ functionAxiomUnification
+                                Mock.functionalConstr10Symbol
+                                [mkElemVar Mock.x]
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = mkMu Mock.setX (mkSetVar Mock.setX)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    ]
+
 conditionalEqualityPattern
     :: InternalVariable variable
     => TermLike variable
@@ -1178,6 +1423,8 @@ axiom left right requires =
     Equation
         { left
         , requires
+        , argument = Nothing
+        , antiLeft = Nothing
         , right
         , ensures = Predicate.makeTruePredicate_
         , attributes = Default.def
