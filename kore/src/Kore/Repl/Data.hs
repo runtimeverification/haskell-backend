@@ -411,8 +411,8 @@ helpText =
     \Available entry types:\n    "
     <> intercalate "\n    " Log.getEntryTypesAsText
     <> "\n\n\
-    \For logging the applied (or just attempted) equations, launch kore-repl\
-    \ with the appropriate flags:\n\
+    \For logging the succesfully applied equations, attempted equations, or both,\n\
+    \launch kore-repl with the appropriate flags:\n\
     \--debug-apply-equation EQUATION_IDENTIFIER\n\
     \--debug-attempt-equation EQUATION_IDENTIFIER\n\
     \--debug-equation EQUATION_IDENTIFIER;\n\
