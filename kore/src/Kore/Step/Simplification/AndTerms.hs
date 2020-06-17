@@ -134,9 +134,12 @@ termUnification notSimplifier =
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
-        Error.maybeT (unificationPattern pat1 pat2) pure maybeTermUnification
+        Error.maybeT
+            (incompleteUnificationPattern pat1 pat2)
+            pure
+            maybeTermUnification
 
-    unificationPattern term1 term2 =
+    incompleteUnificationPattern term1 term2 =
         return
         . Pattern.fromTermLike
         $ mkAnd term1 term2
