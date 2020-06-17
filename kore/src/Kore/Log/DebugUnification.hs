@@ -16,17 +16,12 @@ module Kore.Log.DebugUnification
 
 import Prelude.Kore
 
-import Data.Text
-    ( Text
-    )
-
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 import Kore.Unparser
 import Log
 import Pretty
     ( Pretty
-    , (<+>)
     )
 import qualified Pretty
 
@@ -77,16 +72,13 @@ instance Pretty UnificationUnsolved where
 {- | @UnificationSolved@ represents the solution of a unification problem.
  -}
 data UnificationSolved =
-    UnificationSolved
-    { evaluator :: Text
-    , result :: Pattern VariableName
-    }
+    UnificationSolved { result :: Pattern VariableName }
     deriving Show
 
 instance Pretty UnificationSolved where
-    pretty UnificationSolved { evaluator, result } =
+    pretty UnificationSolved { result } =
         Pretty.vsep
-        [ "Unified by" <+> Pretty.pretty evaluator <> Pretty.colon
+        [ "Unification solution:"
         , Pretty.indent 4 (unparse result)
         ]
 
@@ -106,11 +98,10 @@ whileDebugUnification term1' term2' =
 debugUnificationSolved
     :: MonadLog m
     => InternalVariable variable
-    => Text
-    -> Pattern variable
+    => Pattern variable
     -> m ()
-debugUnificationSolved evaluator result' =
-    logEntry $ DebugUnificationSolved UnificationSolved { evaluator, result }
+debugUnificationSolved result' =
+    logEntry $ DebugUnificationSolved UnificationSolved { result }
   where
     result = Pattern.mapVariables (pure toVariableName) result'
 

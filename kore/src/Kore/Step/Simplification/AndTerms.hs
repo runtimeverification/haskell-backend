@@ -130,7 +130,7 @@ termUnification
 termUnification notSimplifier = \term1 term2 ->
     whileDebugUnification term1 term2 $ do
         result <- termUnificationWorker term1 term2
-        debugUnificationSolved "" result
+        debugUnificationSolved result
         pure result
   where
     termUnificationWorker
