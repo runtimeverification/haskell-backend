@@ -209,19 +209,13 @@ test_SubstitutionSimplifier =
                 actual <-
                     runSimplifier Mock.env . runUnifierT Not.notSimplifier
                     $ simplifySubstitution SideCondition.top input
-                let expect1 = Right . Condition.fromNormalizationSimplified
-                    expect
-                      | null results = Right []
-                      | otherwise    = (: []) <$> traverse expect1 results
-                    actualConditions = map OrCondition.toConditions <$> actual
+                let expect = Condition.fromNormalizationSimplified <$> results
+                    actualConditions = OrCondition.toConditions <$> actual
                     actualSubstitutions =
-                        (map . map) Condition.substitution <$> actualConditions
-                    allNormalized = (all . all . all) Substitution.isNormalized
-                    expectSorted = case actualConditions of
-                        Left _ -> expect
-                        Right r ->
-                            map (\expct' -> fixExpectedSorts expct' (concat r))
-                            <$> expect
+                        (fmap . fmap) Condition.substitution actualConditions
+                    allNormalized = (all . all) Substitution.isNormalized
+                    expectSorted =
+                        fixExpectedSorts expect <$> actualConditions
                 assertEqual ""
                     expectSorted
                     actualConditions
@@ -234,7 +228,7 @@ test_SubstitutionSimplifier =
             [] -> expect
             first:_ ->
                 let sort = Condition.conditionSort first
-                in map (Condition.coerceSort sort) expect
+                in Condition.coerceSort sort <$> expect
 
 x, y, z, xs, ys :: SomeVariable VariableName
 x = inject Mock.x
