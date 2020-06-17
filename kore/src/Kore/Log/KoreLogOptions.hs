@@ -266,13 +266,14 @@ parseDebugApplyEquationOptions =
             [ Options.metavar "EQUATION_IDENTIFIER"
             , Options.long "debug-apply-equation"
             , Options.help
-                "Log every applied equation that matches EQUATION_IDENTIFIER, \
+                "Log every succesfully applied equation that matches EQUATION_IDENTIFIER, \
                 \which may be the name of a symbol or a rule. \
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
                 \occurs on the left-hand side. \
                 \The name of a rule is given with the K module name \
-                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                \This option may be specified multiple times to log multiple equations."
             ]
 
 selectDebugApplyEquation
@@ -308,11 +309,13 @@ parseDebugAttemptEquationOptions =
                 "Log every attempt to apply an equation \
                 \that matches EQUATION_IDENTIFIER, \
                 \which may be the name of a symbol or a rule. \
+                \It will not be mentioned whether the application succeeds or not. \
                 \The name of a symbol may be a Kore identifier or a K label, \
                 \which will match any equation where the named symbol \
                 \occurs on the left-hand side. \
                 \The name of a rule is given with the K module name \
-                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                \This option may be specified multiple times to log multiple equations."
             ]
 
 selectDebugAttemptEquation
@@ -357,7 +360,8 @@ parseDebugEquationOptions =
                 \which will match any equation where the named symbol \
                 \occurs on the left-hand side. \
                 \The name of a rule is given with the K module name \
-                \as a dot-separated prefix: 'MODULE-NAME.rule-name'."
+                \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                \This option may be specified multiple times to log multiple equations."
             ]
 
 selectDebugEquation

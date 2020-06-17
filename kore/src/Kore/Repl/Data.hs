@@ -409,6 +409,13 @@ helpText =
     \ dot, e.g. IMP.myName\n\
     \Available entry types:\n    "
     <> intercalate "\n    " Log.getEntryTypesAsText
+    <> "\n\n\
+    \For logging the succesfully applied equations, attempted equations, or both,\n\
+    \launch kore-repl with the appropriate flags:\n\
+    \--debug-apply-equation EQUATION_IDENTIFIER\n\
+    \--debug-attempt-equation EQUATION_IDENTIFIER\n\
+    \--debug-equation EQUATION_IDENTIFIER;\n\
+    \For more details run: kore-repl --help\n"
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.

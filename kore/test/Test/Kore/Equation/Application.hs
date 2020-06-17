@@ -1,9 +1,12 @@
 module Test.Kore.Equation.Application
     ( test_attemptEquation
+    , test_attemptEquationUnification
     , concrete
     , symbolic
     , axiom
     , axiom_
+    , functionAxiomUnification
+    , functionAxiomUnification_
     ) where
 
 import Prelude.Kore
@@ -20,7 +23,13 @@ import Data.Generics.Product
 import Data.Text
     ( Text
     )
+import GHC.Natural
+    ( intToNatural
+    )
 
+import Data.Sup
+    ( Sup (..)
+    )
 import Kore.Attribute.Axiom.Concrete
     ( Concrete (..)
     )
@@ -32,6 +41,10 @@ import Kore.Equation.Application hiding
     )
 import qualified Kore.Equation.Application as Equation
 import Kore.Equation.Equation
+import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Variables.Target as Target
 import qualified Pretty
 
@@ -39,11 +52,9 @@ import Test.Expect
 import Test.Kore
     ( testId
     )
-import qualified Test.Kore.Internal.Condition as Condition
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
-import Test.Kore.Internal.TermLike as TermLike
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -340,6 +351,166 @@ test_attemptEquation =
         (f a)
     ]
 
+test_attemptEquationUnification :: [TestTree]
+test_attemptEquationUnification =
+    [ applies "Σ(X, X) => X applies to Σ(f(X), f(X))"
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
+        SideCondition.top
+        (sigma (f x) (f x))
+        (Pattern.fromTermLike $ f x)
+
+    , notMatched "merge configuration patterns"
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
+        SideCondition.top
+        (sigma x (f x))
+
+    , notInstantiated "substitution with symbol matching"
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
+        SideCondition.top
+        (sigma (f y) (f z))
+
+    , notInstantiated "merge multiple variables"
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, sigma y y] (sigma x y))
+        SideCondition.top
+        (sigma (sigma x y) (sigma y x))
+
+    , notMatched "symbol clash"
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
+        SideCondition.top
+        (sigma (f x) (g x))
+
+    , notMatched "impossible substitution"
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, sigma y y] (sigma x y))
+        SideCondition.top
+        (sigma (sigma x (f y)) (sigma x y))
+
+    , notMatched "circular dependency error"
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
+        SideCondition.top
+        (sigma x (f x))
+
+    , notInstantiated "non-function substitution error"
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
+        SideCondition.top
+        (sigma x (f y))
+
+    , notInstantiated "unify all children"
+        (functionAxiomUnification_ sigmaSymbol [x, x] x)
+        SideCondition.top
+        (sigma (sigma x x) (sigma (sigma y z) (sigma y y)))
+
+    , notInstantiated "normalize substitution"
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, y] (sigma x y))
+        SideCondition.top
+        (sigma (sigma x (f b)) x)
+
+    , notInstantiated "merge substitution with initial"
+        (functionAxiomUnification_ sigmaSymbol [sigma x x, y] (sigma x y))
+        SideCondition.top
+        (sigma (sigma (f z) (f y)) (f z))
+
+    , testCase "rule a => \\bottom" $ do
+        let expect =
+                Pattern.withCondition (mkBottom Mock.testSort)
+                $ Condition.topOf Mock.testSort
+            initial = Mock.a
+        attemptEquation SideCondition.top initial equationBottom
+            >>= expectRight >>= assertEqual "" expect
+
+    , applies "F(x) => G(x) applies to F(x)"
+        (functionAxiomUnification_ fSymbol [x] (g x))
+        SideCondition.top
+        (f x)
+        (Pattern.fromTermLike $ g x)
+    , applies "F(x) => G(x) [symbolic(x)] applies to F(x)"
+        (functionAxiomUnification_ fSymbol [x] (g x) & symbolic [x])
+        SideCondition.top
+        (f x)
+        (Pattern.fromTermLike $ g x)
+    , notInstantiated "F(x) => G(x) [concrete(x)] doesn't apply to F(x)"
+        (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
+        SideCondition.top
+        (f x)
+    , notInstantiated "F(x) => G(x) [concrete] doesn't apply to f(cf)"
+        (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
+        SideCondition.top
+        (f cf)
+    , notMatched "F(x) => G(x) doesn't apply to F(top)"
+        (functionAxiomUnification_ fSymbol [x] (g x))
+        SideCondition.top
+        (f mkTop_)
+    , applies "F(x) => G(x) [concrete] applies to F(a)"
+        (functionAxiomUnification_ fSymbol [x] (g x) & concrete [x])
+        SideCondition.top
+        (f a)
+        (Pattern.fromTermLike $ g a)
+    , applies
+        "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
+        (functionAxiomUnification_
+            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        )
+        SideCondition.top
+        (sigma x a)
+        (Pattern.fromTermLike a)
+    , notInstantiated
+        "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
+        (functionAxiomUnification_
+            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        )
+        SideCondition.top
+        (sigma a a)
+    , notInstantiated
+        "Σ(X, Y) => A [symbolic(x), concrete(Y)]"
+        (functionAxiomUnification_
+            sigmaSymbol [x, y] a & symbolic [x] & concrete [y]
+        )
+        SideCondition.top
+        (sigma x x)
+    , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
+        (functionAxiomUnification fSymbol [x] (g x) (makeFalsePredicate sortR))
+        SideCondition.top
+        (f x)
+    , notInstantiated "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
+        (functionAxiomUnification_ sigmaSymbol [x, x] (g x))
+        SideCondition.top
+        (sigma y z)
+    , requiresNotMet
+        -- using SMT
+        "Σ(X, Y) => A requires (X > 0 and not Y > 0) doesn't apply to Σ(Z, Z)"
+        (functionAxiomUnification
+            sigmaSymbol [x, y] a (positive x `andNot` positive y)
+        )
+        SideCondition.top
+        (sigma z z)
+    , applies
+        -- using SMT
+        "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
+        (functionAxiomUnification
+            sigmaSymbol [x, y] a (positive x `orNot` positive y)
+        )
+        (SideCondition.fromPredicate $ positive a)
+        (sigma a a)
+        -- SMT not used to simplify trivial constraints
+        (Pattern.fromTermLike a)
+    , requiresNotMet
+        -- using SMT
+        "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
+        (functionAxiomUnification fSymbol [x] a (positive x))
+        (SideCondition.fromPredicate $ makeNotPredicate (positive z))
+        (f z)
+    , applies
+        -- using SMT
+        "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
+        (functionAxiomUnification fSymbol [x] a (positive x))
+        (SideCondition.fromPredicate $ positive z)
+        (f z)
+        (Pattern.fromTermLike a)
+    , notInstantiated "does not introduce variables"
+        (functionAxiomUnification_ fSymbol [a] (g x))
+        SideCondition.top
+        (f a)
+    ]
+
 -- * Test data
 
 equationId :: Equation'
@@ -366,11 +537,17 @@ f, g :: TestTerm -> TestTerm
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
 
+fSymbol :: Symbol
+fSymbol = Mock.functionalConstr10Symbol
+
 cf :: TestTerm
 cf = Mock.cf
 
 sigma :: TestTerm -> TestTerm -> TestTerm
 sigma = Mock.functionalConstr20
+
+sigmaSymbol :: Symbol
+sigmaSymbol = Mock.functionalConstr20Symbol
 
 string :: Text -> TestTerm
 string = Mock.builtinString
@@ -390,10 +567,10 @@ tdivInt :: TestTerm -> TestTerm -> TestTerm
 tdivInt = Mock.tdivInt
 
 positive :: TestTerm -> TestPredicate
-positive u =
+positive u' =
     makeEqualsPredicate Mock.testSort
         (Mock.lessInt
-            (Mock.fTestInt u)  -- wrap the given term for sort agreement
+            (Mock.fTestInt u')  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
         (Mock.builtinBool False)
@@ -420,6 +597,46 @@ axiom_
     -> TestTerm
     -> Equation'
 axiom_ left right = axiom left right (makeTruePredicate sortR)
+
+functionAxiomUnification
+    :: Symbol
+    -> [TestTerm]
+    -> TestTerm
+    -> TestPredicate
+    -> Equation'
+functionAxiomUnification symbol args right requires =
+    case args of
+        [] -> (mkEquation sortR (mkApplySymbol symbol []) right) { requires }
+        _  -> (mkEquation sortR left right) { requires, argument }
+  where
+    left = mkApplySymbol symbol variables
+    sorts = fmap termLikeSort args
+    variables = generateVariables (intToNatural (length args)) sorts
+    generateVariables n sorts' =
+        fmap makeElementVariable (zip [0..n - 1] sorts')
+    argument =
+        Just
+        $ foldr1 makeAndPredicate
+        $ fmap (uncurry (makeInPredicate sortR))
+        $ zip variables args
+    makeElementVariable (num, sort) =
+        mkElementVariable' (testId "funcVar") num sort
+        & mkElemVar
+    mkElementVariable' base counter variableSort =
+        Variable
+            { variableName =
+                ElementVariableName
+                    VariableName { base, counter = Just (Element counter) }
+            , variableSort
+            }
+
+functionAxiomUnification_
+    :: Symbol
+    -> [TestTerm]
+    -> TestTerm
+    -> Equation'
+functionAxiomUnification_ symbol args right =
+    functionAxiomUnification symbol args right (makeTruePredicate sortR)
 
 concrete :: [TestTerm] -> Equation' -> Equation'
 concrete vars =

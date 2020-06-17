@@ -82,6 +82,8 @@ import qualified SQL
 
 data Equation variable = Equation
     { requires :: !(Predicate variable)
+    , argument :: !(Maybe (Predicate variable))
+    , antiLeft :: !(Maybe (Predicate variable))
     , left  :: !(TermLike variable)
     , right :: !(TermLike variable)
     , ensures :: !(Predicate variable)
@@ -103,6 +105,8 @@ mkEquation sort left right =
     Equation
         { left
         , requires = Predicate.makeTruePredicate sort
+        , argument = Nothing
+        , antiLeft = Nothing
         , right
         , ensures = Predicate.makeTruePredicate sort
         , attributes = Default.def
@@ -119,10 +123,14 @@ instance Debug variable => Debug (Equation variable)
 instance (Debug variable, Diff variable) => Diff (Equation variable)
 
 instance InternalVariable variable => Pretty (Equation variable) where
-    pretty equation@(Equation _ _ _ _ _) =
+    pretty equation@(Equation _ _ _ _ _ _ _) =
         Pretty.vsep
             [ "requires:"
             , Pretty.indent 4 (unparse requires)
+            , "argument:"
+            , Pretty.indent 4 (maybe "" unparse argument)
+            , "antiLeft:"
+            , Pretty.indent 4 (maybe "" unparse antiLeft)
             , "left:"
             , Pretty.indent 4 (unparse left)
             , "right:"
@@ -133,6 +141,8 @@ instance InternalVariable variable => Pretty (Equation variable) where
       where
         Equation
             { requires
+            , argument
+            , antiLeft
             , left
             , right
             , ensures
@@ -161,33 +171,78 @@ instance
       , sort1 == sort2
       = left
 
+      -- function rule
+      | Just argument' <- argument
+      , Just antiLeft' <- antiLeft
+      =
+        let antiLeftTerm = from @(Predicate variable) antiLeft'
+            argumentTerm = from @(Predicate variable) argument'
+         in
+            TermLike.mkImplies
+                (TermLike.mkAnd
+                    antiLeftTerm
+                    (TermLike.mkAnd
+                        requires'
+                        argumentTerm
+                    )
+                )
+                (TermLike.mkAnd
+                    (TermLike.mkEquals sort left right)
+                    ensures'
+                )
+
+      -- function rule without priority
+      | Just argument' <- argument
+      =
+        let argumentTerm = from @(Predicate variable) argument'
+         in TermLike.mkImplies
+            (TermLike.mkAnd
+                requires'
+                (TermLike.mkAnd argumentTerm (TermLike.mkTop sort))
+            )
+            (TermLike.mkAnd
+                (TermLike.mkEquals sort left right)
+                ensures'
+            )
+
       -- unconditional equation
       | isTop requires
       , isTop ensures
       = TermLike.mkEquals sort left right
 
       -- conditional equation
-      | otherwise =
+      | otherwise
+      =
         TermLike.mkImplies
             requires'
             (TermLike.mkAnd
                 (TermLike.mkEquals sort left right)
                 ensures'
             )
+
       where
         requires' = from @(Predicate variable) requires
         ensures' = from @(Predicate variable) ensures
         sort = termLikeSort requires'
-        Equation { left, requires, right, ensures } = equation
+        Equation
+            { requires
+            , argument
+            , antiLeft
+            , left
+            , right
+            , ensures
+            } = equation
 
 instance
     InternalVariable variable
     => HasFreeVariables (Equation variable) variable
   where
-    freeVariables rule@(Equation _ _ _ _ _) = case rule of
-        Equation { left, requires, right, ensures } ->
+    freeVariables rule@(Equation _ _ _ _ _ _ _) = case rule of
+        Equation { left, argument, antiLeft, requires, right, ensures } ->
             freeVariables left
             <> freeVariables requires
+            <> maybe mempty freeVariables argument
+            <> maybe mempty freeVariables antiLeft
             <> freeVariables right
             <> freeVariables ensures
 
@@ -199,16 +254,26 @@ mapVariables
     => AdjSomeVariableName (variable1 -> variable2)
     -> Equation variable1
     -> Equation variable2
-mapVariables mapping equation@(Equation _ _ _ _ _) =
+mapVariables mapping equation@(Equation _ _ _ _ _ _ _) =
     equation
         { requires = mapPredicateVariables requires
+        , argument = mapPredicateVariables <$> argument
+        , antiLeft = mapPredicateVariables <$> antiLeft
         , left = mapTermLikeVariables left
         , right = mapTermLikeVariables right
         , ensures = mapPredicateVariables ensures
         , attributes = Attribute.mapAxiomVariables mapping attributes
         }
   where
-    Equation { requires, left, right, ensures, attributes } = equation
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        , attributes
+        } = equation
     mapTermLikeVariables = TermLike.mapVariables mapping
     mapPredicateVariables = Predicate.mapVariables mapping
 
@@ -220,7 +285,7 @@ refreshVariables
     -> (Renaming variable, Equation variable)
 refreshVariables
     (FreeVariables.toNames -> avoid)
-    equation@(Equation _ _ _ _ _)
+    equation@(Equation _ _ _ _ _ _ _)
   =
     let rename :: Map (SomeVariableName variable) (SomeVariable variable)
         rename =
@@ -259,6 +324,8 @@ refreshVariables
             )
         left' = TermLike.substitute subst left
         requires' = Predicate.substitute subst requires
+        argument' = Predicate.substitute subst <$> argument
+        antiLeft' = Predicate.substitute subst <$> antiLeft
         right' = TermLike.substitute subst right
         ensures' = Predicate.substitute subst ensures
         attributes' = Attribute.mapAxiomVariables adj attributes
@@ -266,13 +333,23 @@ refreshVariables
             equation
                 { left = left'
                 , requires = requires'
+                , argument = argument'
+                , antiLeft = antiLeft'
                 , right = right'
                 , ensures = ensures'
                 , attributes = attributes'
                 }
     in (rename, equation')
   where
-    Equation { left, requires, right, ensures, attributes } = equation
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        , attributes
+        } = equation
     originalFreeVariables = freeVariables equation
 
 isSimplificationRule :: Equation variable -> Bool
@@ -293,13 +370,23 @@ substitute
 substitute assignments equation =
     Equation
         { requires = Predicate.substitute assignments requires
+        , argument = Predicate.substitute assignments <$> argument
+        , antiLeft = Predicate.substitute assignments <$> antiLeft
         , left = TermLike.substitute assignments left
         , right = TermLike.substitute assignments right
         , ensures = Predicate.substitute assignments ensures
         , attributes
         }
   where
-    Equation { requires, left, right, ensures, attributes } = equation
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        , attributes
+        } = equation
 
 {- | The list of identifiers for an 'Equation'.
 

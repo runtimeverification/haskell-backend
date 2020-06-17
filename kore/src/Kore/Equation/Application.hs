@@ -24,6 +24,7 @@ import Prelude.Kore
 import Control.Error
     ( ExceptT
     , MaybeT (..)
+    , maybeToList
     , noteT
     , runExceptT
     , throwE
@@ -31,6 +32,9 @@ import Control.Error
     )
 import Control.Monad
     ( (>=>)
+    )
+import Control.Monad.Except
+    ( catchError
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
@@ -67,7 +71,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional (..)
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -80,6 +85,10 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -94,6 +103,7 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT
+import qualified Kore.Step.Substitution as Substitution
 import Kore.Syntax.Id
     ( AstLocation (..)
     , FileLocation (..)
@@ -114,6 +124,7 @@ import Log
     , logEntry
     , logWhile
     )
+import qualified Logic
 import Pretty
     ( Pretty (..)
     )
@@ -140,7 +151,8 @@ applicable.
  -}
 attemptEquation
     :: forall simplifier variable
-    .  MonadSimplify simplifier
+    .  HasCallStack
+    => MonadSimplify simplifier
     => InternalVariable variable
     => SideCondition (Target variable)
     -> TermLike (Target variable)
@@ -148,11 +160,19 @@ attemptEquation
     -> simplifier (AttemptEquationResult variable)
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
-        let Equation { left } = equationRenamed
-        matchResult <- match left termLike & whileMatch
+        let Equation { left, argument, antiLeft } = equationRenamed
         (equation', predicate) <-
-            applyMatchResult equationRenamed matchResult
-            & whileApplyMatchResult
+            case argument of
+                Nothing -> do
+                    matchResult <- match left termLike & whileMatch
+                    applyMatchResult equationRenamed matchResult
+                        & whileApplyMatchResult
+                Just argument' -> do
+                    matchResults <-
+                        whileMatch
+                        $ match left termLike
+                        >>= simplifyArgumentWithResult argument' antiLeft
+                    applyAndSelectMatchResult matchResults
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires
         let Equation { right, ensures } = equation'
@@ -168,6 +188,20 @@ attemptEquation sideCondition termLike equation =
         matchIncremental term1 term2
         & MaybeT & noteT matchError
 
+    applyAndSelectMatchResult
+        :: [MatchResult (Target variable)]
+        -> ExceptT
+            (AttemptEquationError variable)
+            simplifier
+            (Equation variable, Predicate variable)
+    applyAndSelectMatchResult [] =
+        throwE (WhileMatch matchError)
+    applyAndSelectMatchResult results =
+        whileApplyMatchResult $ Foldable.foldr1
+            takeFirstSuccess
+            (applyMatchResult equationRenamed <$> results)
+    takeFirstSuccess first second = catchError first (const second)
+
     whileDebugAttemptEquation'
         :: simplifier (AttemptEquationResult variable)
         -> simplifier (AttemptEquationResult variable)
@@ -175,6 +209,30 @@ attemptEquation sideCondition termLike equation =
         result <- whileDebugAttemptEquation termLike equationRenamed action
         debugAttemptEquationResult equation result
         return result
+
+    simplifyArgumentWithResult
+        :: HasCallStack
+        => Predicate (Target variable)
+        -> Maybe (Predicate (Target variable))
+        -> MatchResult (Target variable)
+        -> ExceptT
+            (MatchError (Target variable))
+            simplifier
+            [MatchResult (Target variable)]
+    simplifyArgumentWithResult
+        argument
+        antiLeft
+        (matchPredicate, matchSubstitution)
+      =
+        lift $ do
+            let toMatchResult Conditional { predicate, substitution } =
+                    (predicate, Substitution.toMap substitution)
+            Substitution.mergePredicatesAndSubstitutions
+                sideCondition
+                ([argument, matchPredicate] <> maybeToList antiLeft)
+                [from @_ @(Substitution _) matchSubstitution]
+                & Logic.observeAllT
+                & (fmap . fmap) toMatchResult
 
 applyEquation
     :: forall simplifier variable
@@ -189,7 +247,6 @@ applyEquation _ equation result = do
     let simplify = return
     debugApplyEquation equation result
     simplify results
-
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 
@@ -227,7 +284,9 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
   where
     equationVariables = freeVariables equation & FreeVariables.toList
 
-    errors = concatMap checkVariable equationVariables
+    errors =
+        concatMap checkVariable equationVariables
+        <> checkNonTargetVariables
 
     checkVariable Variable { variableName } =
         case Map.lookup variableName substitution of
@@ -249,6 +308,10 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
       = [NotSymbolic variable termLike]
       | otherwise
       = empty
+
+    checkNonTargetVariables =
+        NonMatchingSubstitution
+        <$> filter Target.isSomeNonTargetName (Map.keys substitution)
 
     Equation { attributes } = equation
     concretes =
@@ -516,6 +579,8 @@ data ApplyMatchResultError variable
     -- term was required.
     | NotMatched (SomeVariableName variable)
     -- ^ The variable was not matched.
+    | NonMatchingSubstitution (SomeVariableName variable)
+    -- ^ The variable is not part of the matching solution.
     deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
 
@@ -547,6 +612,12 @@ instance
         ]
     pretty (NotMatched variable) =
         Pretty.hsep ["variable", unparse variable, "was not matched"]
+    pretty (NonMatchingSubstitution variable) =
+        Pretty.hsep
+        [ "variable"
+        , unparse variable
+        , "should not be substituted"
+        ]
 
 mapApplyMatchResultErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
@@ -564,6 +635,8 @@ mapApplyMatchResultErrorVariables adj applyMatchResultError =
                 (mapSomeVariableName' variable)
                 (mapTermLikeVariables termLike)
         NotMatched variable -> NotMatched (mapSomeVariableName' variable)
+        NonMatchingSubstitution variable ->
+            NonMatchingSubstitution (mapSomeVariableName' variable)
   where
     mapSomeVariableName' = mapSomeVariableName adj
     mapTermLikeVariables = TermLike.mapVariables adj
