@@ -93,9 +93,6 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( assumeTrueCondition
-    )
 import Kore.Internal.Symbol
     ( Symbol
     )
