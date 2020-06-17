@@ -416,7 +416,7 @@ helpText =
     \--debug-apply-equation EQUATION_IDENTIFIER\n\
     \--debug-attempt-equation EQUATION_IDENTIFIER\n\
     \--debug-equation EQUATION_IDENTIFIER;\n\
-    \Fore more details run: kore-repl --help"
+    \For more details run: kore-repl --help\n"
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.
