@@ -810,14 +810,14 @@ removeDestination lensRulePattern mkState goal =
         -> m (ProofState goal (RulePattern VariableName))
     removeDestinationWorker rulePattern =
         do
-            removal <- removalPredicate destination configuration
+            removal <- removalPatterns destination configuration
             when (isTop removal) (succeed . mkState $ rulePattern)
-            let removalInConjuctionWithConfig =
+            let configAndRemoval =
                     fmap (configuration <*) removal
             simplifiedRemoval <-
                 simplifyConditionsWithSmt
                     SideCondition.top
-                    removalInConjuctionWithConfig
+                    configAndRemoval
             when (isBottom simplifiedRemoval) (succeed Proven)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
@@ -952,7 +952,7 @@ withConfiguration configuration =
 
 {- | The predicate to remove the destination from the present configuration.
  -}
-removalPredicate
+removalPatterns
     :: forall variable m
     .  HasCallStack
     => InternalVariable variable
@@ -962,7 +962,7 @@ removalPredicate
     -> Pattern variable
     -- ^ Current configuration
     -> m (OrPattern variable)
-removalPredicate
+removalPatterns
     destination
     configuration
   | isFunctionPattern configTerm
@@ -988,13 +988,13 @@ removalPredicate
           , Pretty.indent 4 (unparse destTerm)
           ]
   where
-    evaluateMultipleExists substPattern = do
+    evaluateMultipleExists patt = do
         let extraElemVariables =
-                getExtraElemVariables configuration substPattern
+                getExtraElemVariables configuration patt
             remainderPattern =
                 Pattern.fromCondition
                 . Conditional.withoutTerm
-                $ (const <$> destination <*> substPattern)
+                $ (const <$> destination <*> patt)
         Exists.makeEvaluate
             sideCondition extraElemVariables remainderPattern
     Conditional { term = destTerm } = destination
