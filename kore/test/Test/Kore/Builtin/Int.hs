@@ -17,6 +17,7 @@ module Test.Kore.Builtin.Int
     , test_unifyAnd_Equal
     , test_unifyAndEqual_Equal
     , test_unifyAnd_Fn
+    , test_reflexivity_symbolic
     , hprop_unparse
     --
     , asInternal
@@ -31,7 +32,7 @@ module Test.Kore.Builtin.Int
     ) where
 
 import Prelude.Kore
-
+import Kore.Unparser
 import Hedgehog hiding
     ( Concrete
     )
@@ -71,6 +72,7 @@ import Kore.Internal.TermLike
 import Test.Kore
     ( elementVariableGen
     , standaloneGen
+    , testId
     )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
@@ -135,6 +137,18 @@ testComparison symb impl =
         (===) expect actual
   where
     name = expectHook symb
+
+test_reflexivity_symbolic :: TestTree
+test_reflexivity_symbolic =
+    testPropertyWithSolver (Text.unpack name) $ do
+        let x = mkElemVar $ "x" `ofSort` intSort
+            expect = Test.Bool.asPattern $ (==) x x
+        actual <- evaluateT $ mkApplySymbol eqIntSymbol [x, x]
+        expect === actual
+  where
+    name = expectHook eqIntSymbol
+    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+    ofSort idName sort = mkElementVariable (testId idName) sort
 
 -- | Test a partial unary operator hooked to the given symbol.
 testPartialUnary

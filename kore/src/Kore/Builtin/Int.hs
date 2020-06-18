@@ -79,6 +79,7 @@ import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text as Text
 import GHC.Integer
     ( smallInteger
@@ -98,6 +99,11 @@ import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import Kore.Internal.TermLike as TermLike
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
     )
@@ -252,7 +258,7 @@ builtinFunctions =
 
     , comparator gtKey (>)
     , comparator geKey (>=)
-    , comparator eqKey (==)
+    , (eqKey, Builtin.functionEvaluator evalEq)
     , comparator leKey (<=)
     , comparator ltKey (<)
     , comparator neKey (/=)
@@ -325,3 +331,31 @@ builtinFunctions =
     log2 n
         | n > 0 = Just (smallInteger (integerLog2# n))
         | otherwise = Nothing
+
+evalEq :: Builtin.Function
+evalEq resultSort arguments@[_intLeft, _intRight] =
+    concrete <|> symbolicReflexivity
+  where
+    mkCeilUnlessDefined termLike
+      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | otherwise =
+        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+    returnPattern = return . flip Pattern.andCondition conditions
+    conditions = foldMap mkCeilUnlessDefined arguments
+
+    concrete = do
+        _intLeft <- expectBuiltinInt eqKey _intLeft
+        _intRight <- expectBuiltinInt eqKey _intRight
+        _intLeft == _intRight
+            & Bool.asPattern resultSort
+            & returnPattern
+
+    symbolicReflexivity =
+        case (Recursive.project _intLeft, Recursive.project _intRight) of
+            (_ :< VariableF varLeft, _ :< VariableF varRight) ->  
+                varLeft == varRight
+                    & Bool.asPattern resultSort
+                    & returnPattern
+            _ -> empty
+
+evalEq _ _ = Builtin.wrongArity eqKey
