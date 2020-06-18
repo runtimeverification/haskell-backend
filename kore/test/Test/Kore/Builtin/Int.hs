@@ -32,7 +32,7 @@ module Test.Kore.Builtin.Int
     ) where
 
 import Prelude.Kore
-import Kore.Unparser
+
 import Hedgehog hiding
     ( Concrete
     )

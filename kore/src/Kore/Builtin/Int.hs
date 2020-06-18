@@ -71,6 +71,7 @@ import Data.Bits
     , (.&.)
     , (.|.)
     )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -79,7 +80,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
-import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text as Text
 import GHC.Integer
     ( smallInteger
@@ -98,12 +98,12 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import Kore.Internal.TermLike as TermLike
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
     )
+import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
     )
@@ -352,7 +352,7 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
 
     symbolicReflexivity =
         case (Recursive.project _intLeft, Recursive.project _intRight) of
-            (_ :< VariableF varLeft, _ :< VariableF varRight) ->  
+            (_ :< VariableF varLeft, _ :< VariableF varRight) ->
                 varLeft == varRight
                     & Bool.asPattern resultSort
                     & returnPattern
