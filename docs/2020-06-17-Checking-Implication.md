@@ -27,35 +27,18 @@ The reachability proof algorithm will unroll the modality, giving
 
 ```
 φ(X) → ∃ Y. ψ(X, Y) ∨ • ∘ ∃ Y. ψ(X, Y)
+===
+φ(X) ∧ ¬ ∃ Y. ψ(X, Y) → • ∘ ∃ Y. ψ(X, Y)
 ```
 
-If the direct implication holds,
-
-```
-φ(X) → ∃ Y. ψ(X, Y)
-```
-
-then the claim is proven.
-Otherwise, the algorithm continues with
-
-```
-φ(X) → • ∘ ∃ Y. ψ(X, Y)
-```
-
-by rewriting `φ(X)`.
-Here, were are concerned with checking the direct implication,
-
-```
-φ(X) → ∃ Y. ψ(X, Y)
-```
-
-or equivalently, checking that
+If the direct implication holds, then
 
 ```
 φ(X) ∧ ¬ ∃ Y. ψ(X, Y)
 ```
 
 is unsatisfiable.
+Otherwise, the reachability proof algorithm continues by rewriting the configuration.
 
 ## Solution
 
