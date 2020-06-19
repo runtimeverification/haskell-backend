@@ -416,8 +416,7 @@ termEqualsAnd p1 p2 =
   where
     run it =
         (runUnifierT Not.notSimplifier . runMaybeT) it
-        >>= either missingCase Logic.scatter
-    missingCase = const (return Nothing)
+        >>= Logic.scatter
 
     maybeTermEqualsWorker
         :: forall unifier
@@ -435,11 +434,10 @@ termEqualsAnd p1 p2 =
         -> TermLike variable
         -> unifier (Pattern variable)
     termEqualsAndWorker first second =
-        either ignoreErrors scatterResults
+        scatterResults
         =<< runUnification (maybeTermEqualsWorker first second)
       where
         runUnification = runUnifierT Not.notSimplifier . runMaybeT
-        ignoreErrors _ = return equalsPredicate
         scatterResults =
             maybe
                 (return equalsPredicate) -- default if no results

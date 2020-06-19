@@ -31,10 +31,6 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import Control.Error
-    ( ExceptT
-    , runExceptT
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -114,9 +110,6 @@ import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
     ( ModuleName
     , ParsedDefinition
-    )
-import Kore.Unification.Error
-    ( UnificationError
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unification.UnificationProcedure
@@ -287,27 +280,27 @@ runStep
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Either UnificationError (OrPattern VariableName))
+    -> SMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return (Step.gatherResults <$> results)
+    return (Step.gatherResults results)
 
 runStepResult
     :: Pattern VariableName
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Either UnificationError (Step.Results RulePattern VariableName))
+    -> SMT (Step.Results RulePattern VariableName)
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
         [mkRewritingRule axiom]
         configuration
-    & runSimplifier testEnv . runExceptT
+    & runSimplifier testEnv
 
 unificationProcedure
     :: MonadSimplify simplifier
-    => UnificationProcedure (ExceptT UnificationError simplifier)
+    => UnificationProcedure simplifier
 unificationProcedure = Unification.unificationProcedure
 
 -- | Test unparsing internalized patterns.
