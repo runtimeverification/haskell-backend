@@ -2,9 +2,17 @@ module PRIORITY
   imports INT
   imports BOOL
 
-  syntax S ::= "one" | "two" | "three" | "four" | "five" | "six" | "seven"
+  syntax S ::= "one" | "two" | "three" | "four" | "five" | "six" | "seven" | start(Int) | middle(Int)
   rule one => two [priority(1)]
   rule one => three [priority(2)]
+
+  rule start(X) => one       requires X <Int 0  [priority(1)]
+  rule start(X) => middle(X) requires X <Int 10 [priority(2), label(first)]
+  rule start(X) => one                          [priority(3)]
+
+  rule middle(X) => one requires X >Int 5 [priority(1)]
+  rule middle(X) => two requires X >Int 2 [priority(2), label(second)]
+  rule middle(X) => one                   [priority(3)]
 
   syntax S ::= func1(Int)     [function]
   rule func1(X:Int) => four
