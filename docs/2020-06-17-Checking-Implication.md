@@ -126,7 +126,8 @@ If unification fails, then the negative conjunct is `\top` so that the implicati
 Now, the implication is checked in two cases:
 after a configuration is rewritten (in which case the configuration may be rewritten again)
 or after a configuration can no longer be rewritten (a remainder pattern).
-In the case of a rewritten configuration, when unification fails, there is no need to check the rest of the implication pattern because the condition `⌈t₁(X)⌉ ∧ P₁(X)` is ensured by subsequent rewrites.
+In the case of a rewritten configuration, when unification fails, there is no need to check the rest of the implication pattern:
+the condition `t₁(X) ∧ P₁(X)` itself implies the condition `⌈t₁(X)⌉ ∧ P₁(X)`.
 
 ## Summary
 
