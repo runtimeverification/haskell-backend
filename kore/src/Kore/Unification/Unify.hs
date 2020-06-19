@@ -23,7 +23,6 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
     )
-import Kore.Unification.Error
 import Logic
 import Pretty
     ( Doc
@@ -32,20 +31,7 @@ import Pretty
 -- | @MonadUnify@ is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationError'
 -- running in a 'Simplifier' monad.
---
--- 'MonadUnify' chooses its error/left type to 'UnificationError'
--- and provides functions to throw these errors. The point of this is to be able
--- to display information about unification failures through 'explainFailure'.
 class (MonadLogic unifier, MonadSimplify unifier) => MonadUnify unifier where
-    throwUnificationError
-        :: UnificationError
-        -> unifier a
-    default throwUnificationError
-        :: (MonadTrans t, MonadUnify m, unifier ~ t m)
-        => UnificationError -> unifier a
-    throwUnificationError = lift . throwUnificationError
-    {-# INLINE throwUnificationError #-}
-
     explainBottom
         :: InternalVariable variable
         => Doc ()

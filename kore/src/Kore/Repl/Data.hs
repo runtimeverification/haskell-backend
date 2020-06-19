@@ -104,7 +104,6 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
-import Kore.Unification.Error
 import Kore.Unification.UnifierT
     ( MonadUnify
     , UnifierT (..)
@@ -410,6 +409,13 @@ helpText =
     \ dot, e.g. IMP.myName\n\
     \Available entry types:\n    "
     <> intercalate "\n    " Log.getEntryTypesAsText
+    <> "\n\n\
+    \For logging the succesfully applied equations, attempted equations, or both,\n\
+    \launch kore-repl with the appropriate flags:\n\
+    \--debug-apply-equation EQUATION_IDENTIFIER\n\
+    \--debug-attempt-equation EQUATION_IDENTIFIER\n\
+    \--debug-equation EQUATION_IDENTIFIER;\n\
+    \For more details run: kore-repl --help\n"
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.
@@ -538,9 +544,6 @@ instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
         $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    throwUnificationError =
-        UnifierWithExplanation . Monad.Unify.throwUnificationError
-
     explainBottom info first second =
         UnifierWithExplanation
         . Monad.Trans.lift
@@ -593,16 +596,14 @@ runUnifierWithExplanation
     => UnifierWithExplanation m a
     -> m (Either ReplOutput (NonEmpty a))
 runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    either explainError failWithExplanation <$> unificationResults
+    failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  m (Either UnificationError ([a], First ReplOutput))
+        ::  m ([a], First ReplOutput)
     unificationResults =
-        fmap (\(r, ex) -> flip (,) ex <$> r)
-        . flip runAccumT mempty
+        flip runAccumT mempty
         . Monad.Unify.runUnifierT Not.notSimplifier
         $ unifier
-    explainError = Left . makeAuxReplOutput . show . Pretty.pretty
     failWithExplanation
         :: ([a], First ReplOutput)
         -> Either ReplOutput (NonEmpty a)

@@ -443,10 +443,9 @@ termAnd
     -> TermLike variable
     -> LogicT simplifier (Pattern variable)
 termAnd notSimplifier p1 p2 =
-    either (const andTerm) Logic.scatter
+    Logic.scatter
     =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)
   where
-    andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
     termAndWorker
         :: TermLike variable
         -> TermLike variable

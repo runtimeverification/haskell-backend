@@ -27,9 +27,6 @@ module Kore.Step
 
 import Prelude.Kore
 
-import Control.Error
-    ( runExceptT
-    )
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
@@ -67,9 +64,6 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
-import Kore.Unparser
-import qualified Pretty
-
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -101,8 +95,7 @@ rewriteStep a =
  -}
 transitionRule
     :: forall m
-    .  HasCallStack
-    => MonadSimplify m
+    .  MonadSimplify m
     => Prim (RewriteRule VariableName)
     -> Pattern VariableName
     -- ^ Configuration being rewritten
@@ -118,25 +111,14 @@ transitionRule =
         Foldable.asum (pure <$> filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
-        eitherResults <-
+        results <-
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
                 [mkRewritingRule rule]
                 config
-            & lift . runExceptT
-        case eitherResults of
-            Left err ->
-                (error . show . Pretty.vsep)
-                    [ "Could not apply the axiom:"
-                    , unparse rule
-                    , "to the configuration:"
-                    , unparse config
-                    , "Un-implemented unification case; aborting execution."
-                    , "err=" <> Pretty.pretty err
-                    ]
-            Right results ->
-                Foldable.asum
-                    (pure <$> Step.gatherResults results)
+            & lift
+        Foldable.asum
+            (pure <$> Step.gatherResults results)
 
 
 {- | A strategy that applies all the rewrites in parallel.

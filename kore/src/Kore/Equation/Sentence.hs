@@ -54,6 +54,8 @@ fromSentenceAxiom (attributes, SentenceAxiom { sentenceAxiomPattern }) =
 data MatchEquationError variable
     = NotEquation !(TermLike variable)
     | RequiresError !(NotPredicate variable)
+    | ArgumentError !(NotPredicate variable)
+    | AntiLeftError !(NotPredicate variable)
     | EnsuresError !(NotPredicate variable)
     | FunctionalAxiom
     | ConstructorAxiom
@@ -66,11 +68,6 @@ instance SOP.HasDatatypeInfo (MatchEquationError variable)
 
 instance Debug variable => Debug (MatchEquationError variable)
 
-{- | Match a term encoding an 'QualifiedAxiomPattern'.
-
-@patternToAxiomPattern@ returns an error if the given 'TermLike' does
-not encode a normal rewrite or function axiom.
--}
 matchEquation
     :: forall variable
     .  InternalVariable variable
@@ -87,6 +84,66 @@ matchEquation attributes termLike
     isFunctionalAxiom = (isDeclaredFunctional . Attribute.functional) attributes
     isConstructorAxiom = (isConstructor . Attribute.constructor) attributes
     isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
+
+    -- function rule without priority
+    match
+        (TermLike.Implies_ _
+            (TermLike.And_ _
+                requires
+                argument@(TermLike.And_ _
+                    (TermLike.In_ _ _ _ _)
+                    _
+                         )
+            )
+            (TermLike.And_ _
+                (TermLike.Equals_ _ _ left right)
+                ensures
+            )
+        )
+      = do
+        requires' <- makePredicate requires & Bifunctor.first RequiresError
+        argument' <- makePredicate argument & Bifunctor.first ArgumentError
+        ensures'  <- makePredicate ensures  & Bifunctor.first EnsuresError
+        pure Equation
+            { requires = requires'
+            , argument = Just argument'
+            , antiLeft = Nothing
+            , left
+            , right
+            , ensures = ensures'
+            , attributes
+            }
+
+    -- function rule with priority
+    match
+        (TermLike.Implies_ _
+            (TermLike.And_ _
+                antiLeft
+                (TermLike.And_ _
+                    requires
+                    argument
+                )
+            )
+            (TermLike.And_ _
+                (TermLike.Equals_ _ _ left right)
+                ensures
+            )
+        )
+      = do
+        requires' <- makePredicate requires & Bifunctor.first RequiresError
+        argument' <- makePredicate argument & Bifunctor.first ArgumentError
+        antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
+        ensures'  <- makePredicate ensures  & Bifunctor.first EnsuresError
+        pure Equation
+            { requires = requires'
+            , argument = Just argument'
+            , antiLeft = Just antiLeft'
+            , left
+            , right
+            , ensures = ensures'
+            , attributes
+            }
+
     match
         (TermLike.Implies_ _
             requires
@@ -100,6 +157,8 @@ matchEquation attributes termLike
         ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
         pure Equation
             { requires = requires'
+            , argument = Nothing
+            , antiLeft = Nothing
             , left
             , right
             , ensures = ensures'
@@ -109,6 +168,8 @@ matchEquation attributes termLike
     match (TermLike.Equals_ _ sort left right) =
         pure Equation
             { requires = Predicate.makeTruePredicate sort
+            , argument = Nothing
+            , antiLeft = Nothing
             , left
             , right
             , ensures = Predicate.makeTruePredicate sort
@@ -118,6 +179,8 @@ matchEquation attributes termLike
     match left@(TermLike.Ceil_ _ sort _) =
         pure Equation
             { requires = Predicate.makeTruePredicate sort
+            , argument = Nothing
+            , antiLeft = Nothing
             , left
             , right = TermLike.mkTop sort
             , ensures = Predicate.makeTruePredicate sort

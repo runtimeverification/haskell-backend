@@ -14,10 +14,6 @@ module Kore.Unification.Procedure
 
 import Prelude.Kore
 
-import Control.Error
-    ( ExceptT
-    )
-
 import Kore.Internal.Condition
     ( Condition
     )
@@ -41,7 +37,6 @@ import Kore.Step.Simplification.Simplify
     , simplifyCondition
     )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Error
 import Kore.Unification.UnificationProcedure
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT
@@ -58,7 +53,6 @@ import Logic
 -- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
 -- @t2@ are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
--- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedureWorker
     ::  ( InternalVariable variable
         , MonadUnify unifier
@@ -84,7 +78,7 @@ unificationProcedureWorker sideCondition p1 p2
 
 unificationProcedure
     :: MonadSimplify simplifier
-    => UnificationProcedure (ExceptT UnificationError simplifier)
+    => UnificationProcedure simplifier
 unificationProcedure =
     UnificationProcedure $ \sideCondition term1 term2 ->
         unificationProcedureWorker sideCondition term1 term2

@@ -92,9 +92,6 @@ import Kore.Syntax.PatternF
     ( Const (..)
     )
 import Kore.TopBottom
-import Kore.Unification.Error
-    ( unsupportedPatterns
-    )
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
@@ -111,8 +108,8 @@ data SimplificationTarget = AndT | EqualsT | BothT
 We want to keep the terms because substitution relies on the result not being
 @\\bottom@.
 
-Unlike 'termAnd', @termUnification@ does not make an @\\and@ term when a
-particular case is not implemented; otherwise, the two are the same.
+When a case is not implemented, @termUnification@ will create a @\\ceil@ of
+the conjunction of the two terms.
 
 The comment for 'Kore.Step.Simplification.And.simplify' describes all
 the special cases handled by this.
@@ -142,15 +139,16 @@ termUnification notSimplifier = \term1 term2 ->
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
-            unsupportedPatternsError = do
-                debugUnificationUnsolved pat1 pat2
-                throwUnificationError
-                    (unsupportedPatterns
-                        "Unknown unification case."
-                        pat1
-                        pat2
-                    )
-        Error.maybeT unsupportedPatternsError pure maybeTermUnification
+        Error.maybeT
+            (incompleteUnificationPattern pat1 pat2)
+            pure
+            maybeTermUnification
+
+    incompleteUnificationPattern term1 term2 = do
+        debugUnificationUnsolved term1 term2
+        mkAnd term1 term2
+            & Pattern.fromTermLike
+            & return
 
 maybeTermEquals
     :: InternalVariable variable
