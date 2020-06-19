@@ -40,7 +40,6 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import Kore.Unification.Error
 import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -184,15 +183,15 @@ simplifyAnds =
         (Unification.unificationMakeAnd Not.notSimplifier)
         SideCondition.top
 
-andSimplifySuccess
+andSimplify
     :: HasCallStack
     => UnificationTerm
     -> UnificationTerm
     -> [UnificationResult]
     -> Assertion
-andSimplifySuccess term1 term2 results = do
+andSimplify term1 term2 results = do
     let expect = map unificationResult results
-    Right subst' <-
+    subst' <-
         runNoSMT
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT Not.notSimplifier
@@ -210,22 +209,6 @@ andSimplifySuccess term1 term2 results = do
             , "actual="
             , Pretty.indent 4 (Foldable.fold (map unparse actual))
             ]
-
-andSimplifyFailure
-    :: HasCallStack
-    => UnificationTerm
-    -> UnificationTerm
-    -> UnificationError
-    -> Assertion
-andSimplifyFailure term1 term2 err = do
-    let expect :: Either UnificationError TestPattern
-        expect = Left err
-    actual <-
-        runNoSMT
-        $ runSimplifier testEnv
-        $ Monad.Unify.runUnifierT Not.notSimplifier
-        $ simplifyAnds (unificationProblem term1 term2 :| [])
-    assertEqual "" (show expect) (show actual)
 
 andSimplifyException
     :: HasCallStack
@@ -263,7 +246,7 @@ unificationProcedureSuccessWithSimplifiers
   =
     testCase message $ do
         let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
-        Right results <-
+        results <-
             unificationProcedureWorker
                 SideCondition.topTODO
                 term1
@@ -301,7 +284,7 @@ unificationProcedureSuccess message term1 term2 substPredicate =
 test_unification :: [TestTree]
 test_unification =
     [ testCase "Constant" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm a)
             (UnificationTerm a)
             [ UnificationResult
@@ -311,7 +294,7 @@ test_unification =
                 }
             ]
     , testCase "Variable" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm a)
             [ UnificationResult
@@ -321,7 +304,7 @@ test_unification =
                 }
             ]
     , testCase "one level" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm (f (mkElemVar Mock.x)))
             (UnificationTerm (f a))
             [ UnificationResult
@@ -331,7 +314,7 @@ test_unification =
                 }
             ]
     , testCase "equal non-constructor patterns" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm a2)
             (UnificationTerm a2)
             [ UnificationResult
@@ -341,7 +324,7 @@ test_unification =
                 }
             ]
     , testCase "variable + non-constructor pattern" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm a2)
             (UnificationTerm (mkElemVar Mock.x))
             [ UnificationResult
@@ -351,7 +334,7 @@ test_unification =
                 }
             ]
     , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
-        $ andSimplifySuccess
+        $ andSimplify
             (UnificationTerm (ef ex1 (eh ex1) ex2))
             (UnificationTerm (ef (eg ex3) ex4 ex3))
             [ UnificationResult
@@ -365,7 +348,7 @@ test_unification =
                 }
             ]
     , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
-        andSimplifySuccess
+        andSimplify
 
             (UnificationTerm (nonLinF (nonLinG nonLinX) nonLinX))
             (UnificationTerm (nonLinF nonLinY nonLinA))
@@ -379,7 +362,7 @@ test_unification =
                 }
             ]
     , testCase "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
-        $ andSimplifySuccess
+        $ andSimplify
             (UnificationTerm (expBin (expBin expA expY) expX))
             (UnificationTerm (expBin expX (expBin expY expA)))
             [ UnificationResult
@@ -421,12 +404,12 @@ test_unification =
         ]
     , testGroup "inj unification tests" injUnificationTests
     , testCase "Unmatching constants is bottom" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm a)
             (UnificationTerm a1)
             []
     , testCase "Unmatching domain values is bottom" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm dv1)
             (UnificationTerm dv2)
             []
@@ -443,7 +426,7 @@ test_unification =
         \/* Fl Fn D Sfa Cl */ \\dv{testSort{}}(/* Fl Fn D Sfa Cl */ \"dv1\")\n\
         \/* Fl Fn D Sfa Cl */ a{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm dv1)
             (UnificationTerm a2)
             [ UnificationResult
@@ -453,7 +436,7 @@ test_unification =
                 }
             ]
     , testCase "Unmatching nonconstructor constant + domain value" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm a2)
             (UnificationTerm dv1)
             [ UnificationResult
@@ -463,34 +446,39 @@ test_unification =
                 }
             ]
     , testCase "non-functional pattern" $
-        andSimplifyFailure
+        andSimplify
             (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm a3)
-            (unsupportedPatterns
-                "Unknown unification case."
-                (mkElemVar Mock.x)
-                a3
-            )
+            [ UnificationResult
+                { term = mkAnd (mkElemVar Mock.x) a3
+                , substitution = []
+                , predicate = Predicate.makeTruePredicate Mock.testSort
+                }
+            ]
     , testCase "SetVariable w. constructor" $
-        andSimplifyFailure
+        andSimplify
             (UnificationTerm (f (Mock.mkTestSomeVariable "@x")))
             (UnificationTerm (f a))
-            (unsupportedPatterns
-                "Unknown unification case."
-                (Mock.mkTestSomeVariable "@x")
-                a
-            )
+            [ UnificationResult
+                { term =
+                    f (mkAnd (Mock.mkTestSomeVariable "@x") a)
+                , substitution = []
+                , predicate = Predicate.makeTruePredicate Mock.testSort
+                }
+            ]
     , testCase "SetVariable" $
-        andSimplifyFailure
+        andSimplify
             (UnificationTerm (Mock.mkTestSomeVariable "@x"))
             (UnificationTerm a)
-            (unsupportedPatterns
-                "Unknown unification case."
-                (Mock.mkTestSomeVariable "@x")
-                a
-            )
+            [ UnificationResult
+                { term =
+                    mkAnd (Mock.mkTestSomeVariable "@x") a
+                , substitution = []
+                , predicate = Predicate.makeTruePredicate Mock.testSort
+                }
+            ]
     , testCase "non-constructor symbolHead right" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm a)
             (UnificationTerm a2)
             [ UnificationResult
@@ -500,7 +488,7 @@ test_unification =
                 }
             ]
     , testCase "non-constructor symbolHead left" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm a2)
             (UnificationTerm a)
             [ UnificationResult
@@ -510,7 +498,7 @@ test_unification =
                 }
             ]
     , testCase "nested a=a1 is bottom" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm (f a))
             (UnificationTerm (f a1))
             []
@@ -533,7 +521,7 @@ test_unification =
             )
         )
     , testCase "framed Map with concrete Map" $
-            andSimplifySuccess
+            andSimplify
                 (UnificationTerm
                     (Mock.concatMap
                         (Mock.builtinMap [(a, mkElemVar Mock.x)])
@@ -554,7 +542,7 @@ test_unification =
                     }
                 ]
     , testCase "key outside of map" $
-            andSimplifySuccess
+            andSimplify
                 (UnificationTerm
                     (constr20
                         y
@@ -584,7 +572,7 @@ test_unification =
                     }
                 ]
     , testCase "key outside of map, symbolic opaque terms" $
-            andSimplifySuccess
+            andSimplify
                 (UnificationTerm
                     (constr20
                         y
@@ -630,7 +618,7 @@ test_evaluated :: [TestTree]
 test_evaluated =
     [ testCase "variable and functional term" $ do
         let evaluated = mkEvaluated a2
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm (mkElemVar Mock.x))
             (UnificationTerm evaluated)
             [ UnificationResult
@@ -652,19 +640,21 @@ test_evaluated =
 test_unsupportedConstructs :: TestTree
 test_unsupportedConstructs =
     testCase "Unsupported constructs" $
-        andSimplifyFailure
+        andSimplify
             (UnificationTerm (f a))
             (UnificationTerm (f (mkImplies a (mkNext a1))))
-            (unsupportedPatterns
-                "Unknown unification case."
-                a
-                (mkImplies a (mkNext a1))
-            )
+            [ UnificationResult
+                { term =
+                    f (mkAnd a (mkImplies a (mkNext a1)))
+                , substitution = []
+                , predicate = Predicate.makeTruePredicate Mock.testSort
+                }
+            ]
 
 injUnificationTests :: [TestTree]
 injUnificationTests =
     [ testCase "Injected Variable" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm
                 (Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort))
             )
@@ -676,7 +666,7 @@ injUnificationTests =
                 }
             ]
     , testCase "Variable" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm (mkElemVar Mock.xTopSort))
             (UnificationTerm (Mock.sortInjectionSubToTop Mock.aSubsort))
             [ UnificationResult
@@ -693,7 +683,7 @@ injUnificationTests =
                 (Mock.sortInjectionSubToTop
                     (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
                 )
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm
                 (Mock.sortInjectionSubSubToTop (mkElemVar Mock.xSubSubSort))
             )
@@ -709,7 +699,7 @@ injUnificationTests =
             (Mock.sortInjectionSubToTop
                 (Mock.sortInjectionSubSubToSub (mkElemVar Mock.xSubSubSort))
             )
-        andSimplifySuccess
+        andSimplify
             term1
             (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
             [ UnificationResult
@@ -727,7 +717,7 @@ injUnificationTests =
             (Mock.sortInjectionOtherToTop
                 (Mock.sortInjectionSubSubToOther (mkElemVar Mock.xSubSubSort))
             )
-        andSimplifySuccess
+        andSimplify
             term1
             term2
             [ UnificationResult
@@ -737,7 +727,7 @@ injUnificationTests =
                 }
             ]
     , testCase "constant vs injection is bottom" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm Mock.aTopSort)
             (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
             []
@@ -754,12 +744,12 @@ injUnificationTests =
                 (Mock.sortInjectionOtherToTop
                     (Mock.sortInjectionSubOtherToOther Mock.aSubOthersort)
                 )
-        andSimplifySuccess
+        andSimplify
             term1
             term2
             []
     , testCase "matching injections" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
             (UnificationTerm
                 (Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort))
@@ -775,7 +765,7 @@ injUnificationTests =
                 }
             ]
     , testCase "unmatching injections" $
-        andSimplifySuccess
+        andSimplify
             (UnificationTerm (Mock.sortInjectionOtherToTop Mock.aOtherSort))
             (UnificationTerm
                 (Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort))

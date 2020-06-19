@@ -122,6 +122,7 @@ import Logic
 import Pretty
     ( Doc
     )
+import qualified Pretty
 
 {- | Class for things that can fill the @builtinAcChild@ value of a
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
@@ -1304,14 +1305,17 @@ unifyEqualsElementLists
                     result = unifier `andCondition` opaqueCondition
 
                 return (result, [opaqueTerm])
-            _ -> (error . unlines)
-                [ "Unification case that should be handled somewhere else:"
-                , "attempting normalized unification with a "
-                , "non-element-variable opaque term or "
-                , "non-function maps could lead to infinite loops."
-                , "first=" ++ unparseToString first
-                , "second=" ++ unparseToString second
-                ]
+            _ ->
+                error . show . Pretty.vsep $
+                    [ "Unification case that should be handled somewhere else: \
+                        \attempting normalized unification with a \
+                        \non-element-variable opaque term or \
+                        \non-function maps could lead to infinite loops."
+                    , Pretty.indent 2 "first="
+                    , Pretty.indent 4 (unparse first)
+                    , Pretty.indent 2 "second="
+                    , Pretty.indent 4 (unparse second)
+                    ]
 
   where
     unifyWithPermutations =

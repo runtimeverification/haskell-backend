@@ -2,7 +2,9 @@
 
 module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
+    , test_functionIntegrationUnification
     , test_Nat
+    , test_NatUnification
     , test_short_circuit
     , test_List
     , test_lookupMap
@@ -107,6 +109,8 @@ import qualified Test.Kore.Builtin.Map as Map
 import Test.Kore.Equation.Application
     ( axiom
     , axiom_
+    , functionAxiomUnification
+    , functionAxiomUnification_
     )
 import Test.Kore.Step.Axiom.Matcher
     ( doesn'tMatch
@@ -600,6 +604,346 @@ test_functionIntegration =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
         $ TermLike.simplify patt SideCondition.top
 
+test_functionIntegrationUnification :: [TestTree]
+test_functionIntegrationUnification =
+    [ testCase "Simple evaluation" $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (axiomEvaluatorUnification
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.g (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Simple evaluation (builtin branch)" $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (builtinEvaluation $ axiomEvaluatorUnification
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.g (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
+      $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (simplifierWithFallback
+                        (builtinEvaluation $ axiomEvaluatorUnification
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (Mock.g (mkElemVar Mock.x))
+                        )
+                        ( axiomEvaluatorUnification
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (mkElemVar Mock.x)
+                        )
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
+      $ do
+        let expect =
+                Conditional
+                    { term = Mock.g Mock.c
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    (simplifierWithFallback
+                        (builtinEvaluation $ BuiltinAndAxiomSimplifier $ \_ _ ->
+                            notApplicableAxiomEvaluator
+                        )
+                        ( axiomEvaluatorUnification
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (Mock.g (mkElemVar Mock.x))
+                        )
+                    )
+                )
+                (Mock.functional10 Mock.c)
+        assertEqual "" expect actual
+
+    , testCase "Evaluates inside functions" $ do
+        let expect =
+                Conditional
+                    { term = Mock.functional11 (Mock.functional11 Mock.c)
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    ( axiomEvaluatorUnification
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.functional11 (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10 (Mock.functional10 Mock.c))
+        assertEqual "" expect actual
+
+    , testCase "Evaluates 'or'" $ do
+        let expect =
+                Conditional
+                    { term =
+                        mkOr
+                            (Mock.functional11 (Mock.functional11 Mock.c))
+                            (Mock.functional11 (Mock.functional11 Mock.d))
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    ( axiomEvaluatorUnification
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.functional11 (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10
+                    (mkOr
+                        (Mock.functional10 Mock.c)
+                        (Mock.functional10 Mock.d)
+                    )
+                )
+        assertEqual "" expect actual
+
+    , testCase "Evaluates on multiple branches" $ do
+        let expect =
+                Conditional
+                    { term =
+                        Mock.functional11
+                            (Mock.functional20
+                                (Mock.functional11 Mock.c)
+                                (Mock.functional11 Mock.c)
+                            )
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.singleton
+                    (AxiomIdentifier.Application Mock.functional10Id)
+                    ( axiomEvaluatorUnification
+                        Mock.functional10Symbol
+                        [mkElemVar Mock.x]
+                        (Mock.functional11 (mkElemVar Mock.x))
+                    )
+                )
+                (Mock.functional10
+                    (Mock.functional20
+                        (Mock.functional10 Mock.c)
+                        (Mock.functional10 Mock.c)
+                    )
+                )
+        assertEqual "" expect actual
+
+    , testCase "Merges conditions" $ do
+        let expect =
+                Conditional
+                    { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate Mock.testSort (Mock.f Mock.a))
+                            (makeCeilPredicate_ (Mock.g Mock.a))
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.cfId
+                        , appliedMockEvaluator Conditional
+                            { term = Mock.e
+                            , predicate = makeCeilPredicate_ (Mock.g Mock.a)
+                            , substitution = mempty
+                            }
+                        )
+                    ,   ( AxiomIdentifier.Application Mock.cgId
+                        , appliedMockEvaluator Conditional
+                            { term = Mock.e
+                            , predicate = makeCeilPredicate_ (Mock.f Mock.a)
+                            , substitution = mempty
+                            }
+                        )
+                    ,   ( AxiomIdentifier.Application Mock.functional10Id
+                        , axiomEvaluatorUnification
+                            Mock.functional10Symbol
+                            [mkElemVar Mock.x]
+                            (Mock.functional11 (mkElemVar Mock.x))
+                        )
+                    ]
+                )
+                (Mock.functional10 (Mock.functional20 Mock.cf Mock.cg))
+        assertEqual "" expect actual
+
+    , testCase "Reevaluates user-defined function results." $ do
+        let expect =
+                Conditional
+                    { term = Mock.f Mock.e
+                    , predicate = makeEqualsPredicate Mock.testSort
+                        (Mock.f Mock.e) Mock.e
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.cfId
+                        , axiomEvaluatorUnification Mock.cfSymbol [] Mock.cg
+                        )
+                    ,   ( AxiomIdentifier.Application Mock.cgId
+                        , appliedMockEvaluator Conditional
+                            { term = Mock.e
+                            , predicate =
+                                makeEqualsPredicate_ (Mock.f Mock.e) Mock.e
+                            , substitution = mempty
+                            }
+                        )
+                    ]
+                )
+                (Mock.f Mock.cf)
+        assertEqual "" expect actual
+
+    , testCase "Evaluates only simplifications." $ do
+        let expect =
+                Conditional
+                    { term = Mock.b
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.fId
+                        , simplifierWithFallback
+                            (appliedMockEvaluator (Pattern.fromTermLike Mock.b))
+                            (definitionEvaluation
+                                [functionAxiomUnification_ Mock.fSymbol [mkElemVar Mock.y] Mock.a]
+                            )
+                        )
+                    ]
+                )
+                (Mock.f (mkElemVar Mock.x))
+        assertEqual "" expect actual
+
+    , testCase "Picks first matching simplification." $ do
+        let expect =
+                Conditional
+                    { term = Mock.b
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.fId
+                        , simplifierWithFallback
+                            (firstFullEvaluation
+                                [ axiomEvaluatorUnification
+                                    Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
+                                    Mock.c
+                                ,  appliedMockEvaluator Conditional
+                                    { term = Mock.b
+                                    , predicate = makeTruePredicate_
+                                    , substitution = mempty
+                                    }
+                                ,  appliedMockEvaluator Conditional
+                                    { term = Mock.c
+                                    , predicate = makeTruePredicate_
+                                    , substitution = mempty
+                                    }
+                                ]
+                            )
+                            (definitionEvaluation
+                                [ functionAxiomUnification
+                                    Mock.fSymbol [mkElemVar Mock.y]
+                                    Mock.a
+                                    makeTruePredicate_
+                                ]
+                            )
+                        )
+                    ]
+                )
+                (Mock.f (mkElemVar Mock.x))
+        assertEqual "" expect actual
+
+    , testCase "Falls back to evaluating the definition." $ do
+        let expect =
+                Conditional
+                    { term = Mock.a
+                    , predicate = makeTruePredicate Mock.testSort
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluate
+                (Map.fromList
+                    [   ( AxiomIdentifier.Application Mock.fId
+                        , simplifierWithFallback
+                            (axiomEvaluatorUnification
+                                Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
+                                Mock.b
+                            )
+                            (definitionEvaluation
+                                [ functionAxiomUnification
+                                    Mock.fSymbol [mkElemVar Mock.y]
+                                    Mock.a
+                                    makeTruePredicate_
+                                ]
+                            )
+                        )
+                    ]
+                )
+                (Mock.f (mkElemVar Mock.x))
+        assertEqual "" expect actual
+    ]
+  where
+    evaluate
+        :: BuiltinAndAxiomSimplifierMap
+        -> TermLike VariableName
+        -> IO (Pattern VariableName)
+    evaluate functionIdToEvaluator patt =
+        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
+        $ TermLike.simplify patt SideCondition.top
+
 test_Nat :: [TestTree]
 test_Nat =
     [ matches "plus(0, N) matches plus(0, 1)"
@@ -645,6 +989,51 @@ test_Nat =
     , equals "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
     ]
 
+test_NatUnification :: [TestTree]
+test_NatUnification =
+    [ matches "plus(0, N) matches plus(0, 1)"
+        (plus zero varN)
+        (plus zero one)
+        [(inject natN, one)]
+    , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
+        (plus (succ varM) varN)
+        (plus zero one)
+    , matches "plus(succ(M), N) matches plus(1, 1)"
+        (plus (succ varM) varN)
+        (plus one one)
+        [(inject natM, zero), (inject natN, one)]
+    , appliesUnification            "plus(0, N) => ... ~ plus (0, 1)"
+        [plusZeroRule]
+        (plus zero one)
+    , notAppliesUnification         "plus(0, N) => ... ~ plus (1, 1)"
+        [plusZeroRule]
+        (plus one one)
+    , notAppliesUnification         "plus(Succ(M), N) => ... ~ plus (0, 1)"
+        [plusSuccRule]
+        (plus zero one)
+    , appliesUnification            "plus(Succ(M), N) => ... ~ plus (1, 1)"
+        [plusSuccRule]
+        (plus one one)
+    , appliesUnification            "plus(0, 1) => ..."
+        plusRules
+        (plus zero one)
+    , appliesUnification            "plus(1, 1) => ..."
+        plusRules
+        (plus one one)
+    , equalsUnification "0 + 1 = 1 : Nat" (plus zero one) [one]
+    , equalsUnification "0 + 1 = 1 : Nat" (plus one one) [two]
+    , equalsUnification "0 * 1 = 0 : Nat" (times zero one) [zero]
+    , equalsUnification "1 * 1 = 1 : Nat" (times one one) [one]
+    , equalsUnification "1 * 2 = 2 : Nat" (times one two) [two]
+    , equalsUnification "2 * 1 = 2 : Nat" (times two one) [two]
+    , equalsUnification "0! = 1 : Nat" (factorial zero) [one]
+    , equalsUnification "1! = 1 : Nat" (factorial one) [one]
+    , equalsUnification "2! = 2 : Nat" (factorial two) [two]
+    , equalsUnification "fibonacci(0) = 1 : Nat" (fibonacci zero) [one]
+    , equalsUnification "fibonacci(1) = 1 : Nat" (fibonacci one) [one]
+    , equalsUnification "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
+    ]
+
 -- Evaluation tests: check the result of evaluating the term
 equals
     :: HasCallStack
@@ -658,8 +1047,23 @@ equals comment term results =
         let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
         assertEqual "" expect actual
 
+equalsUnification
+    :: HasCallStack
+    => TestName
+    -> TermLike VariableName
+    -> [TermLike VariableName]
+    -> TestTree
+equalsUnification comment term results =
+    testCase comment $ do
+        actual <- simplifyUnification term
+        let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
+        assertEqual "" expect actual
+
 simplify :: TermLike VariableName -> IO (OrPattern VariableName)
 simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
+
+simplifyUnification :: TermLike VariableName -> IO (OrPattern VariableName)
+simplifyUnification = runSimplifier testEnvUnification . TermLike.simplifyToOr SideCondition.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -667,6 +1071,14 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
+    $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
+
+evaluateWithUnification
+    :: BuiltinAndAxiomSimplifier
+    -> TermLike VariableName
+    -> IO CommonAttemptedAxiom
+evaluateWithUnification simplifier patt =
+    runSimplifier testEnvUnification
     $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
@@ -681,7 +1093,18 @@ withApplied check comment rules term =
         actual <- evaluateWith (definitionEvaluation rules) term
         check actual
 
-applies, notApplies
+withAppliedUnification
+    :: (CommonAttemptedAxiom -> Assertion)
+    -> TestName
+    -> [Equation VariableName]
+    -> TermLike VariableName
+    -> TestTree
+withAppliedUnification check comment rules term =
+    testCase comment $ do
+        actual <- evaluateWithUnification (definitionEvaluation rules) term
+        check actual
+
+applies, notApplies, appliesUnification, notAppliesUnification
     :: TestName
     -> [Equation VariableName]
     -> TermLike VariableName
@@ -701,6 +1124,23 @@ applies =
         . Lens.view (field @"remainders")
 notApplies =
     withApplied $ \r ->
+        assertBool "Expected NotApplicable"
+        $ isNotApplicable r || isNotApplicableUntilConditionChanges r
+appliesUnification =
+    withAppliedUnification $ \attempted -> do
+        results <- expectApplied attempted
+        expectNoRemainders results
+  where
+    expectApplied NotApplicable = assertFailure "Expected Applied"
+    expectApplied (NotApplicableUntilConditionChanges _) =
+        assertFailure "Expected Applied"
+    expectApplied (Applied results) = return results
+    expectNoRemainders =
+        assertBool "Expected no remainders"
+        . isBottom
+        . Lens.view (field @"remainders")
+notAppliesUnification =
+    withAppliedUnification $ \r ->
         assertBool "Expected NotApplicable"
         $ isNotApplicable r || isNotApplicableUntilConditionChanges r
 
@@ -812,6 +1252,64 @@ natSimplifiers =
         , timesEvaluator
         , fibonacciEvaluator
         , factorialEvaluator
+        ]
+
+plusZeroRuleUnification, plusSuccRuleUnification :: Equation VariableName
+plusZeroRuleUnification =
+    functionAxiomUnification_ plusSymbol [zero, varN] varN
+plusSuccRuleUnification =
+    functionAxiomUnification_
+        plusSymbol
+        [succ varM, varN]
+        (succ (plus varM varN))
+
+
+plusRulesUnification :: [Equation VariableName]
+plusRulesUnification = [plusZeroRuleUnification, plusSuccRuleUnification]
+
+plusEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+plusEvaluatorUnification = functionEvaluator plusSymbol plusRulesUnification
+
+timesEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+timesEvaluatorUnification =
+    functionEvaluator timesSymbol
+        [ functionAxiomUnification_ timesSymbol [zero, varN] zero
+        , functionAxiomUnification_
+            timesSymbol
+            [succ varM, varN]
+            (plus varN (times varM varN))
+        ]
+
+fibonacciEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+fibonacciEvaluatorUnification =
+    functionEvaluator fibonacciSymbol
+        [ functionAxiomUnification_ fibonacciSymbol [zero] one
+        , functionAxiomUnification_ fibonacciSymbol [one]  one
+        , functionAxiomUnification_
+            fibonacciSymbol [succ (succ varN)]
+            (plus (fibonacci (succ varN)) (fibonacci varN))
+        ]
+
+factorialEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+factorialEvaluatorUnification =
+    functionEvaluator factorialSymbol
+        [ functionAxiomUnification_
+            factorialSymbol
+            [zero]
+            (succ zero)
+        , functionAxiomUnification_
+            factorialSymbol
+            [succ varN]
+            (times (succ varN) (factorial varN))
+        ]
+
+natSimplifiersUnification :: BuiltinAndAxiomSimplifierMap
+natSimplifiersUnification =
+    Map.fromList
+        [ plusEvaluatorUnification
+        , timesEvaluatorUnification
+        , fibonacciEvaluatorUnification
+        , factorialEvaluatorUnification
         ]
 
 -- | Add an unsatisfiable requirement to the 'Equation'.
@@ -1310,6 +1808,15 @@ axiomEvaluator
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate_)
 
+axiomEvaluatorUnification
+    :: Symbol
+    -> [TermLike VariableName]
+    -> TermLike VariableName
+    -> BuiltinAndAxiomSimplifier
+axiomEvaluatorUnification symbol args right =
+    simplificationEvaluation
+        (functionAxiomUnification symbol args right makeTruePredicate_)
+
 appliedMockEvaluator
     :: Pattern VariableName -> BuiltinAndAxiomSimplifier
 appliedMockEvaluator result =
@@ -1443,4 +1950,17 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = Mock.overloadSimplifier
+        }
+
+testEnvUnification :: Env Simplifier
+testEnvUnification =
+    testEnv
+        { simplifierAxioms =
+            mconcat
+                [ testEvaluators
+                , natSimplifiersUnification
+                , listSimplifiers
+                , mapSimplifiers
+                , fatalSimplifiers
+                ]
         }

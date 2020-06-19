@@ -5,13 +5,13 @@ module TEST
 
   syntax Element ::= "a" | "b" | "c"
 
-  syntax Element ::= g(Element) [function]
+  syntax Element ::= g(Element) [function, functional]
 
   rule g(a) => b
   rule g(b) => c
   rule g(c) => a
   
-  syntax Set ::= f(Set) [function] 
+  syntax Set ::= f(Set) [function, functional] 
 
   rule f(.Set) => .Set
   rule f(SetItem(E:Element) S:Set) => SetItem(g(E)) f(S)
