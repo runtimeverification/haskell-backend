@@ -14,17 +14,6 @@
                     /* Sfa */
                     \equals{SortBool{}, SortGeneratedTopCell{}}(
                         /* Fl Fn D Sfa */
-                        Lbl'Unds-GT-'Int'Unds'{}(
-                            /* Fl Fn D Sfa */ VarX0:SortInt{},
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("8")
-                        ),
-                        /* Fl Fn D Sfa Cl */
-                        /* builtin: */ \dv{SortBool{}}("true")
-                    ),
-                    /* Sfa */
-                    \equals{SortBool{}, SortGeneratedTopCell{}}(
-                        /* Fl Fn D Sfa */
                         Lbl'Unds-LT-'Int'Unds'{}(
                             /* Fl Fn D Sfa */ VarX0:SortInt{},
                             /* Fl Fn D Sfa Cl */
@@ -32,6 +21,20 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         /* builtin: */ \dv{SortBool{}}("true")
+                    ),
+                    /* Sfa */
+                    \not{SortGeneratedTopCell{}}(
+                        /* Sfa */
+                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                            /* Fl Fn D Sfa */
+                            Lbl'Unds-GT-'Int'Unds'{}(
+                                /* Fl Fn D Sfa */ VarX0:SortInt{},
+                                /* Fl Fn D Sfa Cl */
+                                /* builtin: */ \dv{SortInt{}}("8")
+                            ),
+                            /* Fl Fn D Sfa Cl */
+                            /* builtin: */ \dv{SortBool{}}("true")
+                        )
                     )
                 ),
                 /* Sfa */
@@ -77,7 +80,7 @@
             kseq{}(
                 /* Fl Fn D Sfa Cli */
                 /* Inj: */ inj{SortS{}, SortKItem{}}(
-                    /* Fl Fn D Sfa Cl */ Lbltwo'Unds'PRIORITY'Unds'S{}()
+                    /* Fl Fn D Sfa Cl */ Lblone'Unds'PRIORITY'Unds'S{}()
                 ),
                 /* Fl Fn D Sfa */ VarDotVar3:SortK{}
             )
