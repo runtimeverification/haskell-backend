@@ -76,20 +76,20 @@ By alpha-equivalence, we can also move the quantifier outside of `⌈ ⌉`:
 We can optimize this solution in the typical case where
 
 ```
-φ(X) = t₁(X) ∧ P₁(X)
-ψ(X, Y) = t₂(X, Y) ∧ P₂(X, Y)
+φ(X) = t(X) ∧ P(X)
+ψ(X, Y) = ⋁ᵢ tᵢ(X, Y) ∧ Pᵢ(X, Y)
 ```
 
-where `t₁(X)` and `t₂(X, Y)` are term-like patterns
-and `P₁(X)` and `P₂(X, Y)` are predicates.
+where `t(X)` and `tᵢ(X, Y)` are term-like patterns
+and `P(X)` and `Pᵢ(X, Y)` are predicates.
 The unification of the left- and right-hand sides is
 
 ```
 ∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉
 ===
-∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₁(X) ∧ P₂(X, Y)
+⋁ᵢ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ P(X) ∧ Pᵢ(X, Y)
 ===
-P₁(X) ∧ ∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)
+P(X) ∧ ⋁ᵢ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)
 ```
 
 so that
@@ -97,17 +97,17 @@ so that
 ```
 (¬ ∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉) ∧ ⌈φ(X)⌉
 ===
-  ¬ P₁(X) ∧ ⌈φ(X)⌉
+  ¬ P(X) ∧ ⌈φ(X)⌉
 ∨
-  (¬ ∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ ⌈φ(X)⌉
+  (¬ ⋁ᵢ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)) ∧ ⌈φ(X)⌉
 ```
 
 The first term of the above disjuntion is `⊥`,
 
 ```
-¬ P₁(X) ∧ ⌈φ(X)⌉
+¬ P(X) ∧ ⌈φ(X)⌉
 ===
-¬ P₁(X) ∧ ⌈t₁(X)⌉ ∧ P₁(X)
+¬ P(X) ∧ ⌈t(X)⌉ ∧ P(X)
 ===
 ⊥
 ```
@@ -115,25 +115,27 @@ The first term of the above disjuntion is `⊥`,
 leaving only
 
 ```
-(¬ ∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉)              ∧ ⌈φ(X)⌉
+(¬    ∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉            ) ∧ ⌈φ(X)⌉
 ===
-(¬ ∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ ⌈t₁(X)⌉ ∧ P₁(X).
+(¬ ⋁ᵢ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X).
+===
+(⋀ᵢ ¬ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X).
 ```
 
-The sub-term `⌈t₁(X) ∧ t₂(X, Y)⌉` is a unification problem with an efficient internal implementation.
-The unification problem should be solved first because
+The sub-terms `⌈t(X) ∧ tᵢ(X, Y)⌉` are unification problems with an efficient internal implementation.
+The unification problems should be solved first because
 
 ```
-⌈t₁(X) ∧ t₂(X, Y)⌉ → ⌈t₁(X)⌉
+⌈t(X) ∧ tᵢ(X, Y)⌉ → ⌈t(X)⌉
 ```
 
-so that if unification succeeds, there is no need to explicitly consider `⌈t₁(X)⌉`.
-If unification fails, then the negative conjunct is `\top` so that the implication is satisified when `⌈t₁(X)⌉ ∧ P₁(X)` is unsatisfiable.
+so that if unification succeeds on any branch, there is no need to explicitly consider `⌈t(X)⌉`.
+If unification fails, then the negative conjunct is `\top` so that the implication is satisified only when `⌈t(X)⌉ ∧ P(X)` is unsatisfiable.
 Now, the implication is checked in two cases:
 after a configuration is rewritten (in which case the configuration may be rewritten again)
 or after a configuration can no longer be rewritten (a remainder pattern).
 In the case of a rewritten configuration, when unification fails, there is no need to check the rest of the implication pattern:
-the condition `t₁(X) ∧ P₁(X)` itself implies the condition `⌈t₁(X)⌉ ∧ P₁(X)`.
+the condition `t(X) ∧ P(X)` itself implies the condition `⌈t(X)⌉ ∧ P(X)`.
 
 ## Summary
 
@@ -148,21 +150,21 @@ Given the implication
 with
 
 ```
-φ(X) = t₁(X) ∧ P₁(X)
-ψ(X, Y) = t₂(X, Y) ∧ P₂(X, Y)
+φ(X) = t(X) ∧ P(X)
+ψ(X, Y) = ⋁ᵢ tᵢ(X, Y) ∧ Pᵢ(X, Y)
 ```
 
-where `t₁(X)` and `t₂(X, Y)` are term-like patterns
-and `P₁(X)` and `P₂(X, Y)` are predicates,
+where `t(X)` and `tᵢ(X, Y)` are term-like patterns
+and `P(X)` and `Pᵢ(X, Y)` are predicates,
 
-1. Solve the unification problem `⌈t₁(X) ∧ t₂(X, Y)⌉`.
-2. If unification succeeds, evaluate
-   `\not(∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ P₁(X)`.
+1. Solve the unification problems `⌈t(X) ∧ tᵢ(X, Y)⌉`.
+2. If unification succeeds on any branch, evaluate
+   `(⋀ᵢ ¬ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X)`.
    The implication is valid iff the predicate is unsatisfiable.
-3. If unification fails,
+3. If unification fails on all branches,
    1. If `φ(X)` is a remainder pattern, evaluate
-      `⌈t₁(X)⌉ ∧ P₁(X)`.
+      `⌈t(X)⌉ ∧ P(X)`.
       The implication is valid iff the predicate is unsatisfiable.
    2. If `φ(X)` is a rewritten pattern, assume the implication is not valid.
 
-Aside: If we checked `⌈t₁(X)⌉ ∧ P₁(X)` in both cases above, then we could infer that the configuration is defined, which would allow us to do subsequent rewriting without generating extra definedness conditions. The efficiency of this method merits investigation.
+Aside: If we checked `⌈t(X)⌉ ∧ P(X)` in both cases above, then we could infer that the configuration is defined, which would allow us to do subsequent rewriting without generating extra definedness conditions. The efficiency of this method merits investigation.
