@@ -160,11 +160,19 @@ and `P(X)` and `Pᵢ(X, Y)` are predicates,
 1. Solve the unification problems `⌈t(X) ∧ tᵢ(X, Y)⌉`.
 2. If unification succeeds on any branch, evaluate
    `(⋀ᵢ ¬ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X)`.
-   The implication is valid iff the predicate is unsatisfiable.
+   1. If the predicate is unsatisfiable,
+      then the implication is valid.
+   2. If the predicate is satisfiable,
+      conjoin it with the configuration and continue rewriting.
+      (Note: At the time of writing,
+      the backend does not conjoin the predicate with the configuration.
+      This is sound, but not complete.)
 3. If unification fails on all branches,
    1. If `φ(X)` is a remainder pattern, evaluate
       `⌈t(X)⌉ ∧ P(X)`.
       The implication is valid iff the predicate is unsatisfiable.
    2. If `φ(X)` is a rewritten pattern, assume the implication is not valid.
-
-Aside: If we checked `⌈t(X)⌉ ∧ P(X)` in both cases above, then we could infer that the configuration is defined, which would allow us to do subsequent rewriting without generating extra definedness conditions. The efficiency of this method merits investigation.
+      (Aside: If we checked `⌈t(X)⌉ ∧ P(X)` here,
+      then we could infer that the configuration is defined,
+      allowing us to do subsequent rewriting without generating extra definedness conditions.
+      The efficiency of this method merits investigation.)
