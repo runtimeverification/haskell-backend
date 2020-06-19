@@ -1,7 +1,6 @@
 module Test.Kore.Exec
     ( test_exec
     , test_execPriority
-    , test_search
     , test_searchPriority
     , test_searchExceedingBreadthLimit
     , test_execGetExitCode
@@ -214,66 +213,6 @@ test_searchPriority =
                 STAR -> Set.fromList [a, c, d]
                 PLUS -> Set.fromList [c, d]
                 FINAL -> Set.fromList [d]
-
-test_search :: [TestTree]
-test_search =
-    [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
-  where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
-    makeTestCase searchType =
-        testCase ("search " <> show searchType) (assertion searchType)
-    assertion searchType =
-        actual searchType >>= assertEqual "" (expected searchType)
-    actual searchType = do
-        finalPattern <-
-            search
-                Unlimited
-                verifiedModule
-                (Limit.replicate unlimited . priorityAllStrategy)
-                inputPattern
-                searchPattern
-                Search.Config { bound = Unlimited, searchType }
-            & runNoSMT
-        let results =
-                fromMaybe
-                    (error "Expected search results")
-                    (extractSearchResults finalPattern)
-        return results
-    verifiedModule = verifiedMyModule Module
-        { moduleName = ModuleName "MY-MODULE"
-        , moduleSentences =
-            [ asSentence mySortDecl
-            , asSentence $ constructorDecl "a"
-            , asSentence $ constructorDecl "b"
-            , asSentence $ constructorDecl "c"
-            , asSentence $ constructorDecl "d"
-            , asSentence $ constructorDecl "e"
-            , functionalAxiom "a"
-            , functionalAxiom "b"
-            , functionalAxiom "c"
-            , functionalAxiom "d"
-            , functionalAxiom "e"
-            , simpleRewriteAxiom "a" "b"
-            , simpleRewriteAxiom "a" "c"
-            , simpleRewriteAxiom "c" "d"
-            , simpleRewriteAxiom "e" "a"
-            ]
-        , moduleAttributes = Attributes []
-        }
-    inputPattern = applyToNoArgs mySort "a"
-    expected =
-        let
-            a = applyToNoArgs mySort "a"
-            b = applyToNoArgs mySort "b"
-            c = applyToNoArgs mySort "c"
-            d = applyToNoArgs mySort "d"
-        in
-            \case
-                ONE -> Set.fromList [b, c]
-                STAR -> Set.fromList [a, b, c, d]
-                PLUS -> Set.fromList [b, c, d]
-                FINAL -> Set.fromList [b, d]
 
 test_searchExceedingBreadthLimit :: [TestTree]
 test_searchExceedingBreadthLimit =
