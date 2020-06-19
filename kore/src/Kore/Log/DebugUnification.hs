@@ -27,7 +27,7 @@ import qualified Pretty
 
 data DebugUnification
     = DebugUnificationWhile !WhileDebugUnification
-    | DebugUnificationSolved !UnificationSolved
+    | DebugUnificationSolved UnificationSolved
     | DebugUnificationUnsolved !UnificationUnsolved
     deriving Show
 
@@ -71,7 +71,7 @@ instance Pretty UnificationUnsolved where
 
 {- | @UnificationSolved@ represents the solution of a unification problem.
  -}
-data UnificationSolved =
+newtype UnificationSolved =
     UnificationSolved { solution :: Pattern VariableName }
     deriving Show
 
