@@ -154,7 +154,7 @@ attemptEquation
     .  HasCallStack
     => MonadSimplify simplifier
     => InternalVariable variable
-    => SideCondition (Target variable)
+    => SideCondition variable
     -> TermLike (Target variable)
     -> Equation variable
     -> simplifier (AttemptEquationResult variable)
@@ -228,7 +228,7 @@ attemptEquation sideCondition termLike equation =
             let toMatchResult Conditional { predicate, substitution } =
                     (predicate, Substitution.toMap substitution)
             Substitution.mergePredicatesAndSubstitutions
-                sideCondition
+                SideCondition.top
                 ([argument, matchPredicate] <> maybeToList antiLeft)
                 [from @_ @(Substitution _) matchSubstitution]
                 & Logic.observeAllT
@@ -333,7 +333,7 @@ checkRequires
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
-    => SideCondition (Target variable)
+    => SideCondition variable
     -> Predicate variable  -- ^ requires from matching
     -> Predicate variable  -- ^ requires from 'Equation'
     -> ExceptT (CheckRequiresError variable) simplifier ()
@@ -357,13 +357,7 @@ checkRequires sideCondition predicate requires =
     -- and the rule will not be applied.
     & (OrCondition.observeAllT >=> assertBottom)
   where
-    simplifyCondition = Simplifier.simplifyCondition sideCondition'
-
-    -- TODO (thomas.tuegel): Do not unwrap sideCondition.
-    sideCondition' =
-        SideCondition.mapVariables
-            (pure Target.unTarget)
-            sideCondition
+    simplifyCondition = Simplifier.simplifyCondition sideCondition
 
     assertBottom orCondition
       | isBottom orCondition = done
@@ -376,7 +370,7 @@ checkRequires sideCondition predicate requires =
             }
 
     -- Pair a configuration with sideCondition for evaluation by the solver.
-    withSideCondition = (,) sideCondition'
+    withSideCondition = (,) sideCondition
 
     withoutAxioms =
         fmap Condition.forgetSimplified
@@ -392,7 +386,7 @@ The variables are marked 'Target' and renamed to avoid any variables in the
 targetEquationVariables
     :: forall variable
     .  InternalVariable variable
-    => SideCondition (Target variable)
+    => SideCondition variable
     -> TermLike (Target variable)
     -> Equation variable
     -> Equation (Target variable)
@@ -401,7 +395,11 @@ targetEquationVariables sideCondition initial =
     . Equation.refreshVariables avoiding
     . Equation.mapVariables Target.mkUnifiedTarget
   where
-    avoiding = freeVariables sideCondition <> freeVariables initial
+    avoiding = sideConditionVariables <> freeVariables initial
+    sideConditionVariables =
+        FreeVariables.mapFreeVariables
+            Target.mkUnifiedNonTarget
+            $ freeVariables sideCondition
 
 -- * Errors
 
