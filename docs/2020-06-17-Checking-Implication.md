@@ -90,7 +90,7 @@ By alpha-equivalence, we can also move the quantifier outside of `⌈ ⌉`:
 
 ## Optimization
 
-We can optimize this solution the typical case where
+We can optimize this solution in the typical case where
 
 ```
 φ(X) = t₁(X) ∧ P₁(X)
@@ -98,20 +98,43 @@ We can optimize this solution the typical case where
 ```
 
 where `t₁(X)` and `t₂(X, Y)` are term-like patterns
-and `P₁(X)` and `P₂(X, Y)` are predicates:
+and `P₁(X)` and `P₂(X, Y)` are predicates.
+The unification of the left- and right-hand sides is
 
 ```
-\not(∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉) ∧ ⌈φ(X)⌉
+∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉
 ===
-\not(∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₁(X) ∧ P₂(X, Y)) ∧ ⌈t₁(X)⌉ ∧ P₁(X)
+∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₁(X) ∧ P₂(X, Y)
 ===
-\not((∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ P₁(X)) ∧ ⌈t₁(X)⌉ ∧ P₁(X)
+P₁(X) ∧ ∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)
+```
+
+so that
+
+```
+(¬ ∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉) ∧ ⌈φ(X)⌉
 ===
-\or(\not(∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)), ¬ P₁(X)) ∧ ⌈t₁(X)⌉ ∧ P₁(X)
+  ¬ P₁(X) ∧ ⌈φ(X)⌉
+∨
+  (¬ ∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ ⌈φ(X)⌉
+```
+
+The first term of the above disjuntion is `⊥`,
+
+```
+¬ P₁(X) ∧ ⌈φ(X)⌉
 ===
-\or(\not(∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ ⌈t₁(X)⌉ ∧ P₁(X), ¬ P₁(X) ∧ ⌈t₁(X)⌉ ∧ P₁(X))
+¬ P₁(X) ∧ ⌈t₁(X)⌉ ∧ P₁(X)
 ===
-\not(∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ ⌈t₁(X)⌉ ∧ P₁(X)
+⊥
+```
+
+leaving only
+
+```
+(¬ ∃ Y. ⌈φ(X) ∧ ψ(X, Y)⌉)              ∧ ⌈φ(X)⌉
+===
+(¬ ∃ Y. ⌈t₁(X) ∧ t₂(X, Y)⌉ ∧ P₂(X, Y)) ∧ ⌈t₁(X)⌉ ∧ P₁(X).
 ```
 
 The sub-term `⌈t₁(X) ∧ t₂(X, Y)⌉` is a unification problem with an efficient internal implementation.
