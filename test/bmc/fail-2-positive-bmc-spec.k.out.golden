@@ -3,18 +3,12 @@
       #execute
     </k>
     <state>
-      "x" |-> X +Int 1
+      "x" |-> X:Int
     </state>
   </T>
 #And
   {
     X >Int 0
-  #Equals
-    true
-  }
-#And
-  {
-    X >Int 5
   #Equals
     true
   }
