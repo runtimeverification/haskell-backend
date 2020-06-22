@@ -132,9 +132,11 @@ import Kore.Parser
 import Kore.Profiler.Data
     ( MonadProfiler
     )
+import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.RulePattern
     ( ReachabilityRule
+    , RewriteRule
     )
 import qualified Kore.Step.RulePattern as Rule
     ( toSentence
@@ -292,7 +294,7 @@ data KoreExecOptions = KoreExecOptions
     , smtSolver           :: !Solver
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
-    , strategy            :: !(String, [Rewrite] -> Strategy (Prim Rewrite))
+    , strategy            :: !(String, [RewriteRule RewritingVariableName] -> Strategy (Prim (RewriteRule RewritingVariableName)))
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
