@@ -38,6 +38,9 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
+import Control.Monad
+    ( foldM
+    )
 import Control.Monad.Catch
     ( Exception (..)
     , MonadCatch
@@ -99,8 +102,9 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( isElementVariable
     , isFunctionPattern
-    , mkIn_
+    , mkIn
     , retractElementVariable
+    , termLikeSort
     )
 import Kore.Log.DebugProofState
 import Kore.Log.InfoReachability
@@ -969,13 +973,19 @@ removalPatterns
   , isFunctionPattern destTerm
   = do
     unifiedConfigs <-
-        simplifyConditionalTermToOr sideCondition (mkIn_ configTerm destTerm)
+        simplifyConditionalTermToOr
+            sideCondition
+            (mkIn configSort configTerm destTerm)
     if isBottom unifiedConfigs
         then return OrPattern.top
         else do
+            let remainderPatterns =
+                    fmap remainderPattern unifiedConfigs
             existentialRemainders <-
-                OrPattern.flatten
-                <$> traverse evaluateMultipleExists unifiedConfigs
+                foldM
+                    (Exists.simplifyEvaluated sideCondition & flip)
+                    remainderPatterns
+                    extraElemVariables
             Not.simplifyEvaluated sideCondition existentialRemainders
   | otherwise =
       error . show . Pretty.vsep $
@@ -988,29 +998,26 @@ removalPatterns
           , Pretty.indent 4 (unparse destTerm)
           ]
   where
-    evaluateMultipleExists patt = do
-        let extraElemVariables =
-                getExtraElemVariables configuration patt
-            remainderPattern =
-                Pattern.fromCondition
-                . Conditional.withoutTerm
-                $ (const <$> destination <*> patt)
-        Exists.makeEvaluate
-            sideCondition extraElemVariables remainderPattern
     Conditional { term = destTerm } = destination
     (configTerm, configPredicate) = Pattern.splitTerm configuration
     sideCondition = SideCondition.assumeTrueCondition configPredicate
+    configSort = termLikeSort configTerm
+    remainderPattern patt =
+        Pattern.fromCondition
+        . Conditional.withoutTerm
+        $ (const <$> destination <*> patt)
     -- The variables of the destination that are missing from the
     -- configuration. These are the variables which should be existentially
     -- quantified in the removal predicate.
-    getExtraElemVariables config dest =
-        let extraNonElemVariables = remainderNonElemVariables config dest
+    extraElemVariables =
+        let extraNonElemVariables =
+                remainderNonElemVariables configuration destination
         in if not . null $ extraNonElemVariables
             then
                 error . show . Pretty.vsep $
                     "Cannot quantify non-element variables: "
                     : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
-            else remainderElementVariables config dest
+            else remainderElementVariables configuration destination
     configVariables :: Pattern variable -> Set.Set (SomeVariable variable)
     configVariables = FreeVariables.toSet . freeVariables
     destVariables = FreeVariables.toSet . freeVariables
