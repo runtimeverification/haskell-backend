@@ -462,7 +462,7 @@ test_symbolic_eq_not_conclusive :: TestTree
 test_symbolic_eq_not_conclusive =
     testCaseWithSMT "" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
-        let y = mkElemVar $ "y" `ofSort` intSort
+            y = mkElemVar $ "y" `ofSort` intSort
             expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
