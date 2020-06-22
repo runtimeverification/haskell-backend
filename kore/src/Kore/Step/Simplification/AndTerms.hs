@@ -25,7 +25,6 @@ import Prelude.Kore hiding
 
 import Control.Error
     ( MaybeT (..)
-    , mapMaybeT
     )
 import qualified Control.Error as Error
 import qualified Data.Foldable as Foldable
@@ -33,7 +32,6 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.String
     ( fromString
     )
-import qualified Data.Text as Text
 
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
@@ -67,6 +65,11 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Log.DebugUnification
+    ( debugUnificationSolved
+    , debugUnificationUnsolved
+    , whileDebugUnification
+    )
 import Kore.Step.Simplification.CeilSimplifier
     ( CeilSimplifier (..)
     )
@@ -91,7 +94,6 @@ import Kore.Syntax.PatternF
 import Kore.TopBottom
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
-import qualified Log
 import Pair
 import qualified Pretty
 
@@ -122,8 +124,11 @@ termUnification
     -> TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification notSimplifier =
-    termUnificationWorker
+termUnification notSimplifier = \term1 term2 ->
+    whileDebugUnification term1 term2 $ do
+        result <- termUnificationWorker term1 term2
+        debugUnificationSolved result
+        pure result
   where
     termUnificationWorker
         :: TermLike variable
@@ -139,10 +144,11 @@ termUnification notSimplifier =
             pure
             maybeTermUnification
 
-    incompleteUnificationPattern term1 term2 =
-        return
-        . Pattern.fromTermLike
-        $ mkAnd term1 term2
+    incompleteUnificationPattern term1 term2 = do
+        debugUnificationUnsolved term1 term2
+        mkAnd term1 term2
+            & Pattern.fromTermLike
+            & return
 
 maybeTermEquals
     :: InternalVariable variable
@@ -219,81 +225,42 @@ andEqualsFunctions
     => HasCallStack
     => NotSimplifier unifier
     -> [(SimplificationTarget, TermTransformation variable unifier)]
-andEqualsFunctions notSimplifier = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s), "expandAlias")
-    , (AndT,    \_ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (BothT,   \_ _ _ -> bytesDifferent, "bytesDifferent")
-    , (EqualsT, \p _ _ -> bottomTermEquals p, "bottomTermEquals")
-    , (EqualsT, \p _ _ -> termBottomEquals p, "termBottomEquals")
-    , (BothT,   \p t _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
-    , (BothT,   \p t _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
-    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ s -> sortInjectionAndEquals s, "sortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues, "Builtin.Bool.unifyBoolValues")
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s, "Builtin.Bool.unifyBoolAnd")
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s, "Builtin.Bool.unifyBoolOr")
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s, "Builtin.Bool.unifyBoolNot")
-    , (EqualsT, \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier, "Builtin.KEqual.termKEquals")
-    , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s, "Builtin.KEqual.unifyIfThenElse")
-    , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
-    , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier ceilSimplifier, "Builtin.Map.unifyNotInKeys")
-    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
-    , (BothT,   \_ t s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
-    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
+andEqualsFunctions notSimplifier =
+    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
+    , (AndT,    \_ _ _ -> boolAnd)
+    , (BothT,   \_ _ _ -> equalAndEquals)
+    , (BothT,   \_ _ _ -> bytesDifferent)
+    , (EqualsT, \p _ _ -> bottomTermEquals p)
+    , (EqualsT, \p _ _ -> termBottomEquals p)
+    , (BothT,   \p t _ -> variableFunctionAndEquals p t)
+    , (BothT,   \p t _ -> functionVariableAndEquals p t)
+    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s)
+    , (BothT,   \_ _ s -> sortInjectionAndEquals s)
+    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals)
+    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads)
+    , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s)
+    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues)
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
+    , (EqualsT, \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier)
+    , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
+    , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
+    , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
+    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s)
+    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier ceilSimplifier)
+    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s)
+    , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
+    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
+    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent)
+    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent)
+    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2)
     ]
   where
 
     ceilSimplifier =
         CeilSimplifier $ \Ceil { ceilChild } ->
             Ceil.makeEvaluateTerm SideCondition.topTODO ceilChild
-
-    mapEqualsFunctions (target, termTransform, name) =
-        (target, logTT name termTransform)
-
-    logTT
-        :: String
-        -> TermTransformation variable unifier
-        -> TermTransformation variable unifier
-    logTT fnName termTransformation predicate sType ts t1 t2 =
-        mapMaybeT (\getResult -> do
-            mresult <- getResult
-            case mresult of
-                Nothing -> do
-                    Log.logDebug . Text.pack . show
-                        $ Pretty.hsep
-                            [ "Evaluator"
-                            , Pretty.pretty fnName
-                            , "does not apply."
-                            ]
-                    return mresult
-                Just result -> do
-                    Log.logDebug . Text.pack . show
-                        $ Pretty.vsep
-                            [ Pretty.hsep
-                                [ "Evaluator"
-                                , Pretty.pretty fnName
-                                ]
-                            , Pretty.indent 4 $ Pretty.vsep
-                                [ "First:"
-                                , Pretty.indent 4 $ unparse t1
-                                , "Second:"
-                                , Pretty.indent 4 $ unparse t2
-                                , "Result:"
-                                , Pretty.indent 4 $ unparse result
-                                ]
-                            ]
-                    return mresult
-            )
-            $ termTransformation predicate sType ts t1 t2
 
 {- | Construct the conjunction or unification of two terms.
 
