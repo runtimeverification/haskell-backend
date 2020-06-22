@@ -18,6 +18,7 @@ module Test.Kore.Builtin.Int
     , test_unifyAndEqual_Equal
     , test_unifyAnd_Fn
     , test_reflexivity_symbolic
+    , test_symbolic_eq_not_conclusive
     , hprop_unparse
     --
     , asInternal
@@ -137,18 +138,6 @@ testComparison symb impl =
         (===) expect actual
   where
     name = expectHook symb
-
-test_reflexivity_symbolic :: TestTree
-test_reflexivity_symbolic =
-    testPropertyWithSolver (Text.unpack name) $ do
-        let x = mkElemVar $ "x" `ofSort` intSort
-            expect = Test.Bool.asPattern $ (==) x x
-        actual <- evaluateT $ mkApplySymbol eqIntSymbol [x, x]
-        expect === actual
-  where
-    name = expectHook eqIntSymbol
-    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-    ofSort idName sort = mkElementVariable (testId idName) sort
 
 -- | Test a partial unary operator hooked to the given symbol.
 testPartialUnary
@@ -458,6 +447,28 @@ test_unifyAnd_Fn =
         actual <- evaluateT $ mkAnd dv fnPat
         (===) expect actual
 
+test_reflexivity_symbolic :: TestTree
+test_reflexivity_symbolic =
+    testCaseWithSMT "" $ do
+        let x = mkElemVar $ "x" `ofSort` intSort
+            expect = Test.Bool.asPattern True
+        actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
+        assertEqual' "" expect actual
+  where
+    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+    ofSort idName sort = mkElementVariable (testId idName) sort
+
+test_symbolic_eq_not_conclusive :: TestTree
+test_symbolic_eq_not_conclusive =
+    testCaseWithSMT "" $ do
+        let x = mkElemVar $ "x" `ofSort` intSort
+        let y = mkElemVar $ "y" `ofSort` intSort
+            expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
+        actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
+        assertEqual' "" expect actual
+  where
+    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+    ofSort idName sort = mkElementVariable (testId idName) sort
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)

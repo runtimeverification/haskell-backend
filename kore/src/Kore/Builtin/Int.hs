@@ -337,7 +337,7 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
     concrete <|> symbolicReflexivity
   where
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | TermLike.isFunctionalPattern termLike = Condition.topOf resultSort
       | otherwise =
         Condition.fromPredicate (makeCeilPredicate resultSort termLike)
     returnPattern = return . flip Pattern.andCondition conditions
@@ -348,14 +348,15 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
         _intRight <- expectBuiltinInt eqKey _intRight
         _intLeft == _intRight
             & Bool.asPattern resultSort
-            & returnPattern
+            & return
 
     symbolicReflexivity =
-        case (Recursive.project _intLeft, Recursive.project _intRight) of
-            (_ :< VariableF varLeft, _ :< VariableF varRight) ->
-                varLeft == varRight
-                    & Bool.asPattern resultSort
-                    & returnPattern
-            _ -> empty
+        let (_ :< patternLeft) = Recursive.project _intLeft
+            (_ :< patternRight) = Recursive.project _intRight
+        in
+        if patternLeft == patternRight then
+            True & Bool.asPattern resultSort & returnPattern
+        else
+            empty
 
 evalEq _ _ = Builtin.wrongArity eqKey
