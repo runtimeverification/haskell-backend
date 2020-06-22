@@ -222,14 +222,14 @@ attemptEquation sideCondition termLike equation =
     simplifyArgumentWithResult
         argument
         antiLeft
-        (matchPredicate, matchSubstitution)
+        (_, matchSubstitution)
       =
         lift $ do
             let toMatchResult Conditional { predicate, substitution } =
                     (predicate, Substitution.toMap substitution)
             Substitution.mergePredicatesAndSubstitutions
                 SideCondition.top
-                ([argument, matchPredicate] <> maybeToList antiLeft)
+                (argument : maybeToList antiLeft)
                 [from @_ @(Substitution _) matchSubstitution]
                 & Logic.observeAllT
                 & (fmap . fmap) toMatchResult
