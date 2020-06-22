@@ -25,8 +25,12 @@ module Kore.Exec
 import Prelude.Kore
 
 import Control.Concurrent.MVar
-import Control.Error.Util
+import Control.Error
     ( note
+    , runMaybeT
+    )
+import Control.Monad
+    ( (>=>)
     )
 import Control.Monad.Catch
     ( MonadCatch
@@ -150,11 +154,12 @@ import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Rule as Rule
 import Kore.Step.Simplification.Simplify
-    ( BuiltinAndAxiomSimplifierMap
-    , MonadSimplify
-    , TermLikeSimplifier
+    ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
+import Kore.Step.Transition
+    ( runTransitionT
+    )
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
@@ -175,32 +180,20 @@ import Log
     ( MonadLog
     )
 import qualified Log
+import qualified Logic
 import SMT
     ( MonadSMT
     , SMT
     )
 
--- | Configuration used in symbolic execution.
-type Config = Pattern VariableName
-
 -- | Semantic rule used during execution.
-type Rewrite = RewriteRule VariableName
+type Rewrite = RewriteRule RewritingVariableName
 
 -- | Function rule used during execution.
 type Equality = Equation VariableName
 
-type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule VariableName)
-
 -- | A collection of rules and simplifiers used during execution.
 newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
-
--- | The products of execution: an execution graph, and assorted simplifiers.
-data Execution =
-    Execution
-        { simplifier :: !TermLikeSimplifier
-        , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
-        , executionGraph :: !ExecutionGraph
-        }
 
 -- | Symbolic execution
 exec
@@ -220,15 +213,37 @@ exec
     -> smt (TermLike VariableName)
 exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
-        execution <- execute breadthLimit verifiedModule' strategy initialTerm
-        let
-            Execution { executionGraph } = execution
-            finalConfig = pickLongest executionGraph
-            finalTerm =
-                forceSort patternSort
-                $ Pattern.toTermLike finalConfig
+        initialized <- initialize verifiedModule
+        let Initialized { rewriteRules } = initialized
+        finalConfig <-
+            getFinalConfigOf $ do
+                initialConfig <-
+                    Pattern.simplify SideCondition.top
+                        (Pattern.fromTermLike initialTerm)
+                    >>= Logic.scatter
+                let
+                    updateQueue = \as ->
+                        Strategy.unfoldDepthFirst as
+                        >=> lift . Strategy.applyBreadthLimit breadthLimit
+                    transit instr config =
+                        Strategy.transitionRule transitionRule instr config
+                        & runTransitionT
+                        & fmap (map fst)
+                        & lift
+                Strategy.leavesM
+                    updateQueue
+                    (Strategy.unfoldTransition transit)
+                    (strategy rewriteRules, initialConfig)
+        let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return finalTerm
   where
+    -- Get the first final configuration of an execution graph.
+    getFinalConfigOf = takeFirstResult >=> orElseBottom
+      where
+        takeResult = snd
+        takeFirstResult act =
+            Logic.observeT (takeResult <$> lift act) & runMaybeT
+        orElseBottom = pure . fromMaybe (Pattern.bottomOf initialSort)
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -238,7 +253,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
     -- because MetadataTools doesn't retain any knowledge of the patterns which
     -- are internalized.
     metadataTools = MetadataTools.build verifiedModule
-    patternSort = termLikeSort initialTerm
+    initialSort = termLikeSort initialTerm
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
@@ -292,9 +307,20 @@ search
 search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
   =
     evalSimplifier verifiedModule $ do
-        execution <- execute breadthLimit verifiedModule strategy termLike
+        initialized <- initialize verifiedModule
+        let Initialized { rewriteRules } = initialized
+        simplifiedPatterns <-
+            Pattern.simplify SideCondition.top
+            $ Pattern.fromTermLike termLike
         let
-            Execution { executionGraph } = execution
+            initialPattern =
+                case MultiOr.extractPatterns simplifiedPatterns of
+                    [] -> Pattern.bottomOf (termLikeSort termLike)
+                    (config : _) -> config
+            runStrategy' =
+                runStrategy breadthLimit transitionRule (strategy rewriteRules)
+        executionGraph <- runStrategy' initialPattern
+        let
             match target config = Search.matchWith target config
         solutionsLists <-
             searchGraph
@@ -434,7 +460,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
         assertSingleClaim specClaims
-        let axioms = fmap Bounded.Axiom rewriteRules
+        let axioms = fmap (Bounded.Axiom . unRewritingRule) rewriteRules
             claims = fmap makeImplicationRule specClaims
 
         Bounded.checkClaim
@@ -497,7 +523,8 @@ mergeRules ruleMerger verifiedModule ruleNames =
 
         let nonEmptyRules :: Either Text (NonEmpty (RewriteRule VariableName))
             nonEmptyRules = do
-                rules <- extractRules rewriteRules ruleNames
+                let rewriteRules' = unRewritingRule <$> rewriteRules
+                rules <- extractRules rewriteRules' ruleNames
                 case rules of
                     [] -> Left "Empty rule list."
                     (r : rs) -> Right (r :| rs)
@@ -596,41 +623,6 @@ simplifyReachabilityRule rule = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
     return (Goal.fromRulePattern rule . getRewriteRule $ rule')
 
--- | Construct an execution graph for the given input pattern.
-execute
-    :: (MonadSimplify simplifier, MonadThrow simplifier)
-    => Limit Natural
-    -> VerifiedModule StepperAttributes
-    -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike VariableName
-    -- ^ The input pattern
-    -> simplifier Execution
-execute breadthLimit verifiedModule strategy inputPattern = do
-    initialized <- initialize verifiedModule
-    let Initialized { rewriteRules } = initialized
-    simplifier <- Simplifier.askSimplifierTermLike
-    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
-    simplifiedPatterns <-
-        Pattern.simplify SideCondition.top
-        $ Pattern.fromTermLike inputPattern
-    let
-        initialPattern =
-            case MultiOr.extractPatterns simplifiedPatterns of
-                [] -> Pattern.bottomOf patternSort
-                (config : _) -> config
-          where
-            patternSort = termLikeSort inputPattern
-        runStrategy' =
-            runStrategy breadthLimit transitionRule (strategy rewriteRules)
-    executionGraph <- runStrategy' initialPattern
-    return Execution
-        { simplifier
-        , axiomIdToSimplifier
-        , executionGraph
-        }
-
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
     :: forall simplifier
@@ -651,7 +643,7 @@ initialize verifiedModule = do
         $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
     rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
         mapM simplifyToList rewriteRules
-    pure Initialized { rewriteRules = concat rewriteAxioms }
+    pure Initialized { rewriteRules = mkRewritingRule <$> concat rewriteAxioms }
 
 data InitializedProver =
     InitializedProver
@@ -703,7 +695,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     simplifiedSpecClaims <- mapM simplifyToList specClaims
     claims <- Profiler.initialization "simplifyRuleOnSecond"
         $ traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
-    let axioms = coerce . mkRewritingRule <$> rewriteRules
+    let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where
