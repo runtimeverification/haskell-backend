@@ -10,7 +10,6 @@ Expose concrete execution as a library
 -}
 module Kore.Exec
     ( exec
-    , execGetExitCode
     , extractRules
     , mergeAllRules
     , mergeRulesConsecutiveBatches
@@ -46,6 +45,7 @@ import Data.Foldable
     ( find
     , traverse_
     )
+import qualified Data.List as List
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -210,7 +210,7 @@ exec
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
-    -> smt (TermLike VariableName)
+    -> smt (ExitCode, TermLike VariableName)
 exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
@@ -234,8 +234,9 @@ exec breadthLimit verifiedModule strategy initialTerm =
                     updateQueue
                     (Strategy.unfoldTransition transit)
                     (strategy rewriteRules, initialConfig)
+        exitCode <- getExitCode verifiedModule finalConfig
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
-        return finalTerm
+        return (exitCode, finalTerm)
   where
     -- Get the first final configuration of an execution graph.
     getFinalConfigOf = takeFirstResult >=> orElseBottom
@@ -256,33 +257,34 @@ exec breadthLimit verifiedModule strategy initialTerm =
     initialSort = termLikeSort initialTerm
 
 -- | Project the value of the exit cell, if it is present.
-execGetExitCode
-    ::  ( MonadIO smt
-        , MonadLog smt
-        , MonadProfiler smt
-        , MonadSMT smt
-        , MonadThrow smt
-        )
+getExitCode
+    :: (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike VariableName
-    -- ^ The final pattern (top cell) to extract the exit code
-    -> smt ExitCode
-execGetExitCode indexedModule strategy' finalTerm =
-    case resolveInternalSymbol indexedModule $ noLocationId "LblgetExitCode" of
-        Nothing -> return ExitSuccess
-        Just mkExitCodeSymbol -> do
-            exitCodePattern <-
-                -- TODO (thomas.tuegel): Run in original execution context.
-                exec (Limit 1) indexedModule strategy'
-                $ mkApplySymbol (mkExitCodeSymbol []) [finalTerm]
-            case exitCodePattern of
-                Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
-                  | exit == 0 -> return ExitSuccess
-                  | otherwise -> return $ ExitFailure $ fromInteger exit
-                _ -> return $ ExitFailure 111
+    -> Pattern VariableName
+    -- ^ The final configuration(s) of execution
+    -> simplifier ExitCode
+getExitCode indexedModule finalConfig =
+    takeExitCode $ \mkExitCodeSymbol -> do
+        let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
+        exitCodePattern <-
+            Pattern.simplifyTopConfiguration (mkGetExitCode <$> finalConfig)
+            >>= Logic.scatter
+        case Pattern.term exitCodePattern of
+            Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
+              | exit == 0 -> return ExitSuccess
+              | otherwise -> return $ ExitFailure $ fromInteger exit
+            _ -> return $ ExitFailure 111
+  where
+    resolve = resolveInternalSymbol indexedModule . noLocationId
+    takeExitCode act = do
+        case resolve "LblgetExitCode" of
+            Nothing -> pure ExitSuccess
+            Just mkGetExitCodeSymbol -> do
+                exitCodes <- Logic.observeAllT (act mkGetExitCodeSymbol)
+                case List.nub exitCodes of
+                    [exit] -> pure exit
+                    _      -> pure $ ExitFailure 111
 
 -- | Symbolic search
 search
