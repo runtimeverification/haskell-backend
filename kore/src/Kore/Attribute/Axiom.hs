@@ -210,6 +210,9 @@ instance
 instance From (Axiom symbol variable) (Priority, Owise) where
     from Axiom { priority, owise } = (priority, owise)
 
+instance From (Axiom symbol variable) HeatCool where
+    from Axiom { heatCool } = heatCool
+
 instance SQL.Column (Axiom SymbolOrAlias VariableName) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn tableName _ =
