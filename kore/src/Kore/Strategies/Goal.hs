@@ -66,7 +66,6 @@ import Data.List.Extra
     ( groupSortOn
     , sortOn
     )
-import qualified Data.Set as Set
 import Data.Stream.Infinite
     ( Stream (..)
     )
@@ -76,7 +75,6 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
@@ -100,10 +98,8 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( isElementVariable
-    , isFunctionPattern
+    ( isFunctionPattern
     , mkIn
-    , retractElementVariable
     , termLikeSort
     )
 import Kore.Log.DebugProofState
@@ -814,7 +810,7 @@ removeDestination lensRulePattern mkState goal =
         -> m (ProofState goal (RulePattern VariableName))
     removeDestinationWorker rulePattern =
         do
-            removal <- removalPatterns destination configuration
+            removal <- removalPatterns destination configuration existentials
             when (isTop removal) (succeed . mkState $ rulePattern)
             let configAndRemoval =
                     fmap (configuration <*) removal
@@ -836,6 +832,10 @@ removeDestination lensRulePattern mkState goal =
         destination =
             Lens.view (field @"rhs") rulePattern
             & topExistsToImplicitForall configFreeVars
+        existentials =
+            Lens.view (field @"existentials")
+            . Lens.view (field @"rhs")
+            $ rulePattern
 
         succeed :: r -> ExceptT r m a
         succeed = throwE
@@ -965,10 +965,13 @@ removalPatterns
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
+    -> [ElementVariable variable]
+    -- ^ existentially quantified variables
     -> m (OrPattern variable)
 removalPatterns
     destination
     configuration
+    existentials
   | isFunctionPattern configTerm
   , isFunctionPattern destTerm
   = do
@@ -985,7 +988,7 @@ removalPatterns
                 foldM
                     (Exists.simplifyEvaluated sideCondition & flip)
                     remainderPatterns
-                    extraElemVariables
+                    existentials
             Not.simplifyEvaluated sideCondition existentialRemainders
   | otherwise =
       error . show . Pretty.vsep $
@@ -1006,32 +1009,6 @@ removalPatterns
         Pattern.fromCondition
         . Conditional.withoutTerm
         $ (const <$> destination <*> patt)
-    -- The variables of the destination that are missing from the
-    -- configuration. These are the variables which should be existentially
-    -- quantified in the removal predicate.
-    extraElemVariables =
-        let extraNonElemVariables =
-                remainderNonElemVariables configuration destination
-        in if not . null $ extraNonElemVariables
-            then
-                error . show . Pretty.vsep $
-                    "Cannot quantify non-element variables: "
-                    : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
-            else remainderElementVariables configuration destination
-    configVariables :: Pattern variable -> Set.Set (SomeVariable variable)
-    configVariables = FreeVariables.toSet . freeVariables
-    destVariables = FreeVariables.toSet . freeVariables
-    remainderVariables config dest =
-        Set.toList
-        $ Set.difference
-            (destVariables dest)
-            (configVariables config)
-    remainderNonElemVariables config dest =
-        filter (not . isElementVariable) (remainderVariables config dest)
-    remainderElementVariables config dest =
-        mapMaybe
-            retractElementVariable
-            (remainderVariables config dest)
 
 getConfiguration :: ReachabilityRule -> Pattern VariableName
 getConfiguration (toRulePattern -> RulePattern { left, requires }) =
