@@ -59,6 +59,7 @@ import Kore.Internal.TermLike
     , mkImplies
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
 import Kore.Sort
     ( Sort (..)
     )
@@ -139,7 +140,7 @@ takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
     $ runSimplifier mockEnv
-    $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
+    $ makeExecutionGraph start (mkRewritingRule . unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
@@ -229,8 +230,8 @@ actualTwoAxioms =
             , predicate = makeTruePredicate_
             , substitution = mempty
             }
-        [ rewriteIdentity
-        , rewriteImplies
+        [ mkRewritingRule rewriteIdentity
+        , mkRewritingRule rewriteImplies
         ]
 
 initialFailSimple :: Pattern VariableName
@@ -251,7 +252,7 @@ actualFailSimple :: IO [Pattern VariableName]
 actualFailSimple =
     runStep
         initialFailSimple
-        [ RewriteRule $ rulePattern
+        [ mkRewritingRule . RewriteRule $ rulePattern
             (metaSigma
                     (mkElemVar $ x1 Mock.testSort)
                     (mkElemVar $ x1 Mock.testSort)
@@ -277,7 +278,7 @@ actualFailCycle :: IO [Pattern VariableName]
 actualFailCycle =
     runStep
         initialFailCycle
-        [ RewriteRule $ rulePattern
+        [ mkRewritingRule . RewriteRule $ rulePattern
             (metaSigma
                     (metaF (mkElemVar $ x1 Mock.testSort))
                     (mkElemVar $ x1 Mock.testSort)
@@ -300,7 +301,7 @@ actualIdentity :: IO [Pattern VariableName]
 actualIdentity =
     runStep
         initialIdentity
-        [ rewriteIdentity ]
+        [ mkRewritingRule rewriteIdentity ]
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
@@ -368,7 +369,7 @@ test_SMT =
         -- Expected: a | f(b) < 0
         [ _actual1 ] <- runStepMockEnv
             (smtPattern Mock.b PredicatePositive)
-            [ RewriteRule RulePattern
+            [ mkRewritingRule $ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , requires =
@@ -376,7 +377,7 @@ test_SMT =
                 , rhs = injectTermIntoRHS Mock.a
                 , attributes = def
                 }
-            , RewriteRule RulePattern
+            , mkRewritingRule $ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , rhs = injectTermIntoRHS Mock.c
@@ -407,7 +408,7 @@ test_SMT =
                     (Mock.builtinBool True)
                 , substitution = mempty
                 }
-            [ RewriteRule RulePattern
+            [ mkRewritingRule $ RewriteRule RulePattern
                 { left = Mock.functionalConstr10 (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , rhs = injectTermIntoRHS Mock.a
@@ -456,7 +457,7 @@ actualUnificationError =
             , predicate = makeTruePredicate_
             , substitution = mempty
             }
-        [axiomMetaSigmaId]
+        [mkRewritingRule axiomMetaSigmaId]
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
@@ -524,7 +525,7 @@ metaI p = mkApplySymbol iSymbol [p]
 runStep
     :: Pattern VariableName
     -- ^left-hand-side of unification
-    -> [RewriteRule VariableName]
+    -> [RewriteRule RewritingVariableName]
     -> IO [Pattern VariableName]
 runStep configuration axioms =
     (<$>) pickFinal
@@ -534,7 +535,7 @@ runStep configuration axioms =
 runStepMockEnv
     :: Pattern VariableName
     -- ^left-hand-side of unification
-    -> [RewriteRule VariableName]
+    -> [RewriteRule RewritingVariableName]
     -> IO [Pattern VariableName]
 runStepMockEnv configuration axioms =
     (<$>) pickFinal

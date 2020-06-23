@@ -4,8 +4,6 @@ License     : NCSA
 
 -}
 
-{-# OPTIONS_GHC -fno-prof-auto #-}
-
 module Log
     (
     -- * Entries
@@ -74,10 +72,6 @@ import qualified Control.Monad.Trans.State.Strict as Strict
 import Data.Generics.Product
     ( field
     )
-import Data.Sequence
-    ( Seq
-    )
-import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -191,7 +185,7 @@ logError
 logError = log Error
 
 -- ---------------------------------------------------------------------
--- * LoggerT
+-- * MonadLog
 
 class Monad m => MonadLog m where
     logEntry :: Entry entry => entry -> m ()
@@ -233,17 +227,20 @@ instance MonadLog log => MonadLog (ReaderT a log)
 
 instance MonadLog log => MonadLog (Strict.StateT state log)
 
-data LoggerEnv monad =
-    LoggerEnv
-        { logAction :: !(LogAction monad ActualEntry)
-        , context :: !(Seq SomeEntry)
-        }
-    deriving (GHC.Generic)
+-- ---------------------------------------------------------------------
+-- * LoggerT
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LoggerEnv m) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
+
+data LoggerEnv monad =
+    LoggerEnv
+        { logAction :: !(LogAction monad ActualEntry)
+        , context :: ![SomeEntry]
+        }
+    deriving (GHC.Generic)
 
 askLogAction :: Monad m => LoggerT m (LogAction m SomeEntry)
 askLogAction = LoggerT $ do
@@ -266,12 +263,11 @@ instance Monad m => MonadLog (LoggerT m) where
         lift $ someLogAction <& toEntry entry
     {-# INLINE logEntry #-}
 
-    logWhile !entry2 action = do
+    logWhile entry2 action = do
         logEntry entry2
         LoggerT . addContext $ getLoggerT action
       where
-        addContext =
-            local $ Lens.over (field @"context") (Seq.|> toEntry entry2)
+        addContext = local $ Lens.over (field @"context") (toEntry entry2 :)
     {-# INLINE logWhile #-}
 
 instance MonadTrans LoggerT where

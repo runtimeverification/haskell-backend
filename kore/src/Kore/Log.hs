@@ -50,9 +50,6 @@ import Control.Monad.Cont
     ( ContT (..)
     , runContT
     )
-import Data.Foldable
-    ( toList
-    )
 import Data.Functor.Contravariant
     ( contramap
     )
@@ -274,15 +271,17 @@ makeKoreLogger exeName timestampSwitch logToText =
             $ lookupTextFromTypeWithError
             $ typeOfSomeEntry entry
         context' =
-            mapMaybe
-                addTypeToDoc
-                entryContext
-                & toList
-        addTypeToDoc se =
-            fmap (\doc ->
-                Pretty.hsep [Pretty.parens (type' se), doc <> Pretty.colon])
-            . shortDoc
-            $ se
+            entryContext
+            & mapMaybe prettyContext
+            & reverse
+        prettyContext someEntry' =
+            shortDoc someEntry'
+            & fmap
+                (\doc ->
+                     Pretty.hsep [Pretty.parens typeName, doc <> Pretty.colon]
+                )
+          where
+            typeName = type' someEntry'
     indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.
