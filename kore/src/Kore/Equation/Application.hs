@@ -41,6 +41,9 @@ import qualified Data.Foldable as Foldable
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -170,8 +173,8 @@ attemptEquation sideCondition termLike equation =
                 Just argument' -> do
                     matchResults <-
                         whileMatch
-                        $ match left termLike
-                        >>= simplifyArgumentWithResult argument' antiLeft
+                        $ (match left termLike & fmap snd)
+                        >>= applySubstitutionAndSimplify argument' antiLeft
                     applyAndSelectMatchResult matchResults
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires
@@ -210,19 +213,19 @@ attemptEquation sideCondition termLike equation =
         debugAttemptEquationResult equation result
         return result
 
-    simplifyArgumentWithResult
+    applySubstitutionAndSimplify
         :: HasCallStack
         => Predicate (Target variable)
         -> Maybe (Predicate (Target variable))
-        -> MatchResult (Target variable)
+        -> Map (SomeVariableName (Target variable)) (TermLike (Target variable))
         -> ExceptT
             (MatchError (Target variable))
             simplifier
             [MatchResult (Target variable)]
-    simplifyArgumentWithResult
+    applySubstitutionAndSimplify
         argument
         antiLeft
-        (_, matchSubstitution)
+        matchSubstitution
       =
         lift $ do
             let toMatchResult Conditional { predicate, substitution } =
