@@ -1,6 +1,6 @@
 module Test.Kore.Step.RulePattern
     ( test_freeVariables
-    , test_refreshRulePattern
+    , test_refreshRule
     ) where
 
 import Prelude.Kore
@@ -32,9 +32,9 @@ test_freeVariables =
             actual = freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
-test_refreshRulePattern :: TestTree
-test_refreshRulePattern =
-    testCase "Rename target variables" $ do
+test_refreshRule :: [TestTree]
+test_refreshRule =
+    [ testCase "Rename target variables" $ do
         let avoiding :: FreeVariables VariableName
             avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
@@ -54,6 +54,17 @@ test_refreshRulePattern =
         assertBool
             "Expected no free variables in common with original RulePattern"
             (all notAvoided (FreeVariables.toList free'))
+    , testCase "no stale variables" $ do
+        let (renaming, _) = refreshRule mempty testRulePattern
+        assertBool "expected not to rename variables" (null renaming)
+    , testCase "stale existentials" $ do
+        let input = testRulePattern { left = mkElemVar Mock.y }
+            (_, RulePattern { rhs }) = refreshRule mempty input
+        assertBool "expected to refresh existentials"
+            (not . elem Mock.y $ existentials rhs)
+        assertBool "expected to substitute fresh variables"
+            ((/=) (mkElemVar Mock.y) $ right rhs)
+    ]
 
 testRulePattern :: RulePattern VariableName
 testRulePattern =
