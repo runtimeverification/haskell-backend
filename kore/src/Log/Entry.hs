@@ -31,10 +31,6 @@ import Control.Lens.Prism
 import Data.Proxy
     ( Proxy (..)
     )
-import Data.Sequence
-    ( Seq
-    )
-import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -92,15 +88,14 @@ entryTypeText (SomeEntry entry) =
 data ActualEntry =
     ActualEntry
         { actualEntry :: !SomeEntry
-        , entryContext :: !(Seq SomeEntry)
+        , entryContext :: ![SomeEntry]
         }
 
 instance From ActualEntry SomeEntry where
     from ActualEntry { actualEntry } = actualEntry
 
 instance From SomeEntry ActualEntry where
-    from actualEntry =
-        ActualEntry { actualEntry, entryContext = Seq.empty }
+    from actualEntry = ActualEntry { actualEntry, entryContext = mempty }
 
 prettySeverity :: Severity -> Pretty.Doc ann
 prettySeverity = Pretty.pretty . show
