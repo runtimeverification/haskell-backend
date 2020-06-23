@@ -902,11 +902,14 @@ deriveWith
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 deriveWith lensRulePattern mkRule takeStep rewrites goal =
-    (\x -> getCompose $ x goal)
-    $ Lens.traverseOf (lensRulePattern . RulePattern.leftPattern)
-    $ \config -> Compose $ withConfiguration config $ do
-        results <- takeStep rewrites config & lift
-        deriveResults mkRule results
+    getCompose
+    $ Lens.forOf lensRulePattern goal
+    $ \rulePattern ->
+        fmap (snd . Step.refreshRule mempty)
+        $ Lens.forOf RulePattern.leftPattern rulePattern
+        $ \config -> Compose $ withConfiguration config $ do
+            results <- takeStep rewrites config & lift
+            deriveResults mkRule results
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
