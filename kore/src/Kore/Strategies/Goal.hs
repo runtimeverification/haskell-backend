@@ -1007,8 +1007,7 @@ removalPatterns
     configSort = termLikeSort configTerm
     remainderPattern patt =
         Pattern.fromCondition
-        . Conditional.withoutTerm
-        $ (const <$> destination <*> patt)
+        $ on (<>) Conditional.withoutTerm destination patt
 
 getConfiguration :: ReachabilityRule -> Pattern VariableName
 getConfiguration (toRulePattern -> RulePattern { left, requires }) =
