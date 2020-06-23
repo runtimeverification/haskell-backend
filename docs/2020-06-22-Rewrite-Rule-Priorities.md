@@ -117,13 +117,13 @@ Let's see if the two are equivalent:
     ∧ ¬ ⌈ ∃ X₁ . C(Y) ∧ φ₁(X₁) ⌉
     ∧ ψ₂(X)
 ===
-// ∃ X₁ . A ∧ B(X)  ===  A ∧ ∃ X₁ . B(X)
+// ∃ X . A ∧ B(X)  ===  A ∧ ∃ X . B(X)
 ∃ X .
     ⌈ C(Y) ∧ φ₂(X) ⌉
     ∧ ¬ ⌈ C(Y) ∧ ∃ X₁ . φ₁(X₁) ⌉
     ∧ ψ₂(X)
 ===
-// ⌈ A ⌉ ∧ P === ⌈ A ∧ P ⌉
+// If P is a predicate, ⌈ A ⌉ ∧ P === ⌈ A ∧ P ⌉
 ∃ X .
     ⌈
         C(Y) ∧ φ₂(X)
@@ -165,9 +165,9 @@ rules at previous priorities:
 and we encode the rule as:
 ```
     φ(X) ∧ P(X)
-    ∧ (¬ ∃ X₁ . φ₁(X₁) ∧ P₁(X₁))
+    ∧ ¬ (∃ X₁ . φ₁(X₁) ∧ P₁(X₁))
     ...
-    ∧ (¬ ∃ Xn . φn(Xn) ∧ Pn(Xn))
+    ∧ ¬ (∃ Xn . φn(Xn) ∧ Pn(Xn))
     ⇒ psi(X)
 ```
 Strictly speaking, we should have the left hand side of the encoding of the
@@ -178,35 +178,38 @@ equivalent.
 
 If we have only two rules
 ```
-φ₁(X) ⇒ ψ₁(X) requires P₁ [priority(p₁)]
-φ₂(X) ⇒ ψ₂(X) requires P₂ [priority(p₂)]
+φ₁(X) ⇒ ψ₁(X) requires P₁(X) [priority(p₁)]
+φ₂(X) ⇒ ψ₂(X) requires P₂(X) [priority(p₂)]
 ```
 and, if we also know that `p₁ < p₂`, we could replace them with
 ```
-φ₁(X) ⇒ ψ₁(X) requires P₁
+φ₁(X) ⇒ ψ₁(X) requires P₁(X)
 φ₂(X) ⇒ ψ₂(X)
     requires P₂(X)
-        ∧ ¬ ∃ X₁ . ⌈φ₂(X) ∧ φ₁(X₁)⌉
+        ∧ ¬ ∃ X₁ . ⌈φ₂(X) ∧ φ₁(X₁)⌉ ∧ P₁(X₁)
 ```
 
 Applying the second rule with a priority predicate means computing:
 ```
-∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . ⌈φ₂(X) ∧ φ₁(X₁)⌉ ⌉ ∧ ψ₂(X)
+∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . ⌈φ₂(X) ∧ φ₁(X₁)⌉ ∧ P₁(X₁)⌉ ∧ ψ₂(X)
 ===
 // A ∧ ¬ B = A ∧ ¬ (A ∧ B)
-∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₂(X) ∧ ⌈φ₂(X) ∧ φ₁(X₁)⌉ ⌉ ∧ ψ₂(X)
+∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₂(X) ∧ ⌈φ₂(X) ∧ φ₁(X₁)⌉ ∧ P₁(X₁) ⌉ ∧ ψ₂(X)
 ===
-// Assuming φ₂(X) is functional, φ₂(X) ∧ ⌈φ₂(X) ∧ φ₁(X₁)⌉
-// === φ₂(X) ∧ φ₁(X₁)
-∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₂(X) ∧ φ₁(X₁) ⌉ ∧ ψ₂(X)
+// Assuming φ₂(X) is functional,
+// φ₂(X) ∧ ⌈φ₂(X) ∧ φ₁(X₁)⌉ === φ₂(X) ∧ φ₁(X₁)
+∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₂(X) ∧ φ₁(X₁) ∧ P₁(X₁) ⌉ ∧ ψ₂(X)
 ===
 // ∃ X₁ . A ∧ B(X)  ===  A ∧ ∃ X₁ . B(X)
-∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ φ₂(X) ∧ ∃ X₁ . φ₁(X₁) ⌉ ∧ ψ₂(X)
+∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ (φ₂(X) ∧ ∃ X₁ . φ₁(X₁) ∧ P₁(X₁)) ⌉ ∧ ψ₂(X)
 ===
 // A ∧ ¬ (A ∧ B) = A ∧ ¬ B
-∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₁(X₁) ⌉ ∧ ψ₂(X)
+∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₁(X₁) ∧ P₁(X₁) ⌉ ∧ ψ₂(X)
+===
+// A ∧ ¬ (A ∧ B) = A ∧ ¬ B
+∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . C(Y) ∧ φ₁(X₁) ∧ P₁(X₁) ⌉ ∧ ψ₂(X)
 ```
-which is the same as above.
+which is the same as above (above `P₁` and `P₂` are included in `φ₁` and `φ₂`).
 
 ### Discussion
 
