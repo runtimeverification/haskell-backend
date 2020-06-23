@@ -171,11 +171,25 @@ attemptEquation sideCondition termLike equation =
                     applyMatchResult equationRenamed matchResult
                         & whileApplyMatchResult
                 Just argument' -> do
+                    (matchPredicate, matchSubstitution) <-
+                        match left termLike
+                        & whileMatch
                     matchResults <-
-                        whileMatch
-                        $ (match left termLike & fmap snd)
-                        >>= applySubstitutionAndSimplify argument' antiLeft
-                    applyAndSelectMatchResult matchResults
+                        applySubstitutionAndSimplify
+                            argument'
+                            antiLeft
+                            matchSubstitution
+                        & whileMatch
+                    (equation', predicate) <-
+                        applyAndSelectMatchResult matchResults
+                    let matchPredicate' =
+                            Predicate.mapVariables
+                                (pure Target.unTarget)
+                                matchPredicate
+                    return
+                        ( equation'
+                        , makeAndPredicate predicate matchPredicate'
+                        )
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires
         let Equation { right, ensures } = equation'
