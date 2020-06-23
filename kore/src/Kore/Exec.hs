@@ -277,7 +277,7 @@ getExitCode indexedModule finalConfig =
             _ -> return $ ExitFailure 111
   where
     resolve = resolveInternalSymbol indexedModule . noLocationId
-    takeExitCode act = do
+    takeExitCode act =
         case resolve "LblgetExitCode" of
             Nothing -> pure ExitSuccess
             Just mkGetExitCodeSymbol -> do
