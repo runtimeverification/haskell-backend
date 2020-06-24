@@ -895,34 +895,33 @@ instance UnifyingRule RulePattern where
 
     precondition = requires
 
-    refreshRule avoid' rule1@(RulePattern _ _ _ _ _) =
-        let avoid = FreeVariables.toNames avoid'
-            freeVarRenaming = refreshVariables avoid originalFreeVariables
-            refreshedFreeVars =
-                Set.map
-                    (variableName . renameVariable freeVarRenaming)
-                    originalFreeVariables
-            exVarsRenaming = refreshVariables refreshedFreeVars exVars
-            subst = TermLike.mkVar <$> freeVarRenaming
-            left' = TermLike.substitute subst left
-            antiLeft' = TermLike.substitute subst <$> antiLeft
-            requires' = Predicate.substitute subst requires
-            rhs' =
-                ( rhsSubstitute subst
-                . renameExistentials exVarsRenaming
-                ) rhs
-            rule2 =
-                rule1
-                    { left = left'
-                    , antiLeft = antiLeft'
-                    , requires = requires'
-                    , rhs = rhs'
-                    }
-        in (freeVarRenaming, rule2)
+    refreshRule stale0' rule0@(RulePattern _ _ _ _ _) =
+        let stale0 = FreeVariables.toNames stale0'
+            freeVariables0 = freeVariables rule0
+            renaming1 =
+                refreshVariables stale0
+                $ FreeVariables.toSet freeVariables0
+            freeVariables1 =
+                FreeVariables.toSet freeVariables0
+                & Set.map (renameVariable renaming1)
+                & foldMap FreeVariables.freeVariable
+            existentials0 = Set.fromList . map inject $ existentials $ rhs rule0
+            stale1 = FreeVariables.toNames freeVariables1 <> stale0
+            renamingExists = refreshVariables stale1 existentials0
+            subst = TermLike.mkVar <$> renaming1
+            rule1 =
+                RulePattern
+                { left = left rule0 & TermLike.substitute subst
+                , antiLeft = antiLeft rule0 & fmap (TermLike.substitute subst)
+                , requires = requires rule0 & Predicate.substitute subst
+                , rhs =
+                    rhs rule0
+                    & renameExistentials renamingExists
+                    & rhsSubstitute subst
+                , attributes = attributes rule0
+                }
+        in (renaming1, rule1)
       where
-        RulePattern { left, antiLeft, requires, rhs } = rule1
-        exVars = Set.fromList $ inject <$> existentials rhs
-        originalFreeVariables = freeVariables rule1 & FreeVariables.toSet
         renameVariable map' var =
             Map.lookup (variableName var) map'
             & fromMaybe var
