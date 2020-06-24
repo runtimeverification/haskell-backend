@@ -61,7 +61,7 @@ test_refreshRule =
         let input = testRulePattern { left = mkElemVar Mock.y }
             (_, RulePattern { rhs }) = refreshRule mempty input
         assertBool "expected to refresh existentials"
-            (not . elem Mock.y $ existentials rhs)
+            (notElem Mock.y $ existentials rhs)
         assertBool "expected to substitute fresh variables"
             ((/=) (mkElemVar Mock.y) $ right rhs)
     ]
