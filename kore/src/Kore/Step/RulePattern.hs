@@ -897,12 +897,20 @@ instance UnifyingRule RulePattern where
 
     refreshRule avoid' rule1@(RulePattern _ _ _ _ _) =
         let avoid = FreeVariables.toNames avoid'
-            rename = refreshVariables (avoid <> exVars) originalFreeVariables
-            subst = TermLike.mkVar <$> rename
+            freeVarRenaming = refreshVariables avoid originalFreeVariables
+            refreshedFreeVars =
+                Set.map
+                    (variableName . renameVariable freeVarRenaming)
+                    originalFreeVariables
+            exVarsRenaming = refreshVariables refreshedFreeVars exVars
+            subst = TermLike.mkVar <$> freeVarRenaming
             left' = TermLike.substitute subst left
             antiLeft' = TermLike.substitute subst <$> antiLeft
             requires' = Predicate.substitute subst requires
-            rhs' = (renameExistentials rename . rhsSubstitute subst) rhs
+            rhs' =
+                ( rhsSubstitute subst
+                . renameExistentials exVarsRenaming
+                ) rhs
             rule2 =
                 rule1
                     { left = left'
@@ -910,11 +918,14 @@ instance UnifyingRule RulePattern where
                     , requires = requires'
                     , rhs = rhs'
                     }
-        in (rename, rule2)
+        in (freeVarRenaming, rule2)
       where
         RulePattern { left, antiLeft, requires, rhs } = rule1
-        exVars = Set.fromList $ inject . variableName <$> existentials rhs
+        exVars = Set.fromList $ inject <$> existentials rhs
         originalFreeVariables = freeVariables rule1 & FreeVariables.toSet
+        renameVariable map' var =
+            Map.lookup (variableName var) map'
+            & fromMaybe var
 
     mapRuleVariables adj rule1@(RulePattern _ _ _ _ _) =
         rule1
