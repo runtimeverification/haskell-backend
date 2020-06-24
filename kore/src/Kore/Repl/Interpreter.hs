@@ -1298,10 +1298,10 @@ graphParams len = Graph.nonClusteredParams
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
             $ case ps of
-                ProofState.DoNotUse.Proven          -> toColorList green
-                ProofState.DoNotUse.GoalStuck _     -> toColorList red
-                ProofState.DoNotUse.GoalRemainder _ -> toColorList red
-                _                                   -> []
+                ProofState.DoNotUse.Proven _          -> toColorList green
+                ProofState.DoNotUse.GoalStuck _ _     -> toColorList red
+                ProofState.DoNotUse.GoalRemainder _ _ -> toColorList red
+                _                                     -> []
         ]
     }
   where

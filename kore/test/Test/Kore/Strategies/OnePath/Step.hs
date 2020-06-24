@@ -898,8 +898,9 @@ assertStuck
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
     assertEqual "as one-path claim"
-        [ ProofState.GoalStuck (ProofState.extractDepth actual) expectedGoal ]
+        [ ProofState.GoalStuck depth expectedGoal ]
         actual
     assertEqual "as reachability claim" (asOnePath actual) actualReach
   where
     asOnePath = (fmap . fmap) OnePath
+    depth = maybe ProofState.depth0 ProofState.extractDepth (headMay actual)

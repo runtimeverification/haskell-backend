@@ -141,6 +141,7 @@ import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
     , proofState
+    , depth0
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
@@ -162,7 +163,7 @@ emptyExecutionGraph =
   where
     extractConfig :: RewriteRule VariableName -> CommonProofState
     extractConfig (RewriteRule RulePattern { left, requires }) =
-        Goal $ Conditional left requires mempty
+        Goal depth0 $ Conditional left requires mempty
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)
