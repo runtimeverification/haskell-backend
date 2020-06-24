@@ -449,7 +449,7 @@ test_unifyAnd_Fn =
 
 test_reflexivity_symbolic :: TestTree
 test_reflexivity_symbolic =
-    testCaseWithSMT "" $ do
+    testCaseWithSMT "evaluate symbolic reflexivity for equality" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
             expect = Test.Bool.asPattern True
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
@@ -460,7 +460,7 @@ test_reflexivity_symbolic =
 
 test_symbolic_eq_not_conclusive :: TestTree
 test_symbolic_eq_not_conclusive =
-    testCaseWithSMT "" $ do
+    testCaseWithSMT "evaluate symbolic equality for different variables" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
             y = mkElemVar $ "y" `ofSort` intSort
             expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
