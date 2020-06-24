@@ -64,6 +64,7 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
+import qualified Control.Monad as Monad
 import Data.Bits
     ( complement
     , shift
@@ -97,6 +98,11 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
@@ -252,7 +258,7 @@ builtinFunctions =
 
     , comparator gtKey (>)
     , comparator geKey (>=)
-    , comparator eqKey (==)
+    , (eqKey, Builtin.functionEvaluator evalEq)
     , comparator leKey (<=)
     , comparator ltKey (<)
     , comparator neKey (/=)
@@ -325,3 +331,32 @@ builtinFunctions =
     log2 n
         | n > 0 = Just (smallInteger (integerLog2# n))
         | otherwise = Nothing
+
+evalEq :: Builtin.Function
+evalEq resultSort arguments@[_intLeft, _intRight] =
+    concrete <|> symbolicReflexivity
+  where
+    concrete = do
+        _intLeft <- expectBuiltinInt eqKey _intLeft
+        _intRight <- expectBuiltinInt eqKey _intRight
+        _intLeft == _intRight
+            & Bool.asPattern resultSort
+            & return
+
+    symbolicReflexivity = do
+        Monad.guard (TermLike.isFunctionPattern _intLeft)
+        -- Do not need to check _intRight because we only return a result
+        -- when _intLeft and _intRight are equal.
+        if _intLeft == _intRight then
+            True & Bool.asPattern resultSort & returnPattern
+        else
+            empty
+
+    mkCeilUnlessDefined termLike
+      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | otherwise =
+        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+    returnPattern = return . flip Pattern.andCondition conditions
+    conditions = foldMap mkCeilUnlessDefined arguments
+
+evalEq _ _ = Builtin.wrongArity eqKey

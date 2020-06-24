@@ -69,14 +69,9 @@ attemptEquation
     -> Equation'
     -> IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
-    Equation.attemptEquation sideCondition' termLike' equation
+    Equation.attemptEquation sideCondition termLike' equation
     & runSimplifier Mock.env
   where
-    sideCondition' =
-        SideCondition.mapVariables
-            Target.mkUnifiedNonTarget
-            sideCondition
-
     termLike' = TermLike.mapVariables Target.mkUnifiedNonTarget termLike
 
 assertNotMatched :: AttemptEquationError' -> Assertion
