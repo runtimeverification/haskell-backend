@@ -213,18 +213,22 @@ which is the same as above (above `P₁` and `P₂` are included in `φ₁` and 
 
 ### Discussion
 
-Using the priority expression requires that the configuration is function-like,
-and, arguably, not even that is needed, i.e. the priority expression could
-work as the definition of applying priority rules.
+Using the priority expression (the option that's currently implemented)
+is cleaner form a theoretical point of view since it requires that the
+configuration is function-like, and, arguably, not even that is needed,
+i.e. the priority expression could work as the definition of applying priority
+rules. It also matches what the Haskell backend produces for remainder pattern
+when rewriting.
 
 The priority predicate requires, additionally, that the left hand side of any
 priority rule is function-like. In practice, they should
 be functional, so this should not matter much.
 
-The priority expression breaks the pattern of always translating rules to
-`LHS ⇒ RHS` where `LHS` is `t ∧ P` where `t` is a term and `P` is a
-predicate, but the priority expression/predicate is removed from the LHS and
-is not evaluated explicitly when rewriting anyway, so, in practice, the LHS can
+It also makes it easier to implement rule merging, since a `LHS ⇒ RHS`
+rule would always have a  `LHS` of the form `t ∧ P` where `t` is a term and
+`P` is a predicate. This would not make a difference for the Haskell backend
+because priority expression/predicate is removed from the `LHS` and is not
+evaluated explicitly when rewriting anyway, so, in practice, the `LHS` can
 be treated as if it is of the form `t ∧ P`.
 
 I recommend using the priority expression.
