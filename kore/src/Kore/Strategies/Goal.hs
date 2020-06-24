@@ -808,7 +808,7 @@ removeDestination lensRulePattern mkState goal =
     removeDestinationWorker
         :: RulePattern VariableName
         -> m (ProofState goal (RulePattern VariableName))
-    removeDestinationWorker rulePattern =
+    removeDestinationWorker (snd . Step.refreshRule mempty -> rulePattern) =
         do
             removal <- removalPatterns destination configuration existentials
             when (isTop removal) (succeed . mkState $ rulePattern)
