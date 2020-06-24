@@ -64,6 +64,7 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
+import qualified Control.Monad as Monad
 import Data.Bits
     ( complement
     , shift
@@ -71,7 +72,6 @@ import Data.Bits
     , (.&.)
     , (.|.)
     )
-import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -336,13 +336,6 @@ evalEq :: Builtin.Function
 evalEq resultSort arguments@[_intLeft, _intRight] =
     concrete <|> symbolicReflexivity
   where
-    mkCeilUnlessDefined termLike
-      | TermLike.isFunctionalPattern termLike = Condition.topOf resultSort
-      | otherwise =
-        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
-    returnPattern = return . flip Pattern.andCondition conditions
-    conditions = foldMap mkCeilUnlessDefined arguments
-
     concrete = do
         _intLeft <- expectBuiltinInt eqKey _intLeft
         _intRight <- expectBuiltinInt eqKey _intRight
@@ -350,13 +343,20 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
             & Bool.asPattern resultSort
             & return
 
-    symbolicReflexivity =
-        let (_ :< patternLeft) = Recursive.project _intLeft
-            (_ :< patternRight) = Recursive.project _intRight
-        in
-        if patternLeft == patternRight then
+    symbolicReflexivity = do
+        Monad.guard (TermLike.isFunctionPattern _intLeft)
+        -- Do not need to check _intRight because we only return a result
+        -- when _intLeft and _intRight are equal.
+        if _intLeft == _intRight then
             True & Bool.asPattern resultSort & returnPattern
         else
             empty
+
+    mkCeilUnlessDefined termLike
+      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | otherwise =
+        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+    returnPattern = return . flip Pattern.andCondition conditions
+    conditions = foldMap mkCeilUnlessDefined arguments
 
 evalEq _ _ = Builtin.wrongArity eqKey
