@@ -429,37 +429,37 @@ instance Goal ReachabilityRule where
             )
     transitionRule = logTransitionRule $ \prim proofstate ->
         case proofstate of
-            Goal (OnePath rule) ->
+            Goal depth (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
-                <$> transitionRule (primRuleOnePath prim) (Goal rule)
-            Goal (AllPath rule) ->
+                <$> transitionRule (primRuleOnePath prim) (Goal depth rule)
+            Goal depth (AllPath rule) ->
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
-                <$> transitionRule (primRuleAllPath prim) (Goal rule)
-            GoalRewritten (OnePath rule) ->
+                <$> transitionRule (primRuleAllPath prim) (Goal depth rule)
+            GoalRewritten depth (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
-                <$> transitionRule (primRuleOnePath prim) (GoalRewritten rule)
-            GoalRewritten (AllPath rule) ->
+                <$> transitionRule (primRuleOnePath prim) (GoalRewritten depth rule)
+            GoalRewritten depth (AllPath rule) ->
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
-                <$> transitionRule (primRuleAllPath prim) (GoalRewritten rule)
-            GoalRemainder (OnePath rule) ->
+                <$> transitionRule (primRuleAllPath prim) (GoalRewritten depth rule)
+            GoalRemainder depth (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
-                <$> transitionRule (primRuleOnePath prim) (GoalRemainder rule)
-            GoalRemainder (AllPath rule) ->
+                <$> transitionRule (primRuleOnePath prim) (GoalRemainder depth rule)
+            GoalRemainder depth (AllPath rule) ->
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
-                <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
-            state@(GoalStuck _) ->
+                <$> transitionRule (primRuleAllPath prim) (GoalRemainder depth rule)
+            state@(GoalStuck  depth _) ->
                 case prim of
                     CheckGoalStuck -> debugProofStateFinal state CheckGoalStuck
                     _ -> return proofstate
-            Proven ->
+            Proven depth ->
                 case prim of
-                    CheckProven -> debugProofStateFinal Proven CheckProven
+                    CheckProven -> debugProofStateFinal (Proven depth) CheckProven
                     _ -> return proofstate
 
     strategy
@@ -590,8 +590,8 @@ logTransitionRule
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
         )
 logTransitionRule rule prim proofState = case proofState of
-    Goal goal          -> logWith goal
-    GoalRemainder goal -> logWith goal
+    Goal depth goal          -> logWith goal
+    GoalRemainder depth goal -> logWith goal
     _                  -> rule prim proofState
   where
     logWith goal = case prim of
@@ -630,43 +630,43 @@ transitionRuleTemplate
         :: Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-    transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
+    transitionRuleWorker CheckProven (Proven _) = empty
+    transitionRuleWorker CheckGoalRemainder (GoalRemainder _ _) = empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten goal) =
-        return (Goal goal)
+    transitionRuleWorker ResetGoal (GoalRewritten depth goal) =
+        return (Goal depth goal)
 
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+    transitionRuleWorker CheckGoalStuck (GoalStuck _ _) = empty
 
-    transitionRuleWorker Simplify (Goal goal) =
+    transitionRuleWorker Simplify (Goal depth goal) =
         Profile.timeStrategy "Goal.Simplify" $ do
             results <- tryTransitionT (simplifyTemplate goal)
             case results of
-                [] -> return Proven
-                _  -> Goal <$> Transition.scatter results
+                [] -> return (Proven depth)
+                _  -> Goal depth <$> Transition.scatter results
 
-    transitionRuleWorker Simplify (GoalRemainder goal) =
+    transitionRuleWorker Simplify (GoalRemainder depth goal) =
         Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplifyTemplate goal
+        $ GoalRemainder depth <$> simplifyTemplate goal
 
-    transitionRuleWorker RemoveDestination (Goal goal) =
+    transitionRuleWorker RemoveDestination (Goal  depth goal) =
         Profile.timeStrategy "Goal.RemoveDestination"
-        $ removeDestinationTemplate Goal goal
-    transitionRuleWorker RemoveDestination (GoalRemainder goal) =
+        $ removeDestinationTemplate (Goal depth) goal
+    transitionRuleWorker RemoveDestination (GoalRemainder depth goal) =
         Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ removeDestinationTemplate GoalRemainder goal
+        $ removeDestinationTemplate (GoalRemainder depth) goal
 
-    transitionRuleWorker TriviallyValid (Goal goal)
+    transitionRuleWorker TriviallyValid (Goal depth goal)
       | isTriviallyValidTemplate goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRemainder goal)
+          return (Proven depth)
+    transitionRuleWorker TriviallyValid (GoalRemainder depth goal)
       | isTriviallyValidTemplate goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRewritten goal)
+          return (Proven depth)
+    transitionRuleWorker TriviallyValid (GoalRewritten depth goal)
       | isTriviallyValidTemplate goal =
-          return Proven
+          return (Proven depth)
 
-    transitionRuleWorker (DerivePar rules) (Goal goal) =
+    transitionRuleWorker (DerivePar rules) (Goal depth goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         --
         -- Note that in most transitions it is obvious what is being transformed
@@ -677,18 +677,18 @@ transitionRuleTemplate
         -- results in `derivePar` as opposed to here.
         Profile.timeStrategy "Goal.DerivePar"
         $ deriveParTemplate rules goal
-    transitionRuleWorker (DerivePar rules) (GoalRemainder goal) =
+    transitionRuleWorker (DerivePar rules) (GoalRemainder depth goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveParRemainder"
         $ deriveParTemplate rules goal
 
-    transitionRuleWorker (DeriveSeq rules) (Goal goal) =
+    transitionRuleWorker (DeriveSeq rules) (Goal depth goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeq"
         $ deriveSeqTemplate rules goal
-    transitionRuleWorker (DeriveSeq rules) (GoalRemainder goal) =
+    transitionRuleWorker (DeriveSeq rules) (GoalRemainder depth goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeqRemainder"
@@ -822,10 +822,11 @@ removeDestination lensRulePattern mkState goal =
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
                 & Lens.set RulePattern.leftPattern stuckConfiguration
-                & GoalStuck
+                & GoalStuck undefined
                 & pure
         & run
         & withConfiguration configuration
+        $ undefined
       where
         configuration = Lens.view RulePattern.leftPattern rulePattern
         configFreeVars = freeVariables configuration
