@@ -407,6 +407,30 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
   where
     subst' = foldr (Map.delete . inject . variableName) subst existentials
 
+renameExistentials
+    :: forall variable
+    .  HasCallStack
+    => InternalVariable variable
+    => Map (SomeVariableName variable) (SomeVariable variable)
+    -> RHS variable
+    -> RHS variable
+renameExistentials rename RHS { existentials, right, ensures } =
+    RHS
+        { existentials =
+            renameVariable <$> existentials
+        , right = TermLike.substitute subst right
+        , ensures = Predicate.substitute subst ensures
+        }
+  where
+    renameVariable
+        :: ElementVariable variable
+        -> ElementVariable variable
+    renameVariable var =
+        let name = SomeVariableNameElement . variableName $ var
+         in maybe var expectElementVariable
+            $ Map.lookup name rename
+    subst = TermLike.mkVar <$> rename
+
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
 rhsForgetSimplified RHS { existentials, right, ensures } =
     RHS
@@ -878,7 +902,7 @@ instance UnifyingRule RulePattern where
             left' = TermLike.substitute subst left
             antiLeft' = TermLike.substitute subst <$> antiLeft
             requires' = Predicate.substitute subst requires
-            rhs' = rhsSubstitute subst rhs
+            rhs' = (renameExistentials rename . rhsSubstitute subst) rhs
             rule2 =
                 rule1
                     { left = left'
