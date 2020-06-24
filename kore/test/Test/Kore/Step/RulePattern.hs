@@ -59,11 +59,12 @@ test_refreshRule =
         assertBool "expected not to rename variables" (null renaming)
     , testCase "stale existentials" $ do
         let input = testRulePattern { left = mkElemVar Mock.y }
-            (_, RulePattern { rhs }) = refreshRule mempty input
+            (renaming, RulePattern { rhs }) = refreshRule mempty input
         assertBool "expected to refresh existentials"
             (notElem Mock.y $ existentials rhs)
         assertBool "expected to substitute fresh variables"
             ((/=) (mkElemVar Mock.y) $ right rhs)
+        assertBool "expected not to rename free variables" (null renaming)
     ]
 
 testRulePattern :: RulePattern VariableName
