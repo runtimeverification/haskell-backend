@@ -57,22 +57,22 @@ test_refreshRule =
     , testCase "no stale variables" $ do
         let (renaming, _) = refreshRule mempty testRulePattern
         assertBool "expected not to rename variables" (null renaming)
-    , testCase "stale existentials" $ do
-        let stale = freeVariable (inject Mock.y)
-            (renaming, RulePattern { rhs }) = refreshRule stale testRulePattern
-        assertBool "expected to refresh existentials"
-            (notElem Mock.y $ existentials rhs)
-        assertBool "expected to substitute fresh variables"
-            ((/=) (mkElemVar Mock.y) $ right rhs)
-        assertBool "expected not to rename free variables" (null renaming)
-    , testCase "stale existentials from left-hand side" $ do
-        let input = testRulePattern { left = mkElemVar Mock.y }
-            (renaming, RulePattern { rhs }) = refreshRule mempty input
-        assertBool "expected to refresh existentials"
-            (notElem Mock.y $ existentials rhs)
-        assertBool "expected to substitute fresh variables"
-            ((/=) (mkElemVar Mock.y) $ right rhs)
-        assertBool "expected not to rename free variables" (null renaming)
+    , testGroup "stale existentials" $
+        let assertions (renaming, RulePattern { rhs }) = do
+                assertBool "expected to refresh existentials"
+                    (notElem Mock.y $ existentials rhs)
+                assertBool "expected to substitute fresh variables"
+                    ((/=) (mkElemVar Mock.y) $ right rhs)
+                assertBool "expected not to rename free variables"
+                    (null renaming)
+        in
+        [ testCase "from outside" $ do
+            let stale = freeVariable (inject Mock.y)
+            assertions $ refreshRule stale testRulePattern
+        , testCase "from left-hand side" $ do
+            let input = testRulePattern { left = mkElemVar Mock.y }
+            assertions $ refreshRule mempty input
+        ]
     ]
 
 testRulePattern :: RulePattern VariableName
