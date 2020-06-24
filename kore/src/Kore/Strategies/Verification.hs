@@ -225,7 +225,7 @@ verifyClaim
   =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = ProofState.Goal $ getConfiguration goal
+        startPattern = ProofState.Goal ProofState.depth0 $ getConfiguration goal
         limitedStrategy =
             strategy goal claims axioms
             & Foldable.toList

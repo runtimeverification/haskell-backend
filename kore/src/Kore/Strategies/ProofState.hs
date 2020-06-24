@@ -5,6 +5,9 @@ License     : NCSA
 module Kore.Strategies.ProofState
     ( extractGoalRem
     , extractUnproven
+    , depth0
+    , extractDepth
+    , Depth (..)
     , ProofState (..)
     , Prim (..)
     , proofState
@@ -76,6 +79,9 @@ instance Unparse goal => Pretty (Prim goal) where
 
 newtype Depth = Depth { getDepth :: Natural}
     deriving (Eq, Show, Ord, Hashable, Debug, Diff)
+
+depth0 :: Depth
+depth0 = Depth 0
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
@@ -150,6 +156,13 @@ extractUnproven (Proven _)      = Nothing
 extractGoalRem :: ProofState a -> Maybe a
 extractGoalRem (GoalRemainder _ t) = Just t
 extractGoalRem _           = Nothing
+
+extractDepth :: ProofState a -> Depth
+extractDepth (Goal d _)    = d
+extractDepth (GoalRewritten d _) = d
+extractDepth (GoalRemainder d _) = d
+extractDepth (GoalStuck d _) = d
+extractDepth (Proven d)      = d
 
 data ProofStateTransformer a val =
     ProofStateTransformer

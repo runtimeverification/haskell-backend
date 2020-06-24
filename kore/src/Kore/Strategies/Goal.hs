@@ -818,15 +818,14 @@ removeDestination lensRulePattern mkState goal =
                 simplifyConditionsWithSmt
                     SideCondition.top
                     configAndRemoval
-            when (isBottom simplifiedRemoval) (succeed Proven)
+            when (isBottom simplifiedRemoval) (succeed $ Proven depth0)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
                 & Lens.set RulePattern.leftPattern stuckConfiguration
-                & GoalStuck undefined
+                & GoalStuck depth0
                 & pure
         & run
         & withConfiguration configuration
-        $ undefined
       where
         configuration = Lens.view RulePattern.leftPattern rulePattern
         configFreeVars = freeVariables configuration
@@ -941,11 +940,11 @@ deriveResults mkRule Results { results, remainders } =
             []      ->
                 -- If the rule returns \bottom, the goal is proven on the
                 -- current branch.
-                pure Proven
+                pure $ Proven depth0
             configs -> Foldable.asum (addRewritten <$> configs)
 
-    addRewritten = pure . GoalRewritten
-    addRemainder = pure . GoalRemainder
+    addRewritten = pure . GoalRewritten depth0
+    addRemainder = pure . GoalRemainder depth0
 
     addRule = Transition.addRule . fromAppliedRule
 
