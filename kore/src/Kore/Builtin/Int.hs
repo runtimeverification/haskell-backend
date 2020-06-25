@@ -273,7 +273,7 @@ builtinFunctions =
     , binaryOperator mulKey (*)
     , unaryOperator absKey abs
 
-      -- TODO (thomas.tuegel): Implement division.
+      -- Division operations
     , partialBinaryOperator edivKey ediv
     , partialBinaryOperator emodKey emod
     , partialBinaryOperator tdivKey tdiv

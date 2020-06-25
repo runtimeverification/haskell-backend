@@ -258,19 +258,7 @@ test_tdiv = testPartialBinary tdivIntSymbol tdiv
 
 test_tdiv_evaluated_arguments :: TestTree
 test_tdiv_evaluated_arguments =
-    testPropertyWithSolver (Text.unpack name) $ do
-        a <- forAll genInteger
-        b <- forAll genInteger
-        na <- forAll $ Gen.integral (Range.linear 0 5)
-        nb <- forAll $ Gen.integral (Range.linear 0 5)
-        let expect = asPartialPattern $ tdiv a b
-        actual <- evaluateT
-            $ mkApplySymbol tdivIntSymbol [evaluated na a, evaluated nb b]
-        (===) expect actual
-  where
-    name = expectHook tdivIntSymbol <> " with evaluated arguments"
-    compose n f = appEndo $ stimes (n :: Integer) (Endo f)
-    evaluated n x = compose n mkEvaluated $ asInternal x
+    test_div_evaluated_arguments tdivIntSymbol tdiv
 
 tdiv :: Integer -> Integer -> Maybe Integer
 tdiv n d
@@ -296,14 +284,21 @@ test_ediv_property = testPartialBinary edivIntSymbol ediv
 
 test_ediv_evaluated_arguments :: TestTree
 test_ediv_evaluated_arguments =
+    test_div_evaluated_arguments edivIntSymbol ediv
+
+test_div_evaluated_arguments
+    :: Symbol
+    -> (Integer -> Integer -> Maybe Integer)
+    -> TestTree
+test_div_evaluated_arguments symbol expected =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
         b <- forAll genInteger
         na <- forAll $ Gen.integral (Range.linear 0 5)
         nb <- forAll $ Gen.integral (Range.linear 0 5)
-        let expect = asPartialPattern $ ediv a b
+        let expect = asPartialPattern $ expected a b
         actual <- evaluateT
-            $ mkApplySymbol edivIntSymbol [evaluated na a, evaluated nb b]
+            $ mkApplySymbol symbol [evaluated na a, evaluated nb b]
         (===) expect actual
   where
     name = expectHook edivIntSymbol <> " with evaluated arguments"
