@@ -274,7 +274,7 @@ builtinFunctions =
     , unaryOperator absKey abs
 
       -- TODO (thomas.tuegel): Implement division.
-    , (edivKey, Builtin.notImplemented)
+    , partialBinaryOperator edivKey ediv
     , partialBinaryOperator emodKey emod
     , partialBinaryOperator tdivKey tdiv
     , partialBinaryOperator tmodKey tmod
@@ -317,6 +317,10 @@ builtinFunctions =
     tmod n d
         | d == 0 = Nothing
         | otherwise = Just (rem n d)
+    ediv n d
+        | d == 0 = Nothing
+        | d < 0 = Just (quot n d)
+        | otherwise = Just (div n d)
     emod a b
         | b == 0 = Nothing
         | b < 0  = Just (rem a b)

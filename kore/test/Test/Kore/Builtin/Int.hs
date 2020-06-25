@@ -6,11 +6,14 @@ module Test.Kore.Builtin.Int
     , test_min, test_max
     , test_add, test_sub, test_mul, test_abs
     , test_tdiv, test_tmod, test_tdivZero, test_tmodZero
+    , test_ediv_property, test_emod_property, test_edivZero, test_emodZero
+    , test_ediv
     , test_emod
     , test_and, test_or, test_xor, test_not
     , test_shl, test_shr
     , test_pow, test_powmod, test_log2
     , test_tdiv_evaluated_arguments
+    , test_ediv_evaluated_arguments
     , test_unifyEqual_NotEqual
     , test_unifyEqual_Equal
     , test_unifyAnd_NotEqual
@@ -280,10 +283,50 @@ tmod n d
   | otherwise = Just (rem n d)
 
 test_tdivZero :: TestTree
-test_tdivZero = testPartialBinaryZero tdivIntSymbol tdiv
+test_tdivZero = testPartialBinaryZero edivIntSymbol tdiv
 
 test_tmodZero :: TestTree
-test_tmodZero = testPartialBinaryZero tmodIntSymbol tmod
+test_tmodZero = testPartialBinaryZero emodIntSymbol tmod
+
+test_ediv_property :: TestTree
+test_ediv_property = testPartialBinary edivIntSymbol ediv
+
+test_ediv_evaluated_arguments :: TestTree
+test_ediv_evaluated_arguments =
+    testPropertyWithSolver (Text.unpack name) $ do
+        a <- forAll genInteger
+        b <- forAll genInteger
+        na <- forAll $ Gen.integral (Range.linear 0 5)
+        nb <- forAll $ Gen.integral (Range.linear 0 5)
+        let expect = asPartialPattern $ ediv a b
+        actual <- evaluateT
+            $ mkApplySymbol edivIntSymbol [evaluated na a, evaluated nb b]
+        (===) expect actual
+  where
+    name = expectHook edivIntSymbol <> " with evaluated arguments"
+    compose n f = appEndo $ stimes (n :: Integer) (Endo f)
+    evaluated n x = compose n mkEvaluated $ asInternal x
+
+ediv :: Integer -> Integer -> Maybe Integer
+ediv n d
+    | d == 0 = Nothing
+    | d < 0 = Just (quot n d)
+    | otherwise = Just (div n d)
+
+test_emod_property :: TestTree
+test_emod_property = testPartialBinary emodIntSymbol emod
+
+emod :: Integer -> Integer -> Maybe Integer
+emod a b
+    | b == 0 = Nothing
+    | b < 0  = Just (rem a b)
+    | otherwise = Just (mod a b)
+
+test_edivZero :: TestTree
+test_edivZero = testPartialBinaryZero edivIntSymbol tdiv
+
+test_emodZero :: TestTree
+test_emodZero = testPartialBinaryZero emodIntSymbol tmod
 
 -- Bitwise operations
 test_and :: TestTree
@@ -357,6 +400,35 @@ test_emod =
     , testInt
         "emod bottom"
         emodIntSymbol
+        (asInternal <$> [193, 0])
+        bottom
+    ]
+
+test_ediv :: [TestTree]
+test_ediv =
+    [ testInt
+        "ediv normal"
+        edivIntSymbol
+        (asInternal <$> [193, 12])
+        (asPattern 16)
+    , testInt
+        "ediv negative lhs"
+        edivIntSymbol
+        (asInternal <$> [-193, 12])
+        (asPattern (-17))
+    , testInt
+        "ediv negative rhs"
+        edivIntSymbol
+        (asInternal <$> [193, -12])
+        (asPattern (-16))
+    , testInt
+        "ediv both negative"
+        edivIntSymbol
+        (asInternal <$> [-193, -12])
+        (asPattern 16)
+    , testInt
+        "ediv bottom"
+        edivIntSymbol
         (asInternal <$> [193, 0])
         bottom
     ]
