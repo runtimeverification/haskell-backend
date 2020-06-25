@@ -38,6 +38,9 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
+import Control.Monad
+    ( foldM
+    )
 import Control.Monad.Catch
     ( Exception (..)
     , MonadCatch
@@ -63,7 +66,6 @@ import Data.List.Extra
     ( groupSortOn
     , sortOn
     )
-import qualified Data.Set as Set
 import Data.Stream.Infinite
     ( Stream (..)
     )
@@ -73,38 +75,32 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
     )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( assumeTrueCondition
-    )
 import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( isElementVariable
-    , isFunctionPattern
-    , mkAnd
-    , retractElementVariable
+    ( isFunctionPattern
+    , mkIn
+    , termLikeSort
     )
 import Kore.Log.DebugProofState
 import Kore.Log.InfoReachability
@@ -139,6 +135,10 @@ import Kore.Step.Simplification.Data
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Exists as Exists
+import qualified Kore.Step.Simplification.Not as Not
+import Kore.Step.Simplification.OrPattern
+    ( simplifyConditionsWithSmt
+    )
 import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     )
@@ -808,14 +808,16 @@ removeDestination lensRulePattern mkState goal =
     removeDestinationWorker
         :: RulePattern VariableName
         -> m (ProofState goal (RulePattern VariableName))
-    removeDestinationWorker rulePattern =
+    removeDestinationWorker (snd . Step.refreshRule mempty -> rulePattern) =
         do
-            removal <- removalPredicate destination configuration
+            removal <- removalPatterns destination configuration existentials
             when (isTop removal) (succeed . mkState $ rulePattern)
+            let configAndRemoval =
+                    fmap (configuration <*) removal
             simplifiedRemoval <-
-                return (Conditional.andPredicate configuration removal)
-                >>= simplifyTopConfiguration
-                >>= SMT.Evaluator.filterMultiOr
+                simplifyConditionsWithSmt
+                    SideCondition.top
+                    configAndRemoval
             when (isBottom simplifiedRemoval) (succeed Proven)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
@@ -830,6 +832,10 @@ removeDestination lensRulePattern mkState goal =
         destination =
             Lens.view (field @"rhs") rulePattern
             & topExistsToImplicitForall configFreeVars
+        existentials =
+            Lens.view (field @"existentials")
+            . Lens.view (field @"rhs")
+            $ rulePattern
 
         succeed :: r -> ExceptT r m a
         succeed = throwE
@@ -896,11 +902,14 @@ deriveWith
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 deriveWith lensRulePattern mkRule takeStep rewrites goal =
-    (\x -> getCompose $ x goal)
-    $ Lens.traverseOf (lensRulePattern . RulePattern.leftPattern)
-    $ \config -> Compose $ withConfiguration config $ do
-        results <- takeStep rewrites config & lift
-        deriveResults mkRule results
+    getCompose
+    $ Lens.forOf lensRulePattern goal
+    $ \rulePattern ->
+        fmap (snd . Step.refreshRule mempty)
+        $ Lens.forOf RulePattern.leftPattern rulePattern
+        $ \config -> Compose $ withConfiguration config $ do
+            results <- takeStep rewrites config & lift
+            deriveResults mkRule results
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -950,53 +959,40 @@ withConfiguration configuration =
 
 {- | The predicate to remove the destination from the present configuration.
  -}
-removalPredicate
+removalPatterns
     :: forall variable m
-    .  InternalVariable variable
+    .  HasCallStack
+    => InternalVariable variable
     => MonadSimplify m
     => Pattern variable
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> m (Predicate variable)
-removalPredicate
+    -> [ElementVariable variable]
+    -- ^ existentially quantified variables
+    -> m (OrPattern variable)
+removalPatterns
     destination
     configuration
+    existentials
   | isFunctionPattern configTerm
   , isFunctionPattern destTerm
   = do
-    -- TODO (thomas.tuegel): Use unification here, not simplification.
     unifiedConfigs <-
-        simplifyConditionalTermToOr sideCondition (mkAnd configTerm destTerm)
-    case OrPattern.toPatterns unifiedConfigs of
-        _ | OrPattern.isFalse unifiedConfigs ->
-            return Predicate.makeTruePredicate_
-        [substPattern] -> do
-            let extraElemVariables =
-                    getExtraElemVariables configuration substPattern
-                remainderPattern =
-                    Pattern.fromCondition
-                    . Conditional.withoutTerm
-                    $ (const <$> destination <*> substPattern)
-            evaluatedRemainder <-
-                Exists.makeEvaluate
-                    sideCondition extraElemVariables remainderPattern
-            return
-                . Predicate.makeNotPredicate
-                . Condition.toPredicate
-                . Conditional.withoutTerm
-                . OrPattern.toPattern
-                $ evaluatedRemainder
-        _ ->
-            error . show . Pretty.vsep $
-            [ "Unifying the terms of the configuration and the\
-            \ destination has unexpectedly produced more than one\
-            \ unification case."
-            , Pretty.indent 2 "Unification cases:"
-            ]
-            <> fmap
-                (Pretty.indent 4 . unparse)
-                (Foldable.toList unifiedConfigs)
+        simplifyConditionalTermToOr
+            sideCondition
+            (mkIn configSort configTerm destTerm)
+    if isBottom unifiedConfigs
+        then return OrPattern.top
+        else do
+            let remainderPatterns =
+                    fmap remainderPattern unifiedConfigs
+            existentialRemainders <-
+                foldM
+                    (Exists.simplifyEvaluated sideCondition & flip)
+                    remainderPatterns
+                    existentials
+            Not.simplifyEvaluated sideCondition existentialRemainders
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
@@ -1011,31 +1007,10 @@ removalPredicate
     Conditional { term = destTerm } = destination
     (configTerm, configPredicate) = Pattern.splitTerm configuration
     sideCondition = SideCondition.assumeTrueCondition configPredicate
-    -- The variables of the destination that are missing from the
-    -- configuration. These are the variables which should be existentially
-    -- quantified in the removal predicate.
-    getExtraElemVariables config dest =
-        let extraNonElemVariables = remainderNonElemVariables config dest
-        in if not . null $ extraNonElemVariables
-            then
-                error . show . Pretty.vsep $
-                    "Cannot quantify non-element variables: "
-                    : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
-            else remainderElementVariables config dest
-    configVariables :: Pattern variable -> Set.Set (SomeVariable variable)
-    configVariables = FreeVariables.toSet . freeVariables
-    destVariables = FreeVariables.toSet . freeVariables
-    remainderVariables config dest =
-        Set.toList
-        $ Set.difference
-            (destVariables dest)
-            (configVariables config)
-    remainderNonElemVariables config dest =
-        filter (not . isElementVariable) (remainderVariables config dest)
-    remainderElementVariables config dest =
-        mapMaybe
-            retractElementVariable
-            (remainderVariables config dest)
+    configSort = termLikeSort configTerm
+    remainderPattern patt =
+        Pattern.fromCondition
+        $ on (<>) Conditional.withoutTerm destination patt
 
 getConfiguration :: ReachabilityRule -> Pattern VariableName
 getConfiguration (toRulePattern -> RulePattern { left, requires }) =

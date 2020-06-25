@@ -33,14 +33,14 @@ module SIMPLIFIED
   rule <k> cc(X) => aa(X) </k>
   rule <k> dd(X) => aa(X) </k>
 
-  syntax Int ::= t(Int) [function]
-  syntax Int ::= s(Int) [function]
+  syntax Int ::= t(Int) [function, functional]
+  syntax Int ::= s(Int) [function, functional]
 
-  syntax Int ::= f(Int) [function]
+  syntax Int ::= f(Int) [function, functional]
   rule f(X) => t(X) requires X >Int 0
   rule f(X) => t(X) requires X <=Int 0
 
-  syntax Int ::= g(Int) [function]
+  syntax Int ::= g(Int) [function, functional]
 
   rule g(X) => s(X) requires X >Int 0 [simplification]
   rule g(X) => s(X) requires X <=Int 0 [simplification]
