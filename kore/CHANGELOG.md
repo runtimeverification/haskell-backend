@@ -14,6 +14,20 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.24.0.0] - 2020-06-25
+
+### Added
+
+- The hook `INT.eq` is reflexive with symbolic arguments.
+- The unification-based interpretation of function equations is supported.
+
+### Fixed
+
+- Improved function evaluation performance by reducing book-keeping.
+- Improved unification performance by removing excess logs.
+- Improved execution performance by discarding historical configurations.
+- `kore-repl` respects all logging options.
+
 ## [0.23.0.0] - 2020-06-10
 
 ### Added
