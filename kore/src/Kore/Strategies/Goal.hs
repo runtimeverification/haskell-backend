@@ -142,9 +142,7 @@ import Kore.Step.Simplification.OrPattern
 import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     )
-import Kore.Step.Simplification.Simplify
-    ( simplifyConditionalTermToOr
-    )
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
@@ -979,9 +977,9 @@ removalPatterns
   , isFunctionPattern destTerm
   = do
     unifiedConfigs <-
-        simplifyConditionalTermToOr
-            sideCondition
-            (mkIn configSort configTerm destTerm)
+        mkIn configSort configTerm destTerm
+        & Pattern.fromTermLike
+        & Pattern.simplify sideCondition
     if isBottom unifiedConfigs
         then return OrPattern.top
         else do
