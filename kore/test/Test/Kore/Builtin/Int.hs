@@ -250,6 +250,9 @@ test_abs :: TestTree
 test_abs = testUnary absIntSymbol abs
 
 -- Division
+-- TODO: add concrete tests for tdiv/tmod and use
+-- implementation from main code;
+-- add documentation to hooks.md
 test_tdiv :: TestTree
 test_tdiv = testPartialBinary tdivIntSymbol tdiv
 
@@ -283,10 +286,10 @@ tmod n d
   | otherwise = Just (rem n d)
 
 test_tdivZero :: TestTree
-test_tdivZero = testPartialBinaryZero edivIntSymbol tdiv
+test_tdivZero = testPartialBinaryZero tdivIntSymbol tdiv
 
 test_tmodZero :: TestTree
-test_tmodZero = testPartialBinaryZero emodIntSymbol tmod
+test_tmodZero = testPartialBinaryZero tmodIntSymbol tmod
 
 test_ediv_property :: TestTree
 test_ediv_property = testPartialBinary edivIntSymbol ediv
