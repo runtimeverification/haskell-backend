@@ -21,7 +21,7 @@
 #And
   <T>
     <k>
-      added
+      added ~> .
     </k>
     <a>
       2 |-> 3
