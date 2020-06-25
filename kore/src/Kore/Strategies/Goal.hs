@@ -810,11 +810,13 @@ removeDestination lensRulePattern mkState goal =
         do
             removal <- removalPatterns destination configuration existentials
             when (isTop removal) (succeed . mkState $ rulePattern)
-            let configAndRemoval =
-                    fmap (configuration <*) removal
+            let configAndRemoval = fmap (configuration <*) removal
+                sideCondition =
+                    Pattern.withoutTerm configuration
+                    & SideCondition.fromCondition
             simplifiedRemoval <-
                 simplifyConditionsWithSmt
-                    SideCondition.top
+                    sideCondition
                     configAndRemoval
             when (isBottom simplifiedRemoval) (succeed Proven)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
