@@ -250,9 +250,6 @@ test_abs :: TestTree
 test_abs = testUnary absIntSymbol abs
 
 -- Division
--- TODO: add concrete tests for tdiv/tmod and use
--- implementation from main code;
--- add documentation to hooks.md
 test_tdiv :: TestTree
 test_tdiv = testPartialBinary tdivIntSymbol tdiv
 
