@@ -407,6 +407,30 @@ rhsSubstitute subst RHS { existentials, right, ensures } =
   where
     subst' = foldr (Map.delete . inject . variableName) subst existentials
 
+renameExistentials
+    :: forall variable
+    .  HasCallStack
+    => InternalVariable variable
+    => Map (SomeVariableName variable) (SomeVariable variable)
+    -> RHS variable
+    -> RHS variable
+renameExistentials rename RHS { existentials, right, ensures } =
+    RHS
+        { existentials =
+            renameVariable <$> existentials
+        , right = TermLike.substitute subst right
+        , ensures = Predicate.substitute subst ensures
+        }
+  where
+    renameVariable
+        :: ElementVariable variable
+        -> ElementVariable variable
+    renameVariable var =
+        let name = SomeVariableNameElement . variableName $ var
+         in maybe var expectElementVariable
+            $ Map.lookup name rename
+    subst = TermLike.mkVar <$> rename
+
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
 rhsForgetSimplified RHS { existentials, right, ensures } =
     RHS
@@ -871,26 +895,36 @@ instance UnifyingRule RulePattern where
 
     precondition = requires
 
-    refreshRule avoid' rule1@(RulePattern _ _ _ _ _) =
-        let avoid = FreeVariables.toNames avoid'
-            rename = refreshVariables (avoid <> exVars) originalFreeVariables
-            subst = TermLike.mkVar <$> rename
-            left' = TermLike.substitute subst left
-            antiLeft' = TermLike.substitute subst <$> antiLeft
-            requires' = Predicate.substitute subst requires
-            rhs' = rhsSubstitute subst rhs
-            rule2 =
-                rule1
-                    { left = left'
-                    , antiLeft = antiLeft'
-                    , requires = requires'
-                    , rhs = rhs'
-                    }
-        in (rename, rule2)
+    refreshRule stale0' rule0@(RulePattern _ _ _ _ _) =
+        let stale0 = FreeVariables.toNames stale0'
+            freeVariables0 = freeVariables rule0
+            renaming1 =
+                refreshVariables stale0
+                $ FreeVariables.toSet freeVariables0
+            freeVariables1 =
+                FreeVariables.toSet freeVariables0
+                & Set.map (renameVariable renaming1)
+                & foldMap FreeVariables.freeVariable
+            existentials0 = Set.fromList . map inject $ existentials $ rhs rule0
+            stale1 = FreeVariables.toNames freeVariables1 <> stale0
+            renamingExists = refreshVariables stale1 existentials0
+            subst = TermLike.mkVar <$> renaming1
+            rule1 =
+                RulePattern
+                { left = left rule0 & TermLike.substitute subst
+                , antiLeft = antiLeft rule0 & fmap (TermLike.substitute subst)
+                , requires = requires rule0 & Predicate.substitute subst
+                , rhs =
+                    rhs rule0
+                    & renameExistentials renamingExists
+                    & rhsSubstitute subst
+                , attributes = attributes rule0
+                }
+        in (renaming1, rule1)
       where
-        RulePattern { left, antiLeft, requires, rhs } = rule1
-        exVars = Set.fromList $ inject . variableName <$> existentials rhs
-        originalFreeVariables = freeVariables rule1 & FreeVariables.toSet
+        renameVariable map' var =
+            Map.lookup (variableName var) map'
+            & fromMaybe var
 
     mapRuleVariables adj rule1@(RulePattern _ _ _ _ _) =
         rule1
