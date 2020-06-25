@@ -824,20 +824,19 @@ removeDestination lensRulePattern mkState goal =
         do
             removal <- removalPatterns destination configuration existentials
             when (isTop removal)
-                (succeed . incrementDepth . mkState $ rulePattern)
+                (succeed . mkState $ rulePattern)
             let configAndRemoval =
                     fmap (configuration <*) removal
                 initialDepth = extractDepth $ mkState rulePattern
-                newDepth = increment initialDepth
             simplifiedRemoval <-
                 simplifyConditionsWithSmt
                     SideCondition.top
                     configAndRemoval
-            when (isBottom simplifiedRemoval) (succeed $ Proven newDepth)
+            when (isBottom simplifiedRemoval) (succeed $ Proven initialDepth)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
                 & Lens.set RulePattern.leftPattern stuckConfiguration
-                & GoalStuck newDepth
+                & GoalStuck initialDepth
                 & pure
         & run
         & withConfiguration configuration

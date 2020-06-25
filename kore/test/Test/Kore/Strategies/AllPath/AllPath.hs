@@ -152,7 +152,7 @@ test_transitionRule_RemoveDestination =
     [ unmodified $ ProofState.Proven ProofState.depth0
     , unmodified (ProofState.GoalRemainder ProofState.depth0 (A, B))
     , ProofState.Goal ProofState.depth0 (B, B)
-        `becomes` (ProofState.Goal (ProofState.Depth 1) (Bot, B), mempty)
+        `becomes` (ProofState.Goal (ProofState.Depth 0) (Bot, B), mempty)
     ]
   where
     run = runTransitionRule ProofState.RemoveDestination
