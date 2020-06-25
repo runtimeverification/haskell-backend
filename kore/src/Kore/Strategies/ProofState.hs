@@ -7,6 +7,8 @@ module Kore.Strategies.ProofState
     , extractUnproven
     , depth0
     , extractDepth
+    , increment
+    , incrementDepth
     , Depth (..)
     , ProofState (..)
     , Prim (..)
@@ -82,6 +84,9 @@ newtype Depth = Depth { getDepth :: Natural}
 
 depth0 :: Depth
 depth0 = Depth 0
+
+increment :: Depth -> Depth
+increment (Depth d) = Depth (d + 1)
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
@@ -163,6 +168,13 @@ extractDepth (GoalRewritten d _) = d
 extractDepth (GoalRemainder d _) = d
 extractDepth (GoalStuck d _) = d
 extractDepth (Proven d)      = d
+
+incrementDepth :: ProofState a -> ProofState a
+incrementDepth (Goal d t)    = Goal (increment d) t
+incrementDepth (GoalRewritten d t) = GoalRewritten (increment d) t
+incrementDepth (GoalRemainder d t) = GoalRemainder (increment d) t
+incrementDepth (GoalStuck d t) = GoalStuck (increment d) t
+incrementDepth (Proven d)      = Proven (increment d)
 
 data ProofStateTransformer a val =
     ProofStateTransformer

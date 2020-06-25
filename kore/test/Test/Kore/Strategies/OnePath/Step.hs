@@ -780,7 +780,7 @@ test_onePathStrategy =
             original
             []
             []
-        assertEqual "" (ProofState.GoalStuck (ProofState.Depth 1) expect) _actual
+        assertEqual "" (ProofState.GoalStuck (ProofState.Depth 0) expect) _actual
     ]
 
 simpleRewrite

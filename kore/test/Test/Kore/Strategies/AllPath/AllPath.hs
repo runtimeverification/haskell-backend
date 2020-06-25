@@ -173,7 +173,7 @@ test_transitionRule_TriviallyValid =
     unmodified state = run state `equals_` [(state, mempty)]
     becomesProven :: HasCallStack => ProofState -> TestTree
     becomesProven state = run state
-        `equals_` [(ProofState.Proven $ ProofState.Depth 1, mempty)]
+        `equals_` [(ProofState.Proven ProofState.depth0, mempty)]
 
 test_transitionRule_DerivePar :: [TestTree]
 test_transitionRule_DerivePar =
