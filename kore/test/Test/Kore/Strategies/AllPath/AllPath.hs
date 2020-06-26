@@ -402,29 +402,35 @@ isTriviallyValid (src, _) = src == Bot
 
 derivePar
     :: [Goal.Rule Goal]
-    -> Goal
+    -> ProofState
     -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-derivePar rules (src, dst) =
-    goals <|> goalRemainder
+derivePar rules proofState =
+    case proofState of
+        ProofState.Goal depth goal -> worker depth goal
+        ProofState.GoalRemainder depth goal -> worker depth goal
+        _ -> return proofState
   where
-    goal rule@(Rule (_, to)) = do
-        Transition.addRule rule
-        (pure . ProofState.Goal (ProofState.Depth 1)) (to, dst)
-    goalRemainder = do
-        let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ProofState.GoalRemainder (ProofState.Depth 1)) (r, dst)
-    applyRule rule@(Rule (fromGoal, _))
-      | fromGoal `matches` src = Just rule
-      | otherwise = Nothing
-    applied = mapMaybe applyRule rules
-    goals = Foldable.asum (goal <$> applied)
+    worker depth (src, dst) = goals <|> goalRemainder
+      where
+        goal rule@(Rule (_, to)) = do
+            Transition.addRule rule
+            (pure . ProofState.Goal (ProofState.increment depth)) (to, dst)
+        goalRemainder = do
+            let r = Foldable.foldl' difference src (fst . unRule <$> applied)
+            pure . ProofState.GoalRemainder (ProofState.increment depth)
+                $ (r, dst)
+        applyRule rule@(Rule (fromGoal, _))
+          | fromGoal `matches` src = Just rule
+          | otherwise = Nothing
+        applied = mapMaybe applyRule rules
+        goals = Foldable.asum (goal <$> applied)
 
 simplify :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
 simplify = return
 
 deriveSeq
     :: [Goal.Rule Goal]
-    -> Goal
+    -> ProofState
     -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
 deriveSeq = derivePar
 

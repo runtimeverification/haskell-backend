@@ -1,7 +1,7 @@
 module Test.Kore.Strategies.OnePath.Step
     ( test_onePathStrategy
     ) where
-
+import Kore.Unparser
 import Prelude.Kore
 
 import Test.Tasty
@@ -174,7 +174,7 @@ test_onePathStrategy =
             (makeReachabilityOnePathRule Mock.a Mock.a)
             [makeReachabilityOnePathRule Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
-        assertEqual "" (ProofState.Proven $ ProofState.Depth 1) _actual
+        assertEqual "" (ProofState.Proven ProofState.depth0) _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
@@ -197,7 +197,7 @@ test_onePathStrategy =
             [makeReachabilityOnePathRule Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
-            (ProofState.Goal (ProofState.Depth 1) $ makeOnePathRule Mock.c Mock.d)
+            (ProofState.Goal ProofState.depth0 $ makeOnePathRule Mock.c Mock.d)
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -231,7 +231,7 @@ test_onePathStrategy =
             , simpleReachabilityRewrite Mock.a Mock.b
             ]
         assertEqual ""
-            (ProofState.Proven $ ProofState.Depth 2)
+            (ProofState.Proven ProofState.depth0)
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -260,7 +260,8 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.Goal (ProofState.Depth 2) $ makeOnePathRule Mock.c Mock.e
+                [ ProofState.Goal ProofState.depth0
+                    $ makeOnePathRule Mock.c Mock.e
                 ]
             )
             (sort
@@ -294,7 +295,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.Goal (ProofState.Depth 2) $ makeOnePathRule Mock.d Mock.e
+                [ ProofState.Goal ProofState.depth0 $ makeOnePathRule Mock.d Mock.e
                 ]
             )
             (sort
@@ -491,7 +492,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqual ""
-            [ ProofState.GoalRemainder (ProofState.Depth 2)
+            [ ProofState.GoalRemainder (ProofState.Depth 1)
             $ makeOnePathRuleFromPatterns
                 Conditional
                     { term = Mock.functionalConstr10 Mock.b
@@ -503,7 +504,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)
-            , ProofState.Proven (ProofState.Depth 2)
+            , ProofState.Proven (ProofState.Depth 0)
             ]
             [ _actual1
             , _actual2
@@ -515,7 +516,7 @@ test_onePathStrategy =
         -- Goal: 0 => 1
         -- Coinductive axioms: none
         -- Normal axiom: x => 1 if x<2
-        [ _actual ] <-
+        result@(_actual : _) <-
             runOnePathSteps
                 Unlimited
                 (Limit 2)
@@ -534,6 +535,7 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     )
                 ]
+        traceM $ show result
         [ _actualReach ] <-
             runOnePathSteps
                 Unlimited

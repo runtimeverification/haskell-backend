@@ -314,7 +314,7 @@ instance Goal OnePathRule where
 deriveParOnePath
     ::  (MonadCatch simplifier, MonadSimplify simplifier)
     =>  [Rule OnePathRule]
-    ->  OnePathRule
+    ->  ProofState OnePathRule OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
             (ProofState OnePathRule OnePathRule)
 deriveParOnePath rules =
@@ -325,7 +325,7 @@ deriveParOnePath rules =
 deriveSeqOnePath
     ::  (MonadCatch simplifier, MonadSimplify simplifier)
     =>  [Rule OnePathRule]
-    ->  OnePathRule
+    ->  ProofState OnePathRule OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
             (ProofState OnePathRule OnePathRule)
 deriveSeqOnePath rules =
@@ -374,7 +374,7 @@ instance Goal AllPathRule where
 deriveParAllPath
     ::  (MonadCatch simplifier, MonadSimplify simplifier)
     =>  [Rule AllPathRule]
-    ->  AllPathRule
+    ->  ProofState AllPathRule AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
             (ProofState AllPathRule AllPathRule)
 deriveParAllPath rules =
@@ -385,7 +385,7 @@ deriveParAllPath rules =
 deriveSeqAllPath
     ::  (MonadCatch simplifier, MonadSimplify simplifier)
     =>  [Rule AllPathRule]
-    ->  AllPathRule
+    ->  ProofState AllPathRule AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
             (ProofState AllPathRule AllPathRule)
 deriveSeqAllPath rules =
@@ -581,11 +581,11 @@ data TransitionRuleTemplate monad goal =
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
         :: [Rule goal]
-        -> goal
+        -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , deriveSeqTemplate
         :: [Rule goal]
-        -> goal
+        -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
 
@@ -688,23 +688,23 @@ transitionRuleTemplate
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
         Profile.timeStrategy "Goal.DerivePar"
-        $ deriveParTemplate rules goal
+        $ deriveParTemplate rules (Goal depth goal)
     transitionRuleWorker (DerivePar rules) (GoalRemainder depth goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveParRemainder"
-        $ deriveParTemplate rules goal
+        $ deriveParTemplate rules (GoalRemainder depth goal)
 
     transitionRuleWorker (DeriveSeq rules) (Goal depth goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeq"
-        $ deriveSeqTemplate rules goal
+        $ deriveSeqTemplate rules (Goal depth goal)
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder depth goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeqRemainder"
-        $ deriveSeqTemplate rules goal
+        $ deriveSeqTemplate rules (GoalRemainder depth goal)
 
     transitionRuleWorker _ state = return state
 
@@ -893,7 +893,7 @@ derivePar
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
-    -> goal
+    -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 derivePar lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
@@ -913,17 +913,24 @@ deriveWith
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
-    -> goal
+    -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveWith lensRulePattern mkRule takeStep rewrites goal =
-    getCompose
-    $ Lens.forOf lensRulePattern goal
-    $ \rulePattern ->
-        fmap (snd . Step.refreshRule mempty)
-        $ Lens.forOf RulePattern.leftPattern rulePattern
-        $ \config -> Compose $ withConfiguration config $ do
-            results <- takeStep rewrites config & lift
-            deriveResults mkRule results
+deriveWith lensRulePattern mkRule takeStep rewrites proofState =
+    case proofState of
+        Goal depth goal -> worker depth goal
+        GoalRemainder depth goal -> worker depth goal
+        _ -> return proofState
+  where
+    worker depth goal =
+        getCompose
+        $ Lens.forOf lensRulePattern goal
+        $ \rulePattern ->
+            fmap (snd . Step.refreshRule mempty)
+            $ Lens.forOf RulePattern.leftPattern rulePattern
+            $ \config -> Compose $ withConfiguration config $ do
+                results <- takeStep rewrites config & lift
+                deriveResults mkRule results
+        & fmap (ProofState.changeDepth (const (increment depth)))
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -933,7 +940,7 @@ deriveSeq
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
-    -> goal
+    -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 deriveSeq lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
