@@ -332,14 +332,14 @@ ediv n d
     | d == 0 = Nothing
     | n == d = Just 1
     | n < 0, d < 0 =
-        Just $ 1 + div (-n) (-d)
+        Just $ 1 + div n d
     | d < 0 = Just (quot n d)
     | otherwise = Just (div n d)
 emod a b
     | b == 0 = Nothing
     | a == b = Just 0
     | a < 0, b < 0 =
-        Just $ a - b * (1 + div (-a) (-b))
+        Just $ a - b * (1 + div a b)
     | b < 0  = Just (rem a b)
     | otherwise = Just (mod a b)
 pow b e
