@@ -227,7 +227,7 @@ test_searchExceedingBreadthLimit =
 
     assertion searchType =
         catch (shouldExceedBreadthLimit searchType)
-        $ \(_ :: LimitExceeded ([Strategy (Prim (RewriteRule RewritingVariableName))], Graph.Node)) ->
+        $ \(_ :: LimitExceeded Graph.Node) ->
             pure ()
 
     shouldExceedBreadthLimit :: SearchType -> IO ()
