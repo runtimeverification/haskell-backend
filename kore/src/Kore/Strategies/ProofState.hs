@@ -9,6 +9,7 @@ module Kore.Strategies.ProofState
     , extractDepth
     , increment
     , incrementDepth
+    , isProven
     , changeDepth
     , Depth (..)
     , ProofState (..)
@@ -179,6 +180,10 @@ changeDepth f (GoalRewritten d t) = GoalRewritten (f d) t
 changeDepth f (GoalRemainder d t) = GoalRemainder (f d) t
 changeDepth f (GoalStuck d t) = GoalStuck (f d) t
 changeDepth f (Proven d)      = Proven (f d)
+
+isProven :: ProofState a -> Bool
+isProven (Proven _) = True
+isProven _ = False
 
 data ProofStateTransformer a val =
     ProofStateTransformer

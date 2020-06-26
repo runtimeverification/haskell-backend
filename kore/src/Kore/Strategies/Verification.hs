@@ -23,6 +23,7 @@ import Prelude.Kore
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
+    , forM_
     )
 import qualified Control.Monad as Monad
     ( foldM_
@@ -35,11 +36,15 @@ import Control.Monad.Except
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
+import Control.Error
+    ( maximumMay
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
 import Data.Text
     ( Text
+    , pack
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -80,6 +85,7 @@ import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (..)
+    , getDepth
     )
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
@@ -88,6 +94,7 @@ import Logic
     ( LogicT
     )
 import qualified Logic
+import qualified Log
 
 -- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
 type CommonProofState = ProofState.ProofState (Pattern VariableName)
@@ -230,13 +237,40 @@ verifyClaim
             strategy goal claims axioms
             & Foldable.toList
             & Limit.takeWithin depthLimit
-    Strategy.leavesM
-        updateQueue
-        (Strategy.unfoldTransition transit)
-        (limitedStrategy, startPattern)
-        & fmap discardStrategy
-        & throwUnproven
+        proofStatesLogicT = Strategy.leavesM
+            updateQueue
+            (Strategy.unfoldTransition transit)
+            (limitedStrategy, startPattern)
+            & fmap discardStrategy
+    proofStatesList <- Logic.observeAllT proofStatesLogicT
+    case depthLongestProven proofStatesList of
+        Just n ->
+            Log.logInfo . pack
+                $ "Final execution length of the longest proven claim :"
+                <> show n
+        _ -> forM_ (depthSomeUnproven proofStatesList)
+            (\n ->
+                Log.logInfo . pack
+                    $ "Final execution length of an unproven configuration :"
+                    <> show n
+            )
+
+    proofStatesLogicT & throwUnproven
   where
+    depthLongestProven :: [CommonProofState] -> Maybe Natural
+    depthLongestProven proofStates =
+        proofStates
+        & filter ProofState.isProven
+        & fmap (getDepth . ProofState.extractDepth)
+        & maximumMay
+
+    depthSomeUnproven :: [CommonProofState] -> Maybe Natural
+    depthSomeUnproven proofStates =
+        proofStates
+        & filter (not . ProofState.isProven)
+        & fmap (getDepth . ProofState.extractDepth)
+        & headMay
+
     destination = getDestination goal
     discardStrategy = snd
 
