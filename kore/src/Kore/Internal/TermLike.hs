@@ -439,7 +439,8 @@ simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys
-    :: InternalVariable variable
+    :: HasCallStack
+    => InternalVariable variable
     => Foldable t
     => t (TermLike variable)
     -> a
@@ -450,9 +451,10 @@ assertConstructorLikeKeys keys a
                 filter (not . Pattern.isConstructorLike) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
-                [ "Map and Set may only contain constructor-like \
-                  \keys (resp. elements)."
-                , Pretty.indent 2 "Simplifiable keys:"
+                [ "Internal error: expected constructor-like patterns,\
+                  \ an internal invariant has been violated.\
+                  \ Please report this error."
+                , Pretty.indent 2 "Non-constructor-like patterns:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | any (not . isFullySimplified) keys =
@@ -460,9 +462,10 @@ assertConstructorLikeKeys keys a
                 filter (not . isFullySimplified) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
-                [ "Map and Set may only contain simplified \
-                  \keys."
-                , Pretty.indent 2 "Simplifiable keys:"
+                [ "Internal error: expected fully simplified patterns,\
+                  \ an internal invariant has been violated.\
+                  \ Please report this error."
+                , Pretty.indent 2 "Unsimplified patterns:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | otherwise = a
