@@ -1010,7 +1010,7 @@ removalPatterns
     sideCondition = SideCondition.assumeTrueCondition configPredicate
     configSort = termLikeSort configTerm
     remainderPattern patt =
-        Pattern.fromCondition
+        Pattern.fromCondition configSort
         $ on (<>) Conditional.withoutTerm destination patt
 
 getConfiguration :: ReachabilityRule -> Pattern VariableName

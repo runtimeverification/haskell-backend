@@ -106,7 +106,7 @@ test_ceilSimplification =
             -- ceil(top{testSort}) = top
             actual1 <- evaluate
                 (makeCeil
-                    [Pattern.fromConditionSorted Mock.testSort Condition.top]
+                    [Pattern.fromCondition Mock.testSort Condition.top]
                 )
             assertEqual "ceil(top)"
                 (OrPattern.fromPatterns
