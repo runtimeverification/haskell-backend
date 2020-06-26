@@ -41,6 +41,9 @@ import qualified Data.Foldable as Foldable
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -154,7 +157,7 @@ attemptEquation
     .  HasCallStack
     => MonadSimplify simplifier
     => InternalVariable variable
-    => SideCondition (Target variable)
+    => SideCondition variable
     -> TermLike (Target variable)
     -> Equation variable
     -> simplifier (AttemptEquationResult variable)
@@ -168,11 +171,25 @@ attemptEquation sideCondition termLike equation =
                     applyMatchResult equationRenamed matchResult
                         & whileApplyMatchResult
                 Just argument' -> do
+                    (matchPredicate, matchSubstitution) <-
+                        match left termLike
+                        & whileMatch
                     matchResults <-
-                        whileMatch
-                        $ match left termLike
-                        >>= simplifyArgumentWithResult argument' antiLeft
-                    applyAndSelectMatchResult matchResults
+                        applySubstitutionAndSimplify
+                            argument'
+                            antiLeft
+                            matchSubstitution
+                        & whileMatch
+                    (equation', predicate) <-
+                        applyAndSelectMatchResult matchResults
+                    let matchPredicate' =
+                            Predicate.mapVariables
+                                (pure Target.unTarget)
+                                matchPredicate
+                    return
+                        ( equation'
+                        , makeAndPredicate predicate matchPredicate'
+                        )
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires
         let Equation { right, ensures } = equation'
@@ -210,26 +227,26 @@ attemptEquation sideCondition termLike equation =
         debugAttemptEquationResult equation result
         return result
 
-    simplifyArgumentWithResult
+    applySubstitutionAndSimplify
         :: HasCallStack
         => Predicate (Target variable)
         -> Maybe (Predicate (Target variable))
-        -> MatchResult (Target variable)
+        -> Map (SomeVariableName (Target variable)) (TermLike (Target variable))
         -> ExceptT
             (MatchError (Target variable))
             simplifier
             [MatchResult (Target variable)]
-    simplifyArgumentWithResult
+    applySubstitutionAndSimplify
         argument
         antiLeft
-        (matchPredicate, matchSubstitution)
+        matchSubstitution
       =
         lift $ do
             let toMatchResult Conditional { predicate, substitution } =
                     (predicate, Substitution.toMap substitution)
             Substitution.mergePredicatesAndSubstitutions
-                sideCondition
-                ([argument, matchPredicate] <> maybeToList antiLeft)
+                SideCondition.top
+                (argument : maybeToList antiLeft)
                 [from @_ @(Substitution _) matchSubstitution]
                 & Logic.observeAllT
                 & (fmap . fmap) toMatchResult
@@ -333,7 +350,7 @@ checkRequires
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
-    => SideCondition (Target variable)
+    => SideCondition variable
     -> Predicate variable  -- ^ requires from matching
     -> Predicate variable  -- ^ requires from 'Equation'
     -> ExceptT (CheckRequiresError variable) simplifier ()
@@ -357,13 +374,7 @@ checkRequires sideCondition predicate requires =
     -- and the rule will not be applied.
     & (OrCondition.observeAllT >=> assertBottom)
   where
-    simplifyCondition = Simplifier.simplifyCondition sideCondition'
-
-    -- TODO (thomas.tuegel): Do not unwrap sideCondition.
-    sideCondition' =
-        SideCondition.mapVariables
-            (pure Target.unTarget)
-            sideCondition
+    simplifyCondition = Simplifier.simplifyCondition sideCondition
 
     assertBottom orCondition
       | isBottom orCondition = done
@@ -376,7 +387,7 @@ checkRequires sideCondition predicate requires =
             }
 
     -- Pair a configuration with sideCondition for evaluation by the solver.
-    withSideCondition = (,) sideCondition'
+    withSideCondition = (,) sideCondition
 
     withoutAxioms =
         fmap Condition.forgetSimplified
@@ -392,7 +403,7 @@ The variables are marked 'Target' and renamed to avoid any variables in the
 targetEquationVariables
     :: forall variable
     .  InternalVariable variable
-    => SideCondition (Target variable)
+    => SideCondition variable
     -> TermLike (Target variable)
     -> Equation variable
     -> Equation (Target variable)
@@ -401,7 +412,11 @@ targetEquationVariables sideCondition initial =
     . Equation.refreshVariables avoiding
     . Equation.mapVariables Target.mkUnifiedTarget
   where
-    avoiding = freeVariables sideCondition <> freeVariables initial
+    avoiding = sideConditionVariables <> freeVariables initial
+    sideConditionVariables =
+        FreeVariables.mapFreeVariables
+            Target.mkUnifiedNonTarget
+            $ freeVariables sideCondition
 
 -- * Errors
 
