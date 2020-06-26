@@ -1,6 +1,6 @@
 <T>
   <k>
-    x = choice ( a , b );
+    x = choice ( a , b ); ~> .
   </k>
   <state>
     a |-> A:Int
