@@ -1,6 +1,6 @@
   <T>
     <k>
-      #addOne ~> #execute
+      #addOne ~> #execute ~> .
     </k>
     <state>
       "x" |-> X +Int -1
