@@ -7,8 +7,8 @@ module Test.Kore.Builtin.Int
     , test_add, test_sub, test_mul, test_abs
     , test_tdiv, test_tmod, test_tdivZero, test_tmodZero
     , test_ediv_property, test_emod_property, test_edivZero, test_emodZero
-    , test_ediv
-    , test_emod
+    , test_ediv, test_emod
+    , test_euclidian_division_theorem
     , test_and, test_or, test_xor, test_not
     , test_shl, test_shr
     , test_pow, test_powmod, test_log2
@@ -56,18 +56,18 @@ import Data.Semigroup
     , stimes
     )
 import qualified Data.Text as Text
-import GHC.Integer
-    ( smallInteger
-    )
-import GHC.Integer.GMP.Internals
-    ( powModInteger
-    , recipModInteger
-    )
-import GHC.Integer.Logarithms
-    ( integerLog2#
-    )
 
+import Kore.Builtin.Int
+    ( ediv
+    , emod
+    , log2
+    , pow
+    , powmod
+    , tdiv
+    , tmod
+    )
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -257,18 +257,8 @@ test_tdiv_evaluated_arguments :: TestTree
 test_tdiv_evaluated_arguments =
     testDivEvaluatedArguments tdivIntSymbol tdiv
 
-tdiv :: Integer -> Integer -> Maybe Integer
-tdiv n d
-  | d == 0 = Nothing
-  | otherwise = Just (quot n d)
-
 test_tmod :: TestTree
 test_tmod = testPartialBinary tmodIntSymbol tmod
-
-tmod :: Integer -> Integer -> Maybe Integer
-tmod n d
-  | d == 0 = Nothing
-  | otherwise = Just (rem n d)
 
 test_tdivZero :: TestTree
 test_tdivZero = testPartialBinaryZero tdivIntSymbol tdiv
@@ -283,26 +273,105 @@ test_ediv_evaluated_arguments :: TestTree
 test_ediv_evaluated_arguments =
     testDivEvaluatedArguments edivIntSymbol ediv
 
-ediv :: Integer -> Integer -> Maybe Integer
-ediv n d
-    | d == 0 = Nothing
-    | d < 0 = Just (quot n d)
-    | otherwise = Just (div n d)
-
 test_emod_property :: TestTree
 test_emod_property = testPartialBinary emodIntSymbol emod
-
-emod :: Integer -> Integer -> Maybe Integer
-emod a b
-    | b == 0 = Nothing
-    | b < 0  = Just (rem a b)
-    | otherwise = Just (mod a b)
 
 test_edivZero :: TestTree
 test_edivZero = testPartialBinaryZero edivIntSymbol tdiv
 
 test_emodZero :: TestTree
 test_emodZero = testPartialBinaryZero emodIntSymbol tmod
+
+test_ediv :: [TestTree]
+test_ediv =
+    [ testInt
+        "ediv normal"
+        edivIntSymbol
+        (asInternal <$> [193, 12])
+        (asPattern 16)
+    , testInt
+        "ediv negative lhs"
+        edivIntSymbol
+        (asInternal <$> [-193, 12])
+        (asPattern (-17))
+    , testInt
+        "ediv negative rhs"
+        edivIntSymbol
+        (asInternal <$> [193, -12])
+        (asPattern (-16))
+    , testInt
+        "ediv both negative"
+        edivIntSymbol
+        (asInternal <$> [-193, -12])
+        (asPattern 17)
+    , testInt
+        "ediv bottom"
+        edivIntSymbol
+        (asInternal <$> [193, 0])
+        bottom
+    ]
+
+test_emod :: [TestTree]
+test_emod =
+    [ testInt
+        "emod normal"
+        emodIntSymbol
+        (asInternal <$> [193, 12])
+        (asPattern 1)
+    , testInt
+        "emod negative lhs"
+        emodIntSymbol
+        (asInternal <$> [-193, 12])
+        (asPattern 11)
+    , testInt
+        "emod negative rhs"
+        emodIntSymbol
+        (asInternal <$> [193, -12])
+        (asPattern 1)
+    , testInt
+        "emod both negative"
+        emodIntSymbol
+        (asInternal <$> [-193, -12])
+        (asPattern 11)
+    , testInt
+        "emod bottom"
+        emodIntSymbol
+        (asInternal <$> [193, 0])
+        bottom
+    ]
+
+test_euclidian_division_theorem :: TestTree
+test_euclidian_division_theorem =
+    testPropertyWithSolver "Euclidian division theorem" $ do
+        dividend <- forAll genInteger
+        divisor <- forAll genInteger
+        unless (divisor /= 0) discard
+        quotient <-
+            evaluate'
+                edivIntSymbol
+                dividend
+                divisor
+        remainder <-
+            evaluate'
+                emodIntSymbol
+                dividend
+                divisor
+        (===) (remainder >= 0 && remainder < abs divisor) True
+        (===) (divisor * quotient + remainder) dividend
+  where
+    evaluate' symbol a b =
+        mkApplySymbol
+            symbol
+            (asInternal <$> [a, b])
+        & evaluateT
+        & fmap extractValue
+    extractValue :: Pattern VariableName -> Integer
+    extractValue (Pattern.toTermLike -> term) =
+        case term of
+            Builtin_
+                (Domain.BuiltinInt Domain.InternalInt { builtinIntValue }) ->
+                    builtinIntValue
+            _ -> error "Expecting builtin int."
 
 testDivEvaluatedArguments
     :: Symbol
@@ -345,88 +414,14 @@ test_shr = testBinary shrIntSymbol shr
   where shr a = shift a . fromInteger . negate
 
 -- Exponential and logarithmic operations
-pow :: Integer -> Integer -> Maybe Integer
-pow b e
-    | e < 0 = Nothing
-    | otherwise = Just (b ^ e)
-
 test_pow :: TestTree
 test_pow = testPartialBinary powIntSymbol pow
-
-powmod :: Integer -> Integer -> Integer -> Maybe Integer
-powmod b e m
-    | m == 0 = Nothing
-    | e < 0 && recipModInteger b m == 0 = Nothing
-    | otherwise = Just (powModInteger b e m)
 
 test_powmod :: TestTree
 test_powmod = testPartialTernary powmodIntSymbol powmod
 
-log2 :: Integer -> Maybe Integer
-log2 n
-    | n > 0 = Just (smallInteger (integerLog2# n))
-    | otherwise = Nothing
-
 test_log2 :: TestTree
 test_log2 = testPartialUnary log2IntSymbol log2
-
-test_emod :: [TestTree]
-test_emod =
-    [ testInt
-        "emod normal"
-        emodIntSymbol
-        (asInternal <$> [193, 12])
-        (asPattern 1)
-    , testInt
-        "emod negative lhs"
-        emodIntSymbol
-        (asInternal <$> [-193, 12])
-        (asPattern 11)
-    , testInt
-        "emod negative rhs"
-        emodIntSymbol
-        (asInternal <$> [193, -12])
-        (asPattern 1)
-    , testInt
-        "emod both negative"
-        emodIntSymbol
-        (asInternal <$> [-193, -12])
-        (asPattern (-1))
-    , testInt
-        "emod bottom"
-        emodIntSymbol
-        (asInternal <$> [193, 0])
-        bottom
-    ]
-
-test_ediv :: [TestTree]
-test_ediv =
-    [ testInt
-        "ediv normal"
-        edivIntSymbol
-        (asInternal <$> [193, 12])
-        (asPattern 16)
-    , testInt
-        "ediv negative lhs"
-        edivIntSymbol
-        (asInternal <$> [-193, 12])
-        (asPattern (-17))
-    , testInt
-        "ediv negative rhs"
-        edivIntSymbol
-        (asInternal <$> [193, -12])
-        (asPattern (-16))
-    , testInt
-        "ediv both negative"
-        edivIntSymbol
-        (asInternal <$> [-193, -12])
-        (asPattern 16)
-    , testInt
-        "ediv bottom"
-        edivIntSymbol
-        (asInternal <$> [193, 0])
-        bottom
-    ]
 
 -- | Another name for asInternal.
 intLiteral :: Integer -> TermLike VariableName

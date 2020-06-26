@@ -239,7 +239,7 @@ The result is `bottom{}()` if the second argument is zero.
 ### INT.emod
 
 Remainder of the first argument divided by the second (using the euclidean
-algorithm).
+algorithm). The result is guaranteed to be positive.
 The result is `bottom{}()` if the second argument is zero.
 
 ~~~
