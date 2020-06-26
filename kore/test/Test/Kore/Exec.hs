@@ -55,10 +55,8 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
 import Kore.Step
-    ( Prim (..)
-    , priorityAllStrategy
+    ( priorityAllStrategy
     , priorityAnyStrategy
     )
 import Kore.Step.Rule
@@ -74,7 +72,6 @@ import Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import Kore.Step.Strategy
     ( LimitExceeded (..)
-    , Strategy (..)
     )
 import Kore.Syntax.Definition hiding
     ( Symbol
