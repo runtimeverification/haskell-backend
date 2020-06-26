@@ -174,7 +174,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
         :: (VerifiedModule StepperAttributes, TermLike VariableName)
         -> IO (TermLike VariableName)
     execution (verifiedModule, purePattern) =
-        flip runLoggerT emptyLogger
+        fmap snd
+        $ flip runLoggerT emptyLogger
         $ SMT.runSMT SMT.defaultConfig
         $ exec unlimited verifiedModule strategy purePattern
       where

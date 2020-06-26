@@ -646,10 +646,9 @@ koreRun execOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
-    (exitCode, final) <- execute execOptions mainModule $ do
-        final <- exec breadthLimit mainModule strategy' initial
-        exitCode <- execGetExitCode mainModule strategy' final
-        return (exitCode, final)
+    (exitCode, final) <-
+        execute execOptions mainModule
+        $ exec breadthLimit mainModule strategy' initial
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
