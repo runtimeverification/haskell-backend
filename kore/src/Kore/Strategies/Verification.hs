@@ -38,9 +38,6 @@ import Control.Monad.Except
 import qualified Control.Monad.Except as Monad.Except
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
-import Data.Sequence
-    ( Seq
-    )
 import qualified Data.Stream.Infinite as Stream
 import Data.Text
     ( Text
