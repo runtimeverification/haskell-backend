@@ -240,6 +240,11 @@ powmodIntSymbol =
 log2IntSymbol :: Internal.Symbol
 log2IntSymbol = unaryIntSymbol "log2Int" & hook "INT.log2" & function
 
+edivIntSymbol :: Internal.Symbol
+edivIntSymbol =
+    binaryIntSymbol "edivInt"
+    & hook "INT.ediv" & smthook "div" & function
+
 emodIntSymbol :: Internal.Symbol
 emodIntSymbol =
     binaryIntSymbol "emodInt"
@@ -1368,6 +1373,7 @@ intModule =
             , hookedSymbolDecl absIntSymbol
             , hookedSymbolDecl tdivIntSymbol
             , hookedSymbolDecl tmodIntSymbol
+            , hookedSymbolDecl edivIntSymbol
             , hookedSymbolDecl emodIntSymbol
             , symbolDecl dummyIntSymbol
             , hookedSymbolDecl andIntSymbol

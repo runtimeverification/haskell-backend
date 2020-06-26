@@ -1,6 +1,6 @@
 <T>
   <k>
-    a
+    a ~> .
   </k>
   <l>
     ListItem ( a )
