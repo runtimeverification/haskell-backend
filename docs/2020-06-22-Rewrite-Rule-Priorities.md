@@ -27,8 +27,8 @@ we could write the following rules:
 
 ```
 rule A(X) ⇒ B(X) requires X <Int 0 [priority(1)]
-rule A(X) ⇒ B(X) requires X <Int 1 [priority(2)]
-rule A(X) ⇒ B(X)                   [priority(3)]
+rule A(X) ⇒ C(X) requires X <Int 1 [priority(2)]
+rule A(X) ⇒ D(X)                   [priority(3)]
 ```
 
 ### Non-priority rules in Kore
