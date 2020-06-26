@@ -18,11 +18,11 @@ module Kore.Strategies.ProofState
 
 import Prelude.Kore
 
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Numeric.Natural
     ( Natural
     )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Unparser

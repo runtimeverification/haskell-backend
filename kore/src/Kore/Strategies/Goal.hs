@@ -602,8 +602,8 @@ logTransitionRule
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
         )
 logTransitionRule rule prim proofState = case proofState of
-    Goal depth goal          -> logWith goal
-    GoalRemainder depth goal -> logWith goal
+    Goal _ goal          -> logWith goal
+    GoalRemainder _ goal -> logWith goal
     _                        -> rule prim proofState
   where
     logWith goal = case prim of
@@ -645,7 +645,7 @@ transitionRuleTemplate
     transitionRuleWorker CheckProven (Proven _) = empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder _ _) = empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten depth goal) =
+    transitionRuleWorker ResetGoal (GoalRewritten _ goal) =
         return (Goal depth0 goal)
 
     transitionRuleWorker CheckGoalStuck (GoalStuck _ _) = empty
@@ -654,12 +654,12 @@ transitionRuleTemplate
         Profile.timeStrategy "Goal.Simplify" $ do
             results <- tryTransitionT (simplifyTemplate goal)
             case results of
-                [] -> return $ Proven (increment depth)
-                _  -> Goal (increment depth) <$> Transition.scatter results
+                [] -> return $ Proven depth
+                _  -> Goal depth <$> Transition.scatter results
 
     transitionRuleWorker Simplify (GoalRemainder depth goal) =
         Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder (increment depth) <$> simplifyTemplate goal
+        $ GoalRemainder depth <$> simplifyTemplate goal
 
     transitionRuleWorker RemoveDestination (Goal depth goal) =
         Profile.timeStrategy "Goal.RemoveDestination"

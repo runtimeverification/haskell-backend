@@ -206,7 +206,7 @@ test_transitionRule_DerivePar =
         -- ^ transitions
         -> TestTree
     derives rules =
-        equals_ 
+        equals_
             (run rules $ ProofState.GoalRemainder (ProofState.Depth 0) (A, C))
 
 test_runStrategy :: [TestTree]
