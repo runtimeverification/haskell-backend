@@ -451,8 +451,6 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 constructExecutionGraph
     :: forall m config rule instr
     .  (MonadProfiler m, MonadThrow m)
-    => Show instr
-    => Typeable instr
     => Limit Natural
     -> (instr -> config -> TransitionT rule m config)
     -> [instr]
@@ -638,8 +636,6 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 runStrategy
     :: forall m prim rule config
     .  (MonadProfiler m, MonadThrow m)
-    => Show prim
-    => Typeable prim
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
@@ -654,8 +650,6 @@ runStrategy breadthLimit applyPrim instrs0 config0 =
 runStrategyWithSearchOrder
     :: forall m prim rule config
     .  (MonadProfiler m, MonadThrow m)
-    => Show prim
-    => Typeable prim
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
