@@ -19,6 +19,7 @@ module Kore.Strategies.Goal
     , getDestination
     , transitionRuleTemplate
     , isTrusted
+    , removalPatterns
     -- * Re-exports
     , module Kore.Strategies.Rule
     , module Kore.Log.InfoReachability
