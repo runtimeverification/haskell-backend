@@ -85,7 +85,9 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -131,6 +133,10 @@ import Kore.Step.RulePattern
     , topExistsToImplicitForall
     )
 import qualified Kore.Step.RulePattern as RulePattern
+import Kore.Step.Simplification.AndPredicates
+    ( simplifyEvaluatedMultiPredicate
+    )
+import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
     ( InternalVariable
     , MonadSimplify
@@ -986,8 +992,23 @@ removalPatterns
     if isBottom unifiedConfigs
         then return OrPattern.top
         else do
+            let unifiedConditions =
+                    fmap Conditional.withoutTerm unifiedConfigs
+            -- TODO (thomas.tuegel): Move this up to avoid repeated calls.
+            destinationConditions <-
+                Conditional.withoutTerm destination
+                & Condition.simplifyCondition sideCondition
+                & OrCondition.observeAllT
+            remainderConditions <-
+                simplifyEvaluatedMultiPredicate
+                    sideCondition
+                    (MultiAnd.make
+                        [ unifiedConditions
+                        , destinationConditions
+                        ]
+                    )
             let remainderPatterns =
-                    fmap remainderPattern unifiedConfigs
+                    fmap Pattern.fromCondition_ remainderConditions
             existentialRemainders <-
                 foldM
                     (Exists.simplifyEvaluated sideCondition & flip)
@@ -1009,9 +1030,6 @@ removalPatterns
     (configTerm, configPredicate) = Pattern.splitTerm configuration
     sideCondition = SideCondition.assumeTrueCondition configPredicate
     configSort = termLikeSort configTerm
-    remainderPattern patt =
-        Pattern.fromCondition configSort
-        $ on (<>) Conditional.withoutTerm destination patt
 
 getConfiguration :: ReachabilityRule -> Pattern VariableName
 getConfiguration (toRulePattern -> RulePattern { left, requires }) =
