@@ -224,7 +224,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 let
                     updateQueue = \as ->
                         Strategy.unfoldDepthFirst as
-                        >=> lift . Strategy.applyBreadthLimit breadthLimit
+                        >=> lift . Strategy.applyBreadthLimit breadthLimit snd
                     transit instr config =
                         Strategy.transitionRule transitionRule instr config
                         & runTransitionT

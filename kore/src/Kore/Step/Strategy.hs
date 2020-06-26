@@ -467,7 +467,7 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
 
     mkQueue = \as ->
         unfoldSearchOrder searchOrder0 as
-        >=> applyBreadthLimit breadthLimit
+        >=> applyBreadthLimit breadthLimit snd
         >=> profileQueueLength
 
     profileQueueLength queue = do
@@ -546,14 +546,15 @@ unfoldSearchOrder DepthFirst = unfoldDepthFirst
 unfoldSearchOrder BreadthFirst = unfoldBreadthFirst
 
 applyBreadthLimit
-    :: Exception (LimitExceeded a)
+    :: Exception (LimitExceeded b)
     => MonadThrow m
     => Limit Natural
+    -> (a -> b)
     -> Seq a
     -> m (Seq a)
-applyBreadthLimit breadthLimit as
-  | _ Seq.:<| as' <- as, exceedsLimit as' =
-    Exception.throwM (LimitExceeded as)
+applyBreadthLimit breadthLimit transf as
+  | exceedsLimit as =
+    Exception.throwM (LimitExceeded (transf <$> as))
   | otherwise = pure as
   where
     exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length

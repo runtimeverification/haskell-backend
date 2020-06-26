@@ -89,6 +89,7 @@ import Kore.IndexedModule.IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -684,7 +685,7 @@ koreProve execOptions proveOptions = do
                 (return ())
                 (lift . saveProven specModule provenClaims)
                 saveProofs
-            return (failure $ Pattern.toTermLike stuckPattern)
+            return (failure . Pattern.toTermLike . OrPattern.toPattern $ stuckPattern)
         Right () -> return success
 
     lift $ renderResult execOptions (unparse final)
