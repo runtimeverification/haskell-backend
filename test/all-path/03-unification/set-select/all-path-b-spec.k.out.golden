@@ -1,6 +1,6 @@
 <generatedTop>
   <k>
-    c
+    c ~> .
   </k>
   <state>
     SetItem ( b )
