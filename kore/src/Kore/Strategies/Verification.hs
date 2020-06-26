@@ -100,7 +100,10 @@ import qualified Logic
 -- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
 type CommonProofState = ProofState.ProofState (Pattern VariableName)
 
-commonProofStateTransformer :: ProofStateTransformer (Pattern VariableName) (Pattern VariableName)
+commonProofStateTransformer
+    :: ProofStateTransformer
+        (Pattern VariableName)
+        (Pattern VariableName)
 commonProofStateTransformer =
     ProofStateTransformer
         { goalTransformer = id
