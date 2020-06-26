@@ -1,5 +1,3 @@
-{-# LANGUAGE MagicHash #-}
-
 module Test.Kore.Builtin.Int
     (
       test_gt, test_ge, test_eq, test_le, test_lt, test_ne
