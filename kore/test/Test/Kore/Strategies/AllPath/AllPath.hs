@@ -116,7 +116,7 @@ test_unprovenNodes =
 
     subgoal
         :: Gr.Node
-        -> (Gr.Node, Goal.ProofState Goal Integer)
+        -> (Gr.Node, ProofState.ProofState Integer)
         -> ExecutionGraph -> ExecutionGraph
     subgoal parent node@(child, _) =
         insEdge (parent, child) . insNode node
@@ -263,13 +263,13 @@ test_runStrategy =
 
 -- * Definitions
 
-type ExecutionGraph = Strategy.ExecutionGraph (Goal.ProofState Goal Integer) (Goal.Rule Goal)
+type ExecutionGraph = Strategy.ExecutionGraph (ProofState.ProofState Integer) (Goal.Rule Goal)
 
-emptyExecutionGraph :: Goal.ProofState Goal Integer -> ExecutionGraph
+emptyExecutionGraph :: ProofState.ProofState Integer -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph
 
 insNode
-    :: (Gr.Node, Goal.ProofState Goal Integer)
+    :: (Gr.Node, ProofState.ProofState Integer)
     -> ExecutionGraph
     -> ExecutionGraph
 insNode = Strategy.insNode
@@ -309,7 +309,7 @@ difference a    b
 
 type Goal = (K, K)
 
-type ProofState = Goal.ProofState Goal Goal
+type ProofState = ProofState.ProofState Goal
 
 type Prim = Goal.Prim Goal
 
@@ -319,8 +319,6 @@ newtype instance Goal.Rule Goal =
 
 instance Goal.Goal Goal where
     type Prim Goal = ProofState.Prim (Goal.Rule Goal)
-
-    type ProofState Goal = ProofState.ProofState
 
     strategy _ goals rules =
         firstStep :> Stream.iterate id nextStep

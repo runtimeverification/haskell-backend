@@ -60,9 +60,6 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
-import Data.Kind
-    ( Type
-    )
 import Data.List.Extra
     ( groupSortOn
     , sortOn
@@ -162,7 +159,6 @@ import Kore.Step.Transition
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( Prim
-    , ProofState
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
@@ -190,8 +186,7 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
  -}
 unprovenNodes
     :: forall goal a
-    .  ProofState.ProofState a ~ ProofState goal a
-    => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
+    .  Strategy.ExecutionGraph (ProofState a) (Rule goal)
     -> MultiOr.MultiOr a
 unprovenNodes executionGraph =
     MultiOr.MultiOr
@@ -202,14 +197,12 @@ unprovenNodes executionGraph =
  -}
 proven
     :: forall goal a
-    .  ProofState.ProofState a ~ ProofState goal a
-    => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
+    .  Strategy.ExecutionGraph (ProofState a) (Rule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
 
 class Goal goal where
     type Prim goal
-    type ProofState goal :: Type -> Type
 
     goalToRule :: goal -> Rule goal
     default goalToRule
@@ -220,8 +213,8 @@ class Goal goal where
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
         => Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+        -> ProofState goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 
     strategy
         :: goal
@@ -286,7 +279,6 @@ Things to note when implementing your own:
 
 instance Goal OnePathRule where
     type Prim OnePathRule = ProofState.Prim (Rule OnePathRule)
-    type ProofState OnePathRule = ProofState.ProofState
 
     goalToRule =
         OnePathRewriteRule
@@ -321,7 +313,7 @@ deriveParOnePath
     =>  [Rule OnePathRule]
     ->  OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
-            (ProofState OnePathRule OnePathRule)
+            (ProofState OnePathRule)
 deriveParOnePath rules =
     derivePar _Unwrapped OnePathRewriteRule rewrites
   where
@@ -332,7 +324,7 @@ deriveSeqOnePath
     =>  [Rule OnePathRule]
     ->  OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
-            (ProofState OnePathRule OnePathRule)
+            (ProofState OnePathRule)
 deriveSeqOnePath rules =
     deriveSeq _Unwrapped OnePathRewriteRule rewrites
   where
@@ -346,7 +338,6 @@ instance ClaimExtractor OnePathRule where
 
 instance Goal AllPathRule where
     type Prim AllPathRule = ProofState.Prim (Rule AllPathRule)
-    type ProofState AllPathRule = ProofState.ProofState
 
     goalToRule =
         AllPathRewriteRule
@@ -381,7 +372,7 @@ deriveParAllPath
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
-            (ProofState AllPathRule AllPathRule)
+            (ProofState AllPathRule)
 deriveParAllPath rules =
     derivePar _Unwrapped AllPathRewriteRule rewrites
   where
@@ -392,7 +383,7 @@ deriveSeqAllPath
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
-            (ProofState AllPathRule AllPathRule)
+            (ProofState AllPathRule)
 deriveSeqAllPath rules =
     deriveSeq _Unwrapped AllPathRewriteRule rewrites
   where
@@ -406,7 +397,6 @@ instance ClaimExtractor AllPathRule where
 
 instance Goal ReachabilityRule where
     type Prim ReachabilityRule = ProofState.Prim (Rule ReachabilityRule)
-    type ProofState ReachabilityRule = ProofState.ProofState
 
     goalToRule (OnePath rule) =
         ReachabilityRewriteRule
@@ -420,18 +410,11 @@ instance Goal ReachabilityRule where
         $ getAllPathRule rule
 
     transitionRule
-        :: (MonadCatch m, MonadSimplify m)
-        => Prim ReachabilityRule
-        -> ProofState
-            ReachabilityRule
-            ReachabilityRule
-        -> Strategy.TransitionT
-            (Rule ReachabilityRule)
-            m
-            ( ProofState
-                ReachabilityRule
-                ReachabilityRule
-            )
+        ::  (MonadCatch m, MonadSimplify m)
+        =>  Prim ReachabilityRule
+        ->  ProofState ReachabilityRule
+        ->  Strategy.TransitionT (Rule ReachabilityRule) m
+                (ProofState ReachabilityRule)
     transitionRule = logTransitionRule $ \prim proofstate ->
         case proofstate of
             Goal (OnePath rule) ->
@@ -520,14 +503,10 @@ reachabilityAllPathStrategy strategy' =
         ruleAllPathToRuleReachability
         strategy'
 
-allPathProofState
-    :: ProofState AllPathRule AllPathRule
-    -> ProofState ReachabilityRule ReachabilityRule
+allPathProofState :: ProofState AllPathRule -> ProofState ReachabilityRule
 allPathProofState = fmap AllPath
 
-onePathProofState
-    :: ProofState OnePathRule OnePathRule
-    -> ProofState ReachabilityRule ReachabilityRule
+onePathProofState :: ProofState OnePathRule -> ProofState ReachabilityRule
 onePathProofState = fmap OnePath
 
 primRuleOnePath
@@ -568,36 +547,35 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , checkImplicationTemplate
-        :: (forall x. x -> ProofState goal x)
+        :: (forall x. x -> ProofState x)
         -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal)
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
         :: [Rule goal]
         -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal)
     , deriveSeqTemplate
         :: [Rule goal]
         -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal)
     }
 
+type TransitionRule m goal =
+    Prim goal
+    -> ProofState goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
 logTransitionRule
-    :: forall m goal
+    :: forall m
     .  MonadSimplify m
-    => goal ~ ReachabilityRule
-    =>  (  Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-        )
-    ->  (  Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-        )
-logTransitionRule rule prim proofState = case proofState of
-    Goal goal          -> logWith goal
-    GoalRemainder goal -> logWith goal
-    _                  -> rule prim proofState
+    => TransitionRule m ReachabilityRule
+    -> TransitionRule m ReachabilityRule
+logTransitionRule rule prim proofState =
+    case proofState of
+        Goal goal          -> logWith goal
+        GoalRemainder goal -> logWith goal
+        _                  -> rule prim proofState
   where
     logWith goal = case prim of
         Simplify ->
@@ -614,12 +592,9 @@ logTransitionRule rule prim proofState = case proofState of
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
-    -> Prim goal
-    -> ProofState goal goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+    -> TransitionRule m goal
 transitionRuleTemplate
     TransitionRuleTemplate
         { simplifyTemplate
@@ -633,8 +608,8 @@ transitionRuleTemplate
   where
     transitionRuleWorker
         :: Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+        -> ProofState goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
 
@@ -799,11 +774,10 @@ checkImplication
     :: forall goal m
     .  MonadSimplify m
     => MonadCatch m
-    => ProofState.ProofState goal ~ ProofState goal goal
     => Lens' goal (RulePattern VariableName)
-    -> (forall x. x -> ProofState goal x)
+    -> (forall x. x -> ProofState x)
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 checkImplication lensRulePattern mkState goal =
     goal
     & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
@@ -812,7 +786,7 @@ checkImplication lensRulePattern mkState goal =
   where
     checkImplicationWorker
         :: RulePattern VariableName
-        -> m (ProofState goal (RulePattern VariableName))
+        -> m (ProofState (RulePattern VariableName))
     checkImplicationWorker (snd . Step.refreshRule mempty -> rulePattern) =
         do
             removal <- removalPatterns destination configuration existentials
@@ -882,12 +856,11 @@ instance Exception WithConfiguration
 derivePar
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
-    => ProofState.ProofState goal ~ ProofState goal goal
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 derivePar lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
@@ -901,13 +874,12 @@ type Deriver monad =
 deriveWith
     :: forall m goal
     .  MonadCatch m
-    => ProofState.ProofState goal ~ ProofState goal goal
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 deriveWith lensRulePattern mkRule takeStep rewrites goal =
     getCompose
     $ Lens.forOf lensRulePattern goal
@@ -922,12 +894,11 @@ deriveWith lensRulePattern mkRule takeStep rewrites goal =
 deriveSeq
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
-    => ProofState.ProofState goal ~ ProofState goal goal
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 deriveSeq lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
@@ -1055,15 +1026,14 @@ debugProofStateBracket
     .  MonadLog monad
     => ToReachabilityRule goal
     => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => ProofState goal goal
+    => ProofState goal
     -- ^ current proof state
     -> Prim goal
     -- ^ transition
-    -> monad (ProofState goal goal)
+    -> monad (ProofState goal)
     -- ^ action to be computed
-    -> monad (ProofState goal goal)
+    -> monad (ProofState goal)
 debugProofStateBracket
     (fmap toReachabilityRule -> proofState)
     (coerce -> transition)
@@ -1083,13 +1053,12 @@ debugProofStateFinal
     => MonadLog monad
     => ToReachabilityRule goal
     => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => ProofState goal goal
+    => ProofState goal
     -- ^ current proof state
     -> Prim goal
     -- ^ transition
-    -> monad (ProofState goal goal)
+    -> monad (ProofState goal)
 debugProofStateFinal
     (fmap toReachabilityRule -> proofState)
     (coerce -> transition)
@@ -1106,18 +1075,9 @@ withDebugProofState
     .  MonadLog monad
     => ToReachabilityRule goal
     => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    =>
-        (  Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
-        )
-    ->
-        (  Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
-        )
+    => TransitionRule monad goal
+    -> TransitionRule monad goal
 withDebugProofState transitionFunc =
     \transition state ->
         Transition.orElse

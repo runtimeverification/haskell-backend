@@ -829,13 +829,10 @@ rewriteReachabilityWithPredicate left right predicate =
 
 runSteps
     :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Show (Prim goal)
     => Typeable (Prim goal)
     => Limit Natural
-    -> ( ExecutionGraph
-            (ProofState goal goal)
-            (Rule goal)
+    -> ( ExecutionGraph (ProofState.ProofState goal) (Rule goal)
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)
@@ -862,7 +859,6 @@ runSteps breadthLimit graphFilter picker configuration strategy' =
 
 runOnePathSteps
     :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Ord goal
     => Show (Prim goal)
     => Typeable (Prim goal)
@@ -872,7 +868,7 @@ runOnePathSteps
     -- ^left-hand-side of unification
     -> [goal]
     -> [Rule goal]
-    -> IO [ProofState goal goal]
+    -> IO [ProofState.ProofState goal]
 runOnePathSteps
     breadthLimit
     depthLimit
