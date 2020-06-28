@@ -9,6 +9,7 @@ module Kore.Strategies.Goal
     , ClaimExtractor (..)
     , TransitionRuleTemplate (..)
     , WithConfiguration (..)
+    , CheckImplicationResult (..)
     , extractClaims
     , unprovenNodes
     , proven
@@ -542,9 +543,8 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , checkImplicationTemplate
-        :: (forall x. x -> ProofState x)
-        -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal)
+        :: goal
+        -> Strategy.TransitionT (Rule goal) monad (CheckImplicationResult goal)
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
         :: [Rule goal]
@@ -624,11 +624,19 @@ transitionRuleTemplate
         $ GoalRemainder <$> simplifyTemplate goal
 
     transitionRuleWorker CheckImplication (Goal goal) =
-        Profile.timeStrategy "Goal.CheckImplication"
-        $ checkImplicationTemplate Goal goal
+        Profile.timeStrategy "Goal.CheckImplication" $ do
+            result <- checkImplicationTemplate goal
+            case result of
+                NotImpliedStuck a -> pure (GoalStuck a)
+                Implied -> pure Proven
+                NotImplied a -> pure (Goal a)
     transitionRuleWorker CheckImplication (GoalRemainder goal) =
-        Profile.timeStrategy "Goal.CheckImplicationRemainder"
-        $ checkImplicationTemplate GoalRemainder goal
+        Profile.timeStrategy "Goal.CheckImplicationRemainder" $ do
+            result <- checkImplicationTemplate goal
+            case result of
+                NotImpliedStuck a -> pure (GoalStuck a)
+                Implied -> pure Proven
+                NotImplied a -> pure (GoalRemainder a)
 
     transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValidTemplate goal =
@@ -756,16 +764,32 @@ allPathFollowupStep claims axiomGroups =
         , TriviallyValid
         ]
 
+{- | The result of checking the direct implication of a proof goal.
+
+As an optimization, 'checkImplication' returns 'NotImpliedStuck' when the
+implication between /terms/ is valid, but the implication between side
+conditions does not hold.
+
+ -}
+data CheckImplicationResult a
+    = Implied
+    -- ^ The implication is valid.
+    | NotImplied !a
+    -- ^ The implication is not valid.
+    | NotImpliedStuck !a
+    -- ^ The implication between /terms/ is valid, but the implication between
+    -- side-conditions is not valid.
+    deriving (Functor)
+
 -- | Remove the destination of the goal.
 checkImplication
     :: forall goal m
     .  MonadSimplify m
     => MonadCatch m
     => Lens' goal (RulePattern VariableName)
-    -> (forall x. x -> ProofState x)
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-checkImplication lensRulePattern mkState goal =
+    -> Strategy.TransitionT (Rule goal) m (CheckImplicationResult goal)
+checkImplication lensRulePattern goal =
     goal
     & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
     & getCompose
@@ -773,11 +797,11 @@ checkImplication lensRulePattern mkState goal =
   where
     checkImplicationWorker
         :: RulePattern VariableName
-        -> m (ProofState (RulePattern VariableName))
+        -> m (CheckImplicationResult (RulePattern VariableName))
     checkImplicationWorker (snd . Step.refreshRule mempty -> rulePattern) =
         do
             removal <- removalPatterns destination configuration existentials
-            when (isTop removal) (succeed . mkState $ rulePattern)
+            when (isTop removal) (succeed . NotImplied $ rulePattern)
             let configAndRemoval = fmap (configuration <*) removal
                 sideCondition =
                     Pattern.withoutTerm configuration
@@ -786,11 +810,11 @@ checkImplication lensRulePattern mkState goal =
                 simplifyConditionsWithSmt
                     sideCondition
                     configAndRemoval
-            when (isBottom simplifiedRemoval) (succeed Proven)
+            when (isBottom simplifiedRemoval) (succeed Implied)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
                 & Lens.set RulePattern.leftPattern stuckConfiguration
-                & GoalStuck
+                & NotImpliedStuck
                 & pure
         & run
         & withConfiguration configuration

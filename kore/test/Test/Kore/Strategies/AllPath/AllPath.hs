@@ -378,11 +378,11 @@ instance Diff (Goal.Rule Goal)
 
 -- | The destination-removal rule for our unit test goal.
 checkImplication
-    :: (Goal -> ProofState)
-    -> Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-checkImplication constr (src, dst) =
-    return . constr $ (difference src dst, dst)
+    ::  Goal
+    ->  Strategy.TransitionT (Goal.Rule Goal) m
+            (Goal.CheckImplicationResult Goal)
+checkImplication (src, dst) =
+    return . Goal.NotImplied $ (difference src dst, dst)
 
 -- | The goal is trivially valid when the members are equal.
 isTriviallyValid :: Goal -> Bool
