@@ -2,7 +2,7 @@ module Test.Kore.Strategies.AllPath.AllPath
     ( test_unprovenNodes
     , test_transitionRule_CheckProven
     , test_transitionRule_CheckGoalRem
-    , test_transitionRule_RemoveDestination
+    , test_transitionRule_CheckImplication
     , test_transitionRule_TriviallyValid
     , test_transitionRule_DerivePar
     , test_runStrategy
@@ -147,14 +147,14 @@ test_transitionRule_CheckGoalRem =
     done :: HasCallStack => ProofState -> TestTree
     done state = run state `satisfies_` Foldable.null
 
-test_transitionRule_RemoveDestination :: [TestTree]
-test_transitionRule_RemoveDestination =
+test_transitionRule_CheckImplication :: [TestTree]
+test_transitionRule_CheckImplication =
     [ unmodified ProofState.Proven
     , unmodified (ProofState.GoalRemainder (A, B))
     , ProofState.Goal (B, B) `becomes` (ProofState.Goal (Bot, B), mempty)
     ]
   where
-    run = runTransitionRule ProofState.RemoveDestination
+    run = runTransitionRule ProofState.CheckImplication
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     becomes initial final = run initial `equals_` [final]
@@ -329,7 +329,7 @@ instance Goal.Goal Goal where
             (Strategy.sequence . map Strategy.apply)
                 [ ProofState.CheckProven
                 , ProofState.CheckGoalRemainder
-                , ProofState.RemoveDestination
+                , ProofState.CheckImplication
                 , ProofState.TriviallyValid
                 , ProofState.DerivePar axioms
                 , ProofState.Simplify
@@ -341,14 +341,14 @@ instance Goal.Goal Goal where
             (Strategy.sequence . map Strategy.apply)
                 [ ProofState.CheckProven
                 , ProofState.CheckGoalRemainder
-                , ProofState.RemoveDestination
+                , ProofState.CheckImplication
                 , ProofState.TriviallyValid
                 , ProofState.DeriveSeq claims
-                , ProofState.RemoveDestination
+                , ProofState.CheckImplication
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
                 , ProofState.DerivePar axioms
-                , ProofState.RemoveDestination
+                , ProofState.CheckImplication
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
                 , ProofState.ResetGoal
@@ -362,8 +362,8 @@ instance Goal.Goal Goal where
             Goal.TransitionRuleTemplate
                 { simplifyTemplate =
                     simplify
-                , removeDestinationTemplate =
-                    removeDestination
+                , checkImplicationTemplate =
+                    checkImplication
                 , isTriviallyValidTemplate =
                     isTriviallyValid
                 , deriveParTemplate =
@@ -381,11 +381,11 @@ instance Debug (Goal.Rule Goal)
 instance Diff (Goal.Rule Goal)
 
 -- | The destination-removal rule for our unit test goal.
-removeDestination
+checkImplication
     :: (Goal -> ProofState)
     -> Goal
     -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-removeDestination constr (src, dst) =
+checkImplication constr (src, dst) =
     return . constr $ (difference src dst, dst)
 
 -- | The goal is trivially valid when the members are equal.

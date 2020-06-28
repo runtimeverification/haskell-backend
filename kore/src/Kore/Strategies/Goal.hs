@@ -298,7 +298,7 @@ instance Goal OnePathRule where
         (withDebugProofState . transitionRuleTemplate)
         TransitionRuleTemplate
             { simplifyTemplate = simplify _Unwrapped
-            , removeDestinationTemplate = removeDestination _Unwrapped
+            , checkImplicationTemplate = checkImplication _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
             , deriveParTemplate = deriveParOnePath
             , deriveSeqTemplate = deriveSeqOnePath
@@ -358,7 +358,7 @@ instance Goal AllPathRule where
         (withDebugProofState . transitionRuleTemplate)
         TransitionRuleTemplate
             { simplifyTemplate = simplify _Unwrapped
-            , removeDestinationTemplate = removeDestination _Unwrapped
+            , checkImplicationTemplate = checkImplication _Unwrapped
             , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
             , deriveParTemplate = deriveParAllPath
             , deriveSeqTemplate = deriveSeqAllPath
@@ -567,7 +567,7 @@ data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
-    , removeDestinationTemplate
+    , checkImplicationTemplate
         :: (forall x. x -> ProofState goal x)
         -> goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
@@ -602,8 +602,8 @@ logTransitionRule rule prim proofState = case proofState of
     logWith goal = case prim of
         Simplify ->
             whileSimplify goal $ rule prim proofState
-        RemoveDestination ->
-            whileRemoveDestination goal $ rule prim proofState
+        CheckImplication ->
+            whileCheckImplication goal $ rule prim proofState
         (DeriveSeq rules) ->
             whileDeriveSeq rules goal $ rule prim proofState
         (DerivePar rules) ->
@@ -623,7 +623,7 @@ transitionRuleTemplate
 transitionRuleTemplate
     TransitionRuleTemplate
         { simplifyTemplate
-        , removeDestinationTemplate
+        , checkImplicationTemplate
         , isTriviallyValidTemplate
         , deriveParTemplate
         , deriveSeqTemplate
@@ -654,12 +654,12 @@ transitionRuleTemplate
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate goal
 
-    transitionRuleWorker RemoveDestination (Goal goal) =
-        Profile.timeStrategy "Goal.RemoveDestination"
-        $ removeDestinationTemplate Goal goal
-    transitionRuleWorker RemoveDestination (GoalRemainder goal) =
-        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ removeDestinationTemplate GoalRemainder goal
+    transitionRuleWorker CheckImplication (Goal goal) =
+        Profile.timeStrategy "Goal.CheckImplication"
+        $ checkImplicationTemplate Goal goal
+    transitionRuleWorker CheckImplication (GoalRemainder goal) =
+        Profile.timeStrategy "Goal.CheckImplicationRemainder"
+        $ checkImplicationTemplate GoalRemainder goal
 
     transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValidTemplate goal =
@@ -712,7 +712,7 @@ onePathFirstStep axioms =
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
-        , RemoveDestination
+        , CheckImplication
         , DeriveSeq axioms
         , Simplify
         , TriviallyValid
@@ -733,7 +733,7 @@ onePathFollowupStep claims axioms =
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
-        , RemoveDestination
+        , CheckImplication
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -764,7 +764,7 @@ allPathFirstStep axiomGroups =
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
-        , RemoveDestination
+        , CheckImplication
         ]
         <> groupStrategy axiomGroups <>
         [ ResetGoal
@@ -783,7 +783,7 @@ allPathFollowupStep claims axiomGroups =
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
-        , RemoveDestination
+        , CheckImplication
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -795,7 +795,7 @@ allPathFollowupStep claims axiomGroups =
         ]
 
 -- | Remove the destination of the goal.
-removeDestination
+checkImplication
     :: forall goal m
     .  MonadSimplify m
     => MonadCatch m
@@ -804,16 +804,16 @@ removeDestination
     -> (forall x. x -> ProofState goal x)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestination lensRulePattern mkState goal =
+checkImplication lensRulePattern mkState goal =
     goal
-    & Lens.traverseOf lensRulePattern (Compose . removeDestinationWorker)
+    & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
     & getCompose
     & lift
   where
-    removeDestinationWorker
+    checkImplicationWorker
         :: RulePattern VariableName
         -> m (ProofState goal (RulePattern VariableName))
-    removeDestinationWorker (snd . Step.refreshRule mempty -> rulePattern) =
+    checkImplicationWorker (snd . Step.refreshRule mempty -> rulePattern) =
         do
             removal <- removalPatterns destination configuration existentials
             when (isTop removal) (succeed . mkState $ rulePattern)

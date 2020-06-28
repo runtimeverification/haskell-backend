@@ -37,7 +37,7 @@ data Prim rule
     | ResetGoal
     -- ^ Mark all goals rewritten previously as new goals.
     | Simplify
-    | RemoveDestination
+    | CheckImplication
     | TriviallyValid
     | DerivePar [rule]
     | DeriveSeq [rule]
@@ -49,7 +49,7 @@ instance Filterable Prim where
     mapMaybe _ CheckGoalStuck     = CheckGoalStuck
     mapMaybe _ ResetGoal          = ResetGoal
     mapMaybe _ Simplify           = Simplify
-    mapMaybe _ RemoveDestination  = RemoveDestination
+    mapMaybe _ CheckImplication   = CheckImplication
     mapMaybe _ TriviallyValid     = TriviallyValid
     mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
     mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
@@ -60,7 +60,7 @@ instance Unparse goal => Pretty (Prim goal) where
     pretty CheckGoalStuck = "Transition CheckGoalStuck."
     pretty ResetGoal = "Transition ResetGoal."
     pretty Simplify = "Transition Simplify."
-    pretty RemoveDestination = "Transition RemoveDestination."
+    pretty CheckImplication = "Transition CheckImplication."
     pretty TriviallyValid = "Transition TriviallyValid."
     pretty (DerivePar rules) =
         Pretty.vsep
@@ -83,7 +83,7 @@ data ProofState goal
     | GoalStuck !goal
     -- ^ If the terms unify and the condition does not imply
     -- the goal, the proof is stuck. This state should be reachable
-    -- only by applying RemoveDestination.
+    -- only by applying CheckImplication.
     | Proven
     -- ^ The parent goal was proven.
     deriving (Eq, Show, Ord, Functor, GHC.Generic)
