@@ -318,8 +318,6 @@ newtype instance Goal.Rule Goal =
     deriving (Eq, GHC.Generic, Show)
 
 instance Goal.Goal Goal where
-    type Prim Goal = ProofState.Prim (Goal.Rule Goal)
-
     strategy _ goals rules =
         firstStep :> Stream.iterate id nextStep
       where

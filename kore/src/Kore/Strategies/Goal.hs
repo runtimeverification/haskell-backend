@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , Prim
     , FromRulePattern (..)
     , ClaimExtractor (..)
     , TransitionRuleTemplate (..)
@@ -201,9 +202,9 @@ proven
     -> Bool
 proven = Foldable.null . unprovenNodes
 
-class Goal goal where
-    type Prim goal
+type Prim goal = ProofState.Prim (Rule goal)
 
+class Goal goal where
     goalToRule :: goal -> Rule goal
     default goalToRule
         :: Coercible goal (Rule goal)
@@ -278,8 +279,6 @@ Things to note when implementing your own:
 -}
 
 instance Goal OnePathRule where
-    type Prim OnePathRule = ProofState.Prim (Rule OnePathRule)
-
     goalToRule =
         OnePathRewriteRule
         . mkRewritingRule
@@ -337,8 +336,6 @@ instance ClaimExtractor OnePathRule where
             _ -> Nothing
 
 instance Goal AllPathRule where
-    type Prim AllPathRule = ProofState.Prim (Rule AllPathRule)
-
     goalToRule =
         AllPathRewriteRule
         . mkRewritingRule
@@ -396,8 +393,6 @@ instance ClaimExtractor AllPathRule where
             _ -> Nothing
 
 instance Goal ReachabilityRule where
-    type Prim ReachabilityRule = ProofState.Prim (Rule ReachabilityRule)
-
     goalToRule (OnePath rule) =
         ReachabilityRewriteRule
         $ mkRewritingRule
@@ -592,7 +587,6 @@ logTransitionRule rule prim proofState =
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
-    => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
     -> TransitionRule m goal
 transitionRuleTemplate
@@ -676,10 +670,7 @@ transitionRuleTemplate
 
     transitionRuleWorker _ state = return state
 
-onePathFirstStep
-    :: Prim goal ~ ProofState.Prim (Rule goal)
-    => [Rule goal]
-    -> Strategy (Prim goal)
+onePathFirstStep :: [Rule goal] -> Strategy (Prim goal)
 onePathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -696,11 +687,7 @@ onePathFirstStep axioms =
         , TriviallyValid
         ]
 
-onePathFollowupStep
-    :: Prim goal ~ ProofState.Prim (Rule goal)
-    => [Rule goal]
-    -> [Rule goal]
-    -> Strategy (Prim goal)
+onePathFollowupStep :: [Rule goal] -> [Rule goal] -> Strategy (Prim goal)
 onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -1026,7 +1013,6 @@ debugProofStateBracket
     .  MonadLog monad
     => ToReachabilityRule goal
     => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => Prim goal ~ ProofState.Prim (Rule goal)
     => ProofState goal
     -- ^ current proof state
     -> Prim goal
@@ -1053,7 +1039,6 @@ debugProofStateFinal
     => MonadLog monad
     => ToReachabilityRule goal
     => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => Prim goal ~ ProofState.Prim (Rule goal)
     => ProofState goal
     -- ^ current proof state
     -> Prim goal
@@ -1075,7 +1060,6 @@ withDebugProofState
     .  MonadLog monad
     => ToReachabilityRule goal
     => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRule monad goal
     -> TransitionRule monad goal
 withDebugProofState transitionFunc =
