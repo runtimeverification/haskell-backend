@@ -34,9 +34,6 @@ import Control.Error
     , runExceptT
     , throwE
     )
-import Control.Exception
-    ( throw
-    )
 import Control.Lens
     ( Lens'
     )
@@ -48,7 +45,6 @@ import Control.Monad.Catch
     ( Exception (..)
     , MonadCatch
     , SomeException (..)
-    , handle
     )
 import Data.Coerce
     ( Coercible
@@ -718,7 +714,6 @@ data CheckImplicationResult a
 checkImplication'
     :: forall goal m
     .  MonadSimplify m
-    => MonadCatch m
     => Lens' goal (RulePattern VariableName)
     -> goal
     -> m (CheckImplicationResult goal)
@@ -749,7 +744,6 @@ checkImplication' lensRulePattern goal =
                 & NotImpliedStuck
                 & pure
         & run
-        & withConfiguration configuration
       where
         configuration = Lens.view RulePattern.leftPattern rulePattern
         configFreeVars = freeVariables configuration
@@ -773,8 +767,7 @@ simplify'
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify' lensRulePattern =
-    Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config ->
-    withConfiguration config $ do
+    Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
         configs <-
             simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
             & lift
@@ -829,7 +822,7 @@ deriveWith lensRulePattern mkRule takeStep rewrites goal =
     $ \rulePattern ->
         fmap (snd . Step.refreshRule mempty)
         $ Lens.forOf RulePattern.leftPattern rulePattern
-        $ \config -> Compose $ withConfiguration config $ do
+        $ \config -> Compose $ do
             results <- takeStep rewrites config & lift
             deriveResults mkRule results
 
@@ -873,10 +866,6 @@ deriveResults mkRule Results { results, remainders } =
     addRule = Transition.addRule . fromAppliedRule
 
     fromAppliedRule = mkRule . RewriteRule . Step.withoutUnification
-
-withConfiguration :: MonadCatch m => Pattern VariableName -> m a -> m a
-withConfiguration configuration =
-    handle (throw . WithConfiguration configuration)
 
 {- | The predicate to remove the destination from the present configuration.
  -}

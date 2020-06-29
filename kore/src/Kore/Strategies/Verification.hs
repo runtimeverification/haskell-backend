@@ -29,6 +29,8 @@ import qualified Control.Monad as Monad
     )
 import Control.Monad.Catch
     ( MonadCatch
+    , handleAll
+    , throwM
     )
 import Control.Monad.Except
     ( ExceptT
@@ -67,6 +69,7 @@ import Kore.Step.RulePattern
     , RHS
     , ReachabilityRule (..)
     , leftPattern
+    , toRulePattern
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -343,9 +346,14 @@ transitionRule'
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
 transitionRule' goal _ prim state = do
     let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
-    next <- (logTransitionRule $ withDebugProofState transitionRule) prim goal'
+    next <- transit prim goal'
     pure $ fmap getConfiguration next
   where
+    transit =
+        transitionRule
+        & withConfiguration
+        & withDebugProofState
+        & logTransitionRule
     lensReachabilityConfig =
         Lens.lens
             (\case
@@ -441,3 +449,20 @@ withDebugProofState transitionFunc =
                 state
                 transition
             )
+
+withConfiguration
+    :: MonadCatch monad
+    => TransitionRule monad ReachabilityRule
+    -> TransitionRule monad ReachabilityRule
+withConfiguration transit prim proofState =
+    handle' (transit prim proofState)
+  where
+    config =
+        case proofState of
+            ProofState.Goal a -> Just a
+            ProofState.GoalRewritten a -> Just a
+            ProofState.GoalRemainder a -> Just a
+            ProofState.GoalStuck a -> Just a
+            ProofState.Proven -> Nothing
+        & fmap (Lens.view leftPattern . toRulePattern)
+    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config
