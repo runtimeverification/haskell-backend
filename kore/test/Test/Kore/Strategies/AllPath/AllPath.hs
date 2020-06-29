@@ -376,7 +376,7 @@ newtype instance Goal.Rule Goal =
     deriving (Eq, GHC.Generic, Show)
 
 instance Goal.Goal Goal where
-    strategy _ goals rules =
+    strategy _ _ _ =
         firstStep :> Stream.iterate id nextStep
       where
         firstStep =
@@ -385,7 +385,7 @@ instance Goal.Goal Goal where
                 , ProofState.CheckGoalRemainder
                 , ProofState.CheckImplication
                 , ProofState.TriviallyValid
-                , ProofState.DerivePar axioms
+                , ProofState.ApplyAxioms
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
                 , ProofState.ResetGoal
@@ -397,19 +397,17 @@ instance Goal.Goal Goal where
                 , ProofState.CheckGoalRemainder
                 , ProofState.CheckImplication
                 , ProofState.TriviallyValid
-                , ProofState.DeriveSeq claims
+                , ProofState.ApplyClaims
                 , ProofState.CheckImplication
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
-                , ProofState.DerivePar axioms
+                , ProofState.ApplyAxioms
                 , ProofState.CheckImplication
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
                 , ProofState.ResetGoal
                 , ProofState.TriviallyValid
                 ]
-        axioms = rules
-        claims = Rule <$> goals
 
     checkImplication (src, dst) =
         return . Goal.NotImplied $ (difference src dst, dst)
