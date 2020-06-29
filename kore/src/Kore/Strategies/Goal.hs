@@ -220,6 +220,12 @@ class Goal goal where
         => goal
         -> Strategy.TransitionT (Rule goal) m goal
 
+    applyClaims
+        :: MonadSimplify m
+        => [goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
     deriveSeq
         :: MonadSimplify m
         => [Rule goal]
@@ -300,21 +306,17 @@ instance Goal OnePathRule where
 
     deriveSeq = deriveSeqOnePath
 
+    applyClaims claims = deriveSeqOnePath (map goalToRule claims)
+
     derivePar = deriveParOnePath
 
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
-    strategy _ goals rules =
+    strategy _ _ rules =
         onePathFirstStep rewrites
-        :> Stream.iterate
-            id
-            ( onePathFollowupStep
-                coinductiveRewrites
-                rewrites
-            )
+        :> Stream.iterate id (onePathFollowupStep rewrites)
       where
         rewrites = sortOn Attribute.Axiom.getPriorityOfAxiom rules
-        coinductiveRewrites = goalToRule <$> goals
 
 deriveParOnePath
     ::  MonadSimplify simplifier
@@ -354,20 +356,15 @@ instance Goal AllPathRule where
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
     isTriviallyValid = isTriviallyValid' _Unwrapped
+    applyClaims claims = deriveSeqAllPath (map goalToRule claims)
     derivePar = deriveParAllPath
     deriveSeq = deriveSeqAllPath
 
-    strategy _ goals rules =
+    strategy _ _ rules =
         allPathFirstStep priorityGroups
-        :> Stream.iterate
-            id
-            ( allPathFollowupStep
-                coinductiveRewrites
-                priorityGroups
-            )
+        :> Stream.iterate id (allPathFollowupStep priorityGroups)
       where
         priorityGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom rules
-        coinductiveRewrites = goalToRule <$> goals
 
 deriveParAllPath
     ::  MonadSimplify simplifier
@@ -427,6 +424,15 @@ instance Goal ReachabilityRule where
         allPathTransition $ fmap AllPath <$> deriveSeq (map coerce rules) goal
     deriveSeq rules (OnePath goal) =
         onePathTransition $ fmap OnePath <$> deriveSeq (map coerce rules) goal
+
+    applyClaims claims (AllPath goal) =
+        applyClaims (mapMaybe maybeAllPath claims) goal
+        & fmap (fmap AllPath)
+        & allPathTransition
+    applyClaims claims (OnePath goal) =
+        applyClaims (mapMaybe maybeOnePath claims) goal
+        & fmap (fmap OnePath)
+        & onePathTransition
 
     strategy
         :: ReachabilityRule
@@ -525,8 +531,9 @@ transitionRule
     :: forall m goal
     .  MonadSimplify m
     => Goal goal
-    => TransitionRule m goal
-transitionRule = transitionRuleWorker
+    => [goal]
+    -> TransitionRule m goal
+transitionRule claims = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim goal
@@ -576,6 +583,14 @@ transitionRule = transitionRuleWorker
       | isTriviallyValid goal =
           return Proven
 
+    transitionRuleWorker ApplyClaims (Goal goal) =
+        Profile.timeStrategy "applyClaims"
+        $ applyClaims claims goal
+
+    transitionRuleWorker ApplyClaims (GoalRemainder goal) =
+        Profile.timeStrategy "applyClaims"
+        $ applyClaims claims goal
+
     transitionRuleWorker (DerivePar rules) (Goal goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         --
@@ -623,8 +638,8 @@ onePathFirstStep axioms =
         , TriviallyValid
         ]
 
-onePathFollowupStep :: [Rule goal] -> [Rule goal] -> Strategy (Prim goal)
-onePathFollowupStep claims axioms =
+onePathFollowupStep :: [Rule goal] -> Strategy (Prim goal)
+onePathFollowupStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalStuck
@@ -632,7 +647,7 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , CheckImplication
-        , DeriveSeq claims
+        , ApplyClaims
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
@@ -671,10 +686,9 @@ allPathFirstStep axiomGroups =
         ]
 
 allPathFollowupStep
-    :: [Rule AllPathRule]
-    -> [[Rule AllPathRule]]
+    :: [[Rule AllPathRule]]
     -> Strategy (Prim AllPathRule)
-allPathFollowupStep claims axiomGroups =
+allPathFollowupStep axiomGroups =
     (Strategy.sequence . map Strategy.apply) $
         [ CheckProven
         , CheckGoalStuck
@@ -682,9 +696,7 @@ allPathFollowupStep claims axiomGroups =
         , Simplify
         , TriviallyValid
         , CheckImplication
-        , DeriveSeq claims
-        , Simplify
-        , TriviallyValid
+        , ApplyClaims
         ]
         <> groupStrategy axiomGroups <>
         [ ResetGoal

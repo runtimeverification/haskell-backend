@@ -297,7 +297,7 @@ verifyClaim
     modifiedTransitionRule prim proofState' = do
         transitions <-
             lift . lift . runTransitionT
-            $ transitionRule' goal destination prim proofState'
+            $ transitionRule' claims goal destination prim proofState'
         Transition.scatter transitions
 
 -- | Attempts to perform a single proof step, starting at the configuration
@@ -317,8 +317,12 @@ verifyClaimStep
     -> Graph.Node
     -- ^ selected node in the graph
     -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
-verifyClaimStep target claims axioms eg@ExecutionGraph { root } node =
-    executionHistoryStep (transitionRule' target destination) strategy' eg node
+verifyClaimStep target claims axioms executionGraph node =
+    executionHistoryStep
+        (transitionRule' claims target destination)
+        strategy'
+        executionGraph
+        node
   where
     destination = getDestination target
 
@@ -333,24 +337,27 @@ verifyClaimStep target claims axioms eg@ExecutionGraph { root } node =
     followupStep :: Strategy (Prim ReachabilityRule)
     followupStep = strategy target claims axioms Stream.!! 1
 
+    ExecutionGraph { root } = executionGraph
+
     isRoot :: Bool
     isRoot = node == root
 
 transitionRule'
     :: forall simplifier
     .  (MonadCatch simplifier, MonadSimplify simplifier)
-    => ReachabilityRule
+    => [ReachabilityRule]
+    -> ReachabilityRule
     -> RHS VariableName
     -> Prim ReachabilityRule
     -> CommonProofState
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
-transitionRule' goal _ prim state = do
+transitionRule' claims goal _ prim state = do
     let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
     next <- transit prim goal'
     pure $ fmap getConfiguration next
   where
     transit =
-        transitionRule
+        transitionRule claims
         & withConfiguration
         & withDebugProofState
         & logTransitionRule

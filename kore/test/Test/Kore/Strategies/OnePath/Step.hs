@@ -836,11 +836,12 @@ runSteps
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)
+    -> [goal]
     -> goal
     -- ^left-hand-side of unification
     -> [Strategy (Prim goal)]
     -> IO a
-runSteps breadthLimit graphFilter picker configuration strategy' =
+runSteps breadthLimit graphFilter picker claims configuration strategy' =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
@@ -850,7 +851,7 @@ runSteps breadthLimit graphFilter picker configuration strategy' =
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
         runStrategy
             breadthLimit
-            transitionRule
+            (transitionRule claims)
             strategy'
             (ProofState.Goal configuration)
   where
@@ -880,6 +881,7 @@ runOnePathSteps
         breadthLimit
         Just
         pickFinal
+        coinductiveRewrites
         goal
         (Limit.takeWithin
             depthLimit
