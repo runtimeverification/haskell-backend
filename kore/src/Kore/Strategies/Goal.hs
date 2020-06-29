@@ -213,6 +213,18 @@ class Goal goal where
         => goal
         -> Strategy.TransitionT (Rule goal) m goal
 
+    {- TODO (thomas.tuegel): applyClaims and applyAxioms should return:
+
+    > data ApplyResult goal
+    >     = ApplyRewritten !goal
+    >     | ApplyRemainder !goal
+
+    Rationale: ProofState is part of the implementation of transitionRule, that
+    is: these functions have hidden knowledge of how transitionRule works
+    because they tell it what to do next. Instead, they should report their
+    result and leave the decision up to transitionRule.
+
+    -}
     applyClaims
         :: MonadSimplify m
         => [goal]
@@ -222,18 +234,6 @@ class Goal goal where
     applyAxioms
         :: MonadSimplify m
         => [[Rule goal]]
-        -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-
-    deriveSeq
-        :: MonadSimplify m
-        => [Rule goal]
-        -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-
-    derivePar
-        :: MonadSimplify m
-        => [Rule goal]
         -> goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 
@@ -307,24 +307,9 @@ instance Goal OnePathRule where
 
     applyAxioms axioms = deriveSeqOnePath (concat axioms)
 
-    deriveSeq = deriveSeqOnePath
-
-    derivePar = deriveParOnePath
-
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
     strategy _ _ _ = onePathFirstStep :> Stream.iterate id onePathFollowupStep
-
-deriveParOnePath
-    ::  MonadSimplify simplifier
-    =>  [Rule OnePathRule]
-    ->  OnePathRule
-    ->  Strategy.TransitionT (Rule OnePathRule) simplifier
-            (ProofState OnePathRule)
-deriveParOnePath rules =
-    derivePar' _Unwrapped OnePathRewriteRule rewrites
-  where
-    rewrites = unRuleOnePath <$> rules
 
 deriveSeqOnePath
     ::  MonadSimplify simplifier
@@ -379,9 +364,6 @@ instance Goal AllPathRule where
           | all isTriviallyValid proofState = pure Proven
           | otherwise = pure proofState
 
-    derivePar = deriveParAllPath
-    deriveSeq = deriveSeqAllPath
-
     strategy _ _ _ = allPathFirstStep :> Stream.iterate id allPathFollowupStep
 
 deriveParAllPath
@@ -432,16 +414,6 @@ instance Goal ReachabilityRule where
 
     isTriviallyValid (AllPath goal) = isTriviallyValid goal
     isTriviallyValid (OnePath goal) = isTriviallyValid goal
-
-    derivePar rules (AllPath goal) =
-        allPathTransition $ fmap AllPath <$> derivePar (map coerce rules) goal
-    derivePar rules (OnePath goal) =
-        onePathTransition $ fmap OnePath <$> derivePar (map coerce rules) goal
-
-    deriveSeq rules (AllPath goal) =
-        allPathTransition $ fmap AllPath <$> deriveSeq (map coerce rules) goal
-    deriveSeq rules (OnePath goal) =
-        onePathTransition $ fmap OnePath <$> deriveSeq (map coerce rules) goal
 
     applyClaims claims (AllPath goal) =
         applyClaims (mapMaybe maybeAllPath claims) goal
