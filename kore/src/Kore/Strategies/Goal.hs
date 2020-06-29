@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , TransitionRule
     , Prim
     , FromRulePattern (..)
     , ClaimExtractor (..)
@@ -446,14 +447,7 @@ instance Goal ReachabilityRule where
     deriveSeq rules (OnePath goal) =
         onePathTransition $ fmap OnePath <$> deriveSeq (map coerce rules) goal
 
-    transitionRule
-        ::  (MonadCatch m, MonadSimplify m)
-        =>  Prim ReachabilityRule
-        ->  ProofState ReachabilityRule
-        ->  Strategy.TransitionT (Rule ReachabilityRule) m
-                (ProofState ReachabilityRule)
-    transitionRule =
-        (logTransitionRule . withDebugProofState) transitionRuleTemplate
+    transitionRule = withDebugProofState transitionRuleTemplate
 
     strategy
         :: ReachabilityRule
@@ -547,29 +541,6 @@ type TransitionRule m goal =
     Prim goal
     -> ProofState goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-
-logTransitionRule
-    :: forall m
-    .  MonadSimplify m
-    => TransitionRule m ReachabilityRule
-    -> TransitionRule m ReachabilityRule
-logTransitionRule rule prim proofState =
-    case proofState of
-        Goal goal          -> logWith goal
-        GoalRemainder goal -> logWith goal
-        _                  -> rule prim proofState
-  where
-    logWith goal = case prim of
-        Simplify ->
-            whileSimplify goal $ rule prim proofState
-        CheckImplication ->
-            whileCheckImplication goal $ rule prim proofState
-        (DeriveSeq rules) ->
-            whileDeriveSeq rules goal $ rule prim proofState
-        (DerivePar rules) ->
-            whileDerivePar rules goal $ rule prim proofState
-        _ ->
-            rule prim proofState
 
 transitionRuleTemplate
     :: forall m goal

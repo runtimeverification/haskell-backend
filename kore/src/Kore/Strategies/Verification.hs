@@ -82,6 +82,12 @@ import Kore.Strategies.ProofState
     ( ProofStateTransformer (..)
     )
 import qualified Kore.Strategies.ProofState as ProofState
+    ( ProofState (..)
+    , extractUnproven
+    )
+import qualified Kore.Strategies.ProofState as Prim
+    ( Prim (..)
+    )
 import Kore.Syntax.Variable
 import Kore.Unparser
 import Logic
@@ -329,7 +335,7 @@ transitionRule'
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
 transitionRule' goal _ prim state = do
     let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
-    next <- transitionRule prim goal'
+    next <- logTransitionRule transitionRule prim goal'
     pure $ fmap getConfiguration next
   where
     lensReachabilityConfig =
@@ -346,3 +352,26 @@ transitionRule' goal _ prim state = do
                 AllPath (AllPathRule rulePattern) -> \b ->
                     (AllPath . AllPathRule) (Lens.set leftPattern b rulePattern)
             )
+
+logTransitionRule
+    :: forall m
+    .  MonadSimplify m
+    => TransitionRule m ReachabilityRule
+    -> TransitionRule m ReachabilityRule
+logTransitionRule rule prim proofState =
+    case proofState of
+        ProofState.Goal goal          -> logWith goal
+        ProofState.GoalRemainder goal -> logWith goal
+        _                  -> rule prim proofState
+  where
+    logWith goal = case prim of
+        Prim.Simplify ->
+            whileSimplify goal $ rule prim proofState
+        Prim.CheckImplication ->
+            whileCheckImplication goal $ rule prim proofState
+        (Prim.DeriveSeq rules) ->
+            whileDeriveSeq rules goal $ rule prim proofState
+        (Prim.DerivePar rules) ->
+            whileDerivePar rules goal $ rule prim proofState
+        _ ->
+            rule prim proofState
