@@ -14,8 +14,9 @@ import Data.Default
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.List
-    ( nub
+import Data.List.Extra
+    ( groupSortOn
+    , nub
     , sort
     )
 import Data.Reflection
@@ -29,6 +30,7 @@ import Data.Limit
     ( Limit (..)
     )
 import qualified Data.Limit as Limit
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Rewriting.RewritingVariable
 
 import Kore.IndexedModule.IndexedModule
@@ -837,11 +839,20 @@ runSteps
        )
     -> (ExecutionGraph b c -> a)
     -> [goal]
+    -> [[Rule goal]]
     -> goal
     -- ^left-hand-side of unification
     -> [Strategy (Prim goal)]
     -> IO a
-runSteps breadthLimit graphFilter picker claims configuration strategy' =
+runSteps
+    breadthLimit
+    graphFilter
+    picker
+    claims
+    axiomGroups
+    configuration
+    strategy'
+  =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
@@ -851,7 +862,7 @@ runSteps breadthLimit graphFilter picker claims configuration strategy' =
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
         runStrategy
             breadthLimit
-            (transitionRule claims)
+            (transitionRule claims axiomGroups)
             strategy'
             (ProofState.Goal configuration)
   where
@@ -863,6 +874,7 @@ runOnePathSteps
     => Ord goal
     => Show (Prim goal)
     => Typeable (Prim goal)
+    => From (Rule goal) (Attribute.Axiom.Priority, Attribute.Axiom.Owise)
     => Limit Natural
     -> Limit Natural
     -> goal
@@ -882,6 +894,7 @@ runOnePathSteps
         Just
         pickFinal
         coinductiveRewrites
+        (groupSortOn Attribute.Axiom.getPriorityOfAxiom rewrites)
         goal
         (Limit.takeWithin
             depthLimit

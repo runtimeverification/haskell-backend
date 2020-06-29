@@ -42,6 +42,7 @@ data Prim rule
     | DerivePar [rule]
     | DeriveSeq [rule]
     | ApplyClaims
+    | ApplyAxioms
     deriving (Show, Functor)
 
 instance Filterable Prim where
@@ -53,6 +54,7 @@ instance Filterable Prim where
     mapMaybe _ CheckImplication   = CheckImplication
     mapMaybe _ TriviallyValid     = TriviallyValid
     mapMaybe _ ApplyClaims        = ApplyClaims
+    mapMaybe _ ApplyAxioms        = ApplyAxioms
     mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
     mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
 
@@ -65,6 +67,7 @@ instance Unparse goal => Pretty (Prim goal) where
     pretty CheckImplication = "Transition CheckImplication."
     pretty TriviallyValid = "Transition TriviallyValid."
     pretty ApplyClaims = "apply claims"
+    pretty ApplyAxioms = "apply axioms"
     pretty (DerivePar rules) =
         Pretty.vsep
             $ ["Transition DerivePar with rules:"]

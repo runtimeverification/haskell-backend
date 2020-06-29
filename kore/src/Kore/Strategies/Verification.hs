@@ -42,6 +42,9 @@ import Data.Coerce
     )
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
+import Data.List.Extra
+    ( groupSortOn
+    )
 import qualified Data.Stream.Infinite as Stream
 import Data.Text
     ( Text
@@ -56,6 +59,7 @@ import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
@@ -256,6 +260,7 @@ verifyClaim
   where
     destination = getDestination goal
     discardStrategy = snd
+    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -296,8 +301,14 @@ verifyClaim
                 CommonProofState
     modifiedTransitionRule prim proofState' = do
         transitions <-
-            lift . lift . runTransitionT
-            $ transitionRule' claims goal destination prim proofState'
+            transitionRule'
+                claims
+                axiomGroups
+                goal
+                destination
+                prim
+                proofState'
+            & lift . lift . runTransitionT
         Transition.scatter transitions
 
 -- | Attempts to perform a single proof step, starting at the configuration
@@ -319,12 +330,13 @@ verifyClaimStep
     -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
 verifyClaimStep target claims axioms executionGraph node =
     executionHistoryStep
-        (transitionRule' claims target destination)
+        (transitionRule' claims axiomGroups target destination)
         strategy'
         executionGraph
         node
   where
     destination = getDestination target
+    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
     strategy' :: Strategy (Prim ReachabilityRule)
     strategy'
@@ -346,18 +358,19 @@ transitionRule'
     :: forall simplifier
     .  (MonadCatch simplifier, MonadSimplify simplifier)
     => [ReachabilityRule]
+    -> [[Rule ReachabilityRule]]
     -> ReachabilityRule
     -> RHS VariableName
     -> Prim ReachabilityRule
     -> CommonProofState
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
-transitionRule' claims goal _ prim state = do
+transitionRule' claims axiomGroups goal _ prim state = do
     let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
     next <- transit prim goal'
     pure $ fmap getConfiguration next
   where
     transit =
-        transitionRule claims
+        transitionRule claims axiomGroups
         & withConfiguration
         & withDebugProofState
         & logTransitionRule
