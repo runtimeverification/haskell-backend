@@ -22,22 +22,22 @@ parseSimplification = parseAttributes
 test_simplification :: TestTree
 test_simplification =
     testCase "[simplification{}()] :: Simplification"
-        $ expectSuccess Simplification { isSimplification = True }
-        $ parseSimplification $ Attributes [ simplificationAttribute ]
+        $ expectSuccess (IsSimplification Nothing)
+        $ parseSimplification $ Attributes [ simplificationAttribute Nothing ]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[simplification{}()] :: Attributes"
         $ expectSuccess attrs $ parseAttributes attrs
   where
-    attrs = Attributes [ simplificationAttribute ]
+    attrs = Attributes [ simplificationAttribute Nothing ]
 
 test_duplicate :: TestTree
 test_duplicate =
     testCase "[simplification{}(), simplification{}()]"
         $ expectFailure
         $ parseSimplification
-        $ Attributes [ simplificationAttribute, simplificationAttribute ]
+        $ Attributes [ simplificationAttribute Nothing, simplificationAttribute Nothing ]
 
 test_arguments :: TestTree
 test_arguments =

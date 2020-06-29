@@ -40,6 +40,7 @@ module Kore.Attribute.Parser
     , getTwoParams
     , getZeroArguments
     , getOneArgument
+    , getZeroOrOneArguments
     , getTwoArguments
     , getSymbolOrAlias
     , Kore.Attribute.Parser.getStringLiteral
@@ -278,6 +279,19 @@ getOneArgument =
           where
             arity = length args
 
+getZeroOrOneArguments
+    :: [AttributePattern]
+    -> Parser (Maybe AttributePattern)
+getZeroOrOneArguments =
+    \case
+        [] -> return Nothing
+        [arg] -> return (Just arg)
+        args ->
+            Kore.Error.koreFail
+                ("expected zero or one arguments, found " <> show arity)
+          where
+            arity = length args
+
 {- | Accept exactly two arguments.
  -}
 getTwoArguments
@@ -317,7 +331,7 @@ getStringLiteral kore =
         _ :< StringLiteralF (Const lit) -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
 
-{- | Accept a string literal.
+{- | Accept a variable.
  -}
 getVariable :: AttributePattern -> Parser (SomeVariable VariableName)
 getVariable kore =
