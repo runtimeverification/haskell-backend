@@ -353,20 +353,33 @@ instance Goal.Goal Goal where
         axioms = rules
         claims = Rule <$> goals
 
-    transitionRule =
-        Goal.transitionRuleTemplate
-            Goal.TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , checkImplicationTemplate =
-                    checkImplication
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+    transitionRule = Goal.transitionRuleTemplate
+
+    checkImplication (src, dst) =
+        return . Goal.NotImplied $ (difference src dst, dst)
+
+    -- | The goal is trivially valid when the members are equal.
+    isTriviallyValid :: Goal -> Bool
+    isTriviallyValid (src, _) = src == Bot
+
+    derivePar rules (src, dst) =
+        goals <|> goalRemainder
+      where
+        goal rule@(Rule (_, to)) = do
+            Transition.addRule rule
+            (pure . ProofState.Goal) (to, dst)
+        goalRemainder = do
+            let r = Foldable.foldl' difference src (fst . unRule <$> applied)
+            (pure . ProofState.GoalRemainder) (r, dst)
+        applyRule rule@(Rule (fromGoal, _))
+          | fromGoal `matches` src = Just rule
+          | otherwise = Nothing
+        applied = mapMaybe applyRule rules
+        goals = Foldable.asum (goal <$> applied)
+
+    simplify = return
+
+    deriveSeq = Goal.derivePar
 
 instance SOP.Generic (Goal.Rule Goal)
 
@@ -375,46 +388,6 @@ instance SOP.HasDatatypeInfo (Goal.Rule Goal)
 instance Debug (Goal.Rule Goal)
 
 instance Diff (Goal.Rule Goal)
-
--- | The destination-removal rule for our unit test goal.
-checkImplication
-    ::  Goal
-    ->  Strategy.TransitionT (Goal.Rule Goal) m
-            (Goal.CheckImplicationResult Goal)
-checkImplication (src, dst) =
-    return . Goal.NotImplied $ (difference src dst, dst)
-
--- | The goal is trivially valid when the members are equal.
-isTriviallyValid :: Goal -> Bool
-isTriviallyValid (src, _) = src == Bot
-
-derivePar
-    :: [Goal.Rule Goal]
-    -> Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-derivePar rules (src, dst) =
-    goals <|> goalRemainder
-  where
-    goal rule@(Rule (_, to)) = do
-        Transition.addRule rule
-        (pure . ProofState.Goal) (to, dst)
-    goalRemainder = do
-        let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ProofState.GoalRemainder) (r, dst)
-    applyRule rule@(Rule (fromGoal, _))
-      | fromGoal `matches` src = Just rule
-      | otherwise = Nothing
-    applied = mapMaybe applyRule rules
-    goals = Foldable.asum (goal <$> applied)
-
-simplify :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
-simplify = return
-
-deriveSeq
-    :: [Goal.Rule Goal]
-    -> Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-deriveSeq = derivePar
 
 runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq (Goal.Rule Goal))]
 runTransitionRule prim state =

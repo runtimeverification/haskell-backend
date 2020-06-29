@@ -7,7 +7,6 @@ module Kore.Strategies.Goal
     , Prim
     , FromRulePattern (..)
     , ClaimExtractor (..)
-    , TransitionRuleTemplate (..)
     , WithConfiguration (..)
     , CheckImplicationResult (..)
     , extractClaims
@@ -224,6 +223,29 @@ class Goal goal where
         -> [Rule goal]
         -> Stream (Strategy (Prim goal))
 
+    isTriviallyValid :: goal -> Bool
+
+    checkImplication
+        :: (MonadCatch m, MonadSimplify m)
+        => goal -> m (CheckImplicationResult goal)
+
+    simplify
+        :: (MonadCatch m, MonadSimplify m)
+        => goal
+        -> Strategy.TransitionT (Rule goal) m goal
+
+    deriveSeq
+        :: (MonadCatch m, MonadSimplify m)
+        => [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
+    derivePar
+        :: (MonadCatch m, MonadSimplify m)
+        => [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+
 type AxiomAttributes = Attribute.Axiom.Axiom Symbol VariableName
 
 class ClaimExtractor claim where
@@ -286,15 +308,17 @@ instance Goal OnePathRule where
         . RewriteRule
         . getOnePathRule
 
-    transitionRule =
-        (withDebugProofState . transitionRuleTemplate)
-        TransitionRuleTemplate
-            { simplifyTemplate = simplify _Unwrapped
-            , checkImplicationTemplate = checkImplication _Unwrapped
-            , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
-            , deriveParTemplate = deriveParOnePath
-            , deriveSeqTemplate = deriveSeqOnePath
-            }
+    simplify = simplify' _Unwrapped
+
+    checkImplication = checkImplication' _Unwrapped
+
+    deriveSeq = deriveSeqOnePath
+
+    derivePar = deriveParOnePath
+
+    isTriviallyValid = isTriviallyValid' _Unwrapped
+
+    transitionRule = withDebugProofState transitionRuleTemplate
 
     strategy _ goals rules =
         onePathFirstStep rewrites
@@ -315,7 +339,7 @@ deriveParOnePath
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
             (ProofState OnePathRule)
 deriveParOnePath rules =
-    derivePar _Unwrapped OnePathRewriteRule rewrites
+    derivePar' _Unwrapped OnePathRewriteRule rewrites
   where
     rewrites = unRuleOnePath <$> rules
 
@@ -326,7 +350,7 @@ deriveSeqOnePath
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
             (ProofState OnePathRule)
 deriveSeqOnePath rules =
-    deriveSeq _Unwrapped OnePathRewriteRule rewrites
+    deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where
     rewrites = unRuleOnePath <$> rules
 
@@ -343,15 +367,13 @@ instance Goal AllPathRule where
         . RewriteRule
         . getAllPathRule
 
-    transitionRule =
-        (withDebugProofState . transitionRuleTemplate)
-        TransitionRuleTemplate
-            { simplifyTemplate = simplify _Unwrapped
-            , checkImplicationTemplate = checkImplication _Unwrapped
-            , isTriviallyValidTemplate = isTriviallyValid _Unwrapped
-            , deriveParTemplate = deriveParAllPath
-            , deriveSeqTemplate = deriveSeqAllPath
-            }
+    simplify = simplify' _Unwrapped
+    checkImplication = checkImplication' _Unwrapped
+    isTriviallyValid = isTriviallyValid' _Unwrapped
+    derivePar = deriveParAllPath
+    deriveSeq = deriveSeqAllPath
+
+    transitionRule = withDebugProofState transitionRuleTemplate
 
     strategy _ goals rules =
         allPathFirstStep priorityGroups
@@ -372,7 +394,7 @@ deriveParAllPath
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
             (ProofState AllPathRule)
 deriveParAllPath rules =
-    derivePar _Unwrapped AllPathRewriteRule rewrites
+    derivePar' _Unwrapped AllPathRewriteRule rewrites
   where
     rewrites = unRuleAllPath <$> rules
 
@@ -383,7 +405,7 @@ deriveSeqAllPath
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
             (ProofState AllPathRule)
 deriveSeqAllPath rules =
-    deriveSeq _Unwrapped AllPathRewriteRule rewrites
+    deriveSeq' _Unwrapped AllPathRewriteRule rewrites
   where
     rewrites = unRuleAllPath <$> rules
 
@@ -405,46 +427,33 @@ instance Goal ReachabilityRule where
         $ RewriteRule
         $ getAllPathRule rule
 
+    simplify (AllPath goal) = allPathTransition $ AllPath <$> simplify goal
+    simplify (OnePath goal) = onePathTransition $ OnePath <$> simplify goal
+
+    checkImplication (AllPath goal) = fmap AllPath <$> checkImplication goal
+    checkImplication (OnePath goal) = fmap OnePath <$> checkImplication goal
+
+    isTriviallyValid (AllPath goal) = isTriviallyValid goal
+    isTriviallyValid (OnePath goal) = isTriviallyValid goal
+
+    derivePar rules (AllPath goal) =
+        allPathTransition $ fmap AllPath <$> derivePar (map coerce rules) goal
+    derivePar rules (OnePath goal) =
+        onePathTransition $ fmap OnePath <$> derivePar (map coerce rules) goal
+
+    deriveSeq rules (AllPath goal) =
+        allPathTransition $ fmap AllPath <$> deriveSeq (map coerce rules) goal
+    deriveSeq rules (OnePath goal) =
+        onePathTransition $ fmap OnePath <$> deriveSeq (map coerce rules) goal
+
     transitionRule
         ::  (MonadCatch m, MonadSimplify m)
         =>  Prim ReachabilityRule
         ->  ProofState ReachabilityRule
         ->  Strategy.TransitionT (Rule ReachabilityRule) m
                 (ProofState ReachabilityRule)
-    transitionRule = logTransitionRule $ \prim proofstate ->
-        case proofstate of
-            Goal (OnePath rule) ->
-                Transition.mapRules ruleOnePathToRuleReachability
-                $ onePathProofState
-                <$> transitionRule (primRuleOnePath prim) (Goal rule)
-            Goal (AllPath rule) ->
-                Transition.mapRules ruleAllPathToRuleReachability
-                $ allPathProofState
-                <$> transitionRule (primRuleAllPath prim) (Goal rule)
-            GoalRewritten (OnePath rule) ->
-                Transition.mapRules ruleOnePathToRuleReachability
-                $ onePathProofState
-                <$> transitionRule (primRuleOnePath prim) (GoalRewritten rule)
-            GoalRewritten (AllPath rule) ->
-                Transition.mapRules ruleAllPathToRuleReachability
-                $ allPathProofState
-                <$> transitionRule (primRuleAllPath prim) (GoalRewritten rule)
-            GoalRemainder (OnePath rule) ->
-                Transition.mapRules ruleOnePathToRuleReachability
-                $ onePathProofState
-                <$> transitionRule (primRuleOnePath prim) (GoalRemainder rule)
-            GoalRemainder (AllPath rule) ->
-                Transition.mapRules ruleAllPathToRuleReachability
-                $ allPathProofState
-                <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
-            state@(GoalStuck _) ->
-                case prim of
-                    CheckGoalStuck -> debugProofStateFinal state CheckGoalStuck
-                    _ -> return proofstate
-            Proven ->
-                case prim of
-                    CheckProven -> debugProofStateFinal Proven CheckProven
-                    _ -> return proofstate
+    transitionRule =
+        (logTransitionRule . withDebugProofState) transitionRuleTemplate
 
     strategy
         :: ReachabilityRule
@@ -473,6 +482,18 @@ instance ClaimExtractor ReachabilityRule where
             Right (AllPathClaimPattern claim) -> Just (AllPath claim)
             _ -> Nothing
 
+allPathTransition
+    :: Monad m
+    => Strategy.TransitionT (Rule AllPathRule) m a
+    -> Strategy.TransitionT (Rule ReachabilityRule) m a
+allPathTransition = Transition.mapRules ruleAllPathToRuleReachability
+
+onePathTransition
+    :: Monad m
+    => Strategy.TransitionT (Rule OnePathRule) m a
+    -> Strategy.TransitionT (Rule ReachabilityRule) m a
+onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
+
 maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
 maybeOnePath (OnePath rule) = Just rule
 maybeOnePath _ = Nothing
@@ -499,22 +520,6 @@ reachabilityAllPathStrategy strategy' =
         ruleAllPathToRuleReachability
         strategy'
 
-allPathProofState :: ProofState AllPathRule -> ProofState ReachabilityRule
-allPathProofState = fmap AllPath
-
-onePathProofState :: ProofState OnePathRule -> ProofState ReachabilityRule
-onePathProofState = fmap OnePath
-
-primRuleOnePath
-    :: ProofState.Prim (Rule ReachabilityRule)
-    -> ProofState.Prim (Rule OnePathRule)
-primRuleOnePath = fmap ruleReachabilityToRuleOnePath
-
-primRuleAllPath
-    :: ProofState.Prim (Rule ReachabilityRule)
-    -> ProofState.Prim (Rule AllPathRule)
-primRuleAllPath = fmap ruleReachabilityToRuleAllPath
-
 -- The functions below are easier to read coercions between
 -- the newtypes over 'RewriteRule VariableName' defined in the
 -- instances of 'Goal' as 'Rule's.
@@ -537,24 +542,6 @@ ruleOnePathToRuleReachability
     :: Rule OnePathRule
     -> Rule ReachabilityRule
 ruleOnePathToRuleReachability = coerce
-
-data TransitionRuleTemplate monad goal =
-    TransitionRuleTemplate
-    { simplifyTemplate
-        :: goal -> Strategy.TransitionT (Rule goal) monad goal
-    , checkImplicationTemplate
-        :: goal
-        -> Strategy.TransitionT (Rule goal) monad (CheckImplicationResult goal)
-    , isTriviallyValidTemplate :: goal -> Bool
-    , deriveParTemplate
-        :: [Rule goal]
-        -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal)
-    , deriveSeqTemplate
-        :: [Rule goal]
-        -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal)
-    }
 
 type TransitionRule m goal =
     Prim goal
@@ -586,19 +573,10 @@ logTransitionRule rule prim proofState =
 
 transitionRuleTemplate
     :: forall m goal
-    .  MonadSimplify m
-    => TransitionRuleTemplate m goal
-    -> TransitionRule m goal
-transitionRuleTemplate
-    TransitionRuleTemplate
-        { simplifyTemplate
-        , checkImplicationTemplate
-        , isTriviallyValidTemplate
-        , deriveParTemplate
-        , deriveSeqTemplate
-        }
-  =
-    transitionRuleWorker
+    .  (MonadCatch m, MonadSimplify m)
+    => Goal goal
+    => TransitionRule m goal
+transitionRuleTemplate = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim goal
@@ -614,38 +592,38 @@ transitionRuleTemplate
 
     transitionRuleWorker Simplify (Goal goal) =
         Profile.timeStrategy "Goal.Simplify" $ do
-            results <- tryTransitionT (simplifyTemplate goal)
+            results <- tryTransitionT (simplify goal)
             case results of
                 [] -> return Proven
                 _  -> Goal <$> Transition.scatter results
 
     transitionRuleWorker Simplify (GoalRemainder goal) =
         Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplifyTemplate goal
+        $ GoalRemainder <$> simplify goal
 
     transitionRuleWorker CheckImplication (Goal goal) =
         Profile.timeStrategy "Goal.CheckImplication" $ do
-            result <- checkImplicationTemplate goal
+            result <- checkImplication goal
             case result of
                 NotImpliedStuck a -> pure (GoalStuck a)
                 Implied -> pure Proven
                 NotImplied a -> pure (Goal a)
     transitionRuleWorker CheckImplication (GoalRemainder goal) =
         Profile.timeStrategy "Goal.CheckImplicationRemainder" $ do
-            result <- checkImplicationTemplate goal
+            result <- checkImplication goal
             case result of
                 NotImpliedStuck a -> pure (GoalStuck a)
                 Implied -> pure Proven
                 NotImplied a -> pure (GoalRemainder a)
 
     transitionRuleWorker TriviallyValid (Goal goal)
-      | isTriviallyValidTemplate goal =
+      | isTriviallyValid goal =
           return Proven
     transitionRuleWorker TriviallyValid (GoalRemainder goal)
-      | isTriviallyValidTemplate goal =
+      | isTriviallyValid goal =
           return Proven
     transitionRuleWorker TriviallyValid (GoalRewritten goal)
-      | isTriviallyValidTemplate goal =
+      | isTriviallyValid goal =
           return Proven
 
     transitionRuleWorker (DerivePar rules) (Goal goal) =
@@ -658,23 +636,23 @@ transitionRuleTemplate
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
         Profile.timeStrategy "Goal.DerivePar"
-        $ deriveParTemplate rules goal
+        $ derivePar rules goal
     transitionRuleWorker (DerivePar rules) (GoalRemainder goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveParRemainder"
-        $ deriveParTemplate rules goal
+        $ derivePar rules goal
 
     transitionRuleWorker (DeriveSeq rules) (Goal goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeq"
-        $ deriveSeqTemplate rules goal
+        $ deriveSeq rules goal
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
         Profile.timeStrategy "Goal.DeriveSeqRemainder"
-        $ deriveSeqTemplate rules goal
+        $ deriveSeq rules goal
 
     transitionRuleWorker _ state = return state
 
@@ -782,18 +760,17 @@ data CheckImplicationResult a
     deriving (Functor)
 
 -- | Remove the destination of the goal.
-checkImplication
+checkImplication'
     :: forall goal m
     .  MonadSimplify m
     => MonadCatch m
     => Lens' goal (RulePattern VariableName)
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (CheckImplicationResult goal)
-checkImplication lensRulePattern goal =
+    -> m (CheckImplicationResult goal)
+checkImplication' lensRulePattern goal =
     goal
     & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
     & getCompose
-    & lift
   where
     checkImplicationWorker
         :: RulePattern VariableName
@@ -835,12 +812,12 @@ checkImplication lensRulePattern goal =
         run :: ExceptT r m r -> m r
         run acts = runExceptT acts >>= either pure pure
 
-simplify
+simplify'
     :: (MonadCatch m, MonadSimplify m)
     => Lens' goal (RulePattern VariableName)
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify lensRulePattern =
+simplify' lensRulePattern =
     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config ->
     withConfiguration config $ do
         configs <-
@@ -850,8 +827,8 @@ simplify lensRulePattern =
             then pure Pattern.bottom
             else Foldable.asum (pure <$> configs)
 
-isTriviallyValid :: Lens' goal (RulePattern variable) -> goal -> Bool
-isTriviallyValid lensRulePattern =
+isTriviallyValid' :: Lens' goal (RulePattern variable) -> goal -> Bool
+isTriviallyValid' lensRulePattern =
     isBottom . RulePattern.left . Lens.view lensRulePattern
 
 isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
@@ -864,7 +841,7 @@ data WithConfiguration = WithConfiguration (Pattern VariableName) SomeException
 instance Exception WithConfiguration
 
 -- | Apply 'Rule's to the goal in parallel.
-derivePar
+derivePar'
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Lens' goal (RulePattern VariableName)
@@ -872,7 +849,7 @@ derivePar
     -> [RewriteRule RewritingVariableName]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-derivePar lensRulePattern mkRule =
+derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
 
@@ -902,7 +879,7 @@ deriveWith lensRulePattern mkRule takeStep rewrites goal =
             deriveResults mkRule results
 
 -- | Apply 'Rule's to the goal in sequence.
-deriveSeq
+deriveSeq'
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Lens' goal (RulePattern VariableName)
@@ -910,7 +887,7 @@ deriveSeq
     -> [RewriteRule RewritingVariableName]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-deriveSeq lensRulePattern mkRule =
+deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
