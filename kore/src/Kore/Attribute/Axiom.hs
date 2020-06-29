@@ -283,7 +283,8 @@ mapAxiomVariables adj axiom@Axiom { concrete, symbolic } =
 
 getPriorityOfAxiom
     :: forall attrs
-    .  From attrs (Priority, Owise, Simplification)
+    .  HasCallStack
+    => From attrs (Priority, Owise, Simplification)
     => attrs
     -> Integer
 getPriorityOfAxiom (from @attrs -> attrs) =
@@ -300,7 +301,7 @@ getPriorityOfAxiom (from @attrs -> attrs) =
             value
         -- TODO: remove this case once the frontend
         -- modifies the simplification attribute
-        -- to take an optional priority attribute
+        -- to take an optional priority value
         (Priority (Just value), Owise False, IsSimplification Nothing) ->
             value
         errorCase@(_, _, _) ->
