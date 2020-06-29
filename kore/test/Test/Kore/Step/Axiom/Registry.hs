@@ -307,8 +307,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
                 Attributes
-                    [ simplificationAttribute Nothing
-                    , Attribute.priorityAttribute 3
+                    [ simplificationAttribute (Just 3)
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
@@ -325,8 +324,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
                 Attributes
-                    [ simplificationAttribute Nothing
-                    , Attribute.priorityAttribute 1
+                    [ simplificationAttribute (Just 1)
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
@@ -343,8 +341,7 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
                 Attributes
-                    [ simplificationAttribute Nothing
-                    , Attribute.priorityAttribute 2
+                    [ simplificationAttribute (Just 2)
                     ]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
