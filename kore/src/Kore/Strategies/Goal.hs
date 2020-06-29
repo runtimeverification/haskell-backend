@@ -104,7 +104,6 @@ import Kore.Internal.TermLike
     , mkIn
     , termLikeSort
     )
-import Kore.Log.DebugProofState
 import Kore.Log.InfoReachability
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
@@ -176,9 +175,6 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Verified as Verified
-import Log
-    ( MonadLog (..)
-    )
 import qualified Pretty
 
 {- | The final nodes of an execution graph which were not proven.
@@ -319,7 +315,7 @@ instance Goal OnePathRule where
 
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
-    transitionRule = withDebugProofState transitionRuleTemplate
+    transitionRule = transitionRuleTemplate
 
     strategy _ goals rules =
         onePathFirstStep rewrites
@@ -374,7 +370,7 @@ instance Goal AllPathRule where
     derivePar = deriveParAllPath
     deriveSeq = deriveSeqAllPath
 
-    transitionRule = withDebugProofState transitionRuleTemplate
+    transitionRule = transitionRuleTemplate
 
     strategy _ goals rules =
         allPathFirstStep priorityGroups
@@ -447,7 +443,7 @@ instance Goal ReachabilityRule where
     deriveSeq rules (OnePath goal) =
         onePathTransition $ fmap OnePath <$> deriveSeq (map coerce rules) goal
 
-    transitionRule = withDebugProofState transitionRuleTemplate
+    transitionRule = transitionRuleTemplate
 
     strategy
         :: ReachabilityRule
@@ -967,82 +963,3 @@ getConfiguration (toRulePattern -> RulePattern { left, requires }) =
 
 getDestination :: ReachabilityRule -> RHS VariableName
 getDestination (toRulePattern -> RulePattern { rhs }) = rhs
-
-class ToReachabilityRule rule where
-    toReachabilityRule :: rule -> ReachabilityRule
-
-instance ToReachabilityRule OnePathRule where
-    toReachabilityRule = OnePath
-
-instance ToReachabilityRule AllPathRule where
-    toReachabilityRule = AllPath
-
-instance ToReachabilityRule ReachabilityRule where
-    toReachabilityRule = id
-
-debugProofStateBracket
-    :: forall monad goal
-    .  MonadLog monad
-    => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => ProofState goal
-    -- ^ current proof state
-    -> Prim goal
-    -- ^ transition
-    -> monad (ProofState goal)
-    -- ^ action to be computed
-    -> monad (ProofState goal)
-debugProofStateBracket
-    (fmap toReachabilityRule -> proofState)
-    (coerce -> transition)
-    action
-  = do
-    result <- action
-    logEntry DebugProofState
-        { proofState
-        , transition
-        , result = Just $ toReachabilityRule <$> result
-        }
-    return result
-
-debugProofStateFinal
-    :: forall monad goal
-    .  Alternative monad
-    => MonadLog monad
-    => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => ProofState goal
-    -- ^ current proof state
-    -> Prim goal
-    -- ^ transition
-    -> monad (ProofState goal)
-debugProofStateFinal
-    (fmap toReachabilityRule -> proofState)
-    (coerce -> transition)
-  = do
-    logEntry DebugProofState
-        { proofState
-        , transition
-        , result = Nothing
-        }
-    empty
-
-withDebugProofState
-    :: forall monad goal
-    .  MonadLog monad
-    => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule RewritingVariableName)
-    => TransitionRule monad goal
-    -> TransitionRule monad goal
-withDebugProofState transitionFunc =
-    \transition state ->
-        Transition.orElse
-            (debugProofStateBracket
-                state
-                transition
-                (transitionFunc transition state)
-            )
-            (debugProofStateFinal
-                state
-                transition
-            )

@@ -35,6 +35,9 @@ import Control.Monad.Except
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
+import Data.Coerce
+    ( coerce
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
@@ -56,6 +59,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Log.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
     ( AllPathRule (..)
@@ -79,7 +83,8 @@ import Kore.Step.Transition
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
-    ( ProofStateTransformer (..)
+    ( ProofState
+    , ProofStateTransformer (..)
     )
 import qualified Kore.Strategies.ProofState as ProofState
     ( ProofState (..)
@@ -90,6 +95,9 @@ import qualified Kore.Strategies.ProofState as Prim
     )
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Log
+    ( MonadLog (..)
+    )
 import Logic
     ( LogicT
     )
@@ -335,7 +343,7 @@ transitionRule'
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
 transitionRule' goal _ prim state = do
     let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
-    next <- logTransitionRule transitionRule prim goal'
+    next <- (logTransitionRule $ withDebugProofState transitionRule) prim goal'
     pure $ fmap getConfiguration next
   where
     lensReachabilityConfig =
@@ -375,3 +383,61 @@ logTransitionRule rule prim proofState =
             whileDerivePar rules goal $ rule prim proofState
         _ ->
             rule prim proofState
+
+debugProofStateBracket
+    :: forall monad
+    .  MonadLog monad
+    => ProofState ReachabilityRule
+    -- ^ current proof state
+    -> Prim ReachabilityRule
+    -- ^ transition
+    -> monad (ProofState ReachabilityRule)
+    -- ^ action to be computed
+    -> monad (ProofState ReachabilityRule)
+debugProofStateBracket
+    proofState
+    (coerce -> transition)
+    action
+  = do
+    result <- action
+    logEntry DebugProofState
+        { proofState
+        , transition
+        , result = Just result
+        }
+    return result
+
+debugProofStateFinal
+    :: forall monad
+    .  Alternative monad
+    => MonadLog monad
+    => ProofState ReachabilityRule
+    -- ^ current proof state
+    -> Prim ReachabilityRule
+    -- ^ transition
+    -> monad (ProofState ReachabilityRule)
+debugProofStateFinal proofState (coerce -> transition) = do
+    logEntry DebugProofState
+        { proofState
+        , transition
+        , result = Nothing
+        }
+    empty
+
+withDebugProofState
+    :: forall monad
+    .  MonadLog monad
+    => TransitionRule monad ReachabilityRule
+    -> TransitionRule monad ReachabilityRule
+withDebugProofState transitionFunc =
+    \transition state ->
+        Transition.orElse
+            (debugProofStateBracket
+                state
+                transition
+                (transitionFunc transition state)
+            )
+            (debugProofStateFinal
+                state
+                transition
+            )
