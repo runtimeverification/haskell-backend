@@ -43,7 +43,6 @@ import Control.Monad
     )
 import Control.Monad.Catch
     ( Exception (..)
-    , MonadCatch
     , SomeException (..)
     )
 import Data.Coerce
@@ -213,22 +212,22 @@ class Goal goal where
     isTriviallyValid :: goal -> Bool
 
     checkImplication
-        :: (MonadCatch m, MonadSimplify m)
+        :: MonadSimplify m
         => goal -> m (CheckImplicationResult goal)
 
     simplify
-        :: (MonadCatch m, MonadSimplify m)
+        :: MonadSimplify m
         => goal
         -> Strategy.TransitionT (Rule goal) m goal
 
     deriveSeq
-        :: (MonadCatch m, MonadSimplify m)
+        :: MonadSimplify m
         => [Rule goal]
         -> goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 
     derivePar
-        :: (MonadCatch m, MonadSimplify m)
+        :: MonadSimplify m
         => [Rule goal]
         -> goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
@@ -318,7 +317,7 @@ instance Goal OnePathRule where
         coinductiveRewrites = goalToRule <$> goals
 
 deriveParOnePath
-    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
     ->  OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
@@ -329,7 +328,7 @@ deriveParOnePath rules =
     rewrites = unRuleOnePath <$> rules
 
 deriveSeqOnePath
-    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
     ->  OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
@@ -371,7 +370,7 @@ instance Goal AllPathRule where
         coinductiveRewrites = goalToRule <$> goals
 
 deriveParAllPath
-    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    ::  MonadSimplify simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
@@ -382,7 +381,7 @@ deriveParAllPath rules =
     rewrites = unRuleAllPath <$> rules
 
 deriveSeqAllPath
-    ::  (MonadCatch simplifier, MonadSimplify simplifier)
+    ::  MonadSimplify simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
@@ -524,7 +523,7 @@ type TransitionRule m goal =
 
 transitionRule
     :: forall m goal
-    .  (MonadCatch m, MonadSimplify m)
+    .  MonadSimplify m
     => Goal goal
     => TransitionRule m goal
 transitionRule = transitionRuleWorker
@@ -762,7 +761,7 @@ checkImplication' lensRulePattern goal =
         run acts = runExceptT acts >>= either pure pure
 
 simplify'
-    :: (MonadCatch m, MonadSimplify m)
+    :: MonadSimplify m
     => Lens' goal (RulePattern VariableName)
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
@@ -791,7 +790,7 @@ instance Exception WithConfiguration
 -- | Apply 'Rule's to the goal in parallel.
 derivePar'
     :: forall m goal
-    .  (MonadCatch m, MonadSimplify m)
+    .  MonadSimplify m
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
@@ -809,7 +808,7 @@ type Deriver monad =
 -- | Apply 'Rule's to the goal in parallel.
 deriveWith
     :: forall m goal
-    .  MonadCatch m
+    .  Monad m
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> Deriver m
@@ -829,7 +828,7 @@ deriveWith lensRulePattern mkRule takeStep rewrites goal =
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq'
     :: forall m goal
-    .  (MonadCatch m, MonadSimplify m)
+    .  MonadSimplify m
     => Lens' goal (RulePattern VariableName)
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
