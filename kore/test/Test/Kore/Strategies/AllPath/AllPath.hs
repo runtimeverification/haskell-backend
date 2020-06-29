@@ -4,7 +4,6 @@ module Test.Kore.Strategies.AllPath.AllPath
     , test_transitionRule_CheckGoalRem
     , test_transitionRule_CheckImplication
     , test_transitionRule_TriviallyValid
-    , test_transitionRule_DerivePar
     , test_transitionRule_ApplyClaims
     , test_transitionRule_ApplyAxioms
     , test_runStrategy
@@ -175,34 +174,6 @@ test_transitionRule_TriviallyValid =
     becomesProven :: HasCallStack => ProofState -> TestTree
     becomesProven state = run state `equals_` [(ProofState.Proven, mempty)]
 
-test_transitionRule_DerivePar :: [TestTree]
-test_transitionRule_DerivePar =
-    [ unmodified ProofState.Proven
-    , unmodified (ProofState.GoalRewritten    (A, B))
-    , [Rule (A, C)]
-        `derives`
-        [ (ProofState.Goal    (C,   C), Seq.singleton $ Rule (A, C))
-        , (ProofState.GoalRemainder (Bot, C), mempty)
-        ]
-    , fmap Rule [(A, B), (B, C)]
-        `derives`
-        [ (ProofState.Goal    (B  , C), Seq.singleton $ Rule (A, B))
-        , (ProofState.GoalRemainder (Bot, C), mempty)
-        ]
-    ]
-  where
-    run rules = runTransitionRule [] [] (ProofState.DerivePar rules)
-    unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
-    derives
-        :: HasCallStack
-        => [Goal.Rule Goal]
-        -- ^ rules to apply in parallel
-        -> [(ProofState, Seq (Goal.Rule Goal))]
-        -- ^ transitions
-        -> TestTree
-    derives rules = equals_ (run rules $ ProofState.GoalRemainder (A, C))
-
 test_transitionRule_ApplyClaims :: [TestTree]
 test_transitionRule_ApplyClaims =
     [ unmodified ProofState.Proven
@@ -369,7 +340,7 @@ type Goal = (K, K)
 
 type ProofState = ProofState.ProofState Goal
 
-type Prim = Goal.Prim Goal
+type Prim = Goal.Prim
 
 newtype instance Goal.Rule Goal =
     Rule { unRule :: (K, K) }
@@ -416,28 +387,30 @@ instance Goal.Goal Goal where
     isTriviallyValid :: Goal -> Bool
     isTriviallyValid (src, _) = src == Bot
 
-    derivePar rules (src, dst) =
-        goals <|> goalRemainder
-      where
-        goal rule@(Rule (_, to)) = do
-            Transition.addRule rule
-            (pure . ProofState.Goal) (to, dst)
-        goalRemainder = do
-            let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-            (pure . ProofState.GoalRemainder) (r, dst)
-        applyRule rule@(Rule (fromGoal, _))
-          | fromGoal `matches` src = Just rule
-          | otherwise = Nothing
-        applied = mapMaybe applyRule rules
-        goals = Foldable.asum (goal <$> applied)
-
     simplify = return
 
-    deriveSeq = Goal.derivePar
+    applyClaims claims = derivePar (map Rule claims)
 
-    applyClaims claims = Goal.deriveSeq (map Rule claims)
+    applyAxioms axiomGroups = derivePar (concat axiomGroups)
 
-    applyAxioms axiomGroups = Goal.derivePar (concat axiomGroups)
+derivePar
+    :: [Goal.Rule Goal]
+    -> (K, K)
+    -> Transition.TransitionT (Goal.Rule Goal) m (ProofState.ProofState (K, K))
+derivePar rules (src, dst) =
+    goals <|> goalRemainder
+  where
+    goal rule@(Rule (_, to)) = do
+        Transition.addRule rule
+        (pure . ProofState.Goal) (to, dst)
+    goalRemainder = do
+        let r = Foldable.foldl' difference src (fst . unRule <$> applied)
+        (pure . ProofState.GoalRemainder) (r, dst)
+    applyRule rule@(Rule (fromGoal, _))
+        | fromGoal `matches` src = Just rule
+        | otherwise = Nothing
+    applied = mapMaybe applyRule rules
+    goals = Foldable.asum (goal <$> applied)
 
 instance SOP.Generic (Goal.Rule Goal)
 

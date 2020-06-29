@@ -831,8 +831,6 @@ rewriteReachabilityWithPredicate left right predicate =
 
 runSteps
     :: Goal goal
-    => Show (Prim goal)
-    => Typeable (Prim goal)
     => Limit Natural
     -> ( ExecutionGraph (ProofState.ProofState goal) (Rule goal)
        -> Maybe (ExecutionGraph b c)
@@ -842,7 +840,7 @@ runSteps
     -> [[Rule goal]]
     -> goal
     -- ^left-hand-side of unification
-    -> [Strategy (Prim goal)]
+    -> [Strategy Prim]
     -> IO a
 runSteps
     breadthLimit
@@ -872,8 +870,6 @@ runSteps
 runOnePathSteps
     :: Goal goal
     => Ord goal
-    => Show (Prim goal)
-    => Typeable (Prim goal)
     => From (Rule goal) (Attribute.Axiom.Priority, Attribute.Axiom.Owise)
     => Limit Natural
     -> Limit Natural

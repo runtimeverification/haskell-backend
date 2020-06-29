@@ -295,7 +295,7 @@ verifyClaim
         & lift
 
     modifiedTransitionRule
-        ::  Prim ReachabilityRule
+        ::  Prim
         ->  CommonProofState
         ->  TransitionT (Rule ReachabilityRule) (Verifier simplifier)
                 CommonProofState
@@ -338,15 +338,15 @@ verifyClaimStep target claims axioms executionGraph node =
     destination = getDestination target
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
-    strategy' :: Strategy (Prim ReachabilityRule)
+    strategy' :: Strategy Prim
     strategy'
         | isRoot = firstStep
         | otherwise = followupStep
 
-    firstStep :: Strategy (Prim ReachabilityRule)
+    firstStep :: Strategy Prim
     firstStep = strategy target claims axioms Stream.!! 0
 
-    followupStep :: Strategy (Prim ReachabilityRule)
+    followupStep :: Strategy Prim
     followupStep = strategy target claims axioms Stream.!! 1
 
     ExecutionGraph { root } = executionGraph
@@ -361,7 +361,7 @@ transitionRule'
     -> [[Rule ReachabilityRule]]
     -> ReachabilityRule
     -> RHS VariableName
-    -> Prim ReachabilityRule
+    -> Prim
     -> CommonProofState
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
 transitionRule' claims axiomGroups goal _ prim state = do
@@ -405,10 +405,6 @@ logTransitionRule rule prim proofState =
             whileSimplify goal $ rule prim proofState
         Prim.CheckImplication ->
             whileCheckImplication goal $ rule prim proofState
-        (Prim.DeriveSeq rules) ->
-            whileDeriveSeq rules goal $ rule prim proofState
-        (Prim.DerivePar rules) ->
-            whileDerivePar rules goal $ rule prim proofState
         _ ->
             rule prim proofState
 
@@ -417,7 +413,7 @@ debugProofStateBracket
     .  MonadLog monad
     => ProofState ReachabilityRule
     -- ^ current proof state
-    -> Prim ReachabilityRule
+    -> Prim
     -- ^ transition
     -> monad (ProofState ReachabilityRule)
     -- ^ action to be computed
@@ -441,7 +437,7 @@ debugProofStateFinal
     => MonadLog monad
     => ProofState ReachabilityRule
     -- ^ current proof state
-    -> Prim ReachabilityRule
+    -> Prim
     -- ^ transition
     -> monad (ProofState ReachabilityRule)
 debugProofStateFinal proofState (coerce -> transition) = do

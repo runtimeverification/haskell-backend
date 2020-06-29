@@ -27,7 +27,7 @@ import qualified Pretty
 
 {- | The primitive transitions of the reachability proof strategy.
  -}
-data Prim rule
+data Prim
     = CheckProven
     -- ^ End execution on this branch if the state is 'Proven'.
     | CheckGoalRemainder
@@ -39,26 +39,11 @@ data Prim rule
     | Simplify
     | CheckImplication
     | TriviallyValid
-    | DerivePar [rule]
-    | DeriveSeq [rule]
     | ApplyClaims
     | ApplyAxioms
-    deriving (Show, Functor)
+    deriving (Show)
 
-instance Filterable Prim where
-    mapMaybe _ CheckProven        = CheckProven
-    mapMaybe _ CheckGoalRemainder = CheckGoalRemainder
-    mapMaybe _ CheckGoalStuck     = CheckGoalStuck
-    mapMaybe _ ResetGoal          = ResetGoal
-    mapMaybe _ Simplify           = Simplify
-    mapMaybe _ CheckImplication   = CheckImplication
-    mapMaybe _ TriviallyValid     = TriviallyValid
-    mapMaybe _ ApplyClaims        = ApplyClaims
-    mapMaybe _ ApplyAxioms        = ApplyAxioms
-    mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
-    mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
-
-instance Unparse goal => Pretty (Prim goal) where
+instance Pretty Prim where
     pretty CheckProven = "Transition CheckProven."
     pretty CheckGoalRemainder = "Transition CheckGoalRemainder."
     pretty CheckGoalStuck = "Transition CheckGoalStuck."
@@ -68,14 +53,6 @@ instance Unparse goal => Pretty (Prim goal) where
     pretty TriviallyValid = "Transition TriviallyValid."
     pretty ApplyClaims = "apply claims"
     pretty ApplyAxioms = "apply axioms"
-    pretty (DerivePar rules) =
-        Pretty.vsep
-            $ ["Transition DerivePar with rules:"]
-            <> fmap (Pretty.indent 4 . unparse) rules
-    pretty (DeriveSeq rules) =
-        Pretty.vsep
-            $ ["Transition DeriveSeq with rules:"]
-            <> fmap (Pretty.indent 4 . unparse) rules
 
 {- | The state of the reachability proof strategy for @goal@.
  -}

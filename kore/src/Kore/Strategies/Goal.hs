@@ -150,8 +150,7 @@ import Kore.Step.Transition
     )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
-    ( Prim
-    , proofState
+    ( proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Strategies.Rule
@@ -190,8 +189,6 @@ proven
     -> Bool
 proven = Foldable.null . unprovenNodes
 
-type Prim goal = ProofState.Prim (Rule goal)
-
 class Goal goal where
     goalToRule :: goal -> Rule goal
     default goalToRule
@@ -203,7 +200,7 @@ class Goal goal where
         :: goal
         -> [goal]
         -> [Rule goal]
-        -> Stream (Strategy (Prim goal))
+        -> Stream (Strategy Prim)
 
     isTriviallyValid :: goal -> Bool
 
@@ -468,18 +465,16 @@ instance Goal ReachabilityRule where
         :: ReachabilityRule
         -> [ReachabilityRule]
         -> [Rule ReachabilityRule]
-        -> Stream (Strategy (Prim ReachabilityRule))
+        -> Stream (Strategy Prim)
     strategy goal claims axioms =
         case goal of
             OnePath rule ->
-                reachabilityOnePathStrategy
-                $ strategy
+                strategy
                     rule
                     (mapMaybe maybeOnePath claims)
                     (fmap ruleReachabilityToRuleOnePath axioms)
             AllPath rule ->
-                reachabilityAllPathStrategy
-                $ strategy
+                strategy
                     rule
                     (mapMaybe maybeAllPath claims)
                     (fmap ruleReachabilityToRuleAllPath axioms)
@@ -511,24 +506,6 @@ maybeAllPath :: ReachabilityRule -> Maybe AllPathRule
 maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
-reachabilityOnePathStrategy
-    :: Functor t
-    => t (Strategy (Prim OnePathRule))
-    -> t (Strategy (Prim ReachabilityRule))
-reachabilityOnePathStrategy strategy' =
-    (fmap . fmap . fmap)
-        ruleOnePathToRuleReachability
-        strategy'
-
-reachabilityAllPathStrategy
-    :: Functor t
-    => t (Strategy (Prim AllPathRule))
-    -> t (Strategy (Prim ReachabilityRule))
-reachabilityAllPathStrategy strategy' =
-    (fmap . fmap . fmap)
-        ruleAllPathToRuleReachability
-        strategy'
-
 -- The functions below are easier to read coercions between
 -- the newtypes over 'RewriteRule VariableName' defined in the
 -- instances of 'Goal' as 'Rule's.
@@ -553,7 +530,7 @@ ruleOnePathToRuleReachability
 ruleOnePathToRuleReachability = coerce
 
 type TransitionRule m goal =
-    Prim goal
+    Prim
     -> ProofState goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 
@@ -567,7 +544,7 @@ transitionRule
 transitionRule claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
-        :: Prim goal
+        :: Prim
         -> ProofState goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
     transitionRuleWorker CheckProven Proven = empty
@@ -614,6 +591,17 @@ transitionRule claims axiomGroups = transitionRuleWorker
       | isTriviallyValid goal =
           return Proven
 
+    -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
+    --
+    -- thomas.tuegel: "Here" is in ApplyClaims and ApplyAxioms.
+    --
+    -- Note that in most transitions it is obvious what is being transformed
+    -- into what, e.g. that a `ResetGoal` transition transforms
+    -- `GoalRewritten` into `Goal`. However, here we're taking a `Goal`
+    -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
+    -- opaque way. I think that there's no good reason for wrapping the
+    -- results in `derivePar` as opposed to here.
+
     transitionRuleWorker ApplyClaims (Goal goal) =
         Profile.timeStrategy "applyClaims"
         $ applyClaims claims goal
@@ -630,37 +618,9 @@ transitionRule claims axiomGroups = transitionRuleWorker
         Profile.timeStrategy "applyAxioms"
         $ applyAxioms axiomGroups goal
 
-    transitionRuleWorker (DerivePar rules) (Goal goal) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        --
-        -- Note that in most transitions it is obvious what is being transformed
-        -- into what, e.g. that a `ResetGoal` transition transforms
-        -- `GoalRewritten` into `Goal`. However, here we're taking a `Goal`
-        -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
-        -- opaque way. I think that there's no good reason for wrapping the
-        -- results in `derivePar` as opposed to here.
-        Profile.timeStrategy "Goal.DerivePar"
-        $ derivePar rules goal
-    transitionRuleWorker (DerivePar rules) (GoalRemainder goal) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveParRemainder"
-        $ derivePar rules goal
-
-    transitionRuleWorker (DeriveSeq rules) (Goal goal) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveSeq"
-        $ deriveSeq rules goal
-    transitionRuleWorker (DeriveSeq rules) (GoalRemainder goal) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveSeqRemainder"
-        $ deriveSeq rules goal
-
     transitionRuleWorker _ state = return state
 
-onePathFirstStep :: Strategy (Prim goal)
+onePathFirstStep :: Strategy Prim
 onePathFirstStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -675,7 +635,7 @@ onePathFirstStep =
         , TriviallyValid
         ]
 
-onePathFollowupStep :: Strategy (Prim goal)
+onePathFollowupStep :: Strategy Prim
 onePathFollowupStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -691,7 +651,7 @@ onePathFollowupStep =
         , TriviallyValid
         ]
 
-allPathFirstStep :: Strategy (Prim AllPathRule)
+allPathFirstStep :: Strategy Prim
 allPathFirstStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -706,7 +666,7 @@ allPathFirstStep =
         , TriviallyValid
         ]
 
-allPathFollowupStep :: Strategy (Prim AllPathRule)
+allPathFollowupStep :: Strategy Prim
 allPathFollowupStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
