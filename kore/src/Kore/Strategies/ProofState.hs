@@ -89,7 +89,9 @@ data ProofState goal
     -- only by applying CheckImplication.
     | Proven
     -- ^ The parent goal was proven.
-    deriving (Eq, Show, Ord, Functor, GHC.Generic)
+    deriving (Eq, Show, Ord)
+    deriving (Foldable, Functor)
+    deriving (GHC.Generic)
 
 instance Hashable goal => Hashable (ProofState goal)
 
