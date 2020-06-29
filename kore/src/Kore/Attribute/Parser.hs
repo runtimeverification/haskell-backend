@@ -288,7 +288,7 @@ getZeroOrOneArguments =
         [arg] -> return (Just arg)
         args ->
             Kore.Error.koreFail
-                ("expected zero or one arguments, found " <> show arity)
+                ("expected at most one argument, found " <> show arity)
           where
             arity = length args
 

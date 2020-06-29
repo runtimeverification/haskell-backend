@@ -34,8 +34,9 @@ import Kore.Debug
 
 type SimplificationPriority = Maybe Integer
 
--- TODO: update docs
 {- | @Simplification@ represents the @simplification@ attribute for axioms.
+    It takes an optional integer argument which represents the rule's priority,
+    to allow the possibility of ordering the application of simplification rules.
  -}
 data Simplification
     = IsSimplification SimplificationPriority
@@ -70,24 +71,27 @@ simplificationSymbol =
 -- | Kore pattern representing the @simplification@ attribute.
 simplificationAttribute :: Maybe Integer -> AttributePattern
 simplificationAttribute priority =
-    attributePattern simplificationSymbol (fmap attributeInteger (maybeToList priority))
+    attributePattern
+        simplificationSymbol
+        (fmap attributeInteger (maybeToList priority))
 
 instance ParseAttributes Simplification where
     parseAttribute =
-        withApplication' $ \params args simplification ->
-            case simplification of
-                NotSimplification -> do
-                    Parser.getZeroParams params
-                    arg <- Parser.getZeroOrOneArguments args
-                    case arg of
-                        Just arg' -> do
-                            stringLiteral <- Parser.getStringLiteral arg'
-                            integer <- Parser.parseInteger stringLiteral
-                            return (IsSimplification (Just integer))
-                        Nothing ->
-                            return (IsSimplification Nothing)
-                _ -> failDuplicate'
+        withApplication' parseSimplification
       where
+        parseSimplification params args NotSimplification = do
+            Parser.getZeroParams params
+            arg <- Parser.getZeroOrOneArguments args
+            case arg of
+                Just arg' -> do
+                    stringLiteral <- Parser.getStringLiteral arg'
+                    integer <- Parser.parseInteger stringLiteral
+                    return (IsSimplification (Just integer))
+                Nothing ->
+                    return (IsSimplification Nothing)
+        parseSimplification _ _ _ =
+            failDuplicate'
+
         withApplication' = Parser.withApplication simplificationId
         failDuplicate' = Parser.failDuplicate simplificationId
 
