@@ -19,7 +19,7 @@ module Kore.Strategies.Goal
     , allPathFollowupStep
     , getConfiguration
     , getDestination
-    , transitionRuleTemplate
+    , transitionRule
     , isTrusted
     , removalPatterns
     -- * Re-exports
@@ -208,12 +208,6 @@ class Goal goal where
         => goal -> Rule goal
     goalToRule = coerce
 
-    transitionRule
-        :: (MonadCatch m, MonadSimplify m)
-        => Prim goal
-        -> ProofState goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-
     strategy
         :: goal
         -> [goal]
@@ -315,8 +309,6 @@ instance Goal OnePathRule where
 
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
-    transitionRule = transitionRuleTemplate
-
     strategy _ goals rules =
         onePathFirstStep rewrites
         :> Stream.iterate
@@ -369,8 +361,6 @@ instance Goal AllPathRule where
     isTriviallyValid = isTriviallyValid' _Unwrapped
     derivePar = deriveParAllPath
     deriveSeq = deriveSeqAllPath
-
-    transitionRule = transitionRuleTemplate
 
     strategy _ goals rules =
         allPathFirstStep priorityGroups
@@ -442,8 +432,6 @@ instance Goal ReachabilityRule where
         allPathTransition $ fmap AllPath <$> deriveSeq (map coerce rules) goal
     deriveSeq rules (OnePath goal) =
         onePathTransition $ fmap OnePath <$> deriveSeq (map coerce rules) goal
-
-    transitionRule = transitionRuleTemplate
 
     strategy
         :: ReachabilityRule
@@ -538,12 +526,12 @@ type TransitionRule m goal =
     -> ProofState goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
 
-transitionRuleTemplate
+transitionRule
     :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => TransitionRule m goal
-transitionRuleTemplate = transitionRuleWorker
+transitionRule = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim goal

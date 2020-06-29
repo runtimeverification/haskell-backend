@@ -353,8 +353,6 @@ instance Goal.Goal Goal where
         axioms = rules
         claims = Rule <$> goals
 
-    transitionRule = Goal.transitionRuleTemplate
-
     checkImplication (src, dst) =
         return . Goal.NotImplied $ (difference src dst, dst)
 
