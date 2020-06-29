@@ -246,7 +246,7 @@ simplifyInternal term sideCondition = do
             Right termPredicate ->
                 return
                 $ OrPattern.fromPattern
-                $ Pattern.fromConditionSorted (termLikeSort termLike)
+                $ Pattern.fromCondition (termLikeSort termLike)
                 $ assertConditionSimplified termLike
                 $ Condition.fromPredicate termPredicate
         | otherwise
@@ -353,7 +353,7 @@ simplifyInternal term sideCondition = do
           , resultPredicate == condition
           = return
                 $ OrPattern.fromPattern
-                $ Pattern.fromCondition
+                $ Pattern.fromCondition_
                 $ Condition.markPredicateSimplifiedConditional
                     sideConditionRepresentation
                     resultPredicate

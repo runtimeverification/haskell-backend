@@ -241,7 +241,7 @@ termKEquals unifyChildren (NotSimplifier notSimplifier) a b =
     worker a b <|> worker b a
   where
     eraseTerm =
-        Pattern.fromCondition . Pattern.withoutTerm
+        Pattern.fromCondition_ . Pattern.withoutTerm
     worker termLike1 termLike2
       | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
       , isFunctionPattern termLike1
