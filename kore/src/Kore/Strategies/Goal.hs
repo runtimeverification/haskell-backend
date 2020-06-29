@@ -670,8 +670,6 @@ onePathFirstStep =
         , TriviallyValid
         , CheckImplication
         , ApplyAxioms
-        , Simplify
-        , TriviallyValid
         , ResetGoal
         , Simplify
         , TriviallyValid
@@ -687,11 +685,7 @@ onePathFollowupStep =
         , TriviallyValid
         , CheckImplication
         , ApplyClaims
-        , Simplify
-        , TriviallyValid
         , ApplyAxioms
-        , Simplify
-        , TriviallyValid
         , ResetGoal
         , Simplify
         , TriviallyValid
