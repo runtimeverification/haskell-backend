@@ -94,7 +94,6 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makePredicate
     )
@@ -685,7 +684,10 @@ koreProve execOptions proveOptions = do
                 (return ())
                 (lift . saveProven specModule provenClaims)
                 saveProofs
-            return (failure . Pattern.toTermLike . OrPattern.toPattern $ stuckPattern)
+            stuckPattern
+                & OrPattern.toTermLike
+                & failure
+                & return
         Right () -> return success
 
     lift $ renderResult execOptions (unparse final)
