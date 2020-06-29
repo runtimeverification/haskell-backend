@@ -83,6 +83,47 @@ test_reachabilityVerification =
         assertEqual ""
             (Left $ fromTermLike Mock.a)
             actual
+    , testCase "OnePath: Breadth limit zero" $ do
+        -- Axiom: a => b
+        -- Claim: a => b
+        -- Expected: error a
+        actual <- runVerificationToPattern
+            (Limit 0)
+            Unlimited
+            [simpleAxiom Mock.a Mock.b]
+            [simpleOnePathClaim Mock.a Mock.b]
+            []
+        assertEqual ""
+            (Left $ fromTermLike Mock.a)
+            actual
+    , testCase "AllPath: Breadth limit zero" $ do
+        -- Axiom: a => b
+        -- Claim: a => b
+        -- Expected: error a
+        actual <- runVerificationToPattern
+            (Limit 0)
+            Unlimited
+            [simpleAxiom Mock.a Mock.b]
+            [simpleAllPathClaim Mock.a Mock.b]
+            []
+        assertEqual ""
+            (Left $ fromTermLike Mock.a)
+            actual
+    , testCase "Mixed: Breadth limit zero" $ do
+        -- Axiom: a => b
+        -- Claim: a => b
+        -- Expected: error a
+        actual <- runVerificationToPattern
+            (Limit 0)
+            Unlimited
+            [simpleAxiom Mock.a Mock.b]
+            [ simpleOnePathClaim Mock.a Mock.b
+            , simpleAllPathClaim Mock.a Mock.b
+            ]
+            []
+        assertEqual ""
+            (Left $ fromTermLike Mock.a)
+            actual
     , testCase "OnePath: Runs one step" $ do
         -- Axiom: a => b
         -- Claim: a => b
@@ -528,6 +569,132 @@ test_reachabilityVerification =
                         )
                 , substitution = mempty
                 }
+            )
+            actual
+    , testCase "OnePath: Stops at branching because of breadth limit" $ do
+        -- Axiom: constr11(a) => b
+        -- Axiom: constr10(x) => constr11(x)
+        -- Claim: constr10(x) => b
+        -- Expected: error constr11(x) and x != a
+        actual <- runVerificationToPattern
+            (Limit 1)
+            Unlimited
+            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
+            , simpleAxiom
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+            ]
+            [ simpleOnePathClaim
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                Mock.b
+            ]
+            []
+        assertEqual ""
+            ( Left . OrPattern.fromPatterns $
+            [ Conditional
+                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
+                , predicate =
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
+                , substitution = mempty
+                }
+            , Conditional
+                { term = Mock.b
+                , predicate =
+                    makeEqualsPredicate Mock.testSort
+                        (mkElemVar Mock.x)
+                        Mock.a
+                , substitution = mempty
+                }
+            ]
+            )
+            actual
+    , testCase "AllPath: Stops at branching because of breadth limit" $ do
+        -- Axiom: constr11(a) => b
+        -- Axiom: constr10(x) => constr11(x)
+        -- Claim: constr10(x) => b
+        -- Expected: error constr11(x) and x != a
+        actual <- runVerificationToPattern
+            (Limit 1)
+            Unlimited
+            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
+            , simpleAxiom
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+            ]
+            [ simpleAllPathClaim
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                Mock.b
+            ]
+            []
+        assertEqual ""
+            ( Left . OrPattern.fromPatterns $
+            [ Conditional
+                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
+                , predicate =
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
+                , substitution = mempty
+                }
+            , Conditional
+                { term = Mock.b
+                , predicate =
+                    makeEqualsPredicate Mock.testSort
+                        (mkElemVar Mock.x)
+                        Mock.a
+                , substitution = mempty
+                }
+            ]
+            )
+            actual
+    , testCase "Mixed: Stops at branching because of breadth limit" $ do
+        -- Axiom: constr11(a) => b
+        -- Axiom: constr10(x) => constr11(x)
+        -- Claim: constr10(x) => b
+        -- Expected: error constr11(x) and x != a
+        actual <- runVerificationToPattern
+            (Limit 1)
+            Unlimited
+            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
+            , simpleAxiom
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+            ]
+            [ simpleOnePathClaim
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                Mock.b
+            , simpleAllPathClaim
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                Mock.b
+            ]
+            []
+        assertEqual ""
+            ( Left . OrPattern.fromPatterns $
+            [ Conditional
+                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
+                , predicate =
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
+                , substitution = mempty
+                }
+            , Conditional
+                { term = Mock.b
+                , predicate =
+                    makeEqualsPredicate Mock.testSort
+                        (mkElemVar Mock.x)
+                        Mock.a
+                , substitution = mempty
+                }
+            ]
             )
             actual
     , testCase "OnePath: Verifies two claims" $ do
