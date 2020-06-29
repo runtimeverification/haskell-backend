@@ -151,7 +151,7 @@ anyRewrite rewrites =
     Strategy.any (rewriteStep <$> rewrites)
 
 priorityAllStrategy
-    :: From rewrite (Attribute.Priority, Attribute.Owise)
+    :: From rewrite (Attribute.Priority, Attribute.Owise, Attribute.Simplification)
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAllStrategy rewrites =
@@ -160,7 +160,7 @@ priorityAllStrategy rewrites =
     priorityGroups = groupSortOn Attribute.getPriorityOfAxiom rewrites
 
 priorityAnyStrategy
-    :: From rewrite (Attribute.Priority, Attribute.Owise)
+    :: From rewrite (Attribute.Priority, Attribute.Owise, Attribute.Simplification)
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAnyStrategy rewrites =

@@ -19,6 +19,7 @@ Informal example of an axiom that would use the simplification attribute:
 module Kore.Attribute.Simplification
     ( Simplification (..)
     , simplificationId, simplificationSymbol, simplificationAttribute
+    , defaultSimplificationPriority
     ) where
 
 import Prelude.Kore
@@ -35,8 +36,8 @@ import Kore.Debug
 type SimplificationPriority = Maybe Integer
 
 {- | @Simplification@ represents the @simplification@ attribute for axioms.
-    It takes an optional integer argument which represents the rule's priority,
-    to allow the possibility of ordering the application of simplification rules.
+    It takes an optional integer argument which represents the rule's priority.
+    This allows the possibility of ordering the application of simplification rules.
  -}
 data Simplification
     = IsSimplification SimplificationPriority
@@ -74,6 +75,9 @@ simplificationAttribute priority =
     attributePattern
         simplificationSymbol
         (fmap attributeInteger (maybeToList priority))
+
+defaultSimplificationPriority :: Integer
+defaultSimplificationPriority = 50
 
 instance ParseAttributes Simplification where
     parseAttribute =

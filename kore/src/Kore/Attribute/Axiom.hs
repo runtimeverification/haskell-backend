@@ -207,8 +207,9 @@ instance
             , from . owise
             ]
 
-instance From (Axiom symbol variable) (Priority, Owise) where
-    from Axiom { priority, owise } = (priority, owise)
+instance From (Axiom symbol variable) (Priority, Owise, Simplification) where
+    from Axiom { priority, owise, simplification } =
+        (priority, owise, simplification)
 
 instance From (Axiom symbol variable) HeatCool where
     from Axiom { heatCool } = heatCool
@@ -281,9 +282,31 @@ mapAxiomVariables adj axiom@Axiom { concrete, symbolic } =
         }
 
 getPriorityOfAxiom
-    :: forall attrs. From attrs (Priority, Owise) => attrs -> Integer
-getPriorityOfAxiom attrs
-  | isOwise   = owisePriority
-  | otherwise = fromMaybe defaultPriority getPriority
-  where
-    (Priority { getPriority }, Owise { isOwise }) = from @attrs attrs
+    :: forall attrs
+    .  From attrs (Priority, Owise, Simplification)
+    => attrs
+    -> Integer
+getPriorityOfAxiom (from @attrs -> attrs) =
+    case attrs of
+        (Priority Nothing, Owise True, NotSimplification) ->
+            owisePriority
+        (Priority Nothing, Owise False, NotSimplification) ->
+            defaultPriority
+        (Priority (Just value), Owise False, NotSimplification) ->
+            value
+        (Priority Nothing, Owise False, IsSimplification Nothing) ->
+            defaultSimplificationPriority
+        (Priority Nothing, Owise False, IsSimplification (Just value)) ->
+            value
+        -- TODO: remove this case once the frontend
+        -- modifies the simplification attribute
+        -- to take an optional priority attribute
+        (Priority (Just value), Owise False, IsSimplification Nothing) ->
+            value
+        errorCase@(_, _, _) ->
+            error
+                ("An axiom cannot have the following \
+                \ combination of attributes: "
+                <> show errorCase
+                <> " Please report this error."
+                )
