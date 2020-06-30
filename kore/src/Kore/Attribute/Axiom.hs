@@ -288,9 +288,9 @@ mapAxiomVariables adj axiom@Axiom { concrete, symbolic } =
 
 data PriorityAttributes =
     PriorityAttributes
-    { priorityAttr :: Priority
-    , owiseAttr :: Owise
-    , simplificationAttr :: Simplification
+    { priorityAttr :: !Priority
+    , owiseAttr :: !Owise
+    , simplificationAttr :: !Simplification
     }
 
 getPriorityOfAxiom
