@@ -1,0 +1,37 @@
+    <T>
+      <k>
+        {
+          max = a;
+        } ~> .
+      </k>
+      <state>
+        a |-> A:Int
+        b |-> B:Int
+        max |-> _0
+      </state>
+    </T>
+  #And
+    {
+      A <=Int B
+    #Equals
+      false
+    }
+#Or
+    <T>
+      <k>
+        {
+          max = b;
+        } ~> .
+      </k>
+      <state>
+        a |-> A:Int
+        b |-> B:Int
+        max |-> _0
+      </state>
+    </T>
+  #And
+    {
+      A <=Int B
+    #Equals
+      true
+    }
