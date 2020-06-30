@@ -120,7 +120,7 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
         , moduleAttributes = Attributes []
         }
     inputPattern = applyToNoArgs mySort "a"
-    expected = applyToNoArgs mySort "d"
+    expected = (ExitSuccess, applyToNoArgs mySort "d")
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
@@ -153,7 +153,7 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
         , moduleAttributes = Attributes []
         }
     inputPattern = applyToNoArgs mySort "b"
-    expected = applyToNoArgs mySort "d"
+    expected = (ExitSuccess, applyToNoArgs mySort "d")
 
 test_searchPriority :: [TestTree]
 test_searchPriority =
@@ -474,11 +474,15 @@ test_execGetExitCode =
             $ actual testModule inputInteger >>= assertEqual "" expectedCode
 
     actual testModule exitCode =
-        execGetExitCode
+        exec
+            Unlimited
             (verifiedMyModule testModule)
             (Limit.replicate unlimited . priorityAnyStrategy)
             (Int.asInternal myIntSort exitCode)
         & runNoSMT
+        & fmap takeExitCode
+      where
+        takeExitCode = fst
 
     -- Module with no getExitCode symbol
     testModuleNoSymbol = Module

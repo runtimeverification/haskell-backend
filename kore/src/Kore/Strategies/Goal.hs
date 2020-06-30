@@ -19,6 +19,7 @@ module Kore.Strategies.Goal
     , getDestination
     , transitionRuleTemplate
     , isTrusted
+    , removalPatterns
     -- * Re-exports
     , module Kore.Strategies.Rule
     , module Kore.Log.InfoReachability
@@ -84,7 +85,9 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -130,6 +133,10 @@ import Kore.Step.RulePattern
     , topExistsToImplicitForall
     )
 import qualified Kore.Step.RulePattern as RulePattern
+import Kore.Step.Simplification.AndPredicates
+    ( simplifyEvaluatedMultiPredicate
+    )
+import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
     ( InternalVariable
     , MonadSimplify
@@ -142,9 +149,7 @@ import Kore.Step.Simplification.OrPattern
 import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     )
-import Kore.Step.Simplification.Simplify
-    ( simplifyConditionalTermToOr
-    )
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
@@ -823,20 +828,21 @@ removeDestination lensRulePattern mkState goal =
     removeDestinationWorker (snd . Step.refreshRule mempty -> rulePattern) =
         do
             removal <- removalPatterns destination configuration existentials
-            when (isTop removal)
-                (succeed . mkState $ rulePattern)
-            let configAndRemoval =
-                    fmap (configuration <*) removal
-                initialDepth = extractDepth $ mkState rulePattern
+            when (isTop removal) (succeed . mkState $ rulePattern)
+            let configAndRemoval = fmap (configuration <*) removal
+                sideCondition =
+                    Pattern.withoutTerm configuration
+                    & SideCondition.fromCondition
+                depth = extractDepth $ mkState rulePattern
             simplifiedRemoval <-
                 simplifyConditionsWithSmt
-                    SideCondition.top
+                    sideCondition
                     configAndRemoval
-            when (isBottom simplifiedRemoval) (succeed $ Proven initialDepth)
+            when (isBottom simplifiedRemoval) (succeed $ Proven depth)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
             rulePattern
                 & Lens.set RulePattern.leftPattern stuckConfiguration
-                & GoalStuck initialDepth
+                & GoalStuck depth
                 & pure
         & run
         & withConfiguration configuration
@@ -1000,14 +1006,29 @@ removalPatterns
   , isFunctionPattern destTerm
   = do
     unifiedConfigs <-
-        simplifyConditionalTermToOr
-            sideCondition
-            (mkIn configSort configTerm destTerm)
+        mkIn configSort configTerm destTerm
+        & Pattern.fromTermLike
+        & Pattern.simplify sideCondition
     if isBottom unifiedConfigs
         then return OrPattern.top
         else do
+            let unifiedConditions =
+                    fmap Conditional.withoutTerm unifiedConfigs
+            -- TODO (thomas.tuegel): Move this up to avoid repeated calls.
+            destinationConditions <-
+                Conditional.withoutTerm destination
+                & Condition.simplifyCondition sideCondition
+                & OrCondition.observeAllT
+            remainderConditions <-
+                simplifyEvaluatedMultiPredicate
+                    sideCondition
+                    (MultiAnd.make
+                        [ unifiedConditions
+                        , destinationConditions
+                        ]
+                    )
             let remainderPatterns =
-                    fmap remainderPattern unifiedConfigs
+                    fmap Pattern.fromCondition_ remainderConditions
             existentialRemainders <-
                 foldM
                     (Exists.simplifyEvaluated sideCondition & flip)
@@ -1029,9 +1050,6 @@ removalPatterns
     (configTerm, configPredicate) = Pattern.splitTerm configuration
     sideCondition = SideCondition.assumeTrueCondition configPredicate
     configSort = termLikeSort configTerm
-    remainderPattern patt =
-        Pattern.fromCondition
-        $ on (<>) Conditional.withoutTerm destination patt
 
 getConfiguration :: ReachabilityRule -> Pattern VariableName
 getConfiguration (toRulePattern -> RulePattern { left, requires }) =

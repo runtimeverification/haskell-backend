@@ -157,7 +157,7 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
                 , termCeil
                 ]
             )
-    return (fmap Pattern.fromCondition result)
+    return (fmap Pattern.fromCondition_ result)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.

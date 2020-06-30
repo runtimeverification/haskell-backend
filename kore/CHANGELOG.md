@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- `kore-exec` exits with the code specified by the semantics, even when the
+  final configuration has side conditions.
+
 ## [0.24.0.0] - 2020-06-25
 
 ### Added

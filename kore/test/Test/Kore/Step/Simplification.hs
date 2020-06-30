@@ -1,6 +1,5 @@
 module Test.Kore.Step.Simplification
-    ( Simplifier, Env (..)
-    , runSimplifier
+    ( runSimplifier
     , runSimplifierNoSMT
     , runSimplifierBranch
     , simplifiedCondition
@@ -10,6 +9,11 @@ module Test.Kore.Step.Simplification
     , simplifiedPredicate
     , simplifiedSubstitution
     , simplifiedTerm
+    -- * Re-exports
+    , Simplifier
+    , SimplifierT
+    , NoSMT
+    , Env (..)
     ) where
 
 import Prelude.Kore

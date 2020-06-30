@@ -57,6 +57,14 @@ module Kore.Builtin.Int
     , powKey
     , powmodKey
     , log2Key
+      -- * implementations (for testing)
+    , tdiv
+    , tmod
+    , ediv
+    , emod
+    , pow
+    , powmod
+    , log2
     ) where
 
 import Prelude.Kore
@@ -273,8 +281,8 @@ builtinFunctions =
     , binaryOperator mulKey (*)
     , unaryOperator absKey abs
 
-      -- TODO (thomas.tuegel): Implement division.
-    , (edivKey, Builtin.notImplemented)
+      -- Division operations
+    , partialBinaryOperator edivKey ediv
     , partialBinaryOperator emodKey emod
     , partialBinaryOperator tdivKey tdiv
     , partialBinaryOperator tmodKey tmod
@@ -311,26 +319,43 @@ builtinFunctions =
     partialTernaryOperator name op =
         ( name, Builtin.ternaryOperator extractIntDomainValue
             asPartialPattern name op )
-    tdiv n d
-        | d == 0 = Nothing
-        | otherwise = Just (quot n d)
-    tmod n d
-        | d == 0 = Nothing
-        | otherwise = Just (rem n d)
-    emod a b
-        | b == 0 = Nothing
-        | b < 0  = Just (rem a b)
-        | otherwise = Just (mod a b)
-    pow b e
-        | e < 0 = Nothing
-        | otherwise = Just (b ^ e)
-    powmod b e m
-        | m == 0 = Nothing
-        | e < 0 && recipModInteger b m == 0 = Nothing
-        | otherwise = Just (powModInteger b e m)
-    log2 n
-        | n > 0 = Just (smallInteger (integerLog2# n))
-        | otherwise = Nothing
+
+tdiv, tmod, ediv, emod, pow
+    :: Integer -> Integer -> Maybe Integer
+tdiv n d
+    | d == 0 = Nothing
+    | otherwise = Just (quot n d)
+tmod n d
+    | d == 0 = Nothing
+    | otherwise = Just (rem n d)
+ediv n d
+    | d == 0 = Nothing
+    | n < 0, d < 0, mod n d /= 0 =
+        Just (1 + div (-n) (-d))
+    | d < 0 = Just (quot n d)
+    | otherwise = Just (div n d)
+emod n d
+    | d == 0 = Nothing
+    | n < 0, d < 0, mod n d /= 0 =
+        Just (n - d * (1 + div (-n) (-d)))
+    | d < 0  = Just (rem n d)
+    | otherwise = Just (mod n d)
+pow b e
+    | e < 0 = Nothing
+    | otherwise = Just (b ^ e)
+
+log2
+    :: Integer -> Maybe Integer
+log2 n
+    | n > 0 = Just (smallInteger (integerLog2# n))
+    | otherwise = Nothing
+
+powmod
+    :: Integer -> Integer -> Integer -> Maybe Integer
+powmod b e m
+    | m == 0 = Nothing
+    | e < 0 && recipModInteger b m == 0 = Nothing
+    | otherwise = Just (powModInteger b e m)
 
 evalEq :: Builtin.Function
 evalEq resultSort arguments@[_intLeft, _intRight] =
