@@ -15,7 +15,7 @@ module Kore.Strategies.Verification
     , AlreadyProven (..)
     , verify
     , verifyClaimStep
-    , commonProofStateTransformer
+    , lhsProofStateTransformer
     ) where
 
 import Prelude.Kore
@@ -94,19 +94,18 @@ import Logic
     )
 import qualified Logic
 
--- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
-type CommonProofState = ProofState.ProofState (Pattern VariableName)
+type CommonProofState = ProofState.ProofState ReachabilityRule
 
-commonProofStateTransformer
+lhsProofStateTransformer
     :: ProofStateTransformer
+        ReachabilityRule
         (Pattern VariableName)
-        (Pattern VariableName)
-commonProofStateTransformer =
+lhsProofStateTransformer =
     ProofStateTransformer
-        { goalTransformer = id
-        , goalRemainderTransformer = id
-        , goalRewrittenTransformer = id
-        , goalStuckTransformer = id
+        { goalTransformer = getConfiguration
+        , goalRemainderTransformer = getConfiguration
+        , goalRewrittenTransformer = getConfiguration
+        , goalStuckTransformer = getConfiguration
         , provenValue = Pattern.bottom
         }
 
@@ -233,7 +232,7 @@ verifyClaim
   =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = ProofState.Goal $ getConfiguration goal
+        startGoal = ProofState.Goal goal
         limitedStrategy =
             strategy goal claims axioms
             & Foldable.toList
@@ -243,7 +242,7 @@ verifyClaim
         $ Strategy.leavesM
             updateQueue
             (Strategy.unfoldTransition transit)
-            (limitedStrategy, startPattern)
+            (limitedStrategy, startGoal)
             & fmap discardStrategy
             & throwUnproven
   where
@@ -257,7 +256,7 @@ verifyClaim
         Monad.Except.throwError
         . OrPattern.fromPatterns
         $ fmap
-            (ProofState.proofState commonProofStateTransformer)
+            (ProofState.proofState lhsProofStateTransformer)
             patterns
 
     updateQueue = \as ->
@@ -278,12 +277,16 @@ verifyClaim
         done = return ()
 
     throwUnprovenOrElse
-        :: ProofState.ProofState (Pattern VariableName)
+        :: CommonProofState
         -> Verifier simplifier ()
         -> Verifier simplifier ()
     throwUnprovenOrElse proofState acts = do
         ProofState.extractUnproven proofState
-            & Foldable.traverse_ (Monad.Except.throwError . OrPattern.fromPattern)
+            & Foldable.traverse_
+                ( Monad.Except.throwError
+                . OrPattern.fromPattern
+                . getConfiguration
+                )
         acts
 
     transit instr config =
@@ -300,7 +303,7 @@ verifyClaim
     modifiedTransitionRule prim proofState' = do
         transitions <-
             lift . lift . runTransitionT
-            $ transitionRule' goal destination prim proofState'
+            $ transitionRule prim proofState'
         Transition.scatter transitions
 
 -- | Attempts to perform a single proof step, starting at the configuration
@@ -321,10 +324,8 @@ verifyClaimStep
     -- ^ selected node in the graph
     -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
 verifyClaimStep target claims axioms eg@ExecutionGraph { root } node =
-    executionHistoryStep (transitionRule' target destination) strategy' eg node
+    executionHistoryStep transitionRule strategy' eg node
   where
-    destination = getDestination target
-
     strategy' :: Strategy (Prim ReachabilityRule)
     strategy'
         | isRoot = firstStep
@@ -338,31 +339,3 @@ verifyClaimStep target claims axioms eg@ExecutionGraph { root } node =
 
     isRoot :: Bool
     isRoot = node == root
-
-transitionRule'
-    :: forall simplifier
-    .  (MonadCatch simplifier, MonadSimplify simplifier)
-    => ReachabilityRule
-    -> RHS VariableName
-    -> Prim ReachabilityRule
-    -> CommonProofState
-    -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
-transitionRule' goal _ prim state = do
-    let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
-    next <- transitionRule prim goal'
-    pure $ fmap getConfiguration next
-  where
-    lensReachabilityConfig =
-        Lens.lens
-            (\case
-                OnePath onePathRule ->
-                    Lens.view leftPattern (getOnePathRule onePathRule)
-                AllPath allPathRule ->
-                    Lens.view leftPattern (getAllPathRule allPathRule)
-            )
-            (\case
-                OnePath (OnePathRule rulePattern) -> \b ->
-                    (OnePath . OnePathRule) (Lens.set leftPattern b rulePattern)
-                AllPath (AllPathRule rulePattern) -> \b ->
-                    (AllPath . AllPathRule) (Lens.set leftPattern b rulePattern)
-            )
