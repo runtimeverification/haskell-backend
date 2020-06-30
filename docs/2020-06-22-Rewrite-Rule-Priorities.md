@@ -168,7 +168,7 @@ and we encode the rule as:
     ∧ ¬ (∃ X₁ . φ₁(X₁) ∧ P₁(X₁))
     ...
     ∧ ¬ (∃ Xn . φn(Xn) ∧ Pn(Xn))
-    ⇒ psi(X)
+    ⇒ ψ(X)
 ```
 Strictly speaking, we should have the left hand side of the encoding of the
 respective rules under `∃ Xᵢ` above, but the two forms should be
