@@ -110,9 +110,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -128,8 +125,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern (..)
+    ( RulePattern (..)
     )
 import Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
@@ -158,11 +154,7 @@ import Kore.Syntax.Variable
 -- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph Axiom
 emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
-  where
-    extractConfig :: RewriteRule VariableName -> CommonProofState
-    extractConfig (RewriteRule RulePattern { left, requires }) =
-        Goal $ Conditional left requires mempty
+    Strategy.emptyExecutionGraph . Goal
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)
@@ -582,10 +574,10 @@ nodeToPattern
     -> Maybe (Pattern VariableName)
 nodeToPattern graph node =
     proofState ProofStateTransformer
-        { goalTransformer = Just
-        , goalRemainderTransformer = Just
-        , goalRewrittenTransformer = Just
-        , goalStuckTransformer = Just
+        { goalTransformer = Just . Goal.getConfiguration
+        , goalRemainderTransformer = Just . Goal.getConfiguration
+        , goalRewrittenTransformer = Just . Goal.getConfiguration
+        , goalStuckTransformer = Just . Goal.getConfiguration
         , provenValue = Nothing
         }
     . Graph.lab'

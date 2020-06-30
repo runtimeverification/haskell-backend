@@ -20,7 +20,6 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
@@ -63,11 +62,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
-    ( AllPathRule (..)
-    , OnePathRule (..)
-    , RHS
-    , ReachabilityRule (..)
-    , leftPattern
+    ( ReachabilityRule (..)
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -246,7 +241,6 @@ verifyClaim
             & fmap discardStrategy
             & throwUnproven
   where
-    destination = getDestination goal
     discardStrategy = snd
 
     handleLimitExceeded

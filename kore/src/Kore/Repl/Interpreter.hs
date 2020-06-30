@@ -191,7 +191,7 @@ import Kore.Strategies.ProofState
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
     ( CommonProofState
-    , commonProofStateTransformer
+    , lhsProofStateTransformer
     )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -853,7 +853,7 @@ tryAxiomClaimWorker mode ref = do
                         , goalRewrittenTransformer = patternUnifier
                         , goalStuckTransformer = patternUnifier
                         }
-                    second
+                    (getConfiguration <$> second)
               where
                 patternUnifier :: Pattern VariableName -> ReplM m ()
                 patternUnifier
@@ -981,7 +981,7 @@ savePartialProof maybeNatural file = do
             putStrLn' "Done."
   where
     unwrapConfig :: CommonProofState -> Pattern VariableName
-    unwrapConfig = proofState commonProofStateTransformer
+    unwrapConfig = proofState lhsProofStateTransformer
 
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
@@ -1206,15 +1206,32 @@ unparseStrategy
     -> ReplOutput
 unparseStrategy omitList =
     proofState ProofStateTransformer
-        { goalTransformer = makeKoreReplOutput . unparseToString . fmap hide
-        , goalRemainderTransformer = \pat ->
+        { goalTransformer =
+            makeKoreReplOutput
+            . unparseToString
+            . fmap hide
+            . getConfiguration
+        , goalRemainderTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+            <> makeKoreReplOutput
+                ( unparseToString
+                . fmap hide
+                . getConfiguration
+                $ goal
+                )
         , goalRewrittenTransformer =
-            makeKoreReplOutput . unparseToString . fmap hide
-        , goalStuckTransformer = \pat ->
+            makeKoreReplOutput
+            . unparseToString
+            . fmap hide
+            . getConfiguration
+        , goalStuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+            <> makeKoreReplOutput
+                ( unparseToString
+                . fmap hide
+                . getConfiguration
+                $ goal
+                )
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
