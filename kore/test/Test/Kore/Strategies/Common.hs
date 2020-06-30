@@ -2,7 +2,6 @@ module Test.Kore.Strategies.Common
     ( simpleRewrite
     , runVerification
     , runVerificationToPattern
-    , fromTermLike
     ) where
 
 import Prelude.Kore
@@ -21,8 +20,6 @@ import Numeric.Natural
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
@@ -74,7 +71,7 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
         return (toPattern stuck)
   where
     toPattern =
-        Bifunctor.first stuckPattern
+        Bifunctor.first stuckPatterns
 
 runVerification
     :: Limit Natural
@@ -98,9 +95,3 @@ runVerification breadthLimit depthLimit axioms claims alreadyProven =
     mockEnv = Mock.env
     applyDepthLimit claim = (claim, depthLimit)
     selectUntrusted = filter (not . isTrusted)
-
-fromTermLike
-    :: TermLike VariableName
-    -> OrPattern VariableName
-fromTermLike =
-    OrPattern.fromPattern . Pattern.fromTermLike

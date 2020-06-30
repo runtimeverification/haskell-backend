@@ -679,12 +679,12 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
-        Left Stuck { stuckPattern, provenClaims } -> do
+        Left Stuck { stuckPatterns, provenClaims } -> do
             maybe
                 (return ())
                 (lift . saveProven specModule provenClaims)
                 saveProofs
-            stuckPattern
+            stuckPatterns
                 & OrPattern.toTermLike
                 & failure
                 & return

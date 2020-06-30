@@ -129,7 +129,7 @@ If the verification succeeds, it returns ().
 -}
 data Stuck =
     Stuck
-    { stuckPattern :: !(OrPattern VariableName)
+    { stuckPatterns :: !(OrPattern VariableName)
     , provenClaims :: ![ReachabilityRule]
     }
     deriving (Eq, GHC.Generic, Show)
@@ -213,7 +213,7 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
             return (claim : provenClaims)
       where
         wrapStuckPattern :: OrPattern VariableName -> Stuck
-        wrapStuckPattern stuckPattern = Stuck { stuckPattern, provenClaims }
+        wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
 
 verifyClaim
     :: forall simplifier

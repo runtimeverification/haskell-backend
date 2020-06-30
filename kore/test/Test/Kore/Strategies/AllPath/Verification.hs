@@ -67,7 +67,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.b ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     -- TODO(Ana): this should be uncommented if we decide
     --            that the destination doesn't need to be
@@ -133,7 +133,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.b ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "Verifies one claim with branching" $ do
         -- Axiom: constr11(a) => b
@@ -222,7 +222,7 @@ test_allPathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "fails second of two claims" $ do
         -- Axiom: a => b
@@ -243,7 +243,7 @@ test_allPathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "second proves first but fails" $ do
         -- Axiom: a => b
@@ -262,7 +262,7 @@ test_allPathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "first proves second but fails" $ do
         -- Axiom: a => b
@@ -281,7 +281,7 @@ test_allPathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "trusted first proves second" $ do
         -- Axiom: a => b
@@ -324,7 +324,7 @@ test_allPathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "Priority: should get stuck because of second axiom" $ do
         -- Axioms:
@@ -344,7 +344,7 @@ test_allPathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "Priority: should succeed, prefering axiom with priority 1" $ do
         -- Axioms:

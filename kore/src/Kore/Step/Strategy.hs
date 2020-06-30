@@ -462,10 +462,11 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
     & flip State.execStateT execGraph
   where
     execGraph = emptyExecutionGraph config0
+    dropStrategy = snd
 
     mkQueue = \as ->
         unfoldSearchOrder searchOrder0 as
-        >=> applyBreadthLimit breadthLimit snd
+        >=> applyBreadthLimit breadthLimit dropStrategy
         >=> profileQueueLength
 
     profileQueueLength queue = do

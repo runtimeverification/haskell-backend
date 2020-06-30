@@ -57,7 +57,7 @@ test_onePathVerification =
             [simpleClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Runs one step" $ do
         -- Axiom: a => b
@@ -75,7 +75,7 @@ test_onePathVerification =
             [simpleClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Returns first failing claim" $ do
         -- Axiom: a => b or c
@@ -88,7 +88,7 @@ test_onePathVerification =
             [simpleClaim Mock.a Mock.d]
             []
         assertEqual ""
-            (Left . fromTermLike $ Mock.b)
+            (Left . OrPattern.fromTermLike $ Mock.b)
             actual
     , testCase "Verifies one claim" $ do
         -- Axiom: a => b
@@ -115,7 +115,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Verifies one claim multiple steps" $ do
         -- Axiom: a => b
@@ -237,7 +237,7 @@ test_onePathVerification =
             []
         assertEqual ""
             (Left Stuck
-                { stuckPattern = fromTermLike Mock.c
+                { stuckPatterns = OrPattern.fromTermLike Mock.c
                 , provenClaims = []
                 }
             )
@@ -262,7 +262,7 @@ test_onePathVerification =
             []
         assertEqual ""
             (Left Stuck
-                { stuckPattern = fromTermLike Mock.e
+                { stuckPatterns = OrPattern.fromTermLike Mock.e
                 , provenClaims = [simpleClaim Mock.a Mock.c]
                 }
             )
@@ -303,7 +303,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "first proves second but fails" $ do
         -- Axiom: a => b
@@ -322,7 +322,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "trusted second proves first" $ do
         -- Axiom: a => b
@@ -384,7 +384,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "Provable using one-path; not provable using all-path" $ do
         -- Axioms:
@@ -421,7 +421,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "Priority: should succeed, prefering axiom with priority 1" $ do
         -- Axioms:
@@ -461,7 +461,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     ]
 

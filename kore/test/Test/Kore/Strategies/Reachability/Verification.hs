@@ -53,7 +53,7 @@ test_reachabilityVerification =
             [simpleOnePathClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "AllPath: Runs zero steps" $ do
         -- Axiom: a => b
@@ -66,7 +66,7 @@ test_reachabilityVerification =
             [simpleAllPathClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Mixed: Runs zero steps" $ do
         -- Axiom: a => b
@@ -81,7 +81,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "OnePath: Breadth limit zero" $ do
         -- Axiom: a => b
@@ -94,7 +94,7 @@ test_reachabilityVerification =
             [simpleOnePathClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "AllPath: Breadth limit zero" $ do
         -- Axiom: a => b
@@ -107,7 +107,7 @@ test_reachabilityVerification =
             [simpleAllPathClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Mixed: Breadth limit zero" $ do
         -- Axiom: a => b
@@ -122,7 +122,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "OnePath: Runs one step" $ do
         -- Axiom: a => b
@@ -140,7 +140,7 @@ test_reachabilityVerification =
             [simpleOnePathClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "AllPath: Runs one step" $ do
         -- Axiom: a => b
@@ -158,7 +158,7 @@ test_reachabilityVerification =
             [simpleAllPathClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Mixed: Runs one step" $ do
         -- Axiom: a => b
@@ -178,7 +178,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "OnePath: Returns first failing claim" $ do
         -- Axiom: a => b or c
@@ -191,7 +191,7 @@ test_reachabilityVerification =
             [simpleOnePathClaim Mock.a Mock.d]
             []
         assertEqual ""
-            (Left . fromTermLike $ Mock.b)
+            (Left . OrPattern.fromTermLike $ Mock.b)
             actual
     , testCase "AllPath: Returns first failing claim" $ do
         -- Axiom: a => b or c
@@ -204,7 +204,7 @@ test_reachabilityVerification =
             [simpleAllPathClaim Mock.a Mock.d]
             []
         assertEqual ""
-            (Left . fromTermLike $ Mock.b)
+            (Left . OrPattern.fromTermLike $ Mock.b)
             actual
     , testCase "Mixed: Returns first failing claim" $ do
         -- Axiom: a => b or c
@@ -219,7 +219,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left . fromTermLike $ Mock.b)
+            (Left . OrPattern.fromTermLike $ Mock.b)
             actual
     , testCase "OnePath: Verifies one claim" $ do
         -- Axiom: a => b
@@ -274,7 +274,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "AllPath: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
@@ -288,7 +288,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Mixed: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
@@ -304,7 +304,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "OnePath: Verifies one claim multiple steps" $ do
         -- Axiom: a => b
@@ -779,7 +779,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "AllPath: fails first of two claims" $ do
         -- Axiom: a => b
@@ -800,7 +800,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "Mixed: fails first of two claims" $ do
         -- Axiom: a => b
@@ -821,7 +821,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "OnePath: fails second of two claims" $ do
         -- Axiom: a => b
@@ -842,7 +842,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "AllPath: fails second of two claims" $ do
         -- Axiom: a => b
@@ -863,7 +863,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "Mixed: fails second of two claims" $ do
         -- Axiom: a => b
@@ -884,7 +884,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "OnePath: second proves first but fails" $ do
         -- Axiom: a => b
@@ -903,7 +903,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "AllPath: second proves first but fails" $ do
         -- Axiom: a => b
@@ -922,7 +922,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Mixed: second proves first but fails" $ do
         -- Axiom: a => b
@@ -943,7 +943,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Mixed: different claim types so\
                \ second can't prove first" $ do
@@ -963,7 +963,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "OnePath: first proves second but fails" $ do
         -- Axiom: a => b
@@ -982,7 +982,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "AllPath: first proves second but fails" $ do
         -- Axiom: a => b
@@ -1001,7 +1001,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Mixed: first proves second but fails" $ do
         -- Axiom: a => b
@@ -1022,7 +1022,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Mixed: first doesn't prove second\
                \ because they are different claim types" $ do
@@ -1042,7 +1042,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "OnePath: trusted second proves first" $ do
         -- Axiom: a => b
@@ -1121,7 +1121,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "OnePath: Prefers using claims for rewriting" $ do
         -- Axiom: a => b
@@ -1145,7 +1145,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "AllPath: Prefers using claims for rewriting" $ do
         -- Axiom: a => b
@@ -1169,7 +1169,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "Mixed: Prefers using claims for rewriting" $ do
         -- Axiom: a => b
@@ -1195,7 +1195,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "Mixed: Doesn't apply claim because of\
                \ different claim type" $ do
@@ -1219,7 +1219,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.d)
+            (Left $ OrPattern.fromTermLike Mock.d)
             actual
     , testCase "OnePath: Provable using one-path; not provable\
                \ using all-path" $ do
@@ -1255,7 +1255,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.b ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "Mixed: Provable using one-path; not provable\
                \ using all-path" $ do
@@ -1275,7 +1275,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            (Left $ fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     ]
 
