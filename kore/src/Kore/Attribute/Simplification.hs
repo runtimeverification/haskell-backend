@@ -19,20 +19,30 @@ Informal example of an axiom that would use the simplification attribute:
 module Kore.Attribute.Simplification
     ( Simplification (..)
     , simplificationId, simplificationSymbol, simplificationAttribute
+    , defaultSimplificationPriority
     ) where
 
 import Prelude.Kore
 
+import Data.Maybe
+    ( maybeToList
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
+type SimplificationPriority = Maybe Integer
+
 {- | @Simplification@ represents the @simplification@ attribute for axioms.
+    It takes an optional integer argument which represents the rule's priority.
+    This allows the possibility of ordering the application of simplification rules.
  -}
-newtype Simplification = Simplification { isSimplification :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
+data Simplification
+    = IsSimplification !SimplificationPriority
+    | NotSimplification
+    deriving (Eq, Ord, Show, GHC.Generic)
 
 instance SOP.Generic Simplification
 
@@ -45,7 +55,7 @@ instance Diff Simplification
 instance NFData Simplification
 
 instance Default Simplification where
-    def = Simplification False
+    def = NotSimplification
 
 -- | Kore identifier representing the @simplification@ attribute symbol.
 simplificationId :: Id
@@ -60,11 +70,36 @@ simplificationSymbol =
         }
 
 -- | Kore pattern representing the @simplification@ attribute.
-simplificationAttribute :: AttributePattern
-simplificationAttribute = attributePattern_ simplificationSymbol
+simplificationAttribute :: Maybe Integer -> AttributePattern
+simplificationAttribute priority =
+    attributePattern
+        simplificationSymbol
+        (fmap attributeInteger (maybeToList priority))
+
+defaultSimplificationPriority :: Integer
+defaultSimplificationPriority = 50
 
 instance ParseAttributes Simplification where
-    parseAttribute = parseBoolAttribute simplificationId
+    parseAttribute =
+        withApplication' parseSimplification
+      where
+        parseSimplification params args NotSimplification = do
+            Parser.getZeroParams params
+            arg <- Parser.getZeroOrOneArguments args
+            case arg of
+                Just arg' -> do
+                    stringLiteral <- Parser.getStringLiteral arg'
+                    integer <- Parser.parseInteger stringLiteral
+                    return (IsSimplification (Just integer))
+                Nothing ->
+                    return (IsSimplification Nothing)
+        parseSimplification _ _ _ =
+            failDuplicate'
+
+        withApplication' = Parser.withApplication simplificationId
+        failDuplicate' = Parser.failDuplicate simplificationId
 
 instance From Simplification Attributes where
-    from = toBoolAttributes simplificationAttribute
+    from NotSimplification = def
+    from (IsSimplification maybePriority) =
+        from @AttributePattern (simplificationAttribute maybePriority)
