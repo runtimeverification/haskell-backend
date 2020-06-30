@@ -40,7 +40,7 @@ type SimplificationPriority = Maybe Integer
     This allows the possibility of ordering the application of simplification rules.
  -}
 data Simplification
-    = IsSimplification SimplificationPriority
+    = IsSimplification !SimplificationPriority
     | NotSimplification
     deriving (Eq, Ord, Show, GHC.Generic)
 

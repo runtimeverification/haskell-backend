@@ -28,6 +28,7 @@ module Kore.Attribute.Axiom
     , Constructor (..)
     , RuleIndex (..)
     , UniqueId (..)
+    , PriorityAttributes (..)
     , axiomSymbolToSymbolOrAlias
     , mapAxiomVariables
     , parseAxiomAttributes
@@ -207,9 +208,13 @@ instance
             , from . owise
             ]
 
-instance From (Axiom symbol variable) (Priority, Owise, Simplification) where
+instance From (Axiom symbol variable) PriorityAttributes where
     from Axiom { priority, owise, simplification } =
-        (priority, owise, simplification)
+        PriorityAttributes
+            { priorityAttr = priority
+            , owiseAttr = owise
+            , simplificationAttr = simplification
+            }
 
 instance From (Axiom symbol variable) HeatCool where
     from Axiom { heatCool } = heatCool
@@ -281,14 +286,29 @@ mapAxiomVariables adj axiom@Axiom { concrete, symbolic } =
         , symbolic = mapSymbolicVariables adj symbolic
         }
 
+data PriorityAttributes =
+    PriorityAttributes
+    { priorityAttr :: Priority
+    , owiseAttr :: Owise
+    , simplificationAttr :: Simplification
+    }
+
 getPriorityOfAxiom
     :: forall attrs
     .  HasCallStack
-    => From attrs (Priority, Owise, Simplification)
+    => From attrs PriorityAttributes
     => attrs
     -> Integer
-getPriorityOfAxiom (from @attrs -> attrs) =
-    case attrs of
+getPriorityOfAxiom
+    (from @attrs ->
+        PriorityAttributes
+            { priorityAttr
+            , owiseAttr
+            , simplificationAttr
+            }
+    )
+  =
+    case (priorityAttr, owiseAttr, simplificationAttr) of
         (Priority Nothing, Owise True, NotSimplification) ->
             owisePriority
         (Priority Nothing, Owise False, NotSimplification) ->
@@ -311,3 +331,4 @@ getPriorityOfAxiom (from @attrs -> attrs) =
                 <> show errorCase
                 <> " Please report this error."
                 )
+
