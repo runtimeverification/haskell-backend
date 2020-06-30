@@ -73,10 +73,8 @@ import Kore.Step.Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
-    ( TransitionT
-    , runTransitionT
+    ( runTransitionT
     )
-import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (..)
@@ -284,21 +282,10 @@ verifyClaim
         acts
 
     transit instr config =
-        Strategy.transitionRule modifiedTransitionRule instr config
+        Strategy.transitionRule transitionRule instr config
         & runTransitionT
         & fmap (map fst)
         & lift
-
-    modifiedTransitionRule
-        ::  Prim ReachabilityRule
-        ->  CommonProofState
-        ->  TransitionT (Rule ReachabilityRule) (Verifier simplifier)
-                CommonProofState
-    modifiedTransitionRule prim proofState' = do
-        transitions <-
-            lift . lift . runTransitionT
-            $ transitionRule prim proofState'
-        Transition.scatter transitions
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
