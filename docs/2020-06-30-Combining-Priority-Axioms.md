@@ -48,7 +48,7 @@ priority rewrite rule.
 
 ```
 ⌈β(X₁)∧α(X₂)⌉
-= ⌈ β(X₁)∧ φ(X) ∧ P(X)
+= ⌈ β(X₁) ∧ φ(X) ∧ P(X)
     ∧ ¬ (∃ X₁ . φ₁(X₁) ∧ P₁(X₁))
     ...
     ∧ ¬ (∃ Xn . φn(Xn) ∧ Pn(Xn))
@@ -65,7 +65,7 @@ priority rewrite rule.
     ...
     ∧ ¬ (∃ Xn . φn(Xn) ∧ Pn(Xn))
   ⌉
-  ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
+  ∧ ⌈β(X₁) ∧ φ(X)⌉ ∧ P(X)
 // φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
 // See the Justification section in
 // 2018-11-08-Configuration-Splitting-Simplification.md
@@ -74,19 +74,29 @@ priority rewrite rule.
     ...
     ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ∧ Pn(Xn) ⌉)
   ⌉
-  ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
+  ∧ ⌈β(X₁) ∧ φ(X)⌉ ∧ P(X)
 // If P is a predicate then ⌈φ∧P⌉=⌈φ⌉∧P
 = ⌈β(X₁)
     ∧ ¬ (∃ X₁ . ⌈ β(X₁) ∧ φ₁(X₁) ⌉ ∧ P₁(X₁))
     ...
     ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ⌉ ∧ Pn(Xn))
   ⌉
-  ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
+  ∧ ⌈β(X₁) ∧ φ(X)⌉ ∧ P(X)
 // If P is a predicate then ∃ X . P is a predicate
 // If P is a predicate then ⌈φ∧P⌉=⌈φ⌉∧P
 = ⌈β(X₁)⌉
   ∧ ¬ (∃ X₁ . ⌈ β(X₁) ∧ φ₁(X₁) ⌉ ∧ P₁(X₁))
   ...
   ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ⌉ ∧ Pn(Xn))
-  ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
+  ∧ ⌈β(X₁) ∧ φ(X)⌉ ∧ P(X)
+// ⌈t⌉ ∧ ⌈ t ∧ s ⌉ = ⌈ t ∧ s ⌉
+= ⌈β(X₁) ∧ φ(X)⌉ ∧ P(X)
+  ∧ ¬ (∃ X₁ . ⌈ β(X₁) ∧ φ₁(X₁) ⌉ ∧ P₁(X₁))
+  ...
+  ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ⌉ ∧ Pn(Xn))
 ```
+
+Usually, at least some of the existential clauses should disappear, because
+unification, i.e. the `⌈ β(Xi) ∧ φi(Xi) ⌉` part, will probably either succeed
+with a full substitution, or will fail. Of course, since we are using symbolic
+inputs, this is not guaranteed.
