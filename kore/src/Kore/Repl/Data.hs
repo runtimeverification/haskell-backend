@@ -36,6 +36,7 @@ module Kore.Repl.Data
     , ScriptModeOutput (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
+    , GraphView (..)
     ) where
 
 import Prelude.Kore
@@ -194,6 +195,11 @@ data RuleReference
     | ByName RuleName
     deriving (Eq, Show)
 
+data GraphView
+    = Collapsed
+    | Expanded
+    deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -207,7 +213,10 @@ data ReplCommand
     -- ^ Show the nth axiom.
     | Prove !(Either ClaimIndex RuleName)
     -- ^ Drop the current proof state and re-initialize for the nth claim.
-    | ShowGraph !(Maybe FilePath) !(Maybe Graph.GraphvizOutput)
+    | ShowGraph
+        !(Maybe GraphView)
+        !(Maybe FilePath)
+        !(Maybe Graph.GraphvizOutput)
     -- ^ Show the current execution graph.
     | ProveSteps !Natural
     -- ^ Do n proof steps from current node.
@@ -304,9 +313,9 @@ helpText =
                                               \ with <name>\n\
     \prove <n|name>                           initializes proof mode for the nth\
                                               \ claim or for the claim with <name>\n\
-    \graph [file] [format]                    shows the current proof graph (*)(**);\
-                                              \ note that in the case of large graphs\
-                                              \ the image might be very zoomed out;\n\
+    \graph [view] [file] [format]             shows the current proof graph (*)(**);\
+                                              \ optional view argument can be either\
+                                              \ 'expanded' or 'collapsed'; default is collapsed\n\
     \                                         (saves image in [format] if file\
                                               \ argument is given; default is .svg\
                                               \ in order to support large graphs;\n\
@@ -426,7 +435,7 @@ shouldStore =
         Help             -> False
         ShowClaim _      -> False
         ShowAxiom _      -> False
-        ShowGraph _ _     -> False
+        ShowGraph _ _ _  -> False
         ShowConfig _     -> False
         ShowLeafs        -> False
         ShowRule _       -> False
