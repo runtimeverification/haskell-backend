@@ -248,7 +248,7 @@ instance TopBottom (RulePattern variable) where
     isTop _ = False
     isBottom _ = False
 
-instance From (RulePattern variable) (Attribute.Priority, Attribute.Owise) where
+instance From (RulePattern variable) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
 instance From (RulePattern variable) Attribute.HeatCool where
@@ -542,7 +542,7 @@ instance
     freeVariables (RewriteRule rule) = freeVariables rule
     {-# INLINE freeVariables #-}
 
-instance From (RewriteRule variable) (Attribute.Priority, Attribute.Owise) where
+instance From (RewriteRule variable) Attribute.PriorityAttributes where
     from = from @(RulePattern _) . getRewriteRule
 
 instance From (RewriteRule variable) Attribute.HeatCool where

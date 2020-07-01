@@ -830,8 +830,6 @@ rewriteReachabilityWithPredicate left right predicate =
 runSteps
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
-    => Show (Prim goal)
-    => Typeable (Prim goal)
     => Limit Natural
     -> ( ExecutionGraph
             (ProofState goal goal)
@@ -864,8 +862,6 @@ runOnePathSteps
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Ord goal
-    => Show (Prim goal)
-    => Typeable (Prim goal)
     => Limit Natural
     -> Limit Natural
     -> goal
