@@ -192,7 +192,6 @@ import Kore.Strategies.ProofState
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
     ( CommonProofState
-    , lhsProofStateTransformer
     )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -524,7 +523,7 @@ showConfig configNode = do
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
             putStrLn' $ "Config at node " <> show node <> " is:"
-            tell $ unparseStrategy omit config
+            tell $ unparseProofStateComponent getConfiguration omit config
 
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
@@ -1194,43 +1193,30 @@ showRewriteRule rule =
     <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
-unparseStrategy
-    :: Set String
+unparseProofStateComponent
+    :: (ReachabilityRule -> Pattern VariableName)
+    -> Set String
     -- ^ omit list
     -> CommonProofState
     -- ^ pattern
     -> ReplOutput
-unparseStrategy omitList =
+unparseProofStateComponent transformation omitList =
     proofState ProofStateTransformer
         { goalTransformer =
-            makeKoreReplOutput
-            . unparseToString
-            . fmap hide
-            . getConfiguration
+            makeKoreReplOutput . unparseComponent
         , goalRemainderTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput
-                ( unparseToString
-                . fmap hide
-                . getConfiguration
-                $ goal
-                )
+            <> makeKoreReplOutput (unparseComponent goal)
         , goalRewrittenTransformer =
-            makeKoreReplOutput
-            . unparseToString
-            . fmap hide
-            . getConfiguration
+            makeKoreReplOutput . unparseComponent
         , goalStuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput
-                ( unparseToString
-                . fmap hide
-                . getConfiguration
-                $ goal
-                )
+            <> makeKoreReplOutput (unparseComponent goal)
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
+    unparseComponent =
+        unparseToString . fmap hide . transformation
     hide :: TermLike VariableName -> TermLike VariableName
     hide =
         Recursive.unfold $ \termLike ->
