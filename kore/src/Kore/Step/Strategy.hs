@@ -451,8 +451,6 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 constructExecutionGraph
     :: forall m config rule instr
     .  (MonadProfiler m, MonadThrow m)
-    => Show instr
-    => Typeable instr
     => Limit Natural
     -> (instr -> config -> TransitionT rule m config)
     -> [instr]
@@ -464,10 +462,11 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
     & flip State.execStateT execGraph
   where
     execGraph = emptyExecutionGraph config0
+    dropStrategy = snd
 
     mkQueue = \as ->
         unfoldSearchOrder searchOrder0 as
-        >=> applyBreadthLimit breadthLimit
+        >=> applyBreadthLimit breadthLimit dropStrategy
         >=> profileQueueLength
 
     profileQueueLength queue = do
@@ -546,14 +545,15 @@ unfoldSearchOrder DepthFirst = unfoldDepthFirst
 unfoldSearchOrder BreadthFirst = unfoldBreadthFirst
 
 applyBreadthLimit
-    :: Exception (LimitExceeded a)
+    :: Exception (LimitExceeded b)
     => MonadThrow m
     => Limit Natural
+    -> (a -> b)
     -> Seq a
     -> m (Seq a)
-applyBreadthLimit breadthLimit as
-  | _ Seq.:<| as' <- as, exceedsLimit as' =
-    Exception.throwM (LimitExceeded as)
+applyBreadthLimit breadthLimit transf as
+  | exceedsLimit as =
+    Exception.throwM (LimitExceeded (transf <$> as))
   | otherwise = pure as
   where
     exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
@@ -637,8 +637,6 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 runStrategy
     :: forall m prim rule config
     .  (MonadProfiler m, MonadThrow m)
-    => Show prim
-    => Typeable prim
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
@@ -653,8 +651,6 @@ runStrategy breadthLimit applyPrim instrs0 config0 =
 runStrategyWithSearchOrder
     :: forall m prim rule config
     .  (MonadProfiler m, MonadThrow m)
-    => Show prim
-    => Typeable prim
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule

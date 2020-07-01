@@ -143,9 +143,9 @@ makeEvaluateNot
 makeEvaluateNot Not { notChild } =
     MultiOr.merge
         (Pattern.fromTermLike <$> makeTermNot term)
-        (MultiOr.singleton $ Pattern.fromConditionSorted
-            (termLikeSort term)
-            (makeEvaluatePredicate condition)
+        (makeEvaluatePredicate condition
+            & Pattern.fromCondition (termLikeSort term)
+            & MultiOr.singleton
         )
   where
     (term, condition) = Conditional.splitTerm notChild

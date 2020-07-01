@@ -9,7 +9,7 @@ module Kore.Internal.Pattern
     , coerceSort
     , patternSort
     , fromCondition
-    , fromConditionSorted
+    , fromCondition_
     , fromPredicateSorted
     , bottom
     , bottomOf
@@ -91,25 +91,25 @@ program configuration for Kore execution.
  -}
 type Pattern variable = Conditional variable (TermLike variable)
 
-fromCondition
+fromCondition_
     :: InternalVariable variable
     => Condition variable
     -> Pattern variable
-fromCondition = (<$) mkTop_
+fromCondition_ = (<$) mkTop_
 
-fromConditionSorted
+fromCondition
     :: InternalVariable variable
     => Sort
     -> Condition variable
     -> Pattern variable
-fromConditionSorted sort = (<$) (mkTop sort)
+fromCondition sort = (<$) (mkTop sort)
 
 fromPredicateSorted
     :: InternalVariable variable
     => Sort
     -> Predicate variable
     -> Pattern variable
-fromPredicateSorted sort = fromConditionSorted sort . Condition.fromPredicate
+fromPredicateSorted sort = fromCondition sort . Condition.fromPredicate
 
 isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =

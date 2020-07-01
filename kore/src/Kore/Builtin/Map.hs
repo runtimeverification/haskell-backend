@@ -643,7 +643,7 @@ unifyNotInKeys
         >>= lift . Unify.scatter
 
     eraseTerm =
-        Pattern.fromCondition . Pattern.withoutTerm
+        Pattern.fromCondition_ . Pattern.withoutTerm
 
     unifyAndNegate t1 t2 = do
         -- Erasing the unified term is valid here because
@@ -658,7 +658,7 @@ unifyNotInKeys
 
     collectConditions terms =
         Foldable.fold terms
-        & Pattern.fromCondition
+        & Pattern.fromCondition_
 
     worker
         :: TermLike variable

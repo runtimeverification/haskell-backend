@@ -18,14 +18,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Label as Attribute
     ( Label
-    )
-import Kore.Attribute.Owise as Attribute
-    ( Owise
-    )
-import Kore.Attribute.Priority as Attribute
-    ( Priority
     )
 import Kore.Attribute.RuleIndex as Attribute
     ( RuleIndex
@@ -66,7 +61,7 @@ instance Diff (Rule OnePathRule)
 instance ToRulePattern (Rule OnePathRule) where
     toRulePattern = getRewriteRule . unRewritingRule . unRuleOnePath
 
-instance From (Rule OnePathRule) (Attribute.Priority, Attribute.Owise) where
+instance From (Rule OnePathRule) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleOnePath
 
 -- * All-path reachability
@@ -86,7 +81,7 @@ instance Diff (Rule AllPathRule)
 instance ToRulePattern (Rule AllPathRule) where
     toRulePattern = getRewriteRule . unRewritingRule . unRuleAllPath
 
-instance From (Rule AllPathRule) (Attribute.Priority, Attribute.Owise) where
+instance From (Rule AllPathRule) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
 
 -- * Reachability
@@ -107,8 +102,7 @@ instance Diff (Rule ReachabilityRule)
 instance ToRulePattern (Rule ReachabilityRule) where
     toRulePattern = getRewriteRule . unRewritingRule . unReachabilityRewriteRule
 
-instance From (Rule ReachabilityRule) (Attribute.Priority, Attribute.Owise)
-  where
+instance From (Rule ReachabilityRule) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
 instance From (Rule ReachabilityRule) Attribute.SourceLocation where
