@@ -74,16 +74,19 @@ priority rewrite rule.
     ...
     ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ∧ Pn(Xn) ⌉)
   ⌉
+  ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
 // If P is a predicate then ⌈φ∧P⌉=⌈φ⌉∧P
 = ⌈β(X₁)
     ∧ ¬ (∃ X₁ . ⌈ β(X₁) ∧ φ₁(X₁) ⌉ ∧ P₁(X₁))
     ...
     ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ⌉ ∧ Pn(Xn))
   ⌉
+  ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
 // If P is a predicate then ∃ X . P is a predicate
 // If P is a predicate then ⌈φ∧P⌉=⌈φ⌉∧P
 = ⌈β(X₁)⌉
-    ∧ ¬ (∃ X₁ . ⌈ β(X₁) ∧ φ₁(X₁) ⌉ ∧ P₁(X₁))
-    ...
-    ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ⌉ ∧ Pn(Xn))
+  ∧ ¬ (∃ X₁ . ⌈ β(X₁) ∧ φ₁(X₁) ⌉ ∧ P₁(X₁))
+  ...
+  ∧ ¬ (∃ Xn . ⌈ β(X₁) ∧ φn(Xn) ⌉ ∧ Pn(Xn))
+  ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
 ```
