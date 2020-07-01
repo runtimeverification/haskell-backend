@@ -46,7 +46,6 @@ import Control.Monad.State.Strict
     , modify
     )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import qualified Data.Bifunctor as Bifunctor
 import Data.Bitraversable
     ( bisequence
     , bitraverse
@@ -136,6 +135,7 @@ import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
+    , extractUnproven
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
@@ -573,13 +573,7 @@ nodeToGoal
     -> Graph.Node
     -> Maybe ReachabilityRule
 nodeToGoal graph node =
-    proofState ProofStateTransformer
-        { goalTransformer = Just
-        , goalRemainderTransformer = Just
-        , goalRewrittenTransformer = Just
-        , goalStuckTransformer = Just
-        , provenValue = Nothing
-        }
+    extractUnproven
     . Graph.lab'
     . Graph.context graph
     $ node
