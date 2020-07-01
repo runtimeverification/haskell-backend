@@ -186,6 +186,7 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (ProofStateTransformer)
+    , extractUnproven
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
@@ -959,30 +960,25 @@ savePartialProof
     -> FilePath
     -> ReplM m ()
 savePartialProof maybeNatural file = do
-    currentClaim <- Lens.use (field @"claim")
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
     Config { mainModuleName } <- ask
     maybeConfig <- getConfigAt maybeNode
-    case maybeConfig of
+    case (fmap . fmap) extractUnproven maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
-        Just (currentNode, currentProofState) -> do
-            let config = unwrapConfig currentProofState
-                newClaim = createClaim currentClaim config
-                newTrustedClaims =
+        Just (_, Nothing) -> putStrLn' "Goal is proven."
+        Just (currentNode, Just currentGoal) -> do
+            let newTrustedClaims =
                     makeTrusted
                     <$> removeIfRoot currentNode currentIndex claims
                 newDefinition =
                     createNewDefinition
                         mainModuleName
                         (makeModuleName file)
-                        $ newClaim : newTrustedClaims
+                        $ currentGoal : newTrustedClaims
             saveUnparsedDefinitionToFile (unparse newDefinition)
             putStrLn' "Done."
   where
-    unwrapConfig :: CommonProofState -> Pattern VariableName
-    unwrapConfig = proofState lhsProofStateTransformer
-
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
         -> ReplM m ()

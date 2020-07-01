@@ -253,7 +253,7 @@ verifyClaim
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
-        >=> lift . Strategy.applyBreadthLimit breadthLimit snd
+        >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
         >=> profileQueueLength
 
     profileQueueLength queue = do

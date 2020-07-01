@@ -568,16 +568,16 @@ getNodeState graph node =
         . Graph.context graph
         $ node
 
-nodeToPattern
+nodeToGoal
     :: InnerGraph axiom
     -> Graph.Node
-    -> Maybe (Pattern VariableName)
-nodeToPattern graph node =
+    -> Maybe ReachabilityRule
+nodeToGoal graph node =
     proofState ProofStateTransformer
-        { goalTransformer = Just . Goal.getConfiguration
-        , goalRemainderTransformer = Just . Goal.getConfiguration
-        , goalRewrittenTransformer = Just . Goal.getConfiguration
-        , goalStuckTransformer = Just . Goal.getConfiguration
+        { goalTransformer = Just
+        , goalRemainderTransformer = Just
+        , goalRewrittenTransformer = Just
+        , goalStuckTransformer = Just
         , provenValue = Nothing
         }
     . Graph.lab'
@@ -689,18 +689,10 @@ generateInProgressClaims
 generateInProgressClaims = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
-    let started = startedClaims graphs claims
+    let started = unprovenGoals graphs
         notStarted = notStartedClaims graphs claims
     return $ started <> notStarted
   where
-    startedClaims
-        :: Map.Map ClaimIndex (ExecutionGraph Axiom)
-        -> [ReachabilityRule]
-        -> [ReachabilityRule]
-    startedClaims graphs claims =
-        fmap (uncurry createClaim)
-        $ claimsWithPatterns graphs claims
-        >>= sequence
     notStartedClaims
         :: Map.Map ClaimIndex (ExecutionGraph Axiom)
         -> [ReachabilityRule]
@@ -720,21 +712,17 @@ generateInProgressClaims = do
                     )
                 )
 
-claimsWithPatterns
+unprovenGoals
     :: Map ClaimIndex (ExecutionGraph axiom)
-    -> [claim]
-    -> [(claim, [Pattern VariableName])]
-claimsWithPatterns graphs claims =
-    Bifunctor.bimap
-        ((claims !!) . unClaimIndex)
-        (findTerminalPatterns . Strategy.graph)
-    <$> Map.toList graphs
+    -> [ReachabilityRule]
+unprovenGoals graphs =
+    findUnprovenGoals =<< Map.elems graphs
 
-findTerminalPatterns
-    :: InnerGraph axiom
-    -> [Pattern VariableName]
-findTerminalPatterns graph =
-    mapMaybe (nodeToPattern graph)
+findUnprovenGoals
+    :: ExecutionGraph axiom
+    -> [ReachabilityRule]
+findUnprovenGoals (Strategy.graph -> graph) =
+    mapMaybe (nodeToGoal graph)
     . findLeafNodes
     $ graph
 
