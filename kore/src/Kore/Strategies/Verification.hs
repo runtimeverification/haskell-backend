@@ -20,13 +20,9 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
-import Control.Error
-    ( maximumMay
-    )
 import qualified Control.Lens as Lens
 import Control.Monad
-    ( forM_
-    , (>=>)
+    ( (>=>)
     )
 import qualified Control.Monad as Monad
     ( foldM_
@@ -45,7 +41,6 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
 import Data.Text
     ( Text
-    , pack
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -66,6 +61,9 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Log.InfoProofLength
+    ( infoProofLength
+    )
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
     ( AllPathRule (..)
@@ -90,12 +88,10 @@ import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (..)
-    , getDepth
     )
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
 import Kore.Unparser
-import qualified Log
 import Logic
     ( LogicT
     )
@@ -253,37 +249,12 @@ verifyClaim
                 & fmap discardStrategy
     
     proofStateList <- Logic.observeAllT proofStatesLogicT
-    case depthLongestProven proofStateList of
-        Just n ->
-            Log.logInfo . pack
-                $ "Final execution length of the longest proven claim :"
-                <> show n
-        _ -> forM_ (depthSomeUnproven proofStateList)
-            (\n ->
-                Log.logInfo . pack
-                    $ "Final execution length of an unproven configuration :"
-                    <> show n
-            )
-
+    infoProofLength proofStateList
     handle
         handleLimitExceeded
         $ proofStatesLogicT
             & throwUnproven
   where
-    depthLongestProven :: [CommonProofState] -> Maybe Natural
-    depthLongestProven proofStates =
-        proofStates
-        & filter ProofState.isProven
-        & fmap (getDepth . ProofState.extractDepth)
-        & maximumMay
-
-    depthSomeUnproven :: [CommonProofState] -> Maybe Natural
-    depthSomeUnproven proofStates =
-        proofStates
-        & filter (not . ProofState.isProven)
-        & fmap (getDepth . ProofState.extractDepth)
-        & headMay
-
     destination = getDestination goal
     discardStrategy = snd
 
