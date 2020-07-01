@@ -217,6 +217,8 @@ data ReplCommand
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe ReplNode)
     -- ^ Show the configuration from the current node.
+    | ShowDest !(Maybe ReplNode)
+    -- ^ Show the destination from the current node.
     | OmitCell !(Maybe String)
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
@@ -321,6 +323,8 @@ helpText =
                                               \ interesting branching node (***)\n\
     \select <n>                               select node id 'n' from the graph\n\
     \config [n]                               shows the config for node 'n'\
+                                              \ (defaults to current node)\n\
+    \dest [n]                                 shows the destination for node 'n'\
                                               \ (defaults to current node)\n\
     \omit [cell]                              adds or removes cell to omit list\
                                               \ (defaults to showing the omit\

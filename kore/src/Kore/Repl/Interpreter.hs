@@ -178,6 +178,7 @@ import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
+    , rhsToPattern
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -248,6 +249,7 @@ replInterpreter0 printAux printKore replCmd = do
                 ProveStepsF n         -> proveStepsF n         $> Continue
                 SelectNode i          -> selectNode i          $> Continue
                 ShowConfig mc         -> showConfig mc         $> Continue
+                ShowDest mc           -> showDest mc           $> Continue
                 OmitCell c            -> omitCell c            $> Continue
                 ShowLeafs             -> showLeafs             $> Continue
                 ShowRule   mc         -> showRule mc           $> Continue
@@ -524,6 +526,25 @@ showConfig configNode = do
             omit <- Lens.use (field @"omit")
             putStrLn' $ "Config at node " <> show node <> " is:"
             tell $ unparseProofStateComponent getConfiguration omit config
+
+-- | Shows destination at node 'n', or current node if 'Nothing' is passed.
+showDest
+    :: Monad m
+    => Maybe ReplNode
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
+    -> ReplM m ()
+showDest configNode = do
+    maybeConfig <- getConfigAt configNode
+    case maybeConfig of
+        Nothing -> putStrLn' "Invalid node!"
+        Just (ReplNode node, config) -> do
+            omit <- Lens.use (field @"omit")
+            putStrLn' $ "Destination at node " <> show node <> " is:"
+            unparseProofStateComponent
+                (rhsToPattern . getDestination)
+                omit
+                config
+                & tell
 
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.

@@ -39,6 +39,7 @@ test_replParser =
     , stepTests         `tests`       "step"
     , selectTests       `tests`       "select"
     , configTests       `tests`       "config"
+    , destTests         `tests`       "dest"
     , leafsTests        `tests`       "leafs"
     , precBranchTests   `tests`       "prec-branch"
     , childrenTests     `tests`       "children"
@@ -169,6 +170,16 @@ configTests =
     , "config -5"          `fails`     ()
     , "config | > >> file" `fails`     ()
     , "config | s >> "     `fails`     ()
+    ]
+
+destTests :: [ParserTest ReplCommand]
+destTests =
+    [ "dest"             `parsesTo_` ShowDest Nothing
+    , "dest "            `parsesTo_` ShowDest Nothing
+    , "dest 5"           `parsesTo_` ShowDest (Just (ReplNode 5))
+    , "dest -5"          `fails`     ()
+    , "dest | > >> file" `fails`     ()
+    , "dest | s >> "     `fails`     ()
     ]
 
 omitTests :: [ParserTest ReplCommand]
