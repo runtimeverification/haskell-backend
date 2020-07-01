@@ -197,7 +197,7 @@ test_onePathStrategy =
             [makeReachabilityOnePathRule Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
-            (ProofState.Goal ProofState.depth0 $ makeOnePathRule Mock.c Mock.d)
+            (ProofState.Goal (ProofState.Depth 1) $ makeOnePathRule Mock.c Mock.d)
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -231,7 +231,7 @@ test_onePathStrategy =
             , simpleReachabilityRewrite Mock.a Mock.b
             ]
         assertEqual ""
-            (ProofState.Proven ProofState.depth0)
+            (ProofState.Proven (ProofState.Depth 1))
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -260,7 +260,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.Goal ProofState.depth0
+                [ ProofState.Goal (ProofState.Depth 2)
                     $ makeOnePathRule Mock.c Mock.e
                 ]
             )
@@ -295,7 +295,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.Goal ProofState.depth0 $ makeOnePathRule Mock.d Mock.e
+                [ ProofState.Goal (ProofState.Depth 2) $ makeOnePathRule Mock.d Mock.e
                 ]
             )
             (sort
@@ -492,7 +492,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqual ""
-            [ ProofState.GoalRemainder (ProofState.Depth 1)
+            [ ProofState.GoalRemainder (ProofState.Depth 0)
             $ makeOnePathRuleFromPatterns
                 Conditional
                     { term = Mock.functionalConstr10 Mock.b
@@ -504,7 +504,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)
-            , ProofState.Proven (ProofState.Depth 0)
+            , ProofState.Proven (ProofState.Depth 1)
             ]
             [ _actual1
             , _actual2
@@ -516,7 +516,7 @@ test_onePathStrategy =
         -- Goal: 0 => 1
         -- Coinductive axioms: none
         -- Normal axiom: x => 1 if x<2
-        result@(_actual : _) <-
+        _actual : _ <-
             runOnePathSteps
                 Unlimited
                 (Limit 2)
@@ -535,8 +535,7 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     )
                 ]
-        traceM $ show result
-        [ _actualReach ] <-
+        _actualReach : _ <-
             runOnePathSteps
                 Unlimited
                 (Limit 2)
@@ -556,7 +555,7 @@ test_onePathStrategy =
                     )
                 ]
         assertEqual ""
-            (ProofState.Proven $ ProofState.Depth 2)
+            (ProofState.Proven $ ProofState.Depth 0)
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)

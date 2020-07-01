@@ -20,10 +20,13 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
+import Control.Error
+    ( maximumMay
+    )
 import qualified Control.Lens as Lens
 import Control.Monad
-    ( (>=>)
-    , forM_
+    ( forM_
+    , (>=>)
     )
 import qualified Control.Monad as Monad
     ( foldM_
@@ -36,9 +39,6 @@ import Control.Monad.Except
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
-import Control.Error
-    ( maximumMay
-    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
@@ -90,11 +90,11 @@ import Kore.Strategies.ProofState
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
 import Kore.Unparser
+import qualified Log
 import Logic
     ( LogicT
     )
 import qualified Logic
-import qualified Log
 
 -- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
 type CommonProofState = ProofState.ProofState (Pattern VariableName)

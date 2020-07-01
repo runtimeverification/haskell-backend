@@ -650,8 +650,8 @@ transitionRuleTemplate
     transitionRuleWorker CheckProven (Proven _) = empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder _ _) = empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten _ goal) =
-        return (Goal depth0 goal)
+    transitionRuleWorker ResetGoal (GoalRewritten depth goal) =
+        return (Goal depth goal)
 
     transitionRuleWorker CheckGoalStuck (GoalStuck _ _) = empty
 
@@ -935,8 +935,7 @@ deriveWith lensRulePattern mkRule takeStep rewrites proofState =
             $ Lens.forOf RulePattern.leftPattern rulePattern
             $ \config -> Compose $ withConfiguration config $ do
                 results <- takeStep rewrites config & lift
-                deriveResults mkRule results
-        & fmap (ProofState.changeDepth (const (increment depth)))
+                deriveResults mkRule results depth
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -955,10 +954,11 @@ deriveSeq lensRulePattern mkRule =
 deriveResults
     :: (RewriteRule RewritingVariableName -> Rule goal)
     -> Step.Results RulePattern VariableName
+    -> Depth
     -> Strategy.TransitionT (Rule goal) simplifier
         (ProofState.ProofState (Pattern VariableName))
 -- TODO (thomas.tuegel): Remove goal argument.
-deriveResults mkRule Results { results, remainders } =
+deriveResults mkRule Results { results, remainders } depth =
     addResults <|> addRemainders
   where
     addResults = Foldable.asum (addResult <$> results)
@@ -970,11 +970,11 @@ deriveResults mkRule Results { results, remainders } =
             []      ->
                 -- If the rule returns \bottom, the goal is proven on the
                 -- current branch.
-                pure $ Proven ProofState.depth0
+                pure $ Proven depth
             configs -> Foldable.asum (addRewritten <$> configs)
 
-    addRewritten = pure . GoalRewritten ProofState.depth0
-    addRemainder = pure . GoalRemainder ProofState.depth0
+    addRewritten = pure . GoalRewritten (increment depth)
+    addRemainder = pure . GoalRemainder depth
 
     addRule = Transition.addRule . fromAppliedRule
 
