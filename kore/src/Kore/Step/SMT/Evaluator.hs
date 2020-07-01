@@ -66,8 +66,8 @@ import Kore.Log.DebugEvaluateCondition
     ( debugEvaluateConditionResult
     , whileDebugEvaluateCondition
     )
-import Kore.Log.WarnDecidePredicateUnknown
-    ( warnDecidePredicateUnknown
+import Kore.Log.ErrorDecidePredicateUnknown
+    ( errorDecidePredicateUnknown
     )
 import qualified Kore.Profiler.Profile as Profile
     ( smtDecision
@@ -191,7 +191,7 @@ decidePredicate predicates =
             Unsat -> return False
             Sat -> empty
             Unknown -> do
-                warnDecidePredicateUnknown predicates
+                errorDecidePredicateUnknown predicates
                 empty
 
 translatePredicate

@@ -62,6 +62,9 @@ import Kore.Log.DebugSubstitutionSimplifier
 import Kore.Log.DebugUnification
     ( DebugUnification
     )
+import Kore.Log.ErrorDecidePredicateUnknown
+    ( ErrorDecidePredicateUnknown
+    )
 import Kore.Log.ErrorException
     ( ErrorException
     )
@@ -79,9 +82,6 @@ import Kore.Log.InfoReachability
     )
 import Kore.Log.WarnBottomTotalFunction
     ( WarnBottomTotalFunction
-    )
-import Kore.Log.WarnDecidePredicateUnknown
-    ( WarnDecidePredicateUnknown
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
@@ -132,7 +132,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugAppliedRewriteRules
     , mk $ Proxy @DebugSubstitutionSimplifier
     , mk $ Proxy @WarnBottomTotalFunction
-    , mk $ Proxy @WarnDecidePredicateUnknown
+    , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @DebugEvaluateCondition
