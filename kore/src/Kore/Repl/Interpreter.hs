@@ -518,14 +518,8 @@ showConfig
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
-showConfig configNode = do
-    maybeConfig <- getConfigAt configNode
-    case maybeConfig of
-        Nothing -> putStrLn' "Invalid node!"
-        Just (ReplNode node, config) -> do
-            omit <- Lens.use (field @"omit")
-            putStrLn' $ "Config at node " <> show node <> " is:"
-            tell $ unparseProofStateComponent getConfiguration omit config
+showConfig =
+    showProofStateComponent "Config" getConfiguration
 
 -- | Shows destination at node 'n', or current node if 'Nothing' is passed.
 showDest
@@ -533,15 +527,25 @@ showDest
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
-showDest configNode = do
-    maybeConfig <- getConfigAt configNode
-    case maybeConfig of
+showDest =
+    showProofStateComponent "Destination" (rhsToPattern . getDestination)
+
+showProofStateComponent
+    :: Monad m
+    => String
+    -- ^ component name
+    -> (ReachabilityRule -> Pattern VariableName)
+    -> Maybe ReplNode
+    -> ReplM m ()
+showProofStateComponent name transformer maybeNode = do
+    maybeProofState <- getProofStateAt maybeNode
+    case maybeProofState of
         Nothing -> putStrLn' "Invalid node!"
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
-            putStrLn' $ "Destination at node " <> show node <> " is:"
+            putStrLn' $ name <> " at node " <> show node <> " is:"
             unparseProofStateComponent
-                (rhsToPattern . getDestination)
+                transformer
                 omit
                 config
                 & tell
@@ -862,7 +866,7 @@ tryAxiomClaimWorker mode ref = do
         -> ReplM m ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
-        maybeSecond <- getConfigAt (Just node)
+        maybeSecond <- getProofStateAt (Just node)
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
@@ -983,7 +987,7 @@ savePartialProof maybeNatural file = do
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
     Config { mainModuleName } <- ask
-    maybeConfig <- getConfigAt maybeNode
+    maybeConfig <- getProofStateAt maybeNode
     case (fmap . fmap) extractUnproven maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
         Just (_, Nothing) -> putStrLn' "Goal is proven."

@@ -17,7 +17,7 @@ module Kore.Repl.State
     , getTargetNode, getInnerGraph, getExecutionGraph
     , smoothOutGraph
     , getInterestingBranchingNode
-    , getConfigAt, getRuleFor, getLabels, setLabels
+    , getProofStateAt, getRuleFor, getLabels, setLabels
     , runStepper, runStepper'
     , runUnifier
     , updateInnerGraph, updateExecutionGraph
@@ -418,12 +418,12 @@ getTargetNode maybeNode = do
        then pure . Just . ReplNode $ node'
        else pure Nothing
 
--- | Get the configuration at selected node (or current node for 'Nothing').
-getConfigAt
+-- | Get the proof state at selected node (or current node for 'Nothing').
+getProofStateAt
     :: MonadState ReplState m
     => Maybe ReplNode
     -> m (Maybe (ReplNode, CommonProofState))
-getConfigAt maybeNode = do
+getProofStateAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> pure Nothing
