@@ -89,11 +89,11 @@ import Kore.IndexedModule.IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makePredicate
     )
@@ -678,12 +678,15 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
-        Left Stuck { stuckPattern, provenClaims } -> do
+        Left Stuck { stuckPatterns, provenClaims } -> do
             maybe
                 (return ())
                 (lift . saveProven specModule provenClaims)
                 saveProofs
-            return (failure $ Pattern.toTermLike stuckPattern)
+            stuckPatterns
+                & OrPattern.toTermLike
+                & failure
+                & return
         Right () -> return success
 
     lift $ renderResult execOptions (unparse final)

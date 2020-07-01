@@ -33,6 +33,7 @@ import qualified Control.Monad as Monad
     )
 import Control.Monad.Catch
     ( MonadCatch
+    , handle
     )
 import Control.Monad.Except
     ( ExceptT
@@ -57,6 +58,10 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import Kore.Debug
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -99,7 +104,10 @@ import qualified Logic
 -- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
 type CommonProofState = ProofState.ProofState (Pattern VariableName)
 
-commonProofStateTransformer :: ProofStateTransformer (Pattern VariableName) (Pattern VariableName)
+commonProofStateTransformer
+    :: ProofStateTransformer
+        (Pattern VariableName)
+        (Pattern VariableName)
 commonProofStateTransformer =
     ProofStateTransformer
         { goalTransformer = id
@@ -115,7 +123,7 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (Pattern VariableName) m
+type Verifier m = ExceptT (OrPattern VariableName) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -128,7 +136,7 @@ If the verification succeeds, it returns ().
 -}
 data Stuck =
     Stuck
-    { stuckPattern :: !(Pattern VariableName)
+    { stuckPatterns :: !(OrPattern VariableName)
     , provenClaims :: ![ReachabilityRule]
     }
     deriving (Eq, GHC.Generic, Show)
@@ -211,8 +219,8 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
             verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
-        wrapStuckPattern :: Pattern VariableName -> Stuck
-        wrapStuckPattern stuckPattern = Stuck { stuckPattern, provenClaims }
+        wrapStuckPattern :: OrPattern VariableName -> Stuck
+        wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
 
 verifyClaim
     :: forall simplifier
@@ -222,7 +230,7 @@ verifyClaim
     -> AllClaims ReachabilityRule
     -> Axioms ReachabilityRule
     -> (ReachabilityRule, Limit Natural)
-    -> ExceptT (Pattern VariableName) simplifier ()
+    -> ExceptT (OrPattern VariableName) simplifier ()
 verifyClaim
     breadthLimit
     searchOrder
@@ -237,25 +245,30 @@ verifyClaim
             strategy goal claims axioms
             & Foldable.toList
             & Limit.takeWithin depthLimit
-        proofStatesLogicT = Strategy.leavesM
-            updateQueue
-            (Strategy.unfoldTransition transit)
-            (limitedStrategy, startPattern)
-            & fmap discardStrategy
-    proofStatesList <- Logic.observeAllT proofStatesLogicT
-    case depthLongestProven proofStatesList of
+        proofStatesLogicT =
+            Strategy.leavesM
+                updateQueue
+                (Strategy.unfoldTransition transit)
+                (limitedStrategy, startPattern)
+                & fmap discardStrategy
+    
+    proofStateList <- Logic.observeAllT proofStatesLogicT
+    case depthLongestProven proofStateList of
         Just n ->
             Log.logInfo . pack
                 $ "Final execution length of the longest proven claim :"
                 <> show n
-        _ -> forM_ (depthSomeUnproven proofStatesList)
+        _ -> forM_ (depthSomeUnproven proofStateList)
             (\n ->
                 Log.logInfo . pack
                     $ "Final execution length of an unproven configuration :"
                     <> show n
             )
 
-    proofStatesLogicT & throwUnproven
+    handle
+        handleLimitExceeded
+        $ proofStatesLogicT
+            & throwUnproven
   where
     depthLongestProven :: [CommonProofState] -> Maybe Natural
     depthLongestProven proofStates =
@@ -274,9 +287,19 @@ verifyClaim
     destination = getDestination goal
     discardStrategy = snd
 
+    handleLimitExceeded
+        :: Strategy.LimitExceeded CommonProofState
+        -> ExceptT (OrPattern VariableName) simplifier ()
+    handleLimitExceeded (Strategy.LimitExceeded patterns) =
+        Monad.Except.throwError
+        . OrPattern.fromPatterns
+        $ fmap
+            (ProofState.proofState commonProofStateTransformer)
+            patterns
+
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
-        >=> lift . Strategy.applyBreadthLimit breadthLimit
+        >=> lift . Strategy.applyBreadthLimit breadthLimit snd
         >=> profileQueueLength
 
     profileQueueLength queue = do
@@ -297,7 +320,7 @@ verifyClaim
         -> Verifier simplifier ()
     throwUnprovenOrElse proofState acts = do
         ProofState.extractUnproven proofState
-            & Foldable.traverse_ Monad.Except.throwError
+            & Foldable.traverse_ (Monad.Except.throwError . OrPattern.fromPattern)
         acts
 
     transit instr config =
