@@ -84,6 +84,7 @@ module Kore.Internal.TermLike
     , mkEvaluated
     , mkEndianness
     , mkSignedness
+    , mkDefined
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -1436,6 +1437,67 @@ mkEvaluated
     => TermLike variable
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
+
+mkDefined
+    :: forall variable
+    .  HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+mkDefined = updateCallStack . Recursive.cata worker
+  where
+    worker
+      :: CofreeF
+           (TermLikeF variable)
+           (Attribute.Pattern variable)
+           (TermLike variable)
+         -> TermLike variable
+    worker (_ :< patt) =
+        case patt of
+            AndF _ ->
+               mkDefined' (synthesize patt)
+            ApplySymbolF (Application symbol _) ->
+                if isFunctional symbol
+                    then synthesize patt
+                    else mkDefined' (synthesize patt)
+            ApplyAliasF _ -> mkDefined' (synthesize patt)
+            BottomF _ -> error "TODO: error message"
+            CeilF _ -> synthesize patt
+            DomainValueF _ -> mkDefined' (synthesize patt)
+            EqualsF _ -> mkDefined' (synthesize patt)
+            ExistsF _ -> mkDefined' (synthesize patt)
+            FloorF _ -> mkDefined' (synthesize patt)
+            ForallF _ -> mkDefined' (synthesize patt)
+            IffF _ -> mkDefined' (synthesize patt)
+            ImpliesF _ -> mkDefined' (synthesize patt)
+            InF _ -> mkDefined' (synthesize patt)
+            MuF _ -> mkDefined' (synthesize patt)
+            NextF _ -> mkDefined' (synthesize patt)
+            NotF _ -> mkDefined' (synthesize patt)
+            NuF _ -> mkDefined' (synthesize patt)
+            OrF _ -> synthesize patt
+            RewritesF _ -> mkDefined' (synthesize patt)
+            TopF _ -> synthesize patt
+            InhabitantF _ -> mkDefined' (synthesize patt)
+            BuiltinF (Domain.BuiltinMap _) -> mkDefined' (synthesize patt)
+            BuiltinF (Domain.BuiltinList _) -> mkDefined' (synthesize patt)
+            BuiltinF (Domain.BuiltinSet _) -> mkDefined' (synthesize patt)
+            BuiltinF (Domain.BuiltinInt _) -> synthesize patt
+            BuiltinF (Domain.BuiltinBool _) -> synthesize patt
+            BuiltinF (Domain.BuiltinString _) -> synthesize patt
+            EvaluatedF _ -> synthesize patt
+            StringLiteralF _ -> synthesize patt
+            InternalBytesF _ -> synthesize patt
+            VariableF (Const variable) ->
+                if isElementVariable variable
+                    then synthesize patt
+                    else mkDefined' (synthesize patt)
+            EndiannessF _ -> mkDefined' (synthesize patt)
+            SignednessF _ -> mkDefined' (synthesize patt)
+            InjF _ -> mkDefined' (synthesize patt)
+            DefinedF _ -> synthesize patt
+
+    mkDefined' = synthesize . DefinedF . Defined
 
 {- | Construct an 'Endianness' pattern.
  -}
