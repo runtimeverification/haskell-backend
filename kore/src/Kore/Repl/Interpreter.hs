@@ -238,37 +238,37 @@ replInterpreter0
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
-                ShowUsage             -> showUsage             $> Continue
-                Help                  -> help                  $> Continue
-                ShowClaim mc          -> showClaim mc          $> Continue
-                ShowAxiom ea          -> showAxiom ea          $> Continue
-                Prove i               -> prove i               $> Continue
-                ShowGraph mfile out   -> showGraph mfile out   $> Continue
-                ProveSteps n          -> proveSteps n          $> Continue
-                ProveStepsF n         -> proveStepsF n         $> Continue
-                SelectNode i          -> selectNode i          $> Continue
-                ShowConfig mc         -> showConfig mc         $> Continue
-                OmitCell c            -> omitCell c            $> Continue
-                ShowLeafs             -> showLeafs             $> Continue
-                ShowRule   mc         -> showRule mc           $> Continue
-                ShowPrecBranch mn     -> showPrecBranch mn     $> Continue
-                ShowChildren mn       -> showChildren mn       $> Continue
-                Label ms              -> label ms              $> Continue
-                LabelAdd l mn         -> labelAdd l mn         $> Continue
-                LabelDel l            -> labelDel l            $> Continue
-                Redirect inn file     -> redirect inn file     $> Continue
-                Try ref               -> tryAxiomClaim ref     $> Continue
-                TryF ac               -> tryFAxiomClaim ac     $> Continue
-                Clear n               -> clear n               $> Continue
-                SaveSession file      -> saveSession file      $> Continue
-                SavePartialProof mn f -> savePartialProof mn f $> Continue
-                Pipe inn file args    -> pipe inn file args    $> Continue
-                AppendTo inn file     -> appendTo inn file     $> Continue
-                Alias a               -> alias a               $> Continue
+                ShowUsage             -> showUsage               $> Continue
+                Help                  -> help                    $> Continue
+                ShowClaim mc          -> showClaim mc            $> Continue
+                ShowAxiom ea          -> showAxiom ea            $> Continue
+                Prove i               -> prove i                 $> Continue
+                ShowGraph v mfile out -> showGraph v mfile out   $> Continue
+                ProveSteps n          -> proveSteps n            $> Continue
+                ProveStepsF n         -> proveStepsF n           $> Continue
+                SelectNode i          -> selectNode i            $> Continue
+                ShowConfig mc         -> showConfig mc           $> Continue
+                OmitCell c            -> omitCell c              $> Continue
+                ShowLeafs             -> showLeafs               $> Continue
+                ShowRule   mc         -> showRule mc             $> Continue
+                ShowPrecBranch mn     -> showPrecBranch mn       $> Continue
+                ShowChildren mn       -> showChildren mn         $> Continue
+                Label ms              -> label ms                $> Continue
+                LabelAdd l mn         -> labelAdd l mn           $> Continue
+                LabelDel l            -> labelDel l              $> Continue
+                Redirect inn file     -> redirect inn file       $> Continue
+                Try ref               -> tryAxiomClaim ref       $> Continue
+                TryF ac               -> tryFAxiomClaim ac       $> Continue
+                Clear n               -> clear n                 $> Continue
+                SaveSession file      -> saveSession file        $> Continue
+                SavePartialProof mn f -> savePartialProof mn f   $> Continue
+                Pipe inn file args    -> pipe inn file args      $> Continue
+                AppendTo inn file     -> appendTo inn file       $> Continue
+                Alias a               -> alias a                 $> Continue
                 TryAlias name         -> tryAlias name printAux printKore
-                LoadScript file       -> loadScript file       $> Continue
-                ProofStatus           -> proofStatus           $> Continue
-                Log opts              -> handleLog opts        $> Continue
+                LoadScript file       -> loadScript file         $> Continue
+                ProofStatus           -> proofStatus             $> Continue
+                Log opts              -> handleLog opts          $> Continue
                 Exit                  -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
@@ -422,15 +422,20 @@ showIndexOrName =
 showGraph
     :: MonadIO m
     => MonadWriter ReplOutput m
-    => Maybe FilePath
+    => Maybe GraphView
+    -> Maybe FilePath
     -> Maybe Graph.GraphvizOutput
     -> MonadState ReplState m
     => m ()
-showGraph mfile out = do
+showGraph view mfile out = do
     let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
     processedGraph <-
-        maybe (showOriginalGraph graph) return (smoothOutGraph graph)
+        case view of
+            Just Expanded ->
+                return $ Graph.emap Just graph
+            _ ->
+                maybe (showOriginalGraph graph) return (smoothOutGraph graph)
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
