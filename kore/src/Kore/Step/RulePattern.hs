@@ -31,6 +31,7 @@ module Kore.Step.RulePattern
     , rhsForgetSimplified
     , rhsToTerm
     , lhsToTerm
+    , rhsToPattern
     , termToRHS
     , injectTermIntoRHS
     , rewriteRuleToTerm
@@ -315,6 +316,20 @@ rhsToTerm
     -> TermLike.TermLike variable
 rhsToTerm RHS { existentials, right, ensures } =
     TermLike.mkExistsN existentials rhs
+  where
+    rhs = case ensures of
+        Predicate.PredicateTrue -> right
+        _ -> TermLike.mkAnd (Predicate.fromPredicate sort ensures) right
+    sort = TermLike.termLikeSort right
+
+-- | Converts the 'RHS' back to the term form.
+rhsToPattern
+    :: InternalVariable variable
+    => RHS variable
+    -> Pattern variable
+rhsToPattern RHS { existentials, right, ensures } =
+    TermLike.mkExistsN existentials rhs
+    & Pattern.fromTermLike
   where
     rhs =
         Pattern.toTermLike
