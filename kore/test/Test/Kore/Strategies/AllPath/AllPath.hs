@@ -3,6 +3,7 @@ module Test.Kore.Strategies.AllPath.AllPath
     , test_transitionRule_CheckProven
     , test_transitionRule_CheckGoalRem
     , test_transitionRule_CheckImplication
+    , test_transitionRule_InferDefined
     , test_transitionRule_TriviallyValid
     , test_transitionRule_ApplyClaims
     , test_transitionRule_ApplyAxioms
@@ -226,6 +227,19 @@ test_transitionRule_ApplyAxioms =
         -> TestTree
     derives rules = equals_ (run rules $ ProofState.GoalRemainder (A, C))
 
+test_transitionRule_InferDefined :: [TestTree]
+test_transitionRule_InferDefined =
+    [ unmodified ProofState.Proven
+    , unmodified (ProofState.Goal (A, B))
+    , unmodified (ProofState.GoalStuck (A, B))
+    , ProofState.GoalRemainder (NotDef, B) `becomes` (ProofState.Proven, mempty)
+    ]
+  where
+    run = runTransitionRule [] [] ProofState.InferDefined
+    unmodified :: HasCallStack => ProofState -> TestTree
+    unmodified state = run state `equals_` [(state, mempty)]
+    becomes initial final = run initial `equals_` [final]
+
 test_runStrategy :: [TestTree]
 test_runStrategy =
     [ [] `proves`    (A, A)
@@ -240,7 +254,8 @@ test_runStrategy =
 
     , [Rule (A, A)] `proves` (A, B)
     , [Rule (A, A)] `proves` (A, C)
-    , [Rule (A, A)] `disproves` (A, C) $ []
+
+    , [Rule (A, NotDef)] `disproves` (A, C) $ []
 
     , fmap Rule [(A, B), (A, C)] `proves`    (A, BorC)
     , fmap Rule [(A, B), (A, C)] `disproves` (A, B   ) $ [(C, B)]
@@ -307,7 +322,7 @@ insEdge
 insEdge = Strategy.insEdge
 
 -- | Simple program configurations for unit testing.
-data K = BorC | A | B | C | D | E | F | Bot
+data K = BorC | A | B | C | D | E | F | NotDef | Bot
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic K
@@ -346,6 +361,7 @@ newtype instance Goal.Rule Goal =
 instance Goal.Goal Goal where
     checkImplication (src, dst)
       | src' == Bot = return Goal.Implied
+      | src == NotDef = return Goal.Implied
       | otherwise = return $ Goal.NotImplied (src', dst)
       where
         src' = difference src dst
@@ -355,6 +371,10 @@ instance Goal.Goal Goal where
     isTriviallyValid (src, _) = src == Bot
 
     simplify = return
+
+    inferDefined goal@(src, _)
+      | src == NotDef = empty
+      | otherwise = pure goal
 
     applyClaims claims = derivePar (map Rule claims)
 
