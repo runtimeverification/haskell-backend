@@ -195,6 +195,9 @@ data RuleReference
     | ByName RuleName
     deriving (Eq, Show)
 
+-- | Option for viewing the full (expanded) graph
+-- or the collapsed graph where only the branching nodes,
+-- their direct descendents and leafs are visible
 data GraphView
     = Collapsed
     | Expanded
