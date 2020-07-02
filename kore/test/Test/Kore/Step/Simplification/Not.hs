@@ -161,7 +161,7 @@ forceTermSort = fmap (forceSort Mock.testSort)
 fromPredicate :: TestPredicate -> TestPattern
 fromPredicate =
     forceTermSort
-    . Pattern.fromCondition
+    . Pattern.fromCondition_
     . Condition.fromPredicate
 
 fromSubstitution
@@ -169,7 +169,7 @@ fromSubstitution
     -> TestPattern
 fromSubstitution =
     forceTermSort
-    . Pattern.fromCondition
+    . Pattern.fromCondition_
     . Condition.fromSubstitution
 
 simplifyEvaluated

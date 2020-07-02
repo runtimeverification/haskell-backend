@@ -21,7 +21,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
     ( bottom
-    , fromConditionSorted
+    , fromCondition
     , top
     )
 import Kore.Internal.Predicate
@@ -97,7 +97,7 @@ test_floorSimplification =
             )
             (evaluate
                 (makeFloor
-                    [ Pattern.fromConditionSorted testSort Condition.top ]
+                    [ Pattern.fromCondition testSort Condition.top ]
                 )
             )
     , testCase "expanded Floor - bool operations"
