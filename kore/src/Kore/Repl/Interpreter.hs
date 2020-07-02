@@ -178,7 +178,7 @@ import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
-    , rhsToPattern
+    , rhsToTerm
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -528,7 +528,9 @@ showDest
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
 showDest =
-    showProofStateComponent "Destination" (rhsToPattern . getDestination)
+    showProofStateComponent
+        "Destination"
+        (Pattern.fromTermLike . rhsToTerm . getDestination)
 
 showProofStateComponent
     :: Monad m
