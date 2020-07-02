@@ -62,11 +62,11 @@ import Kore.Log.DebugSubstitutionSimplifier
 import Kore.Log.DebugUnification
     ( DebugUnification
     )
-import Kore.Log.ErrorDecidePredicateUnknown
-    ( ErrorDecidePredicateUnknown
-    )
 import Kore.Log.ErrorBottomTotalFunction
     ( ErrorBottomTotalFunction
+    )
+import Kore.Log.ErrorDecidePredicateUnknown
+    ( ErrorDecidePredicateUnknown
     )
 import Kore.Log.ErrorException
     ( ErrorException
