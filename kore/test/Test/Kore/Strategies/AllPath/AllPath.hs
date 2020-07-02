@@ -27,10 +27,6 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
-import Data.Stream.Infinite
-    ( Stream (..)
-    )
-import qualified Data.Stream.Infinite as Stream
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -152,7 +148,7 @@ test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
     [ unmodified ProofState.Proven
     , unmodified (ProofState.GoalRemainder (A, B))
-    , ProofState.Goal (B, B) `becomes` (ProofState.Goal (Bot, B), mempty)
+    , ProofState.Goal (B, B) `becomes` (ProofState.Proven, mempty)
     ]
   where
     run = runTransitionRule [] [] ProofState.CheckImplication
@@ -180,12 +176,12 @@ test_transitionRule_ApplyClaims =
     , unmodified (ProofState.GoalRewritten    (A, B))
     , [Rule (A, C)]
         `derives`
-        [ (ProofState.Goal    (C,   C), Seq.singleton $ Rule (A, C))
+        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ Rule (A, C))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ProofState.Goal    (B  , C), Seq.singleton $ Rule (A, B))
+        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ Rule (A, B))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     ]
@@ -208,12 +204,12 @@ test_transitionRule_ApplyAxioms =
     , unmodified (ProofState.GoalRewritten    (A, B))
     , [Rule (A, C)]
         `derives`
-        [ (ProofState.Goal    (C,   C), Seq.singleton $ Rule (A, C))
+        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ Rule (A, C))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ProofState.Goal    (B  , C), Seq.singleton $ Rule (A, B))
+        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ Rule (A, B))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     ]
@@ -244,6 +240,7 @@ test_runStrategy =
 
     , [Rule (A, A)] `proves` (A, B)
     , [Rule (A, A)] `proves` (A, C)
+    , [Rule (A, A)] `disproves` (A, C) $ []
 
     , fmap Rule [(A, B), (A, C)] `proves`    (A, BorC)
     , fmap Rule [(A, B), (A, C)] `disproves` (A, B   ) $ [(C, B)]
@@ -261,7 +258,7 @@ test_runStrategy =
         $ Strategy.runStrategy
             Unlimited
             (Goal.transitionRule [unRule goal] [axioms])
-            (Foldable.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
+            (Foldable.toList Goal.strategy)
             (ProofState.Goal . unRule $ goal)
     disproves
         :: HasCallStack
@@ -347,41 +344,11 @@ newtype instance Goal.Rule Goal =
     deriving (Eq, GHC.Generic, Show)
 
 instance Goal.Goal Goal where
-    strategy _ _ _ =
-        firstStep :> Stream.iterate id nextStep
+    checkImplication (src, dst)
+      | src' == Bot = return Goal.Implied
+      | otherwise = return $ Goal.NotImplied (src', dst)
       where
-        firstStep =
-            (Strategy.sequence . map Strategy.apply)
-                [ ProofState.CheckProven
-                , ProofState.CheckGoalRemainder
-                , ProofState.CheckImplication
-                , ProofState.TriviallyValid
-                , ProofState.ApplyAxioms
-                , ProofState.Simplify
-                , ProofState.TriviallyValid
-                , ProofState.ResetGoal
-                , ProofState.TriviallyValid
-                ]
-        nextStep =
-            (Strategy.sequence . map Strategy.apply)
-                [ ProofState.CheckProven
-                , ProofState.CheckGoalRemainder
-                , ProofState.CheckImplication
-                , ProofState.TriviallyValid
-                , ProofState.ApplyClaims
-                , ProofState.CheckImplication
-                , ProofState.Simplify
-                , ProofState.TriviallyValid
-                , ProofState.ApplyAxioms
-                , ProofState.CheckImplication
-                , ProofState.Simplify
-                , ProofState.TriviallyValid
-                , ProofState.ResetGoal
-                , ProofState.TriviallyValid
-                ]
-
-    checkImplication (src, dst) =
-        return . Goal.NotImplied $ (difference src dst, dst)
+        src' = difference src dst
 
     -- | The goal is trivially valid when the members are equal.
     isTriviallyValid :: Goal -> Bool
@@ -402,7 +369,7 @@ derivePar rules (src, dst) =
   where
     goal rule@(Rule (_, to)) = do
         Transition.addRule rule
-        (pure . ProofState.Goal) (to, dst)
+        (pure . ProofState.GoalRewritten) (to, dst)
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
         (pure . ProofState.GoalRemainder) (r, dst)

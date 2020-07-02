@@ -45,7 +45,6 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
     )
-import qualified Data.Stream.Infinite as Stream
 import Data.Text
     ( Text
     )
@@ -248,7 +247,7 @@ verifyClaim
     let
         startPattern = ProofState.Goal $ getConfiguration goal
         limitedStrategy =
-            strategy goal claims axioms
+            strategy
             & Foldable.toList
             & Limit.takeWithin depthLimit
     Strategy.leavesM
@@ -344,10 +343,10 @@ verifyClaimStep target claims axioms executionGraph node =
         | otherwise = followupStep
 
     firstStep :: Strategy Prim
-    firstStep = strategy target claims axioms Stream.!! 0
+    firstStep = reachabilityFirstStep
 
     followupStep :: Strategy Prim
-    followupStep = strategy target claims axioms Stream.!! 1
+    followupStep = reachabilityNextStep
 
     ExecutionGraph { root } = executionGraph
 

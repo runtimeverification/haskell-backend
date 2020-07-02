@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , strategy
     , TransitionRule
     , Prim
     , FromRulePattern (..)
@@ -13,10 +14,8 @@ module Kore.Strategies.Goal
     , extractClaims
     , unprovenNodes
     , proven
-    , onePathFirstStep
-    , onePathFollowupStep
-    , allPathFirstStep
-    , allPathFollowupStep
+    , reachabilityFirstStep
+    , reachabilityNextStep
     , getConfiguration
     , getDestination
     , transitionRule
@@ -196,12 +195,8 @@ class Goal goal where
         => goal -> Rule goal
     goalToRule = coerce
 
-    strategy
-        :: goal
-        -> [goal]
-        -> [Rule goal]
-        -> Stream (Strategy Prim)
-
+    -- TODO (thomas.tuegel): isTriviallyValid should be part of
+    -- checkImplication. why is this so slow?
     isTriviallyValid :: goal -> Bool
 
     checkImplication
@@ -309,8 +304,6 @@ instance Goal OnePathRule where
 
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
-    strategy _ _ _ = onePathFirstStep :> Stream.iterate id onePathFollowupStep
-
 deriveSeqOnePath
     ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
@@ -363,8 +356,6 @@ instance Goal AllPathRule where
         checkTriviallyValid proofState
           | all isTriviallyValid proofState = pure Proven
           | otherwise = pure proofState
-
-    strategy _ _ _ = allPathFirstStep :> Stream.iterate id allPathFollowupStep
 
 deriveParAllPath
     ::  MonadSimplify simplifier
@@ -433,24 +424,6 @@ instance Goal ReachabilityRule where
         & fmap (fmap OnePath)
         & onePathTransition
 
-    strategy
-        :: ReachabilityRule
-        -> [ReachabilityRule]
-        -> [Rule ReachabilityRule]
-        -> Stream (Strategy Prim)
-    strategy goal claims axioms =
-        case goal of
-            OnePath rule ->
-                strategy
-                    rule
-                    (mapMaybe maybeOnePath claims)
-                    (fmap ruleReachabilityToRuleOnePath axioms)
-            AllPath rule ->
-                strategy
-                    rule
-                    (mapMaybe maybeAllPath claims)
-                    (fmap ruleReachabilityToRuleAllPath axioms)
-
 instance ClaimExtractor ReachabilityRule where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
@@ -477,19 +450,6 @@ maybeOnePath _ = Nothing
 maybeAllPath :: ReachabilityRule -> Maybe AllPathRule
 maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
-
--- The functions below are easier to read coercions between
--- the newtypes over 'RewriteRule VariableName' defined in the
--- instances of 'Goal' as 'Rule's.
-ruleReachabilityToRuleAllPath
-    :: Rule ReachabilityRule
-    -> Rule AllPathRule
-ruleReachabilityToRuleAllPath = coerce
-
-ruleReachabilityToRuleOnePath
-    :: Rule ReachabilityRule
-    -> Rule OnePathRule
-ruleReachabilityToRuleOnePath = coerce
 
 ruleAllPathToRuleReachability
     :: Rule AllPathRule
@@ -592,8 +552,8 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker _ state = return state
 
-onePathFirstStep :: Strategy Prim
-onePathFirstStep =
+reachabilityFirstStep :: Strategy Prim
+reachabilityFirstStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalStuck
@@ -607,8 +567,8 @@ onePathFirstStep =
         , TriviallyValid
         ]
 
-onePathFollowupStep :: Strategy Prim
-onePathFollowupStep =
+reachabilityNextStep :: Strategy Prim
+reachabilityNextStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalStuck
@@ -623,36 +583,9 @@ onePathFollowupStep =
         , TriviallyValid
         ]
 
-allPathFirstStep :: Strategy Prim
-allPathFirstStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , CheckGoalRemainder
-        , Simplify
-        , TriviallyValid
-        , CheckImplication
-        , ApplyAxioms
-        , ResetGoal
-        , Simplify
-        , TriviallyValid
-        ]
-
-allPathFollowupStep :: Strategy Prim
-allPathFollowupStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , CheckGoalRemainder
-        , Simplify
-        , TriviallyValid
-        , CheckImplication
-        , ApplyClaims
-        , ApplyAxioms
-        , ResetGoal
-        , Simplify
-        , TriviallyValid
-        ]
+strategy :: Stream (Strategy Prim)
+strategy =
+    reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
 
 {- | The result of checking the direct implication of a proof goal.
 

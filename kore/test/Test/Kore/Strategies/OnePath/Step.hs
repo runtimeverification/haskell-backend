@@ -892,10 +892,7 @@ runOnePathSteps
         coinductiveRewrites
         (groupSortOn Attribute.Axiom.getPriorityOfAxiom rewrites)
         goal
-        (Limit.takeWithin
-            depthLimit
-            (Foldable.toList $ strategy goal coinductiveRewrites rewrites)
-        )
+        (Limit.takeWithin depthLimit (Foldable.toList strategy))
     return (sort $ nub result)
 
 assertStuck
