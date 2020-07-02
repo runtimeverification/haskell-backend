@@ -123,17 +123,21 @@ proveTests =
 
 graphTests :: [ParserTest ReplCommand]
 graphTests =
-    [ "graph"                `parsesTo_` ShowGraph Nothing Nothing
-    , "graph "               `parsesTo_` ShowGraph Nothing Nothing
-    , "graph file"           `parsesTo_` ShowGraph (Just "file") Nothing
-    , "graph file svg"       `parsesTo_` ShowGraph (Just "file") (Just Graph.Svg)
-    , "graph file jpeg"      `parsesTo_` ShowGraph (Just "file") (Just Graph.Jpeg)
-    , "graph file jpg"       `parsesTo_` ShowGraph (Just "file") (Just Graph.Jpeg)
-    , "graph file pdf"       `parsesTo_` ShowGraph (Just "file") (Just Graph.Pdf)
-    , "graph file png"       `parsesTo_` ShowGraph (Just "file") (Just Graph.Png)
-    , "graph \"f ile\""      `parsesTo_` ShowGraph (Just "f ile") Nothing
-    , "graph \"f ile\" jpg"  `parsesTo_` ShowGraph (Just "f ile") (Just Graph.Jpeg)
-    , "graph f ile"          `fails`     ()
+    [ "graph"                        `parsesTo_` ShowGraph Nothing Nothing Nothing
+    , "graph "                       `parsesTo_` ShowGraph Nothing Nothing Nothing
+    , "graph expanded"               `parsesTo_` ShowGraph (Just Expanded) Nothing Nothing
+    , "graph file"                   `parsesTo_` ShowGraph Nothing (Just "file") Nothing
+    , "graph collapsed file"         `parsesTo_` ShowGraph (Just Collapsed) (Just "file") Nothing
+    , "graph file svg"               `parsesTo_` ShowGraph Nothing (Just "file") (Just Graph.Svg)
+    , "graph file jpeg"              `parsesTo_` ShowGraph Nothing (Just "file") (Just Graph.Jpeg)
+    , "graph file jpg"               `parsesTo_` ShowGraph Nothing (Just "file") (Just Graph.Jpeg)
+    , "graph file pdf"               `parsesTo_` ShowGraph Nothing (Just "file") (Just Graph.Pdf)
+    , "graph file png"               `parsesTo_` ShowGraph Nothing (Just "file") (Just Graph.Png)
+    , "graph expanded file svg"      `parsesTo_` ShowGraph (Just Expanded) (Just "file") (Just Graph.Svg)
+    , "graph \"f ile\""              `parsesTo_` ShowGraph Nothing (Just "f ile") Nothing
+    , "graph \"f ile\" jpg"          `parsesTo_` ShowGraph Nothing (Just "f ile") (Just Graph.Jpeg)
+    , "graph expanded \"f ile\" jpg" `parsesTo_` ShowGraph (Just Expanded) (Just "f ile") (Just Graph.Jpeg)
+    , "graph f ile"                  `fails`     ()
     ]
 
 stepTests :: [ParserTest ReplCommand]

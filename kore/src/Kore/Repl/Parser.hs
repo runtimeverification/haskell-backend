@@ -165,11 +165,12 @@ prove =
        )
 
 showGraph :: Parser ReplCommand
-showGraph =
-    ShowGraph
-    <$$> literal "graph"
-    *> optional (quotedOrWordWithout "")
-    <**> optional parseGraphOpt
+showGraph = do
+    literal "graph"
+    view <- optional parseGraphView
+    file <- optional (quotedOrWordWithout "")
+    fileType <- optional parseGraphOpt
+    return $ ShowGraph view file fileType
 
 proveSteps :: Parser ReplCommand
 proveSteps =
@@ -429,3 +430,8 @@ parseGraphOpt =
     <|> (Graph.Png <$ literal "png")
     <|> (Graph.Svg <$ literal "svg")
     <|> (Graph.Pdf <$ literal "pdf")
+
+parseGraphView :: Parser GraphView
+parseGraphView =
+    (Collapsed <$ literal "collapsed")
+    <|> (Expanded <$ literal "expanded")
