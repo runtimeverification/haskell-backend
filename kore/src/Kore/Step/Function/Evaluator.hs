@@ -47,8 +47,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.WarnBottomTotalFunction
-    ( warnBottomTotalFunction
+import Kore.Log.ErrorBottomTotalFunction
+    ( errorBottomTotalFunction
     )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
@@ -109,7 +109,7 @@ evaluateApplication
         & lift
     Foldable.for_ canMemoize (recordOrPattern results)
     when (Symbol.isFunctional symbol && isBottom results) $
-        lift $ warnBottomTotalFunction termLike
+        lift $ errorBottomTotalFunction termLike
     return results
   where
     finishT :: ExceptT r simplifier r -> simplifier r
