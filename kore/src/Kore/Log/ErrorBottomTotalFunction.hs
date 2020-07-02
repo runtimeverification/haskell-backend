@@ -4,9 +4,9 @@ License     : NCSA
 
 -}
 
-module Kore.Log.WarnBottomTotalFunction
-    ( WarnBottomTotalFunction (..)
-    , warnBottomTotalFunction
+module Kore.Log.ErrorBottomTotalFunction
+    ( ErrorBottomTotalFunction (..)
+    , errorBottomTotalFunction
     ) where
 
 import Prelude.Kore
@@ -29,35 +29,35 @@ import qualified Pretty
 import Log
 import qualified SQL
 
-newtype WarnBottomTotalFunction =
-    WarnBottomTotalFunction
+newtype ErrorBottomTotalFunction =
+    ErrorBottomTotalFunction
         { term :: TermLike VariableName
         }
     deriving (Show)
     deriving (GHC.Generic)
 
-instance SOP.Generic WarnBottomTotalFunction
+instance SOP.Generic ErrorBottomTotalFunction
 
-instance SOP.HasDatatypeInfo WarnBottomTotalFunction
+instance SOP.HasDatatypeInfo ErrorBottomTotalFunction
 
-instance Pretty WarnBottomTotalFunction where
-    pretty WarnBottomTotalFunction { term } =
+instance Pretty ErrorBottomTotalFunction where
+    pretty ErrorBottomTotalFunction { term } =
         Pretty.vsep
             [ "Evaluating total function"
             , Pretty.indent 4 (unparse term)
             , "has resulted in \\bottom."
             ]
 
-instance Entry WarnBottomTotalFunction where
-    entrySeverity _ = Warning
-    helpDoc _ = "warn when a total function is undefined"
+instance Entry ErrorBottomTotalFunction where
+    entrySeverity _ = Error
+    helpDoc _ = "errors raised when a total function is undefined"
 
-instance SQL.Table WarnBottomTotalFunction
+instance SQL.Table ErrorBottomTotalFunction
 
-warnBottomTotalFunction
+errorBottomTotalFunction
     :: MonadLog logger
     => InternalVariable variable
     => TermLike variable
     -> logger ()
-warnBottomTotalFunction (mapVariables (pure toVariableName) -> term) =
-    logEntry WarnBottomTotalFunction { term }
+errorBottomTotalFunction (mapVariables (pure toVariableName) -> term) =
+    logEntry ErrorBottomTotalFunction { term }
