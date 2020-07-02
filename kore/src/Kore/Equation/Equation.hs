@@ -354,10 +354,9 @@ refreshVariables
 
 isSimplificationRule :: Equation variable -> Bool
 isSimplificationRule Equation { attributes } =
-    isSimplification
-  where
-    Attribute.Simplification { isSimplification } =
-        Attribute.simplification attributes
+    case Attribute.simplification attributes of
+        Attribute.IsSimplification _ -> True
+        _ -> False
 
 equationPriority :: Equation variable -> Integer
 equationPriority = Attribute.getPriorityOfAxiom . attributes

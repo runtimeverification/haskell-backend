@@ -14,13 +14,13 @@ import Data.Limit
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (Conditional)
     )
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
@@ -57,7 +57,7 @@ test_onePathVerification =
             [simpleClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Runs one step" $ do
         -- Axiom: a => b
@@ -75,7 +75,7 @@ test_onePathVerification =
             [simpleClaim Mock.a Mock.b]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "Returns first failing claim" $ do
         -- Axiom: a => b or c
@@ -88,7 +88,7 @@ test_onePathVerification =
             [simpleClaim Mock.a Mock.d]
             []
         assertEqual ""
-            (Left . Pattern.fromTermLike $ Mock.b)
+            (Left . OrPattern.fromTermLike $ Mock.b)
             actual
     , testCase "Verifies one claim" $ do
         -- Axiom: a => b
@@ -115,7 +115,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.a)
+            (Left $ OrPattern.fromTermLike Mock.a)
             actual
     , testCase "Verifies one claim multiple steps" $ do
         -- Axiom: a => b
@@ -183,7 +183,8 @@ test_onePathVerification =
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
             []
         assertEqual ""
-            (Left Conditional
+            ( Left . OrPattern.fromPattern
+            $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
                     makeNotPredicate
@@ -236,7 +237,7 @@ test_onePathVerification =
             []
         assertEqual ""
             (Left Stuck
-                { stuckPattern = Pattern.fromTermLike Mock.c
+                { stuckPatterns = OrPattern.fromTermLike Mock.c
                 , provenClaims = []
                 }
             )
@@ -261,7 +262,7 @@ test_onePathVerification =
             []
         assertEqual ""
             (Left Stuck
-                { stuckPattern = Pattern.fromTermLike Mock.e
+                { stuckPatterns = OrPattern.fromTermLike Mock.e
                 , provenClaims = [simpleClaim Mock.a Mock.c]
                 }
             )
@@ -302,7 +303,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "first proves second but fails" $ do
         -- Axiom: a => b
@@ -321,7 +322,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.b)
+            (Left $ OrPattern.fromTermLike Mock.b)
             actual
     , testCase "trusted second proves first" $ do
         -- Axiom: a => b
@@ -383,7 +384,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.e)
+            (Left $ OrPattern.fromTermLike Mock.e)
             actual
     , testCase "Provable using one-path; not provable using all-path" $ do
         -- Axioms:
@@ -420,7 +421,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     , testCase "Priority: should succeed, prefering axiom with priority 1" $ do
         -- Axioms:
@@ -460,7 +461,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left $ Pattern.fromTermLike Mock.c)
+            (Left $ OrPattern.fromTermLike Mock.c)
             actual
     ]
 

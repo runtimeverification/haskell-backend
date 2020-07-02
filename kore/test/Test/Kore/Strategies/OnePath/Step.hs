@@ -870,7 +870,7 @@ runSteps
 runOnePathSteps
     :: Goal goal
     => Ord goal
-    => From (Rule goal) (Attribute.Axiom.Priority, Attribute.Axiom.Owise)
+    => From (Rule goal) Attribute.Axiom.PriorityAttributes
     => Limit Natural
     -> Limit Natural
     -> goal

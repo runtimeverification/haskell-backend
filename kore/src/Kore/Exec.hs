@@ -224,7 +224,10 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 let
                     updateQueue = \as ->
                         Strategy.unfoldDepthFirst as
-                        >=> lift . Strategy.applyBreadthLimit breadthLimit
+                        >=> lift
+                            . Strategy.applyBreadthLimit
+                                breadthLimit
+                                dropStrategy
                     transit instr config =
                         Strategy.transitionRule transitionRule instr config
                         & runTransitionT
@@ -238,6 +241,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return (exitCode, finalTerm)
   where
+    dropStrategy = snd
     -- Get the first final configuration of an execution graph.
     getFinalConfigOf = takeFirstResult >=> orElseBottom
       where
