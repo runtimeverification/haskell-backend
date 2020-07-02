@@ -156,6 +156,7 @@ library:
   source-dirs: src
 
 _common-exe: &common-exe
+  ghc-options: -eventlog
   when:
     - condition: flag(threaded)
       then:
