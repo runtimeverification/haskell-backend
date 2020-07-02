@@ -259,9 +259,9 @@ exec breadthLimit verifiedModule strategy initialTerm =
         takeFirstResult act =
             Logic.observeT (takeResult <$> lift act) & runMaybeT
         orElseBottom =
-            pure
-            . fromMaybe
-                (ExecState (Pattern.bottomOf initialSort, ExecutionDepth 0))
+            let def = ExecState (Pattern.bottomOf initialSort, ExecutionDepth 0)
+            in
+                pure . fromMaybe def
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin

@@ -34,17 +34,17 @@ data InfoExecutionLength =
 instance Pretty InfoExecutionLength where
     pretty (UnprovenConfiguration depth) =
         Pretty.hsep
-            [ "Final execution length of the longest proven claim: "
+            [ "Final execution length of the longest proven claim:"
             , Pretty.pretty (getDepth depth)
             ]
     pretty (LongestProvenClaim depth) =
         Pretty.hsep
-            [ "Final execution length of an unproven configuration: "
+            [ "Final execution length of an unproven configuration:"
             , Pretty.pretty (getDepth depth)
             ]
     pretty (ExecutionLength depth) =
         Pretty.hsep
-            [ "Execution length: "
+            [ "Final execution length:"
             , Pretty.pretty (getDepth depth)
             ]
 

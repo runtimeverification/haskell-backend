@@ -609,7 +609,7 @@ logTransitionRule
 logTransitionRule rule prim proofState = case proofState of
     Goal _ goal          -> logWith goal
     GoalRemainder _ goal -> logWith goal
-    _                        -> rule prim proofState
+    _                    -> rule prim proofState
   where
     logWith goal = case prim of
         Simplify ->
