@@ -61,7 +61,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Log.InfoProofLength
+import Kore.Log.InfoExecutionLength
     ( infoProofLength
     )
 import qualified Kore.Profiler.Profile as Profile
@@ -236,7 +236,9 @@ verifyClaim
   =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = ProofState.Goal ProofState.depth0 $ getConfiguration goal
+        startPattern =
+            ProofState.Goal (ProofState.ExecutionDepth 0)
+                $ getConfiguration goal
         limitedStrategy =
             strategy goal claims axioms
             & Foldable.toList
@@ -247,7 +249,7 @@ verifyClaim
                 (Strategy.unfoldTransition transit)
                 (limitedStrategy, startPattern)
                 & fmap discardStrategy
-    
+
     proofStateList <- Logic.observeAllT proofStatesLogicT
     infoProofLength proofStateList
     handle

@@ -12,6 +12,7 @@ import Test.Tasty
 
 import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens
+import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
     )
@@ -74,6 +75,7 @@ import Kore.Step.RulePattern as RulePattern
     , rulePattern
     )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
 
 import Test.Kore
@@ -147,7 +149,8 @@ takeSteps (Start start, wrappedAxioms) =
             Unlimited
             transitionRule
             (repeat $ priorityAllStrategy axioms)
-            (pure configuration)
+            (ExecState (pure configuration, ProofState.ExecutionDepth 0))
+        & fmap (Bifunctor.first (fst . getState))
 
 compareTo
     :: HasCallStack
@@ -530,7 +533,12 @@ runStep
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy
+        Unlimited
+        transitionRule
+        [priorityAllStrategy axioms]
+        (ExecState (configuration, ProofState.ExecutionDepth 0))
+    & fmap (Bifunctor.first (fst . getState))
 
 runStepMockEnv
     :: Pattern VariableName
@@ -540,4 +548,9 @@ runStepMockEnv
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy
+        Unlimited
+        transitionRule
+        [priorityAllStrategy axioms]
+        (ExecState (configuration, ProofState.ExecutionDepth 0))
+    & fmap (Bifunctor.first (fst . getState))

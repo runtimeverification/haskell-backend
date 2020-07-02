@@ -85,6 +85,10 @@ import Control.Monad.State.Strict
     ( MonadState
     )
 import qualified Control.Monad.State.Strict as State
+import Data.Bifunctor
+    ( Bifunctor
+    )
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
@@ -269,6 +273,12 @@ data ExecutionGraph config rule = ExecutionGraph
     }
     deriving (Eq, Show)
     deriving (GHC.Generic)
+
+instance Bifunctor ExecutionGraph where
+    first f (ExecutionGraph root graph) =
+        ExecutionGraph root (Bifunctor.first f graph)
+    second g (ExecutionGraph root graph) =
+        ExecutionGraph root (Bifunctor.second (fmap g) graph)
 
 -- | A temporary data structure used to construct the 'ExecutionGraph'.
 -- Well, it was intended to be temporary, but for the purpose of making

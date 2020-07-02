@@ -5,13 +5,12 @@ License     : NCSA
 module Kore.Strategies.ProofState
     ( extractGoalRem
     , extractUnproven
-    , depth0
     , extractDepth
     , increment
     , incrementDepth
     , isProven
     , changeDepth
-    , Depth (..)
+    , ExecutionDepth (..)
     , ProofState (..)
     , Prim (..)
     , proofState
@@ -81,29 +80,26 @@ instance Unparse goal => Pretty (Prim goal) where
             $ ["Transition DeriveSeq with rules:"]
             <> fmap (Pretty.indent 4 . unparse) rules
 
-newtype Depth = Depth { getDepth :: Natural}
+newtype ExecutionDepth = ExecutionDepth { getDepth :: Natural}
     deriving (Eq, Show, Ord, Hashable, Debug, Diff)
 
-depth0 :: Depth
-depth0 = Depth 0
-
-increment :: Depth -> Depth
-increment (Depth d) = Depth (d + 1)
+increment :: ExecutionDepth -> ExecutionDepth
+increment (ExecutionDepth d) = ExecutionDepth (d + 1)
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
 data ProofState goal
-    = Goal Depth !goal
+    = Goal ExecutionDepth !goal
     -- ^ The indicated goal is being proven.
-    | GoalRemainder Depth !goal
+    | GoalRemainder ExecutionDepth !goal
     -- ^ The indicated goal remains after rewriting.
-    | GoalRewritten Depth !goal
+    | GoalRewritten ExecutionDepth !goal
     -- ^ We already rewrote the goal this step.
-    | GoalStuck Depth !goal
+    | GoalStuck ExecutionDepth !goal
     -- ^ If the terms unify and the condition does not imply
     -- the goal, the proof is stuck. This state should be reachable
     -- only by applying RemoveDestination.
-    | Proven Depth
+    | Proven ExecutionDepth
     -- ^ The parent goal was proven.
     deriving (Eq, Show, Ord, Functor, GHC.Generic)
 
@@ -164,7 +160,7 @@ extractGoalRem :: ProofState a -> Maybe a
 extractGoalRem (GoalRemainder _ t) = Just t
 extractGoalRem _           = Nothing
 
-extractDepth :: ProofState a -> Depth
+extractDepth :: ProofState a -> ExecutionDepth
 extractDepth (Goal d _)    = d
 extractDepth (GoalRewritten d _) = d
 extractDepth (GoalRemainder d _) = d
@@ -174,7 +170,10 @@ extractDepth (Proven d)      = d
 incrementDepth :: ProofState a -> ProofState a
 incrementDepth = changeDepth increment
 
-changeDepth :: (Depth -> Depth) -> ProofState a -> ProofState a
+changeDepth
+    :: (ExecutionDepth -> ExecutionDepth)
+    -> ProofState a
+    -> ProofState a
 changeDepth f (Goal d t)    = Goal (f d) t
 changeDepth f (GoalRewritten d t) = GoalRewritten (f d) t
 changeDepth f (GoalRemainder d t) = GoalRemainder (f d) t

@@ -954,7 +954,7 @@ deriveSeq lensRulePattern mkRule =
 deriveResults
     :: (RewriteRule RewritingVariableName -> Rule goal)
     -> Step.Results RulePattern VariableName
-    -> Depth
+    -> ExecutionDepth
     -> Strategy.TransitionT (Rule goal) simplifier
         (ProofState.ProofState (Pattern VariableName))
 -- TODO (thomas.tuegel): Remove goal argument.

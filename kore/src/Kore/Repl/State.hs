@@ -138,9 +138,9 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
-    ( ProofState (Goal)
+    ( ExecutionDepth (..)
+    , ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
-    , depth0
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
@@ -163,7 +163,7 @@ emptyExecutionGraph =
   where
     extractConfig :: RewriteRule VariableName -> CommonProofState
     extractConfig (RewriteRule RulePattern { left, requires }) =
-        Goal depth0 $ Conditional left requires mempty
+        Goal (ExecutionDepth 0) $ Conditional left requires mempty
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)

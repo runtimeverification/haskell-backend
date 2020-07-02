@@ -68,7 +68,7 @@ import Test.Terse
 test_unprovenNodes :: [TestTree]
 test_unprovenNodes =
     [ Goal.unprovenNodes
-        (emptyExecutionGraph $ ProofState.Proven ProofState.depth0)
+        (emptyExecutionGraph $ ProofState.Proven (ProofState.ExecutionDepth 0))
         `satisfies_`
         Foldable.null
     , Goal.unprovenNodes
@@ -82,37 +82,37 @@ test_unprovenNodes =
         $  "returns single unproven node"
     , Goal.unprovenNodes
         (goal 0
-            & insNode (1, ProofState.Goal ProofState.depth0 1)
-            & insNode (2, ProofState.Proven ProofState.depth0)
+            & insNode (1, ProofState.Goal (ProofState.ExecutionDepth 0) 1)
+            & insNode (2, ProofState.Proven (ProofState.ExecutionDepth 0))
         )
         `equals_`
         MultiOr.MultiOr [0, 1]
     , Goal.unprovenNodes
         (goal 0
-            & subgoal 0 (1, ProofState.Goal (ProofState.Depth 1) 1)
-            & subgoal 0 (2, ProofState.Proven (ProofState.Depth 1))
+            & subgoal 0 (1, ProofState.Goal (ProofState.ExecutionDepth 1) 1)
+            & subgoal 0 (2, ProofState.Proven (ProofState.ExecutionDepth 1))
         )
         `equals_`
         MultiOr.MultiOr [1]
     , Goal.unprovenNodes
         (goal 0
-            & subgoal 0 (1, ProofState.Goal (ProofState.Depth 1) 1)
-            & subgoal 1 (2, ProofState.Goal (ProofState.Depth 2) 2)
-            & subgoal 2 (3, ProofState.Proven (ProofState.Depth 3))
+            & subgoal 0 (1, ProofState.Goal (ProofState.ExecutionDepth 1) 1)
+            & subgoal 1 (2, ProofState.Goal (ProofState.ExecutionDepth 2) 2)
+            & subgoal 2 (3, ProofState.Proven (ProofState.ExecutionDepth 3))
         )
         `equals_`
         MultiOr.MultiOr []
     , Goal.unprovenNodes
         (goal 0
-            & subgoal 0 (1, ProofState.GoalRemainder (ProofState.Depth 1) 1)
-            & subgoal 0 (2, ProofState.Proven (ProofState.Depth 1))
+            & subgoal 0 (1, ProofState.GoalRemainder (ProofState.ExecutionDepth 1) 1)
+            & subgoal 0 (2, ProofState.Proven (ProofState.ExecutionDepth 1))
         )
         `equals_`
         MultiOr.MultiOr [1]
     ]
   where
     goal :: Integer -> ExecutionGraph
-    goal n = emptyExecutionGraph (ProofState.Goal ProofState.depth0 n)
+    goal n = emptyExecutionGraph (ProofState.Goal (ProofState.ExecutionDepth 0) n)
 
     subgoal
         :: Gr.Node
@@ -123,9 +123,9 @@ test_unprovenNodes =
 
 test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
-    [ done $ ProofState.Proven ProofState.depth0
-    , unmodified (ProofState.Goal          ProofState.depth0 (A, B))
-    , unmodified (ProofState.GoalRemainder ProofState.depth0 (A, B))
+    [ done $ ProofState.Proven (ProofState.ExecutionDepth 0)
+    , unmodified (ProofState.Goal          (ProofState.ExecutionDepth 0) (A, B))
+    , unmodified (ProofState.GoalRemainder (ProofState.ExecutionDepth 0) (A, B))
     ]
   where
     run = runTransitionRule ProofState.CheckProven
@@ -136,9 +136,9 @@ test_transitionRule_CheckProven =
 
 test_transitionRule_CheckGoalRem :: [TestTree]
 test_transitionRule_CheckGoalRem =
-    [ unmodified $ ProofState.Proven ProofState.depth0
-    , unmodified (ProofState.Goal          ProofState.depth0 (A, B))
-    , done       (ProofState.GoalRemainder ProofState.depth0 (A, B))
+    [ unmodified $ ProofState.Proven (ProofState.ExecutionDepth 0)
+    , unmodified (ProofState.Goal          (ProofState.ExecutionDepth 0) (A, B))
+    , done       (ProofState.GoalRemainder (ProofState.ExecutionDepth 0) (A, B))
     ]
   where
     run = runTransitionRule ProofState.CheckGoalRemainder
@@ -149,10 +149,10 @@ test_transitionRule_CheckGoalRem =
 
 test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
-    [ unmodified $ ProofState.Proven ProofState.depth0
-    , unmodified (ProofState.GoalRemainder ProofState.depth0 (A, B))
-    , ProofState.Goal ProofState.depth0 (B, B)
-        `becomes` (ProofState.Goal (ProofState.Depth 0) (Bot, B), mempty)
+    [ unmodified $ ProofState.Proven (ProofState.ExecutionDepth 0)
+    , unmodified (ProofState.GoalRemainder (ProofState.ExecutionDepth 0) (A, B))
+    , ProofState.Goal (ProofState.ExecutionDepth 0) (B, B)
+        `becomes` (ProofState.Goal (ProofState.ExecutionDepth 0) (Bot, B), mempty)
     ]
   where
     run = runTransitionRule ProofState.RemoveDestination
@@ -162,10 +162,10 @@ test_transitionRule_RemoveDestination =
 
 test_transitionRule_TriviallyValid :: [TestTree]
 test_transitionRule_TriviallyValid =
-    [ unmodified    (ProofState.Proven        ProofState.depth0)
-    , unmodified    (ProofState.Goal          ProofState.depth0 (A, B))
-    , unmodified    (ProofState.GoalRemainder ProofState.depth0 (A, B))
-    , becomesProven (ProofState.GoalRemainder ProofState.depth0 (Bot, B))
+    [ unmodified    (ProofState.Proven        (ProofState.ExecutionDepth 0))
+    , unmodified    (ProofState.Goal          (ProofState.ExecutionDepth 0) (A, B))
+    , unmodified    (ProofState.GoalRemainder (ProofState.ExecutionDepth 0) (A, B))
+    , becomesProven (ProofState.GoalRemainder (ProofState.ExecutionDepth 0) (Bot, B))
     ]
   where
     run = runTransitionRule ProofState.TriviallyValid
@@ -173,25 +173,25 @@ test_transitionRule_TriviallyValid =
     unmodified state = run state `equals_` [(state, mempty)]
     becomesProven :: HasCallStack => ProofState -> TestTree
     becomesProven state = run state
-        `equals_` [(ProofState.Proven ProofState.depth0, mempty)]
+        `equals_` [(ProofState.Proven (ProofState.ExecutionDepth 0), mempty)]
 
 test_transitionRule_DerivePar :: [TestTree]
 test_transitionRule_DerivePar =
-    [ unmodified (ProofState.Proven ProofState.depth0)
-    , unmodified (ProofState.GoalRewritten ProofState.depth0 (A, B))
+    [ unmodified (ProofState.Proven (ProofState.ExecutionDepth 0))
+    , unmodified (ProofState.GoalRewritten (ProofState.ExecutionDepth 0) (A, B))
     , [Rule (A, C)]
         `derives`
-        [   ( ProofState.Goal (ProofState.Depth 1) (C, C), Seq.singleton
+        [   ( ProofState.Goal (ProofState.ExecutionDepth 1) (C, C), Seq.singleton
                 $ Rule (A, C)
             )
-        , (ProofState.GoalRemainder (ProofState.Depth 1) (Bot, C), mempty)
+        , (ProofState.GoalRemainder (ProofState.ExecutionDepth 1) (Bot, C), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [   ( ProofState.Goal (ProofState.Depth 1) (B, C), Seq.singleton
+        [   ( ProofState.Goal (ProofState.ExecutionDepth 1) (B, C), Seq.singleton
                 $ Rule (A, B)
             )
-        , (ProofState.GoalRemainder (ProofState.Depth 1) (Bot, C), mempty)
+        , (ProofState.GoalRemainder (ProofState.ExecutionDepth 1) (Bot, C), mempty)
         ]
     ]
   where
@@ -207,7 +207,7 @@ test_transitionRule_DerivePar =
         -> TestTree
     derives rules =
         equals_
-            (run rules $ ProofState.GoalRemainder (ProofState.Depth 0) (A, C))
+            (run rules $ ProofState.GoalRemainder (ProofState.ExecutionDepth 0) (A, C))
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
@@ -241,7 +241,7 @@ test_runStrategy =
             Unlimited
             Goal.transitionRule
             (Foldable.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
-            (ProofState.Goal ProofState.depth0 . unRule $ goal)
+            (ProofState.Goal (ProofState.ExecutionDepth 0) . unRule $ goal)
     disproves
         :: HasCallStack
         => [Goal.Rule Goal]

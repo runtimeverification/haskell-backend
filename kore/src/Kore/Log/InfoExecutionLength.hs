@@ -3,31 +3,35 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
 
-module Kore.Log.InfoProofLength
-    ( InfoProofLength
+module Kore.Log.InfoExecutionLength
+    ( InfoExecutionLength
     , infoProofLength
+    , infoExecutionLength
     ) where
 
 import Prelude.Kore
 
-import Control.Monad
 import Control.Error
     ( maximumMay
     )
+import Control.Monad
+import Kore.Strategies.ProofState
+import Log
 import Numeric.Natural
     ( Natural
     )
-import Kore.Strategies.ProofState
-import Log
 import Pretty
     ( Pretty
     )
 import qualified Pretty
 
-data InfoProofLength = UnprovenConfiguration Depth | LongestProvenClaim Depth
+data InfoExecutionLength =
+    UnprovenConfiguration ExecutionDepth
+    | LongestProvenClaim ExecutionDepth
+    | ExecutionLength ExecutionDepth
     deriving Show
 
-instance Pretty InfoProofLength where
+instance Pretty InfoExecutionLength where
     pretty (UnprovenConfiguration depth) =
         Pretty.hsep
             [ "Final execution length of the longest proven claim: "
@@ -38,8 +42,13 @@ instance Pretty InfoProofLength where
             [ "Final execution length of an unproven configuration: "
             , Pretty.pretty (getDepth depth)
             ]
+    pretty (ExecutionLength depth) =
+        Pretty.hsep
+            [ "Execution length: "
+            , Pretty.pretty (getDepth depth)
+            ]
 
-instance Entry InfoProofLength where
+instance Entry InfoExecutionLength where
     entrySeverity _ = Info
     helpDoc _ = "log proof length"
 
@@ -49,9 +58,9 @@ infoProofLength
     -> log ()
 infoProofLength proofStateList =
     case depthLongestProven proofStateList of
-        Just n -> logEntry (LongestProvenClaim (Depth n))
+        Just n -> logEntry (LongestProvenClaim (ExecutionDepth n))
         _ -> forM_ (depthSomeUnproven proofStateList)
-            (logEntry . UnprovenConfiguration . Depth )
+            (logEntry . UnprovenConfiguration . ExecutionDepth )
   where
     depthLongestProven :: [ProofState goal] -> Maybe Natural
     depthLongestProven proofStates =
@@ -66,3 +75,10 @@ infoProofLength proofStateList =
         & filter (not . isProven)
         & fmap (getDepth . extractDepth)
         & headMay
+
+infoExecutionLength
+    :: MonadLog log
+    => ExecutionDepth
+    -> log ()
+infoExecutionLength depth =
+    logEntry $ ExecutionLength depth
