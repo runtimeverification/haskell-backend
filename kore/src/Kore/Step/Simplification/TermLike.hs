@@ -379,6 +379,8 @@ simplifyInternal term sideCondition = do
         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
+            -- TODO: how should this case be handled?
+            DefinedF _ -> doNotSimplify
             -- Do not simplify non-simplifiable patterns.
             EvaluatedF  _ -> doNotSimplify
             EndiannessF _ -> doNotSimplify

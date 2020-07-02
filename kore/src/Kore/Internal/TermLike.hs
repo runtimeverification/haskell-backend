@@ -10,6 +10,7 @@ module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
     , Evaluated (..)
+    , Defined (..)
     , Builtin
     , extractAttributes
     , isSimplified
@@ -644,6 +645,7 @@ forceSortPredicate
     case pattern' of
         -- Recurse
         EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
+        DefinedF defined -> DefinedF (Right <$> defined)
         -- Predicates: Force sort and stop.
         BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
         TopF top' -> TopF top' { topSort = forcedSort }
