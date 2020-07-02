@@ -50,7 +50,7 @@ instance Pretty InfoExecutionLength where
 
 instance Entry InfoExecutionLength where
     entrySeverity _ = Info
-    helpDoc _ = "log proof length"
+    helpDoc _ = "log execution or proof length"
 
 infoProofLength
     :: MonadLog log
