@@ -89,6 +89,9 @@ import qualified Logic
 
 type CommonProofState = ProofState.ProofState ReachabilityRule
 
+-- | Extracts the left hand side (configuration) from the
+-- 'CommonProofState'. If the 'ProofState' is 'Proven', then
+-- the configuration will be '\\bottom'.
 lhsProofStateTransformer
     :: ProofStateTransformer
         ReachabilityRule
