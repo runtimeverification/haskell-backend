@@ -26,6 +26,7 @@ import Control.Monad
     )
 import qualified Control.Monad as Monad
     ( foldM_
+    , void
     )
 import Control.Monad.Catch
     ( MonadCatch
@@ -249,20 +250,19 @@ verifyClaim
                 (Strategy.unfoldTransition transit)
                 (limitedStrategy, startPattern)
                 & fmap discardStrategy
+        result = handle handleLimitExceeded $ proofStatesLogicT & throwUnproven
 
-    proofStateList <- Logic.observeAllT proofStatesLogicT
+    proofStateList <- result
     infoProofLength proofStateList
-    handle
-        handleLimitExceeded
-        $ proofStatesLogicT
-            & throwUnproven
+
+    Monad.void result
   where
     destination = getDestination goal
     discardStrategy = snd
 
     handleLimitExceeded
         :: Strategy.LimitExceeded CommonProofState
-        -> ExceptT (OrPattern VariableName) simplifier ()
+        -> ExceptT (OrPattern VariableName) simplifier [CommonProofState]
     handleLimitExceeded (Strategy.LimitExceeded patterns) =
         Monad.Except.throwError
         . OrPattern.fromPatterns
@@ -281,20 +281,20 @@ verifyClaim
 
     throwUnproven
         :: LogicT (Verifier simplifier) CommonProofState
-        -> Verifier simplifier ()
+        -> Verifier simplifier [CommonProofState]
     throwUnproven acts =
         Logic.runLogicT acts throwUnprovenOrElse done
       where
-        done = return ()
+        done = return []
 
     throwUnprovenOrElse
         :: ProofState.ProofState (Pattern VariableName)
-        -> Verifier simplifier ()
-        -> Verifier simplifier ()
+        -> Verifier simplifier [CommonProofState]
+        -> Verifier simplifier [CommonProofState]
     throwUnprovenOrElse proofState acts = do
         ProofState.extractUnproven proofState
             & Foldable.traverse_ (Monad.Except.throwError . OrPattern.fromPattern)
-        acts
+        fmap (proofState : ) acts
 
     transit instr config =
         Strategy.transitionRule modifiedTransitionRule instr config
