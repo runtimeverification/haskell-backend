@@ -69,6 +69,9 @@ import qualified Kore.Step.Simplification.Builtin as Builtin
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( simplify
     )
+import qualified Kore.Step.Simplification.Defined as Defined
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
     ( simplify
     )
@@ -379,8 +382,6 @@ simplifyInternal term sideCondition = do
         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
-            -- TODO: how should this case be handled?
-            DefinedF _ -> doNotSimplify
             -- Do not simplify non-simplifiable patterns.
             EvaluatedF  _ -> doNotSimplify
             EndiannessF _ -> doNotSimplify
@@ -478,5 +479,7 @@ simplifyInternal term sideCondition = do
                 return $ InternalBytes.simplify (getConst internalBytesF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
+            DefinedF definedF ->
+                Defined.simplify <$> simplifyChildren definedF
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
