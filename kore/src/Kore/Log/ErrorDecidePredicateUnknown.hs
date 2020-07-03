@@ -4,9 +4,9 @@ License     : NCSA
 
 -}
 
-module Kore.Log.WarnDecidePredicateUnknown
-    ( WarnDecidePredicateUnknown (..)
-    , warnDecidePredicateUnknown
+module Kore.Log.ErrorDecidePredicateUnknown
+    ( ErrorDecidePredicateUnknown (..)
+    , errorDecidePredicateUnknown
     ) where
 
 import Prelude.Kore
@@ -27,14 +27,14 @@ import Pretty
     )
 import qualified Pretty
 
-newtype WarnDecidePredicateUnknown =
-    WarnDecidePredicateUnknown
+newtype ErrorDecidePredicateUnknown =
+    ErrorDecidePredicateUnknown
         { predicates :: NonEmpty (Predicate VariableName)
         }
     deriving (Show)
 
-instance Pretty WarnDecidePredicateUnknown where
-    pretty WarnDecidePredicateUnknown { predicates } =
+instance Pretty ErrorDecidePredicateUnknown where
+    pretty ErrorDecidePredicateUnknown { predicates } =
         Pretty.vsep
         ( ["Failed to decide predicate:", Pretty.indent 4 (unparse predicate)]
         ++ do
@@ -44,16 +44,17 @@ instance Pretty WarnDecidePredicateUnknown where
       where
        predicate :| sideConditions = predicates
 
-instance Entry WarnDecidePredicateUnknown where
-    entrySeverity _ = Warning
-    helpDoc _ = "warn when the solver cannot decide satisfiability of a formula"
+instance Entry ErrorDecidePredicateUnknown where
+    entrySeverity _ = Error
+    helpDoc _ =
+        "errors raised when the solver cannot decide satisfiability of a formula"
 
-warnDecidePredicateUnknown
+errorDecidePredicateUnknown
     :: MonadLog log
     => InternalVariable variable
     => NonEmpty (Predicate variable)
     -> log ()
-warnDecidePredicateUnknown predicates' =
-    logEntry WarnDecidePredicateUnknown { predicates }
+errorDecidePredicateUnknown predicates' =
+    logEntry ErrorDecidePredicateUnknown { predicates }
   where
     predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'
