@@ -391,8 +391,6 @@ makeSimplifiedCeil
     needsChildCeils = case termLikeF of
         ApplyAliasF _ -> False
         EvaluatedF  _ -> False
-        -- TODO: since the whole term is defined
-        -- the children don't need ceils
         DefinedF  _ -> False
         EndiannessF _ -> True
         SignednessF _ -> True

@@ -5,6 +5,7 @@ module Test.Kore.Internal.TermLike
     , test_refreshVariables
     , test_hasConstructorLikeTop
     , test_renaming
+    , test_mkDefined
     --
     , termLikeGen
     , termLikeChildGen
@@ -40,6 +41,7 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import Kore.Attribute.Synthetic
     ( resynthesize
+    , synthesize
     )
 import Kore.Domain.Builtin
     ( Builtin (..)
@@ -422,3 +424,50 @@ test_renaming =
                 updatesFreeVariables renamed
                 doesNotCapture (inject Mock.setY) renamed
             ]
+
+test_mkDefined :: [TestTree]
+test_mkDefined =
+    [ testCase "Nested and, functional symbol" $ do
+        let term =
+                mkAnd
+                    (mkAnd
+                        mkTop_
+                        (Mock.functional11 (Mock.f mkTop_))
+                    )
+                    mkTop_
+            expected =
+                defined
+                    (mkAnd
+                        (defined
+                            (mkAnd
+                                mkTop_
+                                (Mock.functional11
+                                    (defined (Mock.f mkTop_))
+                                )
+                            )
+                        )
+                        mkTop_
+                    )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Nested or, ceils, functional symbol" $ do
+        let term =
+                mkOr
+                    (mkOr
+                        mkBottom_
+                        (mkCeil_ (Mock.f mkTop_))
+                    )
+                    Mock.c
+            expected =
+                mkOr
+                    (mkOr
+                        mkBottom_
+                        (mkCeil_ (defined (Mock.f mkTop_)))
+                    )
+                    Mock.c
+            actual = mkDefined term
+        assertEqual "" expected actual
+    ]
+  where
+    defined :: TermLike VariableName -> TermLike VariableName
+    defined = synthesize . DefinedF . Defined
