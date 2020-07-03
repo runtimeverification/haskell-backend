@@ -1461,9 +1461,7 @@ mkDefined = updateCallStack . Recursive.cata worker
                     then synthesize patt
                     else mkDefined' (synthesize patt)
             ApplyAliasF _ -> mkDefined' (synthesize patt)
-            BottomF _ ->
-                synthesize patt
-                -- error "TODO: error message"
+            BottomF _ -> synthesize patt
             CeilF _ -> synthesize patt
             DomainValueF _ -> mkDefined' (synthesize patt)
             EqualsF _ -> mkDefined' (synthesize patt)
