@@ -174,6 +174,8 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
     , module Variable
+    -- * For testing
+    , mkDefinedAtTop
     ) where
 
 import Prelude.Kore
@@ -1455,33 +1457,33 @@ mkDefined = updateCallStack . Recursive.cata worker
     worker (_ :< patt) =
         case patt of
             AndF _ ->
-               mkDefined' (synthesize patt)
+               mkDefinedAtTop (synthesize patt)
             ApplySymbolF (Application symbol _) ->
                 if isFunctional symbol
                     then synthesize patt
-                    else mkDefined' (synthesize patt)
-            ApplyAliasF _ -> mkDefined' (synthesize patt)
+                    else mkDefinedAtTop (synthesize patt)
+            ApplyAliasF _ -> mkDefinedAtTop (synthesize patt)
             BottomF _ -> synthesize patt
             CeilF _ -> synthesize patt
-            DomainValueF _ -> mkDefined' (synthesize patt)
-            EqualsF _ -> mkDefined' (synthesize patt)
-            ExistsF _ -> mkDefined' (synthesize patt)
-            FloorF _ -> mkDefined' (synthesize patt)
-            ForallF _ -> mkDefined' (synthesize patt)
-            IffF _ -> mkDefined' (synthesize patt)
-            ImpliesF _ -> mkDefined' (synthesize patt)
-            InF _ -> mkDefined' (synthesize patt)
-            MuF _ -> mkDefined' (synthesize patt)
-            NextF _ -> mkDefined' (synthesize patt)
-            NotF _ -> mkDefined' (synthesize patt)
-            NuF _ -> mkDefined' (synthesize patt)
+            DomainValueF _ -> mkDefinedAtTop (synthesize patt)
+            EqualsF _ -> mkDefinedAtTop (synthesize patt)
+            ExistsF _ -> mkDefinedAtTop (synthesize patt)
+            FloorF _ -> mkDefinedAtTop (synthesize patt)
+            ForallF _ -> mkDefinedAtTop (synthesize patt)
+            IffF _ -> mkDefinedAtTop (synthesize patt)
+            ImpliesF _ -> mkDefinedAtTop (synthesize patt)
+            InF _ -> mkDefinedAtTop (synthesize patt)
+            MuF _ -> mkDefinedAtTop (synthesize patt)
+            NextF _ -> mkDefinedAtTop (synthesize patt)
+            NotF _ -> mkDefinedAtTop (synthesize patt)
+            NuF _ -> mkDefinedAtTop (synthesize patt)
             OrF _ -> synthesize patt
-            RewritesF _ -> mkDefined' (synthesize patt)
+            RewritesF _ -> mkDefinedAtTop (synthesize patt)
             TopF _ -> synthesize patt
-            InhabitantF _ -> mkDefined' (synthesize patt)
-            BuiltinF (Domain.BuiltinMap _) -> mkDefined' (synthesize patt)
-            BuiltinF (Domain.BuiltinList _) -> mkDefined' (synthesize patt)
-            BuiltinF (Domain.BuiltinSet _) -> mkDefined' (synthesize patt)
+            InhabitantF _ -> mkDefinedAtTop (synthesize patt)
+            BuiltinF (Domain.BuiltinMap _) -> mkDefinedAtTop (synthesize patt)
+            BuiltinF (Domain.BuiltinList _) -> mkDefinedAtTop (synthesize patt)
+            BuiltinF (Domain.BuiltinSet _) -> mkDefinedAtTop (synthesize patt)
             BuiltinF (Domain.BuiltinInt _) -> synthesize patt
             BuiltinF (Domain.BuiltinBool _) -> synthesize patt
             BuiltinF (Domain.BuiltinString _) -> synthesize patt
@@ -1491,13 +1493,14 @@ mkDefined = updateCallStack . Recursive.cata worker
             VariableF (Const variable) ->
                 if isElementVariable variable
                     then synthesize patt
-                    else mkDefined' (synthesize patt)
-            EndiannessF _ -> mkDefined' (synthesize patt)
-            SignednessF _ -> mkDefined' (synthesize patt)
-            InjF _ -> mkDefined' (synthesize patt)
+                    else mkDefinedAtTop (synthesize patt)
+            EndiannessF _ -> mkDefinedAtTop (synthesize patt)
+            SignednessF _ -> mkDefinedAtTop (synthesize patt)
+            InjF _ -> mkDefinedAtTop (synthesize patt)
             DefinedF _ -> synthesize patt
 
-    mkDefined' = synthesize . DefinedF . Defined
+mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
+mkDefinedAtTop = synthesize . DefinedF . Defined
 
 {- | Construct an 'Endianness' pattern.
  -}

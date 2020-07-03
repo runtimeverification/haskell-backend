@@ -15,9 +15,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Test.Tasty
 
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
@@ -1001,7 +998,7 @@ test_simplificationIntegration =
         assertEqual "" expected actual
     ]
   where
-    defined = synthesize . DefinedF . Defined
+    defined = mkDefinedAtTop
 
 test_simplificationIntegrationUnification :: [TestTree]
 test_simplificationIntegrationUnification =

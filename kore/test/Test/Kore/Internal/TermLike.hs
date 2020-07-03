@@ -41,7 +41,6 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import Kore.Attribute.Synthetic
     ( resynthesize
-    , synthesize
     )
 import Kore.Domain.Builtin
     ( Builtin (..)
@@ -470,4 +469,4 @@ test_mkDefined =
     ]
   where
     defined :: TermLike VariableName -> TermLike VariableName
-    defined = synthesize . DefinedF . Defined
+    defined = mkDefinedAtTop

@@ -15,7 +15,6 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
 
-
 -- | Marks an 'OrPattern' resulted from simplification
 -- as 'Defined'. Does not do any actual simplification.
 simplify
