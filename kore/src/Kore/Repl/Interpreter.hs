@@ -76,6 +76,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import qualified Data.Graph.Inductive.Query.BFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
 import Data.IORef
@@ -251,6 +252,7 @@ replInterpreter0 printAux printKore replCmd = do
                 OmitCell c            -> omitCell c              $> Continue
                 ShowLeafs             -> showLeafs               $> Continue
                 ShowRule   mc         -> showRule mc             $> Continue
+                ShowRules  ns         -> showRules ns            $> Continue
                 ShowPrecBranch mn     -> showPrecBranch mn       $> Continue
                 ShowChildren mn       -> showChildren mn         $> Continue
                 Label ms              -> label ms                $> Continue
@@ -634,6 +636,37 @@ showRule configNode = do
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
+
+showRules
+    :: Monad m
+    => (ReplNode, ReplNode)
+    -> ReplM m ()
+showRules (ReplNode node1, ReplNode node2) = do
+    graph <- getInnerGraph
+    axioms <- Lens.use (field @"axioms")
+    let path =
+            Graph.lesp node1 node2 graph
+            & Graph.unLPath
+            & Map.fromList
+    let ruleIndexes =
+            Map.map (fmap (from @_ @Attribute.RuleIndex)) path
+    putStrLn' $ Map.foldrWithKey (acc (length axioms)) "Rules applied:" ruleIndexes
+  where
+    acc num key element result =
+        result
+        <> "\n  to reach node "
+        <> show key
+        <> " the following rules were applied: "
+        <> foldl
+            (oneStepRules num)
+            ""
+            element
+    oneStepRules num result rules =
+        result
+        <> " "
+        <> if null rules
+            then "Implication checking."
+            else showAxiomOrClaim num <$> rules
 
 -- | Shows the previous branching point.
 showPrecBranch

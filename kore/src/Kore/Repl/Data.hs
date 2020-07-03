@@ -235,6 +235,9 @@ data ReplCommand
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
     | ShowRule !(Maybe ReplNode)
     -- ^ Show the rule(s) that got us to this configuration.
+    | ShowRules !(ReplNode, ReplNode)
+    -- ^ Show the rules which were applied from the first node
+    -- to reach the second.
     | ShowPrecBranch !(Maybe ReplNode)
     -- ^ Show the first preceding branch.
     | ShowChildren !(Maybe ReplNode)

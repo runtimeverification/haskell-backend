@@ -107,7 +107,7 @@ nonRecursiveCommand =
         , showConfig
         , omitCell
         , showLeafs
-        , showRule
+        , ruleCommandsParser
         , showPrecBranch
         , showChildren
         , try labelAdd
@@ -194,10 +194,21 @@ omitCell = OmitCell <$$> literal "omit" *> maybeWord
 showLeafs :: Parser ReplCommand
 showLeafs = const ShowLeafs <$$> literal "leafs"
 
+ruleCommandsParser :: Parser ReplCommand
+ruleCommandsParser =
+    try showRules <|> showRule
+
 showRule :: Parser ReplCommand
 showRule = do
     dec <- literal "rule" *> maybeDecimal
     return $ ShowRule (fmap ReplNode dec)
+
+showRules :: Parser ReplCommand
+showRules = do
+    literal "rules"
+    node1 <- decimal
+    node2 <- decimal
+    return $ ShowRules (ReplNode node1, ReplNode node2)
 
 showPrecBranch :: Parser ReplCommand
 showPrecBranch = do
