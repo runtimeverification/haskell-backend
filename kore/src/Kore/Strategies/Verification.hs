@@ -494,11 +494,6 @@ withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where
     config =
-        case proofState of
-            ProofState.Goal a -> Just a
-            ProofState.GoalRewritten a -> Just a
-            ProofState.GoalRemainder a -> Just a
-            ProofState.GoalStuck a -> Just a
-            ProofState.Proven -> Nothing
+        ProofState.extractUnproven proofState
         & fmap (Lens.view leftPattern . toRulePattern)
     handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config
