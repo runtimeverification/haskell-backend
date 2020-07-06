@@ -62,8 +62,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Log.InfoExecutionLength
-    ( infoProofLength
+import Kore.Log.InfoExecutionDepth
+    ( infoProofDepth
     )
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
@@ -253,7 +253,7 @@ verifyClaim
         result = handle handleLimitExceeded $ proofStatesLogicT & throwUnproven
 
     proofStateList <- result
-    infoProofLength proofStateList
+    infoProofDepth proofStateList
 
     Monad.void result
   where

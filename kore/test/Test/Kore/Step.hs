@@ -12,7 +12,6 @@ import Test.Tasty
 
 import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens
-import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
     )
@@ -25,6 +24,9 @@ import Data.Text
     ( Text
     )
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Exec
+    ( discardNodesDepth
+    )
 import Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
     , SmtMetadataTools
@@ -150,7 +152,7 @@ takeSteps (Start start, wrappedAxioms) =
             transitionRule
             (repeat $ priorityAllStrategy axioms)
             (ExecState (pure configuration, ProofState.ExecutionDepth 0))
-        & fmap (Bifunctor.first (fst . getState))
+        & fmap discardNodesDepth
 
 compareTo
     :: HasCallStack
@@ -538,7 +540,7 @@ runStep configuration axioms =
         transitionRule
         [priorityAllStrategy axioms]
         (ExecState (configuration, ProofState.ExecutionDepth 0))
-    & fmap (Bifunctor.first (fst . getState))
+    & fmap discardNodesDepth
 
 runStepMockEnv
     :: Pattern VariableName
@@ -553,4 +555,4 @@ runStepMockEnv configuration axioms =
         transitionRule
         [priorityAllStrategy axioms]
         (ExecState (configuration, ProofState.ExecutionDepth 0))
-    & fmap (Bifunctor.first (fst . getState))
+    & fmap discardNodesDepth

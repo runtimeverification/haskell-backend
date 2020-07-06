@@ -9,7 +9,8 @@ Portability : portable
 Expose concrete execution as a library
 -}
 module Kore.Exec
-    ( exec
+    ( discardNodesDepth
+    , exec
     , extractRules
     , mergeAllRules
     , mergeRulesConsecutiveBatches
@@ -104,8 +105,8 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
-import Kore.Log.InfoExecutionLength
-    ( infoExecutionLength
+import Kore.Log.InfoExecutionDepth
+    ( infoExecutionDepth
     )
 import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
@@ -246,7 +247,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
                     ( strategy rewriteRules
                     , ExecState (initialConfig, ExecutionDepth 0)
                     )
-        infoExecutionLength executionLength
+        infoExecutionDepth executionLength
         exitCode <- getExitCode verifiedModule finalConfig
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return (exitCode, finalTerm)
@@ -346,7 +347,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
             searchGraph
                 searchConfig
                 (match SideCondition.topTODO searchPattern)
-                (Bifunctor.first (fst . getState) executionGraph)
+                (discardNodesDepth executionGraph)
         let
             solutions = concatMap MultiOr.extractPatterns solutionsLists
             orPredicate =
@@ -355,6 +356,10 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
   where
     patternSort = termLikeSort termLike
 
+discardNodesDepth
+    :: Strategy.ExecutionGraph ExecState c
+    -> Strategy.ExecutionGraph (Pattern VariableName) c
+discardNodesDepth = Bifunctor.first (fst . getState)
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
