@@ -62,6 +62,7 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import qualified SMT
+import qualified System.Clock as Clock
 
 import GlobalMain
 
@@ -89,8 +90,8 @@ data KoreReplOptions = KoreReplOptions
     , koreLogOptions   :: !KoreLogOptions
     }
 
-parseKoreReplOptions :: Parser KoreReplOptions
-parseKoreReplOptions =
+parseKoreReplOptions :: Clock.TimeSpec -> Parser KoreReplOptions
+parseKoreReplOptions startTime =
     KoreReplOptions
     <$> parseMainModule
     <*> parseKoreProveOptions
@@ -99,7 +100,7 @@ parseKoreReplOptions =
     <*> parseScriptModeOutput
     <*> parseReplScript
     <*> parseOutputFile
-    <*> parseKoreLogOptions (ExeName "kore-repl")
+    <*> parseKoreLogOptions (ExeName "kore-repl") startTime
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -190,7 +191,12 @@ exeName = ExeName "kore-repl"
 
 main :: IO ()
 main = do
-    options <- mainGlobal Main.exeName parseKoreReplOptions parserInfoModifiers
+    startTime <- Clock.getTime Clock.Monotonic
+    options <-
+        mainGlobal
+            Main.exeName
+            (parseKoreReplOptions startTime)
+            parserInfoModifiers
     case localOptions options of
         Nothing -> pure ()
         Just koreReplOptions -> mainWithOptions koreReplOptions

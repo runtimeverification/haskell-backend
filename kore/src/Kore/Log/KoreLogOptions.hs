@@ -74,6 +74,7 @@ import Kore.Log.SQLite
     , parseLogSQLiteOptions
     )
 import Log
+import qualified System.Clock as Clock
 import qualified Pretty
 
 {- | Command line options for logging.
@@ -89,6 +90,7 @@ data KoreLogOptions = KoreLogOptions
     -- ^ extra entries to show, ignoring 'logLevel'
     , debugSolverOptions :: !DebugSolverOptions
     , exeName :: !ExeName
+    , startTime :: !Clock.TimeSpec
     , logSQLiteOptions :: !LogSQLiteOptions
     , warningSwitch :: !WarningSwitch
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
@@ -106,6 +108,7 @@ instance Default KoreLogOptions where
             , logEntries = mempty
             , debugSolverOptions = def @DebugSolverOptions
             , exeName = ExeName mempty
+            , startTime = Clock.fromNanoSecs 0
             , logSQLiteOptions = def @LogSQLiteOptions
             , warningSwitch = def @WarningSwitch
             , debugApplyEquationOptions = def @DebugApplyEquationOptions
@@ -161,8 +164,8 @@ parseTimestampsSwitch =
         in Options.flag' TimestampsDisable info
 
 -- | Parse 'KoreLogOptions'.
-parseKoreLogOptions :: ExeName -> Parser KoreLogOptions
-parseKoreLogOptions exeName =
+parseKoreLogOptions :: ExeName -> Clock.TimeSpec -> Parser KoreLogOptions
+parseKoreLogOptions exeName startTime =
     KoreLogOptions
     <$> (parseKoreLogType <|> pure LogStdErr)
     <*> (parseSeverity <|> pure Warning)
@@ -170,6 +173,7 @@ parseKoreLogOptions exeName =
     <*> (mconcat <$> many parseEntryTypes)
     <*> parseDebugSolverOptions
     <*> pure exeName
+    <*> pure startTime
     <*> parseLogSQLiteOptions
     <*> parseWarningSwitch
     <*> parseDebugApplyEquationOptions
@@ -382,6 +386,7 @@ unparseKoreLogOptions
         timestampsSwitch
         logEntries
         debugSolverOptions
+        _
         _
         logSQLiteOptions
         warningSwitch

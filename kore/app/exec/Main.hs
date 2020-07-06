@@ -70,6 +70,7 @@ import System.Exit
     ( ExitCode (..)
     , exitWith
     )
+import qualified System.Clock as Clock
 import System.FilePath
     ( (</>)
     )
@@ -304,8 +305,8 @@ data KoreExecOptions = KoreExecOptions
     }
 
 -- | Command Line Argument Parser
-parseKoreExecOptions :: Parser KoreExecOptions
-parseKoreExecOptions =
+parseKoreExecOptions :: Clock.TimeSpec -> Parser KoreExecOptions
+parseKoreExecOptions startTime =
     applyKoreSearchOptions
         <$> optional parseKoreSearchOptions
         <*> parseKoreExecOptions0
@@ -349,7 +350,7 @@ parseKoreExecOptions =
         <*> parseBreadthLimit
         <*> parseDepthLimit
         <*> parseStrategy
-        <*> parseKoreLogOptions (ExeName "kore-exec")
+        <*> parseKoreLogOptions (ExeName "kore-exec") startTime
         <*> pure Nothing
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
@@ -554,7 +555,12 @@ exeName = ExeName "kore-exec"
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    options <- mainGlobal Main.exeName parseKoreExecOptions parserInfoModifiers
+    startTime <- Clock.getTime Clock.Monotonic
+    options <-
+        mainGlobal
+            Main.exeName
+            (parseKoreExecOptions startTime)
+            parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
