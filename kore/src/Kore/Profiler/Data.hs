@@ -85,11 +85,11 @@ class Monad profiler => MonadProfiler profiler where
             , dumpIdentifier = Nothing
             , destination = GhcEventsAnalyze
             , logBranching = False
-            , logStrategy = True
-            , logSimplification = False
+            , logStrategy = False
+            , logSimplification = True
             , logInitialization = False
-            , logEvaluation = True
-            , logSmt = True
+            , logEvaluation = False
+            , logSmt = False
             }
     {-# INLINE profileConfiguration #-}
 
