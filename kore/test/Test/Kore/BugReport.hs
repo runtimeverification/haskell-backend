@@ -21,7 +21,9 @@ import Kore.Log.KoreLogOptions
 import Kore.Log.Registry
     ( entryTypeReps
     )
-import qualified System.Clock as Clock
+import System.Clock
+    ( fromNanoSecs
+    )
 
 import Options.Applicative
 
@@ -85,7 +87,7 @@ parseKoreLogOpts arguments =
     execParserPure
         defaultPrefs
         ( info
-            (parseKoreLogOptions (ExeName "kore-exec") (Clock.fromNanoSecs 0))
+            (parseKoreLogOptions (ExeName "kore-exec") (fromNanoSecs 0))
             fullDesc
         )
         arguments

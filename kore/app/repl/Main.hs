@@ -62,7 +62,11 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import qualified SMT
-import qualified System.Clock as Clock
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
 
 import GlobalMain
 
@@ -90,7 +94,7 @@ data KoreReplOptions = KoreReplOptions
     , koreLogOptions   :: !KoreLogOptions
     }
 
-parseKoreReplOptions :: Clock.TimeSpec -> Parser KoreReplOptions
+parseKoreReplOptions :: TimeSpec -> Parser KoreReplOptions
 parseKoreReplOptions startTime =
     KoreReplOptions
     <$> parseMainModule
@@ -191,7 +195,7 @@ exeName = ExeName "kore-repl"
 
 main :: IO ()
 main = do
-    startTime <- Clock.getTime Clock.Monotonic
+    startTime <- getTime Monotonic
     options <-
         mainGlobal
             Main.exeName

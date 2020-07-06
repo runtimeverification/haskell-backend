@@ -56,6 +56,11 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
 import System.Directory
     ( copyFile
     , doesFileExist
@@ -70,7 +75,6 @@ import System.Exit
     ( ExitCode (..)
     , exitWith
     )
-import qualified System.Clock as Clock
 import System.FilePath
     ( (</>)
     )
@@ -305,7 +309,7 @@ data KoreExecOptions = KoreExecOptions
     }
 
 -- | Command Line Argument Parser
-parseKoreExecOptions :: Clock.TimeSpec -> Parser KoreExecOptions
+parseKoreExecOptions :: TimeSpec -> Parser KoreExecOptions
 parseKoreExecOptions startTime =
     applyKoreSearchOptions
         <$> optional parseKoreSearchOptions
@@ -555,7 +559,7 @@ exeName = ExeName "kore-exec"
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    startTime <- Clock.getTime Clock.Monotonic
+    startTime <- getTime Monotonic
     options <-
         mainGlobal
             Main.exeName

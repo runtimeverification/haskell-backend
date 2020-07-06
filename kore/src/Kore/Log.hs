@@ -53,24 +53,8 @@ import Control.Monad.Cont
 import Data.Functor.Contravariant
     ( contramap
     )
-import Data.String
-    ( IsString
-    , fromString
-    )
 import Data.Text
     ( Text
-    )
-import Data.Time.Clock
-    ( getCurrentTime
-    )
-import Data.Time.Format
-    ( defaultTimeLocale
-    , formatTime
-    )
-import Data.Time.LocalTime
-    ( LocalTime
-    , getCurrentTimeZone
-    , utcToLocalTime
     )
 import qualified Pretty
 
@@ -86,13 +70,20 @@ import Kore.Log.Registry
     )
 import Kore.Log.SQLite
 import Log
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , diffTimeSpec
+    , getTime
+    , toNanoSecs
+    )
 import System.FilePath
     ( (<.>)
     , (</>)
     )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
-data WithTimestamp = WithTimestamp ActualEntry LocalTime
+data WithTimestamp = WithTimestamp ActualEntry TimeSpec
 
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
 -- the CPS style because some outputters require cleanup (e.g. files).
@@ -115,7 +106,7 @@ withMainLogger
     -> (LogAction IO ActualEntry -> IO a)
     -> IO a
 withMainLogger reportDirectory koreLogOptions = runContT $ do
-    let KoreLogOptions { exeName } = koreLogOptions
+    let KoreLogOptions { exeName, startTime } = koreLogOptions
         bugReportLogFile = reportDirectory </> getExeName exeName <.> "log"
     bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
     userLogAction <-
@@ -125,7 +116,7 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
     let KoreLogOptions { timestampsSwitch } = koreLogOptions
         logAction =
             userLogAction <> bugReportLogAction
-            & makeKoreLogger exeName timestampsSwitch
+            & makeKoreLogger exeName startTime timestampsSwitch
             & koreLogFilters koreLogOptions
             & koreLogTransformer koreLogOptions
     pure logAction
@@ -230,15 +221,16 @@ makeKoreLogger
     :: forall m
     .  MonadIO m
     => ExeName
+    -> TimeSpec
     -> TimestampsSwitch
     -> LogAction m Text
     -> LogAction m ActualEntry
-makeKoreLogger exeName timestampSwitch logToText =
-    Colog.cmapM withTimestamp
-    $ contramap messageToText logToText
+makeKoreLogger exeName startTime timestampSwitch logToText =
+    Colog.cmapM (withTimestamp startTime)
+        $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
-    messageToText (WithTimestamp entry localTime) =
+    messageToText (WithTimestamp entry elapsedTime) =
         Pretty.renderText
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         $ prettyActualEntry timestamp entry
@@ -246,10 +238,15 @@ makeKoreLogger exeName timestampSwitch logToText =
         timestamp =
             case timestampSwitch of
                 TimestampsDisable -> Nothing
-                TimestampsEnable ->
-                    Just $ Pretty.brackets (formattedTime localTime)
+                TimestampsEnable -> Just $
+                    Pretty.brackets
+                        $ Pretty.hsep
+                            [ "Microseconds since startup:"
+                            , Pretty.pretty
+                                $ (toMicroseconds . toNanoSecs) elapsedTime
+                            ]
+        toMicroseconds = (`div` 1000)
     exeName' = Pretty.pretty exeName <> Pretty.colon
-    formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
     prettyActualEntry timestamp ActualEntry { actualEntry, entryContext } =
         (Pretty.vsep . concat)
         [ [header]
@@ -285,17 +282,10 @@ makeKoreLogger exeName timestampSwitch logToText =
     indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.
-withTimestamp :: MonadIO io => ActualEntry -> io WithTimestamp
-withTimestamp msg = WithTimestamp msg <$> getLocalTime
-
--- Helper to get the local time in 'MonadIO'.
-getLocalTime :: MonadIO m => m LocalTime
-getLocalTime =
-    liftIO $ utcToLocalTime <$> getCurrentTimeZone <*> getCurrentTime
-
--- Formats the local time using the provided format string.
-formatLocalTime :: IsString s => String -> LocalTime -> s
-formatLocalTime format = fromString . formatTime defaultTimeLocale format
+withTimestamp :: MonadIO io => TimeSpec -> ActualEntry -> io WithTimestamp
+withTimestamp startTime msg = liftIO $ do
+    currentTime <- getTime Monotonic
+    pure $ WithTimestamp msg (diffTimeSpec currentTime startTime)
 
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
@@ -303,10 +293,11 @@ emptyLogger = mempty
 stderrLogger
     :: MonadIO io
     => ExeName
+    -> TimeSpec
     -> TimestampsSwitch
     -> LogAction io ActualEntry
-stderrLogger exeName timestampsSwitch =
-    makeKoreLogger exeName timestampsSwitch Colog.logTextStderr
+stderrLogger exeName startTime timestampsSwitch =
+    makeKoreLogger exeName startTime timestampsSwitch Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
