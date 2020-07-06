@@ -196,7 +196,7 @@ class Goal goal where
     goalToRule = coerce
 
     -- TODO (thomas.tuegel): isTriviallyValid should be part of
-    -- checkImplication. why is this so slow?
+    -- checkImplication.
     isTriviallyValid :: goal -> Bool
 
     checkImplication
