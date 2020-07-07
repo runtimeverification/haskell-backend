@@ -30,15 +30,22 @@ import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
     , handle
+    , handleAll
+    , throwM
     )
 import Control.Monad.Except
     ( ExceptT
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
+import Data.Coerce
+    ( coerce
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
-import qualified Data.Stream.Infinite as Stream
+import Data.List.Extra
+    ( groupSortOn
+    )
 import Data.Text
     ( Text
     )
@@ -52,6 +59,7 @@ import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Debug
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -61,6 +69,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Log.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
     ( AllPathRule (..)
@@ -68,6 +77,7 @@ import Kore.Step.RulePattern
     , RHS
     , ReachabilityRule (..)
     , leftPattern
+    , toRulePattern
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -84,11 +94,22 @@ import Kore.Step.Transition
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
-    ( ProofStateTransformer (..)
+    ( ProofState
+    , ProofStateTransformer (..)
     )
 import qualified Kore.Strategies.ProofState as ProofState
+    ( ProofState (..)
+    , extractUnproven
+    , proofState
+    )
+import qualified Kore.Strategies.ProofState as Prim
+    ( Prim (..)
+    )
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Log
+    ( MonadLog (..)
+    )
 import Logic
     ( LogicT
     )
@@ -235,7 +256,7 @@ verifyClaim
     let
         startPattern = ProofState.Goal $ getConfiguration goal
         limitedStrategy =
-            strategy goal claims axioms
+            strategy
             & Foldable.toList
             & Limit.takeWithin depthLimit
     handle
@@ -249,6 +270,7 @@ verifyClaim
   where
     destination = getDestination goal
     discardStrategy = snd
+    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
     handleLimitExceeded
         :: Strategy.LimitExceeded CommonProofState
@@ -293,14 +315,20 @@ verifyClaim
         & lift
 
     modifiedTransitionRule
-        ::  Prim ReachabilityRule
+        ::  Prim
         ->  CommonProofState
         ->  TransitionT (Rule ReachabilityRule) (Verifier simplifier)
                 CommonProofState
     modifiedTransitionRule prim proofState' = do
         transitions <-
-            lift . lift . runTransitionT
-            $ transitionRule' goal destination prim proofState'
+            transitionRule'
+                claims
+                axiomGroups
+                goal
+                destination
+                prim
+                proofState'
+            & lift . lift . runTransitionT
         Transition.scatter transitions
 
 -- | Attempts to perform a single proof step, starting at the configuration
@@ -320,21 +348,28 @@ verifyClaimStep
     -> Graph.Node
     -- ^ selected node in the graph
     -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
-verifyClaimStep target claims axioms eg@ExecutionGraph { root } node =
-    executionHistoryStep (transitionRule' target destination) strategy' eg node
+verifyClaimStep target claims axioms executionGraph node =
+    executionHistoryStep
+        (transitionRule' claims axiomGroups target destination)
+        strategy'
+        executionGraph
+        node
   where
     destination = getDestination target
+    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
-    strategy' :: Strategy (Prim ReachabilityRule)
+    strategy' :: Strategy Prim
     strategy'
         | isRoot = firstStep
         | otherwise = followupStep
 
-    firstStep :: Strategy (Prim ReachabilityRule)
-    firstStep = strategy target claims axioms Stream.!! 0
+    firstStep :: Strategy Prim
+    firstStep = reachabilityFirstStep
 
-    followupStep :: Strategy (Prim ReachabilityRule)
-    followupStep = strategy target claims axioms Stream.!! 1
+    followupStep :: Strategy Prim
+    followupStep = reachabilityNextStep
+
+    ExecutionGraph { root } = executionGraph
 
     isRoot :: Bool
     isRoot = node == root
@@ -342,16 +377,23 @@ verifyClaimStep target claims axioms eg@ExecutionGraph { root } node =
 transitionRule'
     :: forall simplifier
     .  (MonadCatch simplifier, MonadSimplify simplifier)
-    => ReachabilityRule
+    => [ReachabilityRule]
+    -> [[Rule ReachabilityRule]]
+    -> ReachabilityRule
     -> RHS VariableName
-    -> Prim ReachabilityRule
+    -> Prim
     -> CommonProofState
     -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
-transitionRule' goal _ prim state = do
+transitionRule' claims axiomGroups goal _ prim state = do
     let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
-    next <- transitionRule prim goal'
+    next <- transit prim goal'
     pure $ fmap getConfiguration next
   where
+    transit =
+        transitionRule claims axiomGroups
+        & withConfiguration
+        & withDebugProofState
+        & logTransitionRule
     lensReachabilityConfig =
         Lens.lens
             (\case
@@ -366,3 +408,92 @@ transitionRule' goal _ prim state = do
                 AllPath (AllPathRule rulePattern) -> \b ->
                     (AllPath . AllPathRule) (Lens.set leftPattern b rulePattern)
             )
+
+logTransitionRule
+    :: forall m
+    .  MonadSimplify m
+    => TransitionRule m ReachabilityRule
+    -> TransitionRule m ReachabilityRule
+logTransitionRule rule prim proofState =
+    case proofState of
+        ProofState.Goal goal          -> logWith goal
+        ProofState.GoalRemainder goal -> logWith goal
+        _                  -> rule prim proofState
+  where
+    logWith goal = case prim of
+        Prim.Simplify ->
+            whileSimplify goal $ rule prim proofState
+        Prim.CheckImplication ->
+            whileCheckImplication goal $ rule prim proofState
+        _ ->
+            rule prim proofState
+
+debugProofStateBracket
+    :: forall monad
+    .  MonadLog monad
+    => ProofState ReachabilityRule
+    -- ^ current proof state
+    -> Prim
+    -- ^ transition
+    -> monad (ProofState ReachabilityRule)
+    -- ^ action to be computed
+    -> monad (ProofState ReachabilityRule)
+debugProofStateBracket
+    proofState
+    (coerce -> transition)
+    action
+  = do
+    result <- action
+    logEntry DebugProofState
+        { proofState
+        , transition
+        , result = Just result
+        }
+    return result
+
+debugProofStateFinal
+    :: forall monad
+    .  Alternative monad
+    => MonadLog monad
+    => ProofState ReachabilityRule
+    -- ^ current proof state
+    -> Prim
+    -- ^ transition
+    -> monad (ProofState ReachabilityRule)
+debugProofStateFinal proofState (coerce -> transition) = do
+    logEntry DebugProofState
+        { proofState
+        , transition
+        , result = Nothing
+        }
+    empty
+
+withDebugProofState
+    :: forall monad
+    .  MonadLog monad
+    => TransitionRule monad ReachabilityRule
+    -> TransitionRule monad ReachabilityRule
+withDebugProofState transitionFunc =
+    \transition state ->
+        Transition.orElse
+            (debugProofStateBracket
+                state
+                transition
+                (transitionFunc transition state)
+            )
+            (debugProofStateFinal
+                state
+                transition
+            )
+
+withConfiguration
+    :: MonadCatch monad
+    => TransitionRule monad ReachabilityRule
+    -> TransitionRule monad ReachabilityRule
+withConfiguration transit prim proofState =
+    handle' (transit prim proofState)
+  where
+    config =
+        ProofState.extractUnproven proofState
+        & fmap (Lens.view leftPattern . toRulePattern)
+    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config
