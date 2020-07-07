@@ -853,10 +853,10 @@ tryAxiomClaimWorker mode ref = do
                 proofState
                     ProofStateTransformer
                         { provenValue        = const $ putStrLn' "Cannot unify bottom"
-                        , goalTransformer = const $ patternUnifier
-                        , goalRemainderTransformer = const $ patternUnifier
-                        , goalRewrittenTransformer = const $ patternUnifier
-                        , goalStuckTransformer = const $ patternUnifier
+                        , goalTransformer = const patternUnifier
+                        , goalRemainderTransformer = const patternUnifier
+                        , goalRewrittenTransformer = const patternUnifier
+                        , goalStuckTransformer = const patternUnifier
                         }
                     second
               where
