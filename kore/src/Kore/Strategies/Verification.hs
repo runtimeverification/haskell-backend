@@ -270,7 +270,7 @@ verifyClaim
                 (Strategy.unfoldTransition transit)
                 (limitedStrategy, startPattern)
                 & fmap discardStrategy
-    handle handleLimitExceeded $ proofStatesLogicT & throwUnproven    
+    handle handleLimitExceeded $ proofStatesLogicT & throwUnproven
   where
     destination = getDestination goal
     discardStrategy = snd
