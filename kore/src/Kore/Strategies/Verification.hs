@@ -270,16 +270,7 @@ verifyClaim
                 (Strategy.unfoldTransition transit)
                 (limitedStrategy, startPattern)
                 & fmap discardStrategy
-        resultExceptT =
-            handle handleLimitExceeded $ proofStatesLogicT & throwUnproven
-        {-result = Monad.Except.runExceptT resultExceptT
-
-    resultEither <- lift result
-    case resultEither of
-        Left (depth, _) -> Log.logEntry . UnprovenConfiguration $ depth
-        Right proofStateList -> infoProofDepth proofStateList
-    -}
-    resultExceptT
+    handle handleLimitExceeded $ proofStatesLogicT & throwUnproven    
   where
     destination = getDestination goal
     discardStrategy = snd
@@ -287,9 +278,7 @@ verifyClaim
     handleLimitExceeded
         :: Strategy.LimitExceeded CommonProofState
         -> ExceptT
-            ( ProofState.ExecutionDepth
-            , OrPattern VariableName
-            )
+            (ProofState.ExecutionDepth, OrPattern VariableName)
             simplifier
             [CommonProofState]
     handleLimitExceeded (Strategy.LimitExceeded patterns) =

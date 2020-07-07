@@ -437,38 +437,35 @@ instance Goal ReachabilityRule where
             Goal depth (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
-                <$> transitionRule
-                    (primRuleOnePath prim) (Goal depth rule)
+                <$> transitionRule (primRuleOnePath prim) (Goal depth rule)
             Goal depth (AllPath rule) ->
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
-                <$> transitionRule
-                    (primRuleAllPath prim)
-                    (Goal depth rule)
+                <$> transitionRule (primRuleAllPath prim) (Goal depth rule)
             GoalRewritten depth (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
                 <$> transitionRule
-                    (primRuleOnePath prim)
-                    (GoalRewritten depth rule)
+                        (primRuleOnePath prim)
+                        (GoalRewritten depth rule)
             GoalRewritten depth (AllPath rule) ->
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule
-                    (primRuleAllPath prim)
-                    (GoalRewritten depth rule)
+                        (primRuleAllPath prim)
+                        (GoalRewritten depth rule)
             GoalRemainder depth (OnePath rule) ->
                 Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
                 <$> transitionRule
-                    (primRuleOnePath prim)
-                    (GoalRemainder depth rule)
+                        (primRuleOnePath prim)
+                        (GoalRemainder depth rule)
             GoalRemainder depth (AllPath rule) ->
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule
-                    (primRuleAllPath prim)
-                    (GoalRemainder depth rule)
+                        (primRuleAllPath prim)
+                        (GoalRemainder depth rule)
             state@(GoalStuck _ _) ->
                 case prim of
                     CheckGoalStuck -> debugProofStateFinal state CheckGoalStuck
