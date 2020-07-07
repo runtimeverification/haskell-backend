@@ -20,6 +20,7 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
+import qualified Data.Bifunctor as Bifunctor
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
@@ -53,6 +54,7 @@ import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
+import qualified Data.Sequence as Seq
 import Kore.Debug
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -64,6 +66,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.InfoExecutionDepth
     ( infoProofDepth
+    )
+import Kore.Log.InfoExecutionDepth
+    ( InfoExecutionDepth (..)
     )
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
@@ -93,6 +98,8 @@ import Kore.Strategies.ProofState
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
 import Kore.Unparser
+import qualified Log
+
 import Logic
     ( LogicT
     )
@@ -104,14 +111,14 @@ type CommonProofState = ProofState.ProofState (Pattern VariableName)
 commonProofStateTransformer
     :: ProofStateTransformer
         (Pattern VariableName)
-        (Pattern VariableName)
+        (ProofState.ExecutionDepth, Pattern VariableName)
 commonProofStateTransformer =
     ProofStateTransformer
-        { goalTransformer = id
-        , goalRemainderTransformer = id
-        , goalRewrittenTransformer = id
-        , goalStuckTransformer = id
-        , provenValue = Pattern.bottom
+        { goalTransformer = (,)
+        , goalRemainderTransformer = (,)
+        , goalRewrittenTransformer = (,)
+        , goalStuckTransformer = (,)
+        , provenValue = flip (,) Pattern.bottom
         }
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
@@ -120,7 +127,7 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (OrPattern VariableName) m
+type Verifier m = ExceptT (ProofState.ExecutionDepth, OrPattern VariableName) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -213,7 +220,13 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
         -> ExceptT Stuck simplifier [ReachabilityRule]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
-            verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
+            withExceptT snd $
+                verifyClaim
+                    breadthLimit
+                    searchOrder
+                    claims
+                    axioms
+                    unprovenClaim
             return (claim : provenClaims)
       where
         wrapStuckPattern :: OrPattern VariableName -> Stuck
@@ -227,7 +240,7 @@ verifyClaim
     -> AllClaims ReachabilityRule
     -> Axioms ReachabilityRule
     -> (ReachabilityRule, Limit Natural)
-    -> ExceptT (OrPattern VariableName) simplifier ()
+    -> ExceptT (ProofState.ExecutionDepth, OrPattern VariableName) simplifier ()
 verifyClaim
     breadthLimit
     searchOrder
@@ -250,25 +263,41 @@ verifyClaim
                 (Strategy.unfoldTransition transit)
                 (limitedStrategy, startPattern)
                 & fmap discardStrategy
-        result = handle handleLimitExceeded $ proofStatesLogicT & throwUnproven
-
-    proofStateList <- result
-    infoProofDepth proofStateList
-
-    Monad.void result
+        resultExceptT =
+            handle handleLimitExceeded $ proofStatesLogicT & throwUnproven
+        result = Monad.Except.runExceptT resultExceptT
+    
+    resultEither <- lift result
+    case resultEither of
+        Left (depth, _) -> Log.logEntry . UnprovenConfiguration $ depth
+        Right proofStateList -> infoProofDepth proofStateList
+        
+    Monad.void resultExceptT
   where
     destination = getDestination goal
     discardStrategy = snd
 
     handleLimitExceeded
         :: Strategy.LimitExceeded CommonProofState
-        -> ExceptT (OrPattern VariableName) simplifier [CommonProofState]
+        -> ExceptT
+            ( ProofState.ExecutionDepth
+            , OrPattern VariableName
+            )
+            simplifier
+            [CommonProofState]
     handleLimitExceeded (Strategy.LimitExceeded patterns) =
         Monad.Except.throwError
-        . OrPattern.fromPatterns
+        $ Bifunctor.bimap headOrZero OrPattern.fromPatterns
+        $ Seq.unzip
         $ fmap
             (ProofState.proofState commonProofStateTransformer)
             patterns
+      where
+        headOrZero
+            :: Seq.Seq ProofState.ExecutionDepth
+            -> ProofState.ExecutionDepth
+        headOrZero depths =
+            fromMaybe (ProofState.ExecutionDepth 0) $ Seq.lookup 0 depths
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -293,7 +322,11 @@ verifyClaim
         -> Verifier simplifier [CommonProofState]
     throwUnprovenOrElse proofState acts = do
         ProofState.extractUnproven proofState
-            & Foldable.traverse_ (Monad.Except.throwError . OrPattern.fromPattern)
+            & Foldable.traverse_
+                ( Monad.Except.throwError
+                . (,) (ProofState.extractDepth proofState)
+                . OrPattern.fromPattern
+                )
         fmap (proofState : ) acts
 
     transit instr config =

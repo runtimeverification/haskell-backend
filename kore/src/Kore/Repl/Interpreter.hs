@@ -852,11 +852,11 @@ tryAxiomClaimWorker mode ref = do
             Just (_, second) ->
                 proofState
                     ProofStateTransformer
-                        { provenValue        = putStrLn' "Cannot unify bottom"
-                        , goalTransformer = patternUnifier
-                        , goalRemainderTransformer = patternUnifier
-                        , goalRewrittenTransformer = patternUnifier
-                        , goalStuckTransformer = patternUnifier
+                        { provenValue        = const $ putStrLn' "Cannot unify bottom"
+                        , goalTransformer = const $ patternUnifier
+                        , goalRemainderTransformer = const $ patternUnifier
+                        , goalRewrittenTransformer = const $ patternUnifier
+                        , goalStuckTransformer = const $ patternUnifier
                         }
                     second
               where
@@ -986,7 +986,7 @@ savePartialProof maybeNatural file = do
             putStrLn' "Done."
   where
     unwrapConfig :: CommonProofState -> Pattern VariableName
-    unwrapConfig = proofState commonProofStateTransformer
+    unwrapConfig = snd . proofState commonProofStateTransformer
 
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
@@ -1211,16 +1211,16 @@ unparseStrategy
     -> ReplOutput
 unparseStrategy omitList =
     proofState ProofStateTransformer
-        { goalTransformer = makeKoreReplOutput . unparseToString . fmap hide
-        , goalRemainderTransformer = \pat ->
+        { goalTransformer = const $ makeKoreReplOutput . unparseToString . fmap hide
+        , goalRemainderTransformer = \_ pat ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseToString $ fmap hide pat)
-        , goalRewrittenTransformer =
+        , goalRewrittenTransformer = const $
             makeKoreReplOutput . unparseToString . fmap hide
-        , goalStuckTransformer = \pat ->
+        , goalStuckTransformer = \_ pat ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseToString $ fmap hide pat)
-        , provenValue = makeAuxReplOutput "Reached bottom"
+        , provenValue = const $ makeAuxReplOutput "Reached bottom"
         }
   where
     hide :: TermLike VariableName -> TermLike VariableName

@@ -4,7 +4,7 @@ License     : NCSA
 -}
 
 module Kore.Log.InfoExecutionDepth
-    ( InfoExecutionDepth
+    ( InfoExecutionDepth (..)
     , infoProofDepth
     , infoExecutionDepth
     ) where
@@ -34,12 +34,12 @@ data InfoExecutionDepth
 instance Pretty InfoExecutionDepth where
     pretty (UnprovenConfiguration depth) =
         Pretty.hsep
-            [ "Final execution length of the longest proven claim:"
+            [ "Final execution length of an unproven configuration:"
             , Pretty.pretty (getDepth depth)
             ]
     pretty (LongestProvenClaim depth) =
         Pretty.hsep
-            [ "Final execution length of an unproven configuration:"
+            [ "Final execution length of the longest proven claim:"
             , Pretty.pretty (getDepth depth)
             ]
     pretty (ExecutionLength depth) =

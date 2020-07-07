@@ -186,11 +186,11 @@ isProven _ = False
 
 data ProofStateTransformer a val =
     ProofStateTransformer
-        { goalTransformer :: a -> val
-        , goalRemainderTransformer :: a -> val
-        , goalRewrittenTransformer :: a -> val
-        , goalStuckTransformer :: a -> val
-        , provenValue :: val
+        { goalTransformer :: ExecutionDepth -> a -> val
+        , goalRemainderTransformer :: ExecutionDepth -> a -> val
+        , goalRewrittenTransformer :: ExecutionDepth -> a -> val
+        , goalStuckTransformer :: ExecutionDepth -> a -> val
+        , provenValue :: ExecutionDepth -> val
         }
 
 {- | Catamorphism for 'ProofState'
@@ -209,8 +209,8 @@ proofState
         }
   =
     \case
-        Goal _ goal -> goalTransformer goal
-        GoalRemainder _ goal -> goalRemainderTransformer goal
-        GoalRewritten _ goal -> goalRewrittenTransformer goal
-        GoalStuck _ goal -> goalStuckTransformer goal
-        Proven _ -> provenValue
+        Goal depth goal -> goalTransformer depth goal
+        GoalRemainder depth goal -> goalRemainderTransformer depth goal
+        GoalRewritten depth goal -> goalRewrittenTransformer depth goal
+        GoalStuck depth goal -> goalStuckTransformer depth goal
+        Proven depth -> provenValue depth

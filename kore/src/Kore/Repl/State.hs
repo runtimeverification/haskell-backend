@@ -567,11 +567,11 @@ getNodeState :: InnerGraph axiom -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
         . proofState ProofStateTransformer
-            { goalTransformer = const . Just $ UnevaluatedNode
-            , goalRemainderTransformer = const . Just $ StuckNode
-            , goalRewrittenTransformer = const . Just $ UnevaluatedNode
-            , goalStuckTransformer = const . Just $ StuckNode
-            , provenValue = Nothing
+            { goalTransformer = const . const . Just $ UnevaluatedNode
+            , goalRemainderTransformer = const . const . Just $ StuckNode
+            , goalRewrittenTransformer = const .const . Just $ UnevaluatedNode
+            , goalStuckTransformer = const . const . Just $ StuckNode
+            , provenValue = const Nothing
             }
         . Graph.lab'
         . Graph.context graph
@@ -583,11 +583,11 @@ nodeToPattern
     -> Maybe (Pattern VariableName)
 nodeToPattern graph node =
     proofState ProofStateTransformer
-        { goalTransformer = Just
-        , goalRemainderTransformer = Just
-        , goalRewrittenTransformer = Just
-        , goalStuckTransformer = Just
-        , provenValue = Nothing
+        { goalTransformer = const Just
+        , goalRemainderTransformer = const Just
+        , goalRewrittenTransformer = const Just
+        , goalStuckTransformer = const Just
+        , provenValue = const Nothing
         }
     . Graph.lab'
     . Graph.context graph
