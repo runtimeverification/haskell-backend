@@ -20,14 +20,12 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
-import qualified Data.Bifunctor as Bifunctor
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
 import qualified Control.Monad as Monad
     ( foldM_
-    , void
     )
 import Control.Monad.Catch
     ( MonadCatch
@@ -35,9 +33,12 @@ import Control.Monad.Catch
     )
 import Control.Monad.Except
     ( ExceptT
+    , catchError
+    , throwError
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
@@ -65,10 +66,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.InfoExecutionDepth
-    ( infoProofDepth
-    )
-import Kore.Log.InfoExecutionDepth
     ( InfoExecutionDepth (..)
+    , infoProofDepth
     )
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
@@ -219,19 +218,24 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
         -> (ReachabilityRule, Limit Natural)
         -> ExceptT Stuck simplifier [ReachabilityRule]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
-        withExceptT wrapStuckPattern $ do
-            withExceptT snd $
-                verifyClaim
-                    breadthLimit
-                    searchOrder
-                    claims
-                    axioms
-                    unprovenClaim
+        withExceptT (wrapStuckPattern . snd) $ do
+            let verified =
+                    verifyClaim
+                        breadthLimit
+                        searchOrder
+                        claims
+                        axioms
+                        unprovenClaim
+            proofStateList <- catchError verified logExceptionHandler
+            infoProofDepth proofStateList
             return (claim : provenClaims)
       where
         wrapStuckPattern :: OrPattern VariableName -> Stuck
         wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
 
+        logExceptionHandler e@(depth, _) = do
+            Log.logEntry $ UnprovenConfiguration depth
+            throwError e
 verifyClaim
     :: forall simplifier
     .  (MonadCatch simplifier, MonadSimplify simplifier)
@@ -240,7 +244,10 @@ verifyClaim
     -> AllClaims ReachabilityRule
     -> Axioms ReachabilityRule
     -> (ReachabilityRule, Limit Natural)
-    -> ExceptT (ProofState.ExecutionDepth, OrPattern VariableName) simplifier ()
+    -> ExceptT
+        (ProofState.ExecutionDepth, OrPattern VariableName)
+        simplifier
+        [CommonProofState]
 verifyClaim
     breadthLimit
     searchOrder
@@ -265,14 +272,14 @@ verifyClaim
                 & fmap discardStrategy
         resultExceptT =
             handle handleLimitExceeded $ proofStatesLogicT & throwUnproven
-        result = Monad.Except.runExceptT resultExceptT
-    
+        {-result = Monad.Except.runExceptT resultExceptT
+
     resultEither <- lift result
     case resultEither of
         Left (depth, _) -> Log.logEntry . UnprovenConfiguration $ depth
         Right proofStateList -> infoProofDepth proofStateList
-        
-    Monad.void resultExceptT
+    -}
+    resultExceptT
   where
     destination = getDestination goal
     discardStrategy = snd
