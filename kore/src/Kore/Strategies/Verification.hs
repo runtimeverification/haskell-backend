@@ -320,9 +320,7 @@ verifyClaim
 verifyClaimStep
     :: forall simplifier
     .  (MonadCatch simplifier, MonadSimplify simplifier)
-    => ReachabilityRule
-    -- ^ claim that is being proven
-    -> [ReachabilityRule]
+    => [ReachabilityRule]
     -- ^ list of claims in the spec module
     -> [Rule ReachabilityRule]
     -- ^ list of axioms in the main module
@@ -331,7 +329,7 @@ verifyClaimStep
     -> Graph.Node
     -- ^ selected node in the graph
     -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
-verifyClaimStep target claims axioms executionGraph node =
+verifyClaimStep claims axioms executionGraph node =
     executionHistoryStep
         (transitionRule' claims axioms)
         strategy'

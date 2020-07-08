@@ -497,13 +497,12 @@ data ReplState = ReplState
 -- | Configuration environment for the repl.
 data Config m = Config
     { stepper
-        :: Claim
-        -> [Claim]
+        :: [Claim]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> m (ExecutionGraph Axiom)
-    -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+    -- ^ Stepper function
     , unifier
         :: SideCondition VariableName
         -> TermLike VariableName

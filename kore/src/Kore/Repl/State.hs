@@ -521,12 +521,11 @@ runStepper'
     -> ReplNode
     -> t m (ExecutionGraph Axiom, StepResult)
 runStepper' claims axioms node = do
-    ReplState { claim } <- get
     stepper <- asks stepper
     mvar <- asks logger
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
-        liftSimplifierWithLogger mvar $ stepper claim claims axioms gph node
+        liftSimplifierWithLogger mvar $ stepper claims axioms gph node
     pure . (,) gr
         $ case Graph.suc innerGraph (unReplNode node) of
             []       -> NoResult
