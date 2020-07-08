@@ -94,6 +94,7 @@ data KoreReplOptions = KoreReplOptions
     , koreLogOptions   :: !KoreLogOptions
     }
 
+-- | Parse options after being given the value of startTime for KoreLogOptions
 parseKoreReplOptions :: TimeSpec -> Parser KoreReplOptions
 parseKoreReplOptions startTime =
     KoreReplOptions
