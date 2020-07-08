@@ -2,9 +2,10 @@ module Test.Kore.Strategies.AllPath.AllPath
     ( test_unprovenNodes
     , test_transitionRule_CheckProven
     , test_transitionRule_CheckGoalRem
-    , test_transitionRule_RemoveDestination
+    , test_transitionRule_CheckImplication
     , test_transitionRule_TriviallyValid
-    , test_transitionRule_DerivePar
+    , test_transitionRule_ApplyClaims
+    , test_transitionRule_ApplyAxioms
     , test_runStrategy
     ) where
 
@@ -26,10 +27,6 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
-import Data.Stream.Infinite
-    ( Stream (..)
-    )
-import qualified Data.Stream.Infinite as Stream
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -116,7 +113,7 @@ test_unprovenNodes =
 
     subgoal
         :: Gr.Node
-        -> (Gr.Node, Goal.ProofState Goal Integer)
+        -> (Gr.Node, ProofState.ProofState Integer)
         -> ExecutionGraph -> ExecutionGraph
     subgoal parent node@(child, _) =
         insEdge (parent, child) . insNode node
@@ -128,7 +125,7 @@ test_transitionRule_CheckProven =
     , unmodified (ProofState.GoalRemainder (A, B))
     ]
   where
-    run = runTransitionRule ProofState.CheckProven
+    run = runTransitionRule [] [] ProofState.CheckProven
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
@@ -141,20 +138,20 @@ test_transitionRule_CheckGoalRem =
     , done       (ProofState.GoalRemainder (A, B))
     ]
   where
-    run = runTransitionRule ProofState.CheckGoalRemainder
+    run = runTransitionRule [] [] ProofState.CheckGoalRemainder
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
     done state = run state `satisfies_` Foldable.null
 
-test_transitionRule_RemoveDestination :: [TestTree]
-test_transitionRule_RemoveDestination =
+test_transitionRule_CheckImplication :: [TestTree]
+test_transitionRule_CheckImplication =
     [ unmodified ProofState.Proven
     , unmodified (ProofState.GoalRemainder (A, B))
-    , ProofState.Goal (B, B) `becomes` (ProofState.Goal (Bot, B), mempty)
+    , ProofState.Goal (B, B) `becomes` (ProofState.Proven, mempty)
     ]
   where
-    run = runTransitionRule ProofState.RemoveDestination
+    run = runTransitionRule [] [] ProofState.CheckImplication
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     becomes initial final = run initial `equals_` [final]
@@ -167,29 +164,57 @@ test_transitionRule_TriviallyValid =
     , becomesProven (ProofState.GoalRemainder (Bot, B))
     ]
   where
-    run = runTransitionRule ProofState.TriviallyValid
+    run = runTransitionRule [] [] ProofState.TriviallyValid
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     becomesProven :: HasCallStack => ProofState -> TestTree
     becomesProven state = run state `equals_` [(ProofState.Proven, mempty)]
 
-test_transitionRule_DerivePar :: [TestTree]
-test_transitionRule_DerivePar =
+test_transitionRule_ApplyClaims :: [TestTree]
+test_transitionRule_ApplyClaims =
     [ unmodified ProofState.Proven
     , unmodified (ProofState.GoalRewritten    (A, B))
     , [Rule (A, C)]
         `derives`
-        [ (ProofState.Goal    (C,   C), Seq.singleton $ Rule (A, C))
+        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ Rule (A, C))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ProofState.Goal    (B  , C), Seq.singleton $ Rule (A, B))
+        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ Rule (A, B))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     ]
   where
-    run rules = runTransitionRule (ProofState.DerivePar rules)
+    run rules = runTransitionRule (map unRule rules) [] ProofState.ApplyClaims
+    unmodified :: HasCallStack => ProofState -> TestTree
+    unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
+    derives
+        :: HasCallStack
+        => [Goal.Rule Goal]
+        -- ^ rules to apply in parallel
+        -> [(ProofState, Seq (Goal.Rule Goal))]
+        -- ^ transitions
+        -> TestTree
+    derives rules = equals_ (run rules $ ProofState.GoalRemainder (A, C))
+
+test_transitionRule_ApplyAxioms :: [TestTree]
+test_transitionRule_ApplyAxioms =
+    [ unmodified ProofState.Proven
+    , unmodified (ProofState.GoalRewritten    (A, B))
+    , [Rule (A, C)]
+        `derives`
+        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ Rule (A, C))
+        , (ProofState.GoalRemainder (Bot, C), mempty)
+        ]
+    , fmap Rule [(A, B), (B, C)]
+        `derives`
+        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ Rule (A, B))
+        , (ProofState.GoalRemainder (Bot, C), mempty)
+        ]
+    ]
+  where
+    run rules = runTransitionRule [] [rules] ProofState.ApplyAxioms
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives
@@ -215,6 +240,7 @@ test_runStrategy =
 
     , [Rule (A, A)] `proves` (A, B)
     , [Rule (A, A)] `proves` (A, C)
+    , [Rule (A, A)] `disproves` (A, C) $ []
 
     , fmap Rule [(A, B), (A, C)] `proves`    (A, BorC)
     , fmap Rule [(A, B), (A, C)] `disproves` (A, B   ) $ [(C, B)]
@@ -231,8 +257,8 @@ test_runStrategy =
         . unAllPathIdentity
         $ Strategy.runStrategy
             Unlimited
-            Goal.transitionRule
-            (Foldable.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
+            (Goal.transitionRule [unRule goal] [axioms])
+            (Foldable.toList Goal.strategy)
             (ProofState.Goal . unRule $ goal)
     disproves
         :: HasCallStack
@@ -263,13 +289,13 @@ test_runStrategy =
 
 -- * Definitions
 
-type ExecutionGraph = Strategy.ExecutionGraph (Goal.ProofState Goal Integer) (Goal.Rule Goal)
+type ExecutionGraph = Strategy.ExecutionGraph (ProofState.ProofState Integer) (Goal.Rule Goal)
 
-emptyExecutionGraph :: Goal.ProofState Goal Integer -> ExecutionGraph
+emptyExecutionGraph :: ProofState.ProofState Integer -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph
 
 insNode
-    :: (Gr.Node, Goal.ProofState Goal Integer)
+    :: (Gr.Node, ProofState.ProofState Integer)
     -> ExecutionGraph
     -> ExecutionGraph
 insNode = Strategy.insNode
@@ -309,68 +335,49 @@ difference a    b
 
 type Goal = (K, K)
 
-type ProofState = Goal.ProofState Goal Goal
+type ProofState = ProofState.ProofState Goal
 
-type Prim = Goal.Prim Goal
+type Prim = Goal.Prim
 
 newtype instance Goal.Rule Goal =
     Rule { unRule :: (K, K) }
     deriving (Eq, GHC.Generic, Show)
 
 instance Goal.Goal Goal where
-    type Prim Goal = ProofState.Prim (Goal.Rule Goal)
-
-    type ProofState Goal = ProofState.ProofState
-
-    strategy _ goals rules =
-        firstStep :> Stream.iterate id nextStep
+    checkImplication (src, dst)
+      | src' == Bot = return Goal.Implied
+      | otherwise = return $ Goal.NotImplied (src', dst)
       where
-        firstStep =
-            (Strategy.sequence . map Strategy.apply)
-                [ ProofState.CheckProven
-                , ProofState.CheckGoalRemainder
-                , ProofState.RemoveDestination
-                , ProofState.TriviallyValid
-                , ProofState.DerivePar axioms
-                , ProofState.Simplify
-                , ProofState.TriviallyValid
-                , ProofState.ResetGoal
-                , ProofState.TriviallyValid
-                ]
-        nextStep =
-            (Strategy.sequence . map Strategy.apply)
-                [ ProofState.CheckProven
-                , ProofState.CheckGoalRemainder
-                , ProofState.RemoveDestination
-                , ProofState.TriviallyValid
-                , ProofState.DeriveSeq claims
-                , ProofState.RemoveDestination
-                , ProofState.Simplify
-                , ProofState.TriviallyValid
-                , ProofState.DerivePar axioms
-                , ProofState.RemoveDestination
-                , ProofState.Simplify
-                , ProofState.TriviallyValid
-                , ProofState.ResetGoal
-                , ProofState.TriviallyValid
-                ]
-        axioms = rules
-        claims = Rule <$> goals
+        src' = difference src dst
 
-    transitionRule =
-        Goal.transitionRuleTemplate
-            Goal.TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+    -- | The goal is trivially valid when the members are equal.
+    isTriviallyValid :: Goal -> Bool
+    isTriviallyValid (src, _) = src == Bot
+
+    simplify = return
+
+    applyClaims claims = derivePar (map Rule claims)
+
+    applyAxioms axiomGroups = derivePar (concat axiomGroups)
+
+derivePar
+    :: [Goal.Rule Goal]
+    -> (K, K)
+    -> Transition.TransitionT (Goal.Rule Goal) m (ProofState.ProofState (K, K))
+derivePar rules (src, dst) =
+    goals <|> goalRemainder
+  where
+    goal rule@(Rule (_, to)) = do
+        Transition.addRule rule
+        (pure . ProofState.GoalRewritten) (to, dst)
+    goalRemainder = do
+        let r = Foldable.foldl' difference src (fst . unRule <$> applied)
+        (pure . ProofState.GoalRemainder) (r, dst)
+    applyRule rule@(Rule (fromGoal, _))
+        | fromGoal `matches` src = Just rule
+        | otherwise = Nothing
+    applied = mapMaybe applyRule rules
+    goals = Foldable.asum (goal <$> applied)
 
 instance SOP.Generic (Goal.Rule Goal)
 
@@ -380,50 +387,15 @@ instance Debug (Goal.Rule Goal)
 
 instance Diff (Goal.Rule Goal)
 
--- | The destination-removal rule for our unit test goal.
-removeDestination
-    :: (Goal -> ProofState)
-    -> Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-removeDestination constr (src, dst) =
-    return . constr $ (difference src dst, dst)
-
--- | The goal is trivially valid when the members are equal.
-isTriviallyValid :: Goal -> Bool
-isTriviallyValid (src, _) = src == Bot
-
-derivePar
-    :: [Goal.Rule Goal]
-    -> Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-derivePar rules (src, dst) =
-    goals <|> goalRemainder
-  where
-    goal rule@(Rule (_, to)) = do
-        Transition.addRule rule
-        (pure . ProofState.Goal) (to, dst)
-    goalRemainder = do
-        let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ProofState.GoalRemainder) (r, dst)
-    applyRule rule@(Rule (fromGoal, _))
-      | fromGoal `matches` src = Just rule
-      | otherwise = Nothing
-    applied = mapMaybe applyRule rules
-    goals = Foldable.asum (goal <$> applied)
-
-simplify :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
-simplify = return
-
-deriveSeq
-    :: [Goal.Rule Goal]
-    -> Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-deriveSeq = derivePar
-
-runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq (Goal.Rule Goal))]
-runTransitionRule prim state =
+runTransitionRule
+    :: [Goal]
+    -> [[Goal.Rule Goal]]
+    -> Prim
+    -> ProofState
+    -> [(ProofState, Seq (Goal.Rule Goal))]
+runTransitionRule claims axiomGroups prim state =
     (runIdentity . unAllPathIdentity . runTransitionT)
-        (Goal.transitionRule prim state)
+        (Goal.transitionRule claims axiomGroups prim state)
 
 newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
     deriving (Functor, Applicative, Monad)

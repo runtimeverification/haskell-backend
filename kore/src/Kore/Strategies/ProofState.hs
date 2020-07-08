@@ -27,7 +27,7 @@ import qualified Pretty
 
 {- | The primitive transitions of the reachability proof strategy.
  -}
-data Prim rule
+data Prim
     = CheckProven
     -- ^ End execution on this branch if the state is 'Proven'.
     | CheckGoalRemainder
@@ -37,39 +37,22 @@ data Prim rule
     | ResetGoal
     -- ^ Mark all goals rewritten previously as new goals.
     | Simplify
-    | RemoveDestination
+    | CheckImplication
     | TriviallyValid
-    | DerivePar [rule]
-    | DeriveSeq [rule]
-    deriving (Show, Functor)
+    | ApplyClaims
+    | ApplyAxioms
+    deriving (Show)
 
-instance Filterable Prim where
-    mapMaybe _ CheckProven        = CheckProven
-    mapMaybe _ CheckGoalRemainder = CheckGoalRemainder
-    mapMaybe _ CheckGoalStuck     = CheckGoalStuck
-    mapMaybe _ ResetGoal          = ResetGoal
-    mapMaybe _ Simplify           = Simplify
-    mapMaybe _ RemoveDestination  = RemoveDestination
-    mapMaybe _ TriviallyValid     = TriviallyValid
-    mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
-    mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
-
-instance Unparse goal => Pretty (Prim goal) where
+instance Pretty Prim where
     pretty CheckProven = "Transition CheckProven."
     pretty CheckGoalRemainder = "Transition CheckGoalRemainder."
     pretty CheckGoalStuck = "Transition CheckGoalStuck."
     pretty ResetGoal = "Transition ResetGoal."
     pretty Simplify = "Transition Simplify."
-    pretty RemoveDestination = "Transition RemoveDestination."
+    pretty CheckImplication = "Transition CheckImplication."
     pretty TriviallyValid = "Transition TriviallyValid."
-    pretty (DerivePar rules) =
-        Pretty.vsep
-            $ ["Transition DerivePar with rules:"]
-            <> fmap (Pretty.indent 4 . unparse) rules
-    pretty (DeriveSeq rules) =
-        Pretty.vsep
-            $ ["Transition DeriveSeq with rules:"]
-            <> fmap (Pretty.indent 4 . unparse) rules
+    pretty ApplyClaims = "apply claims"
+    pretty ApplyAxioms = "apply axioms"
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
@@ -83,10 +66,12 @@ data ProofState goal
     | GoalStuck !goal
     -- ^ If the terms unify and the condition does not imply
     -- the goal, the proof is stuck. This state should be reachable
-    -- only by applying RemoveDestination.
+    -- only by applying CheckImplication.
     | Proven
     -- ^ The parent goal was proven.
-    deriving (Eq, Show, Ord, Functor, GHC.Generic)
+    deriving (Eq, Show, Ord)
+    deriving (Foldable, Functor)
+    deriving (GHC.Generic)
 
 instance Hashable goal => Hashable (ProofState goal)
 
