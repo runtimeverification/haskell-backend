@@ -15,7 +15,7 @@ module Kore.Strategies.Verification
     , AlreadyProven (..)
     , verify
     , verifyClaimStep
-    , commonProofStateTransformer
+    , lhsProofStateTransformer
     ) where
 
 import Prelude.Kore
@@ -72,10 +72,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
-    ( AllPathRule (..)
-    , OnePathRule (..)
-    , RHS
-    , ReachabilityRule (..)
+    ( ReachabilityRule (..)
     , leftPattern
     , toRulePattern
     )
@@ -88,8 +85,7 @@ import Kore.Step.Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
-    ( TransitionT
-    , runTransitionT
+    ( runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
@@ -115,19 +111,21 @@ import Logic
     )
 import qualified Logic
 
--- TODO (thomas.tuegel): (Pattern VariableName) should be ReachabilityRule.
-type CommonProofState = ProofState.ProofState (Pattern VariableName)
+type CommonProofState = ProofState.ProofState ReachabilityRule
 
-commonProofStateTransformer
+-- | Extracts the left hand side (configuration) from the
+-- 'CommonProofState'. If the 'ProofState' is 'Proven', then
+-- the configuration will be '\\bottom'.
+lhsProofStateTransformer
     :: ProofStateTransformer
+        ReachabilityRule
         (Pattern VariableName)
-        (Pattern VariableName)
-commonProofStateTransformer =
+lhsProofStateTransformer =
     ProofStateTransformer
-        { goalTransformer = id
-        , goalRemainderTransformer = id
-        , goalRewrittenTransformer = id
-        , goalStuckTransformer = id
+        { goalTransformer = getConfiguration
+        , goalRemainderTransformer = getConfiguration
+        , goalRewrittenTransformer = getConfiguration
+        , goalStuckTransformer = getConfiguration
         , provenValue = Pattern.bottom
         }
 
@@ -254,7 +252,7 @@ verifyClaim
   =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = ProofState.Goal $ getConfiguration goal
+        startGoal = ProofState.Goal goal
         limitedStrategy =
             strategy
             & Foldable.toList
@@ -264,13 +262,11 @@ verifyClaim
         $ Strategy.leavesM
             updateQueue
             (Strategy.unfoldTransition transit)
-            (limitedStrategy, startPattern)
+            (limitedStrategy, startGoal)
             & fmap discardStrategy
             & throwUnproven
   where
-    destination = getDestination goal
     discardStrategy = snd
-    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
     handleLimitExceeded
         :: Strategy.LimitExceeded CommonProofState
@@ -279,12 +275,12 @@ verifyClaim
         Monad.Except.throwError
         . OrPattern.fromPatterns
         $ fmap
-            (ProofState.proofState commonProofStateTransformer)
+            (ProofState.proofState lhsProofStateTransformer)
             patterns
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
-        >=> lift . Strategy.applyBreadthLimit breadthLimit snd
+        >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
         >=> profileQueueLength
 
     profileQueueLength queue = do
@@ -300,36 +296,23 @@ verifyClaim
         done = return ()
 
     throwUnprovenOrElse
-        :: ProofState.ProofState (Pattern VariableName)
+        :: CommonProofState
         -> Verifier simplifier ()
         -> Verifier simplifier ()
     throwUnprovenOrElse proofState acts = do
         ProofState.extractUnproven proofState
-            & Foldable.traverse_ (Monad.Except.throwError . OrPattern.fromPattern)
+            & Foldable.traverse_
+                ( Monad.Except.throwError
+                . OrPattern.fromPattern
+                . getConfiguration
+                )
         acts
 
     transit instr config =
-        Strategy.transitionRule modifiedTransitionRule instr config
+        Strategy.transitionRule (transitionRule' claims axioms) instr config
         & runTransitionT
         & fmap (map fst)
         & lift
-
-    modifiedTransitionRule
-        ::  Prim
-        ->  CommonProofState
-        ->  TransitionT (Rule ReachabilityRule) (Verifier simplifier)
-                CommonProofState
-    modifiedTransitionRule prim proofState' = do
-        transitions <-
-            transitionRule'
-                claims
-                axiomGroups
-                goal
-                destination
-                prim
-                proofState'
-            & lift . lift . runTransitionT
-        Transition.scatter transitions
 
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
@@ -337,9 +320,7 @@ verifyClaim
 verifyClaimStep
     :: forall simplifier
     .  (MonadCatch simplifier, MonadSimplify simplifier)
-    => ReachabilityRule
-    -- ^ claim that is being proven
-    -> [ReachabilityRule]
+    => [ReachabilityRule]
     -- ^ list of claims in the spec module
     -> [Rule ReachabilityRule]
     -- ^ list of axioms in the main module
@@ -348,16 +329,13 @@ verifyClaimStep
     -> Graph.Node
     -- ^ selected node in the graph
     -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
-verifyClaimStep target claims axioms executionGraph node =
+verifyClaimStep claims axioms executionGraph node =
     executionHistoryStep
-        (transitionRule' claims axiomGroups target destination)
+        (transitionRule' claims axioms)
         strategy'
         executionGraph
         node
   where
-    destination = getDestination target
-    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
-
     strategy' :: Strategy Prim
     strategy'
         | isRoot = firstStep
@@ -375,39 +353,20 @@ verifyClaimStep target claims axioms executionGraph node =
     isRoot = node == root
 
 transitionRule'
-    :: forall simplifier
-    .  (MonadCatch simplifier, MonadSimplify simplifier)
+    :: MonadSimplify simplifier
+    => MonadCatch simplifier
     => [ReachabilityRule]
-    -> [[Rule ReachabilityRule]]
-    -> ReachabilityRule
-    -> RHS VariableName
-    -> Prim
-    -> CommonProofState
-    -> TransitionT (Rule ReachabilityRule) simplifier CommonProofState
-transitionRule' claims axiomGroups goal _ prim state = do
-    let goal' = flip (Lens.set lensReachabilityConfig) goal <$> state
-    next <- transit prim goal'
-    pure $ fmap getConfiguration next
+    -> [Rule ReachabilityRule]
+    -> TransitionRule simplifier ReachabilityRule
+transitionRule' claims axioms =
+    transitionRule claims axiomGroups
+    & withConfiguration
+    & withDebugProofState
+    & logTransitionRule
   where
-    transit =
-        transitionRule claims axiomGroups
-        & withConfiguration
-        & withDebugProofState
-        & logTransitionRule
-    lensReachabilityConfig =
-        Lens.lens
-            (\case
-                OnePath onePathRule ->
-                    Lens.view leftPattern (getOnePathRule onePathRule)
-                AllPath allPathRule ->
-                    Lens.view leftPattern (getAllPathRule allPathRule)
-            )
-            (\case
-                OnePath (OnePathRule rulePattern) -> \b ->
-                    (OnePath . OnePathRule) (Lens.set leftPattern b rulePattern)
-                AllPath (AllPathRule rulePattern) -> \b ->
-                    (AllPath . AllPathRule) (Lens.set leftPattern b rulePattern)
-            )
+    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+
+
 
 logTransitionRule
     :: forall m
