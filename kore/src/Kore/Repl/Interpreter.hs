@@ -178,6 +178,7 @@ import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
+    , rhsToPattern
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -186,12 +187,12 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (ProofStateTransformer)
+    , extractUnproven
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
     ( CommonProofState
-    , commonProofStateTransformer
     )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -248,6 +249,7 @@ replInterpreter0 printAux printKore replCmd = do
                 ProveStepsF n         -> proveStepsF n           $> Continue
                 SelectNode i          -> selectNode i            $> Continue
                 ShowConfig mc         -> showConfig mc           $> Continue
+                ShowDest mc           -> showDest mc             $> Continue
                 OmitCell c            -> omitCell c              $> Continue
                 ShowLeafs             -> showLeafs               $> Continue
                 ShowRule   mc         -> showRule mc             $> Continue
@@ -521,14 +523,37 @@ showConfig
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
-showConfig configNode = do
-    maybeConfig <- getConfigAt configNode
-    case maybeConfig of
+showConfig =
+    showProofStateComponent "Config" getConfiguration
+
+-- | Shows destination at node 'n', or current node if 'Nothing' is passed.
+showDest
+    :: Monad m
+    => Maybe ReplNode
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
+    -> ReplM m ()
+showDest =
+    showProofStateComponent "Destination" (rhsToPattern . getDestination)
+
+showProofStateComponent
+    :: Monad m
+    => String
+    -- ^ component name
+    -> (ReachabilityRule -> Pattern VariableName)
+    -> Maybe ReplNode
+    -> ReplM m ()
+showProofStateComponent name transformer maybeNode = do
+    maybeProofState <- getProofStateAt maybeNode
+    case maybeProofState of
         Nothing -> putStrLn' "Invalid node!"
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
-            putStrLn' $ "Config at node " <> show node <> " is:"
-            tell $ unparseStrategy omit config
+            putStrLn' $ name <> " at node " <> show node <> " is:"
+            unparseProofStateComponent
+                transformer
+                omit
+                config
+                & tell
 
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
@@ -846,7 +871,7 @@ tryAxiomClaimWorker mode ref = do
         -> ReplM m ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
-        maybeSecond <- getConfigAt (Just node)
+        maybeSecond <- getProofStateAt (Just node)
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
@@ -858,7 +883,7 @@ tryAxiomClaimWorker mode ref = do
                         , goalRewrittenTransformer = patternUnifier
                         , goalStuckTransformer = patternUnifier
                         }
-                    second
+                    (getConfiguration <$> second)
               where
                 patternUnifier :: Pattern VariableName -> ReplM m ()
                 patternUnifier
@@ -964,30 +989,25 @@ savePartialProof
     -> FilePath
     -> ReplM m ()
 savePartialProof maybeNatural file = do
-    currentClaim <- Lens.use (field @"claim")
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
     Config { mainModuleName } <- ask
-    maybeConfig <- getConfigAt maybeNode
-    case maybeConfig of
+    maybeConfig <- getProofStateAt maybeNode
+    case (fmap . fmap) extractUnproven maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
-        Just (currentNode, currentProofState) -> do
-            let config = unwrapConfig currentProofState
-                newClaim = createClaim currentClaim config
-                newTrustedClaims =
+        Just (_, Nothing) -> putStrLn' "Goal is proven."
+        Just (currentNode, Just currentGoal) -> do
+            let newTrustedClaims =
                     makeTrusted
                     <$> removeIfRoot currentNode currentIndex claims
                 newDefinition =
                     createNewDefinition
                         mainModuleName
                         (makeModuleName file)
-                        $ newClaim : newTrustedClaims
+                        $ currentGoal : newTrustedClaims
             saveUnparsedDefinitionToFile (unparse newDefinition)
             putStrLn' "Done."
   where
-    unwrapConfig :: CommonProofState -> Pattern VariableName
-    unwrapConfig = proofState commonProofStateTransformer
-
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
         -> ReplM m ()
@@ -1203,26 +1223,30 @@ showRewriteRule rule =
     <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
-unparseStrategy
-    :: Set String
+unparseProofStateComponent
+    :: (ReachabilityRule -> Pattern VariableName)
+    -> Set String
     -- ^ omit list
     -> CommonProofState
     -- ^ pattern
     -> ReplOutput
-unparseStrategy omitList =
+unparseProofStateComponent transformation omitList =
     proofState ProofStateTransformer
-        { goalTransformer = makeKoreReplOutput . unparseToString . fmap hide
-        , goalRemainderTransformer = \pat ->
+        { goalTransformer =
+            makeKoreReplOutput . unparseComponent
+        , goalRemainderTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+            <> makeKoreReplOutput (unparseComponent goal)
         , goalRewrittenTransformer =
-            makeKoreReplOutput . unparseToString . fmap hide
-        , goalStuckTransformer = \pat ->
+            makeKoreReplOutput . unparseComponent
+        , goalStuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+            <> makeKoreReplOutput (unparseComponent goal)
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
+    unparseComponent =
+        unparseToString . fmap hide . transformation
     hide :: TermLike VariableName -> TermLike VariableName
     hide =
         Recursive.unfold $ \termLike ->
