@@ -249,9 +249,8 @@ simplifyConditionalTermToOr
     => SideCondition variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
-simplifyConditionalTermToOr sideCondition termLike = do
-    results <- observeAllT $ simplifyConditionalTerm sideCondition termLike
-    return (OrPattern.fromPatterns results)
+simplifyConditionalTermToOr sideCondition termLike =
+    OrPattern.observeAllT $ simplifyConditionalTerm sideCondition termLike
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}
