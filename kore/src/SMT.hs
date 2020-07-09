@@ -83,6 +83,7 @@ import Data.Text
     ( Text
     )
 
+import Kore.Prof
 import Log
     ( LogAction
     , LoggerT
@@ -221,6 +222,10 @@ newtype NoSMT a = NoSMT { getNoSMT :: LoggerT IO a }
 runNoSMT :: NoSMT a -> LoggerT IO a
 runNoSMT = getNoSMT
 
+instance MonadProf NoSMT where
+    traceProf = defaultTraceProf
+    {-# INLINE traceProf #-}
+
 instance MonadLog NoSMT where
     logEntry entry = NoSMT $ logEntry entry
     {-# INLINE logEntry #-}
@@ -263,6 +268,10 @@ newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
         , MonadThrow
         , MonadMask
         )
+
+instance MonadProf SMT where
+    traceProf = defaultTraceProf
+    {-# INLINE traceProf #-}
 
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do

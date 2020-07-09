@@ -12,20 +12,23 @@ Portability : portable
 {-# OPTIONS_GHC -fno-prof-auto #-}
 
 module Kore.Step.Simplification.Data
-    ( MonadSimplify (..), InternalVariable
-    , Simplifier
+    ( Simplifier
     , TermSimplifier
     , SimplifierT, runSimplifierT
     , Env (..)
     , runSimplifier
     , runSimplifierBranch
     , evalSimplifier
+    -- * Re-exports
+    , MonadSimplify (..), InternalVariable
+    , MonadProf
     ) where
 
 import Prelude.Kore
 
 import Control.Monad.Catch
     ( MonadCatch
+    , MonadMask
     , MonadThrow
     )
 import qualified Control.Monad.Morph as Morph
@@ -47,7 +50,11 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Prof
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
+import Kore.Step.Axiom.Identifier
+    ( matchAxiomIdentifier
+    )
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
@@ -60,6 +67,7 @@ import qualified Kore.Step.Simplification.SubstitutionSimplifier as Substitution
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import Log
 import Logic
+import qualified Pretty
 import SMT
     ( MonadSMT (..)
     , SMT (..)
@@ -88,7 +96,7 @@ newtype SimplifierT smt a = SimplifierT
     { runSimplifierT :: ReaderT (Env (SimplifierT smt)) smt a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
-    deriving (MonadIO, MonadCatch, MonadThrow)
+    deriving (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving (MonadReader (Env (SimplifierT smt)))
 
 type Simplifier = SimplifierT SMT
@@ -100,12 +108,23 @@ instance MonadTrans SimplifierT where
 instance MonadLog log => MonadLog (SimplifierT log) where
     logWhile entry = mapSimplifierT $ logWhile entry
 
-instance (MonadSMT m, MonadLog m) => MonadSimplify (SimplifierT m) where
+instance MonadProf prof => MonadProf (SimplifierT prof) where
+    traceProf name = SimplifierT . Morph.hoist (traceProf name) . runSimplifierT
+    {-# INLINE traceProf #-}
+
+instance
+    (MonadSMT m, MonadLog m, MonadProf m)
+    => MonadSimplify (SimplifierT m)
+  where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
     simplifyTermLike sideCondition termLike =
-        TermLike.simplify sideCondition termLike
+        (maybe id traceProf ident) (TermLike.simplify sideCondition termLike)
+      where
+        ident =
+            Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
+            <$> matchAxiomIdentifier termLike
     {-# INLINE simplifyTermLike #-}
 
     simplifyCondition topCondition conditional = do
@@ -159,7 +178,7 @@ that may branch.
   -}
 evalSimplifier
     :: forall smt a
-    .  (MonadLog smt, MonadSMT smt, MonadIO smt)
+    .  (MonadLog smt, MonadSMT smt, MonadProf smt, MonadIO smt)
     => VerifiedModule Attribute.Symbol
     -> SimplifierT smt a
     -> smt a

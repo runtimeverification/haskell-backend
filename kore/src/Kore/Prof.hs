@@ -8,6 +8,7 @@ License     : NCSA
 
 module Kore.Prof
     ( MonadProf (..)
+    , defaultTraceProf
     ) where
 
 import Prelude.Kore hiding
@@ -15,7 +16,8 @@ import Prelude.Kore hiding
     )
 
 import Control.Monad.Catch
-    ( bracket_
+    ( MonadMask
+    , bracket_
     )
 import Data.Text
     ( Text
@@ -25,17 +27,26 @@ import Debug.Trace.Text
     ( traceEventIO
     )
 
-class MonadProf monad where
+class Monad prof => MonadProf prof where
     {- | Attribute an action to a particular name for profiling.
      -}
     traceProf
         :: Text  -- ^ name for profiling
-        -> monad a  -- ^ action
-        -> monad a
+        -> prof a  -- ^ action
+        -> prof a
 
 instance MonadProf IO where
-    traceProf name =
-        bracket_ open close
-      where
-        open = traceEventIO (Text.cons 'O' name)
-        close = traceEventIO (Text.cons 'C' name)
+    traceProf = defaultTraceProf
+    {-# INLINE traceProf #-}
+
+defaultTraceProf
+    :: (MonadIO mask, MonadMask mask)
+    => Text
+    -> mask a
+    -> mask a
+defaultTraceProf name =
+    bracket_ open close
+  where
+    open = liftIO $ traceEventIO (Text.cons 'O' name)
+    close = liftIO $ traceEventIO (Text.cons 'C' name)
+{-# INLINE defaultTraceProf #-}

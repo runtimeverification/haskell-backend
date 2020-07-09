@@ -142,7 +142,8 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
-    ( evalSimplifier
+    ( MonadProf
+    , evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -195,6 +196,7 @@ exec
         , MonadLog smt
         , MonadSMT smt
         , MonadThrow smt
+        , MonadProf smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -289,6 +291,7 @@ search
         , MonadLog smt
         , MonadSMT smt
         , MonadThrow smt
+        , MonadProf smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -341,6 +344,7 @@ prove
         , MonadCatch smt
         , MonadIO smt
         , MonadSMT smt
+        , MonadProf smt
         )
     => Strategy.GraphSearchOrder
     -> Limit Natural
@@ -440,6 +444,7 @@ boundedModelCheck
         , MonadSMT smt
         , MonadIO smt
         , MonadThrow smt
+        , MonadProf smt
         )
     => Limit Natural
     -> Limit Natural
@@ -470,6 +475,7 @@ mergeAllRules
     ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -483,6 +489,7 @@ mergeRulesConsecutiveBatches
     ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
         )
     => Int
     -- ^ Batch size
@@ -499,6 +506,7 @@ mergeRules
     ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
         )
     =>  (  NonEmpty (RewriteRule VariableName)
         -> Simplifier.SimplifierT smt [RewriteRule VariableName]

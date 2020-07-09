@@ -249,7 +249,7 @@ simplify =
     . simplifyConditionalTerm SideCondition.top
 
 evaluate
-    :: (MonadSMT smt, MonadLog smt)
+    :: (MonadSMT smt, MonadLog smt, MonadProf smt)
     => TermLike VariableName
     -> smt (Pattern VariableName)
 evaluate termLike =
@@ -259,7 +259,7 @@ evaluate termLike =
 
 evaluateT
     :: MonadTrans t
-    => (MonadSMT smt, MonadLog smt)
+    => (MonadSMT smt, MonadLog smt, MonadProf smt)
     => TermLike VariableName
     -> t smt (Pattern VariableName)
 evaluateT = lift . evaluate
