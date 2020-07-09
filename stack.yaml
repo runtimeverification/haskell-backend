@@ -47,7 +47,7 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-  - ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2
+  - ghc-trace-events-0.1.2.1
 
   - witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
   - witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775

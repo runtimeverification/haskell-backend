@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2,1991
+    hackage: ghc-trace-events-0.1.2.1@sha256:2b7f9be840d748c3d33d0f70120a5d7614ef5862cb854efa272cd0c536319306,3117
     pantry-tree:
-      size: 647
-      sha256: 94a3fbef9c432f270715865d0e1d239d1390738e90312147571dd0f3a19ed76e
+      size: 710
+      sha256: 50f58ec1f2033c259402ad00ff42cbb0d002492f960967442b5bdd9a7a75dc0a
   original:
-    hackage: ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2
+    hackage: ghc-trace-events-0.1.2.1
 - completed:
     hackage: witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
     pantry-tree:
