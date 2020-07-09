@@ -322,9 +322,11 @@ instance MonadSMT SMT where
     declareDatatypes datatypes =
         withSolver' $ \solver -> SimpleSMT.declareDatatypes solver datatypes
 
-    assert fact = withSolver' $ \solver -> SimpleSMT.assert solver fact
+    assert fact =
+        traceProf ":solver:assert"
+        $ withSolver' $ \solver -> SimpleSMT.assert solver fact
 
-    check = withSolver' SimpleSMT.check
+    check = traceProf ":solver:check" $ withSolver' SimpleSMT.check
 
     ackCommand command =
         withSolver' $ \solver -> SimpleSMT.ackCommand solver command
