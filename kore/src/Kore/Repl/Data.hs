@@ -87,9 +87,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Log
 import qualified Kore.Log.Registry as Log
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -539,8 +536,6 @@ instance Monad m => MonadLogic (UnifierWithExplanation m) where
         wrapNext = (fmap . fmap) UnifierWithExplanation
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
-
-deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift

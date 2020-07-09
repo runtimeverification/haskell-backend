@@ -201,15 +201,6 @@ executables:
       - kore
     <<: *common-exe
 
-  kore-profiler:
-    main: Main.hs
-    source-dirs:
-      - app/profiler
-      - app/share
-    dependencies:
-      - kore
-    <<: *common-exe
-
 tests:
   kore-test:
     main: Test.hs

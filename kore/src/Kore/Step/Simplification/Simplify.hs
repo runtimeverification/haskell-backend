@@ -93,9 +93,6 @@ import Kore.Internal.Variable
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
     )
-import Kore.Profiler.Data
-    ( MonadProfiler (..)
-    )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
@@ -122,9 +119,7 @@ import SMT
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
-class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
-    => MonadSimplify m
-  where
+class (MonadLog m, MonadSMT m) => MonadSimplify m where
     -- | Retrieve the 'MetadataTools' for the Kore context.
     askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
     default askMetadataTools

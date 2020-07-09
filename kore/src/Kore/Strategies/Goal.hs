@@ -98,9 +98,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log.InfoReachability
-import qualified Kore.Profiler.Profile as Profile
-    ( timeStrategy
-    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.Result
     ( Result (..)
@@ -508,38 +505,33 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
-    transitionRuleWorker Simplify (Goal goal) =
-        Profile.timeStrategy "Goal.Simplify" $ do
-            results <- tryTransitionT (simplify goal)
-            case results of
-                [] -> return Proven
-                _  -> Goal <$> Transition.scatter results
+    transitionRuleWorker Simplify (Goal goal) = do
+        results <- tryTransitionT (simplify goal)
+        case results of
+            [] -> return Proven
+            _  -> Goal <$> Transition.scatter results
 
     transitionRuleWorker Simplify (GoalRemainder goal) =
-        Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplify goal
+        GoalRemainder <$> simplify goal
 
-    transitionRuleWorker InferDefined (GoalRemainder goal) =
-        Profile.timeStrategy "inferDefined" $ do
-            results <- tryTransitionT (inferDefined goal)
-            case results of
-                [] -> return Proven
-                _ -> GoalRemainder <$> Transition.scatter results
+    transitionRuleWorker InferDefined (GoalRemainder goal) = do
+        results <- tryTransitionT (inferDefined goal)
+        case results of
+            [] -> return Proven
+            _ -> GoalRemainder <$> Transition.scatter results
 
-    transitionRuleWorker CheckImplication (Goal goal) =
-        Profile.timeStrategy "Goal.CheckImplication" $ do
-            result <- checkImplication goal
-            case result of
-                NotImpliedStuck a -> pure (GoalStuck a)
-                Implied -> pure Proven
-                NotImplied a -> pure (Goal a)
-    transitionRuleWorker CheckImplication (GoalRemainder goal) =
-        Profile.timeStrategy "Goal.CheckImplicationRemainder" $ do
-            result <- checkImplication goal
-            case result of
-                NotImpliedStuck a -> pure (GoalStuck a)
-                Implied -> pure Proven
-                NotImplied a -> pure (GoalRemainder a)
+    transitionRuleWorker CheckImplication (Goal goal) = do
+        result <- checkImplication goal
+        case result of
+            NotImpliedStuck a -> pure (GoalStuck a)
+            Implied -> pure Proven
+            NotImplied a -> pure (Goal a)
+    transitionRuleWorker CheckImplication (GoalRemainder goal) = do
+        result <- checkImplication goal
+        case result of
+            NotImpliedStuck a -> pure (GoalStuck a)
+            Implied -> pure Proven
+            NotImplied a -> pure (GoalRemainder a)
 
     transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValid goal =
@@ -563,20 +555,16 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- results in `derivePar` as opposed to here.
 
     transitionRuleWorker ApplyClaims (Goal goal) =
-        Profile.timeStrategy "applyClaims"
-        $ applyClaims claims goal
+        applyClaims claims goal
 
     transitionRuleWorker ApplyClaims (GoalRemainder goal) =
-        Profile.timeStrategy "applyClaims"
-        $ applyClaims claims goal
+        applyClaims claims goal
 
     transitionRuleWorker ApplyAxioms (Goal goal) =
-        Profile.timeStrategy "applyAxioms"
-        $ applyAxioms axiomGroups goal
+        applyAxioms axiomGroups goal
 
     transitionRuleWorker ApplyAxioms (GoalRemainder goal) =
-        Profile.timeStrategy "applyAxioms"
-        $ applyAxioms axiomGroups goal
+        applyAxioms axiomGroups goal
 
     transitionRuleWorker _ state = return state
 

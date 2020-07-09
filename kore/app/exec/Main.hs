@@ -129,9 +129,6 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.RulePattern
@@ -813,7 +810,6 @@ loadRuleIds fileName = do
 type MonadExecute exe =
     ( MonadCatch exe
     , MonadIO exe
-    , MonadProfiler exe
     , MonadSMT exe
     , WithLog LogMessage exe
     )

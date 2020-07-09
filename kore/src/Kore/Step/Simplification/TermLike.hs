@@ -48,12 +48,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Profiler.Profile as Profiler
-    ( identifierSimplification
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-    ( matchAxiomIdentifier
-    )
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -214,10 +208,6 @@ simplifyInternal term sideCondition = do
         )
     return result
   where
-    tracer termLike =
-        maybe id Profiler.identifierSimplification
-        $ AxiomIdentifier.matchAxiomIdentifier termLike
-
     simplifyChildren
         :: Traversable t
         => t (TermLike variable)
@@ -250,7 +240,7 @@ simplifyInternal term sideCondition = do
                 $ assertConditionSimplified termLike
                 $ Condition.fromPredicate termPredicate
         | otherwise
-        = assertTermNotPredicate $ tracer termLike $ do
+        = assertTermNotPredicate $ do
             unfixedTermOr <- descendAndSimplify termLike
             let termOr = OrPattern.coerceSort
                     (termLikeSort termLike)

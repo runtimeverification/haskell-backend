@@ -70,7 +70,6 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
-import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , leftPattern
@@ -281,11 +280,6 @@ verifyClaim
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
         >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
-        >=> profileQueueLength
-
-    profileQueueLength queue = do
-        Profile.executionQueueLength (length queue)
-        pure queue
 
     throwUnproven
         :: LogicT (Verifier simplifier) CommonProofState

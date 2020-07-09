@@ -107,12 +107,6 @@ import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
-import qualified Kore.Profiler.Profile as Profiler
-    ( initialization
-    )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
@@ -199,7 +193,6 @@ newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
 exec
     ::  ( MonadIO smt
         , MonadLog smt
-        , MonadProfiler smt
         , MonadSMT smt
         , MonadThrow smt
         )
@@ -294,7 +287,6 @@ getExitCode indexedModule finalConfig =
 search
     ::  ( MonadIO smt
         , MonadLog smt
-        , MonadProfiler smt
         , MonadSMT smt
         , MonadThrow smt
         )
@@ -345,9 +337,8 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
 -- | Proving a spec given as a module containing rules to be proven
 prove
     ::  forall smt
-      . ( Log.WithLog Log.LogMessage smt
+      . ( MonadLog smt
         , MonadCatch smt
-        , MonadProfiler smt
         , MonadIO smt
         , MonadSMT smt
         )
@@ -445,8 +436,7 @@ proveWithRepl
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
         , MonadThrow smt
@@ -477,8 +467,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
 
 -- | Rule merging
 mergeAllRules
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
         )
@@ -491,8 +480,7 @@ mergeAllRules = mergeRules Rules.mergeRules
 
 -- | Rule merging
 mergeRulesConsecutiveBatches
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
         )
@@ -508,8 +496,7 @@ mergeRulesConsecutiveBatches batchSize =
 
 -- | Rule merging in batches
 mergeRules
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
         )
@@ -647,8 +634,7 @@ initialize verifiedModule = do
     traverse_
         errorRewriteLoop
         $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
-    rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
-        mapM simplifyToList rewriteRules
+    rewriteAxioms <- mapM simplifyToList rewriteRules
     pure Initialized { rewriteRules = mkRewritingRule <$> concat rewriteAxioms }
 
 data InitializedProver =
@@ -699,8 +685,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    claims <- Profiler.initialization "simplifyRuleOnSecond"
-        $ traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }

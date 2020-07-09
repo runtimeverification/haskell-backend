@@ -83,10 +83,6 @@ import Data.Text
     ( Text
     )
 
-import Kore.Profiler.Data
-    ( MonadProfiler (..)
-    , profileEvent
-    )
 import Log
     ( LogAction
     , LoggerT
@@ -244,11 +240,6 @@ instance MonadSMT NoSMT where
     assert _ = return ()
     check = return Unknown
 
-instance MonadProfiler NoSMT where
-    profile a action = do
-        configuration <- profileConfiguration
-        profileEvent configuration a action
-
 -- * Implementation
 
 {- | Query an external SMT solver.
@@ -335,13 +326,6 @@ instance MonadSMT SMT where
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
     {-# INLINE withSolver #-}
-
-instance MonadProfiler SMT
-  where
-    profile a action = do
-        configuration <- profileConfiguration
-        SMT (profileEvent configuration a (getSMT action))
-    {-# INLINE profile #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 

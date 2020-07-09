@@ -33,11 +33,6 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Profiler.Data
-    ( Configuration (..)
-    , Destination (..)
-    , MonadProfiler (..)
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -435,21 +430,6 @@ instance MonadSMT AllPathIdentity where
     check = undefined
     ackCommand = undefined
     loadFile = undefined
-
-instance MonadProfiler AllPathIdentity where
-    profile _ = id
-    profileConfiguration =
-        return Configuration
-            { identifierFilter = Nothing
-            , dumpIdentifier = Nothing
-            , destination = HumanReadable
-            , logBranching = False
-            , logStrategy = False
-            , logSimplification = False
-            , logInitialization = False
-            , logEvaluation = False
-            , logSmt = False
-            }
 
 instance MonadThrow AllPathIdentity where
     throwM _ = error "Unimplemented"

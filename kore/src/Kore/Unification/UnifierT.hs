@@ -31,9 +31,6 @@ import Control.Monad.Trans.Reader
     , mapReaderT
     )
 
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
@@ -69,8 +66,6 @@ instance MonadTrans UnifierT where
 deriving instance MonadLog m => MonadLog (UnifierT m)
 
 deriving instance Monad m => MonadLogic (UnifierT m)
-
-deriving instance MonadProfiler m => MonadProfiler (UnifierT m)
 
 deriving instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
 

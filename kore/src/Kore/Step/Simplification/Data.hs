@@ -47,9 +47,6 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import Kore.Profiler.Data
-    ( MonadProfiler (profile)
-    )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
@@ -104,18 +101,7 @@ instance MonadTrans SimplifierT where
 instance MonadLog log => MonadLog (SimplifierT log) where
     logWhile entry = mapSimplifierT $ logWhile entry
 
-instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
-    profile event duration =
-        SimplifierT (profile event (runSimplifierT duration))
-    {-# INLINE profile #-}
-
-instance
-    ( MonadSMT m
-    , MonadProfiler m
-    , WithLog LogMessage m
-    )
-    => MonadSimplify (SimplifierT m)
-  where
+instance (MonadSMT m, MonadLog m) => MonadSimplify (SimplifierT m) where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
 
@@ -178,8 +164,7 @@ that may branch.
   -}
 evalSimplifier
     :: forall smt a
-    .  WithLog LogMessage smt
-    => (MonadProfiler smt, MonadSMT smt, MonadIO smt)
+    .  (MonadLog smt, MonadSMT smt, MonadIO smt)
     => VerifiedModule Attribute.Symbol
     -> SimplifierT smt a
     -> smt a
