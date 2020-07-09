@@ -9,6 +9,7 @@ Strategy-based interface to rule application (step-wise execution).
 module Kore.Step
     ( -- * Primitive strategies
       Prim (..)
+    , ExecState (..)
     , rewrite
     , simplify
     , rewriteStep
@@ -62,6 +63,10 @@ import Kore.Step.Strategy hiding
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
+import Kore.Strategies.ProofState
+    ( ExecutionDepth (..)
+    , increment
+    )
 import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 
@@ -88,6 +93,10 @@ rewriteStep :: rewrite -> Strategy (Prim rewrite)
 rewriteStep a =
     Strategy.sequence [Strategy.apply (rewrite a), Strategy.apply simplify]
 
+newtype ExecState =
+    ExecState { getState :: (Pattern VariableName, ExecutionDepth) }
+    deriving Show
+
 {- | Transition rule for primitive strategies in 'Prim'.
 
 @transitionRule@ is intended to be partially applied and passed to
@@ -97,19 +106,20 @@ transitionRule
     :: forall m
     .  MonadSimplify m
     => Prim (RewriteRule RewritingVariableName)
-    -> Pattern VariableName
+    -> ExecState
     -- ^ Configuration being rewritten
-    -> TransitionT (RewriteRule RewritingVariableName) m (Pattern VariableName)
+    -> TransitionT (RewriteRule RewritingVariableName) m ExecState
 transitionRule =
     \case
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
-    transitionSimplify config = do
+    transitionSimplify ( ExecState (config, depth) ) = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
         Foldable.asum (pure <$> filteredConfigs)
-    transitionRewrite rule config = do
+            & fmap (\configuration -> ExecState (configuration, depth))
+    transitionRewrite rule ( ExecState (config, depth) ) = do
         Transition.addRule rule
         results <-
             Step.applyRewriteRulesParallel
@@ -117,8 +127,9 @@ transitionRule =
                 [rule]
                 config
             & lift
-        Foldable.asum
-            (pure <$> Step.gatherResults results)
+        Foldable.asum (pure <$> Step.gatherResults results)
+            & fmap
+                (\configuration -> ExecState (configuration, increment depth))
 
 
 {- | A strategy that applies all the rewrites in parallel.

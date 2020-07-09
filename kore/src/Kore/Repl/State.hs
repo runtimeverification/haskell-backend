@@ -133,9 +133,9 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
-    ( ProofState (Goal)
+    ( ExecutionDepth (..)
+    , ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
-    , ExecutionDepth (..)
     , extractUnproven
     , proofState
     )

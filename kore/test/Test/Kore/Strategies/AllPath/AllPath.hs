@@ -47,10 +47,10 @@ import Kore.Step.Transition
     )
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Strategies.Goal as Goal
-import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Strategies.ProofState
     ( ExecutionDepth (..)
     )
+import qualified Kore.Strategies.ProofState as ProofState
 import Log
     ( MonadLog (..)
     )

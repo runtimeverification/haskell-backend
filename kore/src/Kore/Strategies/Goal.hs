@@ -367,7 +367,7 @@ instance Goal AllPathRule where
                 _ -> return proofState
 
         checkTriviallyValid proofState
-          | all isTriviallyValid proofState = pure $ Proven (ExecutionDepth 0) 
+          | all isTriviallyValid proofState = pure $ Proven (ExecutionDepth 0)
           | otherwise = pure proofState
 
 deriveParAllPath

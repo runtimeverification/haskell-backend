@@ -90,9 +90,9 @@ import Kore.Step.Transition
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
-    ( ProofState
+    ( ExecutionDepth (..)
+    , ProofState
     , ProofStateTransformer (..)
-    , ExecutionDepth (..)
     )
 import qualified Kore.Strategies.ProofState as ProofState
     ( ProofState (..)

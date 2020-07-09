@@ -9,7 +9,8 @@ Portability : portable
 Expose concrete execution as a library
 -}
 module Kore.Exec
-    ( exec
+    ( discardNodesDepth
+    , exec
     , extractRules
     , mergeAllRules
     , mergeRulesConsecutiveBatches
@@ -38,6 +39,7 @@ import Control.Monad.Catch
 import Control.Monad.Trans.Except
     ( runExceptT
     )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( coerce
     )
@@ -103,6 +105,9 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
+import Kore.Log.InfoExecutionDepth
+    ( infoExecutionDepth
+    )
 import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     )
@@ -161,6 +166,9 @@ import Kore.Step.Transition
     ( runTransitionT
     )
 import qualified Kore.Strategies.Goal as Goal
+import Kore.Strategies.ProofState
+    ( ExecutionDepth (..)
+    )
 import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)
@@ -215,7 +223,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-        finalConfig <-
+        ExecState (finalConfig, executionLength) <-
             getFinalConfigOf $ do
                 initialConfig <-
                     Pattern.simplify SideCondition.top
@@ -236,7 +244,10 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    (strategy rewriteRules, initialConfig)
+                    ( strategy rewriteRules
+                    , ExecState (initialConfig, ExecutionDepth 0)
+                    )
+        infoExecutionDepth executionLength
         exitCode <- getExitCode verifiedModule finalConfig
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return (exitCode, finalTerm)
@@ -248,7 +259,9 @@ exec breadthLimit verifiedModule strategy initialTerm =
         takeResult = snd
         takeFirstResult act =
             Logic.observeT (takeResult <$> lift act) & runMaybeT
-        orElseBottom = pure . fromMaybe (Pattern.bottomOf initialSort)
+        orElseBottom =
+            let def = ExecState (Pattern.bottomOf initialSort, ExecutionDepth 0)
+            in pure . fromMaybe def
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -325,14 +338,15 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                     (config : _) -> config
             runStrategy' =
                 runStrategy breadthLimit transitionRule (strategy rewriteRules)
-        executionGraph <- runStrategy' initialPattern
+        executionGraph <-
+            runStrategy' $ ExecState (initialPattern, ExecutionDepth 0)
         let
             match target config = Search.matchWith target config
         solutionsLists <-
             searchGraph
                 searchConfig
                 (match SideCondition.topTODO searchPattern)
-                executionGraph
+                (discardNodesDepth executionGraph)
         let
             solutions = concatMap MultiOr.extractPatterns solutionsLists
             orPredicate =
@@ -341,6 +355,10 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
   where
     patternSort = termLikeSort termLike
 
+discardNodesDepth
+    :: Strategy.ExecutionGraph ExecState c
+    -> Strategy.ExecutionGraph (Pattern VariableName) c
+discardNodesDepth = Bifunctor.first (fst . getState)
 
 -- | Proving a spec given as a module containing rules to be proven
 prove

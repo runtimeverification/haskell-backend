@@ -9,6 +9,7 @@ module Kore.Strategies.ProofState
     , ProofState (..)
     , Prim (..)
     , proofState
+    , increment
     , ProofStateTransformer (..)
     ) where
 
@@ -123,7 +124,7 @@ instance Unparse goal => Pretty (ProofState goal) where
             , Pretty.indent 4 $ unparse goal
             , Pretty.hsep ["Depth:", Pretty.pretty (getDepth depth)]
             ]
-    pretty (Proven depth) = "Proof state Proven."
+    pretty (Proven _) = "Proof state Proven."
 
 {- | Extract the unproven goals of a 'ProofState'.
 

@@ -75,10 +75,10 @@ import Kore.Step.Strategy
     , runStrategy
     )
 import Kore.Strategies.Goal
-import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Strategies.ProofState
     ( ExecutionDepth (..)
     )
+import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Module
     ( ModuleName (ModuleName)
     )

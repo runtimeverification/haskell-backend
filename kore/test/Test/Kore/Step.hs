@@ -24,6 +24,9 @@ import Data.Text
     ( Text
     )
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Exec
+    ( discardNodesDepth
+    )
 import Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
     , SmtMetadataTools
@@ -74,6 +77,9 @@ import Kore.Step.RulePattern as RulePattern
     , rulePattern
     )
 import qualified Kore.Step.Strategy as Strategy
+import Kore.Strategies.ProofState
+    ( ExecutionDepth (..)
+    )
 import Kore.Syntax.Variable
 
 import Test.Kore
@@ -147,7 +153,8 @@ takeSteps (Start start, wrappedAxioms) =
             Unlimited
             transitionRule
             (repeat $ priorityAllStrategy axioms)
-            (pure configuration)
+            (ExecState (pure configuration, ExecutionDepth 0))
+        & fmap discardNodesDepth
 
 compareTo
     :: HasCallStack
@@ -530,7 +537,12 @@ runStep
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy
+        Unlimited
+        transitionRule
+        [priorityAllStrategy axioms]
+        (ExecState (configuration, ExecutionDepth 0))
+    & fmap discardNodesDepth
 
 runStepMockEnv
     :: Pattern VariableName
@@ -540,4 +552,9 @@ runStepMockEnv
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy
+        Unlimited
+        transitionRule
+        [priorityAllStrategy axioms]
+        (ExecState (configuration, ExecutionDepth 0))
+    & fmap discardNodesDepth
