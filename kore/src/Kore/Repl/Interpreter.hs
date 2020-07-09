@@ -32,6 +32,7 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import Control.Monad
     ( void
+    , (<=<)
     )
 import Control.Monad.Extra
     ( ifM
@@ -935,16 +936,19 @@ clear
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
-clear =
-    \case
+clear maybeNode = do
+    graph <- getInnerGraph
+    case maybeNode of
         Nothing -> Lens.use (field @"node") >>= clear . Just
         Just node
-          | unReplNode node == 0 -> putStrLn' "Cannot clear initial node (0)."
-          | otherwise -> clear0 node
+          | unReplNode node == 0 ->
+              putStrLn' "Cannot clear initial node (0)."
+          | isDirectDescendentOfBranching node graph ->
+              putStrLn' "Cannot clear a direct descendant of a branching node."
+          | otherwise -> clear0 node graph
   where
-    clear0 :: ReplNode -> m ()
-    clear0 rnode = do
-        graph <- getInnerGraph
+    clear0 :: ReplNode -> InnerGraph Axiom -> m ()
+    clear0 rnode graph = do
         let node = unReplNode rnode
         let
             nodesToBeRemoved = collect (next graph) node
@@ -961,6 +965,11 @@ clear =
 
     prevNode :: InnerGraph axiom -> Graph.Node -> Graph.Node
     prevNode graph = fromMaybe 0 . headMay . fmap fst . Graph.lpre graph
+
+    isDirectDescendentOfBranching :: ReplNode -> InnerGraph axiom -> Bool
+    isDirectDescendentOfBranching (ReplNode node) graph =
+        let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
+         in length childrenOfParent /= 1
 
 -- | Save this sessions' commands to the specified file.
 saveSession
