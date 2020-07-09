@@ -30,6 +30,9 @@ import Test.Tasty.HUnit
     , testCase
     )
 
+import Control.Monad.Catch
+    ( MonadMask
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -249,7 +252,7 @@ simplify =
     . simplifyConditionalTerm SideCondition.top
 
 evaluate
-    :: (MonadSMT smt, MonadLog smt, MonadProf smt)
+    :: (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt)
     => TermLike VariableName
     -> smt (Pattern VariableName)
 evaluate termLike =
@@ -259,7 +262,7 @@ evaluate termLike =
 
 evaluateT
     :: MonadTrans t
-    => (MonadSMT smt, MonadLog smt, MonadProf smt)
+    => (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt)
     => TermLike VariableName
     -> t smt (Pattern VariableName)
 evaluateT = lift . evaluate

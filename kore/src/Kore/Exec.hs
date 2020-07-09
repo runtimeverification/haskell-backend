@@ -32,8 +32,7 @@ import Control.Monad
     ( (>=>)
     )
 import Control.Monad.Catch
-    ( MonadCatch
-    , MonadThrow
+    ( MonadMask
     )
 import Control.Monad.Trans.Except
     ( runExceptT
@@ -195,7 +194,7 @@ exec
     ::  ( MonadIO smt
         , MonadLog smt
         , MonadSMT smt
-        , MonadThrow smt
+        , MonadMask smt
         , MonadProf smt
         )
     => Limit Natural
@@ -290,7 +289,7 @@ search
     ::  ( MonadIO smt
         , MonadLog smt
         , MonadSMT smt
-        , MonadThrow smt
+        , MonadMask smt
         , MonadProf smt
         )
     => Limit Natural
@@ -341,7 +340,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
 prove
     ::  forall smt
       . ( MonadLog smt
-        , MonadCatch smt
+        , MonadMask smt
         , MonadIO smt
         , MonadSMT smt
         , MonadProf smt
@@ -443,7 +442,7 @@ boundedModelCheck
     ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
-        , MonadThrow smt
+        , MonadMask smt
         , MonadProf smt
         )
     => Limit Natural
@@ -476,6 +475,7 @@ mergeAllRules
         , MonadSMT smt
         , MonadIO smt
         , MonadProf smt
+        , MonadMask smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -490,6 +490,7 @@ mergeRulesConsecutiveBatches
         , MonadSMT smt
         , MonadIO smt
         , MonadProf smt
+        , MonadMask smt
         )
     => Int
     -- ^ Batch size
@@ -507,6 +508,7 @@ mergeRules
         , MonadSMT smt
         , MonadIO smt
         , MonadProf smt
+        , MonadMask smt
         )
     =>  (  NonEmpty (RewriteRule VariableName)
         -> Simplifier.SimplifierT smt [RewriteRule VariableName]

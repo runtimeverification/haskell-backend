@@ -111,9 +111,9 @@ instance MonadTrans SimplifierT where
 instance MonadLog log => MonadLog (SimplifierT log) where
     logWhile entry = mapSimplifierT $ logWhile entry
 
-instance MonadProf prof => MonadProf (SimplifierT prof) where
-    traceProf name = SimplifierT . Morph.hoist (traceProf name) . runSimplifierT
-    {-# INLINE traceProf #-}
+instance (MonadMask prof, MonadProf prof) => MonadProf (SimplifierT prof) where
+    traceEvent name = lift (traceEvent name)
+    {-# INLINE traceEvent #-}
 
 traceProfSimplify
     :: MonadProf prof
@@ -130,7 +130,7 @@ traceProfSimplify termLike =
         <$> matchAxiomIdentifier termLike
 
 instance
-    (MonadSMT m, MonadLog m, MonadProf m)
+    (MonadSMT m, MonadLog m, MonadMask m, MonadProf m)
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools
@@ -191,7 +191,7 @@ that may branch.
   -}
 evalSimplifier
     :: forall smt a
-    .  (MonadLog smt, MonadSMT smt, MonadProf smt, MonadIO smt)
+    .  (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt)
     => VerifiedModule Attribute.Symbol
     -> SimplifierT smt a
     -> smt a

@@ -118,7 +118,10 @@ import Data.Witherable
     ( Filterable (..)
     , Witherable (..)
     )
-import Debug.Trace
+import Debug.Trace hiding
+    ( traceEvent
+    , traceEventIO
+    )
 import GHC.Stack
     ( HasCallStack
     )

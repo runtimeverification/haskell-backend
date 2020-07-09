@@ -223,8 +223,8 @@ runNoSMT :: NoSMT a -> LoggerT IO a
 runNoSMT = getNoSMT
 
 instance MonadProf NoSMT where
-    traceProf = defaultTraceProf
-    {-# INLINE traceProf #-}
+    traceEvent name = NoSMT (traceEvent name)
+    {-# INLINE traceEvent #-}
 
 instance MonadLog NoSMT where
     logEntry entry = NoSMT $ logEntry entry
@@ -270,8 +270,8 @@ newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
         )
 
 instance MonadProf SMT where
-    traceProf = defaultTraceProf
-    {-# INLINE traceProf #-}
+    traceEvent name = SMT (traceEvent name)
+    {-# INLINE traceEvent #-}
 
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do

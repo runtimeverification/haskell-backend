@@ -3,7 +3,7 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     , SomeException
     , displayException
     , handle
@@ -811,7 +811,7 @@ loadRuleIds fileName = do
         )
 
 type MonadExecute exe =
-    ( MonadCatch exe
+    ( MonadMask exe
     , MonadIO exe
     , MonadSMT exe
     , MonadProf exe

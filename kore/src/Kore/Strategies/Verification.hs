@@ -29,6 +29,7 @@ import qualified Control.Monad as Monad
     )
 import Control.Monad.Catch
     ( MonadCatch
+    , MonadMask
     , handle
     , handleAll
     , throwM
@@ -109,6 +110,7 @@ import Logic
     ( LogicT
     )
 import qualified Logic
+import Prof
 
 type CommonProofState = ProofState.ProofState ReachabilityRule
 
@@ -167,7 +169,9 @@ newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
 
 verify
     :: forall simplifier
-    .  (MonadCatch simplifier, MonadSimplify simplifier)
+    .  MonadMask simplifier
+    => MonadSimplify simplifier
+    => MonadProf simplifier
     => Limit Natural
     -> GraphSearchOrder
     -> AllClaims ReachabilityRule
@@ -209,7 +213,9 @@ verify
 
 verifyHelper
     :: forall simplifier
-    .  (MonadCatch simplifier, MonadSimplify simplifier)
+    .  MonadSimplify simplifier
+    => MonadMask simplifier
+    => MonadProf simplifier
     => Limit Natural
     -> GraphSearchOrder
     -> AllClaims ReachabilityRule
@@ -235,7 +241,9 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
 
 verifyClaim
     :: forall simplifier
-    .  (MonadCatch simplifier, MonadSimplify simplifier)
+    .  MonadSimplify simplifier
+    => MonadMask simplifier
+    => MonadProf simplifier
     => Limit Natural
     -> GraphSearchOrder
     -> AllClaims ReachabilityRule
@@ -313,7 +321,9 @@ verifyClaim
 -- execution graph by inserting this step.
 verifyClaimStep
     :: forall simplifier
-    .  (MonadCatch simplifier, MonadSimplify simplifier)
+    .  MonadSimplify simplifier
+    => MonadMask simplifier
+    => MonadProf simplifier
     => [ReachabilityRule]
     -- ^ list of claims in the spec module
     -> [Rule ReachabilityRule]
@@ -348,19 +358,36 @@ verifyClaimStep claims axioms executionGraph node =
 
 transitionRule'
     :: MonadSimplify simplifier
-    => MonadCatch simplifier
+    => MonadProf simplifier
+    => MonadMask simplifier
     => [ReachabilityRule]
     -> [Rule ReachabilityRule]
     -> TransitionRule simplifier ReachabilityRule
 transitionRule' claims axioms =
     transitionRule claims axiomGroups
+    & profTransitionRule
     & withConfiguration
     & withDebugProofState
     & logTransitionRule
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
-
+profTransitionRule
+    :: forall m
+    .  MonadProf m
+    => TransitionRule m ReachabilityRule
+    -> TransitionRule m ReachabilityRule
+profTransitionRule rule prim proofState =
+    case prim of
+        Prim.ApplyClaims -> tracing ":transit:apply-claims"
+        Prim.ApplyAxioms -> tracing ":transit:apply-axioms"
+        Prim.CheckImplication -> tracing ":transit:check-implies"
+        Prim.Simplify -> tracing ":transit:simplify"
+        _ -> rule prim proofState
+  where
+    tracing name =
+        lift (traceProf name (runTransitionT (rule prim proofState)))
+        >>= Transition.scatter
 
 logTransitionRule
     :: forall m

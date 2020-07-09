@@ -11,13 +11,17 @@ module Prof
     , defaultTraceProf
     ) where
 
-import Prelude.Kore hiding
-    ( traceEventIO
-    )
+import Prelude.Kore
 
 import Control.Monad.Catch
     ( MonadMask
     , bracket_
+    )
+import Control.Monad.Trans.Except
+    ( ExceptT
+    )
+import Control.Monad.Trans.Reader
+    ( ReaderT
     )
 import Data.Text
     ( Text
@@ -34,19 +38,38 @@ class Monad prof => MonadProf prof where
         :: Text  -- ^ name for profiling
         -> prof a  -- ^ action
         -> prof a
-
-instance MonadProf IO where
+    default traceProf
+        :: MonadMask prof
+        => Text
+        -> prof a
+        -> prof a
     traceProf = defaultTraceProf
     {-# INLINE traceProf #-}
 
+    {- | For internal use only.
+     -}
+    traceEvent :: Text -> prof ()
+
+instance MonadProf IO where
+    traceEvent = traceEventIO
+    {-# INLINE traceEvent #-}
+
+instance (MonadMask prof, MonadProf prof) => MonadProf (ExceptT e prof) where
+    traceEvent name = lift (traceEvent name)
+    {-# INLINE traceEvent #-}
+
+instance (MonadMask prof, MonadProf prof) => MonadProf (ReaderT r prof) where
+    traceEvent name = lift (traceEvent name)
+    {-# INLINE traceEvent #-}
+
 defaultTraceProf
-    :: (MonadIO mask, MonadMask mask)
+    :: (MonadProf prof, MonadMask prof)
     => Text
-    -> mask a
-    -> mask a
+    -> prof a
+    -> prof a
 defaultTraceProf name =
     bracket_ open close
   where
-    open = liftIO $ traceEventIO (Text.cons 'O' name)
-    close = liftIO $ traceEventIO (Text.cons 'C' name)
+    open = traceEvent (Text.cons 'O' name)
+    close = traceEvent (Text.cons 'C' name)
 {-# INLINE defaultTraceProf #-}
