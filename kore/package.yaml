@@ -201,6 +201,14 @@ executables:
       - kore
     <<: *common-exe
 
+  kore-prof:
+    main: Main.hs
+    source-dirs:
+      - app/prof
+    dependencies:
+      - eventlog2speedscope
+      - optparse-applicative
+
 tests:
   kore-test:
     main: Test.hs

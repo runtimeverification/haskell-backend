@@ -56,6 +56,21 @@ extra-deps:
     commit: e411234da88d3f32dfe1319c5edce478abf5115b
   - junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
 
+  - git: https://github.com/ttuegel/pipes-ghc-events.git
+    commit: 8e1580ed54c610c282b19499db72529a9f51becc
+    subdirs:
+      - eventlog2speedscope
+    # nix-sha256: 0w302yywkv8vwa7zrh8c6zjcc1d21pxp83b4h4mi46pam4ivapfd
+  - git: https://github.com/ttuegel/pipes-ghc-events.git
+    commit: 8e1580ed54c610c282b19499db72529a9f51becc
+    subdirs:
+      - pipes-ghc-events
+    # nix-sha256: 0w302yywkv8vwa7zrh8c6zjcc1d21pxp83b4h4mi46pam4ivapfd
+  - git: https://github.com/ttuegel/pipes-sqlite-simple.git
+    commit: a3920f053f92e76f2a7ff7c68e34f9e926817702
+    # nix-sha256: 13iag206szfmc8ng77j6qjb6r91ysy9qkvijmf9n9dclvmb1g8an
+  - ghc-events-0.13.0
+
 # TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
 allow-newer: true
 
