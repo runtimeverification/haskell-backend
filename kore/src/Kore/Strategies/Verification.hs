@@ -93,6 +93,7 @@ import Kore.Strategies.ProofState
     ( ExecutionDepth (..)
     , ProofState
     , ProofStateTransformer (..)
+    , incrementDepth
     )
 import qualified Kore.Strategies.ProofState as ProofState
     ( ProofState (..)
@@ -364,10 +365,24 @@ transitionRule' claims axioms =
     & withConfiguration
     & withDebugProofState
     & logTransitionRule
+    & countExecutionDepth
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
-
+countExecutionDepth
+    :: TransitionRule m ReachabilityRule
+    -> TransitionRule m ReachabilityRule
+countExecutionDepth rule = \prim proofState -> do
+    result <- rule prim proofState
+    if prim `elem` [Prim.ApplyClaims, Prim.ApplyAxioms]
+        && isGoalRemainder result
+    then
+        fmap incrementDepth (rule prim proofState)
+    else
+        rule prim proofState
+  where
+    isGoalRemainder (ProofState.GoalRemainder _ _) = True
+    isGoalRemainder _ = False
 
 logTransitionRule
     :: forall m

@@ -6,10 +6,12 @@ module Kore.Strategies.ProofState
     ( extractGoalRem
     , extractUnproven
     , ExecutionDepth (..)
+    , increment
     , ProofState (..)
     , Prim (..)
     , proofState
-    , increment
+    , incrementDepth
+    , changeDepth
     , ProofStateTransformer (..)
     ) where
 
@@ -50,7 +52,7 @@ data Prim
     | TriviallyValid
     | ApplyClaims
     | ApplyAxioms
-    deriving (Show)
+    deriving (Show, Eq)
 
 instance Pretty Prim where
     pretty CheckProven = "Transition CheckProven."
@@ -141,6 +143,19 @@ extractUnproven (Proven _)            = Nothing
 extractGoalRem :: ProofState a -> Maybe a
 extractGoalRem (GoalRemainder _ t) = Just t
 extractGoalRem _                   = Nothing
+
+incrementDepth :: ProofState a -> ProofState a
+incrementDepth = changeDepth increment
+
+changeDepth
+    :: (ExecutionDepth -> ExecutionDepth)
+    -> ProofState a
+    -> ProofState a
+changeDepth f (Goal d t)    = Goal (f d) t
+changeDepth f (GoalRewritten d t) = GoalRewritten (f d) t
+changeDepth f (GoalRemainder d t) = GoalRemainder (f d) t
+changeDepth f (GoalStuck d t) = GoalStuck (f d) t
+changeDepth f (Proven d)      = Proven (f d)
 
 data ProofStateTransformer a val =
     ProofStateTransformer
