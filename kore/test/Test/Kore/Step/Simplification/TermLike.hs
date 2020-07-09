@@ -1,5 +1,5 @@
 module Test.Kore.Step.Simplification.TermLike
-    ( test_simplifyInternal
+    ( test_simplify
     ) where
 
 import Prelude.Kore
@@ -24,15 +24,15 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
-test_simplifyInternal :: [TestTree]
-test_simplifyInternal =
+test_simplify :: [TestTree]
+test_simplify =
     [ testCase "Evaluated" $ void
-      $ simplifyInternalEvaluated $ mkEvaluated $ Mock.f Mock.a
+      $ simplifyEvaluated $ mkEvaluated $ Mock.f Mock.a
     ]
 
-simplifyInternalEvaluated :: TermLike VariableName -> IO (OrPattern VariableName)
-simplifyInternalEvaluated original =
-    runSimplifier env $ TermLike.simplifyInternal original SideCondition.top
+simplifyEvaluated :: TermLike VariableName -> IO (OrPattern VariableName)
+simplifyEvaluated original =
+    runSimplifier env $ TermLike.simplify SideCondition.top original
   where
     env = Mock.env
         { simplifierTermLike =

@@ -5,7 +5,6 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.TermLike
     ( simplify
-    , simplifyInternal
     ) where
 
 import Prelude.Kore
