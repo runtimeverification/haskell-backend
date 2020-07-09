@@ -176,7 +176,7 @@ simplify sideCondition = \termLike ->
         :: Traversable t
         => t (TermLike variable)
         -> simplifier (t (OrPattern variable))
-    simplifyChildren = traverse simplifyInternalWorker
+    simplifyChildren = traverse (simplifyConditionalTermToOr sideCondition)
 
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
