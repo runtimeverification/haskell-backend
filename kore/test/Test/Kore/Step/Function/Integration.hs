@@ -600,9 +600,10 @@ test_functionIntegration =
         :: BuiltinAndAxiomSimplifierMap
         -> TermLike VariableName
         -> IO (Pattern VariableName)
-    evaluate functionIdToEvaluator patt =
-        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt SideCondition.top
+    evaluate functionIdToEvaluator termLike =
+        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
+            patterns <- TermLike.simplifyToOr SideCondition.top termLike
+            pure (OrPattern.toPattern patterns)
 
 test_functionIntegrationUnification :: [TestTree]
 test_functionIntegrationUnification =
@@ -940,9 +941,10 @@ test_functionIntegrationUnification =
         :: BuiltinAndAxiomSimplifierMap
         -> TermLike VariableName
         -> IO (Pattern VariableName)
-    evaluate functionIdToEvaluator patt =
-        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt SideCondition.top
+    evaluate functionIdToEvaluator termLike =
+        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
+            patterns <- TermLike.simplifyToOr SideCondition.top termLike
+            pure (OrPattern.toPattern patterns)
 
 test_Nat :: [TestTree]
 test_Nat =

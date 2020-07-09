@@ -4,8 +4,7 @@ License     : NCSA
 
 -}
 module Kore.Step.Simplification.TermLike
-    ( simplify
-    , simplifyToOr
+    ( simplifyToOr
     , simplifyInternal
     ) where
 
@@ -149,20 +148,6 @@ import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
-
-{-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
--}
-simplify
-    ::  ( HasCallStack
-        , InternalVariable variable
-        , MonadSimplify simplifier
-        )
-    =>  TermLike variable
-    ->  SideCondition variable
-    ->  simplifier (Pattern variable)
-simplify patt sideCondition = do
-    orPatt <- simplifyToOr sideCondition patt
-    return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
 'OrPattern'.

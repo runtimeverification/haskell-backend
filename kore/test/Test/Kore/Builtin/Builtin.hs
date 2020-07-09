@@ -75,6 +75,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -257,7 +258,10 @@ evaluate
     :: (MonadSMT smt, MonadLog smt)
     => TermLike VariableName
     -> smt (Pattern VariableName)
-evaluate = runSimplifier testEnv . (`TermLike.simplify` SideCondition.top)
+evaluate termLike =
+    runSimplifier testEnv $ do
+        patterns <- TermLike.simplifyToOr SideCondition.top termLike
+        pure (OrPattern.toPattern patterns)
 
 evaluateT
     :: MonadTrans t
