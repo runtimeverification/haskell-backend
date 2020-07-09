@@ -16,8 +16,8 @@ import Prelude.Kore ()
 
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
-    ( simplifyToOr
+    ( simplify
     )
 
 create :: TermLikeSimplifier
-create = termLikeSimplifier TermLike.simplifyToOr
+create = termLikeSimplifier TermLike.simplify

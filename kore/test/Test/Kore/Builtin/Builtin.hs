@@ -260,7 +260,7 @@ evaluate
     -> smt (Pattern VariableName)
 evaluate termLike =
     runSimplifier testEnv $ do
-        patterns <- TermLike.simplifyToOr SideCondition.top termLike
+        patterns <- TermLike.simplify SideCondition.top termLike
         pure (OrPattern.toPattern patterns)
 
 evaluateT
@@ -274,7 +274,7 @@ evaluateToList :: TermLike VariableName -> SMT [Pattern VariableName]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
-    . TermLike.simplifyToOr SideCondition.top
+    . TermLike.simplify SideCondition.top
 
 runStep
     :: Pattern VariableName

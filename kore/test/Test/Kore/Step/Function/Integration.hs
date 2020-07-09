@@ -602,7 +602,7 @@ test_functionIntegration =
         -> IO (Pattern VariableName)
     evaluate functionIdToEvaluator termLike =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
-            patterns <- TermLike.simplifyToOr SideCondition.top termLike
+            patterns <- TermLike.simplify SideCondition.top termLike
             pure (OrPattern.toPattern patterns)
 
 test_functionIntegrationUnification :: [TestTree]
@@ -943,7 +943,7 @@ test_functionIntegrationUnification =
         -> IO (Pattern VariableName)
     evaluate functionIdToEvaluator termLike =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
-            patterns <- TermLike.simplifyToOr SideCondition.top termLike
+            patterns <- TermLike.simplify SideCondition.top termLike
             pure (OrPattern.toPattern patterns)
 
 test_Nat :: [TestTree]
@@ -1062,10 +1062,10 @@ equalsUnification comment term results =
         assertEqual "" expect actual
 
 simplify :: TermLike VariableName -> IO (OrPattern VariableName)
-simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
+simplify = runSimplifier testEnv . TermLike.simplify SideCondition.top
 
 simplifyUnification :: TermLike VariableName -> IO (OrPattern VariableName)
-simplifyUnification = runSimplifier testEnvUnification . TermLike.simplifyToOr SideCondition.top
+simplifyUnification = runSimplifier testEnvUnification . TermLike.simplify SideCondition.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
