@@ -50,7 +50,7 @@ let
     {
       inherit pkgs project;
       cache = [
-        pkgs.haskell-nix.haskellNixRoots
+        project.roots
         (pkgs.haskell-nix.withInputs shell)
       ];
     };
