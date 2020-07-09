@@ -11,6 +11,7 @@ module Kore.Log.KoreLogOptions
     , ExeName (..)
     , TimestampsSwitch (..)
     , WarningSwitch (..)
+    , defaultKoreLogOptions
     , parseKoreLogOptions
     , DebugApplyEquationOptions (..)
     , selectDebugApplyEquation
@@ -77,7 +78,6 @@ import Log
 import qualified Pretty
 import System.Clock
     ( TimeSpec
-    , fromNanoSecs
     )
 
 {- | Command line options for logging.
@@ -102,22 +102,23 @@ data KoreLogOptions = KoreLogOptions
     }
     deriving (Eq, Show)
 
-instance Default KoreLogOptions where
-    def =
-        KoreLogOptions
-            { logType = def @KoreLogType
-            , logLevel = Warning
-            , timestampsSwitch = def @TimestampsSwitch
-            , logEntries = mempty
-            , debugSolverOptions = def @DebugSolverOptions
-            , exeName = ExeName mempty
-            , startTime = fromNanoSecs 0
-            , logSQLiteOptions = def @LogSQLiteOptions
-            , warningSwitch = def @WarningSwitch
-            , debugApplyEquationOptions = def @DebugApplyEquationOptions
-            , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
-            , debugEquationOptions = def @DebugEquationOptions
-            }
+
+defaultKoreLogOptions :: ExeName -> TimeSpec -> KoreLogOptions
+defaultKoreLogOptions exeName startTime =
+    KoreLogOptions
+        { logType = def @KoreLogType
+        , logLevel = Warning
+        , timestampsSwitch = def @TimestampsSwitch
+        , logEntries = mempty
+        , debugSolverOptions = def @DebugSolverOptions
+        , exeName
+        , startTime
+        , logSQLiteOptions = def @LogSQLiteOptions
+        , warningSwitch = def @WarningSwitch
+        , debugApplyEquationOptions = def @DebugApplyEquationOptions
+        , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
+        , debugEquationOptions = def @DebugEquationOptions
+        }
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
