@@ -139,9 +139,9 @@ properly defined at the end of this section.
     | "\forall" "{" <sort> "}"
         "(" <element-variable> "," <pattern> ")"
     // Fixpoint operators
-    | "\mu" "{" <sort> "}"
+    | "\mu" "{" "}"
         "(" <set-variable> "," <pattern> ")"
-    | "\nu" "{" <sort> "}"
+    | "\nu" "{" "}"
         "(" <set-variable> "," <pattern> ")"
     // Definedness and totality
     | "\ceil" "{" <sort> "," <sort> "}"
@@ -297,4 +297,3 @@ Keywords
 ```
 
 An identifier cannot be a keyword.
-

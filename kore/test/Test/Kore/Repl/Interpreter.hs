@@ -755,14 +755,13 @@ mkConfig logger =
         }
   where
     stepper0
-        :: Claim
-        -> [Claim]
+        :: [Claim]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> Simplifier (ExecutionGraph Axiom)
-    stepper0 claim' claims' axioms' graph (ReplNode node) =
-        verifyClaimStep claim' claims' axioms' graph node
+    stepper0 claims' axioms' graph (ReplNode node) =
+        verifyClaimStep claims' axioms' graph node
 
 formatUnificationError
     :: Pretty.Doc ()

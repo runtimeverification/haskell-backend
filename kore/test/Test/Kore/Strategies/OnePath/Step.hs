@@ -14,8 +14,9 @@ import Data.Default
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.List
-    ( nub
+import Data.List.Extra
+    ( groupSortOn
+    , nub
     , sort
     )
 import Data.Reflection
@@ -29,6 +30,7 @@ import Data.Limit
     ( Limit (..)
     )
 import qualified Data.Limit as Limit
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Rewriting.RewritingVariable
 
 import Kore.IndexedModule.IndexedModule
@@ -829,19 +831,26 @@ rewriteReachabilityWithPredicate left right predicate =
 
 runSteps
     :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Limit Natural
-    -> ( ExecutionGraph
-            (ProofState goal goal)
-            (Rule goal)
+    -> ( ExecutionGraph (ProofState.ProofState goal) (Rule goal)
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)
+    -> [goal]
+    -> [[Rule goal]]
     -> goal
     -- ^left-hand-side of unification
-    -> [Strategy (Prim goal)]
+    -> [Strategy Prim]
     -> IO a
-runSteps breadthLimit graphFilter picker configuration strategy' =
+runSteps
+    breadthLimit
+    graphFilter
+    picker
+    claims
+    axiomGroups
+    configuration
+    strategy'
+  =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
@@ -851,7 +860,7 @@ runSteps breadthLimit graphFilter picker configuration strategy' =
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
         runStrategy
             breadthLimit
-            transitionRule
+            (transitionRule claims axiomGroups)
             strategy'
             (ProofState.Goal configuration)
   where
@@ -860,15 +869,15 @@ runSteps breadthLimit graphFilter picker configuration strategy' =
 
 runOnePathSteps
     :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
     => Ord goal
+    => From (Rule goal) Attribute.Axiom.PriorityAttributes
     => Limit Natural
     -> Limit Natural
     -> goal
     -- ^left-hand-side of unification
     -> [goal]
     -> [Rule goal]
-    -> IO [ProofState goal goal]
+    -> IO [ProofState.ProofState goal]
 runOnePathSteps
     breadthLimit
     depthLimit
@@ -880,11 +889,10 @@ runOnePathSteps
         breadthLimit
         Just
         pickFinal
+        coinductiveRewrites
+        (groupSortOn Attribute.Axiom.getPriorityOfAxiom rewrites)
         goal
-        (Limit.takeWithin
-            depthLimit
-            (Foldable.toList $ strategy goal coinductiveRewrites rewrites)
-        )
+        (Limit.takeWithin depthLimit (Foldable.toList strategy))
     return (sort $ nub result)
 
 assertStuck
