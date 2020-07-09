@@ -83,7 +83,6 @@ import Data.Text
     ( Text
     )
 
-import Kore.Prof
 import Log
     ( LogAction
     , LoggerT
@@ -95,6 +94,7 @@ import Logic
     ( LogicT
     , mapLogicT
     )
+import Prof
 import SMT.SimpleSMT
     ( Constructor (..)
     , ConstructorArgument (..)

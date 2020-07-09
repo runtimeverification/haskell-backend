@@ -167,6 +167,9 @@ import Pretty
     , putDoc
     , vsep
     )
+import Prof
+    ( MonadProf
+    )
 import SMT
     ( MonadSMT
     , TimeOut (..)
@@ -811,6 +814,7 @@ type MonadExecute exe =
     ( MonadCatch exe
     , MonadIO exe
     , MonadSMT exe
+    , MonadProf exe
     , WithLog LogMessage exe
     )
 

@@ -50,7 +50,6 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import Kore.Prof
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
@@ -68,6 +67,7 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
 import Log
 import Logic
 import qualified Pretty
+import Prof
 import SMT
     ( MonadSMT (..)
     , SMT (..)

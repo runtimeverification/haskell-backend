@@ -6,7 +6,7 @@ License     : NCSA
 
 {-# OPTIONS_GHC -fno-prof-auto #-}
 
-module Kore.Prof
+module Prof
     ( MonadProf (..)
     , defaultTraceProf
     ) where
