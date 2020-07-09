@@ -135,6 +135,7 @@ import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
+    , ExecutionDepth (..)
     , extractUnproven
     , proofState
     )
@@ -154,7 +155,7 @@ import Kore.Syntax.Variable
 -- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph Axiom
 emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . Goal
+    Strategy.emptyExecutionGraph . Goal (ExecutionDepth 0)
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)

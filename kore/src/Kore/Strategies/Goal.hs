@@ -346,7 +346,7 @@ instance Goal AllPathRule where
     applyClaims claims = deriveSeqAllPath (map goalToRule claims)
 
     applyAxioms axiomss = \goal ->
-        foldM applyAxioms1 (GoalRemainder goal) axiomss
+        foldM applyAxioms1 (GoalRemainder (ExecutionDepth 0) goal) axiomss
       where
         applyAxioms1 proofState axioms
           | Just goal <- retractRewritableGoal proofState =
@@ -356,17 +356,18 @@ instance Goal AllPathRule where
           | otherwise =
             pure proofState
 
-        retractRewritableGoal (Goal goal) = Just goal
-        retractRewritableGoal (GoalRemainder goal) = Just goal
+        retractRewritableGoal (Goal _ goal) = Just goal
+        retractRewritableGoal (GoalRemainder _ goal) = Just goal
         retractRewritableGoal _ = Nothing
 
         simplifyRemainder proofState =
             case proofState of
-                GoalRemainder goal -> GoalRemainder <$> simplify goal
+                GoalRemainder depth goal ->
+                    GoalRemainder depth <$> simplify goal
                 _ -> return proofState
 
         checkTriviallyValid proofState
-          | all isTriviallyValid proofState = pure Proven
+          | all isTriviallyValid proofState = pure $ Proven (ExecutionDepth 0) 
           | otherwise = pure proofState
 
 deriveParAllPath
@@ -500,56 +501,56 @@ transitionRule claims axiomGroups = transitionRuleWorker
         :: Prim
         -> ProofState goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-    transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
+    transitionRuleWorker CheckProven (Proven _) = empty
+    transitionRuleWorker CheckGoalRemainder (GoalRemainder _ _) = empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten goal) =
-        return (Goal goal)
+    transitionRuleWorker ResetGoal (GoalRewritten depth goal) =
+        return (Goal depth goal)
 
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+    transitionRuleWorker CheckGoalStuck (GoalStuck _ _) = empty
 
-    transitionRuleWorker Simplify (Goal goal) =
+    transitionRuleWorker Simplify (Goal depth goal) =
         Profile.timeStrategy "Goal.Simplify" $ do
             results <- tryTransitionT (simplify goal)
             case results of
-                [] -> return Proven
-                _  -> Goal <$> Transition.scatter results
+                [] -> return (Proven depth)
+                _  -> Goal depth <$> Transition.scatter results
 
-    transitionRuleWorker Simplify (GoalRemainder goal) =
+    transitionRuleWorker Simplify (GoalRemainder depth goal) =
         Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplify goal
+        $ GoalRemainder depth <$> simplify goal
 
-    transitionRuleWorker InferDefined (GoalRemainder goal) =
+    transitionRuleWorker InferDefined (GoalRemainder depth goal) =
         Profile.timeStrategy "inferDefined" $ do
             results <- tryTransitionT (inferDefined goal)
             case results of
-                [] -> return Proven
-                _ -> GoalRemainder <$> Transition.scatter results
+                [] -> return (Proven depth)
+                _ -> GoalRemainder depth <$> Transition.scatter results
 
-    transitionRuleWorker CheckImplication (Goal goal) =
+    transitionRuleWorker CheckImplication (Goal depth goal) =
         Profile.timeStrategy "Goal.CheckImplication" $ do
             result <- checkImplication goal
             case result of
-                NotImpliedStuck a -> pure (GoalStuck a)
-                Implied -> pure Proven
-                NotImplied a -> pure (Goal a)
-    transitionRuleWorker CheckImplication (GoalRemainder goal) =
+                NotImpliedStuck a -> pure (GoalStuck depth a)
+                Implied -> pure (Proven depth)
+                NotImplied a -> pure (Goal depth a)
+    transitionRuleWorker CheckImplication (GoalRemainder depth goal) =
         Profile.timeStrategy "Goal.CheckImplicationRemainder" $ do
             result <- checkImplication goal
             case result of
-                NotImpliedStuck a -> pure (GoalStuck a)
-                Implied -> pure Proven
-                NotImplied a -> pure (GoalRemainder a)
+                NotImpliedStuck a -> pure (GoalStuck depth a)
+                Implied -> pure (Proven depth)
+                NotImplied a -> pure (GoalRemainder depth a)
 
-    transitionRuleWorker TriviallyValid (Goal goal)
+    transitionRuleWorker TriviallyValid (Goal depth goal)
       | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRemainder goal)
+          return (Proven depth)
+    transitionRuleWorker TriviallyValid (GoalRemainder depth goal)
       | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRewritten goal)
+          return (Proven depth)
+    transitionRuleWorker TriviallyValid (GoalRewritten depth goal)
       | isTriviallyValid goal =
-          return Proven
+          return (Proven depth)
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -562,19 +563,19 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- opaque way. I think that there's no good reason for wrapping the
     -- results in `derivePar` as opposed to here.
 
-    transitionRuleWorker ApplyClaims (Goal goal) =
+    transitionRuleWorker ApplyClaims (Goal _ goal) =
         Profile.timeStrategy "applyClaims"
         $ applyClaims claims goal
 
-    transitionRuleWorker ApplyClaims (GoalRemainder goal) =
+    transitionRuleWorker ApplyClaims (GoalRemainder _ goal) =
         Profile.timeStrategy "applyClaims"
         $ applyClaims claims goal
 
-    transitionRuleWorker ApplyAxioms (Goal goal) =
+    transitionRuleWorker ApplyAxioms (Goal _ goal) =
         Profile.timeStrategy "applyAxioms"
         $ applyAxioms axiomGroups goal
 
-    transitionRuleWorker ApplyAxioms (GoalRemainder goal) =
+    transitionRuleWorker ApplyAxioms (GoalRemainder _ goal) =
         Profile.timeStrategy "applyAxioms"
         $ applyAxioms axiomGroups goal
 
@@ -800,11 +801,11 @@ deriveResults mkRule Results { results, remainders } =
             []      ->
                 -- If the rule returns \bottom, the goal is proven on the
                 -- current branch.
-                pure Proven
+                pure $ Proven (ExecutionDepth 0)
             configs -> Foldable.asum (addRewritten <$> configs)
 
-    addRewritten = pure . GoalRewritten
-    addRemainder = pure . GoalRemainder
+    addRewritten = pure . GoalRewritten (ExecutionDepth 0)
+    addRemainder = pure . GoalRemainder (ExecutionDepth 0)
 
     addRule = Transition.addRule . fromAppliedRule
 

@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Strategies.ProofState
     ( extractGoalRem
     , extractUnproven
+    , ExecutionDepth (..)
     , ProofState (..)
     , Prim (..)
     , proofState
@@ -15,6 +16,9 @@ import Prelude.Kore
 
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import Numeric.Natural
+    ( Natural
+    )
 
 import Kore.Debug
 import Kore.Unparser
@@ -59,20 +63,26 @@ instance Pretty Prim where
     pretty ApplyClaims = "apply claims"
     pretty ApplyAxioms = "apply axioms"
 
+newtype ExecutionDepth = ExecutionDepth { getDepth :: Natural}
+    deriving (Eq, Show, Ord, Hashable, Debug, Diff)
+
+increment :: ExecutionDepth -> ExecutionDepth
+increment (ExecutionDepth d) = ExecutionDepth (d + 1)
+
 {- | The state of the reachability proof strategy for @goal@.
  -}
 data ProofState goal
-    = Goal !goal
+    = Goal ExecutionDepth !goal
     -- ^ The indicated goal is being proven.
-    | GoalRemainder !goal
+    | GoalRemainder ExecutionDepth !goal
     -- ^ The indicated goal remains after rewriting.
-    | GoalRewritten !goal
+    | GoalRewritten ExecutionDepth !goal
     -- ^ We already rewrote the goal this step.
-    | GoalStuck !goal
+    | GoalStuck ExecutionDepth !goal
     -- ^ If the terms unify and the condition does not imply
     -- the goal, the proof is stuck. This state should be reachable
     -- only by applying CheckImplication.
-    | Proven
+    | Proven ExecutionDepth
     -- ^ The parent goal was proven.
     deriving (Eq, Show, Ord)
     deriving (Foldable, Functor)
@@ -89,27 +99,31 @@ instance Debug a => Debug (ProofState a)
 instance (Debug a, Diff a) => Diff (ProofState a)
 
 instance Unparse goal => Pretty (ProofState goal) where
-    pretty (Goal goal) =
+    pretty (Goal depth goal) =
         Pretty.vsep
             ["Proof state Goal:"
             , Pretty.indent 4 $ unparse goal
+            , Pretty.hsep ["Depth:", Pretty.pretty (getDepth depth)]
             ]
-    pretty (GoalRemainder goal) =
+    pretty (GoalRemainder depth goal) =
         Pretty.vsep
             ["Proof state GoalRemainder:"
             , Pretty.indent 4 $ unparse goal
+            , Pretty.hsep ["Depth:", Pretty.pretty (getDepth depth)]
             ]
-    pretty (GoalRewritten goal) =
+    pretty (GoalRewritten depth goal) =
         Pretty.vsep
             ["Proof state GoalRewritten:"
             , Pretty.indent 4 $ unparse goal
+            , Pretty.hsep ["Depth:", Pretty.pretty (getDepth depth)]
             ]
-    pretty (GoalStuck goal) =
+    pretty (GoalStuck depth goal) =
         Pretty.vsep
             ["Proof state GoalStuck:"
             , Pretty.indent 4 $ unparse goal
+            , Pretty.hsep ["Depth:", Pretty.pretty (getDepth depth)]
             ]
-    pretty Proven = "Proof state Proven."
+    pretty (Proven depth) = "Proof state Proven."
 
 {- | Extract the unproven goals of a 'ProofState'.
 
@@ -117,15 +131,15 @@ Returns 'Nothing' if there is no remaining unproven goal.
 
  -}
 extractUnproven :: ProofState a -> Maybe a
-extractUnproven (Goal t)    = Just t
-extractUnproven (GoalRewritten t) = Just t
-extractUnproven (GoalRemainder t) = Just t
-extractUnproven (GoalStuck t) = Just t
-extractUnproven Proven      = Nothing
+extractUnproven (Goal _ t)          = Just t
+extractUnproven (GoalRewritten _ t) = Just t
+extractUnproven (GoalRemainder _ t) = Just t
+extractUnproven (GoalStuck _ t)     = Just t
+extractUnproven (Proven _)            = Nothing
 
 extractGoalRem :: ProofState a -> Maybe a
-extractGoalRem (GoalRemainder t) = Just t
-extractGoalRem _           = Nothing
+extractGoalRem (GoalRemainder _ t) = Just t
+extractGoalRem _                   = Nothing
 
 data ProofStateTransformer a val =
     ProofStateTransformer
@@ -152,8 +166,8 @@ proofState
         }
   =
     \case
-        Goal goal -> goalTransformer goal
-        GoalRemainder goal -> goalRemainderTransformer goal
-        GoalRewritten goal -> goalRewrittenTransformer goal
-        GoalStuck goal -> goalStuckTransformer goal
-        Proven -> provenValue
+        Goal _ goal -> goalTransformer goal
+        GoalRemainder _ goal -> goalRemainderTransformer goal
+        GoalRewritten _ goal -> goalRewrittenTransformer goal
+        GoalStuck _ goal -> goalStuckTransformer goal
+        Proven _ -> provenValue

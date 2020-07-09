@@ -92,6 +92,7 @@ import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofState
     , ProofStateTransformer (..)
+    , ExecutionDepth (..)
     )
 import qualified Kore.Strategies.ProofState as ProofState
     ( ProofState (..)
@@ -252,7 +253,7 @@ verifyClaim
   =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startGoal = ProofState.Goal goal
+        startGoal = ProofState.Goal (ExecutionDepth 0) goal
         limitedStrategy =
             strategy
             & Foldable.toList
@@ -375,9 +376,9 @@ logTransitionRule
     -> TransitionRule m ReachabilityRule
 logTransitionRule rule prim proofState =
     case proofState of
-        ProofState.Goal goal          -> logWith goal
-        ProofState.GoalRemainder goal -> logWith goal
-        _                  -> rule prim proofState
+        ProofState.Goal _ goal          -> logWith goal
+        ProofState.GoalRemainder _ goal -> logWith goal
+        _                               -> rule prim proofState
   where
     logWith goal = case prim of
         Prim.Simplify ->
