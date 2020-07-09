@@ -105,6 +105,7 @@ nonRecursiveCommand =
         , proveSteps
         , selectNode
         , showConfig
+        , showDest
         , omitCell
         , showLeafs
         , showRule
@@ -187,6 +188,11 @@ showConfig :: Parser ReplCommand
 showConfig = do
     dec <- literal "config" *> maybeDecimal
     return $ ShowConfig (fmap ReplNode dec)
+
+showDest :: Parser ReplCommand
+showDest = do
+    dec <- literal "dest" *> maybeDecimal
+    return $ ShowDest (fmap ReplNode dec)
 
 omitCell :: Parser ReplCommand
 omitCell = OmitCell <$$> literal "omit" *> maybeWord

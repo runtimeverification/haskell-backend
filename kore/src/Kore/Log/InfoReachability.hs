@@ -6,7 +6,7 @@ License     : NCSA
 module Kore.Log.InfoReachability
     ( InfoReachability (..)
     , whileSimplify
-    , whileRemoveDestination
+    , whileCheckImplication
     , whileDeriveSeq
     , whileDerivePar
     ) where
@@ -19,7 +19,7 @@ import qualified Pretty
 
 data InfoReachability
     = InfoSimplify !ReachabilityRule
-    | InfoRemoveDestination !ReachabilityRule
+    | InfoCheckImplication !ReachabilityRule
     | InfoDeriveSeq ![Rule ReachabilityRule] !ReachabilityRule
     | InfoDerivePar ![Rule ReachabilityRule] !ReachabilityRule
     deriving (Show)
@@ -55,8 +55,8 @@ prettyInfoReachabilityGoalAndRules transition goal rules fromRule =
 instance Pretty.Pretty InfoReachability where
     pretty (InfoSimplify goal) =
         prettyInfoReachabilityGoal "Simplify" goal
-    pretty (InfoRemoveDestination goal) =
-        prettyInfoReachabilityGoal "RemoveDestination" goal
+    pretty (InfoCheckImplication goal) =
+        prettyInfoReachabilityGoal "CheckImplication" goal
     pretty (InfoDeriveSeq rules goal) =
         prettyInfoReachabilityGoalAndRules
             "DeriveSeq"
@@ -74,7 +74,7 @@ instance Entry InfoReachability where
     entrySeverity _ = Info
     shortDoc (InfoSimplify _) =
         Just "While simplifying the configuration"
-    shortDoc (InfoRemoveDestination _) =
+    shortDoc (InfoCheckImplication _) =
         Just "While checking implication of the proof goal"
     shortDoc (InfoDeriveSeq _ _) =
         Just "While applying axioms in sequence"
@@ -89,12 +89,12 @@ whileSimplify
     -> log a
 whileSimplify goal = logWhile (InfoSimplify goal)
 
-whileRemoveDestination
+whileCheckImplication
     :: MonadLog log
     => ReachabilityRule
     -> log a
     -> log a
-whileRemoveDestination goal = logWhile (InfoRemoveDestination goal)
+whileCheckImplication goal = logWhile (InfoCheckImplication goal)
 
 whileDeriveSeq
     :: MonadLog log

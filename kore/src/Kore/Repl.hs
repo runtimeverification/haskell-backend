@@ -251,19 +251,18 @@ runRepl
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: ReachabilityRule
-        -> [ReachabilityRule]
+        :: [ReachabilityRule]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> m (ExecutionGraph Axiom)
-    stepper0 claim claims axioms graph rnode = do
+    stepper0 claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchEverything graph
                 $ catchInterruptWithDefault graph
-                $ verifyClaimStep claim claims axioms graph node
+                $ verifyClaimStep claims axioms graph node
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a
