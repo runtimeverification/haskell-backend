@@ -647,26 +647,37 @@ showRules (ReplNode node1, ReplNode node2) = do
     let path =
             Graph.lesp node1 node2 graph
             & Graph.unLPath
-            & Map.fromList
-    let ruleIndexes =
-            Map.map (fmap (from @_ @Attribute.RuleIndex)) path
-    putStrLn' $ Map.foldrWithKey (acc (length axioms)) "Rules applied:" ruleIndexes
+    case path of
+        [] -> putStrLn' $ "There is no path between " <> show node1 <> " and " <> show node2
+        [x] -> do
+            maybeRule <- getRuleFor (Just . ReplNode $ (fst x))
+            case maybeRule of
+                Nothing -> putStrLn' "Invalid node!"
+                Just rule -> do
+                    let ruleIndex = from @_ @Attribute.RuleIndex rule
+                    putStrLn'
+                        $ fromMaybe "Error: identifier attribute wasn't initialized."
+                        $ showAxiomOrClaim (length axioms) ruleIndex
+        (_ : xs) -> do
+            let mapPath = Map.fromList xs
+                ruleIndexes =
+                    Map.map (fmap (from @_ @Attribute.RuleIndex)) mapPath
+            putStrLn' $ Map.foldrWithKey (acc (length axioms)) "Rules applied:" ruleIndexes
   where
+    acc :: Int -> Graph.Node -> Seq RuleIndex -> String -> String
     acc num key element result =
         result
         <> "\n  to reach node "
         <> show key
         <> " the following rules were applied: "
-        <> foldl
-            (oneStepRules num)
-            ""
-            element
-    oneStepRules num result rules =
+        <> case Foldable.toList element of
+              [] -> "Implication checking."
+              xs -> foldr (oneStepRules num) "" xs
+    oneStepRules :: Int -> RuleIndex -> String -> String
+    oneStepRules num rule result =
         result
         <> " "
-        <> if null rules
-            then "Implication checking."
-            else showAxiomOrClaim num <$> rules
+        <> fromMaybe "TODO: error" (showAxiomOrClaim num rule)
 
 -- | Shows the previous branching point.
 showPrecBranch
