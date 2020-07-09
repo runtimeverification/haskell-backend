@@ -440,6 +440,7 @@ instance MonadCatch AllPathIdentity where
 instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined
     askSimplifierTermLike = undefined
+    simplifyTermLike = undefined
     simplifyCondition = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined

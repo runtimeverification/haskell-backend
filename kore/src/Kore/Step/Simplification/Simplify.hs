@@ -135,6 +135,22 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askSimplifierTermLike = lift askSimplifierTermLike
     {-# INLINE askSimplifierTermLike #-}
 
+    {- | Simplify a 'TermLike' to a disjunction of function-like 'Pattern's.
+     -}
+    simplifyTermLike
+        :: InternalVariable variable
+        => SideCondition variable
+        -> TermLike variable
+        -> m (OrPattern variable)
+    default simplifyTermLike
+        :: InternalVariable variable
+        => (MonadTrans t, MonadSimplify n, m ~ t n)
+        => SideCondition variable
+        -> TermLike variable
+        -> m (OrPattern variable)
+    simplifyTermLike sideCondition termLike =
+        lift (simplifyTermLike sideCondition termLike)
+
     simplifyCondition
         :: InternalVariable variable
         => SideCondition variable

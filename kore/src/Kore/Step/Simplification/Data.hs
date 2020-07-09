@@ -58,6 +58,7 @@ import Kore.Step.Simplification.OverloadSimplifier
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Step.Simplification.TermLike as TermLike
 import Log
 import Logic
 import SMT
@@ -107,6 +108,10 @@ instance (MonadSMT m, MonadLog m) => MonadSimplify (SimplifierT m) where
 
     askSimplifierTermLike = asks simplifierTermLike
     {-# INLINE askSimplifierTermLike #-}
+
+    simplifyTermLike sideCondition termLike =
+        TermLike.simplify sideCondition termLike
+    {-# INLINE simplifyTermLike #-}
 
     simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition
