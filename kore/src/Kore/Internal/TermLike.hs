@@ -1440,65 +1440,73 @@ mkEvaluated
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
 
+-- | 'mkDefined' will wrap the 'TermLike' in a 'Defined' node based on
+-- the available information about the term. When possible, it will recurse
+-- to distribute the 'Defined' wrapper.
 mkDefined
     :: forall variable
     .  HasCallStack
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
-mkDefined = updateCallStack . Recursive.cata worker
+mkDefined = updateCallStack . worker
   where
     worker
-      :: CofreeF
-           (TermLikeF variable)
-           (Attribute.Pattern variable)
-           (TermLike variable)
-         -> TermLike variable
-    worker (_ :< patt) =
-        case patt of
-            AndF _ ->
-               mkDefinedAtTop (synthesize patt)
-            ApplySymbolF (Application symbol _) ->
+        :: TermLike variable
+        -> TermLike variable
+    worker term
+      | isDefinedPattern term = term
+      | otherwise =
+        -- TODO: Recursive.project -> _ :< termF and match on termF
+        -- TODO: use recursion schemes?
+        case term of
+            And_ _ child1 child2 ->
+                mkDefinedAtTop
+                    ( mkAnd
+                        (worker child1)
+                        (worker child2)
+                    )
+            App_ symbol children ->
                 if isFunctional symbol
-                    then synthesize patt
-                    else mkDefinedAtTop (synthesize patt)
-            ApplyAliasF _ -> mkDefinedAtTop (synthesize patt)
-            BottomF _ -> synthesize patt
-            CeilF _ -> synthesize patt
-            DomainValueF _ -> mkDefinedAtTop (synthesize patt)
-            EqualsF _ -> mkDefinedAtTop (synthesize patt)
-            ExistsF _ -> mkDefinedAtTop (synthesize patt)
-            FloorF _ -> mkDefinedAtTop (synthesize patt)
-            ForallF _ -> mkDefinedAtTop (synthesize patt)
-            IffF _ -> mkDefinedAtTop (synthesize patt)
-            ImpliesF _ -> mkDefinedAtTop (synthesize patt)
-            InF _ -> mkDefinedAtTop (synthesize patt)
-            MuF _ -> mkDefinedAtTop (synthesize patt)
-            NextF _ -> mkDefinedAtTop (synthesize patt)
-            NotF _ -> mkDefinedAtTop (synthesize patt)
-            NuF _ -> mkDefinedAtTop (synthesize patt)
-            OrF _ -> synthesize patt
-            RewritesF _ -> mkDefinedAtTop (synthesize patt)
-            TopF _ -> synthesize patt
-            InhabitantF _ -> mkDefinedAtTop (synthesize patt)
-            BuiltinF (Domain.BuiltinMap _) -> mkDefinedAtTop (synthesize patt)
-            BuiltinF (Domain.BuiltinList _) -> mkDefinedAtTop (synthesize patt)
-            BuiltinF (Domain.BuiltinSet _) -> mkDefinedAtTop (synthesize patt)
-            BuiltinF (Domain.BuiltinInt _) -> synthesize patt
-            BuiltinF (Domain.BuiltinBool _) -> synthesize patt
-            BuiltinF (Domain.BuiltinString _) -> synthesize patt
-            EvaluatedF _ -> synthesize patt
-            StringLiteralF _ -> synthesize patt
-            InternalBytesF _ -> synthesize patt
-            VariableF (Const variable) ->
-                if isElementVariable variable
-                    then synthesize patt
-                    else mkDefinedAtTop (synthesize patt)
-            EndiannessF _ -> mkDefinedAtTop (synthesize patt)
-            SignednessF _ -> mkDefinedAtTop (synthesize patt)
-            InjF _ -> mkDefinedAtTop (synthesize patt)
-            DefinedF _ -> synthesize patt
+                    then mkApplySymbol symbol (fmap worker children)
+                    else mkDefinedAtTop (mkApplySymbol symbol (fmap worker children))
+            ApplyAlias_ _ _ ->
+                mkDefinedAtTop term
+            Bottom_ _ -> error "TODO: error message"
+            Ceil_ _ _ _ -> term
+            DV_ _ _ -> term
+            BuiltinBool_ _ -> term
+            BuiltinInt_ _ -> term
+            BuiltinString_ _ -> term
+            BuiltinList_ _ -> mkDefinedAtTop term
+            BuiltinMap_ _ -> mkDefinedAtTop term
+            BuiltinSet_ _ -> mkDefinedAtTop term
+            Equals_ _ _ _ _ -> term
+            Exists_ _ _ _ -> mkDefinedAtTop term
+            Floor_ _ _ _ -> term
+            Forall_ _ variable child ->
+                mkDefinedAtTop (mkForall variable (worker child))
+            Iff_ _ _ _ -> mkDefinedAtTop term
+            Implies_ _ _ _ -> mkDefinedAtTop term
+            In_ _ _ _ _ -> term
+            Mu_ _ _ -> mkDefinedAtTop term
+            Next_ _ _ -> mkDefinedAtTop term
+            Not_ _ _ -> mkDefinedAtTop term
+            Nu_ _ _ -> mkDefinedAtTop term
+            Or_ _ _ _ -> mkDefinedAtTop term
+            Rewrites_ _ _ _ -> mkDefinedAtTop term
+            Top_ _ -> term
+            ElemVar_ _ -> term
+            SetVar_ _ -> mkDefinedAtTop term
+            StringLiteral_ _ -> term
+            Evaluated_ child -> worker child
+            Defined_ child -> worker child
+            Endianness_ _ -> term
+            Signedness_ _ -> term
+            Inj_ _ -> mkDefinedAtTop term
+            _ -> mkDefinedAtTop term
 
+-- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
 mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
 mkDefinedAtTop = synthesize . DefinedF . Defined
 
@@ -1773,6 +1781,8 @@ pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern Evaluated_ :: TermLike variable -> TermLike variable
 
+pattern Defined_ :: TermLike variable -> TermLike variable
+
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
@@ -1920,6 +1930,9 @@ pattern StringLiteral_ str <-
 
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))
+
+pattern Defined_ child <-
+    (Recursive.project -> _ :< DefinedF (Defined child))
 
 pattern Endianness_ :: Endianness -> TermLike child
 pattern Endianness_ endianness <-

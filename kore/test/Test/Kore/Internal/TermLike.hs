@@ -449,21 +449,23 @@ test_mkDefined =
                     )
             actual = mkDefined term
         assertEqual "" expected actual
-    , testCase "Nested or, ceils, functional symbol" $ do
+    , testCase "Nested or" $ do
         let term =
                 mkOr
                     (mkOr
                         mkBottom_
                         (mkCeil_ (Mock.f mkTop_))
                     )
-                    Mock.c
+                    (Mock.f mkBottom_)
             expected =
-                mkOr
+                defined
                     (mkOr
-                        mkBottom_
-                        (mkCeil_ (defined (Mock.f mkTop_)))
+                        (mkOr
+                            mkBottom_
+                            (mkCeil_ (Mock.f mkTop_))
+                        )
+                    (Mock.f mkBottom_)
                     )
-                    Mock.c
             actual = mkDefined term
         assertEqual "" expected actual
     ]
