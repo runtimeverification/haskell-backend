@@ -47,6 +47,22 @@ packages:
   original:
     hackage: junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
 - completed:
+    subdir: eventlog2speedscope
+    cabal-file:
+      size: 1706
+      sha256: 3b51440b75bb61e34c82be0b47363bcaee64f8cb5554e89738d8a772e0943acc
+    name: eventlog2speedscope
+    version: 0.1.0
+    git: https://github.com/ttuegel/pipes-ghc-events.git
+    pantry-tree:
+      size: 363
+      sha256: bf7f63efcb80d658bc8c03c4c33500956c5da582762801eabf273b29a594d0e1
+    commit: ca7b15e76a60878fbbeebe4d6e876218c8459eac
+  original:
+    subdir: eventlog2speedscope
+    git: https://github.com/ttuegel/pipes-ghc-events.git
+    commit: ca7b15e76a60878fbbeebe4d6e876218c8459eac
+- completed:
     subdir: pipes-ghc-events
     cabal-file:
       size: 1150
@@ -57,43 +73,25 @@ packages:
     pantry-tree:
       size: 234
       sha256: 0e952e299fd0d54b3fcfe4b964985dfd151a2018ccc255b6c62f5c864a705aa1
-    commit: 8e1580ed54c610c282b19499db72529a9f51becc
+    commit: ca7b15e76a60878fbbeebe4d6e876218c8459eac
   original:
     subdir: pipes-ghc-events
     git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: 8e1580ed54c610c282b19499db72529a9f51becc
+    commit: ca7b15e76a60878fbbeebe4d6e876218c8459eac
 - completed:
-    subdir: pipes-sqlite-simple
     cabal-file:
       size: 776
       sha256: 76e013aa2b29b628e82b0ca0374dcb091147d9a45fd92d84a4ec8174656ea189
     name: pipes-sqlite-simple
     version: '0.2'
-    git: https://github.com/ttuegel/pipes-ghc-events.git
+    git: https://github.com/ttuegel/pipes-sqlite-simple.git
     pantry-tree:
       size: 416
       sha256: 94a6840d3b1dd1ca7165f9502778637f26cd93d313c8876262fcd5a6f4e497a8
-    commit: 8e1580ed54c610c282b19499db72529a9f51becc
+    commit: a3920f053f92e76f2a7ff7c68e34f9e926817702
   original:
-    subdir: pipes-sqlite-simple
-    git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: 8e1580ed54c610c282b19499db72529a9f51becc
-- completed:
-    subdir: eventlog2speedscope
-    cabal-file:
-      size: 1706
-      sha256: 3b51440b75bb61e34c82be0b47363bcaee64f8cb5554e89738d8a772e0943acc
-    name: eventlog2speedscope
-    version: 0.1.0
-    git: https://github.com/ttuegel/pipes-ghc-events.git
-    pantry-tree:
-      size: 363
-      sha256: d6d8b2a38a9d1e6c8b67404ff0962c4cbb3d7c58c625fdc9de67fd389ef2bdee
-    commit: 8e1580ed54c610c282b19499db72529a9f51becc
-  original:
-    subdir: eventlog2speedscope
-    git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: 8e1580ed54c610c282b19499db72529a9f51becc
+    git: https://github.com/ttuegel/pipes-sqlite-simple.git
+    commit: a3920f053f92e76f2a7ff7c68e34f9e926817702
 - completed:
     hackage: ghc-events-0.13.0@sha256:27f7ed54b6e27ba6142f8e7c2a1dd39cf099d4471eff570327a4e5058995fb3c,5431
     pantry-tree:
