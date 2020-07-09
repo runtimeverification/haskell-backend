@@ -50,6 +50,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
@@ -112,6 +115,20 @@ instance MonadProf prof => MonadProf (SimplifierT prof) where
     traceProf name = SimplifierT . Morph.hoist (traceProf name) . runSimplifierT
     {-# INLINE traceProf #-}
 
+traceProfSimplify
+    :: MonadProf prof
+    => InternalVariable variable
+    => TermLike variable
+    -> prof a
+    -> prof a
+traceProfSimplify termLike =
+    maybe id traceProf ident
+  where
+    ident =
+        (":simplify:" <>)
+        . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
+        <$> matchAxiomIdentifier termLike
+
 instance
     (MonadSMT m, MonadLog m, MonadProf m)
     => MonadSimplify (SimplifierT m)
@@ -120,11 +137,7 @@ instance
     {-# INLINE askMetadataTools #-}
 
     simplifyTermLike sideCondition termLike =
-        (maybe id traceProf ident) (TermLike.simplify sideCondition termLike)
-      where
-        ident =
-            Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
-            <$> matchAxiomIdentifier termLike
+        traceProfSimplify termLike (TermLike.simplify sideCondition termLike)
     {-# INLINE simplifyTermLike #-}
 
     simplifyCondition topCondition conditional = do
