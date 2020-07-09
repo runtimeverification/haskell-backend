@@ -108,11 +108,6 @@ instance (MonadSMT m, MonadLog m) => MonadSimplify (SimplifierT m) where
     askSimplifierTermLike = asks simplifierTermLike
     {-# INLINE askSimplifierTermLike #-}
 
-    localSimplifierTermLike locally =
-        local $ \env@Env { simplifierTermLike } ->
-            env { simplifierTermLike = locally simplifierTermLike }
-    {-# INLINE localSimplifierTermLike #-}
-
     simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition
         simplify topCondition conditional

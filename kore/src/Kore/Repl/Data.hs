@@ -549,12 +549,8 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     {-# INLINE logWhile #-}
 
 instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierTermLike locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierTermLike locally unifierT
     localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierAxioms locally unifierT
+        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     explainBottom info first second =

@@ -135,15 +135,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askSimplifierTermLike = lift askSimplifierTermLike
     {-# INLINE askSimplifierTermLike #-}
 
-    localSimplifierTermLike
-        :: (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
-    default localSimplifierTermLike
-        :: (MFunctor t, MonadSimplify n, m ~ t n)
-        => (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
-    localSimplifierTermLike locally =
-        Monad.Morph.hoist (localSimplifierTermLike locally)
-    {-# INLINE localSimplifierTermLike #-}
-
     simplifyCondition
         :: InternalVariable variable
         => SideCondition variable
@@ -209,10 +200,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
   where
-    localSimplifierTermLike locally =
-        mapAccumT (localSimplifierTermLike locally)
-    {-# INLINE localSimplifierTermLike #-}
-
     localSimplifierAxioms locally =
         mapAccumT (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
@@ -224,10 +211,6 @@ instance MonadSimplify m => MonadSimplify (ExceptT e m)
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
 instance MonadSimplify m => MonadSimplify (LogicT m) where
-    localSimplifierTermLike locally =
-        mapLogicT (localSimplifierTermLike locally)
-    {-# INLINE localSimplifierTermLike #-}
-
     localSimplifierAxioms locally =
         mapLogicT (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}

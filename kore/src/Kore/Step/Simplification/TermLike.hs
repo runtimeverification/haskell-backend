@@ -176,11 +176,7 @@ simplifyToOr
     ->  TermLike variable
     ->  simplifier (OrPattern variable)
 simplifyToOr sideCondition term =
-    localSimplifierTermLike (const simplifier)
-        . simplifyInternal term
-        $ sideCondition
-  where
-    simplifier = termLikeSimplifier simplifyToOr
+    simplifyInternal term sideCondition
 
 simplifyInternal
     ::  forall variable simplifier
