@@ -241,7 +241,7 @@ simplifyConditionalTerm
     => SideCondition variable
     -> TermLike variable
     -> simplifier (Pattern variable)
-simplifyConditionalTerm sideCondition termLike = do
+simplifyConditionalTerm sideCondition termLike =
     simplifyTermLike sideCondition termLike >>= Logic.scatter
 
 -- * Predicate simplifiers
