@@ -410,8 +410,8 @@ helpText =
     \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
     \ leaf exists (i.e the proof is complete), the current node remains the same\n\
     \ and a message is emitted.\n\
-    \ (****) The clear command doesn't allow the removal of nodes which are direct
-    \ descendants of branchings. The steps which create branchings cannot be
+    \ (****) The clear command doesn't allow the removal of nodes which are direct\n\
+    \ descendants of branchings. The steps which create branchings cannot be\n\
     \ partially redone. Therefore, if this were allowed it would result in invalid proofs.\n\
     \\n\n\
     \Rule names can be added in two ways:\n\
