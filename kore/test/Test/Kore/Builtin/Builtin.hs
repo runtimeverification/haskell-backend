@@ -6,7 +6,6 @@ module Test.Kore.Builtin.Builtin
     , testMetadataTools
     , testEnv
     , testConditionSimplifier
-    , testTermLikeSimplifier
     , testEvaluators
     , testSymbolWithSolver
     , simplify
@@ -100,7 +99,6 @@ import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
@@ -217,9 +215,6 @@ testConditionSimplifier =
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
 
-testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create
-
 testSortGraph :: SortGraph.SortGraph
 testSortGraph = SortGraph.fromIndexedModule verifiedModule
 
@@ -238,7 +233,6 @@ testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools
-        , simplifierTermLike = testTermLikeSimplifier
         , simplifierCondition = testConditionSimplifier
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful

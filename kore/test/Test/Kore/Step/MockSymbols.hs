@@ -93,11 +93,9 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
     , ConditionSimplifier
-    , TermLikeSimplifier
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.SMT.AST as SMT
@@ -1828,9 +1826,6 @@ metadataTools =
         smtDeclarations
         sortConstructors
 
-termLikeSimplifier :: TermLikeSimplifier
-termLikeSimplifier = Simplifier.create
-
 axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 axiomSimplifiers = Map.empty
 
@@ -1856,7 +1851,6 @@ env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
         { metadataTools = Test.Kore.Step.MockSymbols.metadataTools
-        , simplifierTermLike = termLikeSimplifier
         , simplifierCondition = predicateSimplifier
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful

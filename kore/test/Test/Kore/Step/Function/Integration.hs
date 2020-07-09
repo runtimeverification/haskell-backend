@@ -86,7 +86,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.InjSimplifier
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -1928,9 +1927,6 @@ testConditionSimplifier =
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
 
-testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create
-
 testInjSimplifier :: InjSimplifier
 testInjSimplifier =
     mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
@@ -1939,7 +1935,6 @@ testEnv :: Env Simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools
-        , simplifierTermLike = testTermLikeSimplifier
         , simplifierCondition = testConditionSimplifier
         , simplifierAxioms =
             mconcat

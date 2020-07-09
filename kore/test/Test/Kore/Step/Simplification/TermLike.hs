@@ -15,8 +15,10 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.TermLike
+import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
+import qualified Logic
 
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
@@ -35,10 +37,26 @@ simplifyEvaluated original =
     runSimplifier env $ TermLike.simplify SideCondition.top original
   where
     env = Mock.env
-        { simplifierTermLike =
-            -- Throw an error if any term would be simplified.
-            termLikeSimplifier $ const undefined
-        , simplifierCondition =
+        { simplifierCondition =
             -- Throw an error if any predicate would be simplified.
             ConditionSimplifier $ const undefined
         }
+
+newtype TestSimplifier a = TestSimplifier { getTestSimplifier :: Simplifier a }
+    deriving (Functor, Applicative, Monad)
+    deriving (MonadLog, MonadSMT)
+
+instance MonadSimplify TestSimplifier where
+    askMetadataTools = TestSimplifier askMetadataTools
+    askSimplifierAxioms = TestSimplifier askSimplifierAxioms
+    localSimplifierAxioms f =
+        TestSimplifier . localSimplifierAxioms f . getTestSimplifier
+    askMemo = TestSimplifier (Memo.liftSelf TestSimplifier <$> askMemo)
+    askInjSimplifier = TestSimplifier askInjSimplifier
+    askOverloadSimplifier = TestSimplifier askOverloadSimplifier
+    simplifyCondition sideCondition condition =
+        Logic.mapLogicT TestSimplifier
+        (simplifyCondition sideCondition condition)
+
+    -- Throw an error if any term would be simplified.
+    simplifyTermLike = undefined

@@ -55,7 +55,6 @@ import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
@@ -71,7 +70,6 @@ import SMT
 data Env simplifier =
     Env
         { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
-        , simplifierTermLike  :: !TermLikeSimplifier
         , simplifierCondition :: !(ConditionSimplifier simplifier)
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         , memo                :: !(Memo.Self simplifier)
@@ -105,9 +103,6 @@ instance MonadLog log => MonadLog (SimplifierT log) where
 instance (MonadSMT m, MonadLog m) => MonadSimplify (SimplifierT m) where
     askMetadataTools = asks metadataTools
     {-# INLINE askMetadataTools #-}
-
-    askSimplifierTermLike = asks simplifierTermLike
-    {-# INLINE askSimplifierTermLike #-}
 
     simplifyTermLike sideCondition termLike =
         TermLike.simplify sideCondition termLike
@@ -176,7 +171,6 @@ evalSimplifier verifiedModule simplifier = do
         {-# SCC "evalSimplifier/earlyEnv" #-}
         Env
             { metadataTools = earlyMetadataTools
-            , simplifierTermLike
             , simplifierCondition
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
@@ -193,9 +187,6 @@ evalSimplifier verifiedModule simplifier = do
     -- IndexedModule because MetadataTools doesn't retain any
     -- knowledge of the patterns which are internalized.
     earlyMetadataTools = MetadataTools.build verifiedModule
-    simplifierTermLike =
-        {-# SCC "evalSimplifier/simplifierTermLike" #-}
-        Simplifier.create
     substitutionSimplifier =
         {-# SCC "evalSimplifier/substitutionSimplifier" #-}
         SubstitutionSimplifier.substitutionSimplifier
@@ -241,7 +232,6 @@ evalSimplifier verifiedModule simplifier = do
         memo <- Memo.new
         return Env
             { metadataTools
-            , simplifierTermLike
             , simplifierCondition
             , simplifierAxioms
             , memo
