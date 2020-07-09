@@ -139,6 +139,7 @@ module Kore.Internal.TermLike
     , pattern SetVar_
     , pattern StringLiteral_
     , pattern Evaluated_
+    , pattern Defined_
     , pattern Endianness_
     , pattern Signedness_
     , pattern Inj_
@@ -1457,54 +1458,76 @@ mkDefined = updateCallStack . worker
     worker term
       | isDefinedPattern term = term
       | otherwise =
-        -- TODO: Recursive.project -> _ :< termF and match on termF
         -- TODO: use recursion schemes?
-        case term of
-            And_ _ child1 child2 ->
-                mkDefinedAtTop
-                    ( mkAnd
-                        (worker child1)
-                        (worker child2)
-                    )
-            App_ symbol children ->
-                if isFunctional symbol
-                    then mkApplySymbol symbol (fmap worker children)
-                    else mkDefinedAtTop (mkApplySymbol symbol (fmap worker children))
-            ApplyAlias_ _ _ ->
-                mkDefinedAtTop term
-            Bottom_ _ -> error "TODO: error message"
-            Ceil_ _ _ _ -> term
-            DV_ _ _ -> term
-            BuiltinBool_ _ -> term
-            BuiltinInt_ _ -> term
-            BuiltinString_ _ -> term
-            BuiltinList_ _ -> mkDefinedAtTop term
-            BuiltinMap_ _ -> mkDefinedAtTop term
-            BuiltinSet_ _ -> mkDefinedAtTop term
-            Equals_ _ _ _ _ -> term
-            Exists_ _ _ _ -> mkDefinedAtTop term
-            Floor_ _ _ _ -> term
-            Forall_ _ variable child ->
-                mkDefinedAtTop (mkForall variable (worker child))
-            Iff_ _ _ _ -> mkDefinedAtTop term
-            Implies_ _ _ _ -> mkDefinedAtTop term
-            In_ _ _ _ _ -> term
-            Mu_ _ _ -> mkDefinedAtTop term
-            Next_ _ _ -> mkDefinedAtTop term
-            Not_ _ _ -> mkDefinedAtTop term
-            Nu_ _ _ -> mkDefinedAtTop term
-            Or_ _ _ _ -> mkDefinedAtTop term
-            Rewrites_ _ _ _ -> mkDefinedAtTop term
-            Top_ _ -> term
-            ElemVar_ _ -> term
-            SetVar_ _ -> mkDefinedAtTop term
-            StringLiteral_ _ -> term
-            Evaluated_ child -> worker child
-            Defined_ child -> worker child
-            Endianness_ _ -> term
-            Signedness_ _ -> term
-            Inj_ _ -> mkDefinedAtTop term
-            _ -> mkDefinedAtTop term
+        let (_ :< termF) = Recursive.project term
+         in case termF of
+                AndF And { andFirst, andSecond } ->
+                    mkDefinedAtTop
+                        ( mkAnd
+                            (worker andFirst)
+                            (worker andSecond)
+                        )
+                ApplySymbolF
+                    Application
+                        { applicationSymbolOrAlias
+                        , applicationChildren
+                        } ->
+                    if isFunctional applicationSymbolOrAlias
+                        then
+                            mkApplySymbol
+                                applicationSymbolOrAlias
+                                (fmap worker applicationChildren)
+                        else
+                            mkDefinedAtTop
+                                ( mkApplySymbol
+                                    applicationSymbolOrAlias
+                                    (fmap worker applicationChildren)
+                                )
+                ApplyAliasF _ ->
+                    mkDefinedAtTop term
+                BottomF _ ->
+                    error
+                        "Internal error: cannot mark\
+                        \ a \\bottom pattern as defined."
+                CeilF _ -> term
+                DomainValueF _  -> term
+                BuiltinF (Domain.BuiltinBool _) -> term
+                BuiltinF (Domain.BuiltinInt _) -> term
+                BuiltinF (Domain.BuiltinString _) -> term
+                BuiltinF (Domain.BuiltinList _) -> mkDefinedAtTop term
+                BuiltinF (Domain.BuiltinMap _) -> mkDefinedAtTop term
+                BuiltinF (Domain.BuiltinSet _) -> mkDefinedAtTop term
+                EqualsF _ -> term
+                ExistsF _ -> mkDefinedAtTop term
+                FloorF _ -> term
+                ForallF Forall { forallVariable, forallChild} ->
+                    mkDefinedAtTop
+                        ( mkForall
+                            forallVariable
+                            (worker forallChild)
+                        )
+                IffF _ -> mkDefinedAtTop term
+                ImpliesF _ -> mkDefinedAtTop term
+                InF _ -> term
+                MuF _ -> mkDefinedAtTop term
+                NextF _ -> mkDefinedAtTop term
+                NotF _ -> mkDefinedAtTop term
+                NuF _ -> mkDefinedAtTop term
+                OrF _ -> mkDefinedAtTop term
+                RewritesF _ -> mkDefinedAtTop term
+                TopF _ -> term
+                VariableF (Const someVariable) ->
+                    if isElementVariable someVariable
+                        then term
+                        else mkDefinedAtTop term
+                StringLiteralF _ -> term
+                EvaluatedF (Evaluated child) -> worker child
+                DefinedF _ -> term
+                EndiannessF _ -> term
+                SignednessF _ -> term
+                InjF _ -> mkDefinedAtTop term
+                InhabitantF _ -> mkDefinedAtTop term
+                InternalBytesF _ -> term
 
 -- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
 mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
