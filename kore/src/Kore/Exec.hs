@@ -355,6 +355,9 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
   where
     patternSort = termLikeSort termLike
 
+{- | Discard the execution depth from every execution state, keeping only
+    the patterns
+-}
 discardNodesDepth
     :: Strategy.ExecutionGraph ExecState c
     -> Strategy.ExecutionGraph (Pattern VariableName) c
