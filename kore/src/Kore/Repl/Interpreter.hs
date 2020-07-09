@@ -919,7 +919,7 @@ clear maybeNode = do
           | unReplNode node == 0 ->
               putStrLn' "Cannot clear initial node (0)."
           | isDirectDescendentOfBranching node graph ->
-              putStrLn' "Cannot clear a direct descendent of a branching node."
+              putStrLn' "Cannot clear a direct descendant of a branching node."
           | otherwise -> clear0 node graph
   where
     clear0 :: ReplNode -> InnerGraph Axiom -> m ()

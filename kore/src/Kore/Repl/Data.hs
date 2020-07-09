@@ -354,8 +354,8 @@ helpText =
     \tryf (<a|c><num>)|<name>                 attempts <a>xiom or <c>laim at\
                                               \ index <num> or rule with <name>,\
                                               \ and if successful, it will apply it.\n\
-    \clear [n]                                removes all node children from the\
-                                              \ proof graph\n\
+    \clear [n]                                removes all the node's children from the\
+                                              \ proof graph (****)\n\
     \                                         (defaults to current node)\n\
     \save-session file                        saves the current session to file\n\
     \save-partial-proof [n] file              creates a file, <file>.kore, containing a kore module\
@@ -410,6 +410,9 @@ helpText =
     \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
     \ leaf exists (i.e the proof is complete), the current node remains the same\n\
     \ and a message is emitted.\n\
+    \ (****) The clear command doesn't allow the removal of nodes which are direct
+    \ descendants of branchings. The steps which create branchings cannot be
+    \ partially redone. Therefore, if this were allowed it would result in invalid proofs.\n\
     \\n\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\
