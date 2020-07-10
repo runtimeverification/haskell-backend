@@ -647,11 +647,9 @@ showRules (ReplNode node1, ReplNode node2) = do
             & Graph.unLPath
     case path of
         [] -> putStrLn' noPath
-        [singleNode] -> do
-            maybeRule <- getRuleFor (singleNode & fst & ReplNode & Just)
-            case maybeRule of
-                Nothing -> putStrLn' "Invalid node!"
-                Just rule -> putStrLn' $ showRuleIdentifier rule
+        [singleNode] ->
+            getRuleFor (singleNode & fst & ReplNode & Just)
+            >>= putStrLn' . maybe "Invalid node!" showRuleIdentifier
         (_ : labeledNodes) -> do
             let mapPath = Map.fromList labeledNodes
             putStrLn' $ Map.foldrWithKey acc "Rules applied:" mapPath
