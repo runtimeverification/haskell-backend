@@ -9,6 +9,7 @@ module Kore.Step.Simplification.Simplify
     , MonadSimplify (..)
     , simplifyConditionalTerm
     , TermSimplifier
+    , WithoutAxiomsT (..)
     -- * Condition simplifiers
     , ConditionSimplifier (..)
     , emptyConditionSimplifier
@@ -170,17 +171,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askSimplifierAxioms = lift askSimplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
 
-    localSimplifierAxioms
-        :: (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap)
-        -> m a -> m a
-    default localSimplifierAxioms
-        :: (MFunctor t, MonadSimplify n, m ~ t n)
-        => (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap)
-        -> m a -> m a
-    localSimplifierAxioms locally =
-        Monad.Morph.hoist (localSimplifierAxioms locally)
-    {-# INLINE localSimplifierAxioms #-}
-
     askMemo :: m (Memo.Self m)
     default askMemo
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
@@ -206,10 +196,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
-  where
-    localSimplifierAxioms locally =
-        mapAccumT (localSimplifierAxioms locally)
-    {-# INLINE localSimplifierAxioms #-}
 
 instance MonadSimplify m => MonadSimplify (CounterT m)
 
@@ -218,15 +204,29 @@ instance MonadSimplify m => MonadSimplify (ExceptT e m)
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
 instance MonadSimplify m => MonadSimplify (LogicT m) where
-    localSimplifierAxioms locally =
-        mapLogicT (localSimplifierAxioms locally)
-    {-# INLINE localSimplifierAxioms #-}
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
 
 instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+
+newtype WithoutAxiomsT m a =
+    WithoutAxiomsT
+        { runWithoutAxiomsT :: m a
+        }
+    deriving (Eq, Ord, Functor, Applicative, Monad)
+
+instance MonadTrans WithoutAxiomsT
+
+instance MFunctor WithoutAxiomsT
+
+instance MonadSMT m => MonadSMT (WithoutAxiomsT m)
+
+instance MonadLog m => MonadLog (WithoutAxiomsT m)
+
+instance MonadSimplify m => MonadSimplify (WithoutAxiomsT m) where
+    askSimplifierAxioms = return mempty
 
 -- * Term simplifiers
 

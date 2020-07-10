@@ -112,5 +112,5 @@ simplifyTermLike
     => TermLike variable
     -> simplifier (OrPattern variable)
 simplifyTermLike termLike =
-    Simplifier.localSimplifierAxioms (const mempty)
+    Simplifier.runWithoutAxiomsT
     $ Pattern.simplify SideCondition.topTODO (Pattern.fromTermLike termLike)

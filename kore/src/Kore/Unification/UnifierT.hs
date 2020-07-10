@@ -72,15 +72,6 @@ deriving instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
 deriving instance MonadSMT m => MonadSMT (UnifierT m)
 
 instance MonadSimplify m => MonadSimplify (UnifierT m) where
-    localSimplifierAxioms locally (UnifierT readerT) =
-        UnifierT $
-            mapReaderT
-                (mapLogicT
-                    (localSimplifierAxioms locally)
-                )
-                readerT
-    {-# INLINE localSimplifierAxioms #-}
-
     simplifyCondition sideCondition condition = do
         ConditionSimplifier conditionSimplifier <- ask
         conditionSimplifier sideCondition condition

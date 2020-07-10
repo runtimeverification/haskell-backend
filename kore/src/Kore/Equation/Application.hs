@@ -361,10 +361,8 @@ checkRequires sideCondition predicate requires =
             condition :: Condition variable
             condition = from @(Predicate _) (makeNotPredicate requires')
         return condition
-            -- First try to refute 'condition' without user-defined axioms:
-            >>= withoutAxioms . simplifyCondition
-            -- Next try to refute 'condition' including user-defined axioms:
-            >>= withAxioms . simplifyCondition
+            >>= simplifyConditionWithoutAxioms
+            >>= simplifyConditionWithAxioms
             -- Finally, try to refute the simplified 'condition' using the
             -- external solver:
             >>= SMT.filterBranch . withSideCondition
@@ -374,7 +372,12 @@ checkRequires sideCondition predicate requires =
     -- and the rule will not be applied.
     & (OrCondition.observeAllT >=> assertBottom)
   where
-    simplifyCondition = Simplifier.simplifyCondition sideCondition
+    simplifyConditionWithAxioms = Simplifier.simplifyCondition sideCondition
+
+    simplifyConditionWithoutAxioms =
+        fmap Condition.forgetSimplified
+        . Logic.mapLogicT Simplifier.runWithoutAxiomsT
+        . Simplifier.simplifyCondition sideCondition
 
     assertBottom orCondition
       | isBottom orCondition = done
@@ -388,11 +391,6 @@ checkRequires sideCondition predicate requires =
 
     -- Pair a configuration with sideCondition for evaluation by the solver.
     withSideCondition = (,) sideCondition
-
-    withoutAxioms =
-        fmap Condition.forgetSimplified
-        . Simplifier.localSimplifierAxioms (const mempty)
-    withAxioms = id
 
 {- | Make the 'Equation' variables distinct from the initial pattern.
 

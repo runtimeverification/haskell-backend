@@ -548,9 +548,7 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
         UnifierWithExplanation $ logWhile entry (getUnifierWithExplanation ma)
     {-# INLINE logWhile #-}
 
-instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
+instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     explainBottom info first second =

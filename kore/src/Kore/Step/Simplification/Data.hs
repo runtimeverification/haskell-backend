@@ -148,11 +148,6 @@ instance
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
 
-    localSimplifierAxioms locally =
-        local $ \env@Env { simplifierAxioms } ->
-            env { simplifierAxioms = locally simplifierAxioms }
-    {-# INLINE localSimplifierAxioms #-}
-
     askMemo = asks memo
     {-# INLINE askMemo #-}
 
