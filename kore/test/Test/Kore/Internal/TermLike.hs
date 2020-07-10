@@ -426,7 +426,24 @@ test_renaming =
 
 test_mkDefined :: [TestTree]
 test_mkDefined =
-    [ testCase "Nested and, functional symbol" $ do
+    [ testCase "Defined attribute" $ do
+        let term :: TermLike VariableName
+            term = Mock.functional11 Mock.a
+        assertEqual "" term (mkDefined term)
+    , testCase "Multiple argument symbol, nested" $ do
+        let term =
+                Mock.plain20
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g (mkElemVar Mock.y))
+            expected =
+                defined
+                    ( Mock.plain20
+                        (defined (Mock.f (mkElemVar Mock.x)))
+                        (defined (Mock.g (mkElemVar Mock.y)))
+                    )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Nested and, functional symbol, non-functional symbol" $ do
         let term =
                 mkAnd
                     (mkAnd
@@ -449,6 +466,16 @@ test_mkDefined =
                     )
             actual = mkDefined term
         assertEqual "" expected actual
+    , testCase "Forall" $ do
+        let term = mkForall Mock.x (Mock.f (mkElemVar Mock.x))
+            expected =
+                defined
+                    ( mkForall
+                        Mock.x
+                        (defined (Mock.f (mkElemVar Mock.x)))
+                    )
+            actual = mkDefined term
+        assertEqual "" expected actual
     , testCase "Nested or" $ do
         let term =
                 mkOr
@@ -466,6 +493,43 @@ test_mkDefined =
                         )
                     (Mock.f mkBottom_)
                     )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Exists" $ do
+        let term =
+                mkExists Mock.x (Mock.f (mkElemVar Mock.x))
+            expected =
+                defined
+                (mkExists Mock.x (Mock.f (mkElemVar Mock.x)))
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Implies" $ do
+        let term =
+                mkImplies mkBottom_ Mock.plain00
+            expected =
+                defined
+                (mkImplies mkBottom_ Mock.plain00)
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Predicate" $ do
+        let term =
+                mkEquals_ (mkElemVar Mock.x) (Mock.f (mkElemVar Mock.y))
+        assertEqual "" term (mkDefined term)
+    , testCase "Nested predicate" $ do
+        let term =
+                Mock.g
+                    ( mkIn_
+                        (mkElemVar Mock.x)
+                        (Mock.f (mkElemVar Mock.y))
+                    )
+            expected =
+                defined
+                ( Mock.g
+                    ( mkIn_
+                        (mkElemVar Mock.x)
+                        (Mock.f (mkElemVar Mock.y))
+                    )
+                )
             actual = mkDefined term
         assertEqual "" expected actual
     ]

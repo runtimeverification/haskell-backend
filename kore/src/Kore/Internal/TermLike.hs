@@ -1458,7 +1458,6 @@ mkDefined = updateCallStack . worker
     worker term
       | isDefinedPattern term = term
       | otherwise =
-        -- TODO: use recursion schemes?
         let (_ :< termF) = Recursive.project term
          in case termF of
                 AndF And { andFirst, andSecond } ->
@@ -1500,7 +1499,7 @@ mkDefined = updateCallStack . worker
                 EqualsF _ -> term
                 ExistsF _ -> mkDefinedAtTop term
                 FloorF _ -> term
-                ForallF Forall { forallVariable, forallChild} ->
+                ForallF Forall { forallVariable, forallChild } ->
                     mkDefinedAtTop
                         ( mkForall
                             forallVariable
