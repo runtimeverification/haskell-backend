@@ -57,15 +57,15 @@ extra-deps:
   - junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
 
   - git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: ca7b15e76a60878fbbeebe4d6e876218c8459eac
+    commit: 4f3966a4580076a8f6e8ca74e7c1d63c0aae79d2
     subdirs:
       - eventlog2speedscope
-    # nix-sha256: 1dzgchmxavxzrq1p9kwdhyphzsv06j9pcnnn4766pmivdkr9lmzg
+    # nix-sha256: 0cyqyffzrbvyi1y6rja3mapkib0vn8bxsvvp4krhigr310425l52
   - git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: ca7b15e76a60878fbbeebe4d6e876218c8459eac
+    commit: 4f3966a4580076a8f6e8ca74e7c1d63c0aae79d2
     subdirs:
       - pipes-ghc-events
-    # nix-sha256: 1dzgchmxavxzrq1p9kwdhyphzsv06j9pcnnn4766pmivdkr9lmzg
+    # nix-sha256: 0cyqyffzrbvyi1y6rja3mapkib0vn8bxsvvp4krhigr310425l52
   - git: https://github.com/ttuegel/pipes-sqlite-simple.git
     commit: a3920f053f92e76f2a7ff7c68e34f9e926817702
     # nix-sha256: 13iag206szfmc8ng77j6qjb6r91ysy9qkvijmf9n9dclvmb1g8an
