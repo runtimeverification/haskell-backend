@@ -632,8 +632,7 @@ showRule configNode = do
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
             tell . showRewriteRule $ rule
-            let ruleIndex = from @_ @Attribute.RuleIndex rule
-            putStrLn' $ showAxiomOrClaim ruleIndex
+            putStrLn' $ showRuleIdentifier rule
 
 showRules
     :: Monad m
@@ -650,14 +649,10 @@ showRules (ReplNode node1, ReplNode node2) = do
             maybeRule <- getRuleFor (singleNode & fst & ReplNode & Just)
             case maybeRule of
                 Nothing -> putStrLn' "Invalid node!"
-                Just rule -> do
-                    let ruleIndex = getInternalIdentifier rule
-                    putStrLn' $ showAxiomOrClaim ruleIndex
+                Just rule -> putStrLn' $ showRuleIdentifier rule
         (_ : labeledNodes) -> do
             let mapPath = Map.fromList labeledNodes
-                ruleIndexes =
-                    Map.map (fmap getInternalIdentifier) mapPath
-            putStrLn' $ Map.foldrWithKey acc "Rules applied:" ruleIndexes
+            putStrLn' $ Map.foldrWithKey acc "Rules applied:" mapPath
   where
     noPath =
          "There is no path between "
@@ -665,18 +660,29 @@ showRules (ReplNode node1, ReplNode node2) = do
          <> " and "
          <> show node2
          <> "."
-    acc :: Graph.Node -> Seq RuleIndex -> String -> String
-    acc node ruleIndexes result =
+    acc node rules result =
         result
         <> "\n  to reach node "
         <> show node
         <> " the following rules were applied:"
-        <> case Foldable.toList ruleIndexes of
+        <> case Foldable.toList rules of
               [] -> " Implication checking."
-              ruleIndexes' -> foldr oneStepRuleIndexes "" ruleIndexes'
-    oneStepRuleIndexes :: RuleIndex -> String -> String
+              rules' -> foldr oneStepRuleIndexes "" rules'
     oneStepRuleIndexes rule result =
-        result <> " " <> showAxiomOrClaim rule
+        result <> " " <> showRuleIdentifier rule
+
+
+showRuleIdentifier
+    :: From rule AttrLabel.Label
+    => From rule RuleIndex
+    => rule
+    -> String
+showRuleIdentifier rule =
+    fromMaybe
+        (showAxiomOrClaim ruleIndex)
+        (showAxiomOrClaimName ruleIndex (getNameText rule))
+  where
+    ruleIndex = getInternalIdentifier rule
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -1361,17 +1367,7 @@ graphParams = Graph.nonClusteredParams
         case headMay . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
-                maybe
-                    ( Text.Lazy.pack
-                    . showAxiomOrClaim
-                    . getInternalIdentifier
-                    $ rule
-                    )
-                    Text.Lazy.fromStrict
-                    ( showAxiomOrClaimName
-                        (getInternalIdentifier rule)
-                        (getNameText rule)
-                    )
+                Text.Lazy.pack (showRuleIdentifier rule)
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
     red = Graph.Attr.RGB 200 0 0
@@ -1393,17 +1389,19 @@ showAxiomOrClaim (RuleIndex (Just (Attribute.ClaimIndex ruleId))) =
 showAxiomOrClaimName
     :: Attribute.RuleIndex
     -> AttrLabel.Label
-    -> Maybe Text.Text
+    -> Maybe String
 showAxiomOrClaimName _ (AttrLabel.Label Nothing) = Nothing
 showAxiomOrClaimName (RuleIndex Nothing) _ = Nothing
 showAxiomOrClaimName
     (RuleIndex (Just (Attribute.AxiomIndex _)))
-    (AttrLabel.Label (Just ruleName)) =
-        Just $ "Axiom " <> ruleName
+    (AttrLabel.Label (Just ruleName))
+  =
+    Just $ "Axiom " <> Text.unpack ruleName
 showAxiomOrClaimName
     (RuleIndex (Just (Attribute.ClaimIndex _)))
-    (AttrLabel.Label (Just ruleName)) =
-        Just $ "Claim " <> ruleName
+    (AttrLabel.Label (Just ruleName))
+  =
+    Just $ "Claim " <> Text.unpack ruleName
 
 parseEvalScript
     :: forall t m
