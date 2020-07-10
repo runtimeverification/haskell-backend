@@ -97,10 +97,6 @@ import Kore.Unparser
 import Pair
 import qualified Pretty
 
-import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
-    )
-
 data SimplificationTarget = AndT | EqualsT | BothT
 
 {- | Unify two terms without discarding the terms.
@@ -259,8 +255,11 @@ andEqualsFunctions notSimplifier =
   where
 
     ceilSimplifier =
-        CeilSimplifier $ \Ceil { ceilChild } ->
-            Ceil.makeEvaluateTerm SideCondition.topTODO ceilChild
+        CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } ->
+            Predicate.makeCeilPredicate ceilResultSort ceilChild
+            & Condition.fromPredicate
+            & simplifyCondition SideCondition.topTODO
+            & OrCondition.observeAllT
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -360,7 +359,11 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = lift $ do -- MonadUnify
-    secondCeil <- Ceil.makeEvaluateTerm sideCondition second
+    secondCeil <-
+        Predicate.makeCeilPredicate (termLikeSort first) second
+        & Condition.fromPredicate
+        & simplifyCondition sideCondition
+        & OrCondition.observeAllT
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
@@ -431,7 +434,12 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Condition.top
             SimplificationType.Equals -> do
-                resultOr <- Ceil.makeEvaluateTerm sideCondition second
+                let sort = termLikeSort first
+                resultOr <-
+                    Predicate.makeCeilPredicate sort second
+                    & Condition.fromPredicate
+                    & simplifyCondition sideCondition
+                    & OrCondition.observeAllT
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom
