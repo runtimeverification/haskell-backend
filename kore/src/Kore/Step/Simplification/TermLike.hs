@@ -5,8 +5,6 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.TermLike
     ( simplify
-    , simplifyToOr
-    , simplifyInternal
     ) where
 
 import Prelude.Kore
@@ -17,6 +15,9 @@ import qualified Data.Functor.Foldable as Recursive
 
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
+    )
+import Kore.Internal.Condition
+    ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -30,7 +31,10 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -38,6 +42,9 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
     ( mapVariables
     , toRepresentation
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
     )
 import qualified Kore.Internal.Substitution as Substitution
     ( toMap
@@ -48,12 +55,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Profiler.Profile as Profiler
-    ( identifierSimplification
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-    ( matchAxiomIdentifier
-    )
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -142,7 +143,6 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( unparse
-    , unparseToString
     )
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
@@ -156,101 +156,46 @@ import qualified Pretty
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
-{-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
--}
+{- | Simplify 'TermLike' pattern to a disjunction of function-like 'Pattern's.
+ -}
 simplify
-    ::  ( HasCallStack
-        , InternalVariable variable
-        , MonadSimplify simplifier
-        )
-    =>  TermLike variable
-    ->  SideCondition variable
-    ->  simplifier (Pattern variable)
-simplify patt sideCondition = do
-    orPatt <- simplifyToOr sideCondition patt
-    return (OrPattern.toPattern orPatt)
-
-{-|'simplifyToOr' simplifies a TermLike variable, returning an
-'OrPattern'.
--}
-simplifyToOr
-    ::  ( HasCallStack
-        , InternalVariable variable
-        , MonadSimplify simplifier
-        )
-    =>  SideCondition variable
-    ->  TermLike variable
-    ->  simplifier (OrPattern variable)
-simplifyToOr sideCondition term =
-    localSimplifierTermLike (const simplifier)
-        . simplifyInternal term
-        $ sideCondition
+    :: forall variable simplifier
+    .  HasCallStack
+    => InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> TermLike variable
+    -> simplifier (OrPattern variable)
+simplify sideCondition = \termLike ->
+    simplifyInternalWorker termLike
+    >>= ensureSimplifiedResult sideConditionRepresentation termLike
   where
-    simplifier = termLikeSimplifier simplifyToOr
-
-simplifyInternal
-    ::  forall variable simplifier
-    .   ( HasCallStack
-        , InternalVariable variable
-        , MonadSimplify simplifier
-        )
-    =>  TermLike variable
-    ->  SideCondition variable
-    ->  simplifier (OrPattern variable)
-simplifyInternal term sideCondition = do
-    result <- simplifyInternalWorker term
-    unless
-        (OrPattern.isSimplified
-            (SideCondition.toRepresentation sideCondition)
-            result
-        )
-        (error $ unlines
-            (   [ "Not simplified."
-                , "result = "
-                ]
-            ++ map unparseToString (OrPattern.toPatterns result)
-            ++ map show (OrPattern.toPatterns result)
-            )
-        )
-    return result
-  where
-    tracer termLike =
-        maybe id Profiler.identifierSimplification
-        $ AxiomIdentifier.matchAxiomIdentifier termLike
+    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
     simplifyChildren
         :: Traversable t
         => t (TermLike variable)
         -> simplifier (t (OrPattern variable))
-    simplifyChildren = traverse simplifyInternalWorker
-
-    assertConditionSimplified
-        :: TermLike variable -> Condition variable -> Condition variable
-    assertConditionSimplified originalTerm condition =
-        if Condition.isSimplified sideConditionRepresentation condition
-            then condition
-            else (error . unlines)
-                [ "Not simplified."
-                , "term = "
-                , unparseToString originalTerm
-                , "condition = "
-                , unparseToString condition
-                ]
+    simplifyChildren = traverse (simplifyTermLike sideCondition)
 
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
-        | TermLike.isSimplified sideConditionRepresentation termLike
-        = case Predicate.makePredicate termLike of
+      | TermLike.isSimplified sideConditionRepresentation termLike =
+        case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
-            Right termPredicate ->
-                return
-                $ OrPattern.fromPattern
-                $ Pattern.fromCondition (termLikeSort termLike)
-                $ assertConditionSimplified termLike
-                $ Condition.fromPredicate termPredicate
-        | otherwise
-        = assertTermNotPredicate $ tracer termLike $ do
+            Right termPredicate -> do
+                condition <-
+                    ensureSimplifiedCondition
+                        sideConditionRepresentation
+                        termLike
+                        (Condition.fromPredicate termPredicate)
+                condition
+                    & Pattern.fromCondition (termLikeSort termLike)
+                    & OrPattern.fromPattern
+                    & pure
+      | otherwise =
+        assertTermNotPredicate $ do
             unfixedTermOr <- descendAndSimplify termLike
             let termOr = OrPattern.coerceSort
                     (termLikeSort termLike)
@@ -364,7 +309,7 @@ simplifyInternal term sideCondition = do
                 case resultPredicate of
                     Conditional {substitution} -> substitution == mempty
             termAsPredicate =
-                Condition.fromPredicate <$> Predicate.makePredicate term
+                Condition.fromPredicate <$> Predicate.makePredicate originalTerm
 
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
@@ -477,4 +422,39 @@ simplifyInternal term sideCondition = do
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
 
-    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
+ensureSimplifiedResult
+    :: InternalVariable variable
+    => Monad simplifier
+    => SideCondition.Representation
+    -> TermLike variable
+    -> OrPattern variable
+    -> simplifier (OrPattern variable)
+ensureSimplifiedResult repr termLike results
+  | isSimplified results = pure results
+  | otherwise =
+    (error . show . Pretty.vsep)
+        [ "Internal error: expected simplified results, but found:"
+        , (Pretty.indent 4 . Pretty.vsep)
+            (unparse <$> OrPattern.toPatterns results)
+        , Pretty.indent 2 "while simplifying:"
+        , Pretty.indent 4 (unparse termLike)
+        ]
+  where
+    isSimplified = OrPattern.isSimplified repr
+
+ensureSimplifiedCondition
+    :: InternalVariable variable
+    => Monad simplifier
+    => SideCondition.Representation
+    -> TermLike variable
+    -> Condition variable
+    -> simplifier (Condition variable)
+ensureSimplifiedCondition repr termLike condition
+  | Condition.isSimplified repr condition = pure condition
+  | otherwise =
+    (error . show . Pretty.vsep)
+        [ "Internal error: expected simplified condition, but found:"
+        , Pretty.indent 4 (unparse condition)
+        , Pretty.indent 2 "while simplifying:"
+        , Pretty.indent 4 (unparse termLike)
+        ]

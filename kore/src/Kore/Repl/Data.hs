@@ -87,9 +87,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Log
 import qualified Kore.Log.Registry as Log
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -540,8 +537,6 @@ instance Monad m => MonadLogic (UnifierWithExplanation m) where
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
-deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
-
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift
     {-# INLINE lift #-}
@@ -554,12 +549,8 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     {-# INLINE logWhile #-}
 
 instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierTermLike locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierTermLike locally unifierT
     localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierAxioms locally unifierT
+        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     explainBottom info first second =

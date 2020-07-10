@@ -59,7 +59,7 @@ dependencies:
   - filepath >=1.4
   - generic-lens >=1.1
   - generics-sop >=0.4 && <0.5
-  - ghc-trace-events >= 0.0
+  - ghc-trace-events >= 0.1
   - gitrev >=1.3
   - graphviz >=2999.20
   - groom >=0.1
@@ -201,14 +201,13 @@ executables:
       - kore
     <<: *common-exe
 
-  kore-profiler:
+  kore-prof:
     main: Main.hs
     source-dirs:
-      - app/profiler
-      - app/share
+      - app/prof
     dependencies:
-      - kore
-    <<: *common-exe
+      - eventlog2speedscope
+      - optparse-applicative
 
 tests:
   kore-test:

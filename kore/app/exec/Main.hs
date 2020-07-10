@@ -3,7 +3,7 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     , SomeException
     , displayException
     , handle
@@ -129,9 +129,6 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.RulePattern
@@ -169,6 +166,9 @@ import Pretty
     , hPutDoc
     , putDoc
     , vsep
+    )
+import Prof
+    ( MonadProf
     )
 import SMT
     ( MonadSMT
@@ -811,10 +811,10 @@ loadRuleIds fileName = do
         )
 
 type MonadExecute exe =
-    ( MonadCatch exe
+    ( MonadMask exe
     , MonadIO exe
-    , MonadProfiler exe
     , MonadSMT exe
+    , MonadProf exe
     , WithLog LogMessage exe
     )
 

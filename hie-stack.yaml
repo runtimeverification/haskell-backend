@@ -7,5 +7,5 @@ cradle:
   - { path: "./kore/app/exec", component: "kore:kore-exec" }
   - { path: "./kore/app/format", component: "kore:kore-format" }
   - { path: "./kore/app/parser", component: "kore:kore-parser" }
-  - { path: "./kore/app/profiler", component: "kore:kore-profiler" }
+  - { path: "./kore/app/prof", component: "kore:kore-prof" }
   - { path: "./kore/app/repl", component: "kore:kore-repl" }

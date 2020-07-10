@@ -83,14 +83,13 @@ instance Diff AxiomIdentifier
 instance Pretty AxiomIdentifier where
     pretty (Application name) = unparse name
     pretty (Ceil axiomIdentifier) =
-        "ceil" Pretty.<+> Pretty.parens (pretty axiomIdentifier)
+        "\\ceil" <> Pretty.parens (pretty axiomIdentifier)
     pretty (Equals first second) =
-        "equals"
-        Pretty.<+> Pretty.parens
+        "\\equals" <> Pretty.parens
             (pretty first Pretty.<+> "," Pretty.<+> pretty second)
     pretty (Exists axiomIdentifier) =
-        "exists" Pretty.<+> Pretty.parens (pretty axiomIdentifier)
-    pretty Variable = "variable"
+        "\\exists" <> Pretty.parens (pretty axiomIdentifier)
+    pretty Variable = "_"
 
 {- | Match 'TermLike' pattern to determine its 'AxiomIdentifier'.
 

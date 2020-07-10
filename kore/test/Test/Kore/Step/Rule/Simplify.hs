@@ -8,6 +8,15 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
+import Control.Monad.Morph
+    ( MFunctor (..)
+    )
+import Control.Monad.Reader
+    ( MonadReader
+    , ReaderT
+    , runReaderT
+    )
+import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
@@ -58,8 +67,10 @@ import Kore.Step.Simplification.Data
     , runSimplifier
     )
 import Kore.Step.Simplification.Simplify
-    ( emptyConditionSimplifier
-    , termLikeSimplifier
+    ( MonadLog
+    , MonadSMT
+    , MonadSimplify (..)
+    , emptyConditionSimplifier
     )
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import Kore.Syntax.Variable
@@ -293,34 +304,60 @@ test_simplifyClaimRule =
             actual <- run $ simplifyRuleLhs input
             assertEqual "" expect (MultiAnd.extractPatterns actual)
       where
-        run = runNoSMT . runSimplifier env
+        run =
+            runNoSMT
+            . runSimplifier env
+            . flip runReaderT TestEnv { replacements, input, requires }
+            . runTestSimplifierT
         env =
             Mock.env
-                { simplifierTermLike
-                , simplifierCondition = emptyConditionSimplifier
+                { simplifierCondition = emptyConditionSimplifier
                 , simplifierAxioms = mempty
                 }
-        simplifierTermLike = termLikeSimplifier $ \sideCondition termLike -> do
-            let rule = getOnePathRule input
-                left = Lens.view (field @"left") rule
-                sort = termLikeSort left
-                expectSideCondition =
-                    makeAndPredicate requires (makeCeilPredicate sort left)
-                    & liftPredicate
-                    & Predicate.coerceSort predicateSort
-                    & Condition.fromPredicate
-                    & SideCondition.fromCondition
-                satisfied = sideCondition == expectSideCondition
-            return
-                . OrPattern.fromTermLike
-                . (if satisfied then applyReplacements else id)
-                $ termLike
 
+data TestEnv =
+    TestEnv
+    { replacements :: ![(TermLike VariableName, TermLike VariableName)]
+    , input :: !OnePathRule
+    , requires :: !(Predicate VariableName)
+    }
+
+newtype TestSimplifierT m a =
+    TestSimplifierT { runTestSimplifierT :: ReaderT TestEnv m a }
+    deriving (Functor, Applicative, Monad)
+    deriving (MonadReader TestEnv)
+    deriving (MonadLog, MonadSMT)
+
+instance MonadTrans TestSimplifierT where
+    lift = TestSimplifierT . lift
+
+instance MFunctor TestSimplifierT where
+    hoist f = TestSimplifierT . hoist f . runTestSimplifierT
+
+instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
+    simplifyTermLike sideCondition termLike = do
+        TestEnv { replacements, input, requires } <- Reader.ask
+        let rule = getOnePathRule input
+            left = Lens.view (field @"left") rule
+            sort = termLikeSort left
+            expectSideCondition =
+                makeAndPredicate requires (makeCeilPredicate sort left)
+                & liftPredicate
+                & Predicate.coerceSort predicateSort
+                & Condition.fromPredicate
+                & SideCondition.fromCondition
+            satisfied = sideCondition == expectSideCondition
+        return
+            . OrPattern.fromTermLike
+            . (if satisfied then applyReplacements replacements else id)
+            $ termLike
+      where
         applyReplacements
             :: InternalVariable variable
-            => TermLike variable
+            => [(TermLike VariableName, TermLike VariableName)]
             -> TermLike variable
-        applyReplacements zero =
+            -> TermLike variable
+        applyReplacements replacements zero =
             Foldable.foldl' applyReplacement zero
             $ map liftReplacement replacements
 

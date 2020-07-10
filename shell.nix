@@ -15,6 +15,7 @@ shellFor {
     [
       ghcid gnumake yq z3
       ghcide hie-bios
+      haskellPackages.ghc-events
     ];
   tools = {
     cabal = "3.2.0.0";

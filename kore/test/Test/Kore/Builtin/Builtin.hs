@@ -6,7 +6,6 @@ module Test.Kore.Builtin.Builtin
     , testMetadataTools
     , testEnv
     , testConditionSimplifier
-    , testTermLikeSimplifier
     , testEvaluators
     , testSymbolWithSolver
     , simplify
@@ -31,6 +30,9 @@ import Test.Tasty.HUnit
     , testCase
     )
 
+import Control.Monad.Catch
+    ( MonadMask
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -75,6 +77,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -88,9 +91,6 @@ import Kore.Internal.TermLike
 import Kore.Parser
     ( parseKorePattern
     )
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.RewriteStep as Step
@@ -102,7 +102,6 @@ import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
@@ -219,9 +218,6 @@ testConditionSimplifier =
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
 
-testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create
-
 testSortGraph :: SortGraph.SortGraph
 testSortGraph = SortGraph.fromIndexedModule verifiedModule
 
@@ -240,7 +236,6 @@ testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools
-        , simplifierTermLike = testTermLikeSimplifier
         , simplifierCondition = testConditionSimplifier
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
@@ -257,14 +252,17 @@ simplify =
     . simplifyConditionalTerm SideCondition.top
 
 evaluate
-    :: (MonadSMT smt, MonadProfiler smt, MonadLog smt)
+    :: (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt)
     => TermLike VariableName
     -> smt (Pattern VariableName)
-evaluate = runSimplifier testEnv . (`TermLike.simplify` SideCondition.top)
+evaluate termLike =
+    runSimplifier testEnv $ do
+        patterns <- TermLike.simplify SideCondition.top termLike
+        pure (OrPattern.toPattern patterns)
 
 evaluateT
     :: MonadTrans t
-    => (MonadSMT smt, MonadProfiler smt, MonadLog smt)
+    => (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt)
     => TermLike VariableName
     -> t smt (Pattern VariableName)
 evaluateT = lift . evaluate
@@ -273,7 +271,7 @@ evaluateToList :: TermLike VariableName -> SMT [Pattern VariableName]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
-    . TermLike.simplifyToOr SideCondition.top
+    . TermLike.simplify SideCondition.top
 
 runStep
     :: Pattern VariableName
