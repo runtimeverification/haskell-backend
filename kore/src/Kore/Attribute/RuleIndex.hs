@@ -6,6 +6,7 @@ License     : NCSA
 -}
 module Kore.Attribute.RuleIndex
     ( RuleIndex (..)
+    , RuleIndexCase (..)
     ) where
 
 import Prelude.Kore
@@ -19,10 +20,25 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 
+data RuleIndexCase
+    = AxiomIndex !Int
+    | ClaimIndex !Int
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic RuleIndexCase
+
+instance SOP.HasDatatypeInfo RuleIndexCase
+
+instance Debug RuleIndexCase
+
+instance Diff RuleIndexCase
+
+instance NFData RuleIndexCase
+
 {- | This attribute is used in the REPL for tagging
     and uniquely identifiying axioms and claims.
  -}
-newtype RuleIndex = RuleIndex { getRuleIndex :: Maybe Int }
+newtype RuleIndex = RuleIndex { getRuleIndex :: Maybe RuleIndexCase }
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic RuleIndex

@@ -46,6 +46,9 @@ import Data.List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
+import qualified Kore.Attribute.RuleIndex as Attribute
 import System.IO
     ( hFlush
     , stdout
@@ -166,7 +169,7 @@ runRepl
     state =
         ReplState
             { axioms         = addIndexesToAxioms axioms'
-            , claims         = addIndexesToClaims (length axioms') claims'
+            , claims         = addIndexesToClaims claims'
             , claim          = firstClaim
             , claimIndex     = firstClaimIndex
             , graphs         = Map.singleton firstClaimIndex firstClaimExecutionGraph
@@ -201,18 +204,27 @@ runRepl
     addIndexesToAxioms
         :: [Axiom]
         -> [Axiom]
-    addIndexesToAxioms axs =
-        fmap addIndex (zip axs [0..])
+    addIndexesToAxioms axioms'' =
+        fmap addIndexToAxiom (zip axioms'' [0..])
+      where
+        addIndexToAxiom (axiom, index) =
+            Lens.over
+                (lensAttribute . field @"identifier")
+                (const (index & Attribute.AxiomIndex & Just & RuleIndex))
+                axiom
+        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     addIndexesToClaims
-        :: Int
+        :: [ReachabilityRule]
         -> [ReachabilityRule]
-        -> [ReachabilityRule]
-    addIndexesToClaims len claims'' =
-        zipWith addIndexToClaim [len..] claims''
+    addIndexesToClaims claims'' =
+        fmap addIndexToClaim (zip claims'' [0..])
       where
-        addIndexToClaim n =
-            Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n)
+        addIndexToClaim (claim, index) =
+            Lens.over
+                (lensAttribute . field @"identifier")
+                (const (index & Attribute.ClaimIndex & Just & RuleIndex))
+                claim
 
         lensAttribute =
             Lens.lens
@@ -232,17 +244,6 @@ runRepl
                         & Lens.set (_Unwrapped . field @"attributes") attrs
                         & AllPath
                 )
-
-    addIndex
-        :: (Axiom, Int)
-        -> Axiom
-    addIndex (rw, n) =
-        Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n) rw
-      where
-        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
-
-    makeRuleIndex :: Int -> RuleIndex -> RuleIndex
-    makeRuleIndex n _ = RuleIndex (Just n)
 
     firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex

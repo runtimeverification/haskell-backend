@@ -154,6 +154,8 @@ import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
 import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -438,12 +440,11 @@ showGraph view mfile out = do
                 return $ Graph.emap Just graph
             _ ->
                 maybe (showOriginalGraph graph) return (smoothOutGraph graph)
-    axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
        then liftIO $ maybe
-                        (showDotGraph (length axioms) processedGraph)
-                        (saveDotGraph (length axioms) processedGraph format)
+                        (showDotGraph processedGraph)
+                        (saveDotGraph processedGraph format)
                         mfile
        else putStrLn' "Graphviz is not installed."
   where
@@ -630,12 +631,9 @@ showRule configNode = do
     case maybeRule of
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
-            axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
             let ruleIndex = from @_ @Attribute.RuleIndex rule
-            putStrLn'
-                $ fromMaybe "Error: identifier attribute wasn't initialized."
-                $ showAxiomOrClaim (length axioms) ruleIndex
+            putStrLn' $ showAxiomOrClaim ruleIndex
 
 showRules
     :: Monad m
@@ -643,41 +641,41 @@ showRules
     -> ReplM m ()
 showRules (ReplNode node1, ReplNode node2) = do
     graph <- getInnerGraph
-    axioms <- Lens.use (field @"axioms")
     let path =
             Graph.lesp node1 node2 graph
             & Graph.unLPath
     case path of
-        [] -> putStrLn' $ "There is no path between " <> show node1 <> " and " <> show node2
-        [x] -> do
-            maybeRule <- getRuleFor (Just . ReplNode $ (fst x))
+        [] -> putStrLn' noPath
+        [singleNode] -> do
+            maybeRule <- getRuleFor (singleNode & fst & ReplNode & Just)
             case maybeRule of
                 Nothing -> putStrLn' "Invalid node!"
                 Just rule -> do
-                    let ruleIndex = from @_ @Attribute.RuleIndex rule
-                    putStrLn'
-                        $ fromMaybe "Error: identifier attribute wasn't initialized."
-                        $ showAxiomOrClaim (length axioms) ruleIndex
-        (_ : xs) -> do
-            let mapPath = Map.fromList xs
+                    let ruleIndex = getInternalIdentifier rule
+                    putStrLn' $ showAxiomOrClaim ruleIndex
+        (_ : labeledNodes) -> do
+            let mapPath = Map.fromList labeledNodes
                 ruleIndexes =
-                    Map.map (fmap (from @_ @Attribute.RuleIndex)) mapPath
-            putStrLn' $ Map.foldrWithKey (acc (length axioms)) "Rules applied:" ruleIndexes
+                    Map.map (fmap getInternalIdentifier) mapPath
+            putStrLn' $ Map.foldrWithKey acc "Rules applied:" ruleIndexes
   where
-    acc :: Int -> Graph.Node -> Seq RuleIndex -> String -> String
-    acc num key element result =
+    noPath =
+         "There is no path between "
+         <> show node1
+         <> " and "
+         <> show node2
+    acc :: Graph.Node -> Seq RuleIndex -> String -> String
+    acc node ruleIndexes result =
         result
         <> "\n  to reach node "
-        <> show key
+        <> show node
         <> " the following rules were applied: "
-        <> case Foldable.toList element of
+        <> case Foldable.toList ruleIndexes of
               [] -> "Implication checking."
-              xs -> foldr (oneStepRules num) "" xs
-    oneStepRules :: Int -> RuleIndex -> String -> String
-    oneStepRules num rule result =
-        result
-        <> " "
-        <> fromMaybe "TODO: error" (showAxiomOrClaim num rule)
+              ruleIndexes' -> foldr oneStepRuleIndexes "" ruleIndexes'
+    oneStepRuleIndexes :: RuleIndex -> String -> String
+    oneStepRuleIndexes rule result =
+        result <> " " <> showAxiomOrClaim rule
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -1303,20 +1301,20 @@ printNotFound = putStrLn' "Variable or index not found"
 showDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int -> Gr CommonProofState (Maybe (Seq axiom)) -> IO ()
-showDotGraph len =
+    => Gr CommonProofState (Maybe (Seq axiom))
+    -> IO ()
+showDotGraph =
     flip Graph.runGraphvizCanvas' Graph.Xlib
-        . Graph.graphToDot (graphParams len)
+        . Graph.graphToDot graphParams
 
 saveDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int
-    -> Gr CommonProofState (Maybe (Seq axiom))
+    => Gr CommonProofState (Maybe (Seq axiom))
     -> Graph.GraphvizOutput
     -> FilePath
     -> IO ()
-saveDotGraph len gr format file =
+saveDotGraph gr format file =
     withExistingDirectory file saveGraphImg
   where
     saveGraphImg :: FilePath -> IO ()
@@ -1324,7 +1322,7 @@ saveDotGraph len gr format file =
         void
         $ Graph.addExtension
             (Graph.runGraphviz
-                (Graph.graphToDot (graphParams len) gr)
+                (Graph.graphToDot graphParams gr)
             )
             format
             path
@@ -1332,16 +1330,15 @@ saveDotGraph len gr format file =
 graphParams
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int
-    -> Graph.GraphvizParams
+    => Graph.GraphvizParams
          Graph.Node
          CommonProofState
          (Maybe (Seq axiom))
          ()
          CommonProofState
-graphParams len = Graph.nonClusteredParams
+graphParams = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
-        [ Graph.textLabel (maybe "" (ruleIndex len) l)
+        [ Graph.textLabel (maybe "" ruleIndex l)
         , Graph.Attr.Style [dottedOrSolidEdge l]
         ]
     , Graph.fmtNode = \(_, ps) ->
@@ -1359,22 +1356,20 @@ graphParams len = Graph.nonClusteredParams
             (Graph.Attr.SItem Graph.Attr.Dotted mempty)
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
-    ruleIndex ln lbl =
+    ruleIndex lbl =
         case headMay . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
                 maybe
-                    ( maybe "Unknown"
-                        Text.Lazy.pack
-                        ( showAxiomOrClaim ln
-                        . getInternalIdentifier
-                        $ rule
-                        )
+                    ( Text.Lazy.pack
+                    . showAxiomOrClaim
+                    . getInternalIdentifier
+                    $ rule
                     )
                     Text.Lazy.fromStrict
-                    ( showAxiomOrClaimName ln (getInternalIdentifier rule)
-                    . getNameText
-                    $ rule
+                    ( showAxiomOrClaimName
+                        (getInternalIdentifier rule)
+                        (getNameText rule)
                     )
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
@@ -1386,25 +1381,28 @@ showAliasError =
         NameAlreadyDefined -> "Error: Alias name is already defined."
         UnknownCommand     -> "Error: Command does not exist."
 
-showAxiomOrClaim :: Int -> Attribute.RuleIndex -> Maybe String
-showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
-showAxiomOrClaim len (RuleIndex (Just rid))
-  | rid < len = Just $ "Axiom " <> show rid
-  | otherwise = Just $ "Claim " <> show (rid - len)
+showAxiomOrClaim :: Attribute.RuleIndex -> String
+showAxiomOrClaim (RuleIndex Nothing) =
+    "Internal error: rule index was not initialized."
+showAxiomOrClaim (RuleIndex (Just (Attribute.AxiomIndex ruleId))) =
+    "Axiom " <> show ruleId
+showAxiomOrClaim (RuleIndex (Just (Attribute.ClaimIndex ruleId))) =
+    "Claim " <> show ruleId
 
 showAxiomOrClaimName
-    :: Int
-    -> Attribute.RuleIndex
+    :: Attribute.RuleIndex
     -> AttrLabel.Label
     -> Maybe Text.Text
-showAxiomOrClaimName _ _ (AttrLabel.Label Nothing) = Nothing
-showAxiomOrClaimName _ (RuleIndex Nothing) _ = Nothing
+showAxiomOrClaimName _ (AttrLabel.Label Nothing) = Nothing
+showAxiomOrClaimName (RuleIndex Nothing) _ = Nothing
 showAxiomOrClaimName
-    len
-    (RuleIndex (Just rid))
-    (AttrLabel.Label (Just ruleName))
-  | rid < len = Just $ "Axiom " <> ruleName
-  | otherwise = Just $ "Claim " <> ruleName
+    (RuleIndex (Just (Attribute.AxiomIndex _)))
+    (AttrLabel.Label (Just ruleName)) =
+        Just $ "Axiom " <> ruleName
+showAxiomOrClaimName
+    (RuleIndex (Just (Attribute.ClaimIndex _)))
+    (AttrLabel.Label (Just ruleName)) =
+        Just $ "Claim " <> ruleName
 
 parseEvalScript
     :: forall t m
