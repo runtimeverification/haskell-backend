@@ -664,14 +664,15 @@ showRules (ReplNode node1, ReplNode node2) = do
          <> show node1
          <> " and "
          <> show node2
+         <> "."
     acc :: Graph.Node -> Seq RuleIndex -> String -> String
     acc node ruleIndexes result =
         result
         <> "\n  to reach node "
         <> show node
-        <> " the following rules were applied: "
+        <> " the following rules were applied:"
         <> case Foldable.toList ruleIndexes of
-              [] -> "Implication checking."
+              [] -> " Implication checking."
               ruleIndexes' -> foldr oneStepRuleIndexes "" ruleIndexes'
     oneStepRuleIndexes :: RuleIndex -> String -> String
     oneStepRuleIndexes rule result =

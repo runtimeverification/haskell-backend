@@ -343,6 +343,8 @@ helpText =
     \leafs                                    shows unevaluated or stuck leafs\n\
     \rule [n]                                 shows the rule for node 'n'\
                                               \ (defaults to current node)\n\
+    \rule <n1> <n2>                           shows the rules applied on the path\
+                                              \ between nodes n1 and n2\n\
     \prec-branch [n]                          shows first preceding branch\
                                               \ (defaults to current node)\n\
     \children [n]                             shows direct children of node\
