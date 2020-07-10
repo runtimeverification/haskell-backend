@@ -442,10 +442,12 @@ showGraph view mfile out = do
                 maybe (showOriginalGraph graph) return (smoothOutGraph graph)
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
-       then liftIO $ maybe
-                        (showDotGraph processedGraph)
-                        (saveDotGraph processedGraph format)
-                        mfile
+        then
+            liftIO
+            $ maybe
+                (showDotGraph processedGraph)
+                (saveDotGraph processedGraph format)
+                mfile
        else putStrLn' "Graphviz is not installed."
   where
     showOriginalGraph graph = do
@@ -670,7 +672,6 @@ showRules (ReplNode node1, ReplNode node2) = do
               rules' -> foldr oneStepRuleIndexes "" rules'
     oneStepRuleIndexes rule result =
         result <> " " <> showRuleIdentifier rule
-
 
 showRuleIdentifier
     :: From rule AttrLabel.Label
