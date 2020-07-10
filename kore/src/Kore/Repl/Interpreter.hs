@@ -878,11 +878,11 @@ tryAxiomClaimWorker mode ref = do
             Just (_, second) ->
                 proofState
                     ProofStateTransformer
-                        { provenValue        = putStrLn' "Cannot unify bottom"
-                        , goalTransformer = patternUnifier
-                        , goalRemainderTransformer = patternUnifier
-                        , goalRewrittenTransformer = patternUnifier
-                        , goalStuckTransformer = patternUnifier
+                        { provenValue = const $ putStrLn' "Cannot unify bottom"
+                        , goalTransformer = const patternUnifier
+                        , goalRemainderTransformer = const patternUnifier
+                        , goalRewrittenTransformer = const patternUnifier
+                        , goalStuckTransformer = const patternUnifier
                         }
                     (getConfiguration <$> second)
               where
@@ -1241,17 +1241,18 @@ unparseProofStateComponent
     -> ReplOutput
 unparseProofStateComponent transformation omitList =
     proofState ProofStateTransformer
-        { goalTransformer =
+        { goalTransformer = \_ ->
             makeKoreReplOutput . unparseComponent
-        , goalRemainderTransformer = \goal ->
+        , goalRemainderTransformer = \_ goal ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseComponent goal)
-        , goalRewrittenTransformer =
+        , goalRewrittenTransformer = \_ ->
             makeKoreReplOutput . unparseComponent
-        , goalStuckTransformer = \goal ->
+        , goalStuckTransformer = \_ goal ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseComponent goal)
-        , provenValue = makeAuxReplOutput "Reached bottom"
+        , provenValue = \_ ->
+            makeAuxReplOutput "Reached bottom"
         }
   where
     unparseComponent =

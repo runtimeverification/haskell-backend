@@ -15,7 +15,7 @@ module Kore.Strategies.Verification
     , AlreadyProven (..)
     , verify
     , verifyClaimStep
-    , lhsProofStateTransformer
+    , depthAndLhsProofStateTransformer
     ) where
 
 import Prelude.Kore
@@ -35,9 +35,12 @@ import Control.Monad.Catch
     )
 import Control.Monad.Except
     ( ExceptT
+    , catchError
+    , throwError
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
+import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( coerce
     )
@@ -46,6 +49,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
     )
+import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -70,6 +74,9 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
+import Kore.Log.InfoExecutionDepth
+    ( infoUnprovenDepth
+    )
 import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
@@ -97,6 +104,7 @@ import Kore.Strategies.ProofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
     ( ProofState (..)
+    , extractDepth
     , extractUnproven
     , proofState
     )
@@ -118,17 +126,22 @@ type CommonProofState = ProofState.ProofState ReachabilityRule
 -- | Extracts the left hand side (configuration) from the
 -- 'CommonProofState'. If the 'ProofState' is 'Proven', then
 -- the configuration will be '\\bottom'.
-lhsProofStateTransformer
+depthAndLhsProofStateTransformer
     :: ProofStateTransformer
         ReachabilityRule
-        (Pattern VariableName)
-lhsProofStateTransformer =
+        (ExecutionDepth, Pattern VariableName)
+depthAndLhsProofStateTransformer =
     ProofStateTransformer
-        { goalTransformer = getConfiguration
-        , goalRemainderTransformer = getConfiguration
-        , goalRewrittenTransformer = getConfiguration
-        , goalStuckTransformer = getConfiguration
-        , provenValue = Pattern.bottom
+        { goalTransformer =
+            \depth goal -> (depth, getConfiguration goal)
+        , goalRemainderTransformer =
+            \depth goal -> (depth, getConfiguration goal)
+        , goalRewrittenTransformer =
+            \depth goal -> (depth, getConfiguration goal)
+        , goalStuckTransformer =
+            \depth goal -> (depth, getConfiguration goal)
+        , provenValue =
+            \depth -> (depth, Pattern.bottom)
         }
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
@@ -137,7 +150,7 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (OrPattern VariableName) m
+type Verifier m = ExceptT (ExecutionDepth, OrPattern VariableName) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -230,11 +243,24 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
         -> ExceptT Stuck simplifier [ReachabilityRule]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
-            verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
+            let verified =
+                    verifyClaim
+                        breadthLimit
+                        searchOrder
+                        claims
+                        axioms
+                        unprovenClaim
+            catchError verified logExceptionHandler
             return (claim : provenClaims)
       where
-        wrapStuckPattern :: OrPattern VariableName -> Stuck
-        wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
+        wrapStuckPattern
+            :: (ExecutionDepth, OrPattern VariableName) -> Stuck
+        wrapStuckPattern (_ ,stuckPatterns) =
+            Stuck { stuckPatterns, provenClaims }
+
+        logExceptionHandler e@(depth, _) = do
+            infoUnprovenDepth depth
+            throwError e
 
 verifyClaim
     :: forall simplifier
@@ -244,7 +270,7 @@ verifyClaim
     -> AllClaims ReachabilityRule
     -> Axioms ReachabilityRule
     -> (ReachabilityRule, Limit Natural)
-    -> ExceptT (OrPattern VariableName) simplifier ()
+    -> ExceptT (ExecutionDepth, OrPattern VariableName) simplifier ()
 verifyClaim
     breadthLimit
     searchOrder
@@ -272,13 +298,20 @@ verifyClaim
 
     handleLimitExceeded
         :: Strategy.LimitExceeded CommonProofState
-        -> ExceptT (OrPattern VariableName) simplifier ()
+        -> ExceptT (ExecutionDepth, OrPattern VariableName) simplifier ()
     handleLimitExceeded (Strategy.LimitExceeded patterns) =
         Monad.Except.throwError
-        . OrPattern.fromPatterns
+        $ Bifunctor.bimap headOrZero OrPattern.fromPatterns
+        $ Seq.unzip
         $ fmap
-            (ProofState.proofState lhsProofStateTransformer)
+            (ProofState.proofState depthAndLhsProofStateTransformer)
             patterns
+      where
+        headOrZero
+            :: Seq.Seq ExecutionDepth
+            -> ExecutionDepth
+        headOrZero depths =
+            fromMaybe (ExecutionDepth 0) $ Seq.lookup 0 depths
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -305,6 +338,7 @@ verifyClaim
         ProofState.extractUnproven proofState
             & Foldable.traverse_
                 ( Monad.Except.throwError
+                . (,) (ProofState.extractDepth proofState)
                 . OrPattern.fromPattern
                 . getConfiguration
                 )
@@ -373,10 +407,13 @@ countExecutionDepth
     :: TransitionRule m ReachabilityRule
     -> TransitionRule m ReachabilityRule
 countExecutionDepth rule = \prim proofState -> do
+    traceM $ "countExecutionDepth " <> show (ProofState.extractDepth proofState)
     result <- rule prim proofState
     if prim `elem` [Prim.ApplyClaims, Prim.ApplyAxioms]
         && isGoalRemainder result
-    then
+    then do
+        traceM $ "To Increment Depth "
+            <> show (ProofState.extractDepth (incrementDepth proofState))
         fmap incrementDepth (rule prim proofState)
     else
         rule prim proofState

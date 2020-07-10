@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Strategies.ProofState
     ( extractGoalRem
     , extractUnproven
+    , extractDepth
     , ExecutionDepth (..)
     , increment
     , ProofState (..)
@@ -144,6 +145,13 @@ extractGoalRem :: ProofState a -> Maybe a
 extractGoalRem (GoalRemainder _ t) = Just t
 extractGoalRem _                   = Nothing
 
+extractDepth :: ProofState a -> ExecutionDepth
+extractDepth (Goal d _)    = d
+extractDepth (GoalRewritten d _) = d
+extractDepth (GoalRemainder d _) = d
+extractDepth (GoalStuck d _) = d
+extractDepth (Proven d)      = d
+
 incrementDepth :: ProofState a -> ProofState a
 incrementDepth = changeDepth increment
 
@@ -159,11 +167,11 @@ changeDepth f (Proven d)      = Proven (f d)
 
 data ProofStateTransformer a val =
     ProofStateTransformer
-        { goalTransformer :: a -> val
-        , goalRemainderTransformer :: a -> val
-        , goalRewrittenTransformer :: a -> val
-        , goalStuckTransformer :: a -> val
-        , provenValue :: val
+        { goalTransformer :: ExecutionDepth -> a -> val
+        , goalRemainderTransformer :: ExecutionDepth -> a -> val
+        , goalRewrittenTransformer :: ExecutionDepth -> a -> val
+        , goalStuckTransformer :: ExecutionDepth -> a -> val
+        , provenValue :: ExecutionDepth -> val
         }
 
 {- | Catamorphism for 'ProofState'
@@ -182,8 +190,8 @@ proofState
         }
   =
     \case
-        Goal _ goal -> goalTransformer goal
-        GoalRemainder _ goal -> goalRemainderTransformer goal
-        GoalRewritten _ goal -> goalRewrittenTransformer goal
-        GoalStuck _ goal -> goalStuckTransformer goal
-        Proven _ -> provenValue
+        Goal depth goal -> goalTransformer depth goal
+        GoalRemainder depth goal -> goalRemainderTransformer depth goal
+        GoalRewritten depth goal -> goalRewrittenTransformer depth goal
+        GoalStuck depth goal -> goalStuckTransformer depth goal
+        Proven depth -> provenValue depth
