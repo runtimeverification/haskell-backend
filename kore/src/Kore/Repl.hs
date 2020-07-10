@@ -204,28 +204,17 @@ runRepl
     addIndexesToAxioms
         :: [Axiom]
         -> [Axiom]
-    addIndexesToAxioms axioms'' =
-        fmap addIndexToAxiom (zip axioms'' [0..])
+    addIndexesToAxioms =
+        initializeRuleIndexes Attribute.AxiomIndex lensAttribute
       where
-        addIndexToAxiom (axiom, index) =
-            Lens.over
-                (lensAttribute . field @"identifier")
-                (const (index & Attribute.AxiomIndex & Just & RuleIndex))
-                axiom
         lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     addIndexesToClaims
         :: [ReachabilityRule]
         -> [ReachabilityRule]
-    addIndexesToClaims claims'' =
-        fmap addIndexToClaim (zip claims'' [0..])
+    addIndexesToClaims =
+        initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
-        addIndexToClaim (claim, index) =
-            Lens.over
-                (lensAttribute . field @"identifier")
-                (const (index & Attribute.ClaimIndex & Just & RuleIndex))
-                claim
-
         lensAttribute =
             Lens.lens
                 (\case
@@ -244,6 +233,15 @@ runRepl
                         & Lens.set (_Unwrapped . field @"attributes") attrs
                         & AllPath
                 )
+
+    initializeRuleIndexes ctor lens rules =
+        fmap addIndex (zip rules [0..])
+      where
+        addIndex (rule, index) =
+            Lens.over
+                (lens . field @"identifier")
+                (const (index & ctor & Just & RuleIndex))
+                rule
 
     firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex
