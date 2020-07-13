@@ -50,17 +50,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.ErrorBottomTotalFunction
     ( errorBottomTotalFunction
     )
-import qualified Kore.Profiler.Profile as Profile
-    ( axiomBranching
-    , axiomEvaluation
-    , equalitySimplification
-    , mergeSubstitutions
-    , resimplification
-    )
-import Kore.Step.Axiom.Identifier
-    ( AxiomIdentifier
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -226,25 +215,16 @@ maybeEvaluatePattern
     sideCondition
   = do
     BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
-    lift . tracing $ do
+    lift $ do
         merged <- do
-            result <-
-                Profile.axiomEvaluation identifier
-                $ evaluator termLike sideCondition
+            result <- evaluator termLike sideCondition
             flattened <- case result of
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = orResults
                     , remainders = orRemainders
                     } -> do
-                        simplified <-
-                            Profile.resimplification
-                                identifier (length orResults)
-                            $ mapM simplifyIfNeeded orResults
+                        simplified <- mapM simplifyIfNeeded orResults
                         let simplifiedResult = MultiOr.flatten simplified
-                        Profile.axiomBranching
-                            identifier
-                            (length orResults)
-                            (length simplifiedResult)
                         return
                             (AttemptedAxiom.Applied AttemptedAxiomResults
                                 { results = simplifiedResult
@@ -252,11 +232,10 @@ maybeEvaluatePattern
                                 }
                             )
                 _ -> return result
-            Profile.mergeSubstitutions identifier
-                $ mergeWithConditionAndSubstitution
-                    sideCondition
-                    childrenCondition
-                    flattened
+            mergeWithConditionAndSubstitution
+                sideCondition
+                childrenCondition
+                flattened
         case merged of
             AttemptedAxiom.NotApplicable ->
                 defaultValue Nothing
@@ -268,11 +247,6 @@ maybeEvaluatePattern
                 AttemptedAxiomResults { results, remainders } =
                     attemptResults
   where
-    identifier :: Maybe AxiomIdentifier
-    identifier = AxiomIdentifier.matchAxiomIdentifier termLike
-
-    tracing = Profile.equalitySimplification identifier termLike
-
     unchangedPatt =
         Conditional
             { term         = termLike

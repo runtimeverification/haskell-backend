@@ -116,7 +116,7 @@ simplifyPredicate
 simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
-        $ simplifyConditionalTermToOr sideCondition
+        $ simplifyTermLike sideCondition
         $ unwrapPredicate predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.

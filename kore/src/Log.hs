@@ -87,6 +87,7 @@ import Pretty
     ( Pretty
     )
 import qualified Pretty
+import Prof
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
@@ -273,6 +274,10 @@ instance Monad m => MonadLog (LoggerT m) where
 instance MonadTrans LoggerT where
     lift = LoggerT . lift
     {-# INLINE lift #-}
+
+instance (MonadMask prof, MonadProf prof) => MonadProf (LoggerT prof) where
+    traceEvent name = lift (traceEvent name)
+    {-# INLINE traceEvent #-}
 
 logWith
     :: Entry entry

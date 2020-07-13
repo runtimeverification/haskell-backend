@@ -110,10 +110,6 @@ import Data.Sequence
     )
 import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
-import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.Transition
 import Numeric.Natural
 
@@ -460,7 +456,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  (MonadProfiler m, MonadThrow m)
+    .  MonadThrow m
     => Limit Natural
     -> (instr -> config -> TransitionT rule m config)
     -> [instr]
@@ -477,11 +473,6 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
     mkQueue = \as ->
         unfoldSearchOrder searchOrder0 as
         >=> applyBreadthLimit breadthLimit dropStrategy
-        >=> profileQueueLength
-
-    profileQueueLength queue = do
-        Profile.executionQueueLength (Seq.length queue)
-        pure queue
 
     transit' =
         updateGraph $ \instr config ->
@@ -646,7 +637,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  (MonadProfiler m, MonadThrow m)
+    .  MonadThrow m
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
@@ -660,7 +651,7 @@ runStrategy breadthLimit applyPrim instrs0 config0 =
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
-    .  (MonadProfiler m, MonadThrow m)
+    .  MonadThrow m
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
