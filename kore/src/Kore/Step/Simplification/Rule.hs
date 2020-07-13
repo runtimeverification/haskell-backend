@@ -31,7 +31,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
@@ -101,6 +100,5 @@ simplifyPattern
     => TermLike variable
     -> simplifier (OrPattern variable)
 simplifyPattern termLike =
-    Simplifier.localSimplifierTermLike (const Simplifier.create)
-    $ Simplifier.localSimplifierAxioms (const mempty)
+    Simplifier.localSimplifierAxioms (const mempty)
     $ Pattern.simplify SideCondition.topTODO (Pattern.fromTermLike termLike)

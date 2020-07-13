@@ -32,8 +32,7 @@ import Control.Monad
     ( (>=>)
     )
 import Control.Monad.Catch
-    ( MonadCatch
-    , MonadThrow
+    ( MonadMask
     )
 import Control.Monad.Trans.Except
     ( runExceptT
@@ -107,12 +106,6 @@ import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
-import qualified Kore.Profiler.Profile as Profiler
-    ( initialization
-    )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
@@ -148,7 +141,8 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
-    ( evalSimplifier
+    ( MonadProf
+    , evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -199,9 +193,9 @@ newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
 exec
     ::  ( MonadIO smt
         , MonadLog smt
-        , MonadProfiler smt
         , MonadSMT smt
-        , MonadThrow smt
+        , MonadMask smt
+        , MonadProf smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -294,9 +288,9 @@ getExitCode indexedModule finalConfig =
 search
     ::  ( MonadIO smt
         , MonadLog smt
-        , MonadProfiler smt
         , MonadSMT smt
-        , MonadThrow smt
+        , MonadMask smt
+        , MonadProf smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -345,11 +339,11 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
 -- | Proving a spec given as a module containing rules to be proven
 prove
     ::  forall smt
-      . ( Log.WithLog Log.LogMessage smt
-        , MonadCatch smt
-        , MonadProfiler smt
+      . ( MonadLog smt
+        , MonadMask smt
         , MonadIO smt
         , MonadSMT smt
+        , MonadProf smt
         )
     => Strategy.GraphSearchOrder
     -> Limit Natural
@@ -445,11 +439,11 @@ proveWithRepl
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
-        , MonadThrow smt
+        , MonadMask smt
+        , MonadProf smt
         )
     => Limit Natural
     -> Limit Natural
@@ -477,10 +471,11 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
 
 -- | Rule merging
 mergeAllRules
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
+        , MonadMask smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -491,10 +486,11 @@ mergeAllRules = mergeRules Rules.mergeRules
 
 -- | Rule merging
 mergeRulesConsecutiveBatches
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
+        , MonadMask smt
         )
     => Int
     -- ^ Batch size
@@ -508,10 +504,11 @@ mergeRulesConsecutiveBatches batchSize =
 
 -- | Rule merging in batches
 mergeRules
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
+        , MonadMask smt
         )
     =>  (  NonEmpty (RewriteRule VariableName)
         -> Simplifier.SimplifierT smt [RewriteRule VariableName]
@@ -647,8 +644,7 @@ initialize verifiedModule = do
     traverse_
         errorRewriteLoop
         $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
-    rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
-        mapM simplifyToList rewriteRules
+    rewriteAxioms <- mapM simplifyToList rewriteRules
     pure Initialized { rewriteRules = mkRewritingRule <$> concat rewriteAxioms }
 
 data InitializedProver =
@@ -699,8 +695,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    claims <- Profiler.initialization "simplifyRuleOnSecond"
-        $ traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }

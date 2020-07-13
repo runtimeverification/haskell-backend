@@ -87,9 +87,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Log
 import qualified Kore.Log.Registry as Log
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -358,8 +355,8 @@ helpText =
     \tryf (<a|c><num>)|<name>                 attempts <a>xiom or <c>laim at\
                                               \ index <num> or rule with <name>,\
                                               \ and if successful, it will apply it.\n\
-    \clear [n]                                removes all node children from the\
-                                              \ proof graph\n\
+    \clear [n]                                removes all the node's children from the\
+                                              \ proof graph (****)\n\
     \                                         (defaults to current node)\n\
     \save-session file                        saves the current session to file\n\
     \save-partial-proof [n] file              creates a file, <file>.kore, containing a kore module\
@@ -414,6 +411,9 @@ helpText =
     \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
     \ leaf exists (i.e the proof is complete), the current node remains the same\n\
     \ and a message is emitted.\n\
+    \ (****) The clear command doesn't allow the removal of nodes which are direct\n\
+    \ descendants of branchings. The steps which create branchings cannot be\n\
+    \ partially redone. Therefore, if this were allowed it would result in invalid proofs.\n\
     \\n\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\
@@ -537,8 +537,6 @@ instance Monad m => MonadLogic (UnifierWithExplanation m) where
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
-deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
-
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift
     {-# INLINE lift #-}
@@ -551,12 +549,8 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     {-# INLINE logWhile #-}
 
 instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierTermLike locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierTermLike locally unifierT
     localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierAxioms locally unifierT
+        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     explainBottom info first second =

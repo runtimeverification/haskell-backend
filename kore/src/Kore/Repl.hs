@@ -22,7 +22,7 @@ import Control.Monad
     , void
     )
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     )
 import qualified Control.Monad.Catch as Exception
 import Control.Monad.Reader
@@ -77,6 +77,9 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
+import Prof
+    ( MonadProf
+    )
 
 import Kore.Unification.Procedure
     ( unificationProcedureWorker
@@ -97,7 +100,8 @@ runRepl
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => MonadCatch m
+    => MonadProf m
+    => MonadMask m
     => [Axiom]
     -- ^ list of axioms to used in the proof
     -> [ReachabilityRule]

@@ -69,9 +69,6 @@ import Kore.Log.DebugEvaluateCondition
 import Kore.Log.ErrorDecidePredicateUnknown
     ( errorDecidePredicateUnknown
     )
-import qualified Kore.Profiler.Profile as Profile
-    ( smtDecision
-    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.SMT.Translate
 import Kore.TopBottom
@@ -183,7 +180,7 @@ decidePredicate predicates =
     $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         predicates' <- traverse (translatePredicate tools) predicates
-        result <- Profile.smtDecision predicates' $ SMT.withSolver $ do
+        result <- SMT.withSolver $ do
             Foldable.traverse_ SMT.assert predicates'
             SMT.check
         debugEvaluateConditionResult result

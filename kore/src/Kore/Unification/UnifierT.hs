@@ -31,9 +31,6 @@ import Control.Monad.Trans.Reader
     , mapReaderT
     )
 
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
@@ -70,22 +67,11 @@ deriving instance MonadLog m => MonadLog (UnifierT m)
 
 deriving instance Monad m => MonadLogic (UnifierT m)
 
-deriving instance MonadProfiler m => MonadProfiler (UnifierT m)
-
 deriving instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
 
 deriving instance MonadSMT m => MonadSMT (UnifierT m)
 
 instance MonadSimplify m => MonadSimplify (UnifierT m) where
-    localSimplifierTermLike locally (UnifierT readerT) =
-        UnifierT $
-            mapReaderT
-                (mapLogicT
-                    (localSimplifierTermLike locally)
-                )
-                readerT
-    {-# INLINE localSimplifierTermLike #-}
-
     localSimplifierAxioms locally (UnifierT readerT) =
         UnifierT $
             mapReaderT
