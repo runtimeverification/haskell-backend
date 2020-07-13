@@ -314,6 +314,7 @@ verifyClaim
         Strategy.transitionRule (transitionRule' claims axioms) instr config
         & runTransitionT
         & fmap (map fst)
+        & traceProf ":transit"
         & lift
 
 -- | Attempts to perform a single proof step, starting at the configuration
