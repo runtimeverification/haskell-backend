@@ -21,7 +21,7 @@ import qualified Pretty
 data WarnStuckProofState
     = TermsUnifiableStuck
     -- ^ The terms of the left- and right-hand sides do not unify,
-    -- and the left-hand side cannot be rewritten any further
+    -- and the left-hand side cannot be rewritten any further.
     | TermsNotUnifiableStuck
     -- ^ The left- and right-hand side terms are unifiable, but the left-hand side
     -- condition does not imply the right-hand side condition.
