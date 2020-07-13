@@ -29,6 +29,8 @@ module Kore.Step.Simplification.Simplify
     , notApplicableAxiomEvaluator
     , purePatternAxiomEvaluator
     , isConstructorOrOverloaded
+    -- * Term and predicate simplifiers
+    , makeEvaluateTermCeil
     -- * Re-exports
     , MonadSMT, MonadLog
     ) where
@@ -62,10 +64,15 @@ import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -73,6 +80,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -83,6 +91,7 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     , InternalVariable
+    , Sort
     , Symbol
     , TermLike
     , TermLikeF (..)
@@ -549,3 +558,16 @@ isConstructorOrOverloaded s
   = do
     OverloadSimplifier { isOverloaded } <- askOverloadSimplifier
     return (isConstructor s || isOverloaded s)
+
+makeEvaluateTermCeil
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> Sort
+    -> TermLike variable
+    -> simplifier (OrCondition variable)
+makeEvaluateTermCeil sideCondition sort child =
+    Predicate.makeCeilPredicate sort child
+    & Condition.fromPredicate
+    & simplifyCondition sideCondition
+    & OrCondition.observeAllT

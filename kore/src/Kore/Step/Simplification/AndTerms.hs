@@ -256,10 +256,7 @@ andEqualsFunctions notSimplifier =
 
     ceilSimplifier =
         CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } ->
-            Predicate.makeCeilPredicate ceilResultSort ceilChild
-            & Condition.fromPredicate
-            & simplifyCondition SideCondition.topTODO
-            & OrCondition.observeAllT
+            makeEvaluateTermCeil SideCondition.topTODO ceilResultSort ceilChild
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -359,12 +356,7 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = lift $ do -- MonadUnify
-    secondCeil <-
-        Predicate.makeCeilPredicate (termLikeSort first) second
-        & Condition.fromPredicate
-        & simplifyCondition sideCondition
-        & OrCondition.observeAllT
-
+    secondCeil <- makeEvaluateTermCeil sideCondition (termLikeSort first) second
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
@@ -435,11 +427,7 @@ variableFunctionAndEquals
                 return Condition.top
             SimplificationType.Equals -> do
                 let sort = termLikeSort first
-                resultOr <-
-                    Predicate.makeCeilPredicate sort second
-                    & Condition.fromPredicate
-                    & simplifyCondition sideCondition
-                    & OrCondition.observeAllT
+                resultOr <- makeEvaluateTermCeil sideCondition sort second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom
