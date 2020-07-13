@@ -34,7 +34,7 @@ data WarnStuckProofState
 
 instance Pretty WarnStuckProofState where
     pretty TermsUnifiableStuck =
-        "Can't apply any more rules"
+        "The proof has reached the final configuration, but the claimed implication is not valid."
     pretty TermsNotUnifiableStuck =
         "The LHS side condition does not imply the RHS side condition"
 
