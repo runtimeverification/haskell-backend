@@ -76,7 +76,8 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
 import Kore.Log.InfoExecutionDepth
-    ( infoUnprovenDepth
+    ( infoProvenDepth
+    , infoUnprovenDepth
     )
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
@@ -327,15 +328,17 @@ verifyClaim
     throwUnproven
         :: LogicT (Verifier simplifier) CommonProofState
         -> Verifier simplifier ()
-    throwUnproven acts =
-        Logic.runLogicT acts throwUnprovenOrElse done
+    throwUnproven acts = do
+        maybeLongestDepth <- Logic.runLogicT acts throwUnprovenOrElse done
+        Foldable.traverse_ infoProvenDepth maybeLongestDepth
+        return ()
       where
-        done = return ()
+        done = return Nothing
 
     throwUnprovenOrElse
         :: CommonProofState
-        -> Verifier simplifier ()
-        -> Verifier simplifier ()
+        -> Verifier simplifier (Maybe ExecutionDepth)
+        -> Verifier simplifier (Maybe ExecutionDepth)
     throwUnprovenOrElse proofState acts = do
         ProofState.extractUnproven proofState
             & Foldable.traverse_
@@ -344,7 +347,12 @@ verifyClaim
                 . OrPattern.fromPattern
                 . getConfiguration
                 )
-        acts
+        fmap (maybeMaxDepth (ProofState.extractDepth proofState)) acts
+      where
+        maybeMaxDepth depthLeft Nothing =
+            Just depthLeft
+        maybeMaxDepth depthLeft (Just depthRight) =
+            Just $ max depthLeft depthRight
 
     transit instr config =
         Strategy.transitionRule (transitionRule' claims axioms) instr config
@@ -405,27 +413,9 @@ transitionRule' claims axioms =
     & withConfiguration
     & withDebugProofState
     & logTransitionRule
-    & countExecutionDepth
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
-countExecutionDepth
-    :: TransitionRule m ReachabilityRule
-    -> TransitionRule m ReachabilityRule
-countExecutionDepth rule = \prim proofState -> do
-    traceM $ "countExecutionDepth " <> show (ProofState.extractDepth proofState)
-    result <- rule prim proofState
-    if prim `elem` [Prim.ApplyClaims, Prim.ApplyAxioms]
-        && isGoalRemainder result
-    then do
-        traceM $ "To Increment Depth "
-            <> show (ProofState.extractDepth (incrementDepth proofState))
-        fmap incrementDepth (rule prim proofState)
-    else
-        rule prim proofState
-  where
-    isGoalRemainder (ProofState.GoalRemainder _ _) = True
-    isGoalRemainder _ = False
 profTransitionRule
     :: forall m
     .  MonadProf m

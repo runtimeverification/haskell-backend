@@ -492,7 +492,7 @@ transitionRule
     => [goal]
     -> [[Rule goal]]
     -> TransitionRule m goal
-transitionRule claims axiomGroups = transitionRuleWorker
+transitionRule claims axiomGroups = countExecutionDepth transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim
@@ -556,22 +556,37 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- results in `derivePar` as opposed to here.
 
     transitionRuleWorker ApplyClaims (Goal depth goal) =
-        ruleResultToProofSatte (increment depth)
+        ruleResultToProofSatte depth
             <$> applyClaims claims goal
 
     transitionRuleWorker ApplyClaims (GoalRemainder depth goal) =
-        ruleResultToProofSatte (increment depth)
+        ruleResultToProofSatte depth
             <$> applyClaims claims goal
 
     transitionRuleWorker ApplyAxioms (Goal depth goal) =
-        ruleResultToProofSatte (increment depth)
+        ruleResultToProofSatte depth
             <$> applyAxioms axiomGroups goal
 
     transitionRuleWorker ApplyAxioms (GoalRemainder depth goal) =
-        ruleResultToProofSatte (increment depth)
+        ruleResultToProofSatte depth
             <$> applyAxioms axiomGroups goal
 
     transitionRuleWorker _ state = return state
+
+countExecutionDepth
+    :: TransitionRule m goal
+    -> TransitionRule m goal
+countExecutionDepth rule = \prim proofState -> do
+    result <- rule prim proofState
+    if prim `elem` [ApplyClaims, ApplyAxioms]
+        && isGoalRewritten result
+    then
+        fmap incrementDepth (rule prim proofState)
+    else
+        return result
+    where
+    isGoalRewritten (GoalRewritten _ _) = True
+    isGoalRewritten _ = False
 
 reachabilityFirstStep :: Strategy Prim
 reachabilityFirstStep =
