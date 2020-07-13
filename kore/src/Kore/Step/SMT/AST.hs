@@ -205,8 +205,7 @@ instance
 data IndirectSymbolDeclaration sort name =
     IndirectSymbolDeclaration
         { name :: !name
-        , resultSort :: !sort
-        , argumentSorts :: ![sort]
+        , sortDependencies :: ![sort]
         }
     deriving (Eq, GHC.Generic, Ord, Show)
 

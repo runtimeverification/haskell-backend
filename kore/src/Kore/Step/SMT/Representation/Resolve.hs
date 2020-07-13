@@ -316,7 +316,7 @@ resolveKoreSymbolDeclaration
     resolvers@Resolvers {sortDeclaresSymbol}
     symbolId
     (SymbolConstructor indirectDeclaration@IndirectSymbolDeclaration
-        {resultSort}
+        { sortDependencies = (x : _) }
     )
   = do
     -- If the sort does not declare the constructor symbol, and we would try to
@@ -327,26 +327,24 @@ resolveKoreSymbolDeclaration
     --
     -- Note that direct smtlib declarations take precedence over constructors,
     -- so we would not reach this line if this symbol had a smtlib attribute.
-    assertMay (sortDeclaresSymbol resultSort symbolId)
+    assertMay (sortDeclaresSymbol x symbolId)
 
     SymbolConstructor
         <$> resolveIndirectSymbolDeclaration resolvers indirectDeclaration
+resolveKoreSymbolDeclaration _ _ _ = empty
 
 resolveIndirectSymbolDeclaration
     :: Resolvers sort symbol name
     -> UnresolvedIndirectSymbolDeclaration
     -> Maybe (IndirectSymbolDeclaration sort name)
 resolveIndirectSymbolDeclaration
-    Resolvers {sortResolver, nameResolver}
+    Resolvers { nameResolver }
     IndirectSymbolDeclaration
-        {name, resultSort, argumentSorts}
-  = do
-    newResultSort <- sortResolver resultSort
-    newArgumentSorts <- mapM sortResolver argumentSorts
+        { name }
+  =
     return IndirectSymbolDeclaration
         { name = nameResolver name
-        , resultSort = newResultSort
-        , argumentSorts = newArgumentSorts
+        , sortDependencies = []
         }
 
 resolveFunctionDeclaration
