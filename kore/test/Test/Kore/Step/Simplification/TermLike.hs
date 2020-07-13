@@ -34,7 +34,8 @@ test_simplify =
 
 simplifyEvaluated :: TermLike VariableName -> IO (OrPattern VariableName)
 simplifyEvaluated original =
-    runSimplifier env $ TermLike.simplify SideCondition.top original
+    runSimplifier env . getTestSimplifier
+    $ TermLike.simplify SideCondition.top original
   where
     env = Mock.env
         { simplifierCondition =
