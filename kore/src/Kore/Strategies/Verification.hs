@@ -101,7 +101,6 @@ import Kore.Strategies.ProofState
     ( ExecutionDepth (..)
     , ProofState
     , ProofStateTransformer (..)
-    , incrementDepth
     )
 import qualified Kore.Strategies.ProofState as ProofState
     ( ProofState (..)
