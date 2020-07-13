@@ -24,5 +24,11 @@ simplify
     -> OrPattern variable
 simplify Defined { getDefined = defined } =
     Pattern.markSimplified
-    . fmap mkDefined
+    . fmap mkDefined'
     <$> defined
+  where
+    mkDefined' term =
+        case term of
+            Defined_ child ->
+                mkDefined child
+            _ -> mkDefined term
