@@ -98,6 +98,10 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log.InfoReachability
+import Kore.Log.WarnStuckProofState
+    ( warnStuckProofStateTermsUnifiable
+    , warnStuckProofStateTermsNotUnifiable 
+    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.Result
     ( Result (..)
@@ -523,15 +527,21 @@ transitionRule claims axiomGroups = transitionRuleWorker
     transitionRuleWorker CheckImplication (Goal goal) = do
         result <- checkImplication goal
         case result of
-            NotImpliedStuck a -> pure (GoalStuck a)
+            NotImpliedStuck a -> do
+                warnStuckProofStateTermsUnifiable
+                pure (GoalStuck a)
             Implied -> pure Proven
             NotImplied a -> pure (Goal a)
     transitionRuleWorker CheckImplication (GoalRemainder goal) = do
         result <- checkImplication goal
         case result of
-            NotImpliedStuck a -> pure (GoalStuck a)
+            NotImpliedStuck a -> do
+                warnStuckProofStateTermsUnifiable
+                pure (GoalStuck a)
             Implied -> pure Proven
-            NotImplied a -> pure (GoalRemainder a)
+            NotImplied a -> do
+                warnStuckProofStateTermsNotUnifiable
+                pure (GoalRemainder a)
 
     transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValid goal =
