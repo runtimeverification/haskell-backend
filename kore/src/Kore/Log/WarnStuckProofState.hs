@@ -40,8 +40,7 @@ instance Pretty WarnStuckProofState where
 
 instance Entry WarnStuckProofState where
     entrySeverity _ = Warning
-    helpDoc _ = "warn when a proof state is stuck, distinguishing between the\
-                \ two cases"
+    helpDoc _ = "distinguish the ways a proof can become stuck"
 
 warnStuckProofStateTermsUnifiable :: MonadLog log => log ()
 warnStuckProofStateTermsUnifiable = logEntry TermsUnifiableStuck
