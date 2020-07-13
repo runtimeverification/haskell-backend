@@ -293,9 +293,7 @@ translatePredicateWith translateTerm predicate =
                         smtSort <- hoistMaybe $ translateSort sort
                         translateUninterpreted smtSort pat
                     ApplySymbolF app -> translateApplication app
-                    DefinedF (Defined child) -> do
-                        smtSort <- hoistMaybe $ translateSort sort
-                        translateUninterpreted smtSort child
+                    DefinedF (Defined child) -> translatePattern sort child
                     _ -> empty
       where
         tools :: SmtMetadataTools Attribute.Symbol
