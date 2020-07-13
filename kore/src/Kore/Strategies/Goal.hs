@@ -99,8 +99,8 @@ import Kore.Internal.TermLike
     )
 import Kore.Log.InfoReachability
 import Kore.Log.WarnStuckProofState
-    ( warnStuckProofStateTermsUnifiable
-    , warnStuckProofStateTermsNotUnifiable 
+    ( warnStuckProofStateTermsNotUnifiable
+    , warnStuckProofStateTermsUnifiable
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.Result

@@ -86,11 +86,11 @@ import Kore.Log.InfoReachability
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
-import Kore.Log.WarnSymbolSMTRepresentation
-    ( WarnSymbolSMTRepresentation
-    )
 import Kore.Log.WarnStuckProofState
     ( WarnStuckProofState
+    )
+import Kore.Log.WarnSymbolSMTRepresentation
+    ( WarnSymbolSMTRepresentation
     )
 import Log
     ( Entry (..)

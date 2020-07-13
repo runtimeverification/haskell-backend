@@ -7,16 +7,16 @@ License     : NCSA
 module Kore.Log.WarnStuckProofState
     ( WarnStuckProofState (..)
     , warnStuckProofStateTermsUnifiable
-    , warnStuckProofStateTermsNotUnifiable 
+    , warnStuckProofStateTermsNotUnifiable
     ) where
 
 import Prelude.Kore
 
+import Log
 import Pretty
     ( Pretty
     )
 import qualified Pretty
-import Log
 
 data WarnStuckProofState
     = TermsUnifiableStuck
