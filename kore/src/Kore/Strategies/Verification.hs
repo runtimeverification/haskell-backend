@@ -332,7 +332,6 @@ verifyClaim
     throwUnproven acts = do
         maybeLongestDepth <- Logic.runLogicT acts throwUnprovenOrElse done
         Foldable.traverse_ infoProvenDepth maybeLongestDepth
-        return ()
       where
         done = return Nothing
 
