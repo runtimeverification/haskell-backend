@@ -31,6 +31,7 @@ module Kore.Step.Simplification.Simplify
     , isConstructorOrOverloaded
     -- * Term and predicate simplifiers
     , makeEvaluateTermCeil
+    , makeEvaluateCeil
     -- * Re-exports
     , MonadSMT, MonadLog
     ) where
@@ -80,6 +81,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -571,3 +573,20 @@ makeEvaluateTermCeil sideCondition sort child =
     & Condition.fromPredicate
     & simplifyCondition sideCondition
     & OrCondition.observeAllT
+
+makeEvaluateCeil
+    :: MonadSimplify simplifier
+    => InternalVariable variable
+    => SideCondition variable
+    -> Pattern variable
+    -> simplifier (OrPattern variable)
+makeEvaluateCeil sideCondition child =
+    do
+        let (childTerm, childCondition) = Pattern.splitTerm child
+        ceilCondition <-
+            Predicate.makeCeilPredicate_ childTerm
+            & Condition.fromPredicate
+            & simplifyCondition sideCondition
+        Pattern.andCondition Pattern.top (ceilCondition <> childCondition)
+            & pure
+    & OrPattern.observeAllT

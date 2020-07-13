@@ -215,23 +215,6 @@ simplifyEvaluated sideCondition first second
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
 
-makeEvaluateCeil
-    :: MonadSimplify simplifier
-    => InternalVariable variable
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
-makeEvaluateCeil sideCondition child =
-    do
-        let (childTerm, childCondition) = Pattern.splitTerm child
-        ceilCondition <-
-            Predicate.makeCeilPredicate_ childTerm
-            & Condition.fromPredicate
-            & simplifyCondition sideCondition
-        Pattern.andCondition Pattern.top (ceilCondition <> childCondition)
-            & pure
-    & OrPattern.observeAllT
-
 makeEvaluateFunctionalOr
     :: forall variable simplifier
     .  (InternalVariable variable, MonadSimplify simplifier)
