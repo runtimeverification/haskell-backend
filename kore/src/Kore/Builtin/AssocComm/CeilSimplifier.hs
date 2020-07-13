@@ -100,7 +100,7 @@ newSetCeilSimplifier
     ->  CeilSimplifier simplifier
             (BuiltinAssocComm Domain.NormalizedSet variable)
             (OrCondition variable)
-newSetCeilSimplifier ceilSimplifierTermLike =
+newSetCeilSimplifier ceilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
@@ -116,7 +116,7 @@ newSetCeilSimplifier ceilSimplifierTermLike =
             (newBuiltinAssocCommCeilSimplifier
                 TermLike.mkBuiltinSet
                 mkNotMember
-                ceilSimplifierTermLike
+                ceilSimplifier
             )
             ceil
 
@@ -129,7 +129,7 @@ newMapCeilSimplifier
     ->  CeilSimplifier simplifier
             (BuiltinAssocComm Domain.NormalizedMap variable)
             (OrCondition variable)
-newMapCeilSimplifier ceilSimplifierTermLike =
+newMapCeilSimplifier ceilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
@@ -151,7 +151,7 @@ newMapCeilSimplifier ceilSimplifierTermLike =
             (newBuiltinAssocCommCeilSimplifier
                 TermLike.mkBuiltinMap
                 mkNotMember
-                ceilSimplifierTermLike
+                ceilSimplifier
             )
             ceil
 
@@ -196,7 +196,7 @@ newBuiltinAssocCommCeilSimplifier
     ->  CeilSimplifier simplifier
             (BuiltinAssocComm normalized variable)
             (OrCondition variable)
-newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
+newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifier =
     CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } -> do
         let internalAc@Domain.InternalAc { builtinAcChild } = ceilChild
         sideCondition <- Reader.ask
@@ -253,7 +253,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifierTermLike =
         let makeEvaluateTerm, defineAbstractKey, defineOpaque
                 :: TermLike variable -> MaybeT simplifier (OrCondition variable)
             makeEvaluateTerm termLike =
-                runCeilSimplifier ceilSimplifierTermLike
+                runCeilSimplifier ceilSimplifier
                     Ceil
                         { ceilResultSort
                         , ceilOperandSort = TermLike.termLikeSort termLike

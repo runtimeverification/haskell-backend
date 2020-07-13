@@ -23,7 +23,6 @@ import Control.Error
     )
 import Control.Monad.Reader
     ( MonadReader
-    , ReaderT (..)
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
@@ -194,18 +193,6 @@ makeEvaluateTerm sideCondition ceilChild =
         , newConcatMapCeilSimplifier
         ]
 
-ceilSimplifierTermLike
-    ::  InternalVariable variable
-    =>  MonadSimplify simplifier
-    =>  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
-            (TermLike variable)
-            (OrCondition variable)
-ceilSimplifierTermLike =
-    CeilSimplifier $ \Ceil { ceilChild = termLike } ->
-    lift $ ReaderT $ \sideCondition ->
-        makeEvaluateTerm sideCondition termLike
-
 newPredicateCeilSimplifier
     :: Monad simplifier
     => InternalVariable variable
@@ -235,7 +222,11 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
           | let headAttributes = symbolAttributes patternHead
           , Attribute.Symbol.isTotal headAttributes -> do
             sideCondition <- Reader.ask
-            simplifiedChildren <- mapM (makeEvaluateTerm sideCondition) children
+            let mkChildCeil =
+                    makeEvaluateTermCeil
+                        sideCondition
+                        Sort.predicateSort
+            simplifiedChildren <- mapM mkChildCeil children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate
                 sideCondition
@@ -252,8 +243,10 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
         Inj_ inj -> do
             InjSimplifier { evaluateCeilInj } <- askInjSimplifier
             sideCondition <- Reader.ask
-            (makeEvaluateTerm sideCondition . ceilChild . evaluateCeilInj)
-                input { ceilChild = inj }
+            input { ceilChild = inj }
+                & evaluateCeilInj
+                & ceilChild
+                & makeEvaluateTermCeil sideCondition Sort.predicateSort
         _ -> empty
 
 newBuiltinCeilSimplifier
