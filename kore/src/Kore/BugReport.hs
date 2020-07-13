@@ -56,9 +56,9 @@ parseBugReport =
     BugReport
         <$> optional
             ( strOption
-                ( metavar "REPORT FILE"
+                ( metavar "REPORT_FILE"
                 <> long "bug-report"
-                <> help "Whether to report a bug"
+                <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
                 )
             )
 
