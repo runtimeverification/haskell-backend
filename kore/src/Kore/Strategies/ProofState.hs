@@ -67,7 +67,7 @@ instance Pretty Prim where
     pretty ApplyClaims = "apply claims"
     pretty ApplyAxioms = "apply axioms"
 
-newtype ExecutionDepth = ExecutionDepth { getDepth :: Natural}
+newtype ExecutionDepth = ExecutionDepth { getDepth :: Natural }
     deriving (Eq, Show, Ord, Hashable, Debug, Diff)
 
 increment :: ExecutionDepth -> ExecutionDepth
