@@ -211,6 +211,8 @@ instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
+{- | Transform a 'MonadSimplify' instance to run without equations.
+ -}
 newtype WithoutAxiomsT m a =
     WithoutAxiomsT
         { runWithoutAxiomsT :: m a
