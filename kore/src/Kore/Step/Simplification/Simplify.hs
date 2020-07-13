@@ -217,9 +217,11 @@ newtype WithoutAxiomsT m a =
         }
     deriving (Eq, Ord, Functor, Applicative, Monad)
 
-instance MonadTrans WithoutAxiomsT
+instance MonadTrans WithoutAxiomsT where
+    lift = WithoutAxiomsT
 
-instance MFunctor WithoutAxiomsT
+instance MFunctor WithoutAxiomsT where
+    hoist f (WithoutAxiomsT ma) = WithoutAxiomsT $ f ma
 
 instance MonadSMT m => MonadSMT (WithoutAxiomsT m)
 

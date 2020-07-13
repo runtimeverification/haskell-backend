@@ -28,7 +28,6 @@ import Control.Monad.Trans.Class
     )
 import Control.Monad.Trans.Reader
     ( ReaderT (..)
-    , mapReaderT
     )
 
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
