@@ -18,6 +18,11 @@ import Pretty
     )
 import qualified Pretty
 
+{- | @WarnStuckProofState@ is emitted when a proof gets stuck.
+
+The warning message distinguishes for the user the ways that a proof can be stuck.
+
+ -}
 data WarnStuckProofState
     = TermsUnifiableStuck
     -- ^ The terms of the left- and right-hand sides do not unify,
