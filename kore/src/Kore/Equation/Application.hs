@@ -361,7 +361,9 @@ checkRequires sideCondition predicate requires =
             condition :: Condition variable
             condition = from @(Predicate _) (makeNotPredicate requires')
         return condition
+            -- First try to refute 'condition' without user-defined axioms:
             >>= simplifyConditionWithoutAxioms
+            -- Next try to refute 'condition' including user-defined axioms:
             >>= simplifyConditionWithAxioms
             -- Finally, try to refute the simplified 'condition' using the
             -- external solver:
