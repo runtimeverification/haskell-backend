@@ -734,7 +734,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.Goal (ExecutionDepth 1) $ makeOnePathRuleFromPatterns
+            [ ProofState.Goal (ExecutionDepth 0) $ makeOnePathRuleFromPatterns
                 Conditional
                     { term = Mock.a
                     , predicate =

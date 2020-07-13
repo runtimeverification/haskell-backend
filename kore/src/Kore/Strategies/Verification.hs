@@ -101,9 +101,11 @@ import Kore.Strategies.ProofState
     ( ExecutionDepth (..)
     , ProofState
     , ProofStateTransformer (..)
+    , incrementDepth
     )
 import qualified Kore.Strategies.ProofState as ProofState
-    ( ProofState (..)
+    ( Prim (..)
+    , ProofState (..)
     , extractDepth
     , extractUnproven
     , proofState
@@ -412,8 +414,24 @@ transitionRule' claims axioms =
     & withConfiguration
     & withDebugProofState
     & logTransitionRule
+    & countExecutionDepth
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+
+countExecutionDepth
+    :: TransitionRule m goal
+    -> TransitionRule m goal
+countExecutionDepth rule = \prim proofState -> do
+    result <- rule prim proofState
+    if prim `elem` [ProofState.ApplyClaims, ProofState.ApplyAxioms]
+        && isGoalRewritten result
+    then
+        fmap incrementDepth (rule prim proofState)
+    else
+        return result
+    where
+    isGoalRewritten (ProofState.GoalRewritten _ _) = True
+    isGoalRewritten _ = False
 
 profTransitionRule
     :: forall m

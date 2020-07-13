@@ -177,7 +177,7 @@ test_transitionRule_ApplyClaims =
     , unmodified (ProofState.GoalRewritten (ExecutionDepth 0) (A, B))
     , [Rule (A, C)]
         `derives`
-        [   ( ProofState.GoalRewritten (ExecutionDepth 1) (C,   C)
+        [   ( ProofState.GoalRewritten (ExecutionDepth 0) (C,   C)
             , Seq.singleton $ Rule (A, C)
             )
         ,   ( ProofState.GoalRemainder (ExecutionDepth 0) (Bot, C)
