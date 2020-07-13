@@ -1471,17 +1471,11 @@ mkDefined = updateCallStack . worker
                         { applicationSymbolOrAlias
                         , applicationChildren
                         } ->
-                    if isFunctional applicationSymbolOrAlias
-                        then
-                            mkApplySymbol
+                    (if isFunctional applicationSymbolOrAlias then id else mkDefinedAtTop)
+                    (mkApplySymbol
                                 applicationSymbolOrAlias
                                 (fmap worker applicationChildren)
-                        else
-                            mkDefinedAtTop
-                                ( mkApplySymbol
-                                    applicationSymbolOrAlias
-                                    (fmap worker applicationChildren)
-                                )
+                    )
                 ApplyAliasF _ ->
                     mkDefinedAtTop term
                 BottomF _ ->
