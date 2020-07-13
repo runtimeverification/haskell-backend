@@ -87,6 +87,11 @@ import Kore.Unification.Procedure
 import Kore.Unparser
     ( unparseToString
     )
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
@@ -131,40 +136,46 @@ runRepl
     mainModuleName
     logOptions
     = do
+    startTime <- liftIO $ getTime Monotonic
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
-            $ evaluateScript replScript scriptModeOutput
+            $ evaluateScript startTime replScript scriptModeOutput
     case replMode of
         Interactive -> do
             replGreeting
             flip evalStateT newState
                 $ flip runReaderT config
-                $ forever repl0
+                $ forever (repl0 startTime)
         RunScript ->
-            runReplCommand Exit newState
+            runReplCommand startTime Exit newState
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState -> m ()
-    runReplCommand cmd st =
+    runReplCommand :: TimeSpec -> ReplCommand -> ReplState -> m ()
+    runReplCommand startTime cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
-            $ replInterpreter printIfNotEmpty cmd
+            $ replInterpreter startTime printIfNotEmpty cmd
 
     evaluateScript
-        :: ReplScript
+        :: TimeSpec
+        -> ReplScript
         -> ScriptModeOutput
         -> RWST (Config m) String ReplState m ()
-    evaluateScript script outputFlag =
-        maybe (pure ()) (flip parseEvalScript outputFlag) (unReplScript script)
+    evaluateScript startTime script outputFlag =
+        maybe
+            (pure ())
+            (flip (parseEvalScript startTime) outputFlag)
+            (unReplScript script)
 
-    repl0 :: ReaderT (Config m) (StateT ReplState m) ()
-    repl0 = do
+    repl0 :: TimeSpec -> ReaderT (Config m) (StateT ReplState m) ()
+    repl0 startTime = do
         str <- prompt
-        let command = fromMaybe ShowUsage $ parseMaybe commandParser str
+        let command =
+                fromMaybe ShowUsage $ parseMaybe (commandParser startTime) str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
-        void $ replInterpreter printIfNotEmpty command
+        void $ replInterpreter startTime printIfNotEmpty command
 
     state :: ReplState
     state =

@@ -25,7 +25,6 @@ import Control.Monad.Trans.State.Strict
 import Data.Coerce
     ( coerce
     )
-import Data.Default
 import Data.Generics.Product
 import Data.IORef
     ( IORef
@@ -87,6 +86,11 @@ import Kore.Unparser
     )
 import qualified Pretty
 import qualified SMT
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -529,11 +533,12 @@ showAxiomByName =
 
 logUpdatesState :: IO ()
 logUpdatesState = do
+    startTime <- getTime Monotonic
     let
         axioms  = []
         claim   = emptyClaim
         options =
-            def
+            (Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime)
                 { Log.logLevel = Log.Info
                 , Log.logEntries =
                     Map.keysSet . Log.typeToText $ Log.registry
@@ -646,17 +651,18 @@ runWithState
     -> (ReplState -> ReplState)
     -> IO Result
 runWithState command axioms claims claim stateTransformer = do
+    startTime <- getTime Monotonic
     let logger = mempty
     output <- newIORef (mempty :: ReplOutput)
     mvar <- newMVar logger
-    let state = stateTransformer $ mkState axioms claims claim
+    let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar
     (c, s) <-
         flip Log.runLoggerT (Log.swappableLogger mvar)
         $ liftSimplifier
         $ flip runStateT state
         $ flip runReaderT config
-        $ replInterpreter0
+        $ replInterpreter0 startTime
             (PrintAuxOutput . modifyAuxOutput $ output)
             (PrintKoreOutput . modifyKoreOutput $ output)
             command
@@ -721,11 +727,12 @@ tests :: IO () -> String -> TestTree
 tests = flip testCase
 
 mkState
-    :: [Axiom]
+    :: TimeSpec
+    -> [Axiom]
     -> [Claim]
     -> Claim
     -> ReplState
-mkState axioms claims claim =
+mkState startTime axioms claims claim =
     ReplState
         { axioms         = axioms
         , claims         = claims
@@ -737,7 +744,8 @@ mkState axioms claims claim =
         , omit           = mempty
         , labels         = Map.singleton (ClaimIndex 0) Map.empty
         , aliases        = Map.empty
-        , koreLogOptions = def
+        , koreLogOptions =
+            Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime
         }
   where
     graph' = emptyExecutionGraph claim
