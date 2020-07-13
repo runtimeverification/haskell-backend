@@ -138,8 +138,9 @@ unresolvedConstructorSymbol identifier resultSort argumentSorts =
         , declaration = AST.SymbolConstructor
             AST.IndirectSymbolDeclaration
                 { name = encodable
-                , resultSort = AST.SortReference resultSort
-                , argumentSorts = map AST.SortReference argumentSorts
+                , sortDependencies =
+                    AST.SortReference resultSort
+                    : map AST.SortReference argumentSorts
                 }
         }
   where
@@ -189,7 +190,8 @@ unresolvedSmthookSymbol encodedName resultSort argumentSorts =
         , declaration = AST.SymbolBuiltin
             AST.IndirectSymbolDeclaration
                 { name = AST.AlreadyEncoded (AST.Atom encodedName)
-                , resultSort = AST.SortReference resultSort
-                , argumentSorts = map AST.SortReference argumentSorts
+                , sortDependencies =
+                    AST.SortReference resultSort
+                    : map AST.SortReference argumentSorts
                 }
         }

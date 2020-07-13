@@ -1482,8 +1482,9 @@ smtConstructor symbolId argumentSorts resultSort =
         , declaration =
             SMT.SymbolConstructor SMT.IndirectSymbolDeclaration
                 { name = encodableId
-                , resultSort = SMT.SortReference resultSort
-                , argumentSorts = map SMT.SortReference argumentSorts
+                , sortDependencies =
+                    SMT.SortReference resultSort
+                    : map SMT.SortReference argumentSorts
                 }
         }
   where
@@ -1498,8 +1499,9 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
         , declaration =
             SMT.SymbolBuiltin SMT.IndirectSymbolDeclaration
                 { name = SMT.AlreadyEncoded $ SMT.Atom builtin
-                , resultSort = SMT.SortReference resultSort
-                , argumentSorts = map SMT.SortReference argumentSorts
+                , sortDependencies =
+                    SMT.SortReference resultSort
+                    : map SMT.SortReference argumentSorts
                 }
         }
 
