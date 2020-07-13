@@ -87,9 +87,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Log
 import qualified Kore.Log.Registry as Log
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -229,6 +226,8 @@ data ReplCommand
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe ReplNode)
     -- ^ Show the configuration from the current node.
+    | ShowDest !(Maybe ReplNode)
+    -- ^ Show the destination from the current node.
     | OmitCell !(Maybe String)
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
@@ -334,6 +333,8 @@ helpText =
     \select <n>                               select node id 'n' from the graph\n\
     \config [n]                               shows the config for node 'n'\
                                               \ (defaults to current node)\n\
+    \dest [n]                                 shows the destination for node 'n'\
+                                              \ (defaults to current node)\n\
     \omit [cell]                              adds or removes cell to omit list\
                                               \ (defaults to showing the omit\
                                               \ list)\n\
@@ -354,8 +355,8 @@ helpText =
     \tryf (<a|c><num>)|<name>                 attempts <a>xiom or <c>laim at\
                                               \ index <num> or rule with <name>,\
                                               \ and if successful, it will apply it.\n\
-    \clear [n]                                removes all node children from the\
-                                              \ proof graph\n\
+    \clear [n]                                removes all the node's children from the\
+                                              \ proof graph (****)\n\
     \                                         (defaults to current node)\n\
     \save-session file                        saves the current session to file\n\
     \save-partial-proof [n] file              creates a file, <file>.kore, containing a kore module\
@@ -410,6 +411,9 @@ helpText =
     \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
     \ leaf exists (i.e the proof is complete), the current node remains the same\n\
     \ and a message is emitted.\n\
+    \ (****) The clear command doesn't allow the removal of nodes which are direct\n\
+    \ descendants of branchings. The steps which create branchings cannot be\n\
+    \ partially redone. Therefore, if this were allowed it would result in invalid proofs.\n\
     \\n\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\
@@ -493,13 +497,12 @@ data ReplState = ReplState
 -- | Configuration environment for the repl.
 data Config m = Config
     { stepper
-        :: Claim
-        -> [Claim]
+        :: [Claim]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> m (ExecutionGraph Axiom)
-    -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+    -- ^ Stepper function
     , unifier
         :: SideCondition VariableName
         -> TermLike VariableName
@@ -534,8 +537,6 @@ instance Monad m => MonadLogic (UnifierWithExplanation m) where
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
-deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
-
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift
     {-# INLINE lift #-}
@@ -548,12 +549,8 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     {-# INLINE logWhile #-}
 
 instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierTermLike locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierTermLike locally unifierT
     localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierAxioms locally unifierT
+        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     explainBottom info first second =

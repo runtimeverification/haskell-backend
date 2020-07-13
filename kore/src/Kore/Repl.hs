@@ -22,7 +22,7 @@ import Control.Monad
     , void
     )
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     )
 import qualified Control.Monad.Catch as Exception
 import Control.Monad.Reader
@@ -77,6 +77,9 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
+import Prof
+    ( MonadProf
+    )
 
 import Kore.Unification.Procedure
     ( unificationProcedureWorker
@@ -92,7 +95,8 @@ runRepl
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => MonadCatch m
+    => MonadProf m
+    => MonadMask m
     => [Axiom]
     -- ^ list of axioms to used in the proof
     -> [ReachabilityRule]
@@ -251,19 +255,18 @@ runRepl
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: ReachabilityRule
-        -> [ReachabilityRule]
+        :: [ReachabilityRule]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> m (ExecutionGraph Axiom)
-    stepper0 claim claims axioms graph rnode = do
+    stepper0 claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchEverything graph
                 $ catchInterruptWithDefault graph
-                $ verifyClaimStep claim claims axioms graph node
+                $ verifyClaimStep claims axioms graph node
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a

@@ -36,12 +36,11 @@ import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
     , simplifyCondition
-    , simplifyConditionalTermToOr
+    , simplifyConditionalTerm
     )
 import Kore.Substitute
     ( substitute
     )
-import Logic
 
 {-| Simplifies the pattern without a side-condition (i.e. it's top)
 and removes the exists quantifiers at the top.
@@ -77,8 +76,7 @@ simplify sideCondition pattern' =
             term' = substitute (toMap $ substitution simplifiedCondition) term
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition
-        orSimplifiedTerms <- simplifyConditionalTermToOr termSideCondition term'
-        simplifiedTerm <- Logic.scatter orSimplifiedTerms
+        simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
         simplifyCondition
             sideCondition
             (Conditional.andCondition simplifiedTerm simplifiedCondition)

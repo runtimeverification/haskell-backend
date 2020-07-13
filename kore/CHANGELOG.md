@@ -14,8 +14,30 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.25.0.0] - 2020-07-08
+
+### Added
+
+- The `simplification` attribute takes an optional integer argument indicating
+  the priority of the simplification rule.
+- The hooked function `INT.ediv` implements Euclidean division.
+
+### Changed
+
+- `ErrorBottomTotalFunction` is thrown when a function declared total
+  (`functional`) returns `\bottom`.
+- `ErrorDecidePredicateUnknown` is thrown when the solver cannot decide if a
+  condition is satisfiable or unsatisfiable.
+
+### Fixed
+
 - `kore-exec` exits with the code specified by the semantics, even when the
   final configuration has side conditions.
+- `kore-exec` and `kore-repl` halt when the limit specified by the `--breadth`
+  option is exceeded.
+- Proofs are no longer incomplete when the final configuration is undefined.
+- `kore-repl` does not allow `clear`-ing the direct child of a branching node
+  because this can invalidate a proof.
 
 ## [0.24.0.0] - 2020-06-25
 
