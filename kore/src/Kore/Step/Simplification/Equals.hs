@@ -58,8 +58,7 @@ import Kore.Step.Simplification.AndTerms
     ( maybeTermEquals
     )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluate
-    , makeEvaluateTerm
+    ( makeEvaluateTerm
     )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
@@ -216,6 +215,23 @@ simplifyEvaluated sideCondition first second
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
 
+makeEvaluateCeil
+    :: MonadSimplify simplifier
+    => InternalVariable variable
+    => SideCondition variable
+    -> Pattern variable
+    -> simplifier (OrPattern variable)
+makeEvaluateCeil sideCondition child =
+    do
+        let (childTerm, childCondition) = Pattern.splitTerm child
+        ceilCondition <-
+            Predicate.makeCeilPredicate_ childTerm
+            & Condition.fromPredicate
+            & simplifyCondition sideCondition
+        Pattern.andCondition Pattern.top (ceilCondition <> childCondition)
+            & pure
+    & OrPattern.observeAllT
+
 makeEvaluateFunctionalOr
     :: forall variable simplifier
     .  (InternalVariable variable, MonadSimplify simplifier)
@@ -224,8 +240,8 @@ makeEvaluateFunctionalOr
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
 makeEvaluateFunctionalOr sideCondition first seconds = do
-    firstCeil <- Ceil.makeEvaluate sideCondition first
-    secondCeilsWithProofs <- mapM (Ceil.makeEvaluate sideCondition) seconds
+    firstCeil <- makeEvaluateCeil sideCondition first
+    secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
     firstNotCeil <- Not.simplifyEvaluated sideCondition firstCeil
     let secondCeils = secondCeilsWithProofs
     secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
@@ -295,9 +311,9 @@ makeEvaluate
     sideCondition
   = do
     let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
-    firstCeil <- Ceil.makeEvaluate sideCondition first'
+    firstCeil <- makeEvaluateCeil sideCondition first'
     let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
-    secondCeil <- Ceil.makeEvaluate sideCondition second'
+    secondCeil <- makeEvaluateCeil sideCondition second'
     firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
     secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
