@@ -6,6 +6,7 @@ module Kore.Strategies.Goal
     ( Goal (..)
     , strategy
     , TransitionRule
+    , ApplyRuleResult (..)
     , Prim
     , FromRulePattern (..)
     , ClaimExtractor (..)
@@ -60,6 +61,7 @@ import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
+import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Attribute.Pattern.FreeVariables
@@ -151,7 +153,6 @@ import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( proofState
     )
-import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Strategies.Rule
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
@@ -229,13 +230,13 @@ class Goal goal where
         :: MonadSimplify m
         => [goal]
         -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        -> Strategy.TransitionT (Rule goal) m (ApplyRuleResult goal)
 
     applyAxioms
         :: MonadSimplify m
         => [[Rule goal]]
         -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        -> Strategy.TransitionT (Rule goal) m (ApplyRuleResult goal)
 
 type AxiomAttributes = Attribute.Axiom.Axiom Symbol VariableName
 
@@ -317,7 +318,7 @@ deriveSeqOnePath
     =>  [Rule OnePathRule]
     ->  OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
-            (ProofState OnePathRule)
+            (ApplyRuleResult OnePathRule)
 deriveSeqOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where
@@ -343,36 +344,35 @@ instance Goal AllPathRule where
     applyClaims claims = deriveSeqAllPath (map goalToRule claims)
 
     applyAxioms axiomss = \goal ->
-        foldM applyAxioms1 (GoalRemainder (ExecutionDepth 0) goal) axiomss
+        foldM applyAxioms1 (ResultRemainder goal) axiomss
       where
-        applyAxioms1 proofState axioms
-          | Just goal <- retractRewritableGoal proofState =
+        applyAxioms1 ruleResult axioms
+          | Just goal <- retractRewritableGoal ruleResult =
             deriveParAllPath axioms goal
             >>= simplifyRemainder
             >>= checkTriviallyValid
           | otherwise =
-            pure proofState
+            pure ruleResult
 
-        retractRewritableGoal (Goal _ goal) = Just goal
-        retractRewritableGoal (GoalRemainder _ goal) = Just goal
+        retractRewritableGoal (ResultRemainder goal) = Just goal
         retractRewritableGoal _ = Nothing
 
-        simplifyRemainder proofState =
-            case proofState of
-                GoalRemainder depth goal ->
-                    GoalRemainder depth <$> simplify goal
-                _ -> return proofState
+        simplifyRemainder ruleResult =
+            case ruleResult of
+                ResultRemainder goal ->
+                    ResultRemainder <$> simplify goal
+                _ -> return ruleResult
 
-        checkTriviallyValid proofState
-          | all isTriviallyValid proofState = pure $ Proven (ExecutionDepth 0)
-          | otherwise = pure proofState
+        checkTriviallyValid ruleResult
+          | all isTriviallyValid ruleResult = pure ResultProven
+          | otherwise = pure ruleResult
 
 deriveParAllPath
     ::  MonadSimplify simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
-            (ProofState AllPathRule)
+            (ApplyRuleResult AllPathRule)
 deriveParAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where
@@ -383,7 +383,7 @@ deriveSeqAllPath
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
-            (ProofState AllPathRule)
+            (ApplyRuleResult AllPathRule)
 deriveSeqAllPath rules =
     deriveSeq' _Unwrapped AllPathRewriteRule rewrites
   where
@@ -555,17 +555,21 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- opaque way. I think that there's no good reason for wrapping the
     -- results in `derivePar` as opposed to here.
 
-    transitionRuleWorker ApplyClaims (Goal _ goal) =
-        applyClaims claims goal
+    transitionRuleWorker ApplyClaims (Goal depth goal) =
+        ruleResultToProofSatte (increment depth)
+            <$> applyClaims claims goal
 
-    transitionRuleWorker ApplyClaims (GoalRemainder _ goal) =
-        applyClaims claims goal
+    transitionRuleWorker ApplyClaims (GoalRemainder depth goal) =
+        ruleResultToProofSatte (increment depth)
+            <$> applyClaims claims goal
 
-    transitionRuleWorker ApplyAxioms (Goal _ goal) =
-        applyAxioms axiomGroups goal
+    transitionRuleWorker ApplyAxioms (Goal depth goal) =
+        ruleResultToProofSatte (increment depth)
+            <$> applyAxioms axiomGroups goal
 
-    transitionRuleWorker ApplyAxioms (GoalRemainder _ goal) =
-        applyAxioms axiomGroups goal
+    transitionRuleWorker ApplyAxioms (GoalRemainder depth goal) =
+        ruleResultToProofSatte (increment depth)
+            <$> applyAxioms axiomGroups goal
 
     transitionRuleWorker _ state = return state
 
@@ -728,7 +732,7 @@ derivePar'
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (Rule goal) m (ApplyRuleResult goal)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
@@ -747,7 +751,7 @@ deriveWith
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (Rule goal) m (ApplyRuleResult goal)
 deriveWith lensRulePattern mkRule takeStep rewrites goal =
     getCompose
     $ Lens.forOf lensRulePattern goal
@@ -766,16 +770,29 @@ deriveSeq'
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (Rule goal) m (ApplyRuleResult goal)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
+
+data ApplyRuleResult a = ResultRewritten a | ResultRemainder a | ResultProven
+    deriving (Eq, Show, Ord)
+    deriving (Foldable, Functor)
+    deriving (GHC.Generic)
+
+ruleResultToProofSatte
+    :: ExecutionDepth
+    -> ApplyRuleResult a
+    -> ProofState a
+ruleResultToProofSatte depth (ResultRewritten a) = GoalRewritten depth a
+ruleResultToProofSatte depth (ResultRemainder a) = GoalRemainder depth a
+ruleResultToProofSatte depth ResultProven = Proven depth
 
 deriveResults
     :: (RewriteRule RewritingVariableName -> Rule goal)
     -> Step.Results RulePattern VariableName
     -> Strategy.TransitionT (Rule goal) simplifier
-        (ProofState.ProofState (Pattern VariableName))
+        (ApplyRuleResult (Pattern VariableName))
 -- TODO (thomas.tuegel): Remove goal argument.
 deriveResults mkRule Results { results, remainders } =
     addResults <|> addRemainders
@@ -789,11 +806,11 @@ deriveResults mkRule Results { results, remainders } =
             []      ->
                 -- If the rule returns \bottom, the goal is proven on the
                 -- current branch.
-                pure $ Proven (ExecutionDepth 0)
+                pure ResultProven
             configs -> Foldable.asum (addRewritten <$> configs)
 
-    addRewritten = pure . GoalRewritten (ExecutionDepth 0)
-    addRemainder = pure . GoalRemainder (ExecutionDepth 0)
+    addRewritten = pure . ResultRewritten
+    addRemainder = pure . ResultRemainder
 
     addRule = Transition.addRule . fromAppliedRule
 

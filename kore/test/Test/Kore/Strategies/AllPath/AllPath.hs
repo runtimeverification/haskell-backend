@@ -403,16 +403,16 @@ instance Goal.Goal Goal where
 derivePar
     :: [Goal.Rule Goal]
     -> (K, K)
-    -> Transition.TransitionT (Goal.Rule Goal) m (ProofState.ProofState (K, K))
+    -> Transition.TransitionT (Goal.Rule Goal) m (Goal.ApplyRuleResult (K, K))
 derivePar rules (src, dst) =
     goals <|> goalRemainder
   where
     goal rule@(Rule (_, to)) = do
         Transition.addRule rule
-        (pure . ProofState.GoalRewritten (ExecutionDepth 0)) (to, dst)
+        (pure . Goal.ResultRewritten) (to, dst)
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ProofState.GoalRemainder (ExecutionDepth 0)) (r, dst)
+        (pure . Goal.ResultRemainder) (r, dst)
     applyRule rule@(Rule (fromGoal, _))
         | fromGoal `matches` src = Just rule
         | otherwise = Nothing
