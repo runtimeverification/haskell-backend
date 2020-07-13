@@ -37,6 +37,7 @@ import Test.Kore.Internal.TermLike hiding
     ( forgetSimplified
     , isSimplified
     , mapVariables
+    , markSimplified
     , simplifiedAttribute
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
