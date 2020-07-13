@@ -214,38 +214,39 @@ withAsyncLogger logAction continue = do
     untilDone = handleBlockedIndefinitelyOnSTM ignore . forever
     tryAgain action = handleBlockedIndefinitelyOnSTM action action
 
--- Creates a kore logger which:
---     * adds timestamps
---     * formats messages: "<exe-name>: [<timestamp>] <severity> (<entry-type>): <message>"
+{- | The default Kore logger.
+
+Creates a kore logger which:
+  * adds timestamps
+  * formats messages: "<exe-name>: [<timestamp>] <severity> (<entry-type>): <message>"
+
+ -}
 makeKoreLogger
-    :: forall m
-    .  MonadIO m
+    :: forall io
+    .  MonadIO io
     => ExeName
     -> TimeSpec
     -> TimestampsSwitch
-    -> LogAction m Text
-    -> LogAction m ActualEntry
-makeKoreLogger exeName startTime timestampSwitch logToText =
-    Colog.cmapM (withTimestamp startTime)
-        $ contramap messageToText logToText
+    -> LogAction io Text
+    -> LogAction io ActualEntry
+makeKoreLogger exeName startTime timestampSwitch logActionText =
+    logActionText
+    & contramap render
+    & Colog.cmapM withTimestamp
   where
-    messageToText :: WithTimestamp -> Text
-    messageToText (WithTimestamp entry elapsedTime) =
-        Pretty.renderText
-        . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ prettyActualEntry timestamp entry
+    render :: WithTimestamp -> Text
+    render (WithTimestamp entry entryTime) =
+        prettyActualEntry timestamp entry
+        & Pretty.layoutPretty Pretty.defaultLayoutOptions
+        & Pretty.renderText
       where
         timestamp =
             case timestampSwitch of
                 TimestampsDisable -> Nothing
-                TimestampsEnable -> Just $
-                    Pretty.brackets
-                        $ Pretty.hsep
-                            [ "Microseconds since startup:"
-                            , Pretty.pretty
-                                $ (toMicroseconds . toNanoSecs) elapsedTime
-                            ]
-        toMicroseconds = (`div` 1000)
+                TimestampsEnable ->
+                    Just . Pretty.brackets . Pretty.pretty
+                    $ toMicroSecs (diffTimeSpec startTime entryTime)
+        toMicroSecs = (`div` 1000) . toNanoSecs
     exeName' = Pretty.pretty exeName <> Pretty.colon
     prettyActualEntry timestamp ActualEntry { actualEntry, entryContext } =
         (Pretty.vsep . concat)
@@ -282,10 +283,10 @@ makeKoreLogger exeName startTime timestampSwitch logToText =
     indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.
-withTimestamp :: MonadIO io => TimeSpec -> ActualEntry -> io WithTimestamp
-withTimestamp startTime msg = liftIO $ do
+withTimestamp :: MonadIO io => ActualEntry -> io WithTimestamp
+withTimestamp msg = liftIO $ do
     currentTime <- getTime Monotonic
-    pure $ WithTimestamp msg (diffTimeSpec currentTime startTime)
+    pure $ WithTimestamp msg currentTime
 
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
