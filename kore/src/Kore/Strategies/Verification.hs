@@ -47,7 +47,6 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
     )
-import qualified Data.Semigroup as Semigroup
 import Data.Text
     ( Text
     )
@@ -72,6 +71,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
+import Kore.Log.InfoProofDepth
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , leftPattern
@@ -302,13 +302,11 @@ verifyClaim
         :: (ProofDepth, CommonProofState)
         -> Verifier simplifier ()
         -> Verifier simplifier ()
-    throwUnprovenOrElse (_, proofState) acts = do
-        ProofState.extractUnproven proofState
-            & Foldable.traverse_
-                ( Monad.Except.throwError
-                . OrPattern.fromPattern
-                . getConfiguration
-                )
+    throwUnprovenOrElse (proofDepth, proofState) acts = do
+        Foldable.for_ (ProofState.extractUnproven proofState) $ \unproven -> do
+            infoUnprovenDepth proofDepth
+            Monad.Except.throwError . OrPattern.fromPattern
+                $ getConfiguration unproven
         acts
 
     transit instr config =
@@ -411,11 +409,6 @@ logTransitionRule rule prim proofState =
             whileCheckImplication goal $ rule prim proofState
         _ ->
             rule prim proofState
-
-newtype ProofDepth = ProofDepth { getProofDepth :: Natural }
-    deriving (Eq, Ord, Show)
-    deriving (Enum)
-    deriving (Semigroup) via (Semigroup.Max Natural)
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.
  -}
