@@ -566,19 +566,19 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- results in `derivePar` as opposed to here.
 
     transitionRuleWorker ApplyClaims (Goal depth goal) =
-        ruleResultToProofSatte depth
+        ruleResultToProofState depth
             <$> applyClaims claims goal
 
     transitionRuleWorker ApplyClaims (GoalRemainder depth goal) =
-        ruleResultToProofSatte depth
+        ruleResultToProofState depth
             <$> applyClaims claims goal
 
     transitionRuleWorker ApplyAxioms (Goal depth goal) =
-        ruleResultToProofSatte depth
+        ruleResultToProofState depth
             <$> applyAxioms axiomGroups goal
 
     transitionRuleWorker ApplyAxioms (GoalRemainder depth goal) =
-        ruleResultToProofSatte depth
+        ruleResultToProofState depth
             <$> applyAxioms axiomGroups goal
 
     transitionRuleWorker _ state = return state
@@ -790,13 +790,13 @@ data ApplyRuleResult a = ResultRewritten a | ResultRemainder a | ResultProven
     deriving (Foldable, Functor)
     deriving (GHC.Generic)
 
-ruleResultToProofSatte
+ruleResultToProofState
     :: ExecutionDepth
     -> ApplyRuleResult a
     -> ProofState a
-ruleResultToProofSatte depth (ResultRewritten a) = GoalRewritten depth a
-ruleResultToProofSatte depth (ResultRemainder a) = GoalRemainder depth a
-ruleResultToProofSatte depth ResultProven = Proven depth
+ruleResultToProofState depth (ResultRewritten a) = GoalRewritten depth a
+ruleResultToProofState depth (ResultRemainder a) = GoalRemainder depth a
+ruleResultToProofState depth ResultProven = Proven depth
 
 deriveResults
     :: (RewriteRule RewritingVariableName -> Rule goal)
