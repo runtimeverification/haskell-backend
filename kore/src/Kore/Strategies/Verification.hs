@@ -362,7 +362,7 @@ transitionRule'
     => MonadMask simplifier
     => [ReachabilityRule]
     -> [Rule ReachabilityRule]
-    -> TransitionRule simplifier ReachabilityRule
+    -> TransitionRule simplifier (Rule ReachabilityRule) ReachabilityRule
 transitionRule' claims axioms =
     transitionRule claims axiomGroups
     & profTransitionRule
@@ -375,8 +375,8 @@ transitionRule' claims axioms =
 profTransitionRule
     :: forall m
     .  MonadProf m
-    => TransitionRule m ReachabilityRule
-    -> TransitionRule m ReachabilityRule
+    => TransitionRule m (Rule ReachabilityRule) ReachabilityRule
+    -> TransitionRule m (Rule ReachabilityRule) ReachabilityRule
 profTransitionRule rule prim proofState =
     case prim of
         Prim.ApplyClaims -> tracing ":transit:apply-claims"
@@ -392,8 +392,8 @@ profTransitionRule rule prim proofState =
 logTransitionRule
     :: forall m
     .  MonadSimplify m
-    => TransitionRule m ReachabilityRule
-    -> TransitionRule m ReachabilityRule
+    => TransitionRule m (Rule ReachabilityRule) ReachabilityRule
+    -> TransitionRule m (Rule ReachabilityRule) ReachabilityRule
 logTransitionRule rule prim proofState =
     case proofState of
         ProofState.Goal goal          -> logWith goal
@@ -451,8 +451,8 @@ debugProofStateFinal proofState (coerce -> transition) = do
 withDebugProofState
     :: forall monad
     .  MonadLog monad
-    => TransitionRule monad ReachabilityRule
-    -> TransitionRule monad ReachabilityRule
+    => TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
+    -> TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
 withDebugProofState transitionFunc =
     \transition state ->
         Transition.orElse
@@ -468,8 +468,8 @@ withDebugProofState transitionFunc =
 
 withConfiguration
     :: MonadCatch monad
-    => TransitionRule monad ReachabilityRule
-    -> TransitionRule monad ReachabilityRule
+    => TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
+    -> TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where

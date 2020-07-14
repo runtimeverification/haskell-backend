@@ -483,10 +483,10 @@ ruleOnePathToRuleReachability
     -> Rule ReachabilityRule
 ruleOnePathToRuleReachability = coerce
 
-type TransitionRule m goal =
+type TransitionRule m rule goal =
     Prim
     -> ProofState goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT rule m (ProofState goal)
 
 transitionRule
     :: forall m goal
@@ -494,7 +494,7 @@ transitionRule
     => Goal goal
     => [goal]
     -> [[Rule goal]]
-    -> TransitionRule m goal
+    -> TransitionRule m (Rule goal) goal
 transitionRule claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
