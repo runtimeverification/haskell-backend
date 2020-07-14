@@ -141,47 +141,46 @@ runRepl
     = do
     startTime <- liftIO $ getTime Monotonic
     (newState, _) <-
-            (\rwst -> execRWST rwst config state)
-            $ evaluateScript startTime replScript scriptModeOutput
+            (\rwst -> execRWST rwst config (state startTime))
+            $ evaluateScript replScript scriptModeOutput
     case replMode of
         Interactive -> do
             replGreeting
             flip evalStateT newState
                 $ flip runReaderT config
-                $ forever (repl0 startTime)
+                $ forever repl0
         RunScript ->
-            runReplCommand startTime Exit newState
+            runReplCommand Exit newState
 
   where
 
-    runReplCommand :: TimeSpec -> ReplCommand -> ReplState -> m ()
-    runReplCommand startTime cmd st =
+    runReplCommand :: ReplCommand -> ReplState -> m ()
+    runReplCommand cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
-            $ replInterpreter startTime printIfNotEmpty cmd
+            $ replInterpreter printIfNotEmpty cmd
 
     evaluateScript
-        :: TimeSpec
-        -> ReplScript
+        :: ReplScript
         -> ScriptModeOutput
         -> RWST (Config m) String ReplState m ()
-    evaluateScript startTime script outputFlag =
+    evaluateScript script outputFlag =
         maybe
             (pure ())
-            (flip (parseEvalScript startTime) outputFlag)
+            (flip parseEvalScript outputFlag)
             (unReplScript script)
 
-    repl0 :: TimeSpec -> ReaderT (Config m) (StateT ReplState m) ()
-    repl0 startTime = do
+    repl0 :: ReaderT (Config m) (StateT ReplState m) ()
+    repl0 = do
         str <- prompt
         let command =
-                fromMaybe ShowUsage $ parseMaybe (commandParser startTime) str
+                fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
-        void $ replInterpreter startTime printIfNotEmpty command
+        void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState
-    state =
+    state :: TimeSpec -> ReplState
+    state startTime =
         ReplState
             { axioms         = addIndexesToAxioms axioms'
             , claims         = addIndexesToClaims claims'
@@ -197,7 +196,9 @@ runRepl
             , aliases        = Map.empty
             , koreLogOptions =
                 logOptions
-                    { Log.exeName = Log.ExeName "kore-repl" }
+                    { Log.exeName = Log.ExeName "kore-repl"
+                    , Log.startTime = startTime
+                    }
             }
 
     config :: Config m

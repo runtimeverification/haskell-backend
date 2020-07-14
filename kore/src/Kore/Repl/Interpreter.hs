@@ -227,12 +227,11 @@ replInterpreter
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> (String -> IO ())
+    => (String -> IO ())
     -> ReplCommand
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
-replInterpreter startTime fn cmd =
-    replInterpreter0 startTime
+replInterpreter fn cmd =
+    replInterpreter0
         (PrintAuxOutput fn)
         (PrintKoreOutput fn)
         cmd
@@ -241,12 +240,11 @@ replInterpreter0
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> PrintAuxOutput
+    => PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
-replInterpreter0 startTime printAux printKore replCmd = do
+replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
                 ShowUsage             -> showUsage               $> Continue
                 Help                  -> help                    $> Continue
@@ -268,24 +266,25 @@ replInterpreter0 startTime printAux printKore replCmd = do
                 Label ms              -> label ms                $> Continue
                 LabelAdd l mn         -> labelAdd l mn           $> Continue
                 LabelDel l            -> labelDel l              $> Continue
-                Redirect inn file     -> redirect startTime inn file
+                Redirect inn file     -> redirect inn file
                                                                  $> Continue
                 Try ref               -> tryAxiomClaim ref       $> Continue
                 TryF ac               -> tryFAxiomClaim ac       $> Continue
                 Clear n               -> clear n                 $> Continue
                 SaveSession file      -> saveSession file        $> Continue
                 SavePartialProof mn f -> savePartialProof mn f   $> Continue
-                Pipe inn file args    -> pipe startTime inn file args
+                Pipe inn file args    -> pipe inn file args
                                                                  $> Continue
-                AppendTo inn file     -> appendTo startTime inn file
+                AppendTo inn file     -> appendTo inn file
                                                                  $> Continue
                 Alias a               -> alias a                 $> Continue
                 TryAlias name         ->
-                    tryAlias startTime name printAux printKore
-                LoadScript file       -> loadScript startTime file
+                    tryAlias name printAux printKore
+                LoadScript file       -> loadScript file
                                                                  $> Continue
                 ProofStatus           -> proofStatus             $> Continue
-                Log opts              -> handleLog opts          $> Continue
+                Log opts              -> log opts                $> Continue
+                LogAttemptEquation op -> logAttemptEquation op   $> Continue
                 Exit                  -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
@@ -508,17 +507,39 @@ loadScript
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> FilePath
+    => FilePath
     -- ^ path to file
     -> ReplM m ()
-loadScript startTime file = parseEvalScript startTime file DisableOutput
+loadScript file = parseEvalScript file DisableOutput
 
-handleLog
+log
     :: MonadState ReplState m
-    => Log.KoreLogOptions
+    => GeneralLogOptions
     -> m ()
-handleLog t = field @"koreLogOptions" .= t
+log
+    GeneralLogOptions
+        { logType
+        , logLevel
+        , timestampsSwitch
+        , logEntries
+        }
+  = do
+    -- TODO: refactor this as a transformation
+    logOptions <- Lens.use (field @"koreLogOptions")
+    (.=)
+        (field @"koreLogOptions")
+        logOptions
+            { Log.logType = logType
+            , Log.logLevel = logLevel
+            , Log.timestampsSwitch = timestampsSwitch
+            , Log.logEntries = logEntries
+            }
+
+logAttemptEquation
+    :: MonadState ReplState m
+    => Log.DebugAttemptEquationOptions
+    -> m ()
+logAttemptEquation = undefined
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -825,30 +846,28 @@ redirect
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> ReplCommand
+    => ReplCommand
     -- ^ command to redirect
     -> FilePath
     -- ^ file path
     -> ReplM m ()
-redirect startTime cmd file = do
+redirect cmd file = do
     liftIO $ withExistingDirectory file (`writeFile` "")
-    appendCommand startTime cmd file
+    appendCommand cmd file
 
 runInterpreterWithOutput
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> PrintAuxOutput
+    => PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
     -> Config m
     -> ReplM m ()
-runInterpreterWithOutput startTime printAux printKore cmd config =
+runInterpreterWithOutput printAux printKore cmd config =
     get >>= (\st -> lift
             $ execStateReader config st
-            $ replInterpreter0 startTime printAux printKore cmd
+            $ replInterpreter0 printAux printKore cmd
             )
         >>= put
 
@@ -1128,22 +1147,21 @@ pipe
     :: forall m
     .  MonadIO m
     => MonadSimplify m
-    => TimeSpec
-    -> ReplCommand
+    => ReplCommand
     -- ^ command to pipe
     -> String
     -- ^ path to the program that will receive the command's output
     -> [String]
     -- ^ additional arguments to be passed to the program
     -> ReplM m ()
-pipe startTime cmd file args = do
+pipe cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
             config <- ask
             pipeOutRef <- liftIO $ newIORef (mempty :: ReplOutput)
-            runInterpreterWithOutput startTime
+            runInterpreterWithOutput
                 (PrintAuxOutput $ justPrint pipeOutRef)
                 (PrintKoreOutput $ runExternalProcess pipeOutRef exec)
                 cmd
@@ -1173,26 +1191,24 @@ appendTo
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> ReplCommand
+    => ReplCommand
     -- ^ command
     -> FilePath
     -- ^ file to append to
     -> ReplM m ()
-appendTo startTime cmd file =
-    withExistingDirectory file (appendCommand startTime cmd)
+appendTo cmd file =
+    withExistingDirectory file (appendCommand cmd)
 
 appendCommand
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> ReplCommand
+    => ReplCommand
     -> FilePath
     -> ReplM m ()
-appendCommand startTime cmd file = do
+appendCommand cmd file = do
     config <- ask
-    runInterpreterWithOutput startTime
+    runInterpreterWithOutput
         (PrintAuxOutput $ appendFile file)
         (PrintKoreOutput $ appendFile file)
         cmd
@@ -1215,12 +1231,11 @@ tryAlias
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => TimeSpec
-    -> ReplAlias
+    => ReplAlias
     -> PrintAuxOutput
     -> PrintKoreOutput
     -> ReplM m ReplStatus
-tryAlias startTime replAlias@ReplAlias { name } printAux printKore = do
+tryAlias replAlias@ReplAlias { name } printAux printKore = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> Continue
@@ -1230,7 +1245,7 @@ tryAlias startTime replAlias@ReplAlias { name } printAux printKore = do
                 parsedCommand =
                     fromMaybe
                         ShowUsage
-                        $ parseMaybe (commandParser startTime) command
+                        $ parseMaybe commandParser command
             config <- ask
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
@@ -1245,7 +1260,7 @@ tryAlias startTime replAlias@ReplAlias { name } printAux printKore = do
         lift
             $ (`runStateT` st)
             $ runReaderT
-                (replInterpreter0 startTime printAux printKore cmd)
+                (replInterpreter0 printAux printKore cmd)
                 config
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
@@ -1463,16 +1478,15 @@ parseEvalScript
     => MonadState ReplState (t m)
     => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
-    => TimeSpec
-    -> FilePath
+    => FilePath
     -> ScriptModeOutput
     -> t m ()
-parseEvalScript startTime file scriptModeOutput = do
+parseEvalScript file scriptModeOutput = do
     exists <- lift . liftIO . doesFileExist $ file
     if exists
         then do
             contents <- lift . liftIO $ readFile file
-            let result = runParser (scriptParser startTime) file contents
+            let result = runParser scriptParser file contents
             either parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
@@ -1505,7 +1519,7 @@ parseEvalScript startTime file scriptModeOutput = do
             :: ReplCommand
             -> ReaderT (Config m) (StateT ReplState m) ReplStatus
         executeCommand command =
-            replInterpreter0 startTime
+            replInterpreter0
                 (PrintAuxOutput $ \_ -> return ())
                 (PrintKoreOutput $ \_ -> return ())
                 command
@@ -1517,7 +1531,7 @@ parseEvalScript startTime file scriptModeOutput = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             liftIO $ print command
-            replInterpreter0 startTime
+            replInterpreter0
                     (PrintAuxOutput printIfNotEmpty)
                     (PrintKoreOutput printIfNotEmpty)
                     command

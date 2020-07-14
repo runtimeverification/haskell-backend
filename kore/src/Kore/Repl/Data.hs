@@ -37,6 +37,7 @@ module Kore.Repl.Data
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
     , GraphView (..)
+    , GeneralLogOptions (..)
     ) where
 
 import Prelude.Kore
@@ -86,6 +87,11 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Log
+    ( ActualEntry (..)
+    , LogAction (..)
+    , MonadLog (..)
+    )
+import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
@@ -200,6 +206,15 @@ data GraphView
     | Expanded
     deriving (Eq, Show)
 
+data GeneralLogOptions =
+    GeneralLogOptions
+        { logType :: !Log.KoreLogType
+        , logLevel :: !Log.Severity
+        , timestampsSwitch :: !Log.TimestampsSwitch
+        , logEntries :: !Log.EntryTypes
+        }
+    deriving (Eq, Show)
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -271,8 +286,12 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
-    | Log KoreLogOptions
+    | Log GeneralLogOptions
     -- ^ Setup the Kore logger.
+    | LogAttemptEquation Log.DebugAttemptEquationOptions
+    -- ^ Log debugging information about attempting to
+    -- apply specific equations.
+    -- TODO: LogApplyEquation, LogEquation
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -493,7 +512,7 @@ data ReplState = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
-    , koreLogOptions :: !KoreLogOptions
+    , koreLogOptions :: !Log.KoreLogOptions
     -- ^ The log level, log scopes and log type decide what gets logged and
     -- where.
     }

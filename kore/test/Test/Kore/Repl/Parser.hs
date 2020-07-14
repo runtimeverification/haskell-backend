@@ -23,14 +23,8 @@ import Kore.Equation.Application
     , DebugAttemptEquation
     )
 import qualified Kore.Log as Log
-import Kore.Log.KoreLogOptions
-    ( defaultKoreLogOptions
-    )
 import Kore.Repl.Data
 import Kore.Repl.Parser
-import System.Clock
-    ( fromNanoSecs
-    )
 
 import Test.Kore.Parser
 
@@ -76,14 +70,14 @@ tests :: [ParserTest ReplCommand] -> String -> TestTree
 tests ts pname =
     testGroup
         ("REPL.Parser." <> pname)
-        . parseTree (commandParser $ fromNanoSecs 0)
+        . parseTree commandParser
         $ ts
 
 testsScript :: [ParserTest [ReplCommand]] -> String -> TestTree
 testsScript ts pname =
     testGroup
         ("REPL.Parser." <> pname)
-        . parseTree (scriptParser $ fromNanoSecs 0)
+        . parseTree scriptParser
         $ ts
 
 helpTests :: [ParserTest ReplCommand]
@@ -486,71 +480,55 @@ logTests :: [ParserTest ReplCommand]
 logTests =
     [ "log debug [] stderr"
         `parsesTo_`
-            Log
-                ( defaultKoreLogOptions
-                    (Log.ExeName "kore-repl")
-                    (fromNanoSecs 0)
-                )
-                { Log.logLevel = Log.Debug
-                , Log.logType = Log.LogStdErr
+            Log GeneralLogOptions
+                { logLevel = Log.Debug
+                , logType = Log.LogStdErr
+                , timestampsSwitch = Log.TimestampsEnable
+                , logEntries = mempty
                 }
     , "log [] stderr"
         `parsesTo_`
-            Log
-                ( defaultKoreLogOptions
-                    (Log.ExeName "kore-repl")
-                    (fromNanoSecs 0)
-                )
-                { Log.logLevel = Log.Warning
-                , Log.logType = Log.LogStdErr
+            Log GeneralLogOptions
+                { logLevel = Log.Warning
+                , logType = Log.LogStdErr
+                , timestampsSwitch = Log.TimestampsEnable
+                , logEntries = mempty
                 }
     , "log [DebugAttemptEquation] stderr"
         `parsesTo_`
-            Log
-                ( defaultKoreLogOptions
-                    (Log.ExeName "kore-repl")
-                    (fromNanoSecs 0)
-                )
-                { Log.logLevel = Log.Warning
-                , Log.logType = Log.LogStdErr
-                , Log.logEntries = Set.singleton debugAttemptEquationType
+            Log GeneralLogOptions
+                { logLevel = Log.Warning
+                , logType = Log.LogStdErr
+                , logEntries = Set.singleton debugAttemptEquationType
+                , timestampsSwitch = Log.TimestampsEnable
                 }
     , "log error [DebugAttemptEquation] stderr"
         `parsesTo_`
-            Log
-                ( defaultKoreLogOptions
-                    (Log.ExeName "kore-repl")
-                    (fromNanoSecs 0)
-                )
-                { Log.logLevel = Log.Error
-                , Log.logType = Log.LogStdErr
-                , Log.logEntries = Set.singleton debugAttemptEquationType
+            Log GeneralLogOptions
+                { logLevel = Log.Error
+                , logType = Log.LogStdErr
+                , logEntries = Set.singleton debugAttemptEquationType
+                , timestampsSwitch = Log.TimestampsEnable
                 }
     , "log info [ DebugAttemptEquation,  DebugApplyEquation ] file \"f s\""
         `parsesTo_`
-            Log
-                ( defaultKoreLogOptions
-                    (Log.ExeName "kore-repl")
-                    (fromNanoSecs 0)
-                )
-                { Log.logLevel = Log.Info
-                , Log.logType = Log.LogFileText "f s"
-                , Log.logEntries =
+            Log GeneralLogOptions
+                { logLevel = Log.Info
+                , logType = Log.LogFileText "f s"
+                , logEntries =
                     Set.fromList
                         [debugAttemptEquationType, debugApplyEquationType]
+                , timestampsSwitch = Log.TimestampsEnable
                 }
     , "log info [ DebugAttemptEquation   DebugApplyEquation ] file \"f s\""
         `parsesTo_`
-            Log
-                ( defaultKoreLogOptions
-                    (Log.ExeName "kore-repl")
-                    (fromNanoSecs 0)
-                )
-                { Log.logLevel = Log.Info
-                , Log.logType = Log.LogFileText "f s"
-                , Log.logEntries =
+            Log GeneralLogOptions
+                { logLevel = Log.Info
+                , logType = Log.LogFileText "f s"
+                , logEntries =
                     Set.fromList
                         [debugAttemptEquationType, debugApplyEquationType]
+                , timestampsSwitch = Log.TimestampsEnable
                 }
     ]
 

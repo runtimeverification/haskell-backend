@@ -533,22 +533,25 @@ showAxiomByName =
 
 logUpdatesState :: IO ()
 logUpdatesState = do
-    startTime <- getTime Monotonic
     let
         axioms  = []
         claim   = emptyClaim
         options =
-            (Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime)
-                { Log.logLevel = Log.Info
-                , Log.logEntries =
+            GeneralLogOptions
+                { logLevel = Log.Info
+                , logEntries =
                     Map.keysSet . Log.typeToText $ Log.registry
+                , logType = Log.LogStdErr
+                , timestampsSwitch = Log.TimestampsEnable
                 }
         command = Log options
-    Result { output, continue, state } <-
-        run command axioms [claim] claim
-    output   `equalsOutput` mempty
-    continue `equals`     Continue
-    state `hasLogging` options
+    undefined
+-- TODO: just check that the state has been modified
+--     Result { output, continue, state } <-
+--         run command axioms [claim] claim
+--     output   `equalsOutput` mempty
+--     continue `equals`     Continue
+--     state `hasLogging` options
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
@@ -662,7 +665,7 @@ runWithState command axioms claims claim stateTransformer = do
         $ liftSimplifier
         $ flip runStateT state
         $ flip runReaderT config
-        $ replInterpreter0 startTime
+        $ replInterpreter0
             (PrintAuxOutput . modifyAuxOutput $ output)
             (PrintKoreOutput . modifyKoreOutput $ output)
             command
