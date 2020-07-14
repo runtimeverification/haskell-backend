@@ -83,6 +83,9 @@ import Kore.Log.InfoAttemptUnification
 import Kore.Log.InfoReachability
     ( InfoReachability
     )
+import Kore.Log.InfoExecutionBreadth
+    ( InfoExecutionBreadth
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
@@ -145,6 +148,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @LogMessage
     , mk $ Proxy @InfoAttemptUnification
     , mk $ Proxy @InfoReachability
+    , mk $ Proxy @InfoExecutionBreadth
     , mk $ Proxy @ErrorRewritesInstantiation
     , mk $ Proxy @DebugAttemptEquation
     , mk $ Proxy @DebugApplyEquation
