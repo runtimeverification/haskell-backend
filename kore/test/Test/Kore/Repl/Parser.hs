@@ -55,6 +55,7 @@ test_replParser =
     , tryFTests         `tests`       "tryF"
     , redirectTests     `tests`       "redirect"
     , ruleTests         `tests`       "rule"
+    , rulesTests        `tests`       "rules"
     , stepfTests        `tests`       "stepf"
     , clearTests        `tests`       "clear"
     , pipeTests         `tests`       "pipe"
@@ -385,6 +386,19 @@ ruleTests =
     , "rule 5"  `parsesTo_` ShowRule (Just (ReplNode 5))
     , "rule 5 " `parsesTo_` ShowRule (Just (ReplNode 5))
     , "rule -5" `fails`     ()
+    ]
+
+rulesTests :: [ParserTest ReplCommand]
+rulesTests =
+    [ "rules 1 9"    `parsesTo_` ShowRules (ReplNode 1, ReplNode 9)
+    , "rules 1 97"   `parsesTo_` ShowRules (ReplNode 1, ReplNode 97)
+    , "rules  1 97"  `parsesTo_` ShowRules (ReplNode 1, ReplNode 97)
+    , "rules 1  97 " `parsesTo_` ShowRules (ReplNode 1, ReplNode 97)
+    , "rules 97 105" `parsesTo_` ShowRules (ReplNode 97, ReplNode 105)
+    , "rules"        `fails` ()
+    , "rules "       `fails` ()
+    , "rules 13"     `fails` ()
+    , "rules -13"    `fails` ()
     ]
 
 clearTests :: [ParserTest ReplCommand]
