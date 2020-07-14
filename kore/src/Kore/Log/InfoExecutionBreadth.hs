@@ -10,12 +10,12 @@ module Kore.Log.InfoExecutionBreadth
 
 import Prelude.Kore
 
+import Log
+import Numeric.Natural
 import Pretty
     ( Pretty
     )
-import Log
 import qualified Pretty
-import Numeric.Natural  
 
 type ExecutionBreadth = Natural
 

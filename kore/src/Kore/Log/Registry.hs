@@ -80,11 +80,11 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
-import Kore.Log.InfoReachability
-    ( InfoReachability
-    )
 import Kore.Log.InfoExecutionBreadth
     ( InfoExecutionBreadth
+    )
+import Kore.Log.InfoReachability
+    ( InfoReachability
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
