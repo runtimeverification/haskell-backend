@@ -70,9 +70,6 @@ import Kore.Log.DebugUnification
     , debugUnificationUnsolved
     , whileDebugUnification
     )
-import Kore.Step.Simplification.CeilSimplifier
-    ( CeilSimplifier (..)
-    )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
@@ -244,7 +241,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s)
-    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier ceilSimplifier)
+    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier)
     , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s)
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
@@ -252,11 +249,6 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent)
     , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2)
     ]
-  where
-
-    ceilSimplifier =
-        CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } ->
-            makeEvaluateTermCeil SideCondition.topTODO ceilResultSort ceilChild
 
 {- | Construct the conjunction or unification of two terms.
 

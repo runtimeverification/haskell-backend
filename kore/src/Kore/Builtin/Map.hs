@@ -71,9 +71,6 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition
@@ -100,9 +97,6 @@ import Kore.Sort
     ( Sort
     )
 import qualified Kore.Sort as Sort
-import Kore.Step.Simplification.CeilSimplifier
-    ( CeilSimplifier (..)
-    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence
@@ -614,17 +608,10 @@ unifyNotInKeys
     => MonadUnify unifier
     => TermSimplifier variable unifier
     -> NotSimplifier unifier
-    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyNotInKeys
-    unifyChildren
-    (NotSimplifier notSimplifier)
-    (CeilSimplifier ceilSimplifier)
-    a
-    b
-  =
+unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
     worker a b <|> worker b a
   where
     normalizedOrBottom
@@ -634,13 +621,9 @@ unifyNotInKeys
 
     defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
     defineTerm termLike =
-        ceilSimplifier
-            TermLike.Ceil
-                { ceilResultSort = Sort.predicateSort
-                , ceilOperandSort = TermLike.termLikeSort termLike
-                , ceilChild = termLike
-                }
-        >>= lift . Unify.scatter
+        makeEvaluateTermCeil SideCondition.topTODO Sort.predicateSort termLike
+        >>= Unify.scatter
+        & lift
 
     eraseTerm =
         Pattern.fromCondition_ . Pattern.withoutTerm

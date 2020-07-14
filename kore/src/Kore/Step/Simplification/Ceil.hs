@@ -307,7 +307,7 @@ makeEvaluateConcatMap
     -> MaybeT simplifier (OrCondition variable)
 makeEvaluateConcatMap sideCondition (Domain.BuiltinMap internalAc) =
     runCeilSimplifierWith
-        (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
+        AssocComm.newMapCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
@@ -329,7 +329,7 @@ makeEvaluateBuiltin
     -> MaybeT simplifier (OrCondition variable)
 makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
     runCeilSimplifierWith
-        (AssocComm.newSetCeilSimplifier ceilSimplifierTermLike)
+        AssocComm.newSetCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort

@@ -75,6 +75,7 @@ import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
+    , makeEvaluateTermCeil
     )
 import Kore.Variables.Fresh
     ( refreshElementVariable
@@ -96,11 +97,10 @@ newSetCeilSimplifier
     .   InternalVariable variable
     =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
-    =>  CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
-    ->  CeilSimplifier simplifier
+    =>  CeilSimplifier simplifier
             (BuiltinAssocComm Domain.NormalizedSet variable)
             (OrCondition variable)
-newSetCeilSimplifier ceilSimplifier =
+newSetCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
@@ -116,7 +116,6 @@ newSetCeilSimplifier ceilSimplifier =
             (newBuiltinAssocCommCeilSimplifier
                 TermLike.mkBuiltinSet
                 mkNotMember
-                ceilSimplifier
             )
             ceil
 
@@ -125,11 +124,10 @@ newMapCeilSimplifier
     .   InternalVariable variable
     =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
-    =>  CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
-    ->  CeilSimplifier simplifier
+    =>  CeilSimplifier simplifier
             (BuiltinAssocComm Domain.NormalizedMap variable)
             (OrCondition variable)
-newMapCeilSimplifier ceilSimplifier =
+newMapCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
@@ -151,7 +149,6 @@ newMapCeilSimplifier ceilSimplifier =
             (newBuiltinAssocCommCeilSimplifier
                 TermLike.mkBuiltinMap
                 mkNotMember
-                ceilSimplifier
             )
             ceil
 
@@ -191,12 +188,9 @@ newBuiltinAssocCommCeilSimplifier
     =>  MkBuiltinAssocComm normalized variable
     ->  MkNotMember normalized variable
     ->  CeilSimplifier simplifier
-            (TermLike variable)
-            (OrCondition variable)
-    ->  CeilSimplifier simplifier
             (BuiltinAssocComm normalized variable)
             (OrCondition variable)
-newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifier =
+newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } -> do
         let internalAc@Domain.InternalAc { builtinAcChild } = ceilChild
         sideCondition <- Reader.ask
@@ -252,13 +246,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember ceilSimplifier =
 
         let makeEvaluateTerm, defineAbstractKey, defineOpaque
                 :: TermLike variable -> MaybeT simplifier (OrCondition variable)
-            makeEvaluateTerm termLike =
-                runCeilSimplifier ceilSimplifier
-                    Ceil
-                        { ceilResultSort
-                        , ceilOperandSort = TermLike.termLikeSort termLike
-                        , ceilChild = termLike
-                        }
+            makeEvaluateTerm = makeEvaluateTermCeil sideCondition ceilResultSort
             defineAbstractKey = makeEvaluateTerm
             defineOpaque = makeEvaluateTerm
 
