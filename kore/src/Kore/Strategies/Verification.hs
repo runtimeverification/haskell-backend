@@ -114,6 +114,9 @@ import Prof
 
 type CommonProofState = ProofState.ProofState ReachabilityRule
 
+type CommonTransitionRule m =
+    TransitionRule m (Rule ReachabilityRule) CommonProofState
+
 -- | Extracts the left hand side (configuration) from the
 -- 'CommonProofState'. If the 'ProofState' is 'Proven', then
 -- the configuration will be '\\bottom'.
@@ -362,7 +365,7 @@ transitionRule'
     => MonadMask simplifier
     => [ReachabilityRule]
     -> [Rule ReachabilityRule]
-    -> TransitionRule simplifier (Rule ReachabilityRule) ReachabilityRule
+    -> CommonTransitionRule simplifier
 transitionRule' claims axioms =
     transitionRule claims axiomGroups
     & profTransitionRule
@@ -375,8 +378,8 @@ transitionRule' claims axioms =
 profTransitionRule
     :: forall m
     .  MonadProf m
-    => TransitionRule m (Rule ReachabilityRule) ReachabilityRule
-    -> TransitionRule m (Rule ReachabilityRule) ReachabilityRule
+    => CommonTransitionRule m
+    -> CommonTransitionRule m
 profTransitionRule rule prim proofState =
     case prim of
         Prim.ApplyClaims -> tracing ":transit:apply-claims"
@@ -392,8 +395,8 @@ profTransitionRule rule prim proofState =
 logTransitionRule
     :: forall m
     .  MonadSimplify m
-    => TransitionRule m (Rule ReachabilityRule) ReachabilityRule
-    -> TransitionRule m (Rule ReachabilityRule) ReachabilityRule
+    => CommonTransitionRule m
+    -> CommonTransitionRule m
 logTransitionRule rule prim proofState =
     case proofState of
         ProofState.Goal goal          -> logWith goal
@@ -451,8 +454,8 @@ debugProofStateFinal proofState (coerce -> transition) = do
 withDebugProofState
     :: forall monad
     .  MonadLog monad
-    => TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
-    -> TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
+    => CommonTransitionRule monad
+    -> CommonTransitionRule monad
 withDebugProofState transitionFunc =
     \transition state ->
         Transition.orElse
@@ -468,8 +471,8 @@ withDebugProofState transitionFunc =
 
 withConfiguration
     :: MonadCatch monad
-    => TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
-    -> TransitionRule monad (Rule ReachabilityRule) ReachabilityRule
+    => CommonTransitionRule monad
+    -> CommonTransitionRule monad
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where
