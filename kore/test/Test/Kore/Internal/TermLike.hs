@@ -5,6 +5,7 @@ module Test.Kore.Internal.TermLike
     , test_refreshVariables
     , test_hasConstructorLikeTop
     , test_renaming
+    , test_mkDefined
     --
     , termLikeGen
     , termLikeChildGen
@@ -422,3 +423,116 @@ test_renaming =
                 updatesFreeVariables renamed
                 doesNotCapture (inject Mock.setY) renamed
             ]
+
+test_mkDefined :: [TestTree]
+test_mkDefined =
+    [ testCase "Defined attribute" $ do
+        let term :: TermLike VariableName
+            term = Mock.functional11 Mock.a
+        assertEqual "" term (mkDefined term)
+    , testCase "Multiple argument symbol, nested" $ do
+        let term =
+                Mock.plain20
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g (mkElemVar Mock.y))
+            expected =
+                defined
+                    ( Mock.plain20
+                        (defined (Mock.f (mkElemVar Mock.x)))
+                        (defined (Mock.g (mkElemVar Mock.y)))
+                    )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Nested and, functional symbol, non-functional symbol" $ do
+        let term =
+                mkAnd
+                    (mkAnd
+                        mkTop_
+                        (Mock.functional11 (Mock.f mkTop_))
+                    )
+                    mkTop_
+            expected =
+                defined
+                    (mkAnd
+                        (defined
+                            (mkAnd
+                                mkTop_
+                                (Mock.functional11
+                                    (defined (Mock.f mkTop_))
+                                )
+                            )
+                        )
+                        mkTop_
+                    )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Forall" $ do
+        let term = mkForall Mock.x (Mock.f (mkElemVar Mock.x))
+            expected =
+                defined
+                    ( mkForall
+                        Mock.x
+                        (defined (Mock.f (mkElemVar Mock.x)))
+                    )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Nested or" $ do
+        let term =
+                mkOr
+                    (mkOr
+                        mkBottom_
+                        (mkCeil_ (Mock.f mkTop_))
+                    )
+                    (Mock.f mkBottom_)
+            expected =
+                defined
+                    (mkOr
+                        (mkOr
+                            mkBottom_
+                            (mkCeil_ (Mock.f mkTop_))
+                        )
+                    (Mock.f mkBottom_)
+                    )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Exists" $ do
+        let term =
+                mkExists Mock.x (Mock.f (mkElemVar Mock.x))
+            expected =
+                defined
+                (mkExists Mock.x (Mock.f (mkElemVar Mock.x)))
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Implies" $ do
+        let term =
+                mkImplies mkBottom_ Mock.plain00
+            expected =
+                defined
+                (mkImplies mkBottom_ Mock.plain00)
+            actual = mkDefined term
+        assertEqual "" expected actual
+    , testCase "Predicate" $ do
+        let term =
+                mkEquals_ (mkElemVar Mock.x) (Mock.f (mkElemVar Mock.y))
+        assertEqual "" term (mkDefined term)
+    , testCase "Nested predicate" $ do
+        let term =
+                Mock.g
+                    ( mkIn_
+                        (mkElemVar Mock.x)
+                        (Mock.f (mkElemVar Mock.y))
+                    )
+            expected =
+                defined
+                ( Mock.g
+                    ( mkIn_
+                        (mkElemVar Mock.x)
+                        (Mock.f (mkElemVar Mock.y))
+                    )
+                )
+            actual = mkDefined term
+        assertEqual "" expected actual
+    ]
+  where
+    defined :: TermLike VariableName -> TermLike VariableName
+    defined = mkDefinedAtTop
