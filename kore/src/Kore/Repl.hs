@@ -238,9 +238,9 @@ runRepl
         fmap addIndex (zip rules [0..])
       where
         addIndex (rule, index) =
-            Lens.over
+            Lens.set
                 (lens . field @"identifier")
-                (const (index & ctor & Just & RuleIndex))
+                (index & ctor & Just & RuleIndex)
                 rule
 
     firstClaim :: ReachabilityRule

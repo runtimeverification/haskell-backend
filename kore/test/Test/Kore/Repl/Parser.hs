@@ -376,6 +376,7 @@ rulesTests :: [ParserTest ReplCommand]
 rulesTests =
     [ "rules 1 9"    `parsesTo_` ShowRules (ReplNode 1, ReplNode 9)
     , "rules 1 97"   `parsesTo_` ShowRules (ReplNode 1, ReplNode 97)
+    , "rules  1 97"  `parsesTo_` ShowRules (ReplNode 1, ReplNode 97)
     , "rules 1  97 " `parsesTo_` ShowRules (ReplNode 1, ReplNode 97)
     , "rules 97 105" `parsesTo_` ShowRules (ReplNode 97, ReplNode 105)
     , "rules"        `fails` ()
