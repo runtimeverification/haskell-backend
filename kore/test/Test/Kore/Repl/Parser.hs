@@ -9,7 +9,6 @@ import Test.Tasty
     , testGroup
     )
 
-import Data.Default
 import qualified Data.GraphViz as Graph
 import Data.Proxy
 import qualified Data.Set as Set
@@ -24,8 +23,14 @@ import Kore.Equation.Application
     , DebugAttemptEquation
     )
 import qualified Kore.Log as Log
+import Kore.Log.KoreLogOptions
+    ( defaultKoreLogOptions
+    )
 import Kore.Repl.Data
 import Kore.Repl.Parser
+import System.Clock
+    ( fromNanoSecs
+    )
 
 import Test.Kore.Parser
 
@@ -39,6 +44,7 @@ test_replParser =
     , stepTests         `tests`       "step"
     , selectTests       `tests`       "select"
     , configTests       `tests`       "config"
+    , destTests         `tests`       "dest"
     , leafsTests        `tests`       "leafs"
     , precBranchTests   `tests`       "prec-branch"
     , childrenTests     `tests`       "children"
@@ -70,14 +76,14 @@ tests :: [ParserTest ReplCommand] -> String -> TestTree
 tests ts pname =
     testGroup
         ("REPL.Parser." <> pname)
-        . parseTree commandParser
+        . parseTree (commandParser $ fromNanoSecs 0)
         $ ts
 
 testsScript :: [ParserTest [ReplCommand]] -> String -> TestTree
 testsScript ts pname =
     testGroup
         ("REPL.Parser." <> pname)
-        . parseTree scriptParser
+        . parseTree (scriptParser $ fromNanoSecs 0)
         $ ts
 
 helpTests :: [ParserTest ReplCommand]
@@ -174,6 +180,16 @@ configTests =
     , "config -5"          `fails`     ()
     , "config | > >> file" `fails`     ()
     , "config | s >> "     `fails`     ()
+    ]
+
+destTests :: [ParserTest ReplCommand]
+destTests =
+    [ "dest"             `parsesTo_` ShowDest Nothing
+    , "dest "            `parsesTo_` ShowDest Nothing
+    , "dest 5"           `parsesTo_` ShowDest (Just (ReplNode 5))
+    , "dest -5"          `fails`     ()
+    , "dest | > >> file" `fails`     ()
+    , "dest | s >> "     `fails`     ()
     ]
 
 omitTests :: [ParserTest ReplCommand]
@@ -469,43 +485,73 @@ initScriptTests =
 logTests :: [ParserTest ReplCommand]
 logTests =
     [ "log debug [] stderr"
-        `parsesTo_` Log def
-            { Log.logLevel = Log.Debug
-            , Log.logType = Log.LogStdErr
-            }
+        `parsesTo_`
+            Log
+                ( defaultKoreLogOptions
+                    (Log.ExeName "kore-repl")
+                    (fromNanoSecs 0)
+                )
+                { Log.logLevel = Log.Debug
+                , Log.logType = Log.LogStdErr
+                }
     , "log [] stderr"
-        `parsesTo_` Log def
-            { Log.logLevel = Log.Warning
-            , Log.logType = Log.LogStdErr
-            }
+        `parsesTo_`
+            Log
+                ( defaultKoreLogOptions
+                    (Log.ExeName "kore-repl")
+                    (fromNanoSecs 0)
+                )
+                { Log.logLevel = Log.Warning
+                , Log.logType = Log.LogStdErr
+                }
     , "log [DebugAttemptEquation] stderr"
-        `parsesTo_` Log def
-            { Log.logLevel = Log.Warning
-            , Log.logType = Log.LogStdErr
-            , Log.logEntries = Set.singleton debugAttemptEquationType
-            }
+        `parsesTo_`
+            Log
+                ( defaultKoreLogOptions
+                    (Log.ExeName "kore-repl")
+                    (fromNanoSecs 0)
+                )
+                { Log.logLevel = Log.Warning
+                , Log.logType = Log.LogStdErr
+                , Log.logEntries = Set.singleton debugAttemptEquationType
+                }
     , "log error [DebugAttemptEquation] stderr"
-        `parsesTo_` Log def
-            { Log.logLevel = Log.Error
-            , Log.logType = Log.LogStdErr
-            , Log.logEntries = Set.singleton debugAttemptEquationType
-            }
+        `parsesTo_`
+            Log
+                ( defaultKoreLogOptions
+                    (Log.ExeName "kore-repl")
+                    (fromNanoSecs 0)
+                )
+                { Log.logLevel = Log.Error
+                , Log.logType = Log.LogStdErr
+                , Log.logEntries = Set.singleton debugAttemptEquationType
+                }
     , "log info [ DebugAttemptEquation,  DebugApplyEquation ] file \"f s\""
-        `parsesTo_` Log def
-            { Log.logLevel = Log.Info
-            , Log.logType = Log.LogFileText "f s"
-            , Log.logEntries =
-                Set.fromList
-                    [debugAttemptEquationType, debugApplyEquationType]
-            }
+        `parsesTo_`
+            Log
+                ( defaultKoreLogOptions
+                    (Log.ExeName "kore-repl")
+                    (fromNanoSecs 0)
+                )
+                { Log.logLevel = Log.Info
+                , Log.logType = Log.LogFileText "f s"
+                , Log.logEntries =
+                    Set.fromList
+                        [debugAttemptEquationType, debugApplyEquationType]
+                }
     , "log info [ DebugAttemptEquation   DebugApplyEquation ] file \"f s\""
-        `parsesTo_` Log def
-            { Log.logLevel = Log.Info
-            , Log.logType = Log.LogFileText "f s"
-            , Log.logEntries =
-                Set.fromList
-                    [debugAttemptEquationType, debugApplyEquationType]
-            }
+        `parsesTo_`
+            Log
+                ( defaultKoreLogOptions
+                    (Log.ExeName "kore-repl")
+                    (fromNanoSecs 0)
+                )
+                { Log.logLevel = Log.Info
+                , Log.logType = Log.LogFileText "f s"
+                , Log.logEntries =
+                    Set.fromList
+                        [debugAttemptEquationType, debugApplyEquationType]
+                }
     ]
 
 debugAttemptEquationType, debugApplyEquationType :: SomeTypeRep

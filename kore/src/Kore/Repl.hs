@@ -22,7 +22,7 @@ import Control.Monad
     , void
     )
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     )
 import qualified Control.Monad.Catch as Exception
 import Control.Monad.Reader
@@ -80,12 +80,20 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
+import Prof
+    ( MonadProf
+    )
 
 import Kore.Unification.Procedure
     ( unificationProcedureWorker
     )
 import Kore.Unparser
     ( unparseToString
+    )
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
     )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
@@ -95,7 +103,8 @@ runRepl
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => MonadCatch m
+    => MonadProf m
+    => MonadMask m
     => [Axiom]
     -- ^ list of axioms to used in the proof
     -> [ReachabilityRule]
@@ -130,40 +139,46 @@ runRepl
     mainModuleName
     logOptions
     = do
+    startTime <- liftIO $ getTime Monotonic
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
-            $ evaluateScript replScript scriptModeOutput
+            $ evaluateScript startTime replScript scriptModeOutput
     case replMode of
         Interactive -> do
             replGreeting
             flip evalStateT newState
                 $ flip runReaderT config
-                $ forever repl0
+                $ forever (repl0 startTime)
         RunScript ->
-            runReplCommand Exit newState
+            runReplCommand startTime Exit newState
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState -> m ()
-    runReplCommand cmd st =
+    runReplCommand :: TimeSpec -> ReplCommand -> ReplState -> m ()
+    runReplCommand startTime cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
-            $ replInterpreter printIfNotEmpty cmd
+            $ replInterpreter startTime printIfNotEmpty cmd
 
     evaluateScript
-        :: ReplScript
+        :: TimeSpec
+        -> ReplScript
         -> ScriptModeOutput
         -> RWST (Config m) String ReplState m ()
-    evaluateScript script outputFlag =
-        maybe (pure ()) (flip parseEvalScript outputFlag) (unReplScript script)
+    evaluateScript startTime script outputFlag =
+        maybe
+            (pure ())
+            (flip (parseEvalScript startTime) outputFlag)
+            (unReplScript script)
 
-    repl0 :: ReaderT (Config m) (StateT ReplState m) ()
-    repl0 = do
+    repl0 :: TimeSpec -> ReaderT (Config m) (StateT ReplState m) ()
+    repl0 startTime = do
         str <- prompt
-        let command = fromMaybe ShowUsage $ parseMaybe commandParser str
+        let command =
+                fromMaybe ShowUsage $ parseMaybe (commandParser startTime) str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
-        void $ replInterpreter printIfNotEmpty command
+        void $ replInterpreter startTime printIfNotEmpty command
 
     state :: ReplState
     state =
@@ -250,19 +265,18 @@ runRepl
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: ReachabilityRule
-        -> [ReachabilityRule]
+        :: [ReachabilityRule]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> m (ExecutionGraph Axiom)
-    stepper0 claim claims axioms graph rnode = do
+    stepper0 claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchEverything graph
                 $ catchInterruptWithDefault graph
-                $ verifyClaimStep claim claims axioms graph node
+                $ verifyClaimStep claims axioms graph node
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a

@@ -989,9 +989,9 @@ unifyEqualsNormalizedAc
                 (TermLike variable, Domain.Value normalized (TermLike variable))
             )
     simplifyPair (key, value) = do
-        simplifiedKey <- simplifyTermLike key
+        simplifiedKey <- simplifyTermLike' key
         let (keyTerm, keyCondition) = Conditional.splitTerm simplifiedKey
-        simplifiedValue <- traverse simplifyTermLike value
+        simplifiedValue <- traverse simplifyTermLike' value
         let
             splitSimplifiedValue
                 :: Domain.Value
@@ -1016,8 +1016,8 @@ unifyEqualsNormalizedAc
             `andCondition` simplifiedValueCondition
             )
       where
-        simplifyTermLike :: TermLike variable -> unifier (Pattern variable)
-        simplifyTermLike term =
+        simplifyTermLike' :: TermLike variable -> unifier (Pattern variable)
+        simplifyTermLike' term =
             lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
 buildResultFromUnifiers

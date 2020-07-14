@@ -3,7 +3,7 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     , SomeException
     , displayException
     , handle
@@ -56,6 +56,11 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
 import System.Directory
     ( copyFile
     , doesFileExist
@@ -129,9 +134,6 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.RulePattern
@@ -169,6 +171,9 @@ import Pretty
     , hPutDoc
     , putDoc
     , vsep
+    )
+import Prof
+    ( MonadProf
     )
 import SMT
     ( MonadSMT
@@ -304,8 +309,8 @@ data KoreExecOptions = KoreExecOptions
     }
 
 -- | Command Line Argument Parser
-parseKoreExecOptions :: Parser KoreExecOptions
-parseKoreExecOptions =
+parseKoreExecOptions :: TimeSpec -> Parser KoreExecOptions
+parseKoreExecOptions startTime =
     applyKoreSearchOptions
         <$> optional parseKoreSearchOptions
         <*> parseKoreExecOptions0
@@ -349,7 +354,7 @@ parseKoreExecOptions =
         <*> parseBreadthLimit
         <*> parseDepthLimit
         <*> parseStrategy
-        <*> parseKoreLogOptions (ExeName "kore-exec")
+        <*> parseKoreLogOptions (ExeName "kore-exec") startTime
         <*> pure Nothing
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
@@ -554,7 +559,12 @@ exeName = ExeName "kore-exec"
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    options <- mainGlobal Main.exeName parseKoreExecOptions parserInfoModifiers
+    startTime <- getTime Monotonic
+    options <-
+        mainGlobal
+            Main.exeName
+            (parseKoreExecOptions startTime)
+            parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
@@ -811,10 +821,10 @@ loadRuleIds fileName = do
         )
 
 type MonadExecute exe =
-    ( MonadCatch exe
+    ( MonadMask exe
     , MonadIO exe
-    , MonadProfiler exe
     , MonadSMT exe
+    , MonadProf exe
     , WithLog LogMessage exe
     )
 

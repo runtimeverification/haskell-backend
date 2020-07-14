@@ -10,6 +10,7 @@ module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
     , Evaluated (..)
+    , Defined (..)
     , Builtin
     , extractAttributes
     , isSimplified
@@ -83,6 +84,7 @@ module Kore.Internal.TermLike
     , mkEvaluated
     , mkEndianness
     , mkSignedness
+    , mkDefined
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -137,6 +139,7 @@ module Kore.Internal.TermLike
     , pattern SetVar_
     , pattern StringLiteral_
     , pattern Evaluated_
+    , pattern Defined_
     , pattern Endianness_
     , pattern Signedness_
     , pattern Inj_
@@ -172,6 +175,8 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
     , module Variable
+    -- * For testing
+    , mkDefinedAtTop
     ) where
 
 import Prelude.Kore
@@ -644,6 +649,7 @@ forceSortPredicate
     case pattern' of
         -- Recurse
         EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
+        DefinedF defined -> DefinedF (Right <$> defined)
         -- Predicates: Force sort and stop.
         BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
         TopF top' -> TopF top' { topSort = forcedSort }
@@ -1435,6 +1441,94 @@ mkEvaluated
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
 
+-- | 'mkDefined' will wrap the 'TermLike' in a 'Defined' node based on
+-- the available information about the term. When possible, it will recurse
+-- to distribute the 'Defined' wrapper.
+mkDefined
+    :: forall variable
+    .  HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+mkDefined = updateCallStack . worker
+  where
+    worker
+        :: TermLike variable
+        -> TermLike variable
+    worker term
+      | isDefinedPattern term = term
+      | otherwise =
+        let (_ :< termF) = Recursive.project term
+         in case termF of
+                AndF And { andFirst, andSecond } ->
+                    mkDefinedAtTop
+                        ( mkAnd
+                            (worker andFirst)
+                            (worker andSecond)
+                        )
+                ApplySymbolF
+                    Application
+                        { applicationSymbolOrAlias
+                        , applicationChildren
+                        } ->
+                    (if isFunctional applicationSymbolOrAlias
+                        then id
+                        else mkDefinedAtTop
+                    )
+                        (mkApplySymbol
+                                    applicationSymbolOrAlias
+                                    (fmap worker applicationChildren)
+                        )
+                ApplyAliasF _ ->
+                    mkDefinedAtTop term
+                BottomF _ ->
+                    error
+                        "Internal error: cannot mark\
+                        \ a \\bottom pattern as defined."
+                CeilF _ -> term
+                DomainValueF _  -> term
+                BuiltinF (Domain.BuiltinBool _) -> term
+                BuiltinF (Domain.BuiltinInt _) -> term
+                BuiltinF (Domain.BuiltinString _) -> term
+                BuiltinF (Domain.BuiltinList _) -> mkDefinedAtTop term
+                BuiltinF (Domain.BuiltinMap _) -> mkDefinedAtTop term
+                BuiltinF (Domain.BuiltinSet _) -> mkDefinedAtTop term
+                EqualsF _ -> term
+                ExistsF _ -> mkDefinedAtTop term
+                FloorF _ -> term
+                ForallF Forall { forallVariable, forallChild } ->
+                    mkDefinedAtTop
+                        ( mkForall
+                            forallVariable
+                            (worker forallChild)
+                        )
+                IffF _ -> mkDefinedAtTop term
+                ImpliesF _ -> mkDefinedAtTop term
+                InF _ -> term
+                MuF _ -> mkDefinedAtTop term
+                NextF _ -> mkDefinedAtTop term
+                NotF _ -> mkDefinedAtTop term
+                NuF _ -> mkDefinedAtTop term
+                OrF _ -> mkDefinedAtTop term
+                RewritesF _ -> mkDefinedAtTop term
+                TopF _ -> term
+                VariableF (Const someVariable) ->
+                    if isElementVariable someVariable
+                        then term
+                        else mkDefinedAtTop term
+                StringLiteralF _ -> term
+                EvaluatedF (Evaluated child) -> worker child
+                DefinedF _ -> term
+                EndiannessF _ -> term
+                SignednessF _ -> term
+                InjF _ -> mkDefinedAtTop term
+                InhabitantF _ -> mkDefinedAtTop term
+                InternalBytesF _ -> term
+
+-- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
+mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
+mkDefinedAtTop = synthesize . DefinedF . Defined
+
 {- | Construct an 'Endianness' pattern.
  -}
 mkEndianness
@@ -1706,6 +1800,8 @@ pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern Evaluated_ :: TermLike variable -> TermLike variable
 
+pattern Defined_ :: TermLike variable -> TermLike variable
+
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
@@ -1853,6 +1949,9 @@ pattern StringLiteral_ str <-
 
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))
+
+pattern Defined_ child <-
+    (Recursive.project -> _ :< DefinedF (Defined child))
 
 pattern Endianness_ :: Endianness -> TermLike child
 pattern Endianness_ endianness <-

@@ -32,6 +32,7 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import Control.Monad
     ( void
+    , (<=<)
     )
 import Control.Monad.Extra
     ( ifM
@@ -181,6 +182,7 @@ import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
+    , rhsToPattern
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -189,12 +191,12 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (ProofStateTransformer)
+    , extractUnproven
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
     ( CommonProofState
-    , commonProofStateTransformer
     )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -207,6 +209,9 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Pretty
+import System.Clock
+    ( TimeSpec
+    )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -222,11 +227,12 @@ replInterpreter
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => (String -> IO ())
+    => TimeSpec
+    -> (String -> IO ())
     -> ReplCommand
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
-replInterpreter fn cmd =
-    replInterpreter0
+replInterpreter startTime fn cmd =
+    replInterpreter0 startTime
         (PrintAuxOutput fn)
         (PrintKoreOutput fn)
         cmd
@@ -235,11 +241,12 @@ replInterpreter0
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => PrintAuxOutput
+    => TimeSpec
+    -> PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
-replInterpreter0 printAux printKore replCmd = do
+replInterpreter0 startTime printAux printKore replCmd = do
     let command = case replCmd of
                 ShowUsage             -> showUsage               $> Continue
                 Help                  -> help                    $> Continue
@@ -251,6 +258,7 @@ replInterpreter0 printAux printKore replCmd = do
                 ProveStepsF n         -> proveStepsF n           $> Continue
                 SelectNode i          -> selectNode i            $> Continue
                 ShowConfig mc         -> showConfig mc           $> Continue
+                ShowDest mc           -> showDest mc             $> Continue
                 OmitCell c            -> omitCell c              $> Continue
                 ShowLeafs             -> showLeafs               $> Continue
                 ShowRule   mc         -> showRule mc             $> Continue
@@ -260,17 +268,22 @@ replInterpreter0 printAux printKore replCmd = do
                 Label ms              -> label ms                $> Continue
                 LabelAdd l mn         -> labelAdd l mn           $> Continue
                 LabelDel l            -> labelDel l              $> Continue
-                Redirect inn file     -> redirect inn file       $> Continue
+                Redirect inn file     -> redirect startTime inn file
+                                                                 $> Continue
                 Try ref               -> tryAxiomClaim ref       $> Continue
                 TryF ac               -> tryFAxiomClaim ac       $> Continue
                 Clear n               -> clear n                 $> Continue
                 SaveSession file      -> saveSession file        $> Continue
                 SavePartialProof mn f -> savePartialProof mn f   $> Continue
-                Pipe inn file args    -> pipe inn file args      $> Continue
-                AppendTo inn file     -> appendTo inn file       $> Continue
+                Pipe inn file args    -> pipe startTime inn file args
+                                                                 $> Continue
+                AppendTo inn file     -> appendTo startTime inn file
+                                                                 $> Continue
                 Alias a               -> alias a                 $> Continue
-                TryAlias name         -> tryAlias name printAux printKore
-                LoadScript file       -> loadScript file         $> Continue
+                TryAlias name         ->
+                    tryAlias startTime name printAux printKore
+                LoadScript file       -> loadScript startTime file
+                                                                 $> Continue
                 ProofStatus           -> proofStatus             $> Continue
                 Log opts              -> handleLog opts          $> Continue
                 Exit                  -> exit
@@ -495,10 +508,11 @@ loadScript
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => FilePath
+    => TimeSpec
+    -> FilePath
     -- ^ path to file
     -> ReplM m ()
-loadScript file = parseEvalScript file DisableOutput
+loadScript startTime file = parseEvalScript startTime file DisableOutput
 
 handleLog
     :: MonadState ReplState m
@@ -526,14 +540,37 @@ showConfig
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
-showConfig configNode = do
-    maybeConfig <- getConfigAt configNode
-    case maybeConfig of
+showConfig =
+    showProofStateComponent "Config" getConfiguration
+
+-- | Shows destination at node 'n', or current node if 'Nothing' is passed.
+showDest
+    :: Monad m
+    => Maybe ReplNode
+    -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
+    -> ReplM m ()
+showDest =
+    showProofStateComponent "Destination" (rhsToPattern . getDestination)
+
+showProofStateComponent
+    :: Monad m
+    => String
+    -- ^ component name
+    -> (ReachabilityRule -> Pattern VariableName)
+    -> Maybe ReplNode
+    -> ReplM m ()
+showProofStateComponent name transformer maybeNode = do
+    maybeProofState <- getProofStateAt maybeNode
+    case maybeProofState of
         Nothing -> putStrLn' "Invalid node!"
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
-            putStrLn' $ "Config at node " <> show node <> " is:"
-            tell $ unparseStrategy omit config
+            putStrLn' $ name <> " at node " <> show node <> " is:"
+            unparseProofStateComponent
+                transformer
+                omit
+                config
+                & tell
 
 -- | Shows current omit list if passed 'Nothing'. Adds/removes from the list
 -- depending on whether the string already exists in the list or not.
@@ -788,28 +825,30 @@ redirect
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -- ^ command to redirect
     -> FilePath
     -- ^ file path
     -> ReplM m ()
-redirect cmd file = do
+redirect startTime cmd file = do
     liftIO $ withExistingDirectory file (`writeFile` "")
-    appendCommand cmd file
+    appendCommand startTime cmd file
 
 runInterpreterWithOutput
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => PrintAuxOutput
+    => TimeSpec
+    -> PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
     -> Config m
     -> ReplM m ()
-runInterpreterWithOutput printAux printKore cmd config =
+runInterpreterWithOutput startTime printAux printKore cmd config =
     get >>= (\st -> lift
             $ execStateReader config st
-            $ replInterpreter0 printAux printKore cmd
+            $ replInterpreter0 startTime printAux printKore cmd
             )
         >>= put
 
@@ -894,7 +933,7 @@ tryAxiomClaimWorker mode ref = do
         -> ReplM m ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
-        maybeSecond <- getConfigAt (Just node)
+        maybeSecond <- getProofStateAt (Just node)
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
@@ -906,7 +945,7 @@ tryAxiomClaimWorker mode ref = do
                         , goalRewrittenTransformer = patternUnifier
                         , goalStuckTransformer = patternUnifier
                         }
-                    second
+                    (getConfiguration <$> second)
               where
                 patternUnifier :: Pattern VariableName -> ReplM m ()
                 patternUnifier
@@ -958,16 +997,19 @@ clear
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> m ()
-clear =
-    \case
+clear maybeNode = do
+    graph <- getInnerGraph
+    case maybeNode of
         Nothing -> Lens.use (field @"node") >>= clear . Just
         Just node
-          | unReplNode node == 0 -> putStrLn' "Cannot clear initial node (0)."
-          | otherwise -> clear0 node
+          | unReplNode node == 0 ->
+              putStrLn' "Cannot clear initial node (0)."
+          | isDirectDescendentOfBranching node graph ->
+              putStrLn' "Cannot clear a direct descendant of a branching node."
+          | otherwise -> clear0 node graph
   where
-    clear0 :: ReplNode -> m ()
-    clear0 rnode = do
-        graph <- getInnerGraph
+    clear0 :: ReplNode -> InnerGraph Axiom -> m ()
+    clear0 rnode graph = do
         let node = unReplNode rnode
         let
             nodesToBeRemoved = collect (next graph) node
@@ -984,6 +1026,11 @@ clear =
 
     prevNode :: InnerGraph axiom -> Graph.Node -> Graph.Node
     prevNode graph = fromMaybe 0 . headMay . fmap fst . Graph.lpre graph
+
+    isDirectDescendentOfBranching :: ReplNode -> InnerGraph axiom -> Bool
+    isDirectDescendentOfBranching (ReplNode node) graph =
+        let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
+         in length childrenOfParent /= 1
 
 -- | Save this sessions' commands to the specified file.
 saveSession
@@ -1012,30 +1059,25 @@ savePartialProof
     -> FilePath
     -> ReplM m ()
 savePartialProof maybeNatural file = do
-    currentClaim <- Lens.use (field @"claim")
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
     Config { mainModuleName } <- ask
-    maybeConfig <- getConfigAt maybeNode
-    case maybeConfig of
+    maybeConfig <- getProofStateAt maybeNode
+    case (fmap . fmap) extractUnproven maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
-        Just (currentNode, currentProofState) -> do
-            let config = unwrapConfig currentProofState
-                newClaim = createClaim currentClaim config
-                newTrustedClaims =
+        Just (_, Nothing) -> putStrLn' "Goal is proven."
+        Just (currentNode, Just currentGoal) -> do
+            let newTrustedClaims =
                     makeTrusted
                     <$> removeIfRoot currentNode currentIndex claims
                 newDefinition =
                     createNewDefinition
                         mainModuleName
                         (makeModuleName file)
-                        $ newClaim : newTrustedClaims
+                        $ currentGoal : newTrustedClaims
             saveUnparsedDefinitionToFile (unparse newDefinition)
             putStrLn' "Done."
   where
-    unwrapConfig :: CommonProofState -> Pattern VariableName
-    unwrapConfig = proofState commonProofStateTransformer
-
     saveUnparsedDefinitionToFile
         :: Pretty.Doc ann
         -> ReplM m ()
@@ -1086,21 +1128,22 @@ pipe
     :: forall m
     .  MonadIO m
     => MonadSimplify m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -- ^ command to pipe
     -> String
     -- ^ path to the program that will receive the command's output
     -> [String]
     -- ^ additional arguments to be passed to the program
     -> ReplM m ()
-pipe cmd file args = do
+pipe startTime cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
             config <- ask
             pipeOutRef <- liftIO $ newIORef (mempty :: ReplOutput)
-            runInterpreterWithOutput
+            runInterpreterWithOutput startTime
                 (PrintAuxOutput $ justPrint pipeOutRef)
                 (PrintKoreOutput $ runExternalProcess pipeOutRef exec)
                 cmd
@@ -1130,24 +1173,26 @@ appendTo
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -- ^ command
     -> FilePath
     -- ^ file to append to
     -> ReplM m ()
-appendTo cmd file =
-    withExistingDirectory file (appendCommand cmd)
+appendTo startTime cmd file =
+    withExistingDirectory file (appendCommand startTime cmd)
 
 appendCommand
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -> FilePath
     -> ReplM m ()
-appendCommand cmd file = do
+appendCommand startTime cmd file = do
     config <- ask
-    runInterpreterWithOutput
+    runInterpreterWithOutput startTime
         (PrintAuxOutput $ appendFile file)
         (PrintKoreOutput $ appendFile file)
         cmd
@@ -1170,11 +1215,12 @@ tryAlias
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplAlias
+    => TimeSpec
+    -> ReplAlias
     -> PrintAuxOutput
     -> PrintKoreOutput
     -> ReplM m ReplStatus
-tryAlias replAlias@ReplAlias { name } printAux printKore = do
+tryAlias startTime replAlias@ReplAlias { name } printAux printKore = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> Continue
@@ -1182,7 +1228,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
             let
                 command = substituteAlias aliasDef replAlias
                 parsedCommand =
-                    fromMaybe ShowUsage $ parseMaybe commandParser command
+                    fromMaybe
+                        ShowUsage
+                        $ parseMaybe (commandParser startTime) command
             config <- ask
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
@@ -1196,7 +1244,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
     runInterpreter cmd config st =
         lift
             $ (`runStateT` st)
-            $ runReaderT (replInterpreter0 printAux printKore cmd) config
+            $ runReaderT
+                (replInterpreter0 startTime printAux printKore cmd)
+                config
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1251,26 +1301,30 @@ showRewriteRule rule =
     <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
-unparseStrategy
-    :: Set String
+unparseProofStateComponent
+    :: (ReachabilityRule -> Pattern VariableName)
+    -> Set String
     -- ^ omit list
     -> CommonProofState
     -- ^ pattern
     -> ReplOutput
-unparseStrategy omitList =
+unparseProofStateComponent transformation omitList =
     proofState ProofStateTransformer
-        { goalTransformer = makeKoreReplOutput . unparseToString . fmap hide
-        , goalRemainderTransformer = \pat ->
+        { goalTransformer =
+            makeKoreReplOutput . unparseComponent
+        , goalRemainderTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+            <> makeKoreReplOutput (unparseComponent goal)
         , goalRewrittenTransformer =
-            makeKoreReplOutput . unparseToString . fmap hide
-        , goalStuckTransformer = \pat ->
+            makeKoreReplOutput . unparseComponent
+        , goalStuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+            <> makeKoreReplOutput (unparseComponent goal)
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
+    unparseComponent =
+        unparseToString . fmap hide . transformation
     hide :: TermLike VariableName -> TermLike VariableName
     hide =
         Recursive.unfold $ \termLike ->
@@ -1409,15 +1463,16 @@ parseEvalScript
     => MonadState ReplState (t m)
     => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
-    => FilePath
+    => TimeSpec
+    -> FilePath
     -> ScriptModeOutput
     -> t m ()
-parseEvalScript file scriptModeOutput = do
+parseEvalScript startTime file scriptModeOutput = do
     exists <- lift . liftIO . doesFileExist $ file
     if exists
         then do
             contents <- lift . liftIO $ readFile file
-            let result = runParser scriptParser file contents
+            let result = runParser (scriptParser startTime) file contents
             either parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
@@ -1450,7 +1505,7 @@ parseEvalScript file scriptModeOutput = do
             :: ReplCommand
             -> ReaderT (Config m) (StateT ReplState m) ReplStatus
         executeCommand command =
-            replInterpreter0
+            replInterpreter0 startTime
                 (PrintAuxOutput $ \_ -> return ())
                 (PrintKoreOutput $ \_ -> return ())
                 command
@@ -1462,7 +1517,7 @@ parseEvalScript file scriptModeOutput = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             liftIO $ print command
-            replInterpreter0
+            replInterpreter0 startTime
                     (PrintAuxOutput printIfNotEmpty)
                     (PrintKoreOutput printIfNotEmpty)
                     command

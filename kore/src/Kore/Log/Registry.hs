@@ -86,6 +86,9 @@ import Kore.Log.InfoReachability
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
+import Kore.Log.WarnStuckProofState
+    ( WarnStuckProofState
+    )
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
     )
@@ -135,6 +138,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
+    , mk $ Proxy @WarnStuckProofState
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop
