@@ -71,6 +71,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
+import Kore.Log.InfoExecutionBreadth
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , leftPattern
@@ -286,7 +287,8 @@ verifyClaim
             patterns
 
     updateQueue = \as ->
-        Strategy.unfoldSearchOrder searchOrder as
+        (\queue -> infoExecutionBreadth (length queue) >> return queue)
+        >=> Strategy.unfoldSearchOrder searchOrder as
         >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
 
     throwUnproven
