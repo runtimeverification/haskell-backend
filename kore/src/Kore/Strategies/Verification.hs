@@ -47,6 +47,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
     )
+import qualified Data.Semigroup as Semigroup
 import Data.Text
     ( Text
     )
@@ -272,28 +273,25 @@ verifyClaim
         $ Strategy.leavesM
             updateQueue
             (Strategy.unfoldTransition transit)
-            (limitedStrategy, startGoal)
+            (limitedStrategy, (ProofDepth 0, startGoal))
             & fmap discardStrategy
             & throwUnproven
   where
     discardStrategy = snd
 
     handleLimitExceeded
-        :: Strategy.LimitExceeded CommonProofState
+        :: Strategy.LimitExceeded (ProofDepth, CommonProofState)
         -> ExceptT (OrPattern VariableName) simplifier ()
-    handleLimitExceeded (Strategy.LimitExceeded patterns) =
-        Monad.Except.throwError
-        . OrPattern.fromPatterns
-        $ fmap
-            (ProofState.proofState lhsProofStateTransformer)
-            patterns
+    handleLimitExceeded (Strategy.LimitExceeded states) =
+        (Monad.Except.throwError . OrPattern.fromPatterns)
+        (ProofState.proofState lhsProofStateTransformer . snd <$> states)
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
         >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
 
     throwUnproven
-        :: LogicT (Verifier simplifier) CommonProofState
+        :: LogicT (Verifier simplifier) (ProofDepth, CommonProofState)
         -> Verifier simplifier ()
     throwUnproven acts =
         Logic.runLogicT acts throwUnprovenOrElse done
@@ -301,10 +299,10 @@ verifyClaim
         done = return ()
 
     throwUnprovenOrElse
-        :: CommonProofState
+        :: (ProofDepth, CommonProofState)
         -> Verifier simplifier ()
         -> Verifier simplifier ()
-    throwUnprovenOrElse proofState acts = do
+    throwUnprovenOrElse (_, proofState) acts = do
         ProofState.extractUnproven proofState
             & Foldable.traverse_
                 ( Monad.Except.throwError
@@ -314,7 +312,10 @@ verifyClaim
         acts
 
     transit instr config =
-        Strategy.transitionRule (transitionRule' claims axioms) instr config
+        Strategy.transitionRule
+            (transitionRule' claims axioms & trackProofDepth)
+            instr
+            config
         & runTransitionT
         & fmap (map fst)
         & lift
@@ -410,6 +411,37 @@ logTransitionRule rule prim proofState =
             whileCheckImplication goal $ rule prim proofState
         _ ->
             rule prim proofState
+
+newtype ProofDepth = ProofDepth { getProofDepth :: Natural }
+    deriving (Eq, Ord, Show)
+    deriving (Enum)
+    deriving (Semigroup) via (Semigroup.Max Natural)
+
+{- | Modify a 'TransitionRule' to track the depth of a proof.
+ -}
+trackProofDepth
+    :: forall m rule goal
+    .  TransitionRule m rule (ProofState goal)
+    -> TransitionRule m rule (ProofDepth, ProofState goal)
+trackProofDepth rule prim (proofDepth, proofState) = do
+    proofState' <- rule prim proofState
+    let proofDepth' = (if didRewrite proofState' then succ else id) proofDepth
+    pure (proofDepth', proofState')
+  where
+    didRewrite proofState' =
+        isApply prim && isRewritable proofState && isRewritten proofState'
+
+    isApply Prim.ApplyClaims = True
+    isApply Prim.ApplyAxioms = True
+    isApply _                = False
+
+    isRewritable (ProofState.Goal _)          = True
+    isRewritable (ProofState.GoalRemainder _) = True
+    isRewritable _                            = False
+
+    isRewritten (ProofState.GoalRewritten _) = True
+    isRewritten  ProofState.Proven           = True
+    isRewritten _                            = False
 
 debugProofStateBracket
     :: forall monad
