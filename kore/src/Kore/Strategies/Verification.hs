@@ -287,9 +287,9 @@ verifyClaim
             patterns
 
     updateQueue = \as ->
-        (\queue -> infoExecutionBreadth (length queue) >> return queue)
-        >=> Strategy.unfoldSearchOrder searchOrder as
+        Strategy.unfoldSearchOrder searchOrder as
         >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
+        >=> (\queue -> infoExecutionBreadth (length queue) >> return queue)
 
     throwUnproven
         :: LogicT (Verifier simplifier) CommonProofState
