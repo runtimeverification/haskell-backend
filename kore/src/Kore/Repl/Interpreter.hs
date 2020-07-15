@@ -209,9 +209,6 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Pretty
-import System.Clock
-    ( TimeSpec
-    )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -246,46 +243,48 @@ replInterpreter0
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
-                ShowUsage             -> showUsage               $> Continue
-                Help                  -> help                    $> Continue
-                ShowClaim mc          -> showClaim mc            $> Continue
-                ShowAxiom ea          -> showAxiom ea            $> Continue
-                Prove i               -> prove i                 $> Continue
-                ShowGraph v mfile out -> showGraph v mfile out   $> Continue
-                ProveSteps n          -> proveSteps n            $> Continue
-                ProveStepsF n         -> proveStepsF n           $> Continue
-                SelectNode i          -> selectNode i            $> Continue
-                ShowConfig mc         -> showConfig mc           $> Continue
-                ShowDest mc           -> showDest mc             $> Continue
-                OmitCell c            -> omitCell c              $> Continue
-                ShowLeafs             -> showLeafs               $> Continue
-                ShowRule   mc         -> showRule mc             $> Continue
-                ShowRules  ns         -> showRules ns            $> Continue
-                ShowPrecBranch mn     -> showPrecBranch mn       $> Continue
-                ShowChildren mn       -> showChildren mn         $> Continue
-                Label ms              -> label ms                $> Continue
-                LabelAdd l mn         -> labelAdd l mn           $> Continue
-                LabelDel l            -> labelDel l              $> Continue
-                Redirect inn file     -> redirect inn file
-                                                                 $> Continue
-                Try ref               -> tryAxiomClaim ref       $> Continue
-                TryF ac               -> tryFAxiomClaim ac       $> Continue
-                Clear n               -> clear n                 $> Continue
-                SaveSession file      -> saveSession file        $> Continue
-                SavePartialProof mn f -> savePartialProof mn f   $> Continue
-                Pipe inn file args    -> pipe inn file args
-                                                                 $> Continue
-                AppendTo inn file     -> appendTo inn file
-                                                                 $> Continue
-                Alias a               -> alias a                 $> Continue
-                TryAlias name         ->
+                ShowUsage               -> showUsage               $> Continue
+                Help                    -> help                    $> Continue
+                ShowClaim mc            -> showClaim mc            $> Continue
+                ShowAxiom ea            -> showAxiom ea            $> Continue
+                Prove i                 -> prove i                 $> Continue
+                ShowGraph v mfile out   -> showGraph v mfile out   $> Continue
+                ProveSteps n            -> proveSteps n            $> Continue
+                ProveStepsF n           -> proveStepsF n           $> Continue
+                SelectNode i            -> selectNode i            $> Continue
+                ShowConfig mc           -> showConfig mc           $> Continue
+                ShowDest mc             -> showDest mc             $> Continue
+                OmitCell c              -> omitCell c              $> Continue
+                ShowLeafs               -> showLeafs               $> Continue
+                ShowRule   mc           -> showRule mc             $> Continue
+                ShowRules  ns           -> showRules ns            $> Continue
+                ShowPrecBranch mn       -> showPrecBranch mn       $> Continue
+                ShowChildren mn         -> showChildren mn         $> Continue
+                Label ms                -> label ms                $> Continue
+                LabelAdd l mn           -> labelAdd l mn           $> Continue
+                LabelDel l              -> labelDel l              $> Continue
+                Redirect inn file       -> redirect inn file
+                                                                   $> Continue
+                Try ref                 -> tryAxiomClaim ref       $> Continue
+                TryF ac                 -> tryFAxiomClaim ac       $> Continue
+                Clear n                 -> clear n                 $> Continue
+                SaveSession file        -> saveSession file        $> Continue
+                SavePartialProof mn f   -> savePartialProof mn f   $> Continue
+                Pipe inn file args      -> pipe inn file args
+                                                                   $> Continue
+                AppendTo inn file       -> appendTo inn file
+                                                                   $> Continue
+                Alias a                 -> alias a                 $> Continue
+                TryAlias name           ->
                     tryAlias name printAux printKore
-                LoadScript file       -> loadScript file
-                                                                 $> Continue
-                ProofStatus           -> proofStatus             $> Continue
-                Log opts              -> log opts                $> Continue
-                LogAttemptEquation op -> logAttemptEquation op   $> Continue
-                Exit                  -> exit
+                LoadScript file         -> loadScript file
+                                                                   $> Continue
+                ProofStatus             -> proofStatus             $> Continue
+                Log opts                -> log opts                $> Continue
+                DebugAttemptEquation op -> debugAttemptEquation op $> Continue
+                DebugApplyEquation op   -> debugApplyEquation op   $> Continue
+                DebugEquation op        -> debugEquation op        $> Continue
+                Exit                    -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
             ( replOut
@@ -512,6 +511,7 @@ loadScript
     -> ReplM m ()
 loadScript file = parseEvalScript file DisableOutput
 
+-- | Change the general log settings.
 log
     :: MonadState ReplState m
     => GeneralLogOptions
@@ -523,23 +523,60 @@ log
         , timestampsSwitch
         , logEntries
         }
-  = do
-    -- TODO: refactor this as a transformation
-    logOptions <- Lens.use (field @"koreLogOptions")
-    (.=)
-        (field @"koreLogOptions")
-        logOptions
+  =
+    field @"koreLogOptions" %= transformer
+  where
+    transformer koreLogOptions =
+        koreLogOptions
             { Log.logType = logType
             , Log.logLevel = logLevel
             , Log.timestampsSwitch = timestampsSwitch
             , Log.logEntries = logEntries
             }
 
-logAttemptEquation
+-- | Log debugging information about attempting to apply
+-- specific equations.
+debugAttemptEquation
     :: MonadState ReplState m
     => Log.DebugAttemptEquationOptions
     -> m ()
-logAttemptEquation = undefined
+debugAttemptEquation debugAttemptEquationOptions =
+    field @"koreLogOptions" %= transformer
+  where
+    transformer koreLogOptions =
+        koreLogOptions
+            { Log.debugAttemptEquationOptions =
+                debugAttemptEquationOptions
+            }
+
+-- | Log when specific equations apply.
+debugApplyEquation
+    :: MonadState ReplState m
+    => Log.DebugApplyEquationOptions
+    -> m ()
+debugApplyEquation debugApplyEquationOptions =
+    field @"koreLogOptions" %= transformer
+  where
+    transformer koreLogOptions =
+        koreLogOptions
+            { Log.debugApplyEquationOptions =
+                debugApplyEquationOptions
+            }
+
+-- | Log the attempts and the applications of specific
+-- equations.
+debugEquation
+    :: MonadState ReplState m
+    => Log.DebugEquationOptions
+    -> m ()
+debugEquation debugEquationOptions =
+    field @"koreLogOptions" %= transformer
+  where
+    transformer koreLogOptions =
+        koreLogOptions
+            { Log.debugEquationOptions =
+                debugEquationOptions
+            }
 
 -- | Focuses the node with id equals to 'n'.
 selectNode

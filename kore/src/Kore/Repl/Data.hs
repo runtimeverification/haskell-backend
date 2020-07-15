@@ -288,10 +288,14 @@ data ReplCommand
     -- ^ Show proof status of each claim
     | Log GeneralLogOptions
     -- ^ Setup the Kore logger.
-    | LogAttemptEquation Log.DebugAttemptEquationOptions
+    | DebugAttemptEquation Log.DebugAttemptEquationOptions
     -- ^ Log debugging information about attempting to
     -- apply specific equations.
-    -- TODO: LogApplyEquation, LogEquation
+    | DebugApplyEquation Log.DebugApplyEquationOptions
+    -- ^ Log when specific equations apply.
+    | DebugEquation Log.DebugEquationOptions
+    -- ^ Log the attempts and the applications of specific
+    -- equations.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)

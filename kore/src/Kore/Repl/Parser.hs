@@ -52,12 +52,8 @@ import Kore.Log
     ( EntryTypes
     )
 import qualified Kore.Log as Log
-import qualified Kore.Log.KoreLogOptions as Log
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
-import System.Clock
-    ( TimeSpec
-    )
 
 type Parser = Parsec String String
 
@@ -84,7 +80,7 @@ commandParser = commandParser0 eof
 
 commandParser0 :: Parser () -> Parser ReplCommand
 commandParser0 endParser =
-    alias <|> log <|> commandParserExceptAlias endParser <|> tryAlias
+    alias <|> logCommand <|> commandParserExceptAlias endParser <|> tryAlias
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -290,6 +286,13 @@ savePartialProof =
     *> maybeDecimal
     <**> quotedOrWordWithout ""
 
+logCommand :: Parser ReplCommand
+logCommand =
+    log
+    <|> try debugAttemptEquation
+    <|> try debugApplyEquation
+    <|> debugEquation
+
 log :: Parser ReplCommand
 log = do
     literal "log"
@@ -310,13 +313,31 @@ log = do
     parseTimestampSwitchWithDefault =
         fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
 
-logAttemptEquation :: Parser ReplCommand
-logAttemptEquation =
-    LogAttemptEquation
+debugAttemptEquation :: Parser ReplCommand
+debugAttemptEquation =
+    DebugAttemptEquation
     . Log.DebugAttemptEquationOptions
     . HashSet.fromList
     . fmap Text.pack
-    <$$> literal "log-attempt-equation"
+    <$$> literal "debug-attempt-equation"
+    *> many (quotedOrWordWithout "")
+
+debugApplyEquation :: Parser ReplCommand
+debugApplyEquation =
+    DebugApplyEquation
+    . Log.DebugApplyEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-apply-equation"
+    *> many (quotedOrWordWithout "")
+
+debugEquation :: Parser ReplCommand
+debugEquation =
+    DebugEquation
+    . Log.DebugEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-equation"
     *> many (quotedOrWordWithout "")
 
 severity :: Parser Log.Severity
