@@ -102,6 +102,7 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
+import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     )
@@ -209,7 +210,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-        finalConfig <-
+        (execDepth, finalConfig) <-
             getFinalConfigOf $ do
                 initialConfig <-
                     Pattern.simplify SideCondition.top
@@ -223,14 +224,18 @@ exec breadthLimit verifiedModule strategy initialTerm =
                                 breadthLimit
                                 dropStrategy
                     transit instr config =
-                        Strategy.transitionRule transitionRule instr config
+                        Strategy.transitionRule
+                            (transitionRule & trackExecDepth)
+                            instr
+                            config
                         & runTransitionT
                         & fmap (map fst)
                         & lift
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    (strategy rewriteRules, initialConfig)
+                    (strategy rewriteRules, (ExecDepth 0, initialConfig))
+        infoExecDepth execDepth
         exitCode <- getExitCode verifiedModule finalConfig
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
         return (exitCode, finalTerm)
@@ -242,7 +247,8 @@ exec breadthLimit verifiedModule strategy initialTerm =
         takeResult = snd
         takeFirstResult act =
             Logic.observeT (takeResult <$> lift act) & runMaybeT
-        orElseBottom = pure . fromMaybe (Pattern.bottomOf initialSort)
+        orElseBottom =
+            pure . fromMaybe (ExecDepth 0, Pattern.bottomOf initialSort)
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -253,6 +259,22 @@ exec breadthLimit verifiedModule strategy initialTerm =
     -- are internalized.
     metadataTools = MetadataTools.build verifiedModule
     initialSort = termLikeSort initialTerm
+
+type TransitionRule monad rule state =
+    Prim rule -> state -> Strategy.TransitionT rule monad state
+
+trackExecDepth
+    :: TransitionRule monad rule state
+    -> TransitionRule monad rule (ExecDepth, state)
+trackExecDepth transit prim (execDepth, execState) = do
+    execState' <- transit prim execState
+    let execDepth' = (if didRewrite execState' then succ else id) execDepth
+    pure (execDepth', execState')
+  where
+    didRewrite _ = isRewrite prim
+
+    isRewrite Simplify = False
+    isRewrite (Rewrite _) = True
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode

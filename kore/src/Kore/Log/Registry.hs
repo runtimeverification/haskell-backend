@@ -80,6 +80,9 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
+import Kore.Log.InfoExecDepth
+    ( InfoExecDepth
+    )
 import Kore.Log.InfoProofDepth
     ( InfoProofDepth
     )
@@ -153,6 +156,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugApplyEquation
     , mk $ Proxy @DebugUnification
     , mk $ Proxy @InfoProofDepth
+    , mk $ Proxy @InfoExecDepth
     ]
   where
     mk proxy =
