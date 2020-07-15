@@ -260,9 +260,8 @@ exec breadthLimit verifiedModule strategy initialTerm =
     metadataTools = MetadataTools.build verifiedModule
     initialSort = termLikeSort initialTerm
 
-type TransitionRule monad rule state =
-    Prim rule -> state -> Strategy.TransitionT rule monad state
-
+{- | Modify a 'TransitionRule' to track the depth of the execution graph.
+ -}
 trackExecDepth
     :: TransitionRule monad rule state
     -> TransitionRule monad rule (ExecDepth, state)
