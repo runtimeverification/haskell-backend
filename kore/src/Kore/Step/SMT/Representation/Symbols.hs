@@ -120,8 +120,8 @@ builtinDeclaration
                 AST.SymbolBuiltin AST.IndirectSymbolDeclaration
                     { name = AST.AlreadyEncoded smtName
                     , sortDependencies =
-                        AST.SortReference sentenceSymbolResultSort
-                        : map AST.SortReference sentenceSymbolSorts
+                        AST.SortReference
+                            <$> sentenceSymbolResultSort : sentenceSymbolSorts
                     }
             }
         )
@@ -178,8 +178,8 @@ constructorDeclaration
                 AST.SymbolConstructor AST.IndirectSymbolDeclaration
                     { name = encodedName
                     , sortDependencies =
-                        AST.SortReference sentenceSymbolResultSort
-                        : map AST.SortReference sentenceSymbolSorts
+                        AST.SortReference <$>
+                            sentenceSymbolResultSort : sentenceSymbolSorts
                     }
             }
         )

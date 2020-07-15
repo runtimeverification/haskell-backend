@@ -139,8 +139,7 @@ unresolvedConstructorSymbol identifier resultSort argumentSorts =
             AST.IndirectSymbolDeclaration
                 { name = encodable
                 , sortDependencies =
-                    AST.SortReference resultSort
-                    : map AST.SortReference argumentSorts
+                    AST.SortReference <$> resultSort : argumentSorts
                 }
         }
   where
@@ -175,23 +174,20 @@ unresolvedSmtlibSymbol encodedName inputSorts resultSort =
 unresolvedSmthookSymbolMap
     :: Kore.Id
     -> Text
-    -> Kore.Sort
     -> [Kore.Sort]
     -> (Kore.Id, AST.UnresolvedSymbol)
-unresolvedSmthookSymbolMap identifier encodedName resultSort argumentSorts =
-    (identifier, unresolvedSmthookSymbol encodedName resultSort argumentSorts)
+unresolvedSmthookSymbolMap identifier encodedName sortDependencies =
+    (identifier, unresolvedSmthookSymbol encodedName sortDependencies)
 
 unresolvedSmthookSymbol
-    :: Text -> Kore.Sort -> [Kore.Sort] -> AST.UnresolvedSymbol
-unresolvedSmthookSymbol encodedName resultSort argumentSorts =
+    :: Text -> [Kore.Sort] -> AST.UnresolvedSymbol
+unresolvedSmthookSymbol encodedName sortDependencies =
     AST.Symbol
         { smtFromSortArgs = const $ const $ Just
             $ AST.Atom encodedName
         , declaration = AST.SymbolBuiltin
             AST.IndirectSymbolDeclaration
                 { name = AST.AlreadyEncoded (AST.Atom encodedName)
-                , sortDependencies =
-                    AST.SortReference resultSort
-                    : map AST.SortReference argumentSorts
+                , sortDependencies = fmap AST.SortReference sortDependencies
                 }
         }
