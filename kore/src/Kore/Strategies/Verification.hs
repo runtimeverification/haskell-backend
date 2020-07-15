@@ -268,14 +268,13 @@ verifyClaim
             strategy
             & Foldable.toList
             & Limit.takeWithin depthLimit
-    handle
-        handleLimitExceeded
-        $ Strategy.leavesM
-            updateQueue
-            (Strategy.unfoldTransition transit)
-            (limitedStrategy, (ProofDepth 0, startGoal))
-            & fmap discardStrategy
-            & throwUnproven
+    Strategy.leavesM
+        updateQueue
+        (Strategy.unfoldTransition transit)
+        (limitedStrategy, (ProofDepth 0, startGoal))
+        & fmap discardStrategy
+        & throwUnproven
+        & handle handleLimitExceeded
   where
     discardStrategy = snd
 
