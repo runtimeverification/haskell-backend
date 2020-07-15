@@ -25,10 +25,10 @@ import Data.Foldable
 import Data.List
     ( foldl'
     )
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
@@ -300,7 +300,7 @@ parseLhs
     => TermLike variable
     -> Maybe (AntiLeftLhs variable)
 parseLhs lhs = case aliasTerm of
-    (ApplyAlias_ alias params) -> case (substituteInAlias alias params) of
+    (ApplyAlias_ alias params) -> case substituteInAlias alias params of
         (And_ _ predicate term) ->
             Just AntiLeftLhs
                 { aliasTerm
@@ -364,7 +364,7 @@ refreshAntiLeftExistentials
     -> AntiLeftLhs variable
 refreshAntiLeftExistentials
     alreadyUsed
-    antiLeftLhs@(AntiLeftLhs {aliasTerm, existentials, predicate, term})
+    antiLeftLhs@AntiLeftLhs {aliasTerm, existentials, predicate, term}
   = case antiLeftLhs of
     (AntiLeftLhs _ _ _ _) -> AntiLeftLhs
         { aliasTerm = TermLike.substitute substitution aliasTerm
@@ -411,8 +411,7 @@ refreshAntiLeftExistentials
     substitution = fmap mkElemVar varSubstitution
 
     renameVar :: ElementVariable variable -> ElementVariable variable
-    renameVar var = case Map.lookup someVariableName varSubstitution of
-        Nothing -> var
-        Just result -> result
+    renameVar var =
+        fromMaybe var (Map.lookup someVariableName varSubstitution)
       where
         someVariableName = SomeVariableNameElement (variableName var)
