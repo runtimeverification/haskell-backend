@@ -190,9 +190,7 @@ filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
 -- | Run a 'LoggerT' with the given options.
 runKoreLog :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
 runKoreLog reportDirectory options loggerT =
-    withLogger reportDirectory options $ \logAction ->
-    withAsyncLogger logAction $ \asyncLogAction ->
-        runLoggerT loggerT asyncLogAction
+    withLogger reportDirectory options $ runLoggerT loggerT
 
 withAsyncLogger
     :: LogAction IO a
