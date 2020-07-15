@@ -94,6 +94,7 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( isFunctionPattern
+    , mkDefined
     , mkIn
     , termLikeSort
     )
@@ -705,7 +706,7 @@ inferDefined'
 inferDefined' lensRulePattern =
     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
         let definedConfig =
-                Pattern.andCondition config
+                Pattern.andCondition (mkDefined <$> config)
                 $ from $ makeCeilPredicate_ (Conditional.term config)
         configs <-
             simplifyTopConfiguration definedConfig
