@@ -38,6 +38,10 @@ module Kore.Repl.Data
     , makeAuxReplOutput, makeKoreReplOutput
     , GraphView (..)
     , GeneralLogOptions (..)
+    , generalLogOptionsTransformer
+    , debugAttemptEquationTransformer
+    , debugApplyEquationTransformer
+    , debugEquationTransformer
     ) where
 
 import Prelude.Kore
@@ -214,6 +218,64 @@ data GeneralLogOptions =
         , logEntries :: !Log.EntryTypes
         }
     deriving (Eq, Show)
+
+generalLogOptionsTransformer
+    :: GeneralLogOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+generalLogOptionsTransformer
+    logOptions@(GeneralLogOptions _ _ _ _)
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.logLevel = logLevel
+        , Log.logEntries = logEntries
+        , Log.logType = logType
+        , Log.timestampsSwitch = timestampsSwitch
+        }
+  where
+    GeneralLogOptions
+        { logLevel
+        , logType
+        , logEntries
+        , timestampsSwitch
+        } = logOptions
+
+debugAttemptEquationTransformer
+    :: Log.DebugAttemptEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugAttemptEquationTransformer
+    debugAttemptEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugAttemptEquationOptions = debugAttemptEquationOptions
+        }
+
+debugApplyEquationTransformer
+    :: Log.DebugApplyEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugApplyEquationTransformer
+    debugApplyEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugApplyEquationOptions = debugApplyEquationOptions
+        }
+
+debugEquationTransformer
+    :: Log.DebugEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugEquationTransformer
+    debugEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugEquationOptions = debugEquationOptions
+        }
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.

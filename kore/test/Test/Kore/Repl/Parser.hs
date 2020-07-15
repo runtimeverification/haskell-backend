@@ -10,8 +10,16 @@ import Test.Tasty
     )
 
 import qualified Data.GraphViz as Graph
+import Data.HashSet
+    ( HashSet
+    )
+import qualified Data.HashSet as HashSet
 import Data.Proxy
 import qualified Data.Set as Set
+import Data.Text
+    ( Text
+    )
+import qualified Data.Text as Text
 import Numeric.Natural
 import Type.Reflection
     ( SomeTypeRep
@@ -30,40 +38,43 @@ import Test.Kore.Parser
 
 test_replParser :: [TestTree]
 test_replParser =
-    [ helpTests         `tests`       "help"
-    , claimTests        `tests`       "claim"
-    , axiomTests        `tests`       "axiom"
-    , proveTests        `tests`       "prove"
-    , graphTests        `tests`       "graph"
-    , stepTests         `tests`       "step"
-    , selectTests       `tests`       "select"
-    , configTests       `tests`       "config"
-    , destTests         `tests`       "dest"
-    , leafsTests        `tests`       "leafs"
-    , precBranchTests   `tests`       "prec-branch"
-    , childrenTests     `tests`       "children"
-    , exitTests         `tests`       "exit"
-    , omitTests         `tests`       "omit"
-    , labelTests        `tests`       "label"
-    , tryTests          `tests`       "try"
-    , tryFTests         `tests`       "tryF"
-    , redirectTests     `tests`       "redirect"
-    , ruleTests         `tests`       "rule"
-    , rulesTests        `tests`       "rules"
-    , stepfTests        `tests`       "stepf"
-    , clearTests        `tests`       "clear"
-    , pipeTests         `tests`       "pipe"
-    , pipeRedirectTests `tests`       "pipe redirect"
-    , saveSessionTests  `tests`       "save-session"
-    , appendTests       `tests`       "append"
-    , pipeAppendTests   `tests`       "pipe append"
-    , noArgsAliasTests  `tests`       "no arguments alias tests"
-    , tryAliasTests     `tests`       "try alias"
-    , loadScriptTests   `tests`       "load file"
-    , initScriptTests   `testsScript` "repl script"
-    , aliasesWithArgs   `tests`       "aliases with arguments"
-    , proofStatus       `tests`       "proof-status"
-    , logTests          `tests`       "log"
+    [ helpTests                 `tests`       "help"
+    , claimTests                `tests`       "claim"
+    , axiomTests                `tests`       "axiom"
+    , proveTests                `tests`       "prove"
+    , graphTests                `tests`       "graph"
+    , stepTests                 `tests`       "step"
+    , selectTests               `tests`       "select"
+    , configTests               `tests`       "config"
+    , destTests                 `tests`       "dest"
+    , leafsTests                `tests`       "leafs"
+    , precBranchTests           `tests`       "prec-branch"
+    , childrenTests             `tests`       "children"
+    , exitTests                 `tests`       "exit"
+    , omitTests                 `tests`       "omit"
+    , labelTests                `tests`       "label"
+    , tryTests                  `tests`       "try"
+    , tryFTests                 `tests`       "tryF"
+    , redirectTests             `tests`       "redirect"
+    , ruleTests                 `tests`       "rule"
+    , rulesTests                `tests`       "rules"
+    , stepfTests                `tests`       "stepf"
+    , clearTests                `tests`       "clear"
+    , pipeTests                 `tests`       "pipe"
+    , pipeRedirectTests         `tests`       "pipe redirect"
+    , saveSessionTests          `tests`       "save-session"
+    , appendTests               `tests`       "append"
+    , pipeAppendTests           `tests`       "pipe append"
+    , noArgsAliasTests          `tests`       "no arguments alias tests"
+    , tryAliasTests             `tests`       "try alias"
+    , loadScriptTests           `tests`       "load file"
+    , initScriptTests           `testsScript` "repl script"
+    , aliasesWithArgs           `tests`       "aliases with arguments"
+    , proofStatus               `tests`       "proof-status"
+    , logTests                  `tests`       "log"
+    , debugAttemptEquationTests `tests`       "debug-attempt-equation"
+    , debugApplyEquationTests   `tests`       "debug-apply-equation"
+    , debugEquationTests        `tests`       "debug-equation"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -531,6 +542,117 @@ logTests =
                 , timestampsSwitch = Log.TimestampsEnable
                 }
     ]
+
+debugAttemptEquationTests :: [ParserTest ReplCommand]
+debugAttemptEquationTests =
+    [ "debug-attempt-equation"
+        `parsesTo_`
+            DebugAttemptEquation Log.DebugAttemptEquationOptions
+                { Log.selected = fromList
+                    []
+                }
+    , ("debug-attempt-equation " <> totalBalanceSymbolId)
+        `parsesTo_`
+            DebugAttemptEquation Log.DebugAttemptEquationOptions
+                { Log.selected = fromList
+                    [totalBalanceSymbolId]
+                }
+    , ("debug-attempt-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+        `parsesTo_`
+            DebugAttemptEquation Log.DebugAttemptEquationOptions
+                { Log.selected = fromList
+                    [totalBalanceSymbolId, plusSymbolId]
+                }
+    , "debug-attempt-equation label1 label2"
+        `parsesTo_`
+            DebugAttemptEquation Log.DebugAttemptEquationOptions
+                { Log.selected = fromList
+                    ["label1", "label2"]
+                }
+    , "debug-attempt-equation MODULE.label1 MODULE.label2"
+        `parsesTo_`
+            DebugAttemptEquation Log.DebugAttemptEquationOptions
+                { Log.selected = fromList
+                    ["MODULE.label1", "MODULE.label2"]
+                }
+    ]
+
+debugApplyEquationTests :: [ParserTest ReplCommand]
+debugApplyEquationTests =
+    [ "debug-apply-equation"
+        `parsesTo_`
+            DebugApplyEquation Log.DebugApplyEquationOptions
+                { Log.selected = fromList
+                    []
+                }
+    , ("debug-apply-equation " <> totalBalanceSymbolId)
+        `parsesTo_`
+            DebugApplyEquation Log.DebugApplyEquationOptions
+                { Log.selected = fromList
+                    [totalBalanceSymbolId]
+                }
+    , ("debug-apply-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+        `parsesTo_`
+            DebugApplyEquation Log.DebugApplyEquationOptions
+                { Log.selected = fromList
+                    [totalBalanceSymbolId, plusSymbolId]
+                }
+    , "debug-apply-equation label1 label2"
+        `parsesTo_`
+            DebugApplyEquation Log.DebugApplyEquationOptions
+                { Log.selected = fromList
+                    ["label1", "label2"]
+                }
+    , "debug-apply-equation MODULE.label1 MODULE.label2"
+        `parsesTo_`
+            DebugApplyEquation Log.DebugApplyEquationOptions
+                { Log.selected = fromList
+                    ["MODULE.label1", "MODULE.label2"]
+                }
+    ]
+
+debugEquationTests :: [ParserTest ReplCommand]
+debugEquationTests =
+    [ "debug-equation"
+        `parsesTo_`
+            DebugEquation Log.DebugEquationOptions
+                { Log.selected = fromList
+                    []
+                }
+    , ("debug-equation " <> totalBalanceSymbolId)
+        `parsesTo_`
+            DebugEquation Log.DebugEquationOptions
+                { Log.selected = fromList
+                    [totalBalanceSymbolId]
+                }
+    , ("debug-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+        `parsesTo_`
+            DebugEquation Log.DebugEquationOptions
+                { Log.selected = fromList
+                    [totalBalanceSymbolId, plusSymbolId]
+                }
+    , "debug-equation label1 label2"
+        `parsesTo_`
+            DebugEquation Log.DebugEquationOptions
+                { Log.selected = fromList
+                    ["label1", "label2"]
+                }
+    , "debug-equation MODULE.label1 MODULE.label2"
+        `parsesTo_`
+            DebugEquation Log.DebugEquationOptions
+                { Log.selected = fromList
+                    ["MODULE.label1", "MODULE.label2"]
+                }
+    ]
+
+fromList :: [String] -> HashSet Text
+fromList = HashSet.fromList . fmap Text.pack
+
+totalBalanceSymbolId, plusSymbolId :: String
+totalBalanceSymbolId =
+    "Lbltotal'Unds'balance'LParUndsRParUnds'WITH-CONFIG'Unds'Int'Unds'AccountId"
+plusSymbolId =
+    "Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp"
 
 debugAttemptEquationType, debugApplyEquationType :: SomeTypeRep
 debugAttemptEquationType = someTypeRep (Proxy @DebugAttemptEquation)

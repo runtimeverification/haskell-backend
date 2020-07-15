@@ -516,23 +516,8 @@ log
     :: MonadState ReplState m
     => GeneralLogOptions
     -> m ()
-log
-    GeneralLogOptions
-        { logType
-        , logLevel
-        , timestampsSwitch
-        , logEntries
-        }
-  =
-    field @"koreLogOptions" %= transformer
-  where
-    transformer koreLogOptions =
-        koreLogOptions
-            { Log.logType = logType
-            , Log.logLevel = logLevel
-            , Log.timestampsSwitch = timestampsSwitch
-            , Log.logEntries = logEntries
-            }
+log generalLogOptions =
+    field @"koreLogOptions" %= generalLogOptionsTransformer generalLogOptions
 
 -- | Log debugging information about attempting to apply
 -- specific equations.
@@ -541,13 +526,8 @@ debugAttemptEquation
     => Log.DebugAttemptEquationOptions
     -> m ()
 debugAttemptEquation debugAttemptEquationOptions =
-    field @"koreLogOptions" %= transformer
-  where
-    transformer koreLogOptions =
-        koreLogOptions
-            { Log.debugAttemptEquationOptions =
-                debugAttemptEquationOptions
-            }
+    field @"koreLogOptions"
+        %= debugAttemptEquationTransformer debugAttemptEquationOptions
 
 -- | Log when specific equations apply.
 debugApplyEquation
@@ -555,13 +535,8 @@ debugApplyEquation
     => Log.DebugApplyEquationOptions
     -> m ()
 debugApplyEquation debugApplyEquationOptions =
-    field @"koreLogOptions" %= transformer
-  where
-    transformer koreLogOptions =
-        koreLogOptions
-            { Log.debugApplyEquationOptions =
-                debugApplyEquationOptions
-            }
+    field @"koreLogOptions"
+        %= debugApplyEquationTransformer debugApplyEquationOptions
 
 -- | Log the attempts and the applications of specific
 -- equations.
@@ -570,13 +545,8 @@ debugEquation
     => Log.DebugEquationOptions
     -> m ()
 debugEquation debugEquationOptions =
-    field @"koreLogOptions" %= transformer
-  where
-    transformer koreLogOptions =
-        koreLogOptions
-            { Log.debugEquationOptions =
-                debugEquationOptions
-            }
+    field @"koreLogOptions"
+        %= debugEquationTransformer debugEquationOptions
 
 -- | Focuses the node with id equals to 'n'.
 selectNode

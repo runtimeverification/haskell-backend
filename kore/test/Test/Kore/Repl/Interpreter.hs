@@ -545,13 +545,11 @@ logUpdatesState = do
                 , timestampsSwitch = Log.TimestampsEnable
                 }
         command = Log options
-    undefined
--- TODO: just check that the state has been modified
---     Result { output, continue, state } <-
---         run command axioms [claim] claim
---     output   `equalsOutput` mempty
---     continue `equals`     Continue
---     state `hasLogging` options
+    Result { output, continue, state } <-
+        run command axioms [claim] claim
+    output   `equalsOutput` mempty
+    continue `equals`     Continue
+    hasLogging state (generalLogOptionsTransformer options)
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
@@ -711,20 +709,16 @@ hasAlias st alias@AliasDefinition { name } =
 
 hasLogging
     :: ReplState
-    -> Log.KoreLogOptions
+    -> (Log.KoreLogOptions -> Log.KoreLogOptions)
     -> IO ()
-hasLogging st expectedLogging =
-    let
-        actualLogging = koreLogOptions st
-    in
-        actualLogging `equals` expectedLogging
+hasLogging st transformer =
+    let actualLogging = koreLogOptions st
+     in actualLogging `equals` transformer actualLogging
 
 hasCurrentClaimIndex :: ReplState -> ClaimIndex -> IO ()
 hasCurrentClaimIndex st expectedClaimIndex =
-    let
-        actualClaimIndex = claimIndex st
-    in
-        actualClaimIndex `equals` expectedClaimIndex
+    let actualClaimIndex = claimIndex st
+     in actualClaimIndex `equals` expectedClaimIndex
 
 tests :: IO () -> String -> TestTree
 tests = flip testCase
