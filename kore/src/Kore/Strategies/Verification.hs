@@ -268,19 +268,22 @@ verifyClaim
             strategy
             & Foldable.toList
             & Limit.takeWithin depthLimit
-    Strategy.leavesM
-        updateQueue
-        (Strategy.unfoldTransition transit)
-        (limitedStrategy, (ProofDepth 0, startGoal))
-        & fmap discardStrategy
-        & throwUnproven
-        & handle handleLimitExceeded
+    proofDepths <-
+        Strategy.leavesM
+            updateQueue
+            (Strategy.unfoldTransition transit)
+            (limitedStrategy, (ProofDepth 0, startGoal))
+            & fmap discardStrategy
+            & throwUnproven
+            & handle handleLimitExceeded
+    let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
+    infoProvenDepth maxProofDepth
   where
     discardStrategy = snd
 
     handleLimitExceeded
         :: Strategy.LimitExceeded (ProofDepth, CommonProofState)
-        -> ExceptT (OrPattern VariableName) simplifier ()
+        -> Verifier simplifier a
     handleLimitExceeded (Strategy.LimitExceeded states) =
         (Monad.Except.throwError . OrPattern.fromPatterns)
         (ProofState.proofState lhsProofStateTransformer . snd <$> states)
@@ -291,22 +294,17 @@ verifyClaim
 
     throwUnproven
         :: LogicT (Verifier simplifier) (ProofDepth, CommonProofState)
-        -> Verifier simplifier ()
+        -> Verifier simplifier [ProofDepth]
     throwUnproven acts =
-        Logic.runLogicT acts throwUnprovenOrElse done
-      where
-        done = return ()
-
-    throwUnprovenOrElse
-        :: (ProofDepth, CommonProofState)
-        -> Verifier simplifier ()
-        -> Verifier simplifier ()
-    throwUnprovenOrElse (proofDepth, proofState) acts = do
-        Foldable.for_ (ProofState.extractUnproven proofState) $ \unproven -> do
-            infoUnprovenDepth proofDepth
-            Monad.Except.throwError . OrPattern.fromPattern
-                $ getConfiguration unproven
-        acts
+        do
+            (proofDepth, proofState) <- acts
+            let maybeUnproven = ProofState.extractUnproven proofState
+            Foldable.for_ maybeUnproven $ \unproven -> do
+                infoUnprovenDepth proofDepth
+                Monad.Except.throwError . OrPattern.fromPattern
+                    $ getConfiguration unproven
+            pure proofDepth
+        & Logic.observeAllT
 
     transit instr config =
         Strategy.transitionRule
