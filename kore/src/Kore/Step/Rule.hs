@@ -271,7 +271,7 @@ complexRewriteTermToRule attributes pat =
                 (TermLike.And_ _ requires lhs))
             rhs -> case AntiLeft.parse antiLeft of
                 Nothing -> (error . show. Pretty.vsep)
-                    [ "Cannot parse antileft term"
+                    [ "Could not parse antileft term"
                     , Pretty.indent 4 $ unparse antiLeft
                     , "from pattern"
                     , Pretty.indent 4 $ unparse pat
