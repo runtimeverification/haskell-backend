@@ -178,8 +178,8 @@ constructorDeclaration
                 AST.SymbolConstructor AST.IndirectSymbolDeclaration
                     { name = encodedName
                     , sortDependencies =
-                        AST.SortReference <$>
-                            sentenceSymbolResultSort : sentenceSymbolSorts
+                        AST.SortReference
+                            <$> sentenceSymbolResultSort : sentenceSymbolSorts
                     }
             }
         )
