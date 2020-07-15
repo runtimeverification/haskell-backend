@@ -83,7 +83,7 @@ commandParser startTime = commandParser0 startTime eof
 
 commandParser0 :: TimeSpec -> Parser () -> Parser ReplCommand
 commandParser0 startTime endParser =
-    alias <|> log startTime <|> commandParserExceptAlias endParser <|> tryAlias
+    alias <|> log startTime <|> commandParserExceptAlias endParser
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -123,6 +123,7 @@ nonRecursiveCommand =
         , savePartialProof
         , loadScript
         , proofStatus
+        , tryAlias
         , exit
         ]
 
@@ -378,7 +379,7 @@ tryAlias :: Parser ReplCommand
 tryAlias = do
     name <- some (noneOf [' ']) <* Char.space
     arguments <- many
-        (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
+        (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "|>")
     return . TryAlias $ ReplAlias { name, arguments }
 
 infixr 2 <$$>
