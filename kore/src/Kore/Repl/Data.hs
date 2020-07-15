@@ -210,6 +210,7 @@ data GraphView
     | Expanded
     deriving (Eq, Show)
 
+-- | Log options which can be changed by the log command.
 data GeneralLogOptions =
     GeneralLogOptions
         { logType :: !Log.KoreLogType
@@ -348,6 +349,9 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
+    -- TODO(Ana): 'Log (KoreLogOptions -> KoreLogOptions)', this would need
+    -- the parts of the code which depend on the 'Show' instance of 'ReplCommand'
+    -- to change. Do the same for Debug..Equation.
     | Log GeneralLogOptions
     -- ^ Setup the Kore logger.
     | DebugAttemptEquation Log.DebugAttemptEquationOptions
@@ -458,7 +462,7 @@ helpText =
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
-    \log <severity> \"[\"<entry>\"]\" <type>      configures the logging output\n\
+    \log <severity> \"[\"<entry>\"]\" <type>  configures the logging output\n\
     \    <switch-timestamp>                   <severity> can be debug, info,\
                                               \ warning, error, or critical;\
                                               \ is optional and defaults to warning\n\
@@ -475,6 +479,14 @@ helpText =
     \                                         <type> can be 'stderr' or 'file filename'\n\
     \                                         <switch-timestamp> can be enable-log-timestamps\
                                               \ or disable-log-timestamps\n\
+    \debug-[type]-equation [eqId1] [eqId2] .. show debugging information for multiple specific equations;\
+                                              \ [type] can be 'attempt' or 'apply', or nothing\
+                                              \ meaning both, as follows ('debug-equation');\n\
+    \                                         example usage: 'debug-attempt-equation eqId',\
+                                              \ 'debug-equation eqId1 eqId2'; without arguments it will\
+                                              \ will disable showing the info, for example: 'debug-apply-equation';\n\
+    \                                         repl command counterparts of the equation command line options;\
+                                              \ see command line help text for more information;\n\
     \exit                                     exits the repl\
     \\n\n\
     \Available modifiers:\n\
