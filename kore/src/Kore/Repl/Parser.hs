@@ -123,8 +123,8 @@ nonRecursiveCommand =
         , savePartialProof
         , loadScript
         , proofStatus
-        , tryAlias
         , exit
+        , tryAlias
         ]
 
 pipeWith
