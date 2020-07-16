@@ -246,6 +246,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
     , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent)
     , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent)
+    , (BothT,   \_ _ s -> unifyDefined s)
     , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2)
     ]
 
@@ -723,3 +724,17 @@ bytesDifferent
   | bytesFirst /= bytesSecond
     = return Pattern.bottom
 bytesDifferent _ _ = empty
+
+{- | Unwrap a 'Defined' term if it is not handled elsewhere.
+ -}
+unifyDefined
+    :: MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyDefined unifyChildren (Defined_ term1) term2 =
+    lift $ unifyChildren term1 term2
+unifyDefined unifyChildren term1 (Defined_ term2) =
+    lift $ unifyChildren term1 term2
+unifyDefined _ _ _ = empty
