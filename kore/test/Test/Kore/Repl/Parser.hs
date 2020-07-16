@@ -456,7 +456,7 @@ pipeRedirectAliasTests =
     [ parsesTo_
         "myAlias > file"
         ( Redirect
-            ( TryAlias 
+            ( TryAlias
                 ReplAlias {name = "myAlias", arguments = []}
             )
             "file"
