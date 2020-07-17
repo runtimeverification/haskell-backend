@@ -311,7 +311,9 @@ resolveKoreSymbolDeclaration
     (SymbolBuiltin indirectDeclaration)
   =
     SymbolBuiltin
-        <$> resolveIndirectSymbolDeclaration resolvers indirectDeclaration
+    <$> resolveIndirectBuiltinSymbolDeclaration
+            resolvers
+            indirectDeclaration
 resolveKoreSymbolDeclaration
     resolvers@Resolvers {sortDeclaresSymbol}
     symbolId
@@ -335,11 +337,11 @@ resolveKoreSymbolDeclaration
             resolvers
             indirectDeclaration
 
-resolveIndirectSymbolDeclaration
+resolveIndirectBuiltinSymbolDeclaration
     :: Resolvers sort symbol name
     -> UnresolvedIndirectSymbolDeclaration
     -> Maybe (IndirectSymbolDeclaration sort name)
-resolveIndirectSymbolDeclaration
+resolveIndirectBuiltinSymbolDeclaration
     Resolvers { nameResolver }
     IndirectSymbolDeclaration
         { name }
