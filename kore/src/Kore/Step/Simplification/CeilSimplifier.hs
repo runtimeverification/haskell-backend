@@ -8,7 +8,6 @@ module Kore.Step.Simplification.CeilSimplifier
     ( CeilSimplifier (..)
     , hoistCeilSimplifier
     , runCeilSimplifierWith
-    , ceilSimplifierTermLike
     ) where
 
 import Prelude.Kore hiding
@@ -35,23 +34,7 @@ import Data.Profunctor.Choice
     ( Choice (..)
     )
 
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import Kore.Internal.TermLike
-    ( TermLike
-    )
-import Kore.Internal.Variable
-    ( InternalVariable
-    )
 import Kore.Sort
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , makeEvaluateTermCeil
-    )
 import Kore.Syntax.Ceil
 
 newtype CeilSimplifier simplifier input output =
@@ -121,15 +104,3 @@ runCeilSimplifierWith
 runCeilSimplifierWith ceilSimplifier env =
     runCeilSimplifier (hoistCeilSimplifier (flip runReaderT env) ceilSimplifier)
 {-# INLINE runCeilSimplifierWith #-}
-
-ceilSimplifierTermLike
-    ::  InternalVariable variable
-    =>  MonadSimplify simplifier
-    =>  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
-            (TermLike variable)
-            (OrCondition variable)
-ceilSimplifierTermLike =
-    CeilSimplifier $ \Ceil { ceilChild = termLike } ->
-    lift $ ReaderT $ \sideCondition ->
-        makeEvaluateTermCeil sideCondition predicateSort termLike
