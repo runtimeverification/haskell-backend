@@ -251,9 +251,9 @@ runRepl
                 )
 
     initializeRuleIndexes ctor lens rules =
-        fmap addIndex (zip rules [0..])
+        zipWith addIndex rules [0..]
       where
-        addIndex (rule, index) =
+        addIndex rule index =
             Lens.set
                 (lens . field @"identifier")
                 (index & ctor & Just & RuleIndex)

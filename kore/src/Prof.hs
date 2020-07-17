@@ -23,6 +23,12 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader
     ( ReaderT
     )
+import qualified Control.Monad.Trans.State.Lazy as Lazy
+    ( StateT
+    )
+import qualified Control.Monad.Trans.State.Strict as Strict
+    ( StateT
+    )
 import Data.Text
     ( Text
     )
@@ -59,6 +65,20 @@ instance (MonadMask prof, MonadProf prof) => MonadProf (ExceptT e prof) where
     {-# INLINE traceEvent #-}
 
 instance (MonadMask prof, MonadProf prof) => MonadProf (ReaderT r prof) where
+    traceEvent name = lift (traceEvent name)
+    {-# INLINE traceEvent #-}
+
+instance
+    (MonadMask prof, MonadProf prof)
+    => MonadProf (Lazy.StateT s prof)
+  where
+    traceEvent name = lift (traceEvent name)
+    {-# INLINE traceEvent #-}
+
+instance
+    (MonadMask prof, MonadProf prof)
+    => MonadProf (Strict.StateT s prof)
+  where
     traceEvent name = lift (traceEvent name)
     {-# INLINE traceEvent #-}
 
