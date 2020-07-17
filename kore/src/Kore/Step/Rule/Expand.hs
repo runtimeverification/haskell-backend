@@ -197,7 +197,7 @@ expandVariable
     :: SmtMetadataTools attributes
     -> ElementVariable VariableName
     -> Expander (TermLike VariableName)
-expandVariable metadataTools variable@Variable { variableSort } = do
+expandVariable metadataTools variable@Variable { variableSort } =
     expandSort metadataTools variable UseDirectly variableSort
 
 expandSort
