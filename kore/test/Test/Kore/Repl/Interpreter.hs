@@ -553,7 +553,7 @@ logUpdatesState = do
         run command axioms [claim] claim
     output   `equalsOutput` mempty
     continue `equals`     Continue
-    hasLogging state (generalLogOptionsTransformer options)
+    state `hasLogging` generalLogOptionsTransformer options
 
 debugAttemptEquationUpdatesState :: IO ()
 debugAttemptEquationUpdatesState = do
