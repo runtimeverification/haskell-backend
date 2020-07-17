@@ -71,6 +71,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
+import Kore.Log.InfoExecBreadth
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , leftPattern
@@ -288,6 +289,12 @@ verifyClaim
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
         >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
+        >=> ( \queue ->
+                infoExecBreadth (ExecBreadth $ genericLength queue)
+                >> return queue
+            )
+      where
+        genericLength = fromIntegral . length
 
     throwUnproven
         :: LogicT (Verifier simplifier) CommonProofState
