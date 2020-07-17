@@ -243,7 +243,7 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 -- TODO (thomas.tuegel): Factor out these types.
 
-{- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
+{- | Simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
@@ -551,7 +551,7 @@ applicationAxiomSimplifier applicationSimplifier =
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)
 
--- |Checks whether symbol is constructor or overloaded
+-- | Checks whether a symbol is a constructor or is overloaded.
 isConstructorOrOverloaded
     :: MonadSimplify unifier
     => Symbol

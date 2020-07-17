@@ -162,8 +162,6 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
 -- implicit and explicit.
 {-| Evaluates the ceil of a TermLike, see 'simplify' for details.
 -}
--- NOTE (hs-boot): Please update Ceil.hs-boot file when changing the
--- signature.
 makeEvaluateTerm
     :: forall variable simplifier
     .  InternalVariable variable
