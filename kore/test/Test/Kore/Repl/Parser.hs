@@ -68,7 +68,7 @@ test_replParser =
     , loadScriptTests   `tests`       "load file"
     , initScriptTests   `testsScript` "repl script"
     , aliasesWithArgs   `tests`       "aliases with arguments"
-    , pipeRedirectAliasTests
+    , aliasRedirectionTests
                         `tests`       "alias with redirection and piping"
     , proofStatus       `tests`       "proof-status"
     , logTests          `tests`       "log"
@@ -451,11 +451,19 @@ aliasesWithArgs =
     alias name arguments command =
         Alias $ AliasDefinition { name, arguments, command }
 
-pipeRedirectAliasTests :: [ParserTest ReplCommand]
-pipeRedirectAliasTests =
+aliasRedirectionTests :: [ParserTest ReplCommand]
+aliasRedirectionTests =
     [ parsesTo_
         "myAlias > file"
         ( Redirect
+            ( TryAlias
+                ReplAlias {name = "myAlias", arguments = []}
+            )
+            "file"
+        )
+    , parsesTo_
+        "myAlias >> file"
+        ( AppendTo
             ( TryAlias
                 ReplAlias {name = "myAlias", arguments = []}
             )
