@@ -464,12 +464,14 @@ liftSimplifierWithLogger
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
     ReplState { koreLogOptions } <- get
-    let Log.KoreLogOptions { logType, timestampsSwitch, exeName } = koreLogOptions
+    let Log.KoreLogOptions
+            { logType, timestampsSwitch, exeName, startTime } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
             Log.koreLogFilters koreLogOptions
             $ Log.makeKoreLogger
                 exeName
+                startTime
                 timestampsSwitch
                 textLogger
     _ <-

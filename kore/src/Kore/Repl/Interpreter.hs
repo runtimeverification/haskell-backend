@@ -77,6 +77,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import qualified Data.Graph.Inductive.Query.BFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
 import Data.IORef
@@ -154,6 +155,8 @@ import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
 import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -206,6 +209,9 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Pretty
+import System.Clock
+    ( TimeSpec
+    )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -221,11 +227,12 @@ replInterpreter
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => (String -> IO ())
+    => TimeSpec
+    -> (String -> IO ())
     -> ReplCommand
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
-replInterpreter fn cmd =
-    replInterpreter0
+replInterpreter startTime fn cmd =
+    replInterpreter0 startTime
         (PrintAuxOutput fn)
         (PrintKoreOutput fn)
         cmd
@@ -234,11 +241,12 @@ replInterpreter0
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => PrintAuxOutput
+    => TimeSpec
+    -> PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
-replInterpreter0 printAux printKore replCmd = do
+replInterpreter0 startTime printAux printKore replCmd = do
     let command = case replCmd of
                 ShowUsage             -> showUsage               $> Continue
                 Help                  -> help                    $> Continue
@@ -254,22 +262,28 @@ replInterpreter0 printAux printKore replCmd = do
                 OmitCell c            -> omitCell c              $> Continue
                 ShowLeafs             -> showLeafs               $> Continue
                 ShowRule   mc         -> showRule mc             $> Continue
+                ShowRules  ns         -> showRules ns            $> Continue
                 ShowPrecBranch mn     -> showPrecBranch mn       $> Continue
                 ShowChildren mn       -> showChildren mn         $> Continue
                 Label ms              -> label ms                $> Continue
                 LabelAdd l mn         -> labelAdd l mn           $> Continue
                 LabelDel l            -> labelDel l              $> Continue
-                Redirect inn file     -> redirect inn file       $> Continue
+                Redirect inn file     -> redirect startTime inn file
+                                                                 $> Continue
                 Try ref               -> tryAxiomClaim ref       $> Continue
                 TryF ac               -> tryFAxiomClaim ac       $> Continue
                 Clear n               -> clear n                 $> Continue
                 SaveSession file      -> saveSession file        $> Continue
                 SavePartialProof mn f -> savePartialProof mn f   $> Continue
-                Pipe inn file args    -> pipe inn file args      $> Continue
-                AppendTo inn file     -> appendTo inn file       $> Continue
+                Pipe inn file args    -> pipe startTime inn file args
+                                                                 $> Continue
+                AppendTo inn file     -> appendTo startTime inn file
+                                                                 $> Continue
                 Alias a               -> alias a                 $> Continue
-                TryAlias name         -> tryAlias name printAux printKore
-                LoadScript file       -> loadScript file         $> Continue
+                TryAlias name         ->
+                    tryAlias startTime name printAux printKore
+                LoadScript file       -> loadScript startTime file
+                                                                 $> Continue
                 ProofStatus           -> proofStatus             $> Continue
                 Log opts              -> handleLog opts          $> Continue
                 Exit                  -> exit
@@ -439,13 +453,14 @@ showGraph view mfile out = do
                 return $ Graph.emap Just graph
             _ ->
                 maybe (showOriginalGraph graph) return (smoothOutGraph graph)
-    axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
-       then liftIO $ maybe
-                        (showDotGraph (length axioms) processedGraph)
-                        (saveDotGraph (length axioms) processedGraph format)
-                        mfile
+        then
+            liftIO
+            $ maybe
+                (showDotGraph processedGraph)
+                (saveDotGraph processedGraph format)
+                mfile
        else putStrLn' "Graphviz is not installed."
   where
     showOriginalGraph graph = do
@@ -493,10 +508,11 @@ loadScript
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => FilePath
+    => TimeSpec
+    -> FilePath
     -- ^ path to file
     -> ReplM m ()
-loadScript file = parseEvalScript file DisableOutput
+loadScript startTime file = parseEvalScript startTime file DisableOutput
 
 handleLog
     :: MonadState ReplState m
@@ -654,12 +670,55 @@ showRule configNode = do
     case maybeRule of
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
-            axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = from @_ @Attribute.RuleIndex rule
-            putStrLn'
-                $ fromMaybe "Error: identifier attribute wasn't initialized."
-                $ showAxiomOrClaim (length axioms) ruleIndex
+            putStrLn' $ showRuleIdentifier rule
+
+showRules
+    :: Monad m
+    => (ReplNode, ReplNode)
+    -> ReplM m ()
+showRules (ReplNode node1, ReplNode node2) = do
+    graph <- getInnerGraph
+    let path =
+            Graph.lesp node1 node2 graph
+            & Graph.unLPath
+    case path of
+        [] -> putStrLn' noPath
+        [singleNode] ->
+            getRuleFor (singleNode & fst & ReplNode & Just)
+            >>= putStrLn' . maybe "Invalid node!" showRuleIdentifier
+        (_ : labeledNodes) -> do
+            let mapPath = Map.fromList labeledNodes
+            putStrLn' $ Map.foldrWithKey acc "Rules applied:" mapPath
+  where
+    noPath =
+         "There is no path between "
+         <> show node1
+         <> " and "
+         <> show node2
+         <> "."
+    acc node rules result =
+        result
+        <> "\n  to reach node "
+        <> show node
+        <> " the following rules were applied:"
+        <> case Foldable.toList rules of
+              [] -> " Implication checking."
+              rules' -> foldr oneStepRuleIndexes "" rules'
+    oneStepRuleIndexes rule result =
+        result <> " " <> showRuleIdentifier rule
+
+showRuleIdentifier
+    :: From rule AttrLabel.Label
+    => From rule RuleIndex
+    => rule
+    -> String
+showRuleIdentifier rule =
+    fromMaybe
+        (showAxiomOrClaim ruleIndex)
+        (showAxiomOrClaimName ruleIndex (getNameText rule))
+  where
+    ruleIndex = getInternalIdentifier rule
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -766,28 +825,30 @@ redirect
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -- ^ command to redirect
     -> FilePath
     -- ^ file path
     -> ReplM m ()
-redirect cmd file = do
+redirect startTime cmd file = do
     liftIO $ withExistingDirectory file (`writeFile` "")
-    appendCommand cmd file
+    appendCommand startTime cmd file
 
 runInterpreterWithOutput
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => PrintAuxOutput
+    => TimeSpec
+    -> PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
     -> Config m
     -> ReplM m ()
-runInterpreterWithOutput printAux printKore cmd config =
+runInterpreterWithOutput startTime printAux printKore cmd config =
     get >>= (\st -> lift
             $ execStateReader config st
-            $ replInterpreter0 printAux printKore cmd
+            $ replInterpreter0 startTime printAux printKore cmd
             )
         >>= put
 
@@ -1067,21 +1128,22 @@ pipe
     :: forall m
     .  MonadIO m
     => MonadSimplify m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -- ^ command to pipe
     -> String
     -- ^ path to the program that will receive the command's output
     -> [String]
     -- ^ additional arguments to be passed to the program
     -> ReplM m ()
-pipe cmd file args = do
+pipe startTime cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
         Nothing -> putStrLn' "Cannot find executable."
         Just exec -> do
             config <- ask
             pipeOutRef <- liftIO $ newIORef (mempty :: ReplOutput)
-            runInterpreterWithOutput
+            runInterpreterWithOutput startTime
                 (PrintAuxOutput $ justPrint pipeOutRef)
                 (PrintKoreOutput $ runExternalProcess pipeOutRef exec)
                 cmd
@@ -1111,24 +1173,26 @@ appendTo
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -- ^ command
     -> FilePath
     -- ^ file to append to
     -> ReplM m ()
-appendTo cmd file =
-    withExistingDirectory file (appendCommand cmd)
+appendTo startTime cmd file =
+    withExistingDirectory file (appendCommand startTime cmd)
 
 appendCommand
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplCommand
+    => TimeSpec
+    -> ReplCommand
     -> FilePath
     -> ReplM m ()
-appendCommand cmd file = do
+appendCommand startTime cmd file = do
     config <- ask
-    runInterpreterWithOutput
+    runInterpreterWithOutput startTime
         (PrintAuxOutput $ appendFile file)
         (PrintKoreOutput $ appendFile file)
         cmd
@@ -1151,11 +1215,12 @@ tryAlias
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => ReplAlias
+    => TimeSpec
+    -> ReplAlias
     -> PrintAuxOutput
     -> PrintKoreOutput
     -> ReplM m ReplStatus
-tryAlias replAlias@ReplAlias { name } printAux printKore = do
+tryAlias startTime replAlias@ReplAlias { name } printAux printKore = do
     res <- findAlias name
     case res of
         Nothing  -> showUsage $> Continue
@@ -1163,7 +1228,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
             let
                 command = substituteAlias aliasDef replAlias
                 parsedCommand =
-                    fromMaybe ShowUsage $ parseMaybe commandParser command
+                    fromMaybe
+                        ShowUsage
+                        $ parseMaybe (commandParser startTime) command
             config <- ask
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
@@ -1177,7 +1244,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
     runInterpreter cmd config st =
         lift
             $ (`runStateT` st)
-            $ runReaderT (replInterpreter0 printAux printKore cmd) config
+            $ runReaderT
+                (replInterpreter0 startTime printAux printKore cmd)
+                config
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1292,20 +1361,20 @@ printNotFound = putStrLn' "Variable or index not found"
 showDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int -> Gr CommonProofState (Maybe (Seq axiom)) -> IO ()
-showDotGraph len =
+    => Gr CommonProofState (Maybe (Seq axiom))
+    -> IO ()
+showDotGraph =
     flip Graph.runGraphvizCanvas' Graph.Xlib
-        . Graph.graphToDot (graphParams len)
+        . Graph.graphToDot graphParams
 
 saveDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int
-    -> Gr CommonProofState (Maybe (Seq axiom))
+    => Gr CommonProofState (Maybe (Seq axiom))
     -> Graph.GraphvizOutput
     -> FilePath
     -> IO ()
-saveDotGraph len gr format file =
+saveDotGraph gr format file =
     withExistingDirectory file saveGraphImg
   where
     saveGraphImg :: FilePath -> IO ()
@@ -1313,7 +1382,7 @@ saveDotGraph len gr format file =
         void
         $ Graph.addExtension
             (Graph.runGraphviz
-                (Graph.graphToDot (graphParams len) gr)
+                (Graph.graphToDot graphParams gr)
             )
             format
             path
@@ -1321,16 +1390,15 @@ saveDotGraph len gr format file =
 graphParams
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int
-    -> Graph.GraphvizParams
+    => Graph.GraphvizParams
          Graph.Node
          CommonProofState
          (Maybe (Seq axiom))
          ()
          CommonProofState
-graphParams len = Graph.nonClusteredParams
+graphParams = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
-        [ Graph.textLabel (maybe "" (ruleIndex len) l)
+        [ Graph.textLabel (maybe "" ruleIndex l)
         , Graph.Attr.Style [dottedOrSolidEdge l]
         ]
     , Graph.fmtNode = \(_, ps) ->
@@ -1348,23 +1416,11 @@ graphParams len = Graph.nonClusteredParams
             (Graph.Attr.SItem Graph.Attr.Dotted mempty)
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
-    ruleIndex ln lbl =
+    ruleIndex lbl =
         case headMay . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
-                maybe
-                    ( maybe "Unknown"
-                        Text.Lazy.pack
-                        ( showAxiomOrClaim ln
-                        . getInternalIdentifier
-                        $ rule
-                        )
-                    )
-                    Text.Lazy.fromStrict
-                    ( showAxiomOrClaimName ln (getInternalIdentifier rule)
-                    . getNameText
-                    $ rule
-                    )
+                Text.Lazy.pack (showRuleIdentifier rule)
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
     red = Graph.Attr.RGB 200 0 0
@@ -1375,25 +1431,30 @@ showAliasError =
         NameAlreadyDefined -> "Error: Alias name is already defined."
         UnknownCommand     -> "Error: Command does not exist."
 
-showAxiomOrClaim :: Int -> Attribute.RuleIndex -> Maybe String
-showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
-showAxiomOrClaim len (RuleIndex (Just rid))
-  | rid < len = Just $ "Axiom " <> show rid
-  | otherwise = Just $ "Claim " <> show (rid - len)
+showAxiomOrClaim :: Attribute.RuleIndex -> String
+showAxiomOrClaim (RuleIndex Nothing) =
+    "Internal error: rule index was not initialized."
+showAxiomOrClaim (RuleIndex (Just (Attribute.AxiomIndex ruleId))) =
+    "Axiom " <> show ruleId
+showAxiomOrClaim (RuleIndex (Just (Attribute.ClaimIndex ruleId))) =
+    "Claim " <> show ruleId
 
 showAxiomOrClaimName
-    :: Int
-    -> Attribute.RuleIndex
+    :: Attribute.RuleIndex
     -> AttrLabel.Label
-    -> Maybe Text.Text
-showAxiomOrClaimName _ _ (AttrLabel.Label Nothing) = Nothing
-showAxiomOrClaimName _ (RuleIndex Nothing) _ = Nothing
+    -> Maybe String
+showAxiomOrClaimName _ (AttrLabel.Label Nothing) = Nothing
+showAxiomOrClaimName (RuleIndex Nothing) _ = Nothing
 showAxiomOrClaimName
-    len
-    (RuleIndex (Just rid))
+    (RuleIndex (Just (Attribute.AxiomIndex _)))
     (AttrLabel.Label (Just ruleName))
-  | rid < len = Just $ "Axiom " <> ruleName
-  | otherwise = Just $ "Claim " <> ruleName
+  =
+    Just $ "Axiom " <> Text.unpack ruleName
+showAxiomOrClaimName
+    (RuleIndex (Just (Attribute.ClaimIndex _)))
+    (AttrLabel.Label (Just ruleName))
+  =
+    Just $ "Claim " <> Text.unpack ruleName
 
 parseEvalScript
     :: forall t m
@@ -1402,15 +1463,16 @@ parseEvalScript
     => MonadState ReplState (t m)
     => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
-    => FilePath
+    => TimeSpec
+    -> FilePath
     -> ScriptModeOutput
     -> t m ()
-parseEvalScript file scriptModeOutput = do
+parseEvalScript startTime file scriptModeOutput = do
     exists <- lift . liftIO . doesFileExist $ file
     if exists
         then do
             contents <- lift . liftIO $ readFile file
-            let result = runParser scriptParser file contents
+            let result = runParser (scriptParser startTime) file contents
             either parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
@@ -1443,7 +1505,7 @@ parseEvalScript file scriptModeOutput = do
             :: ReplCommand
             -> ReaderT (Config m) (StateT ReplState m) ReplStatus
         executeCommand command =
-            replInterpreter0
+            replInterpreter0 startTime
                 (PrintAuxOutput $ \_ -> return ())
                 (PrintKoreOutput $ \_ -> return ())
                 command
@@ -1455,7 +1517,7 @@ parseEvalScript file scriptModeOutput = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             liftIO $ print command
-            replInterpreter0
+            replInterpreter0 startTime
                     (PrintAuxOutput printIfNotEmpty)
                     (PrintKoreOutput printIfNotEmpty)
                     command

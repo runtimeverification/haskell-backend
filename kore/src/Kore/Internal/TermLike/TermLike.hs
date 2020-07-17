@@ -9,6 +9,7 @@ License     : NCSA
 module Kore.Internal.TermLike.TermLike
     ( Builtin
     , Evaluated (..)
+    , Defined (..)
     , TermLike (..)
     , TermLikeF (..)
     , extractAttributes
@@ -163,6 +164,41 @@ instance {-# OVERLAPS #-} Synthetic Pattern.Simplified Evaluated where
     synthetic = const Pattern.fullySimplified
     {-# INLINE synthetic #-}
 
+{- | @Defined@ wraps patterns which are defined.
+
+This avoids re-checking the definedness of terms which are already
+known to be defined.
+
+ -}
+newtype Defined child = Defined { getDefined :: child }
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+
+instance SOP.Generic (Defined child)
+
+instance SOP.HasDatatypeInfo (Defined child)
+
+instance Debug child => Debug (Defined child)
+
+instance (Debug child, Diff child) => Diff (Defined child)
+
+instance Hashable child => Hashable (Defined child)
+
+instance NFData child => NFData (Defined child)
+
+instance Unparse child => Unparse (Defined child) where
+    unparse defined =
+        Pretty.vsep ["/* defined: */", Unparser.unparseGeneric defined]
+    unparse2 defined =
+        Pretty.vsep ["/* defined: */", Unparser.unparse2Generic defined]
+
+instance Synthetic syn Defined where
+    synthetic = getDefined
+    {-# INLINE synthetic #-}
+
+instance {-# OVERLAPS #-} Synthetic Pattern.Defined Defined where
+    synthetic = const (Pattern.Defined True)
+    {-# INLINE synthetic #-}
+
 {- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
 
 -}
@@ -196,6 +232,7 @@ data TermLikeF variable child
     | EndiannessF    !(Const Endianness child)
     | SignednessF    !(Const Signedness child)
     | InjF           !(Inj child)
+    | DefinedF       !(Defined child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic, GHC.Generic1)
@@ -530,6 +567,8 @@ instance
             InternalBytesF (Const InternalBytes { bytesSort }) ->
                 locationFromAst bytesSort
             BuiltinF builtin -> locationFromAst (Domain.builtinSort builtin)
+            DefinedF Defined { getDefined } ->
+                locationFromAst getDefined
 
 instance AstWithLocation variable => AstWithLocation (TermLike variable)
   where
@@ -594,6 +633,7 @@ traverseVariablesF adj =
         EndiannessF endianness -> pure (EndiannessF endianness)
         SignednessF signedness -> pure (SignednessF signedness)
         InjF inj -> pure (InjF inj)
+        DefinedF childP -> pure (DefinedF childP)
   where
     trElemVar = traverse $ traverseElementVariableName adj
     trSetVar = traverse $ traverseSetVariableName adj

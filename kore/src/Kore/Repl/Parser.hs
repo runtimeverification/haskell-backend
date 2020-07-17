@@ -15,7 +15,6 @@ import Prelude.Kore hiding
     ( many
     )
 
-import Data.Default
 import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
@@ -55,6 +54,9 @@ import qualified Kore.Log as Log
 import Kore.Log.KoreLogOptions
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
+import System.Clock
+    ( TimeSpec
+    )
 
 type Parser = Parsec String String
 
@@ -63,10 +65,10 @@ type Parser = Parsec String String
 -- maybe ShowUsage id . Text.Megaparsec.parseMaybe commandParser
 -- @
 
-scriptParser :: Parser [ReplCommand]
-scriptParser =
+scriptParser :: TimeSpec -> Parser [ReplCommand]
+scriptParser startTime =
     some ( skipSpacesAndComments
-         *> commandParser0 (void Char.newline)
+         *> commandParser0 startTime (void Char.newline)
          <* many Char.newline
          <* skipSpacesAndComments
          )
@@ -76,12 +78,12 @@ scriptParser =
     skipSpacesAndComments =
         optional $ spaceConsumer <* Char.newline
 
-commandParser :: Parser ReplCommand
-commandParser = commandParser0 eof
+commandParser :: TimeSpec -> Parser ReplCommand
+commandParser startTime = commandParser0 startTime eof
 
-commandParser0 :: Parser () -> Parser ReplCommand
-commandParser0 endParser =
-    alias <|> log <|> commandParserExceptAlias endParser <|> tryAlias
+commandParser0 :: TimeSpec -> Parser () -> Parser ReplCommand
+commandParser0 startTime endParser =
+    alias <|> log startTime <|> commandParserExceptAlias endParser <|> tryAlias
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -108,7 +110,7 @@ nonRecursiveCommand =
         , showDest
         , omitCell
         , showLeafs
-        , showRule
+        , ruleCommandsParser
         , showPrecBranch
         , showChildren
         , try labelAdd
@@ -200,10 +202,21 @@ omitCell = OmitCell <$$> literal "omit" *> maybeWord
 showLeafs :: Parser ReplCommand
 showLeafs = const ShowLeafs <$$> literal "leafs"
 
+ruleCommandsParser :: Parser ReplCommand
+ruleCommandsParser =
+    try showRules <|> showRule
+
 showRule :: Parser ReplCommand
 showRule = do
     dec <- literal "rule" *> maybeDecimal
     return $ ShowRule (fmap ReplNode dec)
+
+showRules :: Parser ReplCommand
+showRules = do
+    literal "rules"
+    node1 <- decimal
+    node2 <- decimal
+    return $ ShowRules (ReplNode node1, ReplNode node2)
 
 showPrecBranch :: Parser ReplCommand
 showPrecBranch = do
@@ -276,8 +289,8 @@ savePartialProof =
     *> maybeDecimal
     <**> quotedOrWordWithout ""
 
-log :: Parser ReplCommand
-log = do
+log :: TimeSpec -> Parser ReplCommand
+log startTime = do
     literal "log"
     logLevel <- parseSeverityWithDefault
     logEntries <- parseLogEntries
@@ -285,7 +298,7 @@ log = do
     timestampsSwitch <- parseTimestampSwitchWithDefault
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     -- TODO (thomas.tuegel): Allow the user to specify --sqlog.
-    pure $ Log (def @KoreLogOptions)
+    pure $ Log defKoreLogOptions
         { logType
         , logLevel
         , timestampsSwitch
@@ -293,9 +306,10 @@ log = do
         }
   where
     parseSeverityWithDefault =
-        severity <|> pure (logLevel $ def @KoreLogOptions)
+        severity<|> pure (logLevel defKoreLogOptions)
     parseTimestampSwitchWithDefault =
         fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
+    defKoreLogOptions = defaultKoreLogOptions (ExeName "kore-repl") startTime
 
 severity :: Parser Log.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError

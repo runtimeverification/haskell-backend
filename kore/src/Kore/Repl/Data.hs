@@ -234,6 +234,9 @@ data ReplCommand
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
     | ShowRule !(Maybe ReplNode)
     -- ^ Show the rule(s) that got us to this configuration.
+    | ShowRules !(ReplNode, ReplNode)
+    -- ^ Show the rules which were applied from the first node
+    -- to reach the second.
     | ShowPrecBranch !(Maybe ReplNode)
     -- ^ Show the first preceding branch.
     | ShowChildren !(Maybe ReplNode)
@@ -341,6 +344,8 @@ helpText =
     \leafs                                    shows unevaluated or stuck leafs\n\
     \rule [n]                                 shows the rule for node 'n'\
                                               \ (defaults to current node)\n\
+    \rules <n1> <n2>                          shows the rules applied on the path\
+                                              \ between nodes n1 and n2\n\
     \prec-branch [n]                          shows first preceding branch\
                                               \ (defaults to current node)\n\
     \children [n]                             shows direct children of node\

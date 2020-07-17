@@ -46,6 +46,9 @@ import Data.List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
+import qualified Kore.Attribute.RuleIndex as Attribute
 import System.IO
     ( hFlush
     , stdout
@@ -86,6 +89,11 @@ import Kore.Unification.Procedure
     )
 import Kore.Unparser
     ( unparseToString
+    )
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
     )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
@@ -131,46 +139,52 @@ runRepl
     mainModuleName
     logOptions
     = do
+    startTime <- liftIO $ getTime Monotonic
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
-            $ evaluateScript replScript scriptModeOutput
+            $ evaluateScript startTime replScript scriptModeOutput
     case replMode of
         Interactive -> do
             replGreeting
             flip evalStateT newState
                 $ flip runReaderT config
-                $ forever repl0
+                $ forever (repl0 startTime)
         RunScript ->
-            runReplCommand Exit newState
+            runReplCommand startTime Exit newState
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState -> m ()
-    runReplCommand cmd st =
+    runReplCommand :: TimeSpec -> ReplCommand -> ReplState -> m ()
+    runReplCommand startTime cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
-            $ replInterpreter printIfNotEmpty cmd
+            $ replInterpreter startTime printIfNotEmpty cmd
 
     evaluateScript
-        :: ReplScript
+        :: TimeSpec
+        -> ReplScript
         -> ScriptModeOutput
         -> RWST (Config m) String ReplState m ()
-    evaluateScript script outputFlag =
-        maybe (pure ()) (flip parseEvalScript outputFlag) (unReplScript script)
+    evaluateScript startTime script outputFlag =
+        maybe
+            (pure ())
+            (flip (parseEvalScript startTime) outputFlag)
+            (unReplScript script)
 
-    repl0 :: ReaderT (Config m) (StateT ReplState m) ()
-    repl0 = do
+    repl0 :: TimeSpec -> ReaderT (Config m) (StateT ReplState m) ()
+    repl0 startTime = do
         str <- prompt
-        let command = fromMaybe ShowUsage $ parseMaybe commandParser str
+        let command =
+                fromMaybe ShowUsage $ parseMaybe (commandParser startTime) str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
-        void $ replInterpreter printIfNotEmpty command
+        void $ replInterpreter startTime printIfNotEmpty command
 
     state :: ReplState
     state =
         ReplState
             { axioms         = addIndexesToAxioms axioms'
-            , claims         = addIndexesToClaims (length axioms') claims'
+            , claims         = addIndexesToClaims claims'
             , claim          = firstClaim
             , claimIndex     = firstClaimIndex
             , graphs         = Map.singleton firstClaimIndex firstClaimExecutionGraph
@@ -205,19 +219,17 @@ runRepl
     addIndexesToAxioms
         :: [Axiom]
         -> [Axiom]
-    addIndexesToAxioms axs =
-        fmap addIndex (zip axs [0..])
+    addIndexesToAxioms =
+        initializeRuleIndexes Attribute.AxiomIndex lensAttribute
+      where
+        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     addIndexesToClaims
-        :: Int
+        :: [ReachabilityRule]
         -> [ReachabilityRule]
-        -> [ReachabilityRule]
-    addIndexesToClaims len claims'' =
-        zipWith addIndexToClaim [len..] claims''
+    addIndexesToClaims =
+        initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
-        addIndexToClaim n =
-            Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n)
-
         lensAttribute =
             Lens.lens
                 (\case
@@ -237,16 +249,14 @@ runRepl
                         & AllPath
                 )
 
-    addIndex
-        :: (Axiom, Int)
-        -> Axiom
-    addIndex (rw, n) =
-        Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n) rw
+    initializeRuleIndexes ctor lens rules =
+        zipWith addIndex rules [0..]
       where
-        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
-
-    makeRuleIndex :: Int -> RuleIndex -> RuleIndex
-    makeRuleIndex n _ = RuleIndex (Just n)
+        addIndex rule index =
+            Lens.set
+                (lens . field @"identifier")
+                (index & ctor & Just & RuleIndex)
+                rule
 
     firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex

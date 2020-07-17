@@ -70,6 +70,9 @@ import qualified Kore.Step.Simplification.Builtin as Builtin
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( simplify
     )
+import qualified Kore.Step.Simplification.Defined as Defined
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
     ( simplify
     )
@@ -421,6 +424,8 @@ simplify sideCondition = \termLike ->
                 return $ InternalBytes.simplify (getConst internalBytesF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
+            DefinedF definedF ->
+                Defined.simplify <$> simplifyChildren definedF
 
 ensureSimplifiedResult
     :: InternalVariable variable
