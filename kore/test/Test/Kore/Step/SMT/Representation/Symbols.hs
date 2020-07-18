@@ -125,7 +125,7 @@ test_symbolParsing =
         )
         [ inDeclarations
             (unresolvedSmthookSymbolMap
-                (testId "minus") "-" (koreSort "Integer") [ koreSort "Integer"]
+                (testId "minus") "-" [koreSort "Integer", koreSort "Integer"]
             )
         , smtForSymbolIs "minus" "-"
         ]

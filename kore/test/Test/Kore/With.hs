@@ -313,11 +313,11 @@ instance With AST.UnresolvedKoreSymbolDeclaration Kore.Sort where
 
 instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
     with
-        s@AST.IndirectSymbolDeclaration {argumentSorts}
+        s@AST.IndirectSymbolDeclaration { sortDependencies }
         sort
       = s
-        { AST.IndirectSymbolDeclaration.argumentSorts =
-            argumentSorts `with` AST.SortReference sort
+        { AST.IndirectSymbolDeclaration.sortDependencies =
+            sortDependencies `with` AST.SortReference sort
         }
 
 newtype ConcreteElement =
