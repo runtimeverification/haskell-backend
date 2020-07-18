@@ -5,7 +5,7 @@ import Prelude.Kore
 import Control.Monad.Catch
     ( MonadMask
     , SomeException
-    , displayException
+    , fromException
     , handle
     , throwM
     )
@@ -575,8 +575,7 @@ mainWithOptions execOptions = do
             writeOptionsAndKoreFiles tmpDir execOptions
             go
                 & handle handleWithConfiguration
-                & handle handleSomeEntry
-                & handle (handleSomeException tmpDir)
+                & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
@@ -587,20 +586,12 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
 
-    handleSomeEntry
-        :: SomeEntry -> Main ExitCode
-    handleSomeEntry (SomeEntry entry) = do
-        logEntry entry
-        return $ ExitFailure 1
-
-    handleSomeException :: FilePath -> SomeException -> Main ExitCode
-    handleSomeException tempDirectory someException = do
-        errorException someException
-        lift
-            $ writeFile
-                (tempDirectory <> "/error.log")
-                (displayException someException)
-        return $ ExitFailure 1
+    handleSomeException :: SomeException -> Main ExitCode
+    handleSomeException someException = do
+        case fromException someException of
+            Just (SomeEntry entry) -> logEntry entry
+            Nothing -> errorException someException
+        throwM someException
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
     handleWithConfiguration

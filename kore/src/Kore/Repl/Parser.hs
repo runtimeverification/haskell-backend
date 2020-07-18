@@ -24,6 +24,7 @@ import Data.GraphViz
     ( GraphvizOutput
     )
 import qualified Data.GraphViz as Graph
+import qualified Data.HashSet as HashSet
 import Data.List
     ( nub
     )
@@ -51,12 +52,8 @@ import Kore.Log
     ( EntryTypes
     )
 import qualified Kore.Log as Log
-import Kore.Log.KoreLogOptions
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
-import System.Clock
-    ( TimeSpec
-    )
 
 type Parser = Parsec String String
 
@@ -65,10 +62,10 @@ type Parser = Parsec String String
 -- maybe ShowUsage id . Text.Megaparsec.parseMaybe commandParser
 -- @
 
-scriptParser :: TimeSpec -> Parser [ReplCommand]
-scriptParser startTime =
+scriptParser :: Parser [ReplCommand]
+scriptParser =
     some ( skipSpacesAndComments
-         *> commandParser0 startTime (void Char.newline)
+         *> commandParser0 (void Char.newline)
          <* many Char.newline
          <* skipSpacesAndComments
          )
@@ -78,12 +75,12 @@ scriptParser startTime =
     skipSpacesAndComments =
         optional $ spaceConsumer <* Char.newline
 
-commandParser :: TimeSpec -> Parser ReplCommand
-commandParser startTime = commandParser0 startTime eof
+commandParser :: Parser ReplCommand
+commandParser = commandParser0 eof
 
-commandParser0 :: TimeSpec -> Parser () -> Parser ReplCommand
-commandParser0 startTime endParser =
-    alias <|> log startTime <|> commandParserExceptAlias endParser <|> tryAlias
+commandParser0 :: Parser () -> Parser ReplCommand
+commandParser0 endParser =
+    alias <|> logCommand <|> commandParserExceptAlias endParser <|> tryAlias
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -289,16 +286,22 @@ savePartialProof =
     *> maybeDecimal
     <**> quotedOrWordWithout ""
 
-log :: TimeSpec -> Parser ReplCommand
-log startTime = do
+logCommand :: Parser ReplCommand
+logCommand =
+    log
+    <|> try debugAttemptEquation
+    <|> try debugApplyEquation
+    <|> debugEquation
+
+log :: Parser ReplCommand
+log = do
     literal "log"
     logLevel <- parseSeverityWithDefault
     logEntries <- parseLogEntries
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
-    -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     -- TODO (thomas.tuegel): Allow the user to specify --sqlog.
-    pure $ Log defKoreLogOptions
+    pure $ Log GeneralLogOptions
         { logType
         , logLevel
         , timestampsSwitch
@@ -306,10 +309,36 @@ log startTime = do
         }
   where
     parseSeverityWithDefault =
-        severity<|> pure (logLevel defKoreLogOptions)
+        severity <|> pure Log.defaultSeverity
     parseTimestampSwitchWithDefault =
         fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
-    defKoreLogOptions = defaultKoreLogOptions (ExeName "kore-repl") startTime
+
+debugAttemptEquation :: Parser ReplCommand
+debugAttemptEquation =
+    DebugAttemptEquation
+    . Log.DebugAttemptEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-attempt-equation"
+    *> many (quotedOrWordWithout "")
+
+debugApplyEquation :: Parser ReplCommand
+debugApplyEquation =
+    DebugApplyEquation
+    . Log.DebugApplyEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-apply-equation"
+    *> many (quotedOrWordWithout "")
+
+debugEquation :: Parser ReplCommand
+debugEquation =
+    DebugEquation
+    . Log.DebugEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-equation"
+    *> many (quotedOrWordWithout "")
 
 severity :: Parser Log.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError

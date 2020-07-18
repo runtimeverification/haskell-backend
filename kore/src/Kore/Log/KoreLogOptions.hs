@@ -20,6 +20,7 @@ module Kore.Log.KoreLogOptions
     , DebugEquationOptions (..)
     , selectDebugEquation
     , unparseKoreLogOptions
+    , defaultSeverity
     ) where
 
 import Prelude.Kore
@@ -102,12 +103,14 @@ data KoreLogOptions = KoreLogOptions
     }
     deriving (Eq, Show)
 
+defaultSeverity :: Severity
+defaultSeverity = Warning
 
 defaultKoreLogOptions :: ExeName -> TimeSpec -> KoreLogOptions
 defaultKoreLogOptions exeName startTime =
     KoreLogOptions
         { logType = def @KoreLogType
-        , logLevel = Warning
+        , logLevel = defaultSeverity
         , timestampsSwitch = def @TimestampsSwitch
         , logEntries = mempty
         , debugSolverOptions = def @DebugSolverOptions
