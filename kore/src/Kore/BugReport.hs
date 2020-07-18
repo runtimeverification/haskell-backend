@@ -20,6 +20,7 @@ import Control.Monad.Catch
     ( ExitCase (..)
     , displayException
     , generalBracket
+    , handleAll
     )
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import qualified Data.Foldable as Foldable
@@ -56,9 +57,9 @@ parseBugReport =
     BugReport
         <$> optional
             ( strOption
-                ( metavar "REPORT FILE"
+                ( metavar "REPORT_FILE"
                 <> long "bug-report"
-                <> help "Whether to report a bug"
+                <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
                 )
             )
 
@@ -86,14 +87,17 @@ withBugReport
     -> BugReport
     -> (FilePath -> IO ExitCode)
     -> IO ExitCode
-withBugReport exeName bugReport act = do
-    (exitCode, _) <-
-        generalBracket
-            acquireTempDirectory
-            releaseTempDirectory
-            act
-    pure exitCode
+withBugReport exeName bugReport act =
+    do
+        (exitCode, _) <-
+            generalBracket
+                acquireTempDirectory
+                releaseTempDirectory
+                act
+        pure exitCode
+    & handleAll handler
   where
+    handler _ = pure (ExitFailure 1)
     acquireTempDirectory = do
         tmp <- getCanonicalTemporaryDirectory
         createTempDirectory tmp (getExeName exeName)

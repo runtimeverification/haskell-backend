@@ -27,6 +27,7 @@ module Kore.Attribute.Axiom
     , SourceLocation (..)
     , Constructor (..)
     , RuleIndex (..)
+    , RuleIndexCase (..)
     , UniqueId (..)
     , PriorityAttributes (..)
     , axiomSymbolToSymbolOrAlias

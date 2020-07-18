@@ -32,6 +32,7 @@ module Kore.Internal.Substitution
     , isNormalized
     , isSimplified
     , forgetSimplified
+    , markSimplified
     , simplifiedAttribute
     , null
     , variables
@@ -501,6 +502,14 @@ forgetSimplified
 forgetSimplified =
     wrap
     . fmap (mapAssignedTerm TermLike.forgetSimplified)
+    . unwrap
+
+markSimplified
+    :: InternalVariable variable
+    => Substitution variable -> Substitution variable
+markSimplified =
+    wrap
+    . fmap (mapAssignedTerm TermLike.markSimplified)
     . unwrap
 
 simplifiedAttribute

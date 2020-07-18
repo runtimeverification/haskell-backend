@@ -15,7 +15,6 @@ import Prelude.Kore hiding
     ( many
     )
 
-import Data.Default
 import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
@@ -25,6 +24,7 @@ import Data.GraphViz
     ( GraphvizOutput
     )
 import qualified Data.GraphViz as Graph
+import qualified Data.HashSet as HashSet
 import Data.List
     ( nub
     )
@@ -52,7 +52,6 @@ import Kore.Log
     ( EntryTypes
     )
 import qualified Kore.Log as Log
-import Kore.Log.KoreLogOptions
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 
@@ -81,7 +80,7 @@ commandParser = commandParser0 eof
 
 commandParser0 :: Parser () -> Parser ReplCommand
 commandParser0 endParser =
-    alias <|> log <|> commandParserExceptAlias endParser <|> tryAlias
+    alias <|> logCommand <|> commandParserExceptAlias endParser <|> tryAlias
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -108,7 +107,7 @@ nonRecursiveCommand =
         , showDest
         , omitCell
         , showLeafs
-        , showRule
+        , ruleCommandsParser
         , showPrecBranch
         , showChildren
         , try labelAdd
@@ -200,10 +199,21 @@ omitCell = OmitCell <$$> literal "omit" *> maybeWord
 showLeafs :: Parser ReplCommand
 showLeafs = const ShowLeafs <$$> literal "leafs"
 
+ruleCommandsParser :: Parser ReplCommand
+ruleCommandsParser =
+    try showRules <|> showRule
+
 showRule :: Parser ReplCommand
 showRule = do
     dec <- literal "rule" *> maybeDecimal
     return $ ShowRule (fmap ReplNode dec)
+
+showRules :: Parser ReplCommand
+showRules = do
+    literal "rules"
+    node1 <- decimal
+    node2 <- decimal
+    return $ ShowRules (ReplNode node1, ReplNode node2)
 
 showPrecBranch :: Parser ReplCommand
 showPrecBranch = do
@@ -276,6 +286,13 @@ savePartialProof =
     *> maybeDecimal
     <**> quotedOrWordWithout ""
 
+logCommand :: Parser ReplCommand
+logCommand =
+    log
+    <|> try debugAttemptEquation
+    <|> try debugApplyEquation
+    <|> debugEquation
+
 log :: Parser ReplCommand
 log = do
     literal "log"
@@ -283,9 +300,8 @@ log = do
     logEntries <- parseLogEntries
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
-    -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     -- TODO (thomas.tuegel): Allow the user to specify --sqlog.
-    pure $ Log (def @KoreLogOptions)
+    pure $ Log GeneralLogOptions
         { logType
         , logLevel
         , timestampsSwitch
@@ -293,9 +309,36 @@ log = do
         }
   where
     parseSeverityWithDefault =
-        severity <|> pure (logLevel $ def @KoreLogOptions)
+        severity <|> pure Log.defaultSeverity
     parseTimestampSwitchWithDefault =
         fromMaybe Log.TimestampsEnable <$> optional parseTimestampSwitch
+
+debugAttemptEquation :: Parser ReplCommand
+debugAttemptEquation =
+    DebugAttemptEquation
+    . Log.DebugAttemptEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-attempt-equation"
+    *> many (quotedOrWordWithout "")
+
+debugApplyEquation :: Parser ReplCommand
+debugApplyEquation =
+    DebugApplyEquation
+    . Log.DebugApplyEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-apply-equation"
+    *> many (quotedOrWordWithout "")
+
+debugEquation :: Parser ReplCommand
+debugEquation =
+    DebugEquation
+    . Log.DebugEquationOptions
+    . HashSet.fromList
+    . fmap Text.pack
+    <$$> literal "debug-equation"
+    *> many (quotedOrWordWithout "")
 
 severity :: Parser Log.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError

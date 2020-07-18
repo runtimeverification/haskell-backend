@@ -80,11 +80,17 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
+import Kore.Log.InfoExecBreadth
+    ( InfoExecBreadth
+    )
 import Kore.Log.InfoReachability
     ( InfoReachability
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
+    )
+import Kore.Log.WarnStuckProofState
+    ( WarnStuckProofState
     )
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
@@ -135,12 +141,14 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
+    , mk $ Proxy @WarnStuckProofState
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop
     , mk $ Proxy @LogMessage
     , mk $ Proxy @InfoAttemptUnification
     , mk $ Proxy @InfoReachability
+    , mk $ Proxy @InfoExecBreadth
     , mk $ Proxy @ErrorRewritesInstantiation
     , mk $ Proxy @DebugAttemptEquation
     , mk $ Proxy @DebugApplyEquation

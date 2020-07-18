@@ -28,6 +28,7 @@ import Test.Kore.Internal.TermLike hiding
     ( forgetSimplified
     , isSimplified
     , mapVariables
+    , markSimplified
     , simplifiedAttribute
     )
 import Test.Kore.Variables.V

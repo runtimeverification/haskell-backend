@@ -114,6 +114,7 @@ translatePredicateWith translateTerm predicate =
     translatePredicatePattern pat =
         case Cofree.tailF (Recursive.project pat) of
             EvaluatedF child -> translatePredicatePattern (getEvaluated child)
+            DefinedF child -> translatePredicatePattern (getDefined child)
             -- Logical connectives: translate as connectives
             AndF and' -> translatePredicateAnd and'
             BottomF _ -> return (SMT.bool False)
@@ -292,6 +293,7 @@ translatePredicateWith translateTerm predicate =
                         smtSort <- hoistMaybe $ translateSort sort
                         translateUninterpreted smtSort pat
                     ApplySymbolF app -> translateApplication app
+                    DefinedF (Defined child) -> translatePattern sort child
                     _ -> empty
       where
         tools :: SmtMetadataTools Attribute.Symbol

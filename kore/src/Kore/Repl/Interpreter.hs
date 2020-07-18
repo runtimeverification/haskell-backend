@@ -77,6 +77,7 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import qualified Data.Graph.Inductive.Query.BFS as Graph
 import qualified Data.GraphViz as Graph
 import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
 import Data.IORef
@@ -154,6 +155,8 @@ import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     )
 import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -240,39 +243,48 @@ replInterpreter0
     -> ReaderT (Config m) (StateT ReplState m) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
-                ShowUsage             -> showUsage               $> Continue
-                Help                  -> help                    $> Continue
-                ShowClaim mc          -> showClaim mc            $> Continue
-                ShowAxiom ea          -> showAxiom ea            $> Continue
-                Prove i               -> prove i                 $> Continue
-                ShowGraph v mfile out -> showGraph v mfile out   $> Continue
-                ProveSteps n          -> proveSteps n            $> Continue
-                ProveStepsF n         -> proveStepsF n           $> Continue
-                SelectNode i          -> selectNode i            $> Continue
-                ShowConfig mc         -> showConfig mc           $> Continue
-                ShowDest mc           -> showDest mc             $> Continue
-                OmitCell c            -> omitCell c              $> Continue
-                ShowLeafs             -> showLeafs               $> Continue
-                ShowRule   mc         -> showRule mc             $> Continue
-                ShowPrecBranch mn     -> showPrecBranch mn       $> Continue
-                ShowChildren mn       -> showChildren mn         $> Continue
-                Label ms              -> label ms                $> Continue
-                LabelAdd l mn         -> labelAdd l mn           $> Continue
-                LabelDel l            -> labelDel l              $> Continue
-                Redirect inn file     -> redirect inn file       $> Continue
-                Try ref               -> tryAxiomClaim ref       $> Continue
-                TryF ac               -> tryFAxiomClaim ac       $> Continue
-                Clear n               -> clear n                 $> Continue
-                SaveSession file      -> saveSession file        $> Continue
-                SavePartialProof mn f -> savePartialProof mn f   $> Continue
-                Pipe inn file args    -> pipe inn file args      $> Continue
-                AppendTo inn file     -> appendTo inn file       $> Continue
-                Alias a               -> alias a                 $> Continue
-                TryAlias name         -> tryAlias name printAux printKore
-                LoadScript file       -> loadScript file         $> Continue
-                ProofStatus           -> proofStatus             $> Continue
-                Log opts              -> handleLog opts          $> Continue
-                Exit                  -> exit
+                ShowUsage               -> showUsage               $> Continue
+                Help                    -> help                    $> Continue
+                ShowClaim mc            -> showClaim mc            $> Continue
+                ShowAxiom ea            -> showAxiom ea            $> Continue
+                Prove i                 -> prove i                 $> Continue
+                ShowGraph v mfile out   -> showGraph v mfile out   $> Continue
+                ProveSteps n            -> proveSteps n            $> Continue
+                ProveStepsF n           -> proveStepsF n           $> Continue
+                SelectNode i            -> selectNode i            $> Continue
+                ShowConfig mc           -> showConfig mc           $> Continue
+                ShowDest mc             -> showDest mc             $> Continue
+                OmitCell c              -> omitCell c              $> Continue
+                ShowLeafs               -> showLeafs               $> Continue
+                ShowRule   mc           -> showRule mc             $> Continue
+                ShowRules  ns           -> showRules ns            $> Continue
+                ShowPrecBranch mn       -> showPrecBranch mn       $> Continue
+                ShowChildren mn         -> showChildren mn         $> Continue
+                Label ms                -> label ms                $> Continue
+                LabelAdd l mn           -> labelAdd l mn           $> Continue
+                LabelDel l              -> labelDel l              $> Continue
+                Redirect inn file       -> redirect inn file
+                                                                   $> Continue
+                Try ref                 -> tryAxiomClaim ref       $> Continue
+                TryF ac                 -> tryFAxiomClaim ac       $> Continue
+                Clear n                 -> clear n                 $> Continue
+                SaveSession file        -> saveSession file        $> Continue
+                SavePartialProof mn f   -> savePartialProof mn f   $> Continue
+                Pipe inn file args      -> pipe inn file args
+                                                                   $> Continue
+                AppendTo inn file       -> appendTo inn file
+                                                                   $> Continue
+                Alias a                 -> alias a                 $> Continue
+                TryAlias name           ->
+                    tryAlias name printAux printKore
+                LoadScript file         -> loadScript file
+                                                                   $> Continue
+                ProofStatus             -> proofStatus             $> Continue
+                Log opts                -> log opts                $> Continue
+                DebugAttemptEquation op -> debugAttemptEquation op $> Continue
+                DebugApplyEquation op   -> debugApplyEquation op   $> Continue
+                DebugEquation op        -> debugEquation op        $> Continue
+                Exit                    -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
             ( replOut
@@ -439,13 +451,14 @@ showGraph view mfile out = do
                 return $ Graph.emap Just graph
             _ ->
                 maybe (showOriginalGraph graph) return (smoothOutGraph graph)
-    axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
-       then liftIO $ maybe
-                        (showDotGraph (length axioms) processedGraph)
-                        (saveDotGraph (length axioms) processedGraph format)
-                        mfile
+        then
+            liftIO
+            $ maybe
+                (showDotGraph processedGraph)
+                (saveDotGraph processedGraph format)
+                mfile
        else putStrLn' "Graphviz is not installed."
   where
     showOriginalGraph graph = do
@@ -498,11 +511,42 @@ loadScript
     -> ReplM m ()
 loadScript file = parseEvalScript file DisableOutput
 
-handleLog
+-- | Change the general log settings.
+log
     :: MonadState ReplState m
-    => Log.KoreLogOptions
+    => GeneralLogOptions
     -> m ()
-handleLog t = field @"koreLogOptions" .= t
+log generalLogOptions =
+    field @"koreLogOptions" %= generalLogOptionsTransformer generalLogOptions
+
+-- | Log debugging information about attempting to apply
+-- specific equations.
+debugAttemptEquation
+    :: MonadState ReplState m
+    => Log.DebugAttemptEquationOptions
+    -> m ()
+debugAttemptEquation debugAttemptEquationOptions =
+    field @"koreLogOptions"
+        %= debugAttemptEquationTransformer debugAttemptEquationOptions
+
+-- | Log when specific equations apply.
+debugApplyEquation
+    :: MonadState ReplState m
+    => Log.DebugApplyEquationOptions
+    -> m ()
+debugApplyEquation debugApplyEquationOptions =
+    field @"koreLogOptions"
+        %= debugApplyEquationTransformer debugApplyEquationOptions
+
+-- | Log the attempts and the applications of specific
+-- equations.
+debugEquation
+    :: MonadState ReplState m
+    => Log.DebugEquationOptions
+    -> m ()
+debugEquation debugEquationOptions =
+    field @"koreLogOptions"
+        %= debugEquationTransformer debugEquationOptions
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -654,12 +698,55 @@ showRule configNode = do
     case maybeRule of
         Nothing -> putStrLn' "Invalid node!"
         Just rule -> do
-            axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = from @_ @Attribute.RuleIndex rule
-            putStrLn'
-                $ fromMaybe "Error: identifier attribute wasn't initialized."
-                $ showAxiomOrClaim (length axioms) ruleIndex
+            putStrLn' $ showRuleIdentifier rule
+
+showRules
+    :: Monad m
+    => (ReplNode, ReplNode)
+    -> ReplM m ()
+showRules (ReplNode node1, ReplNode node2) = do
+    graph <- getInnerGraph
+    let path =
+            Graph.lesp node1 node2 graph
+            & Graph.unLPath
+    case path of
+        [] -> putStrLn' noPath
+        [singleNode] ->
+            getRuleFor (singleNode & fst & ReplNode & Just)
+            >>= putStrLn' . maybe "Invalid node!" showRuleIdentifier
+        (_ : labeledNodes) -> do
+            let mapPath = Map.fromList labeledNodes
+            putStrLn' $ Map.foldrWithKey acc "Rules applied:" mapPath
+  where
+    noPath =
+         "There is no path between "
+         <> show node1
+         <> " and "
+         <> show node2
+         <> "."
+    acc node rules result =
+        result
+        <> "\n  to reach node "
+        <> show node
+        <> " the following rules were applied:"
+        <> case Foldable.toList rules of
+              [] -> " Implication checking."
+              rules' -> foldr oneStepRuleIndexes "" rules'
+    oneStepRuleIndexes rule result =
+        result <> " " <> showRuleIdentifier rule
+
+showRuleIdentifier
+    :: From rule AttrLabel.Label
+    => From rule RuleIndex
+    => rule
+    -> String
+showRuleIdentifier rule =
+    fromMaybe
+        (showAxiomOrClaim ruleIndex)
+        (showAxiomOrClaimName ruleIndex (getNameText rule))
+  where
+    ruleIndex = getInternalIdentifier rule
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -1163,7 +1250,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
             let
                 command = substituteAlias aliasDef replAlias
                 parsedCommand =
-                    fromMaybe ShowUsage $ parseMaybe commandParser command
+                    fromMaybe
+                        ShowUsage
+                        $ parseMaybe commandParser command
             config <- ask
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
@@ -1177,7 +1266,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
     runInterpreter cmd config st =
         lift
             $ (`runStateT` st)
-            $ runReaderT (replInterpreter0 printAux printKore cmd) config
+            $ runReaderT
+                (replInterpreter0 printAux printKore cmd)
+                config
 
 -- | Performs n proof steps, picking the next node unless branching occurs.
 -- Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1292,20 +1383,20 @@ printNotFound = putStrLn' "Variable or index not found"
 showDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int -> Gr CommonProofState (Maybe (Seq axiom)) -> IO ()
-showDotGraph len =
+    => Gr CommonProofState (Maybe (Seq axiom))
+    -> IO ()
+showDotGraph =
     flip Graph.runGraphvizCanvas' Graph.Xlib
-        . Graph.graphToDot (graphParams len)
+        . Graph.graphToDot graphParams
 
 saveDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int
-    -> Gr CommonProofState (Maybe (Seq axiom))
+    => Gr CommonProofState (Maybe (Seq axiom))
     -> Graph.GraphvizOutput
     -> FilePath
     -> IO ()
-saveDotGraph len gr format file =
+saveDotGraph gr format file =
     withExistingDirectory file saveGraphImg
   where
     saveGraphImg :: FilePath -> IO ()
@@ -1313,7 +1404,7 @@ saveDotGraph len gr format file =
         void
         $ Graph.addExtension
             (Graph.runGraphviz
-                (Graph.graphToDot (graphParams len) gr)
+                (Graph.graphToDot graphParams gr)
             )
             format
             path
@@ -1321,16 +1412,15 @@ saveDotGraph len gr format file =
 graphParams
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Int
-    -> Graph.GraphvizParams
+    => Graph.GraphvizParams
          Graph.Node
          CommonProofState
          (Maybe (Seq axiom))
          ()
          CommonProofState
-graphParams len = Graph.nonClusteredParams
+graphParams = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
-        [ Graph.textLabel (maybe "" (ruleIndex len) l)
+        [ Graph.textLabel (maybe "" ruleIndex l)
         , Graph.Attr.Style [dottedOrSolidEdge l]
         ]
     , Graph.fmtNode = \(_, ps) ->
@@ -1348,23 +1438,11 @@ graphParams len = Graph.nonClusteredParams
             (Graph.Attr.SItem Graph.Attr.Dotted mempty)
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
-    ruleIndex ln lbl =
+    ruleIndex lbl =
         case headMay . toList $ lbl of
             Nothing -> "Simpl/RD"
             Just rule ->
-                maybe
-                    ( maybe "Unknown"
-                        Text.Lazy.pack
-                        ( showAxiomOrClaim ln
-                        . getInternalIdentifier
-                        $ rule
-                        )
-                    )
-                    Text.Lazy.fromStrict
-                    ( showAxiomOrClaimName ln (getInternalIdentifier rule)
-                    . getNameText
-                    $ rule
-                    )
+                Text.Lazy.pack (showRuleIdentifier rule)
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
     red = Graph.Attr.RGB 200 0 0
@@ -1375,25 +1453,30 @@ showAliasError =
         NameAlreadyDefined -> "Error: Alias name is already defined."
         UnknownCommand     -> "Error: Command does not exist."
 
-showAxiomOrClaim :: Int -> Attribute.RuleIndex -> Maybe String
-showAxiomOrClaim _   (RuleIndex Nothing) = Nothing
-showAxiomOrClaim len (RuleIndex (Just rid))
-  | rid < len = Just $ "Axiom " <> show rid
-  | otherwise = Just $ "Claim " <> show (rid - len)
+showAxiomOrClaim :: Attribute.RuleIndex -> String
+showAxiomOrClaim (RuleIndex Nothing) =
+    "Internal error: rule index was not initialized."
+showAxiomOrClaim (RuleIndex (Just (Attribute.AxiomIndex ruleId))) =
+    "Axiom " <> show ruleId
+showAxiomOrClaim (RuleIndex (Just (Attribute.ClaimIndex ruleId))) =
+    "Claim " <> show ruleId
 
 showAxiomOrClaimName
-    :: Int
-    -> Attribute.RuleIndex
+    :: Attribute.RuleIndex
     -> AttrLabel.Label
-    -> Maybe Text.Text
-showAxiomOrClaimName _ _ (AttrLabel.Label Nothing) = Nothing
-showAxiomOrClaimName _ (RuleIndex Nothing) _ = Nothing
+    -> Maybe String
+showAxiomOrClaimName _ (AttrLabel.Label Nothing) = Nothing
+showAxiomOrClaimName (RuleIndex Nothing) _ = Nothing
 showAxiomOrClaimName
-    len
-    (RuleIndex (Just rid))
+    (RuleIndex (Just (Attribute.AxiomIndex _)))
     (AttrLabel.Label (Just ruleName))
-  | rid < len = Just $ "Axiom " <> ruleName
-  | otherwise = Just $ "Claim " <> ruleName
+  =
+    Just $ "Axiom " <> Text.unpack ruleName
+showAxiomOrClaimName
+    (RuleIndex (Just (Attribute.ClaimIndex _)))
+    (AttrLabel.Label (Just ruleName))
+  =
+    Just $ "Claim " <> Text.unpack ruleName
 
 parseEvalScript
     :: forall t m
