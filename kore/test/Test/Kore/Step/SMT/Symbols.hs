@@ -1,13 +1,19 @@
 module Test.Kore.Step.SMT.Symbols
     ( test_sortDeclaration
+    , test_resolve
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
+import Test.Tasty.HUnit.Ext
 
 import Control.Monad.Trans.Maybe
     ( MaybeT (..)
+    )
+import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
     )
 import Data.Reflection
     ( give
@@ -48,6 +54,9 @@ import Kore.Internal.Variable
 import Kore.Sort
     ( Sort (..)
     )
+import qualified Kore.Step.SMT.AST as AST hiding
+    ( Sort (..)
+    )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
     ( declare
     )
@@ -83,6 +92,7 @@ import Test.Kore.Step.SMT.Builders
     , emptyModule
     , functional
     , indexModule
+    , smthook
     , smtlib
     , sortDeclaration
     , symbolDeclaration
@@ -251,3 +261,57 @@ test_sortDeclaration =
     declareSymbolsAndSorts m =
         Declaration.declare
             (Representation.build m (Attribute.Constructors.indexBySort m))
+
+test_resolve :: [TestTree]
+test_resolve =
+    [ testCase "Builtin indirect declaration" $ do
+        let verifiedModule =
+                indexModule $ emptyModule "m"
+                    `with` sortDeclaration "S1"
+                    `with` sortDeclaration "S2"
+                    `with` sortDeclaration "S3"
+                    `with` (symbolDeclaration "C" "S1" ["S2", "S3"] `with` smthook "c")
+            smtDeclarations = resolveSymbolsAndSorts verifiedModule
+            actual = extractSortDependencies smtDeclarations
+            expected = []
+        assertEqual "" expected actual
+    , testCase "Constructor indirect declaration" $ do
+        let verifiedModule =
+                indexModule $ emptyModule "m"
+                    `with` sortDeclaration "S1"
+                    `with` sortDeclaration "S2"
+                    `with` sortDeclaration "S3"
+                    `with`
+                        (symbolDeclaration "C" "S1" ["S2", "S3"]
+                            `with` smtlib "D"
+                            `with` constructor
+                            `with` functional
+                        )
+                    `with` constructorAxiom "S1" [("C", ["S2", "S3"])]
+            smtDeclarations = resolveSymbolsAndSorts verifiedModule
+            actual = extractSortDependencies smtDeclarations
+            expected = ["S1", "S2", "S3"] & fmap (Atom . encodeName)
+        assertEqual "" expected actual
+    ]
+  where
+    resolveSymbolsAndSorts
+        :: VerifiedModule Attribute.Symbol
+        -> AST.SmtDeclarations
+    resolveSymbolsAndSorts m =
+        Representation.build m (Attribute.Constructors.indexBySort m)
+    idC = testId "C"
+    extractSortDependencies declarations =
+        let symbolDeclaration' =
+                declarations
+                & AST.symbols
+                & Map.lookup idC
+                & fromJust
+                & AST.declaration
+         in case symbolDeclaration' of
+                AST.SymbolBuiltin
+                    AST.IndirectSymbolDeclaration { sortDependencies } ->
+                        sortDependencies
+                AST.SymbolConstructor
+                    AST.IndirectSymbolDeclaration { sortDependencies } ->
+                        sortDependencies
+                _ -> error "Expecting an indirect symbol declaration."
