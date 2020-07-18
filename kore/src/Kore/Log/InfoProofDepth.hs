@@ -49,7 +49,7 @@ instance Entry InfoProofDepth where
     helpDoc _ = "log depth of proof graph"
 
 infoUnprovenDepth :: MonadLog log => ProofDepth -> log ()
-infoUnprovenDepth depth = logEntry . InfoUnprovenDepth $ depth
+infoUnprovenDepth = logEntry . InfoUnprovenDepth
 
 infoProvenDepth :: MonadLog log => ProofDepth -> log ()
-infoProvenDepth depth = logEntry . InfoProvenDepth $ depth
+infoProvenDepth = logEntry . InfoProvenDepth
