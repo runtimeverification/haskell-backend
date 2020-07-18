@@ -44,4 +44,4 @@ instance Entry InfoExecDepth where
     helpDoc _ = "log depth of execution graph"
 
 infoExecDepth :: MonadLog log => ExecDepth -> log ()
-infoExecDepth depth = logEntry . InfoExecDepth $ depth
+infoExecDepth = logEntry . InfoExecDepth
