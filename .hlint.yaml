@@ -164,7 +164,11 @@
       - Kore.Builtin.MapSymbols
       - Kore.Debug
 
-- ignore: {name: "Use newtype instead of data", within: [GlobalMain]}
+- ignore:
+    name: "Use newtype instead of data"
+    within:
+      - GlobalMain
+      - Kore.Log.InfoExecDepth
 
 - ignore: {name: "Redundant compare", within: [Kore.Syntax.Id]}
 

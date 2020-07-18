@@ -83,6 +83,12 @@ import Kore.Log.InfoAttemptUnification
 import Kore.Log.InfoExecBreadth
     ( InfoExecBreadth
     )
+import Kore.Log.InfoExecDepth
+    ( InfoExecDepth
+    )
+import Kore.Log.InfoProofDepth
+    ( InfoProofDepth
+    )
 import Kore.Log.InfoReachability
     ( InfoReachability
     )
@@ -153,6 +159,8 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugAttemptEquation
     , mk $ Proxy @DebugApplyEquation
     , mk $ Proxy @DebugUnification
+    , mk $ Proxy @InfoProofDepth
+    , mk $ Proxy @InfoExecDepth
     ]
   where
     mk proxy =
