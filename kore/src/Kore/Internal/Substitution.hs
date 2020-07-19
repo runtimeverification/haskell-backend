@@ -69,6 +69,7 @@ import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import ErrorContext
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified (..)
@@ -92,7 +93,12 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-    ( unparseToString
+    ( Unparse
+    , unparse
+    , unparseToString
+    )
+import Pretty
+    ( Pretty
     )
 import qualified Pretty
 import qualified SQL
@@ -117,6 +123,14 @@ instance
 instance NFData variable => NFData (Assignment variable)
 
 instance Hashable variable => Hashable (Assignment variable)
+
+instance (Ord variable, Unparse variable) => Pretty (Assignment variable) where
+    pretty Assignment_ { assignedVariable, assignedTerm } =
+        Pretty.vsep
+        [ Pretty.hsep ["assigned variable:", unparse assignedVariable]
+        , "assigned term:"
+        , Pretty.indent 4 (unparse assignedTerm)
+        ]
 
 -- | Smart constructor for 'Assignment'. It enforces the invariant
 -- that for variable renaming, the smaller variable will be on the
@@ -419,7 +433,7 @@ wrap xs = Substitution xs
 -- this unless you are sure you need it.
 unsafeWrap
     :: HasCallStack
-    => Ord variable
+    => InternalVariable variable
     => [(SomeVariable variable, TermLike variable)]
     -> Substitution variable
 unsafeWrap =
@@ -437,6 +451,7 @@ unsafeWrap =
         -- and if this is an element variable substitution, the substitution
         -- must be defined.
         & assert (not $ isElementVariable var && isBottom termLike)
+        & withErrorContext "while wrapping substitution" (assign var termLike)
       where
         Variable { variableName } = var
         occurs = TermLike.hasFreeVariable variableName
@@ -444,7 +459,7 @@ unsafeWrap =
             TermLike.hasFreeVariable variableName' termLike
 
 unsafeWrapFromAssignments
-    :: Ord variable
+    :: InternalVariable variable
     => [Assignment variable]
     -> Substitution variable
 unsafeWrapFromAssignments =
@@ -677,6 +692,23 @@ instance Semigroup (Normalization variable) where
 
 instance Monoid (Normalization variable) where
     mempty = Normalization mempty mempty
+
+instance InternalVariable variable => Pretty (Normalization variable) where
+    pretty Normalization { normalized, denormalized } =
+        Pretty.vsep
+        [ "normalized:"
+        , (Pretty.indent 4 . Pretty.vsep) (map prettyPair normalized)
+        , "denormalized:"
+        , (Pretty.indent 4 . Pretty.vsep) (map prettyPair denormalized)
+        ]
+      where
+        prettyPair assignment =
+            Pretty.vsep
+            [ "variable:"
+            , Pretty.indent 4 (unparse $ assignedVariable assignment)
+            , "term:"
+            , Pretty.indent 4 (unparse $ assignedTerm assignment)
+            ]
 
 mkNormalization
     :: InternalVariable variable
