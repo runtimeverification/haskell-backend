@@ -36,9 +36,6 @@ import Kore.IndexedModule.IndexedModule
     ( IndexedModule
     , recursiveIndexedModuleSymbolSentences
     )
-import Kore.Sort
-    ( Sort
-    )
 import qualified Kore.Step.SMT.AST as AST
 import Kore.Syntax.Id
     ( Id
@@ -51,9 +48,6 @@ import qualified Kore.Syntax.Sentence as Sentence
     )
 import qualified Kore.Syntax.Sentence as Sentence.Symbol
     ( Symbol (..)
-    )
-import Kore.Unparser
-    ( unparseToString
     )
 import qualified Kore.Verified as Verified
 import qualified SMT
@@ -121,12 +115,13 @@ builtinDeclaration
     return
         ( symbolConstructor
         , AST.Symbol
-            { smtFromSortArgs = emptySortArgsToSmt smtName
+            { smtFromSortArgs = const . const $ Just smtName
             , declaration =
                 AST.SymbolBuiltin AST.IndirectSymbolDeclaration
                     { name = AST.AlreadyEncoded smtName
-                    , resultSort = AST.SortReference sentenceSymbolResultSort
-                    , argumentSorts = map AST.SortReference sentenceSymbolSorts
+                    , sortDependencies =
+                        AST.SortReference
+                            <$> sentenceSymbolResultSort : sentenceSymbolSorts
                     }
             }
         )
@@ -150,7 +145,7 @@ smtlibDeclaration
     return
         ( symbolConstructor
         , AST.Symbol
-            { smtFromSortArgs = emptySortArgsToSmt smtName
+            { smtFromSortArgs = const . const $ Just smtName
             , declaration = AST.SymbolDeclaredDirectly
                 SMT.FunctionDeclaration
                     { name = AST.AlreadyEncoded smtName
@@ -178,12 +173,13 @@ constructorDeclaration
         ( symbolConstructor
         , AST.Symbol
             { smtFromSortArgs =
-                emptySortArgsToSmt (AST.encode encodedName)
+                const . const $ Just (AST.encode encodedName)
             , declaration =
                 AST.SymbolConstructor AST.IndirectSymbolDeclaration
                     { name = encodedName
-                    , resultSort = AST.SortReference sentenceSymbolResultSort
-                    , argumentSorts = map AST.SortReference sentenceSymbolSorts
+                    , sortDependencies =
+                        AST.SortReference
+                            <$> sentenceSymbolResultSort : sentenceSymbolSorts
                     }
             }
         )
@@ -194,15 +190,3 @@ constructorDeclaration
     Attribute.Functional { isDeclaredFunctional } =
         Attribute.Symbol.functional attributes
     encodedName = AST.encodable symbolConstructor
-
-emptySortArgsToSmt
-    :: SMT.SExpr
-    -> Map.Map Id AST.SmtSort
-    -> [Sort]
-    -> Maybe SMT.SExpr
-emptySortArgsToSmt representation _ [] = Just representation
-emptySortArgsToSmt representation _ args = (error . unlines)
-    [ "Symbols with arguments not supported yet."
-    , "representation=" ++ SMT.showSExpr representation
-    , "args = " ++ show (fmap unparseToString args)
-    ]

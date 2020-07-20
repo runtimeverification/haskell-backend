@@ -29,6 +29,9 @@ module Kore.Step.Simplification.Simplify
     , notApplicableAxiomEvaluator
     , purePatternAxiomEvaluator
     , isConstructorOrOverloaded
+    -- * Term and predicate simplifiers
+    , makeEvaluateTermCeil
+    , makeEvaluateCeil
     -- * Re-exports
     , MonadSMT, MonadLog
     ) where
@@ -62,10 +65,15 @@ import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -73,6 +81,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -83,6 +93,7 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     , InternalVariable
+    , Sort
     , Symbol
     , TermLike
     , TermLikeF (..)
@@ -232,7 +243,7 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 -- TODO (thomas.tuegel): Factor out these types.
 
-{- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
+{- | Simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
@@ -540,7 +551,7 @@ applicationAxiomSimplifier applicationSimplifier =
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)
 
--- |Checks whether symbol is constructor or overloaded
+-- | Checks whether a symbol is a constructor or is overloaded.
 isConstructorOrOverloaded
     :: MonadSimplify unifier
     => Symbol
@@ -549,3 +560,33 @@ isConstructorOrOverloaded s
   = do
     OverloadSimplifier { isOverloaded } <- askOverloadSimplifier
     return (isConstructor s || isOverloaded s)
+
+makeEvaluateTermCeil
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> Sort
+    -> TermLike variable
+    -> simplifier (OrCondition variable)
+makeEvaluateTermCeil sideCondition sort child =
+    Predicate.makeCeilPredicate sort child
+    & Condition.fromPredicate
+    & simplifyCondition sideCondition
+    & OrCondition.observeAllT
+
+makeEvaluateCeil
+    :: MonadSimplify simplifier
+    => InternalVariable variable
+    => SideCondition variable
+    -> Pattern variable
+    -> simplifier (OrPattern variable)
+makeEvaluateCeil sideCondition child =
+    do
+        let (childTerm, childCondition) = Pattern.splitTerm child
+        ceilCondition <-
+            Predicate.makeCeilPredicate_ childTerm
+            & Condition.fromPredicate
+            & simplifyCondition sideCondition
+        Pattern.andCondition Pattern.top (ceilCondition <> childCondition)
+            & pure
+    & OrPattern.observeAllT

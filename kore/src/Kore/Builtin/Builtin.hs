@@ -103,9 +103,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( predicateSort
     )
-import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
-    )
 import Kore.Step.Simplification.SimplificationType as SimplificationType
     ( SimplificationType (..)
     )
@@ -116,6 +113,7 @@ import Kore.Step.Simplification.Simplify
     , InternalVariable
     , MonadSimplify
     , applicationAxiomSimplifier
+    , makeEvaluateTermCeil
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
@@ -491,7 +489,11 @@ unifyEqualsUnsolved
     -> unifier (Pattern variable)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
-    orCondition <- Ceil.makeEvaluateTerm SideCondition.topTODO unified
+    orCondition <-
+        makeEvaluateTermCeil
+            SideCondition.topTODO
+            predicateSort
+            unified
     predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
