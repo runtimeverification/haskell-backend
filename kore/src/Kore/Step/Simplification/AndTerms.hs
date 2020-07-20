@@ -331,7 +331,7 @@ equalAndEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 equalAndEquals first second
-  | first == second =
+  | unDefined first == unDefined second =
     return (Pattern.fromTermLike first)
 equalAndEquals _ _ = empty
 
