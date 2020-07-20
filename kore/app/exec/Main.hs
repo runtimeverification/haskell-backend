@@ -3,8 +3,9 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Monad.Catch
-    ( MonadMask
-    , SomeException
+    ( Exception (..)
+    , MonadMask
+    , SomeException (..)
     , fromException
     , handle
     , throwM
@@ -575,6 +576,7 @@ mainWithOptions execOptions = do
             writeOptionsAndKoreFiles tmpDir execOptions
             go
                 & handle handleWithConfiguration
+                & handle handleSolverException
                 & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
     let KoreExecOptions { rtsStatistics } = execOptions
@@ -592,6 +594,12 @@ mainWithOptions execOptions = do
             Just (SomeEntry entry) -> logEntry entry
             Nothing -> errorException someException
         throwM someException
+
+    -- TODO: this gets thrown and caught twice now, fix this
+    handleSolverException :: SMT.SolverException -> Main ExitCode
+    handleSolverException solverException = do
+        errorException (SomeException solverException)
+        throwM (SomeException solverException)
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
     handleWithConfiguration
@@ -829,9 +837,11 @@ execute
 execute options mainModule worker =
     clockSomethingIO "Executing"
         $ case smtSolver of
-            Z3   -> withZ3
+            Z3   -> withZ3 -- handle handleZ3Exception withZ3
             None -> withoutSMT
   where
+    -- handleZ3Exception (SomeException e) = do
+    --     throwM e
     withZ3 =
         SMT.runSMT config $ do
             give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)

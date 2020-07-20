@@ -26,6 +26,7 @@ module SMT.SimpleSMT
     , simpleCommand
     , simpleCommandMaybe
     , loadFile
+    , SolverException (..)
 
     -- ** S-Expressions
     , SExpr(..)
@@ -151,12 +152,14 @@ module SMT.SimpleSMT
     , existsQ
     ) where
 
-import Prelude hiding
+import Prelude.Kore hiding
     ( abs
     , and
+    , assert
     , concat
     , const
     , div
+    , extract
     , mod
     , not
     , or
@@ -166,8 +169,12 @@ import qualified Colog
 import Control.Concurrent
     ( forkIO
     )
+import Control.Exception
+    ( IOException
+    )
 import qualified Control.Exception as X
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Catch as Exception
 import Data.Bits
     ( testBit
     )
@@ -203,6 +210,7 @@ import System.IO
     )
 import System.Process
     ( ProcessHandle
+    , getProcessExitCode
     , runInteractiveProcess
     , waitForProcess
     )
@@ -344,18 +352,36 @@ command solver c =
         send solver c
         recv solver
 
-stop :: Solver -> IO ExitCode
-stop solver@Solver { solverHandle = SolverHandle { hIn, hOut, hErr, hProc } } = do
-    send solver (List [Atom "exit"])
-    ec <- waitForProcess hProc
-    let handler :: X.IOException -> IO ()
-        handler ex = (debug solver . Text.pack) (show ex)
-    X.handle handler $ do
-        hClose hIn
-        hClose hOut
-        hClose hErr
-    return ec
+newtype SolverException = SolverException String
+    deriving (Show, Typeable)
 
+instance Exception.Exception SolverException
+
+throwSolverException :: ProcessHandle -> IOException -> IO a
+throwSolverException solverHandle _ = do
+    solverExitCode <- getProcessExitCode solverHandle
+    Exception.throwM
+        ( SolverException
+        $ "The Z3 process has been unexpectedly\
+        \ terminated with exit code: "
+        <> maybe "none" show solverExitCode
+        )
+
+stop :: Solver -> IO ExitCode
+stop solver@Solver { solverHandle = SolverHandle { hIn, hOut, hErr, hProc } } =
+    Exception.handle
+        (throwSolverException hProc)
+        (do
+            send solver (List [Atom "exit"])
+            ec <- waitForProcess hProc
+            let handler :: X.IOException -> IO ()
+                handler ex = (debug solver . Text.pack) (show ex)
+            X.handle handler $ do
+                hClose hIn
+                hClose hOut
+                hClose hErr
+            return ec
+        )
 
 -- | Load the contents of a file.
 loadFile :: Solver -> FilePath -> IO ()
@@ -365,7 +391,6 @@ loadFile s file = do
         Left err -> fail (show err)
         Right exprs ->
             mapM_ (command s) exprs
-
 
 -- | A command with no interesting result.
 ackCommand :: Solver -> SExpr -> IO ()
