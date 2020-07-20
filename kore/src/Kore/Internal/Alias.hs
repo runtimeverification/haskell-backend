@@ -78,7 +78,6 @@ instance
     Synthetic (FreeVariables variable) (Application (Alias patternType))
   where
     -- TODO (thomas.tuegel): Consider that there could be bound variables here.
-    -- Also, the alias could introduce its own free variables when expanding.
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
