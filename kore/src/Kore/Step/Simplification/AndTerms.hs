@@ -733,8 +733,7 @@ unifyDefined
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyDefined unifyChildren (Defined_ term1) term2 =
-    lift $ unifyChildren term1 term2
-unifyDefined unifyChildren term1 (Defined_ term2) =
-    lift $ unifyChildren term1 term2
-unifyDefined _ _ _ = empty
+unifyDefined unifyChildren term1 term2
+  | Defined_ child1 <- term1 = lift $ unifyChildren child1 term2
+  | Defined_ child2 <- term2 = lift $ unifyChildren term1 child2
+  | otherwise = empty
