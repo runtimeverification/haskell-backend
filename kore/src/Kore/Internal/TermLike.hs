@@ -90,6 +90,7 @@ module Kore.Internal.TermLike
     , mkEndianness
     , mkSignedness
     , mkDefined
+    , unDefined
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -1556,6 +1557,14 @@ mkDefined = updateCallStack . worker
 -- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
 mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
 mkDefinedAtTop = synthesize . DefinedF . Defined
+
+unDefined :: TermLike variable -> TermLike variable
+unDefined =
+    Recursive.unfold $ \termLike ->
+        let attrs :< termLikeF = Recursive.project termLike in
+        case termLikeF of
+            DefinedF defined -> Recursive.project (getDefined defined)
+            _ -> attrs :< termLikeF
 
 {- | Construct an 'Endianness' pattern.
  -}
