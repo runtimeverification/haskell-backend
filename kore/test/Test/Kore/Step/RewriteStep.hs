@@ -42,6 +42,7 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
@@ -751,6 +752,8 @@ test_narrowing =
         actual <- apply axiom (Pattern.fromTermLike initial)
         let results = OrPattern.fromPatterns [result]
         checkResults results actual
+        let remainders = OrPattern.fromPatterns [remainder]
+        checkRemainders remainders actual
     , testCase "getResultPattern" $ do
         let resultRewriting =
                 Pattern.withCondition (Mock.sigma Mock.b (mkElemVar xRule))
@@ -779,6 +782,14 @@ test_narrowing =
         Pattern.withCondition (Mock.sigma Mock.b (mkElemVar x'))
         $ Condition.fromSingleSubstitution
         $ Substitution.assign (inject x) (Mock.sigma Mock.a (mkElemVar x'))
+    remainder =
+        Pattern.withCondition initial
+        $ Condition.fromPredicate
+        $ Predicate.makeNotPredicate
+        $ Predicate.makeExistsPredicate x'
+        $ Predicate.makeEqualsPredicate_
+            (mkElemVar x)
+            (Mock.sigma Mock.a (mkElemVar x'))
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRulesParallel
