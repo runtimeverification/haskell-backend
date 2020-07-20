@@ -48,6 +48,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import qualified Kore.Sort as Sort
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
     )
@@ -56,10 +57,6 @@ import qualified Kore.Step.Simplification.AndPredicates as And
     )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermEquals
-    )
-import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluate
-    , makeEvaluateTerm
     )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
@@ -224,8 +221,8 @@ makeEvaluateFunctionalOr
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
 makeEvaluateFunctionalOr sideCondition first seconds = do
-    firstCeil <- Ceil.makeEvaluate sideCondition first
-    secondCeilsWithProofs <- mapM (Ceil.makeEvaluate sideCondition) seconds
+    firstCeil <- makeEvaluateCeil sideCondition first
+    secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
     firstNotCeil <- Not.simplifyEvaluated sideCondition firstCeil
     let secondCeils = secondCeilsWithProofs
     secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
@@ -295,9 +292,9 @@ makeEvaluate
     sideCondition
   = do
     let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
-    firstCeil <- Ceil.makeEvaluate sideCondition first'
+    firstCeil <- makeEvaluateCeil sideCondition first'
     let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
-    secondCeil <- Ceil.makeEvaluate sideCondition second'
+    secondCeil <- makeEvaluateCeil sideCondition second'
     firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
     secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
@@ -372,8 +369,8 @@ makeEvaluateTermsToPredicate first second sideCondition
                 $ Predicate.markSimplified
                 $ makeEqualsPredicate_ first second
         Just predicatedOr -> do
-            firstCeilOr <- Ceil.makeEvaluateTerm sideCondition first
-            secondCeilOr <- Ceil.makeEvaluateTerm sideCondition second
+            firstCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort first
+            secondCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort second
             firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate

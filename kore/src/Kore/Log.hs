@@ -25,23 +25,7 @@ import Colog
     ( LogAction (..)
     )
 import qualified Colog
-import Control.Concurrent.Async
-    ( async
-    )
-import Control.Concurrent.Async as Async
 import Control.Concurrent.MVar
-import Control.Concurrent.STM
-    ( atomically
-    , newTChanIO
-    , readTChan
-    , writeTChan
-    )
-import Control.Exception
-    ( BlockedIndefinitelyOnSTM (..)
-    )
-import Control.Monad
-    ( forever
-    )
 import Control.Monad.Catch
     ( MonadMask
     )
@@ -190,29 +174,7 @@ filterSeverity level ActualEntry { actualEntry = SomeEntry entry } =
 -- | Run a 'LoggerT' with the given options.
 runKoreLog :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
 runKoreLog reportDirectory options loggerT =
-    withLogger reportDirectory options $ \logAction ->
-    withAsyncLogger logAction $ \asyncLogAction ->
-        runLoggerT loggerT asyncLogAction
-
-withAsyncLogger
-    :: LogAction IO a
-    -> (LogAction IO a -> IO b)
-    -> IO b
-withAsyncLogger logAction continue = do
-    tChan <- newTChanIO
-    let asyncLogAction = LogAction (atomically . writeTChan tChan)
-    logAsync <- async $ untilDone $ do
-        a <- atomically $ readTChan tChan
-        logAction Colog.<& a
-    mainAsync <- async $ continue asyncLogAction
-    (_, b) <- tryAgain $ Async.waitBoth logAsync mainAsync
-    return b
-  where
-    handleBlockedIndefinitelyOnSTM handler =
-        Exception.handle $ \BlockedIndefinitelyOnSTM -> handler
-    ignore = return ()
-    untilDone = handleBlockedIndefinitelyOnSTM ignore . forever
-    tryAgain action = handleBlockedIndefinitelyOnSTM action action
+    withLogger reportDirectory options $ runLoggerT loggerT
 
 {- | The default Kore logger.
 
