@@ -16,6 +16,7 @@ module Kore.Attribute.Synthetic
 import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import Data.Functor.Const
 import Data.Functor.Foldable
     ( Base
     , Corecursive
@@ -32,6 +33,10 @@ that is, a 'Cofree' tree with branching described by a @'Functor' base@.
 class Functor base => Synthetic syn base where
     -- | @synthetic@ is the @base@-algebra for synthesizing the attribute @syn@.
     synthetic :: base syn -> syn
+
+instance Synthetic a (Const a) where
+    synthetic (Const a) = a
+    {-# INLINE synthetic #-}
 
 {- | @/resynthesize/@ attribute @b@ bottom-up along a tree @s@.
 
