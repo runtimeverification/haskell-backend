@@ -3,8 +3,7 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Monad.Catch
-    ( Exception (..)
-    , MonadMask
+    ( MonadMask
     , SomeException (..)
     , fromException
     , handle
