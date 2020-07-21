@@ -83,6 +83,7 @@ import Generics.SOP
     , SOP (..)
     )
 import qualified Generics.SOP as SOP
+import qualified Generics.SOP.Metadata as SOPMeta
 import GHC.Stack
     ( callStack
     , prettyCallStack
@@ -194,8 +195,8 @@ debugPrecAux datatypeInfo (SOP sop) =
     constrs :: NP ConstructorInfo xss
     constrs =
         case datatypeInfo of
-            SOP.ADT     _ _ cs -> cs
-            SOP.Newtype _ _ c  -> c :* Nil
+            SOP.ADT     _ _ cs _ -> cs
+            SOP.Newtype _ _ c    -> c :* Nil
 
 precConstr, precRecord :: Int
 precConstr = 10  -- precedence of function application
@@ -316,8 +317,18 @@ datatypeInfoCofreeF =
         "Control.Comonad.Trans.Cofree"
         "CofreeF"
         (constrInfo :* Nil)
+        (SOP.POP
+            ((strictnessInfoForX :* (strictnessInfoForY :* Nil)) :* Nil)
+        )
   where
     constrInfo = SOP.Infix ":<" SOP.RightAssociative 5
+    -- TODO: is the strictness info correct?
+    strictnessInfoForX =
+        SOPMeta.StrictnessInfo
+            SOPMeta.NoSourceUnpackedness
+            SOPMeta.NoSourceStrictness
+            SOPMeta.DecidedLazy
+    strictnessInfoForY = strictnessInfoForX
 
 fromCofreeF :: CofreeF f a b -> SOP I '[ '[a, f b] ]
 fromCofreeF (a :< fb) = SOP (Z (I a :* I fb :* Nil))
@@ -482,8 +493,8 @@ diffPrecSOP datatypeInfo (a, SOP aNS) (b, SOP bNS) =
     constrs :: NP ConstructorInfo xss
     constrs =
         case datatypeInfo of
-            SOP.ADT     _ _ cs -> cs
-            SOP.Newtype _ _ c  -> c :* Nil
+            SOP.ADT     _ _ cs _ -> cs
+            SOP.Newtype _ _ c    -> c :* Nil
 
     diffNS
         :: forall xss'
