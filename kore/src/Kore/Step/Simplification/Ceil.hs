@@ -23,7 +23,6 @@ import Control.Error
     )
 import Control.Monad.Reader
     ( MonadReader
-    , ReaderT (..)
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
@@ -163,8 +162,6 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
 -- implicit and explicit.
 {-| Evaluates the ceil of a TermLike, see 'simplify' for details.
 -}
--- NOTE (hs-boot): Please update Ceil.hs-boot file when changing the
--- signature.
 makeEvaluateTerm
     :: forall variable simplifier
     .  InternalVariable variable
@@ -193,18 +190,6 @@ makeEvaluateTerm sideCondition ceilChild =
         , newAxiomCeilSimplifier
         , newConcatMapCeilSimplifier
         ]
-
-ceilSimplifierTermLike
-    ::  InternalVariable variable
-    =>  MonadSimplify simplifier
-    =>  CeilSimplifier
-            (ReaderT (SideCondition variable) simplifier)
-            (TermLike variable)
-            (OrCondition variable)
-ceilSimplifierTermLike =
-    CeilSimplifier $ \Ceil { ceilChild = termLike } ->
-    lift $ ReaderT $ \sideCondition ->
-        makeEvaluateTerm sideCondition termLike
 
 newPredicateCeilSimplifier
     :: Monad simplifier
@@ -235,7 +220,11 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
           | let headAttributes = symbolAttributes patternHead
           , Attribute.Symbol.isTotal headAttributes -> do
             sideCondition <- Reader.ask
-            simplifiedChildren <- mapM (makeEvaluateTerm sideCondition) children
+            let mkChildCeil =
+                    makeEvaluateTermCeil
+                        sideCondition
+                        Sort.predicateSort
+            simplifiedChildren <- mapM mkChildCeil children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate
                 sideCondition
@@ -252,8 +241,10 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
         Inj_ inj -> do
             InjSimplifier { evaluateCeilInj } <- askInjSimplifier
             sideCondition <- Reader.ask
-            (makeEvaluateTerm sideCondition . ceilChild . evaluateCeilInj)
-                input { ceilChild = inj }
+            input { ceilChild = inj }
+                & evaluateCeilInj
+                & ceilChild
+                & makeEvaluateTermCeil sideCondition Sort.predicateSort
         _ -> empty
 
 newBuiltinCeilSimplifier
@@ -314,7 +305,7 @@ makeEvaluateConcatMap
     -> MaybeT simplifier (OrCondition variable)
 makeEvaluateConcatMap sideCondition (Domain.BuiltinMap internalAc) =
     runCeilSimplifierWith
-        (AssocComm.newMapCeilSimplifier ceilSimplifierTermLike)
+        AssocComm.newMapCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
@@ -336,7 +327,7 @@ makeEvaluateBuiltin
     -> MaybeT simplifier (OrCondition variable)
 makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
     runCeilSimplifierWith
-        (AssocComm.newSetCeilSimplifier ceilSimplifierTermLike)
+        AssocComm.newSetCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort

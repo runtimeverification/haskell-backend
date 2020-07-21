@@ -72,6 +72,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
 import Kore.Log.InfoExecBreadth
+import Kore.Log.InfoProofDepth
 import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , leftPattern
@@ -114,6 +115,9 @@ import qualified Logic
 import Prof
 
 type CommonProofState = ProofState.ProofState ReachabilityRule
+
+type CommonTransitionRule m =
+    TransitionRule m (Rule ReachabilityRule) CommonProofState
 
 -- | Extracts the left hand side (configuration) from the
 -- 'CommonProofState'. If the 'ProofState' is 'Proven', then
@@ -265,26 +269,25 @@ verifyClaim
             strategy
             & Foldable.toList
             & Limit.takeWithin depthLimit
-    handle
-        handleLimitExceeded
-        $ Strategy.leavesM
+    proofDepths <-
+        Strategy.leavesM
             updateQueue
             (Strategy.unfoldTransition transit)
-            (limitedStrategy, startGoal)
+            (limitedStrategy, (ProofDepth 0, startGoal))
             & fmap discardStrategy
             & throwUnproven
+            & handle handleLimitExceeded
+    let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
+    infoProvenDepth maxProofDepth
   where
     discardStrategy = snd
 
     handleLimitExceeded
-        :: Strategy.LimitExceeded CommonProofState
-        -> ExceptT (OrPattern VariableName) simplifier ()
-    handleLimitExceeded (Strategy.LimitExceeded patterns) =
-        Monad.Except.throwError
-        . OrPattern.fromPatterns
-        $ fmap
-            (ProofState.proofState lhsProofStateTransformer)
-            patterns
+        :: Strategy.LimitExceeded (ProofDepth, CommonProofState)
+        -> Verifier simplifier a
+    handleLimitExceeded (Strategy.LimitExceeded states) =
+        (Monad.Except.throwError . OrPattern.fromPatterns)
+        (ProofState.proofState lhsProofStateTransformer . snd <$> states)
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -297,30 +300,27 @@ verifyClaim
         genericLength = fromIntegral . length
 
     throwUnproven
-        :: LogicT (Verifier simplifier) CommonProofState
-        -> Verifier simplifier ()
+        :: LogicT (Verifier simplifier) (ProofDepth, CommonProofState)
+        -> Verifier simplifier [ProofDepth]
     throwUnproven acts =
-        Logic.runLogicT acts throwUnprovenOrElse done
-      where
-        done = return ()
-
-    throwUnprovenOrElse
-        :: CommonProofState
-        -> Verifier simplifier ()
-        -> Verifier simplifier ()
-    throwUnprovenOrElse proofState acts = do
-        ProofState.extractUnproven proofState
-            & Foldable.traverse_
-                ( Monad.Except.throwError
-                . OrPattern.fromPattern
-                . getConfiguration
-                )
-        acts
+        do
+            (proofDepth, proofState) <- acts
+            let maybeUnproven = ProofState.extractUnproven proofState
+            Foldable.for_ maybeUnproven $ \unproven -> do
+                infoUnprovenDepth proofDepth
+                Monad.Except.throwError . OrPattern.fromPattern
+                    $ getConfiguration unproven
+            pure proofDepth
+        & Logic.observeAllT
 
     transit instr config =
-        Strategy.transitionRule (transitionRule' claims axioms) instr config
+        Strategy.transitionRule
+            (transitionRule' claims axioms & trackProofDepth)
+            instr
+            config
         & runTransitionT
         & fmap (map fst)
+        & traceProf ":transit"
         & lift
 
 -- | Attempts to perform a single proof step, starting at the configuration
@@ -369,7 +369,7 @@ transitionRule'
     => MonadMask simplifier
     => [ReachabilityRule]
     -> [Rule ReachabilityRule]
-    -> TransitionRule simplifier ReachabilityRule
+    -> CommonTransitionRule simplifier
 transitionRule' claims axioms =
     transitionRule claims axiomGroups
     & profTransitionRule
@@ -382,8 +382,8 @@ transitionRule' claims axioms =
 profTransitionRule
     :: forall m
     .  MonadProf m
-    => TransitionRule m ReachabilityRule
-    -> TransitionRule m ReachabilityRule
+    => CommonTransitionRule m
+    -> CommonTransitionRule m
 profTransitionRule rule prim proofState =
     case prim of
         Prim.ApplyClaims -> tracing ":transit:apply-claims"
@@ -399,8 +399,8 @@ profTransitionRule rule prim proofState =
 logTransitionRule
     :: forall m
     .  MonadSimplify m
-    => TransitionRule m ReachabilityRule
-    -> TransitionRule m ReachabilityRule
+    => CommonTransitionRule m
+    -> CommonTransitionRule m
 logTransitionRule rule prim proofState =
     case proofState of
         ProofState.Goal goal          -> logWith goal
@@ -414,6 +414,32 @@ logTransitionRule rule prim proofState =
             whileCheckImplication goal $ rule prim proofState
         _ ->
             rule prim proofState
+
+{- | Modify a 'TransitionRule' to track the depth of a proof.
+ -}
+trackProofDepth
+    :: forall m rule goal
+    .  TransitionRule m rule (ProofState goal)
+    -> TransitionRule m rule (ProofDepth, ProofState goal)
+trackProofDepth rule prim (proofDepth, proofState) = do
+    proofState' <- rule prim proofState
+    let proofDepth' = (if didRewrite proofState' then succ else id) proofDepth
+    pure (proofDepth', proofState')
+  where
+    didRewrite proofState' =
+        isApply prim && isRewritable proofState && isRewritten proofState'
+
+    isApply Prim.ApplyClaims = True
+    isApply Prim.ApplyAxioms = True
+    isApply _                = False
+
+    isRewritable (ProofState.Goal _)          = True
+    isRewritable (ProofState.GoalRemainder _) = True
+    isRewritable _                            = False
+
+    isRewritten (ProofState.GoalRewritten _) = True
+    isRewritten  ProofState.Proven           = True
+    isRewritten _                            = False
 
 debugProofStateBracket
     :: forall monad
@@ -458,8 +484,8 @@ debugProofStateFinal proofState (coerce -> transition) = do
 withDebugProofState
     :: forall monad
     .  MonadLog monad
-    => TransitionRule monad ReachabilityRule
-    -> TransitionRule monad ReachabilityRule
+    => CommonTransitionRule monad
+    -> CommonTransitionRule monad
 withDebugProofState transitionFunc =
     \transition state ->
         Transition.orElse
@@ -475,8 +501,8 @@ withDebugProofState transitionFunc =
 
 withConfiguration
     :: MonadCatch monad
-    => TransitionRule monad ReachabilityRule
-    -> TransitionRule monad ReachabilityRule
+    => CommonTransitionRule monad
+    -> CommonTransitionRule monad
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where

@@ -37,6 +37,11 @@ module Kore.Repl.Data
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
     , GraphView (..)
+    , GeneralLogOptions (..)
+    , generalLogOptionsTransformer
+    , debugAttemptEquationTransformer
+    , debugApplyEquationTransformer
+    , debugEquationTransformer
     ) where
 
 import Prelude.Kore
@@ -86,6 +91,11 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Log
+    ( ActualEntry (..)
+    , LogAction (..)
+    , MonadLog (..)
+    )
+import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
@@ -200,6 +210,74 @@ data GraphView
     | Expanded
     deriving (Eq, Show)
 
+-- | Log options which can be changed by the log command.
+data GeneralLogOptions =
+    GeneralLogOptions
+        { logType :: !Log.KoreLogType
+        , logLevel :: !Log.Severity
+        , timestampsSwitch :: !Log.TimestampsSwitch
+        , logEntries :: !Log.EntryTypes
+        }
+    deriving (Eq, Show)
+
+generalLogOptionsTransformer
+    :: GeneralLogOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+generalLogOptionsTransformer
+    logOptions@(GeneralLogOptions _ _ _ _)
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.logLevel = logLevel
+        , Log.logEntries = logEntries
+        , Log.logType = logType
+        , Log.timestampsSwitch = timestampsSwitch
+        }
+  where
+    GeneralLogOptions
+        { logLevel
+        , logType
+        , logEntries
+        , timestampsSwitch
+        } = logOptions
+
+debugAttemptEquationTransformer
+    :: Log.DebugAttemptEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugAttemptEquationTransformer
+    debugAttemptEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugAttemptEquationOptions = debugAttemptEquationOptions
+        }
+
+debugApplyEquationTransformer
+    :: Log.DebugApplyEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugApplyEquationTransformer
+    debugApplyEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugApplyEquationOptions = debugApplyEquationOptions
+        }
+
+debugEquationTransformer
+    :: Log.DebugEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugEquationTransformer
+    debugEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugEquationOptions = debugEquationOptions
+        }
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -271,8 +349,19 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
-    | Log KoreLogOptions
+    -- TODO(Ana): 'Log (KoreLogOptions -> KoreLogOptions)', this would need
+    -- the parts of the code which depend on the 'Show' instance of 'ReplCommand'
+    -- to change. Do the same for Debug..Equation.
+    | Log GeneralLogOptions
     -- ^ Setup the Kore logger.
+    | DebugAttemptEquation Log.DebugAttemptEquationOptions
+    -- ^ Log debugging information about attempting to
+    -- apply specific equations.
+    | DebugApplyEquation Log.DebugApplyEquationOptions
+    -- ^ Log when specific equations apply.
+    | DebugEquation Log.DebugEquationOptions
+    -- ^ Log the attempts and the applications of specific
+    -- equations.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -373,7 +462,7 @@ helpText =
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
-    \log <severity> \"[\"<entry>\"]\" <type>      configures the logging output\n\
+    \log <severity> \"[\"<entry>\"]\" <type>  configures the logging output\n\
     \    <switch-timestamp>                   <severity> can be debug, info,\
                                               \ warning, error, or critical;\
                                               \ is optional and defaults to warning\n\
@@ -390,6 +479,14 @@ helpText =
     \                                         <type> can be 'stderr' or 'file filename'\n\
     \                                         <switch-timestamp> can be enable-log-timestamps\
                                               \ or disable-log-timestamps\n\
+    \debug-[type]-equation [eqId1] [eqId2] .. show debugging information for multiple specific equations;\
+                                              \ [type] can be 'attempt' or 'apply', or nothing\
+                                              \ meaning both, as follows ('debug-equation');\n\
+    \                                         example usage: 'debug-attempt-equation eqId',\
+                                              \ 'debug-equation eqId1 eqId2'; without arguments it will\
+                                              \ will disable showing the info, for example: 'debug-apply-equation';\n\
+    \                                         repl command counterparts of the equation command line options;\
+                                              \ see command line help text for more information;\n\
     \exit                                     exits the repl\
     \\n\n\
     \Available modifiers:\n\
@@ -493,7 +590,7 @@ data ReplState = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
-    , koreLogOptions :: !KoreLogOptions
+    , koreLogOptions :: !Log.KoreLogOptions
     -- ^ The log level, log scopes and log type decide what gets logged and
     -- where.
     }
