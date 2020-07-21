@@ -355,13 +355,15 @@ command solver c =
 newtype SolverException = SolverException String
     deriving (Show, Typeable)
 
-instance Exception.Exception SolverException
+instance Exception.Exception SolverException where
+    displayException (SolverException message) =
+        "Solver exception: " <> message
 
 throwSolverException :: ProcessHandle -> IOException -> IO a
 throwSolverException solverHandle _ = do
     solverExitCode <- getProcessExitCode solverHandle
     Exception.throwM
-        ( SolverException
+        ( Exception.SomeException . SolverException
         $ "The Z3 process has been unexpectedly\
         \ terminated with exit code: "
         <> maybe "none" show solverExitCode
