@@ -63,6 +63,9 @@ import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
     )
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( parse
+    )
 import Kore.Step.RulePattern
     ( AllPathRule (..)
     , ImplicationRule (..)
@@ -266,18 +269,37 @@ complexRewriteTermToRule attributes pat =
             (TermLike.And_ _
                 (TermLike.Not_ _ antiLeft)
                 (TermLike.And_ _ requires lhs))
-            rhs ->
-                RewriteRule RulePattern
-                    { left = lhs
-                    , antiLeft = Just antiLeft
-                    , requires = Predicate.wrapPredicate requires
-                    , rhs = termToRHS rhs
-                    , attributes
-                    }
+            rhs -> case AntiLeft.parse antiLeft of
+                Nothing -> (error . show. Pretty.vsep)
+                    [ "Could not parse antileft term"
+                    , Pretty.indent 4 $ unparse antiLeft
+                    , "from pattern"
+                    , Pretty.indent 4 $ unparse pat
+                    ]
+                Just parsedAntiLeft ->
+                    RewriteRule RulePattern
+                        { left = lhs
+                        , antiLeft = Just parsedAntiLeft
+                        , requires = makePredicate "requires" requires
+                        , rhs = termToRHS rhs
+                        , attributes
+                        }
         _ -> (error . show. Pretty.vsep)
             [ "Expected complex rewrite rule form, but got"
             , Pretty.indent 4 $ unparse pat
             ]
+  where
+    makePredicate
+        :: InternalVariable variable
+        => String -> TermLike.TermLike variable -> Predicate.Predicate variable
+    makePredicate name term = case Predicate.makePredicate term of
+        Left err ->
+            (error . show . Pretty.vsep)
+                [ Pretty.sep ["Error for ", Pretty.pretty name]
+                , unparse term
+                , Pretty.pretty err
+                ]
+        Right predicate -> predicate
 
 {- | Match a term encoding an 'QualifiedAxiomPattern'.
 
