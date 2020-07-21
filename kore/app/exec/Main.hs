@@ -23,9 +23,6 @@ import Data.List
     ( intercalate
     )
 import Data.Reflection
-import Data.Semigroup
-    ( (<>)
-    )
 import Data.Text
     ( Text
     , unpack
@@ -72,8 +69,7 @@ import System.Directory
     , setPermissions
     )
 import System.Exit
-    ( ExitCode (..)
-    , exitWith
+    ( exitWith
     )
 import System.FilePath
     ( (</>)
@@ -114,8 +110,7 @@ import Kore.Internal.TermLike
     , noLocationId
     )
 import Kore.Log
-    ( ExeName (..)
-    , KoreLogOptions (..)
+    ( KoreLogOptions (..)
     , LogMessage
     , SomeEntry (..)
     , WithLog

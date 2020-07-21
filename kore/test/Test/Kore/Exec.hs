@@ -10,9 +10,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Applicative
-    ( liftA2
-    )
 import Control.Exception as Exception
 import Data.Default
     ( def

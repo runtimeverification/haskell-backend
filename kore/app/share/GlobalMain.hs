@@ -31,13 +31,7 @@ import Prelude.Kore
 import Control.Exception
     ( evaluate
     )
-import Control.Monad
-    ( when
-    )
 import qualified Control.Monad as Monad
-import Control.Monad.Trans.Class
-    ( lift
-    )
 import Data.List
     ( intercalate
     )
@@ -45,9 +39,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Semigroup
-    ( (<>)
-    )
 import Data.Text
     ( Text
     , pack
@@ -92,7 +83,6 @@ import Options.Applicative
     , maybeReader
     , metavar
     , option
-    , optional
     , overFailure
     , readerError
     , str
@@ -100,7 +90,6 @@ import Options.Applicative
     , switch
     , value
     , (<**>)
-    , (<|>)
     )
 import Options.Applicative.Help.Chunk
     ( Chunk (..)

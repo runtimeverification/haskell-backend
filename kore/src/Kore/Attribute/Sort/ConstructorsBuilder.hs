@@ -10,12 +10,6 @@ module Kore.Attribute.Sort.ConstructorsBuilder
 
 import Prelude.Kore
 
-import Control.Monad
-    ( when
-    )
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 

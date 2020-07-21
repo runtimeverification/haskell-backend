@@ -55,9 +55,6 @@ import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 import Kore.Step.Simplification.Simplify as Simplifier
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-    ( AttemptedAxiomResults (..)
-    )
 import Kore.TopBottom
 import Kore.Unparser
 import qualified Logic

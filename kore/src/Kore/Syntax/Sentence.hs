@@ -65,6 +65,9 @@ import Data.Coerce
 import Data.Generics.Sum.Typed
     ( projectTyped
     )
+import Data.Kind
+    ( Type
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -167,7 +170,7 @@ instance Unparse Alias where
 category from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 -}
-data SentenceAlias (patternType :: *) =
+data SentenceAlias (patternType :: Type) =
     SentenceAlias
         { sentenceAliasAlias        :: !Alias
         , sentenceAliasSorts        :: ![Sort]
@@ -241,7 +244,7 @@ instance Unparse patternType => Unparse (SentenceAlias patternType) where
 the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 -}
-data SentenceSymbol (patternType :: *) =
+data SentenceSymbol (patternType :: Type) =
     SentenceSymbol
         { sentenceSymbolSymbol     :: !Symbol
         , sentenceSymbolSorts      :: ![Sort]
@@ -324,7 +327,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -- are phantom, every use of 'asSentence' for a 'SentenceImport' will require a
 -- type ascription. We should refactor the class so this is not necessary and
 -- remove the parameters.
-data SentenceImport (patternType :: *) =
+data SentenceImport (patternType :: Type) =
     SentenceImport
         { sentenceImportModuleName :: !ModuleName
         , sentenceImportAttributes :: !Attributes
@@ -375,7 +378,7 @@ coerceSentenceImport = coerce
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
  -}
-data SentenceSort (patternType :: *) =
+data SentenceSort (patternType :: Type) =
     SentenceSort
         { sentenceSortName       :: !Id
         , sentenceSortParameters :: ![SortVariable]
@@ -445,7 +448,7 @@ coerceSentenceSort = coerce
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
  -}
-data SentenceAxiom (patternType :: *) =
+data SentenceAxiom (patternType :: Type) =
     SentenceAxiom
         { sentenceAxiomParameters :: ![SortVariable]
         , sentenceAxiomPattern    :: !patternType
@@ -521,7 +524,7 @@ unparseAxiom2
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
  -}
-newtype SentenceClaim (patternType :: *) =
+newtype SentenceClaim (patternType :: Type) =
     SentenceClaim { getSentenceClaim :: SentenceAxiom patternType }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
@@ -558,7 +561,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 See also: 'SentenceSort', 'SentenceSymbol'
 
  -}
-data SentenceHook (patternType :: *)
+data SentenceHook (patternType :: Type)
     = SentenceHookedSort !(SentenceSort patternType)
     | SentenceHookedSymbol !(SentenceSymbol patternType)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
@@ -601,7 +604,7 @@ coerceSentenceHook = coerce
 Section 9.1.6 (Declaration and Definitions).
 
 -}
-data Sentence (patternType :: *)
+data Sentence (patternType :: Type)
     = SentenceAliasSentence  !(SentenceAlias patternType)
     | SentenceSymbolSentence !(SentenceSymbol patternType)
     | SentenceImportSentence !(SentenceImport patternType)
@@ -733,7 +736,7 @@ instance AsSentence SentenceSort where
 instance AsSentence SentenceHook where
     asSentence = SentenceHookSentence
 
-class SentenceSymbolOrAlias (sentence :: * -> *) where
+class SentenceSymbolOrAlias (sentence :: Type -> Type) where
     getSentenceSymbolOrAliasConstructor
         :: sentence patternType -> Id
     getSentenceSymbolOrAliasSortParams

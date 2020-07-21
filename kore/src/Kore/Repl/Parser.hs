@@ -18,7 +18,6 @@ import Prelude.Kore hiding
 import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
-    , ($>)
     )
 import Data.GraphViz
     ( GraphvizOutput
@@ -39,7 +38,6 @@ import Text.Megaparsec
     , noneOf
     , oneOf
     , option
-    , optional
     , try
     )
 import qualified Text.Megaparsec.Char as Char

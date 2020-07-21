@@ -39,9 +39,6 @@ import Data.Hashable
     , unhashed
     )
 import Data.Int
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Map.Strict
     ( Map
     )

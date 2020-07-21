@@ -15,9 +15,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    )
 import Kore.Unparser
     ( unparse
     )

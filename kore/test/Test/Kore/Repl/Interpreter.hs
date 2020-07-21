@@ -33,9 +33,6 @@ import Data.IORef
     , newIORef
     , readIORef
     )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Map.Strict as StrictMap
 import qualified Data.Sequence as Seq
@@ -54,7 +51,6 @@ import Kore.Internal.TermLike
     , mkAnd
     , mkBottom_
     , mkElemVar
-    , mkElementVariable
     , mkTop_
     )
 import qualified Kore.Log as Log
