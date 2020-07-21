@@ -12,6 +12,27 @@ packages:
   original:
     hackage: ghc-trace-events-0.1.2.1
 - completed:
+    hackage: monoidal-containers-0.6.0.1@sha256:7d776942659eb4d70d8b8da5d734396374a6eda8b4622df9e61e26b24e9c8e40,2501
+    pantry-tree:
+      size: 569
+      sha256: c354e916cb3aa9a0728a60f08440dc589a9e6d8275f047dbe9ab73f168247561
+  original:
+    hackage: monoidal-containers-0.6.0.1@sha256:7d776942659eb4d70d8b8da5d734396374a6eda8b4622df9e61e26b24e9c8e40,2501
+- completed:
+    hackage: sqlite-simple-0.4.18.0@sha256:3ceea56375c0a3590c814e411a4eb86943f8d31b93b110ca159c90689b6b39e5,3002
+    pantry-tree:
+      size: 1930
+      sha256: e58b9955e483d51ee0966f8ba4384305d871480e2a38b32ee0fcd4573d74cf95
+  original:
+    hackage: sqlite-simple-0.4.18.0@sha256:3ceea56375c0a3590c814e411a4eb86943f8d31b93b110ca159c90689b6b39e5,3002
+- completed:
+    hackage: direct-sqlite-2.3.26@sha256:04e835402f1508abca383182023e4e2b9b86297b8533afbd4e57d1a5652e0c23,3718
+    pantry-tree:
+      size: 770
+      sha256: 11874ab21e10c5b54cd1e02a037b677dc1e2ee9986f38c599612c56654dc01c3
+  original:
+    hackage: direct-sqlite-2.3.26@sha256:04e835402f1508abca383182023e4e2b9b86297b8533afbd4e57d1a5652e0c23,3718
+- completed:
     hackage: witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
     pantry-tree:
       size: 271
@@ -26,9 +47,6 @@ packages:
   original:
     hackage: witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775
 - completed:
-    cabal-file:
-      size: 1779
-      sha256: e34ea27f5a8f6673de2952c29799da243adb2246b1912a207e903caa9a9dbe34
     name: tasty-test-reporter
     version: 0.1.1.1
     git: https://github.com/ttuegel/tasty-test-reporter.git
@@ -48,9 +66,6 @@ packages:
     hackage: junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
 - completed:
     subdir: eventlog2speedscope
-    cabal-file:
-      size: 1706
-      sha256: 3b51440b75bb61e34c82be0b47363bcaee64f8cb5554e89738d8a772e0943acc
     name: eventlog2speedscope
     version: 0.1.0
     git: https://github.com/ttuegel/pipes-ghc-events.git
@@ -64,9 +79,6 @@ packages:
     commit: 4f3966a4580076a8f6e8ca74e7c1d63c0aae79d2
 - completed:
     subdir: pipes-ghc-events
-    cabal-file:
-      size: 1150
-      sha256: fcf6742c70f45a38f5ee00c163638f147308b82c8532ae9b50101be3baae3243
     name: pipes-ghc-events
     version: 0.1.0.0
     git: https://github.com/ttuegel/pipes-ghc-events.git
@@ -79,9 +91,6 @@ packages:
     git: https://github.com/ttuegel/pipes-ghc-events.git
     commit: 4f3966a4580076a8f6e8ca74e7c1d63c0aae79d2
 - completed:
-    cabal-file:
-      size: 776
-      sha256: 76e013aa2b29b628e82b0ca0374dcb091147d9a45fd92d84a4ec8174656ea189
     name: pipes-sqlite-simple
     version: '0.2'
     git: https://github.com/ttuegel/pipes-sqlite-simple.git
@@ -101,7 +110,7 @@ packages:
     hackage: ghc-events-0.13.0
 snapshots:
 - completed:
-    size: 524996
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/27.yaml
-    sha256: 7ea31a280c56bf36ff591a7397cc384d0dff622e7f9e4225b47d8980f019a0f0
-  original: lts-14.27
+    size: 531718
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/6.yaml
+    sha256: 230a7266fc11f76222bd3bb68e9503ed11d553060a752f164bff6753ed03e271
+  original: lts-16.6
