@@ -4,7 +4,7 @@ import Prelude.Kore
 
 import Control.Monad.Catch
     ( MonadMask
-    , SomeException (..)
+    , SomeException
     , fromException
     , handle
     , throwM
