@@ -50,7 +50,6 @@ import Control.Monad.RWS.Strict
     ( MonadWriter
     , RWST
     , ask
-    , lift
     , runRWST
     , tell
     )
@@ -68,9 +67,6 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Foldable as Foldable
-import Data.Functor
-    ( ($>)
-    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -89,9 +85,6 @@ import Data.IORef
 import qualified Data.List as List
 import Data.List.Extra
     ( upper
-    )
-import Data.List.NonEmpty
-    ( NonEmpty
     )
 import qualified Data.Map.Strict as Map
 import Data.Maybe
@@ -141,6 +134,7 @@ import System.Process
     )
 import Text.Megaparsec
     ( ParseErrorBundle (..)
+    , ShowErrorComponent (..)
     , errorBundlePretty
     , parseMaybe
     , runParser
@@ -1478,6 +1472,10 @@ showAxiomOrClaimName
   =
     Just $ "Claim " <> Text.unpack ruleName
 
+-- TODO: use runParser instead of parseMaybe;
+-- define newtype over String in order to be
+-- able to pretty print more information about the
+-- parser error;
 parseEvalScript
     :: forall t m
     .  MonadSimplify m
@@ -1493,19 +1491,15 @@ parseEvalScript file scriptModeOutput = do
     if exists
         then do
             contents <- lift . liftIO $ readFile file
-            let result = runParser scriptParser file contents
-            either parseFailed executeScript result
+            let result = parseMaybe scriptParser contents
+            maybe parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
   where
-    parseFailed
-        :: ParseErrorBundle String String
-        -> t m ()
-    parseFailed err =
+    parseFailed :: t m ()
+    parseFailed =
         lift . liftIO . putStrLn
             $ "\nCouldn't parse initial script file."
-            <> "\nParser error at: "
-            <> errorBundlePretty err
 
     executeScript
         :: [ReplCommand]
