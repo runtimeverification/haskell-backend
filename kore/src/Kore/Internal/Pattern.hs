@@ -358,6 +358,8 @@ requireDefined Conditional { term, predicate, substitution } =
 
 {- | Apply a normalized 'Substitution' to a 'Pattern'.
 
+The 'Substitution' of the result will not be normalized.
+
  -}
 substitute
     :: InternalVariable variable
