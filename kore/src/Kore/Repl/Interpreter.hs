@@ -133,7 +133,12 @@ import System.Process
     , std_out
     )
 import Text.Megaparsec
-    ( parseMaybe
+    ( ParseErrorBundle (..)
+    , ShowErrorComponent (..)
+    , errorBundlePretty
+    , mapParseError
+    , parseMaybe
+    , runParser
     )
 
 import Kore.Attribute.Axiom
@@ -1468,10 +1473,12 @@ showAxiomOrClaimName
   =
     Just $ "Claim " <> Text.unpack ruleName
 
--- TODO: use runParser instead of parseMaybe;
--- define newtype over String in order to be
--- able to pretty print more information about the
--- parser error;
+newtype ReplScriptParseError = ReplScriptParseError String
+    deriving (Eq, Ord, Show)
+
+instance ShowErrorComponent ReplScriptParseError where
+    showErrorComponent (ReplScriptParseError err) = err
+
 parseEvalScript
     :: forall t m
     .  MonadSimplify m
@@ -1487,15 +1494,23 @@ parseEvalScript file scriptModeOutput = do
     if exists
         then do
             contents <- lift . liftIO $ readFile file
-            let result = parseMaybe scriptParser contents
-            maybe parseFailed executeScript result
+            let result = runParser scriptParser file contents
+            either parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
   where
-    parseFailed :: t m ()
-    parseFailed =
+    parseFailed err =
         lift . liftIO . putStrLn
-            $ "\nCouldn't parse initial script file."
+            $ "\nCouldn't parse repl script file."
+            <> "\nParser error at: "
+            <> (err & toReplScriptParseErrors & errorBundlePretty)
+
+    toReplScriptParseErrors errorBundle =
+        errorBundle
+            { bundleErrors =
+                mapParseError ReplScriptParseError
+                <$> bundleErrors errorBundle
+            }
 
     executeScript
         :: [ReplCommand]
