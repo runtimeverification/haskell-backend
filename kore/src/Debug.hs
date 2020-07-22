@@ -69,7 +69,6 @@ import Generics.SOP
     , All2
     , Code
     , ConstructorInfo
-    , DatatypeInfo (..)
     , FieldInfo (..)
     , Generic
     , HasDatatypeInfo
@@ -80,7 +79,6 @@ import Generics.SOP
     , SOP (..)
     )
 import qualified Generics.SOP as SOP
-import qualified Generics.SOP.Metadata as SOPMeta
 import GHC.Stack
     ( callStack
     , prettyCallStack
@@ -177,23 +175,19 @@ debugPrecGeneric
     -> Int  -- ^ Surrounding precedence
     -> Doc ann
 debugPrecGeneric a =
-    debugPrecAux (SOP.datatypeInfo $ Proxy @a) (debugSOP (SOP.from a))
+    debugPrecAux constructors (debugSOP (SOP.from a))
+  where
+    constructors = SOP.constructorInfo . SOP.datatypeInfo $ Proxy @a
 
 debugPrecAux
     :: forall xss ann
     .  (All SOP.Top xss)
-    => DatatypeInfo xss
+    => NP ConstructorInfo xss
     -> SOP (K (Int -> Doc ann)) xss
     -> Int  -- ^ Surrounding precedence
     -> Doc ann
-debugPrecAux datatypeInfo (SOP sop) =
-    SOP.hcollapse $ SOP.hzipWith debugConstr constrs sop
-  where
-    constrs :: NP ConstructorInfo xss
-    constrs =
-        case datatypeInfo of
-            SOP.ADT     _ _ cs _ -> cs
-            SOP.Newtype _ _ c    -> c :* Nil
+debugPrecAux constructors (SOP sop) =
+    SOP.hcollapse $ SOP.hzipWith debugConstr constructors sop
 
 precConstr, precRecord :: Int
 precConstr = 10  -- precedence of function application
@@ -306,26 +300,13 @@ instance (Debug a, Debug (f b)) => Debug (CofreeF f a b) where
     debugPrec cofreeF =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecAux datatypeInfoCofreeF (debugSOP $ fromCofreeF cofreeF)
+        debugPrecAux constructorInfoCofreeF (debugSOP $ fromCofreeF cofreeF)
 
-datatypeInfoCofreeF :: DatatypeInfo '[ '[x, y] ]
-datatypeInfoCofreeF =
-    SOP.ADT
-        "Control.Comonad.Trans.Cofree"
-        "CofreeF"
-        (constrInfo :* Nil)
-        (SOP.POP
-            ((strictnessInfoForX :* (strictnessInfoForY :* Nil)) :* Nil)
-        )
+constructorInfoCofreeF :: NP ConstructorInfo '[ '[x, y] ]
+constructorInfoCofreeF =
+    constrInfo :* Nil
   where
     constrInfo = SOP.Infix ":<" SOP.RightAssociative 5
-    -- TODO: is the strictness info correct?
-    strictnessInfoForX =
-        SOPMeta.StrictnessInfo
-            SOPMeta.NoSourceUnpackedness
-            SOPMeta.NoSourceStrictness
-            SOPMeta.DecidedLazy
-    strictnessInfoForY = strictnessInfoForX
 
 fromCofreeF :: CofreeF f a b -> SOP I '[ '[a, f b] ]
 fromCofreeF (a :< fb) = SOP (Z (I a :* I fb :* Nil))
@@ -337,16 +318,12 @@ instance
     debugPrec x =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecAux datatypeInfoCofreeT (debugSOP (fromCofreeT x))
+        debugPrecAux constructorInfoCofreeT (debugSOP (fromCofreeT x))
 
-datatypeInfoCofreeT :: DatatypeInfo '[ '[x] ]
-datatypeInfoCofreeT =
-    SOP.Newtype
-        "Control.Comonad.Trans.Cofree"
-        "CofreeT"
-        constrInfo
-  where
-    constrInfo = SOP.Record "CofreeT" (FieldInfo "runCofreeT" :* Nil)
+constructorInfoCofreeT :: NP ConstructorInfo '[ '[x] ]
+constructorInfoCofreeT =
+    SOP.Record "CofreeT" (FieldInfo "runCofreeT" :* Nil)
+    :* Nil
 
 fromCofreeT :: CofreeT f w a -> SOP I '[ '[w (CofreeF f a (CofreeT f w a))] ]
 fromCofreeT (CofreeT x) = SOP (Z (I x :* Nil))
@@ -475,24 +452,20 @@ diffPrecGeneric
     -> a
     -> Maybe (Int -> Doc ann)
 diffPrecGeneric a b =
-    diffPrecSOP (SOP.datatypeInfo (Proxy @a)) (a, SOP.from a) (b, SOP.from b)
+    diffPrecSOP constructors (a, SOP.from a) (b, SOP.from b)
+  where
+    constructors = SOP.constructorInfo . SOP.datatypeInfo $ Proxy @a
 
 diffPrecSOP
     :: forall a xss ann
     .  (Debug a, All2 Diff xss)
-    => DatatypeInfo xss
+    => NP ConstructorInfo xss
     -> (a, SOP I xss)
     -> (a, SOP I xss)
     -> Maybe (Int -> Doc ann)
-diffPrecSOP datatypeInfo (a, SOP aNS) (b, SOP bNS) =
-    diffNS constrs aNS bNS
+diffPrecSOP constructors (a, SOP aNS) (b, SOP bNS) =
+    diffNS constructors aNS bNS
   where
-    constrs :: NP ConstructorInfo xss
-    constrs =
-        case datatypeInfo of
-            SOP.ADT     _ _ cs _ -> cs
-            SOP.Newtype _ _ c    -> c :* Nil
-
     diffNS
         :: forall xss'
         .  All2 Diff xss'
@@ -595,7 +568,7 @@ instance
     diffPrec x y =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        diffPrecSOP datatypeInfoCofreeF (x, fromCofreeF x) (y, fromCofreeF y)
+        diffPrecSOP constructorInfoCofreeF (x, fromCofreeF x) (y, fromCofreeF y)
 
 instance
     ( Debug a, Debug (w (CofreeF f a (CofreeT f w a)))
@@ -606,7 +579,7 @@ instance
     diffPrec x y =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        diffPrecSOP datatypeInfoCofreeT (x, fromCofreeT x) (y, fromCofreeT y)
+        diffPrecSOP constructorInfoCofreeT (x, fromCofreeT x) (y, fromCofreeT y)
 
 instance (Debug a, Diff a) => Diff (Seq a) where
     diffPrec as bs =
