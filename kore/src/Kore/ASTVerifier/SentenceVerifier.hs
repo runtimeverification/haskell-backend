@@ -83,6 +83,9 @@ import Kore.Internal.TermLike.TermLike
     ( freeVariables
     )
 import Kore.Sort
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( toTermLike
+    )
 import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)
     , fromSentenceAxiom
@@ -426,7 +429,8 @@ verifyClaimSentence sentence =
           where
             rightVars, leftVars :: Set (SomeVariable VariableName)
             rightVars = freeVariables rhs & FreeVariables.toSet
-            lhs = catMaybes [antiLeft] <> [left, unwrapPredicate requires]
+            lhs = Foldable.toList (AntiLeft.toTermLike <$> antiLeft)
+                <> [left, unwrapPredicate requires]
             leftVars = foldMap freeVariables lhs & FreeVariables.toSet
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()

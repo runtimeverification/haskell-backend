@@ -30,6 +30,7 @@ import Test.Kore.Internal.TermLike hiding
     , mapVariables
     , markSimplified
     , simplifiedAttribute
+    , substitute
     )
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
