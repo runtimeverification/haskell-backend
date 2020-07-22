@@ -464,7 +464,7 @@ helpText =
                                               \ to file\n\
     \<command> | external_script              pipes command to external script\
                                               \ and prints the result in the\
-                                              \ repl; can be redirected using > or >> \n\
+                                              \ repl; can be redirected using > or >>\n\
     \\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\
