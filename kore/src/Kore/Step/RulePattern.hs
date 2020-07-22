@@ -113,6 +113,14 @@ import Kore.Internal.Variable
 import Kore.Sort
     ( Sort (..)
     )
+import Kore.Step.AntiLeft
+    ( AntiLeft
+    )
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( mapVariables
+    , substitute
+    , toTermLike
+    )
 import Kore.Step.Step
     ( UnifyingRule (..)
     )
@@ -194,7 +202,7 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
  -}
 data RulePattern variable = RulePattern
     { left  :: !(TermLike.TermLike variable)
-    , antiLeft :: !(Maybe (TermLike.TermLike variable))
+    , antiLeft :: !(Maybe (AntiLeft variable))
     , requires :: !(Predicate variable)
     , rhs :: !(RHS variable)
     , attributes :: !(Attribute.Axiom Symbol variable)
@@ -343,16 +351,15 @@ rhsToPattern RHS { existentials, right, ensures } =
 lhsToTerm
     :: InternalVariable variable
     => TermLike variable
-    -> Maybe (TermLike variable)
+    -> Maybe (AntiLeft variable)
     -> Predicate variable
     -> TermLike variable
-lhsToTerm left antiLeft requires
-  | Just antiLeftTerm <- antiLeft
-  = TermLike.mkAnd
-        (TermLike.mkNot antiLeftTerm)
+lhsToTerm left Nothing requires =
+    TermLike.mkAnd (Predicate.unwrapPredicate requires) left
+lhsToTerm left (Just antiLeft) requires =
+    TermLike.mkAnd
+        (TermLike.mkNot (AntiLeft.toTermLike antiLeft))
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
-  | otherwise
-  = TermLike.mkAnd (Predicate.unwrapPredicate requires) left
 
 
 -- | Wraps a term as a RHS
@@ -393,7 +400,7 @@ instance
     freeVariables rule@(RulePattern _ _ _ _ _) = case rule of
         RulePattern { left, antiLeft, requires, rhs } ->
             freeVariables left
-            <> maybe mempty freeVariables antiLeft
+            <> foldMap freeVariables antiLeft
             <> freeVariables requires
             <> freeVariables rhs
 
@@ -467,7 +474,7 @@ substitute
 substitute subst rulePattern'@(RulePattern _ _ _ _ _) =
     rulePattern'
         { left = TermLike.substitute subst left
-        , antiLeft = TermLike.substitute subst <$> antiLeft
+        , antiLeft = AntiLeft.substitute subst <$> antiLeft
         , requires = Predicate.substitute subst requires
         , rhs = rhsSubstitute subst rhs
         }
@@ -930,7 +937,7 @@ instance UnifyingRule RulePattern where
             rule1 =
                 RulePattern
                 { left = left rule0 & TermLike.substitute subst
-                , antiLeft = antiLeft rule0 & fmap (TermLike.substitute subst)
+                , antiLeft = antiLeft rule0 & fmap (AntiLeft.substitute subst)
                 , requires = requires rule0 & Predicate.substitute subst
                 , rhs =
                     rhs rule0
@@ -947,7 +954,7 @@ instance UnifyingRule RulePattern where
     mapRuleVariables adj rule1@(RulePattern _ _ _ _ _) =
         rule1
             { left = mapTermLikeVariables left
-            , antiLeft = mapTermLikeVariables <$> antiLeft
+            , antiLeft = mapAntiLeftVariables <$> antiLeft
             , requires = mapPredicateVariables requires
             , rhs = RHS
                 { existentials = mapElementVariable adj <$> existentials
@@ -965,6 +972,7 @@ instance UnifyingRule RulePattern where
             } = rule1
         mapTermLikeVariables = TermLike.mapVariables adj
         mapPredicateVariables = Predicate.mapVariables adj
+        mapAntiLeftVariables = AntiLeft.mapVariables adj
 
 instance UnifyingRule RewriteRule where
     matchingPattern (RewriteRule rule) = matchingPattern rule

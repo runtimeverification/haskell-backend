@@ -67,6 +67,9 @@ import Kore.Sort
     , SortActual (SortActual)
     )
 import qualified Kore.Sort as Sort.DoNotUse
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( substitute
+    )
 import Kore.Step.RulePattern
     ( AllPathRule (..)
     , OnePathRule (..)
@@ -133,7 +136,7 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
             in rule
                 { RulePattern.left = TermLike.substitute subst left
                 , RulePattern.antiLeft =
-                    TermLike.substitute subst <$> antiLeft
+                    AntiLeft.substitute subst <$> antiLeft
                 , RulePattern.requires =
                     makeAndPredicate
                         (Predicate.substitute subst requires)

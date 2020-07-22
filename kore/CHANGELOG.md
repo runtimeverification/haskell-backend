@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- A bug is fixed where variables introduced by symbolic narrowing could be
+  captured incorrectly.
+
 ## [0.25.0.0] - 2020-07-08
 
 ### Added
