@@ -83,7 +83,7 @@ writeBugReportArchive base tar = do
 {- | Run the inner action with a temporary directory holding the bug report.
 
 The bug report will be saved as an archive if that was requested by the user, or
-if there is an error in the inner action other than `UserInterrupt`.
+if there is an error in the inner action other than 'UserInterrupt'.
 
  -}
 withBugReport
