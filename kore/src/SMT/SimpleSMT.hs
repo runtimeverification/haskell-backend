@@ -170,7 +170,8 @@ import Control.Concurrent
     ( forkIO
     )
 import Control.Exception
-    ( IOException
+    ( AsyncException
+    , SomeException (..)
     )
 import qualified Control.Exception as X
 import qualified Control.Monad as Monad
@@ -182,6 +183,9 @@ import Data.Ratio
     ( denominator
     , numerator
     , (%)
+    )
+import Data.String
+    ( fromString
     )
 import Data.Text
     ( Text
@@ -200,7 +204,7 @@ import Numeric
     )
 import qualified Prelude
 import System.Exit
-    ( ExitCode
+    ( ExitCode (..)
     )
 import System.IO
     ( Handle
@@ -227,6 +231,7 @@ import Kore.Log.DebugSolver
     , logDebugSolverSendWith
     )
 import qualified Log
+import qualified Pretty
 import SMT.AST
 
 -- ---------------------------------------------------------------------
@@ -274,25 +279,36 @@ data SolverHandle = SolverHandle
     , hProc  :: !ProcessHandle
     }
 
-newtype SolverException = SolverException (Maybe ExitCode)
+data SolverException =
+    SolverException
+    { exitCode :: !(Maybe ExitCode)
+    , someException :: !Exception.SomeException
+    }
     deriving (Show, Typeable)
 
 instance Exception.Exception SolverException where
-    displayException (SolverException solverExitCode) =
-        "Solver exception: The Z3 process has been unexpectedly\
-        \ terminated with exit code: "
-        <> maybe "none" show solverExitCode
+    displayException (SolverException { exitCode, someException }) =
+        (show . Pretty.vsep . catMaybes)
+        [ Just "Error while communicating with the solver:"
+        , Just $ Pretty.indent 4 $ prettyException someException
+        , (Pretty.<+>) "Solver exit code:" . prettyExitCode <$> exitCode
+        ]
+      where
+        prettyException =
+            Pretty.vsep . map fromString . lines . Exception.displayException
+        prettyExitCode ExitSuccess = "0"
+        prettyExitCode (ExitFailure code) = Pretty.pretty code
 
-throwSolverException :: ProcessHandle -> IOException -> IO a
-throwSolverException solverHandle _ =
-    getProcessExitCode solverHandle
-    >>= Exception.throwM . Exception.SomeException . SolverException
+throwSolverException :: ProcessHandle -> SomeException -> IO a
+throwSolverException solverHandle someException
+  | Just _ <- Exception.fromException someException :: Maybe AsyncException =
+    Exception.throwM someException
+  | otherwise = do
+    exitCode <- getProcessExitCode solverHandle
+    Exception.throwM SolverException { exitCode, someException }
 
 trySolver :: ProcessHandle -> IO a -> IO a
-trySolver hProc action =
-    Exception.handle
-        (throwSolverException hProc)
-        action
+trySolver hProc = Exception.handle (throwSolverException hProc)
 
 -- | Start a new solver process.
 newSolver
