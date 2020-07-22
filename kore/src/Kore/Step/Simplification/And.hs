@@ -21,9 +21,6 @@ import Prelude.Kore
 import Control.Error
     ( runMaybeT
     )
-import Control.Monad
-    ( foldM
-    )
 import Control.Monad.State.Strict
     ( StateT
     , evalStateT
@@ -57,9 +54,6 @@ import Changed
 import Kore.Attribute.Synthetic
     ( synthesize
     )
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -87,7 +81,6 @@ import Kore.Internal.TermLike
     , pattern And_
     , pattern Exists_
     , pattern Forall_
-    , InternalVariable
     , pattern Mu_
     , pattern Not_
     , pattern Nu_

@@ -23,8 +23,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , pattern Forall_
+    ( pattern Forall_
     , pattern Implies_
     , TermLike
     , mkAnd

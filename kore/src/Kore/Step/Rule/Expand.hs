@@ -21,9 +21,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Generics.Product
     ( field
     )
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
 import Data.Map.Strict
     ( Map
     )

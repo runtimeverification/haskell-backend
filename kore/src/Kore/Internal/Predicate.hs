@@ -117,9 +117,6 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import Pretty
     ( Pretty (..)
     )

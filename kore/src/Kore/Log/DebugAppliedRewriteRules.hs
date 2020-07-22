@@ -10,9 +10,6 @@ module Kore.Log.DebugAppliedRewriteRules
 
 import Prelude.Kore
 
-import Control.Comonad
-    ( extract
-    )
 import Data.Coerce
     ( coerce
     )

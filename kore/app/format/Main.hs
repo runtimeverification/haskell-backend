@@ -2,9 +2,6 @@ module Main (main) where
 
 import Prelude.Kore
 
-import Data.Semigroup
-    ( (<>)
-    )
 import Options.Applicative
 import System.IO
     ( stdout

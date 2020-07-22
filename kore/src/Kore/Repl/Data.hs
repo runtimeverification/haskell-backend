@@ -61,9 +61,6 @@ import qualified Data.GraphViz as Graph
 import Data.List
     ( intercalate
     )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Map.Strict
     ( Map
     )

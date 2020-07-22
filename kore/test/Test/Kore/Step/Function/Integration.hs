@@ -48,7 +48,6 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )

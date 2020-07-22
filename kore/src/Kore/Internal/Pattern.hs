@@ -64,8 +64,7 @@ import Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , InternalVariable
+    ( InternalVariable
     , Sort
     , TermLike
     , mkAnd

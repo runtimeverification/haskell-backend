@@ -23,8 +23,7 @@ import Kore.Internal.OrPattern
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , rulePattern
+    ( rulePattern
     )
 import Kore.Step.SMT.Declaration.All as SMT.AST
 import Kore.Step.Strategy

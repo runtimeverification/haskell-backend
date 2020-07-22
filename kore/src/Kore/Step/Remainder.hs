@@ -46,8 +46,7 @@ import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify (..)
+    ( MonadSimplify (..)
     )
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.

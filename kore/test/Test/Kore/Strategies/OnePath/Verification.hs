@@ -15,9 +15,6 @@ import Data.Limit
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (Conditional)
-    )
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
@@ -31,7 +28,6 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( OnePathRule (..)
     , ReachabilityRule (..)
-    , RewriteRule (..)
     , RulePattern (..)
     , injectTermIntoRHS
     )

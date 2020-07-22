@@ -58,7 +58,6 @@ import Kore.Internal.TermLike
     , InternalVariable
     , Sort
     , TermLike
-    , VariableName
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike

@@ -133,11 +133,7 @@ import System.Process
     , std_out
     )
 import Text.Megaparsec
-    ( ParseErrorBundle (..)
-    , ShowErrorComponent (..)
-    , errorBundlePretty
-    , parseMaybe
-    , runParser
+    ( parseMaybe
     )
 
 import Kore.Attribute.Axiom
@@ -205,7 +201,7 @@ import Kore.Unparser
 import qualified Pretty
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
--- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
+-- _great care_ of evaluating the RWST to a StateT immediately, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
 type ReplM m a = RWST (Config m) ReplOutput ReplState m a
