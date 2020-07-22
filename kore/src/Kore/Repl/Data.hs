@@ -407,20 +407,14 @@ helpText =
                                               \ with <name>\n\
     \prove <n|name>                           initializes proof mode for the nth\
                                               \ claim or for the claim with <name>\n\
-    \graph [view] [file] [format]             shows the current proof graph (*)(**);\
-                                              \ optional arguments:\n\
-    \                                         [view] can be either 'expanded' or\
-                                              \ (default) 'collapsed';\n\
-    \                                         [format] requires [file] and can be\
-                                              \ jpeg, png, pdf or (default) svg\n\
-    \                                         (file extension is added automatically);\n\
+    \graph [view] [file] [format]             shows the current proof graph (*),\
+                                              \ 'expanded' or 'collapsed';\
+                                              \ or saves it as jpeg, png, pdf or svg\n\
     \step [n]                                 attempts to run 'n' proof steps at\
                                               \ the current node (n=1 by default)\n\
-    \stepf [n]                                attempts to run 'n' proof steps at\
-                                              \ the current node, stepping through\
-                                              \ branchings (n=1 by default);\n\
-    \                                         current node is advanced to the first\
-                                              \ interesting branching node (***)\n\
+    \stepf [n]                                like step, but goes through\
+                                              \ branchings to the first\
+                                              \ interesting branching node (**)\n\
     \select <n>                               select node id 'n' from the graph\n\
     \config [n]                               shows the config for node 'n'\
                                               \ (defaults to current node)\n\
@@ -445,34 +439,22 @@ helpText =
     \label <-l>                               remove a label\n\
     \try (<a|c><num>)|<name>                  attempts <a>xiom or <c>laim at\
                                               \ index <num> or rule with <name>\n\
-    \tryf (<a|c><num>)|<name>                 attempts <a>xiom or <c>laim at\
-                                              \ index <num> or rule with <name>,\
-                                              \ and if successful, it will apply it.\n\
+    \tryf (<a|c><num>)|<name>                 like try, but if successful, it will apply the axiom or claim.\n\
     \clear [n]                                removes all the node's children from the\
-                                              \ proof graph (****)\n\
-    \                                         (defaults to current node)\n\
+                                              \ proof graph (***)\
+                                              \ (defaults to current node)\n\
     \save-session file                        saves the current session to file\n\
-    \save-partial-proof [n] file              creates <file>.kore, containing a module\
-                                              \ with the name uppercase (<file>)-SPEC, a new claim\n\
-    \                                         with the current config (or config <n>) as its LHS\
-                                              \ and all other claims\n\
-    \                                         (including the original claim) marked as trusted\n\
+    \save-partial-proof [n] file              writes a new claim with the\
+                                              \ config 'n' as its LHS and all\
+                                              \ other claims marked as trusted\n\
     \alias <name> = <command>                 adds as an alias for <command>\n\
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
-    \log                                      configures the logging output\n\
-    \   [<severity>]                          <severity> can be debug, info,\n\
-    \   \"[\"<entry>\"]\"                         (default) warning, error, or critical;\n\
-    \   <type>                                [<entry>] is the list of entries\n\
-    \   <switch-timestamp>                    e.g. '[entry1, entry2]';\n\
-    \                                         See available entry types below.\n\
-    \                                         <type> can be 'stderr' or 'file filename'\n\
-    \                                         <switch-timestamp> can be enable-log-timestamps\
-                                              \ or disable-log-timestamps\n\
-    \debug-[type]-equation [eqId1] [eqId2] .. show debugging information for multiple specific equations;\
-                                              \ [type] can be 'attempt' or 'apply',\n\
-    \                                         or nothing meaning both, as follows ('debug-equation')\n\
+    \log [<severity>] \"[\"<entry>\"]\"           configures logging; <severity> can be debug ... error; [<entry>] is a list formed by types below;\n\
+    \    <type> <switch-timestamp>            <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
+    \debug[-type-]equation [eqId1] [eqId2] .. show debugging information for specific equations;\
+                                              \ [-type-] can be '-attempt-', '-apply-' or '-',\n\
     \exit                                     exits the repl\
     \\n\n\
     \Available modifiers:\n\
@@ -496,15 +478,15 @@ helpText =
     "\n\
     \(*) If an edge is labeled as Simpl/RD it means that the target node\n\
     \ was reached using either the SMT solver or the Remove Destination step.\n\
-    \(**) A green node represents the proof has completed on\
+    \    A green node represents the proof has completed on\
     \ that respective branch. \n\
-    \ A red node represents a stuck configuration.\n\
-    \(***) An interesting branching node has at least two children which\n\
+    \    A red node represents a stuck configuration.\n\
+    \(**) An interesting branching node has at least two children which\n\
     \ contain non-bottom leaves in their subtrees. If no such node exists,\n\
     \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
     \ leaf exists (i.e the proof is complete), the current node remains the same\n\
     \ and a message is emitted.\n\
-    \(****) The clear command doesn't allow the removal of nodes which are direct\n\
+    \(***) The clear command doesn't allow the removal of nodes which are direct\n\
     \ descendants of branchings. The steps which create branchings cannot be\n\
     \ partially redone. Therefore, if this were allowed it would result in invalid proofs.\n"
     <> "\nFor more details see https://github.com/kframework/kore/wiki/Kore-REPL#available-commands-in-the-kore-repl\n"
