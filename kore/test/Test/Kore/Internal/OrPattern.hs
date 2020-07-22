@@ -18,9 +18,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import Kore.Internal.OrPattern as OrPattern
 import Kore.Syntax.Variable
 

@@ -17,9 +17,6 @@ import Kore.Internal.Predicate
     ( makeTruePredicate
     )
 import Kore.Internal.TermLike
-import Kore.Sort
-    ( stringMetaSort
-    )
 import Kore.Step.Simplification.StringLiteral
     ( simplify
     )

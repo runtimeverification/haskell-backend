@@ -51,7 +51,6 @@ import Data.Bits
     )
 import Data.Semigroup
     ( Endo (..)
-    , stimes
     )
 import qualified Data.Text as Text
 

@@ -17,9 +17,6 @@ import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.RulePattern
-import Kore.Step.Step
-    ( refreshRule
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
