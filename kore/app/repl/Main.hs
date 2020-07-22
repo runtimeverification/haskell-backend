@@ -62,12 +62,12 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import qualified SMT
+import Stats
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec
     , getTime
     )
-import Stats
 
 import GlobalMain
 

@@ -23,8 +23,8 @@ import Data.Word
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stats as GHC
-import qualified System.Mem as System
 import System.IO
+import qualified System.Mem as System
 
 import Debug
 
