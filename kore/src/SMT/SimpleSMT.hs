@@ -274,6 +274,26 @@ data SolverHandle = SolverHandle
     , hProc  :: !ProcessHandle
     }
 
+newtype SolverException = SolverException (Maybe ExitCode)
+    deriving (Show, Typeable)
+
+instance Exception.Exception SolverException where
+    displayException (SolverException solverExitCode) =
+        "Solver exception: The Z3 process has been unexpectedly\
+        \ terminated with exit code: "
+        <> maybe "none" show solverExitCode
+
+throwSolverException :: ProcessHandle -> IOException -> IO a
+throwSolverException solverHandle _ =
+    getProcessExitCode solverHandle
+    >>= Exception.throwM . Exception.SomeException . SolverException
+
+trySolver :: ProcessHandle -> IO a -> IO a
+trySolver hProc action =
+    Exception.handle
+        (throwSolverException hProc)
+        action
+
 -- | Start a new solver process.
 newSolver
     :: FilePath -- ^ Executable
@@ -315,18 +335,20 @@ warn :: HasCallStack => Solver -> Text -> IO ()
 warn = logMessageWith Log.Warning
 
 send :: Solver -> SExpr -> IO ()
-send Solver { solverHandle = SolverHandle { hIn }, logger } command' = do
-    logDebugSolverSendWith logger command'
-    sendSExpr hIn command'
-    hPutChar hIn '\n'
-    hFlush hIn
+send Solver { solverHandle = SolverHandle { hIn, hProc }, logger } command' =
+    trySolver hProc $ do
+        logDebugSolverSendWith logger command'
+        sendSExpr hIn command'
+        hPutChar hIn '\n'
+        hFlush hIn
 
 recv :: Solver -> IO SExpr
-recv Solver { solverHandle = SolverHandle { hOut } , logger } = do
-    responseLines <- readResponse 0 []
-    let resp = Text.unlines (reverse responseLines)
-    logDebugSolverRecvWith logger resp
-    readSExpr resp
+recv Solver { solverHandle = SolverHandle { hOut, hProc } , logger } =
+    trySolver hProc $ do
+        responseLines <- readResponse 0 []
+        let resp = Text.unlines (reverse responseLines)
+        logDebugSolverRecvWith logger resp
+        readSExpr resp
   where
     {-| Reads an SMT response.
 
@@ -352,38 +374,18 @@ command solver c =
         send solver c
         recv solver
 
-newtype SolverException = SolverException String
-    deriving (Show, Typeable)
-
-instance Exception.Exception SolverException where
-    displayException (SolverException message) =
-        "Solver exception: " <> message
-
-throwSolverException :: ProcessHandle -> IOException -> IO a
-throwSolverException solverHandle _ = do
-    solverExitCode <- getProcessExitCode solverHandle
-    Exception.throwM
-        ( Exception.SomeException . SolverException
-        $ "The Z3 process has been unexpectedly\
-        \ terminated with exit code: "
-        <> maybe "none" show solverExitCode
-        )
-
 stop :: Solver -> IO ExitCode
 stop solver@Solver { solverHandle = SolverHandle { hIn, hOut, hErr, hProc } } =
-    Exception.handle
-        (throwSolverException hProc)
-        (do
-            send solver (List [Atom "exit"])
-            ec <- waitForProcess hProc
-            let handler :: X.IOException -> IO ()
-                handler ex = (debug solver . Text.pack) (show ex)
-            X.handle handler $ do
-                hClose hIn
-                hClose hOut
-                hClose hErr
-            return ec
-        )
+    trySolver hProc $ do
+        send solver (List [Atom "exit"])
+        ec <- waitForProcess hProc
+        let handler :: X.IOException -> IO ()
+            handler ex = (debug solver . Text.pack) (show ex)
+        X.handle handler $ do
+            hClose hIn
+            hClose hOut
+            hClose hErr
+        return ec
 
 -- | Load the contents of a file.
 loadFile :: Solver -> FilePath -> IO ()
