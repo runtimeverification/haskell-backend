@@ -566,6 +566,7 @@ main = do
             (parseKoreExecOptions startTime)
             parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
+    warnIfLowProductivity
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do

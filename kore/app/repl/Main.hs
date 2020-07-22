@@ -67,6 +67,7 @@ import System.Clock
     , TimeSpec
     , getTime
     )
+import Stats
 
 import GlobalMain
 
@@ -205,6 +206,7 @@ main = do
     case localOptions options of
         Nothing -> pure ()
         Just koreReplOptions -> mainWithOptions koreReplOptions
+    warnIfLowProductivity
 
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions

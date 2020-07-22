@@ -9,6 +9,7 @@ module Stats
     , getStats
     , writeStats
     , readStats
+    , warnIfLowProductivity
     ) where
 
 import Prelude.Kore
@@ -23,6 +24,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stats as GHC
 import qualified System.Mem as System
+import System.IO
 
 import Debug
 
@@ -82,3 +84,11 @@ readStats filePath =
     either errorWith return =<< Aeson.eitherDecodeFileStrict filePath
   where
     errorWith message = error ("readStats: " ++ message)
+
+warnIfLowProductivity :: IO ()
+warnIfLowProductivity = do
+    Stats { gc_cpu_ns, cpu_ns } <- getStats
+    when (gc_cpu_ns * 10 > cpu_ns) $
+        hPutStrLn stderr
+            $ "\nWarning! Poor performance: productivity dropped to aprox. "
+            <> show (100 - gc_cpu_ns * 100 `div` cpu_ns) <> "%"
