@@ -53,8 +53,8 @@ priority rewrite rule.
     ...
     ∧ ¬ (∃ Xn . φn(Xn) ∧ Pn(Xn))
   ⌉
-// If β(X₁) is functional then β(X₁)∧ φ(X) = β(X₁) ∧ ⌈β(X₁)∧ φ(X)⌉
-= ⌈ β(X₁) ∧ ⌈β(X₁)∧ φ(X)⌉ ∧ P(X)
+// If β(X₁) is functional then β(X₁) ∧ φ(X) = β(X₁) ∧ ⌈β(X₁) ∧ φ(X)⌉
+= ⌈ β(X₁) ∧ ⌈β(X₁) ∧ φ(X)⌉ ∧ P(X)
     ∧ ¬ (∃ X₁ . φ₁(X₁) ∧ P₁(X₁))
     ...
     ∧ ¬ (∃ Xn . φn(Xn) ∧ Pn(Xn))

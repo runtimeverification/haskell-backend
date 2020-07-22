@@ -80,7 +80,7 @@ commandParser = commandParser0 eof
 
 commandParser0 :: Parser () -> Parser ReplCommand
 commandParser0 endParser =
-    alias <|> logCommand <|> commandParserExceptAlias endParser <|> tryAlias
+    alias <|> logCommand <|> commandParserExceptAlias endParser
 
 commandParserExceptAlias :: Parser () -> Parser ReplCommand
 commandParserExceptAlias endParser = do
@@ -121,6 +121,7 @@ nonRecursiveCommand =
         , loadScript
         , proofStatus
         , exit
+        , tryAlias
         ]
 
 pipeWith
@@ -407,7 +408,7 @@ tryAlias :: Parser ReplCommand
 tryAlias = do
     name <- some (noneOf [' ']) <* Char.space
     arguments <- many
-        (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "")
+        (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "|>")
     return . TryAlias $ ReplAlias { name, arguments }
 
 infixr 2 <$$>

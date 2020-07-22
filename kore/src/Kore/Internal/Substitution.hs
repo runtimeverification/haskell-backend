@@ -46,6 +46,7 @@ module Kore.Internal.Substitution
     , wrapNormalization
     , mkNormalization
     , applyNormalized
+    , substitute
     ) where
 
 import Prelude.Kore hiding
@@ -702,15 +703,29 @@ applyNormalized
 applyNormalized Normalization { normalized, denormalized } =
     Normalization
         { normalized
-        , denormalized =
-            mapAssignedTerm substitute <$> denormalized
+        , denormalized = mapAssignedTerm substitute' <$> denormalized
         }
   where
-    substitute =
+    substitute' =
         TermLike.substitute
         $ Map.mapKeys variableName
         $ Map.fromList
         $ map assignmentToPair normalized
+
+{- | Apply a 'Map' from names to terms to a substitution.
+
+The given mapping will be applied only to the right-hand sides of the
+substitutions (see 'mapAssignedTerm').  The result will not be a normalized
+'Substitution'.
+
+ -}
+substitute
+    :: InternalVariable variable
+    => Map (SomeVariableName variable) (TermLike variable)
+    -> Substitution variable
+    -> Substitution variable
+substitute subst =
+    wrap . (map . mapAssignedTerm) (TermLike.substitute subst) . unwrap
 
 {- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
 
