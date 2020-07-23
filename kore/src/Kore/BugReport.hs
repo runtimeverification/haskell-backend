@@ -17,7 +17,8 @@ import Prelude.Kore
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as GZip
 import Control.Exception
-    ( fromException
+    ( AsyncException (UserInterrupt)
+    , fromException
     )
 import Control.Monad.Catch
     ( ExitCase (..)
@@ -82,7 +83,8 @@ writeBugReportArchive base tar = do
 {- | Run the inner action with a temporary directory holding the bug report.
 
 The bug report will be saved as an archive if that was requested by the user, or
-if there is an error in the inner action other than 'ExitSuccess'
+if there is an error in the inner action other than
+'UserInterrupt' or 'ExitSuccess'.
 
  -}
 withBugReport
@@ -109,6 +111,8 @@ withBugReport exeName bugReport act =
             ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
             ExitCaseException someException
               | Just ExitSuccess == fromException someException ->
+                    optionalWriteBugReport tmpDir
+              | Just UserInterrupt == fromException someException ->
                     optionalWriteBugReport tmpDir
               | otherwise -> do
                     let message = displayException someException
