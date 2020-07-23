@@ -19,6 +19,13 @@ packages:
   original:
     hackage: monoidal-containers-0.6.0.1@sha256:7d776942659eb4d70d8b8da5d734396374a6eda8b4622df9e61e26b24e9c8e40,2501
 - completed:
+    hackage: newtype-0.2.2.0@sha256:44435da250d96ab3a5a861425739f6af523495d1a3943f783df4b053b8a4c108,1354
+    pantry-tree:
+      size: 260
+      sha256: e53d22dd191bfef5d9b9a05a9cf48e96067c22521937468445c171f3800810b4
+  original:
+    hackage: newtype-0.2.2.0@sha256:44435da250d96ab3a5a861425739f6af523495d1a3943f783df4b053b8a4c108,1354
+- completed:
     hackage: sqlite-simple-0.4.18.0@sha256:3ceea56375c0a3590c814e411a4eb86943f8d31b93b110ca159c90689b6b39e5,3002
     pantry-tree:
       size: 1930
@@ -110,7 +117,7 @@ packages:
     hackage: ghc-events-0.13.0
 snapshots:
 - completed:
-    size: 531718
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/6.yaml
-    sha256: 230a7266fc11f76222bd3bb68e9503ed11d553060a752f164bff6753ed03e271
-  original: lts-16.6
+    size: 512195
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2020/7/19.yaml
+    sha256: c5ab758fbac270898400c61189919841d0c6755bff153a651311fca69d906d23
+  original: nightly-2020-07-19

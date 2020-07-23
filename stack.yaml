@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-16.6
+resolver: nightly-2020-07-19
 
 nix:
   packages:
@@ -50,6 +50,8 @@ extra-deps:
   - ghc-trace-events-0.1.2.1
 
   - monoidal-containers-0.6.0.1@sha256:7d776942659eb4d70d8b8da5d734396374a6eda8b4622df9e61e26b24e9c8e40,2501
+  - newtype-0.2.2.0@sha256:44435da250d96ab3a5a861425739f6af523495d1a3943f783df4b053b8a4c108,1354
+
   - sqlite-simple-0.4.18.0@sha256:3ceea56375c0a3590c814e411a4eb86943f8d31b93b110ca159c90689b6b39e5,3002
   - direct-sqlite-2.3.26@sha256:04e835402f1508abca383182023e4e2b9b86297b8533afbd4e57d1a5652e0c23,3718
 
