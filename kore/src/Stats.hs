@@ -90,7 +90,7 @@ readStats filePath =
 
 warnIfLowProductivity :: MonadLog log => MonadIO log => log ()
 warnIfLowProductivity = do
-    Stats { gc_cpu_ns, cpu_ns } <- liftIO $ getStats
+    Stats { gc_cpu_ns, cpu_ns } <- liftIO getStats
     when (gc_cpu_ns * 10 > cpu_ns) $
         logWarning
             $ "\nWarning! Poor performance: productivity dropped to aprox. "
