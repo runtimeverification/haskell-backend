@@ -566,7 +566,6 @@ main = do
             (parseKoreExecOptions startTime)
             parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
-    warnIfLowProductivity
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
@@ -574,7 +573,7 @@ mainWithOptions execOptions = do
     exitCode <-
         withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
-            go
+            go <* warnIfLowProductivity
                 & handle handleWithConfiguration
                 & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions

@@ -206,7 +206,6 @@ main = do
     case localOptions options of
         Nothing -> pure ()
         Just koreReplOptions -> mainWithOptions koreReplOptions
-    warnIfLowProductivity
 
 mainWithOptions :: KoreReplOptions -> IO ()
 mainWithOptions
@@ -273,6 +272,7 @@ mainWithOptions
                         mainModuleName
                         koreLogOptions
 
+                warnIfLowProductivity
                 pure ExitSuccess
     exitWith exitCode
   where
