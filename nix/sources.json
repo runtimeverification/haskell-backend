@@ -3,12 +3,12 @@
         "branch": "master",
         "description": "A library for building Haskell IDE tooling",
         "homepage": "",
-        "owner": "digital-asset",
+        "owner": "ttuegel",
         "repo": "ghcide",
-        "rev": "4149ab539d736328e29957c7eee752e0413fdd40",
-        "sha256": "1d5jpff480p9i2fypxp9cmjjbivi1fy1lw3xhimq7iizwywdnsxv",
+        "rev": "f8aa8dd433cab5da79e5ed29629e94d7fd9083ea",
+        "sha256": "1lkwapmlwqjvkiwxm4ihr6y3cra9c2ii4cw846q4fdhvm620grlv",
         "type": "tarball",
-        "url": "https://github.com/digital-asset/ghcide/archive/4149ab539d736328e29957c7eee752e0413fdd40.tar.gz",
+        "url": "https://github.com/ttuegel/ghcide/archive/f8aa8dd433cab5da79e5ed29629e94d7fd9083ea.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "haskell.nix": {

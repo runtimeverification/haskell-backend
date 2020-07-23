@@ -5,7 +5,7 @@ _: pkgs:
 let
   mkPackages = { ghc, stackYaml }:
     pkgs.haskell-nix.stackProject {
-        src = sources.ghcide;
+        src = sources."ghcide";
         inherit stackYaml;
         modules = [({config, ...}: {
           ghc.package = ghc;
@@ -20,8 +20,8 @@ let
       };
   project = mkPackages {
     # Compiler should be the same as LTS Haskell.
-    ghc = pkgs.haskell-nix.compiler.ghc865;
-    stackYaml = "stack.yaml";
+    ghc = pkgs.haskell-nix.compiler.ghc883;
+    stackYaml = "stack88.yaml";
   };
   mkHieCore = args@{...}:
     let packages = mkPackages args;
