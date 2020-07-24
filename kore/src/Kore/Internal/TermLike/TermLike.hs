@@ -62,7 +62,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
-import Generically
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.ConstructorLike
@@ -235,16 +234,7 @@ data TermLikeF variable child
     | DefinedF       !(Defined child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
-    deriving (GHC.Generic, GHC.Generic1)
-    deriving
-        ( Synthetic (FreeVariables variable)
-        , Synthetic Sort
-        , Synthetic Pattern.Functional
-        , Synthetic Pattern.Function
-        , Synthetic Pattern.Defined
-        , Synthetic Pattern.Simplified
-        , Synthetic Pattern.ConstructorLike
-        ) via (Generically1 (TermLikeF variable))
+    deriving (GHC.Generic)
 
 instance SOP.Generic (TermLikeF variable child)
 
@@ -267,6 +257,246 @@ instance
   where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
+
+instance
+    Ord variable => Synthetic (FreeVariables variable) (TermLikeF variable)
+  where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            BuiltinF builtin -> synthetic builtin
+            EvaluatedF evaluated -> synthetic evaluated
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBytesF internalBytes -> synthetic internalBytes
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+            DefinedF defined -> synthetic defined
+
+instance Synthetic Sort (TermLikeF variable) where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            BuiltinF builtin -> synthetic builtin
+            EvaluatedF evaluated -> synthetic evaluated
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBytesF internalBytes -> synthetic internalBytes
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+            DefinedF defined -> synthetic defined
+
+instance Synthetic Pattern.Functional (TermLikeF variable) where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            BuiltinF builtin -> synthetic builtin
+            EvaluatedF evaluated -> synthetic evaluated
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBytesF internalBytes -> synthetic internalBytes
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+            DefinedF defined -> synthetic defined
+
+instance Synthetic Pattern.Function (TermLikeF variable) where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            BuiltinF builtin -> synthetic builtin
+            EvaluatedF evaluated -> synthetic evaluated
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBytesF internalBytes -> synthetic internalBytes
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+            DefinedF defined -> synthetic defined
+
+instance Synthetic Pattern.Defined (TermLikeF variable) where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            BuiltinF builtin -> synthetic builtin
+            EvaluatedF evaluated -> synthetic evaluated
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBytesF internalBytes -> synthetic internalBytes
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+            DefinedF defined -> synthetic defined
+
+instance Synthetic Pattern.Simplified (TermLikeF variable) where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            BuiltinF builtin -> synthetic builtin
+            EvaluatedF evaluated -> synthetic evaluated
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBytesF internalBytes -> synthetic internalBytes
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+            DefinedF defined -> synthetic defined
+
+instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
+    synthetic =
+        \case
+            AndF and' -> synthetic and'
+            ApplySymbolF application -> synthetic application
+            ApplyAliasF application -> synthetic application
+            BottomF bottom -> synthetic bottom
+            CeilF ceil -> synthetic ceil
+            DomainValueF domainValue -> synthetic domainValue
+            EqualsF equals -> synthetic equals
+            ExistsF exists -> synthetic exists
+            FloorF floor' -> synthetic floor'
+            ForallF forall' -> synthetic forall'
+            IffF iff -> synthetic iff
+            ImpliesF implies -> synthetic implies
+            InF in' -> synthetic in'
+            MuF mu -> synthetic mu
+            NextF next -> synthetic next
+            NotF not' -> synthetic not'
+            NuF nu -> synthetic nu
+            OrF or' -> synthetic or'
+            RewritesF rewrites -> synthetic rewrites
+            TopF top -> synthetic top
+            InhabitantF inhabitant -> synthetic inhabitant
+            BuiltinF builtin -> synthetic builtin
+            EvaluatedF evaluated -> synthetic evaluated
+            StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBytesF internalBytes -> synthetic internalBytes
+            VariableF variable -> synthetic variable
+            EndiannessF endianness -> synthetic endianness
+            SignednessF signedness -> synthetic signedness
+            InjF inj -> synthetic inj
+            DefinedF defined -> synthetic defined
 
 newtype TermLike variable =
     TermLike

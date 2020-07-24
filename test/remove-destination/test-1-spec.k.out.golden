@@ -36,7 +36,7 @@
 #And
   <k>
     a ( K:Int |-> V:Int
-    M ) ~> DotVar1 ~> .
+    M ) ~> _DotVar1 ~> .
   </k>
 #And
   {

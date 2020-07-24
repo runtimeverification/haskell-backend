@@ -13,7 +13,7 @@
                     /* Inj: */ inj{SortId{}, SortKItem{}}(
                         /* Fl Fn D Sfa */ VarX:SortId{}
                     ),
-                    /* Fl Fn D Sfa */ VarDotVar3:SortMap{}
+                    /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortMap{}
                 ),
                 /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("false")
             ),
@@ -32,7 +32,8 @@
                             /* Fl Fn D Sfa */ VarI:SortInt{}
                         )
                     ),
-                    /* opaque child: */ /* Fl Fn D Sfa */ VarDotVar3:SortMap{}
+                    /* opaque child: */ /* Fl Fn D Sfa */
+                    Var'Unds'DotVar3:SortMap{}
                 ),
                 /* Fn Sfc */
                 /* builtin: */
@@ -44,7 +45,8 @@
                         ),
                         /* Fl Fn D Sfa */ VarI0:SortKItem{}
                     ),
-                    /* opaque child: */ /* Fl Fn D Sfa */ VarDotVar6:SortMap{}
+                    /* opaque child: */ /* Fl Fn D Sfa */
+                    Var'Unds'DotVar6:SortMap{}
                 )
             )
         ),
@@ -73,7 +75,7 @@
                             /* Inj: */ inj{SortId{}, SortKItem{}}(
                                 /* Fl Fn D Sfa */ VarX0:SortId{}
                             ),
-                            /* Fl Fn D Sfa */ VarDotVar5:SortK{}
+                            /* Fl Fn D Sfa */ Var'Unds'DotVar5:SortK{}
                         )
                     )
                 ),
@@ -90,11 +92,11 @@
                             /* Fl Fn D Sfa */ Var'Unds'0:SortKItem{}
                         ),
                         /* opaque child: */ /* Fl Fn D Sfa */
-                        VarDotVar3:SortMap{}
+                        Var'Unds'DotVar3:SortMap{}
                     )
                 )
             ),
-            /* Fl Fn D Sfa */ VarDotVar4:SortGeneratedCounterCell{}
+            /* Fl Fn D Sfa */ Var'Unds'DotVar4:SortGeneratedCounterCell{}
         )
     ),
     /* Fn Spa */
@@ -106,7 +108,7 @@
                 /* Fl Fn D Spa */
                 kseq{}(
                     /* Fl Fn D Sfa */ VarI0:SortKItem{},
-                    /* Fl Fn D Sfa */ VarDotVar5:SortK{}
+                    /* Fl Fn D Sfa */ Var'Unds'DotVar5:SortK{}
                 )
             ),
             /* Fn Spa */
@@ -121,10 +123,11 @@
                         ),
                         /* Fl Fn D Sfa */ VarI0:SortKItem{}
                     ),
-                    /* opaque child: */ /* Fl Fn D Sfa */ VarDotVar6:SortMap{}
+                    /* opaque child: */ /* Fl Fn D Sfa */
+                    Var'Unds'DotVar6:SortMap{}
                 )
             )
         ),
-        /* Fl Fn D Sfa */ VarDotVar4:SortGeneratedCounterCell{}
+        /* Fl Fn D Sfa */ Var'Unds'DotVar4:SortGeneratedCounterCell{}
     )
 )
