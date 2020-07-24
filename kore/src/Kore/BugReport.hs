@@ -110,8 +110,8 @@ withBugReport exeName bugReport act =
         case exitCase of
             ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
             ExitCaseException someException
-              | Just ExitSuccess == fromException someException ->
-                    -- ^^^ user exits the repl after the proof was finished
+              | Just ExitSuccess == fromException someException
+                    {- User exits the repl after the proof was finished -} ->
                     optionalWriteBugReport tmpDir
               | Just UserInterrupt == fromException someException ->
                     optionalWriteBugReport tmpDir
