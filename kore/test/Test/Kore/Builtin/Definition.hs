@@ -629,6 +629,11 @@ list2setSetSymbol :: Internal.Symbol
 list2setSetSymbol =
     builtinSymbol "list2setSet" setSort [listSort] & hook "SET.list2set"
 
+inclusionSetSymbol :: Internal.Symbol
+inclusionSetSymbol =
+    builtinSymbol "inclusionSet" boolSort [setSort, setSort]
+        & hook "SET.inclusion"
+
 intersectionSet
     :: TermLike VariableName
     -> TermLike VariableName
@@ -641,6 +646,13 @@ list2setSet
     -> TermLike VariableName
 list2setSet list =
     mkApplySymbol list2setSetSymbol [list]
+
+inclusionSet
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+inclusionSet setLeft setRight =
+    mkApplySymbol inclusionSetSymbol [setLeft, setRight]
 
 -- ** String
 
@@ -1598,6 +1610,7 @@ setModule =
             , hookedSymbolDecl sizeSetSymbol
             , hookedSymbolDecl intersectionSetSymbol
             , hookedSymbolDecl list2setSetSymbol
+            , hookedSymbolDecl inclusionSetSymbol
             ]
         }
 

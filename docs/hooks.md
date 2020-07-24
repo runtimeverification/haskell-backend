@@ -766,6 +766,15 @@ Is the element a member of the given set?
         [hook{}("SET.in")]
 ~~~
 
+### SET.inclusion
+
+Is the first set a subset of the second?
+
+~~~
+    hooked-symbol inclusion{}(Set{}, Set{}) :: Bool{}
+        [hook{}("SET.inclusion")]
+~~~
+
 ### SET.list2set
 
 Convert a list to set

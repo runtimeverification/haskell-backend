@@ -17,6 +17,7 @@ module Test.Kore.Builtin.Set
     , test_intersection_unit
     , test_intersection_idem
     , test_list2set
+    , test_inclusion
     , test_symbolic
     , test_unifyConcreteIdem
     , test_unifyConcreteDistinct
@@ -502,6 +503,61 @@ test_list2set =
             expect = Pattern.fromTermLike (asInternal set)
         (===) expect      =<< evaluateT original
         (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
+
+test_inclusion :: [TestTree]
+test_inclusion =
+    [ testPropertyWithSolver
+        "SET.inclusion success"
+        ( do
+            patKey1 <- forAll genIntegerPattern
+            patKey2 <- forAll genIntegerPattern
+            when (patKey1 == patKey2) discard
+            let patSet1 = elementSet patKey1
+                patSet2 = concatSet patSet1 (elementSet patKey2)
+                patInclusion = inclusionSet patSet1 patSet2
+                predicate =
+                    mkImplies
+                        (mkNot (mkEquals_ patKey1 patKey2))
+                        (mkEquals_ (Test.Bool.asInternal True) patInclusion)
+            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
+            (===) Pattern.top                =<< evaluateT predicate
+        )
+    , testPropertyWithSolver
+        "SET.inclusion success: empty set <= any set"
+        ( do
+            patSomeSet <- forAll genSetPattern
+            let patInclusion = inclusionSet unitSet patSomeSet
+                predicate = mkEquals_ (Test.Bool.asInternal True) patInclusion
+            (===) (Test.Bool.asPattern True) =<< evaluateT patInclusion
+            (===) Pattern.top                =<< evaluateT predicate
+        )
+    , testPropertyWithSolver
+        "SET.inclusion failure: not (some nonempty set <= empty set)"
+        ( do
+            patKey <- forAll genIntegerPattern
+            let patSomeSet = elementSet patKey
+                patInclusion = inclusionSet patSomeSet unitSet
+                predicate = mkEquals_ (Test.Bool.asInternal False) patInclusion
+            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
+            (===) Pattern.top                =<< evaluateT predicate
+        )
+    , testPropertyWithSolver
+        "SET.inclusion failure: lhs key not included in rhs set"
+        ( do
+            patKey1 <- forAll genIntegerPattern
+            patKey2 <- forAll genIntegerPattern
+            when (patKey1 == patKey2) discard
+            let patSet1 = elementSet patKey1
+                patSet2 = concatSet patSet1 (elementSet patKey2)
+                patInclusion = inclusionSet patSet2 patSet1
+                predicate =
+                    mkImplies
+                        (mkNot (mkEquals_ patKey1 patKey2))
+                        (mkEquals_ (Test.Bool.asInternal False) patInclusion)
+            (===) (Test.Bool.asPattern False) =<< evaluateT patInclusion
+            (===) Pattern.top                 =<< evaluateT predicate
+        )
+    ]
 
 setVariableGen :: Sort -> Gen (Set (ElementVariable VariableName))
 setVariableGen sort =
