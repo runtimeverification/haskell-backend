@@ -47,6 +47,9 @@ import Kore.Unparser
     ( Unparse (..)
     )
 
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 -- | Representation of reachability claim types.
@@ -69,6 +72,42 @@ instance SOP.HasDatatypeInfo ClaimPattern
 instance Debug ClaimPattern
 
 instance Diff ClaimPattern
+
+instance From ClaimPattern Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes
+
+instance From ClaimPattern Attribute.Label where
+    from = Attribute.label . attributes
+
+instance From ClaimPattern Attribute.RuleIndex where
+    from = Attribute.identifier . attributes
+
+instance Pretty ClaimPattern where
+    pretty claimPattern'@(ClaimPattern _ _ _ _) =
+        Pretty.vsep
+            [ "left:"
+            , Pretty.indent 4 (unparse left)
+            , "existentials:"
+            , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
+            , "right:"
+            , Pretty.indent 4 (unparse $ OrPattern.toTermLike right)
+            ]
+      where
+        ClaimPattern
+            { left
+            , right
+            , existentials
+            } = claimPattern'
+
+instance TopBottom ClaimPattern where
+    isTop _ = False
+    isBottom _ = False
+
+instance From ClaimPattern Attribute.PriorityAttributes where
+    from = from @(Attribute.Axiom _ _) . attributes
+
+instance From ClaimPattern Attribute.HeatCool where
+    from = from @(Attribute.Axiom _ _) . attributes
 
 claimPatternToTerm
     :: Modality
@@ -141,8 +180,7 @@ instance From OnePathRule Attribute.RuleIndex where
 instance From OnePathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getOnePathRule
 
-{-  | All-Path-Claim rule pattern.
--}
+-- | All-Path-Claim claim pattern.
 newtype AllPathRule =
     AllPathRule { getAllPathRule :: ClaimPattern }
     deriving (Eq, GHC.Generic, Ord, Show)
@@ -187,7 +225,7 @@ instance From AllPathRule Attribute.RuleIndex where
 instance From AllPathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathRule
 
--- | Converts a 'OnePathRule' into its term representation.
+-- | Converts a 'AllPathRule' into its term representation.
 -- This is intended to be used only in unparsing situations,
 -- as some of the variable information related to the
 -- rewriting algorithm is lost.
