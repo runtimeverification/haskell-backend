@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Step.ClaimPattern
     ( ClaimPattern (..)
+    , toSentence
     ) where
 
 import Prelude.Kore
@@ -13,6 +14,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Default as Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -40,12 +42,14 @@ import Kore.Rewriting.RewritingVariable
     , RewritingVariableName
     , getRewritingVariable
     )
+import qualified Kore.Syntax.Definition as Syntax
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
     ( Unparse (..)
     )
+import qualified Kore.Verified as Verified
 
 import Pretty
     ( Pretty (..)
@@ -60,8 +64,7 @@ data ClaimPattern =
     , right :: !(OrPattern RewritingVariableName)
     , attributes :: !(Attribute.Axiom Symbol RewritingVariableName)
     }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+    deriving (Eq, Ord, Show, GHC.Generic)
 
 instance NFData ClaimPattern
 
@@ -232,3 +235,63 @@ instance From AllPathRule Attribute.Trusted where
 allPathRuleToTerm :: AllPathRule -> TermLike VariableName
 allPathRuleToTerm (AllPathRule claimPattern) =
     claimPatternToTerm TermLike.wAF claimPattern
+
+-- | Unified One-Path and All-Path claim pattern.
+data ReachabilityRule
+    = OnePath !OnePathRule
+    | AllPath !AllPathRule
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData ReachabilityRule
+
+instance SOP.Generic ReachabilityRule
+
+instance SOP.HasDatatypeInfo ReachabilityRule
+
+instance Debug ReachabilityRule
+
+instance Diff ReachabilityRule
+
+instance Unparse ReachabilityRule where
+    unparse (OnePath rule) = unparse rule
+    unparse (AllPath rule) = unparse rule
+    unparse2 (AllPath rule) = unparse2 rule
+    unparse2 (OnePath rule) = unparse2 rule
+
+instance TopBottom ReachabilityRule where
+    isTop _ = False
+    isBottom _ = False
+
+instance Pretty ReachabilityRule where
+    pretty (OnePath (OnePathRule rule)) =
+        Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
+    pretty (AllPath (AllPathRule rule)) =
+        Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
+
+instance From ReachabilityRule Attribute.SourceLocation where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.Label where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.RuleIndex where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule Attribute.Trusted where
+    from (OnePath onePathRule) = from onePathRule
+    from (AllPath allPathRule) = from allPathRule
+
+toSentence :: ReachabilityRule -> Verified.Sentence
+toSentence rule =
+    Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
+        { sentenceAxiomParameters = []
+        , sentenceAxiomPattern    = patt
+        , sentenceAxiomAttributes = Default.def
+        }
+  where
+    patt = case rule of
+        OnePath rule' -> onePathRuleToTerm rule'
+        AllPath rule' -> allPathRuleToTerm rule'
