@@ -287,7 +287,7 @@ data SolverException =
     deriving (Show, Typeable)
 
 instance Exception.Exception SolverException where
-    displayException (SolverException { exitCode, someException }) =
+    displayException SolverException { exitCode, someException } =
         (show . Pretty.vsep . catMaybes)
         [ Just "Error while communicating with the solver:"
         , Just $ Pretty.indent 4 $ prettyException someException
