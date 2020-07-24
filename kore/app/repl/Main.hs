@@ -56,13 +56,15 @@ import Kore.Log
 import Kore.Log.KoreLogOptions
     ( parseKoreLogOptions
     )
+import Kore.Log.WarnIfLowProductivity
+    ( warnIfLowProductivity
+    )
 import Kore.Repl.Data
 import Kore.Step.SMT.Lemma
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import qualified SMT
-import Stats
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec

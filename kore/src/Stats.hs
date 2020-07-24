@@ -9,7 +9,6 @@ module Stats
     , getStats
     , writeStats
     , readStats
-    , warnIfLowProductivity
     ) where
 
 import Prelude.Kore
@@ -19,14 +18,10 @@ import Data.Aeson
     , ToJSON
     )
 import qualified Data.Aeson as Aeson
-import Data.Text
-    ( pack
-    )
 import Data.Word
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stats as GHC
-import Log
 import qualified System.Mem as System
 
 import Debug
@@ -87,11 +82,3 @@ readStats filePath =
     either errorWith return =<< Aeson.eitherDecodeFileStrict filePath
   where
     errorWith message = error ("readStats: " ++ message)
-
-warnIfLowProductivity :: MonadLog log => MonadIO log => log ()
-warnIfLowProductivity = do
-    Stats { gc_cpu_ns, cpu_ns } <- liftIO getStats
-    when (gc_cpu_ns * 10 > cpu_ns) $
-        logWarning
-            $ "\nWarning! Poor performance: productivity dropped to aprox. "
-            <> (pack . show) (100 - gc_cpu_ns * 100 `div` cpu_ns) <> "%"

@@ -127,6 +127,9 @@ import Kore.Log
 import Kore.Log.ErrorException
     ( errorException
     )
+import Kore.Log.WarnIfLowProductivity
+    ( warnIfLowProductivity
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
     )
