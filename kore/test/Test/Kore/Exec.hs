@@ -56,6 +56,10 @@ import Kore.Step
     ( priorityAllStrategy
     , priorityAnyStrategy
     )
+import Kore.Step.AntiLeft
+    ( AntiLeft (AntiLeft)
+    )
+import qualified Kore.Step.AntiLeft as AntiLeft.DoNotUse
 import Kore.Step.Rule
 import Kore.Step.RulePattern
     ( RewriteRule (..)
@@ -71,7 +75,8 @@ import Kore.Step.Strategy
     ( LimitExceeded (..)
     )
 import Kore.Syntax.Definition hiding
-    ( Symbol
+    ( Alias
+    , Symbol
     )
 import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
@@ -103,6 +108,11 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
             , asSentence $ constructorDecl "b"
             , asSentence $ constructorDecl "c"
             , asSentence $ constructorDecl "d"
+            , asSentence $
+                aliasDecl
+                    "A"
+                    (mkOr (applyAliasToNoArgs mySort "B") (mkBottom mySort))
+            , asSentence $ aliasDecl "B" (mkAnd (mkTop mySort) (mkTop mySort))
             , functionalAxiom "a"
             , functionalAxiom "b"
             , functionalAxiom "c"
@@ -183,6 +193,11 @@ test_searchPriority =
             , asSentence $ constructorDecl "c"
             , asSentence $ constructorDecl "d"
             , asSentence $ constructorDecl "e"
+            , asSentence $
+                aliasDecl
+                    "A"
+                    (mkOr (applyAliasToNoArgs mySort "B") (mkBottom mySort))
+            , asSentence $ aliasDecl "B" (mkAnd (mkTop mySort) (mkTop mySort))
             , functionalAxiom "a"
             , functionalAxiom "b"
             , functionalAxiom "c"
@@ -359,6 +374,11 @@ constructorDecl name =
             ]
         }
 
+-- | alias name{}() : MySort{} where name{}() := \top{MySort{}} []
+aliasDecl :: Text -> TermLike VariableName -> Verified.SentenceAlias
+aliasDecl name term =
+    mkAlias (testId name) [] mySort [] term
+
 -- |
 --  axiom{R}
 --      \exists{R}(
@@ -391,7 +411,16 @@ simpleRewriteAxiom lhs rhs =
 
 complexRewriteAxiom :: Text -> Text -> Verified.Sentence
 complexRewriteAxiom lhs rhs =
-    rewriteAxiomPriority lhs rhs Nothing (Just mkTop_)
+    rewriteAxiomPriority
+        lhs
+        rhs
+        Nothing
+        (Just AntiLeft
+            { aliasTerm = applyAliasToNoArgs mySort "A"
+            , maybeInner = Nothing
+            , leftHands = []
+            }
+        )
 
 simpleRewriteAxiomWithPriority :: Text -> Text -> Integer -> Verified.Sentence
 simpleRewriteAxiomWithPriority lhs rhs priority =
@@ -399,13 +428,22 @@ simpleRewriteAxiomWithPriority lhs rhs priority =
 
 complexRewriteAxiomWithPriority :: Text -> Text -> Integer -> Verified.Sentence
 complexRewriteAxiomWithPriority lhs rhs priority =
-    rewriteAxiomPriority lhs rhs (Just priority) (Just mkTop_)
+    rewriteAxiomPriority
+        lhs
+        rhs
+        (Just priority)
+        (Just AntiLeft
+            { aliasTerm = applyAliasToNoArgs mySort "A"
+            , maybeInner = Nothing
+            , leftHands = []
+            }
+        )
 
 rewriteAxiomPriority
     :: Text
     -> Text
     -> Maybe Integer
-    -> Maybe (TermLike VariableName)
+    -> Maybe (AntiLeft VariableName)
     -> Verified.Sentence
 rewriteAxiomPriority lhsName rhsName priority antiLeft =
     ( Syntax.SentenceAxiomSentence
@@ -435,6 +473,18 @@ axiomWithAttribute attribute axiom =
         }
   where
     currentAttributes = sentenceAxiomAttributes axiom
+
+applyAliasToNoArgs :: Sort -> Text -> TermLike VariableName
+applyAliasToNoArgs sort name =
+    mkApplyAlias
+        Alias
+            { aliasConstructor = testId name
+            , aliasParams = []
+            , aliasSorts = applicationSorts [] sort
+            , aliasLeft = []
+            , aliasRight = mkTop_
+            }
+        []
 
 applyToNoArgs :: Sort -> Text -> TermLike VariableName
 applyToNoArgs sort name =

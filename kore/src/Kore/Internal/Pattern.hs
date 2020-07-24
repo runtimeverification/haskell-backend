@@ -28,6 +28,7 @@ module Kore.Internal.Pattern
     , simplifiedAttribute
     , assign
     , requireDefined
+    , substitute
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -39,6 +40,10 @@ module Kore.Internal.Pattern
     ) where
 
 import Prelude.Kore
+
+import Data.Map.Strict
+    ( Map
+    )
 
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
@@ -349,3 +354,20 @@ requireDefined Conditional { term, predicate, substitution } =
         }
   where
     sort = termLikeSort term
+
+{- | Apply a normalized 'Substitution' to a 'Pattern'.
+
+The 'Substitution' of the result will not be normalized.
+
+ -}
+substitute
+    :: InternalVariable variable
+    => Map (SomeVariableName variable) (TermLike variable)
+    -> Pattern variable
+    -> Pattern variable
+substitute subst Conditional { term, predicate, substitution } =
+    Conditional
+    { term = TermLike.substitute subst term
+    , predicate = Predicate.substitute subst predicate
+    , substitution = Substitution.substitute subst substitution
+    }

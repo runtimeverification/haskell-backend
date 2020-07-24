@@ -11,19 +11,38 @@ import Test.Tasty
 import Data.Default
     ( def
     )
+import Data.Text
+    ( Text
+    )
 
+import Kore.Internal.ApplicationSorts
+    ( applicationSorts
+    )
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate_
     , makeMultipleAndPredicate
+    , makeNotPredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Alias (Alias)
+    , TermLike
     , mkAnd
+    , mkApplyAlias
+    , mkBottom_
     , mkElemVar
+    , mkEquals_
+    , mkOr
+    )
+import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Step.AntiLeft
+    ( AntiLeft
+    )
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( parse
     )
 import Kore.Step.Rule.Combine
 import Kore.Step.RulePattern
@@ -31,12 +50,20 @@ import Kore.Step.RulePattern
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     )
-import qualified Kore.Step.RulePattern as Rule.DoNotUse
+import qualified Kore.Step.RulePattern as RulePattern
+    ( RulePattern (..)
+    )
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )
 import Kore.Syntax.Variable
+import Kore.Unparser
+    ( unparseToString
+    )
 
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
     ( runNoSMT
@@ -44,7 +71,8 @@ import Test.SMT
 import Test.Tasty.HUnit.Ext
 
 class RewriteRuleBase base where
-    rewritesTo :: base VariableName -> base VariableName -> RewriteRule VariableName
+    rewritesTo
+        :: base VariableName -> base VariableName -> RewriteRule VariableName
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
@@ -65,6 +93,22 @@ instance RewriteRuleBase Pair where
 instance RewriteRuleBase TermLike where
     t1 `rewritesTo` t2 =
         Pair (t1, makeTruePredicate_) `rewritesTo` Pair (t2, makeTruePredicate_)
+
+withAntiLeft
+    :: RewriteRule VariableName
+    -> AntiLeft VariableName
+    -> RewriteRule VariableName
+withAntiLeft (RewriteRule rule) antiLeft =
+    RewriteRule rule {RulePattern.antiLeft = Just antiLeft}
+
+parseAntiLeft
+    :: TermLike VariableName
+    -> IO (AntiLeft VariableName)
+parseAntiLeft term =
+    case AntiLeft.parse term of
+        Nothing -> assertFailure
+            ("Cannot interpret " ++ unparseToString term ++ " as antileft.")
+        Just antiLeft -> return antiLeft
 
 test_combineRulesPredicate :: [TestTree]
 test_combineRulesPredicate =
@@ -150,7 +194,34 @@ test_combineRulesPredicate =
                 , mkElemVar Mock.x `rewritesTo` Mock.c
                 ]
         in assertEqual "" expected actual
+    , testCase "Anti Left" $ do
+        antiLeft <- parseAntiLeft
+            (applyAlias "A"
+                (mkOr
+                    (applyAlias "B"
+                        (mkAnd (mkEquals_ Mock.cf Mock.cg) Mock.ch)
+                    )
+                    mkBottom_
+                )
+            )
+        let expected =
+                makeMultipleAndPredicate
+                    [ makeCeilPredicate_ (mkAnd Mock.a (mkElemVar Mock.var_x_0))
+                    , makeNotPredicate
+                        (makeAndPredicate
+                            (makeEqualsPredicate_ Mock.cf Mock.cg)
+                            (makeCeilPredicate_ (mkAnd Mock.a Mock.ch))
+                        )
+                    , makeCeilPredicate_ (mkAnd Mock.b (mkElemVar Mock.var_x_1))
+                    ]
 
+            actual = mergeRulesPredicate
+                [ mkElemVar Mock.x `rewritesTo` Mock.a
+                , mkElemVar Mock.x `rewritesTo` Mock.b
+                    `withAntiLeft` antiLeft
+                , mkElemVar Mock.x `rewritesTo` Mock.c
+                ]
+        assertEqual "" expected actual
     ]
   where
     x :: TermLike VariableName
@@ -297,6 +368,18 @@ test_combineRulesGrouped =
     x = mkElemVar Mock.x
     y = mkElemVar Mock.y
     z = mkElemVar Mock.z
+
+applyAlias :: Text -> TermLike VariableName -> TermLike VariableName
+applyAlias name aliasRight =
+    mkApplyAlias
+        Alias
+            { aliasConstructor = testId name
+            , aliasParams = []
+            , aliasSorts = applicationSorts [] Mock.testSort
+            , aliasLeft = []
+            , aliasRight
+            }
+        []
 
 runMergeRules
     :: [RewriteRule VariableName]

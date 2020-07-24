@@ -16,6 +16,10 @@ import qualified Data.Set as Set
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import Kore.Step.AntiLeft
+    ( AntiLeft (AntiLeft)
+    )
+import qualified Kore.Step.AntiLeft as AntiLeft.DoNotUse
 import Kore.Step.RulePattern
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -78,7 +82,11 @@ testRulePattern =
         { left =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
-        , antiLeft = Just $ mkElemVar Mock.u
+        , antiLeft = Just $ AntiLeft
+            { aliasTerm = mkElemVar Mock.u
+            , maybeInner = Nothing
+            , leftHands = []
+            }
         , requires = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
         , rhs = RHS
             { existentials = [Mock.y]

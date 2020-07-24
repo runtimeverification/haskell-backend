@@ -5,6 +5,7 @@ module Test.Kore.Step.RewriteStep
     , test_applyRewriteRule_
     , test_applyRewriteRulesParallel
     , test_applyRewriteRulesSequence
+    , test_narrowing
     ) where
 
 import Prelude.Kore
@@ -38,6 +39,7 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
@@ -734,6 +736,57 @@ test_applyRewriteRule_ =
                     (mkElemVar Mock.y)
             )
             (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y))
+
+{- | Tests for symbolic narrowing.
+
+Narrowing happens when a variable in a symbolic configuration is instantiated
+with a particular value.
+
+ -}
+test_narrowing :: [TestTree]
+test_narrowing =
+    [ testCase "applyRewriteRulesParallel" $ do
+        actual <- apply axiom (Pattern.fromTermLike initial)
+        let results = OrPattern.fromPatterns [result]
+        checkResults results actual
+        let remainders = OrPattern.fromPatterns [remainder]
+        checkRemainders remainders actual
+    , testCase "getResultPattern" $ do
+        let resultRewriting =
+                Pattern.withCondition (Mock.sigma Mock.b (mkElemVar xRule))
+                $ Condition.fromSingleSubstitution
+                $ Substitution.assign
+                    (inject xConfig)
+                    (Mock.sigma Mock.a (mkElemVar xRule))
+            initialVariables = FreeVariables.freeVariable (inject xConfig)
+            actual = getResultPattern initialVariables resultRewriting
+        assertEqual "" result actual
+    ]
+  where
+    apply rule config = applyRewriteRulesParallel config [rule]
+    x = Mock.x
+    x' = traverse (\name -> nextName name name) x & fromJust
+    xConfig = mkElementConfigVariable x
+    xRule = mkElementRuleVariable x
+    initial = mkElemVar x
+    -- The significance of this axiom is that it narrows the initial term and
+    -- introduces a new variable.
+    axiom =
+        RewriteRule $ rulePattern
+            (Mock.sigma Mock.a (mkElemVar x))
+            (Mock.sigma Mock.b (mkElemVar x))
+    result =
+        Pattern.withCondition (Mock.sigma Mock.b (mkElemVar x'))
+        $ Condition.fromSingleSubstitution
+        $ Substitution.assign (inject x) (Mock.sigma Mock.a (mkElemVar x'))
+    remainder =
+        Pattern.withCondition initial
+        $ Condition.fromPredicate
+        $ Predicate.makeNotPredicate
+        $ Predicate.makeExistsPredicate x'
+        $ Predicate.makeEqualsPredicate_
+            (mkElemVar x)
+            (Mock.sigma Mock.a (mkElemVar x'))
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRulesParallel
