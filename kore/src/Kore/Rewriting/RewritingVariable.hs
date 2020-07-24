@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , RewritingVariable
     , isConfigVariable
     , isRuleVariable
     , isSomeConfigVariable
@@ -122,6 +123,8 @@ instance From VariableName RewritingVariableName where
     from = RuleVariableName
 
 instance FreshName RewritingVariableName
+
+type RewritingVariable = Variable RewritingVariableName
 
 mkElementConfigVariable
     :: ElementVariable VariableName
