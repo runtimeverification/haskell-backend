@@ -27,6 +27,8 @@ module Kore.Rewriting.RewritingVariable
     , getResultPattern
     , getRemainderPredicate
     , getRemainderPattern
+    -- * For reachability rule unparsing
+    , getRewritingVariable
     ) where
 
 import Prelude.Kore
