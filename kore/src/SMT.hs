@@ -29,6 +29,7 @@ module SMT
     , declareFun_
     , setInfo
     , NoSMT (..), runNoSMT
+    , SimpleSMT.SolverException (..)
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.Logger
@@ -48,7 +49,9 @@ module SMT
     , SimpleSMT.existsQ
     ) where
 
-import Prelude
+import Prelude.Kore hiding
+    ( assert
+    )
 
 import Control.Concurrent.MVar
 import Control.Exception

@@ -122,6 +122,9 @@ import Kore.Log
 import Kore.Log.ErrorException
     ( errorException
     )
+import Kore.Log.WarnIfLowProductivity
+    ( warnIfLowProductivity
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
     )
@@ -568,7 +571,7 @@ mainWithOptions execOptions = do
     exitCode <-
         withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
-            go
+            go <* warnIfLowProductivity
                 & handle handleWithConfiguration
                 & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
