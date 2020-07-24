@@ -49,18 +49,18 @@ packages:
 extra-deps:
   - ghc-trace-events-0.1.2.1
 
-  - monoidal-containers-0.6.0.1@sha256:7d776942659eb4d70d8b8da5d734396374a6eda8b4622df9e61e26b24e9c8e40,2501
-  - newtype-0.2.2.0@sha256:44435da250d96ab3a5a861425739f6af523495d1a3943f783df4b053b8a4c108,1354
+  - monoidal-containers-0.6.0.1
+  - newtype-0.2.2.0
 
-  - sqlite-simple-0.4.18.0@sha256:3ceea56375c0a3590c814e411a4eb86943f8d31b93b110ca159c90689b6b39e5,3002
-  - direct-sqlite-2.3.26@sha256:04e835402f1508abca383182023e4e2b9b86297b8533afbd4e57d1a5652e0c23,3718
+  - sqlite-simple-0.4.18.0
+  - direct-sqlite-2.3.26
 
-  - witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
-  - witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775
+  - witherable-0.3.5
+  - witherable-class-0
 
   - git: https://github.com/ttuegel/tasty-test-reporter.git
     commit: e411234da88d3f32dfe1319c5edce478abf5115b
-  - junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
+  - junit-xml-0.1.0.0
 
   - git: https://github.com/ttuegel/pipes-ghc-events.git
     commit: 4f3966a4580076a8f6e8ca74e7c1d63c0aae79d2

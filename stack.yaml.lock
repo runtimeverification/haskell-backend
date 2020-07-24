@@ -17,42 +17,42 @@ packages:
       size: 569
       sha256: c354e916cb3aa9a0728a60f08440dc589a9e6d8275f047dbe9ab73f168247561
   original:
-    hackage: monoidal-containers-0.6.0.1@sha256:7d776942659eb4d70d8b8da5d734396374a6eda8b4622df9e61e26b24e9c8e40,2501
+    hackage: monoidal-containers-0.6.0.1
 - completed:
     hackage: newtype-0.2.2.0@sha256:44435da250d96ab3a5a861425739f6af523495d1a3943f783df4b053b8a4c108,1354
     pantry-tree:
       size: 260
       sha256: e53d22dd191bfef5d9b9a05a9cf48e96067c22521937468445c171f3800810b4
   original:
-    hackage: newtype-0.2.2.0@sha256:44435da250d96ab3a5a861425739f6af523495d1a3943f783df4b053b8a4c108,1354
+    hackage: newtype-0.2.2.0
 - completed:
     hackage: sqlite-simple-0.4.18.0@sha256:3ceea56375c0a3590c814e411a4eb86943f8d31b93b110ca159c90689b6b39e5,3002
     pantry-tree:
       size: 1930
       sha256: e58b9955e483d51ee0966f8ba4384305d871480e2a38b32ee0fcd4573d74cf95
   original:
-    hackage: sqlite-simple-0.4.18.0@sha256:3ceea56375c0a3590c814e411a4eb86943f8d31b93b110ca159c90689b6b39e5,3002
+    hackage: sqlite-simple-0.4.18.0
 - completed:
     hackage: direct-sqlite-2.3.26@sha256:04e835402f1508abca383182023e4e2b9b86297b8533afbd4e57d1a5652e0c23,3718
     pantry-tree:
       size: 770
       sha256: 11874ab21e10c5b54cd1e02a037b677dc1e2ee9986f38c599612c56654dc01c3
   original:
-    hackage: direct-sqlite-2.3.26@sha256:04e835402f1508abca383182023e4e2b9b86297b8533afbd4e57d1a5652e0c23,3718
+    hackage: direct-sqlite-2.3.26
 - completed:
     hackage: witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
     pantry-tree:
       size: 271
       sha256: b99f21dbac28da031eb7c787fbffbe5e77e0aee42b64b5dda082470e907d5ab5
   original:
-    hackage: witherable-0.3.5@sha256:6590a15735b50ac14dcc138d4265ff1585d5f3e9d3047d5ebc5abf4cd5f50084,1476
+    hackage: witherable-0.3.5
 - completed:
     hackage: witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775
     pantry-tree:
       size: 277
       sha256: e99696bf95da593a3892c7b9a28db09ffd139b4b1b313f32cec9d26979aa7ce2
   original:
-    hackage: witherable-class-0@sha256:91f05518f9f4af5b02424f13ee7dcdab5d6618e01346aa2f388a72ff93e2e501,775
+    hackage: witherable-class-0
 - completed:
     name: tasty-test-reporter
     version: 0.1.1.1
@@ -70,7 +70,7 @@ packages:
       size: 384
       sha256: c21b8b22bbbebb15a8d6babb7efbf3d31045ca2f1763d7fc2c44e99d180a1a59
   original:
-    hackage: junit-xml-0.1.0.0@sha256:5da18fe01fdb2e32904499ad67f32229a1df4bd4422483dd4a26090aeaf5de0d,1417
+    hackage: junit-xml-0.1.0.0
 - completed:
     subdir: eventlog2speedscope
     name: eventlog2speedscope
