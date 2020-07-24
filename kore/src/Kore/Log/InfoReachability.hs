@@ -21,10 +21,7 @@ import Pretty
     )
 import qualified Pretty
 
-data InfoReachability =
-    InfoReachability
-    { prim :: !Prim
-    }
+newtype InfoReachability = InfoReachability { prim :: Prim }
     deriving (Show)
 
 instance Pretty InfoReachability where
