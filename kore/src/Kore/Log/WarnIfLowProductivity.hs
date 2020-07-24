@@ -37,6 +37,8 @@ instance Entry WarnIfLowProductivity where
 warnIfLowProductivity :: MonadLog log => MonadIO log => log ()
 warnIfLowProductivity = do
     Stats { gc_cpu_ns, cpu_ns } <- liftIO getStats
-    when (gc_cpu_ns * 10 > cpu_ns) $
-        (logEntry . WarnIfLowProductivity)
-                (fromIntegral (100 - gc_cpu_ns * 100 `div` cpu_ns))
+    let gcTimeOver10Percent = gc_cpu_ns * 10 > cpu_ns
+        gcPercentage = gc_cpu_ns * 100 `div` cpu_ns
+        productivity = 100 - gcPercentage & fromIntegral
+    when gcTimeOver10Percent . logEntry
+        $ WarnIfLowProductivity productivity
