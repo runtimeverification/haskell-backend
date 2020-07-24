@@ -46,6 +46,7 @@ module Kore.Internal.TermLike
     , forceSort
     , fullyOverrideSort
     -- * Reachability modalities and application
+    , Modality
     , wEF
     , wAF
     , applyModality
@@ -2007,16 +2008,18 @@ refreshSetBinder
     -> Binder (SetVariable variable) (TermLike variable)
 refreshSetBinder = refreshBinder refreshSetVariable
 
--- | Weak exist finally modality symbol
+type Modality = Sort -> Alias (TermLike VariableName)
+
+-- | Weak exists finally modality symbol.
 weakExistsFinally :: Text
 weakExistsFinally = "weakExistsFinally"
 
--- | Weak always finally modality symbol
+-- | Weak always finally modality symbol.
 weakAlwaysFinally :: Text
 weakAlwaysFinally = "weakAlwaysFinally"
 
--- | 'Alias' construct for weak exist finally
-wEF :: Sort -> Alias (TermLike VariableName)
+-- | 'Alias' construct for weak exist finally.
+wEF :: Modality
 wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
@@ -2031,8 +2034,8 @@ wEF sort = Alias
     , aliasRight = mkTop sort
     }
 
--- | 'Alias' construct for weak always finally
-wAF :: Sort -> Alias (TermLike VariableName)
+-- | 'Alias' construct for weak always finally.
+wAF :: Modality
 wAF sort = Alias
     { aliasConstructor = Id
         { getId = weakAlwaysFinally
@@ -2047,8 +2050,10 @@ wAF sort = Alias
     , aliasRight = mkTop sort
     }
 
+-- | Apply one of the reachability modality aliases
+-- to a term.
 applyModality
-    :: (Sort -> Alias (TermLike VariableName))
+    :: Modality
     -> TermLike VariableName
     -> TermLike VariableName
 applyModality modality term =

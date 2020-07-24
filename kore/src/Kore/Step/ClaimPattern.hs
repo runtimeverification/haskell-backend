@@ -30,7 +30,8 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Modality
+    , TermLike
     , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -69,6 +70,23 @@ instance Debug ClaimPattern
 
 instance Diff ClaimPattern
 
+claimPatternToTerm
+    :: Modality
+    -> ClaimPattern
+    -> TermLike VariableName
+claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
+    TermLike.mkImplies
+        leftPattern
+        (TermLike.applyModality modality rightPattern)
+  where
+    ClaimPattern { left, right } = representation
+    leftPattern =
+        Pattern.toTermLike left
+        & TermLike.mapVariables getRewritingVariable
+    rightPattern =
+        OrPattern.toTermLike right
+        & TermLike.mapVariables getRewritingVariable
+
 -- | One-Path-Claim claim pattern.
 newtype OnePathRule =
     OnePathRule { getOnePathRule :: ClaimPattern }
@@ -89,17 +107,8 @@ instance Diff OnePathRule
 -- as some of the variable information related to the
 -- rewriting algorithm is lost.
 onePathRuleToTerm :: OnePathRule -> TermLike VariableName
-onePathRuleToTerm (OnePathRule representation@(ClaimPattern _ _ _ _)) =
-    TermLike.mkImplies leftPattern (wEF rightPattern)
-  where
-    ClaimPattern { left, right } = representation
-    leftPattern =
-        Pattern.toTermLike left
-        & TermLike.mapVariables getRewritingVariable
-    rightPattern =
-        OrPattern.toTermLike right
-        & TermLike.mapVariables getRewritingVariable
-    wEF = TermLike.applyModality TermLike.wEF
+onePathRuleToTerm (OnePathRule claimPattern) =
+    claimPatternToTerm TermLike.wEF claimPattern
 
 instance Unparse OnePathRule where
     unparse claimPattern =
@@ -131,3 +140,57 @@ instance From OnePathRule Attribute.RuleIndex where
 
 instance From OnePathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getOnePathRule
+
+{-  | All-Path-Claim rule pattern.
+-}
+newtype AllPathRule =
+    AllPathRule { getAllPathRule :: ClaimPattern }
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData AllPathRule
+
+instance SOP.Generic AllPathRule
+
+instance SOP.HasDatatypeInfo AllPathRule
+
+instance Debug AllPathRule
+
+instance Diff AllPathRule
+
+instance Unparse AllPathRule where
+    unparse claimPattern =
+        "claim {}"
+        <> Pretty.line'
+        <> Pretty.nest 4
+            (unparse $ allPathRuleToTerm claimPattern)
+        <> Pretty.line'
+        <> "[]"
+    unparse2 claimPattern =
+        "claim {}"
+        Pretty.<+>
+            unparse2 (allPathRuleToTerm claimPattern)
+        Pretty.<+> "[]"
+
+instance TopBottom AllPathRule where
+    isTop _ = False
+    isBottom _ = False
+
+instance From AllPathRule Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes . getAllPathRule
+
+instance From AllPathRule Attribute.Label where
+    from = Attribute.label . attributes . getAllPathRule
+
+instance From AllPathRule Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getAllPathRule
+
+instance From AllPathRule Attribute.Trusted where
+    from = Attribute.trusted . attributes . getAllPathRule
+
+-- | Converts a 'OnePathRule' into its term representation.
+-- This is intended to be used only in unparsing situations,
+-- as some of the variable information related to the
+-- rewriting algorithm is lost.
+allPathRuleToTerm :: AllPathRule -> TermLike VariableName
+allPathRuleToTerm (AllPathRule claimPattern) =
+    claimPatternToTerm TermLike.wAF claimPattern
