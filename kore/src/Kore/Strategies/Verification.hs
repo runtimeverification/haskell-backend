@@ -401,18 +401,7 @@ logTransitionRule
     => CommonTransitionRule m
     -> CommonTransitionRule m
 logTransitionRule rule prim proofState =
-    case proofState of
-        ProofState.Goal goal          -> logWith goal
-        ProofState.GoalRemainder goal -> logWith goal
-        _                  -> rule prim proofState
-  where
-    logWith goal = case prim of
-        Prim.Simplify ->
-            whileSimplify goal $ rule prim proofState
-        Prim.CheckImplication ->
-            whileCheckImplication goal $ rule prim proofState
-        _ ->
-            rule prim proofState
+    whileReachability prim $ rule prim proofState
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.
  -}
