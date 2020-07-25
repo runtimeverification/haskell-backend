@@ -27,9 +27,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
-import Control.Monad
-    ( when
-    )
 import Control.Monad.Except
     ( MonadError (..)
     )

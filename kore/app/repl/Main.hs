@@ -6,13 +6,7 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Concurrent.MVar
-import Control.Monad.Trans
-    ( lift
-    )
 import Data.Reflection
-import Data.Semigroup
-    ( (<>)
-    )
 import Options.Applicative
     ( InfoMod
     , Parser

@@ -17,9 +17,6 @@ import Control.Monad
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-    ( Conditional (..)
-    )
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )

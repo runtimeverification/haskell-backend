@@ -3,12 +3,12 @@
         "branch": "master",
         "description": "A library for building Haskell IDE tooling",
         "homepage": "",
-        "owner": "digital-asset",
+        "owner": "ttuegel",
         "repo": "ghcide",
-        "rev": "4149ab539d736328e29957c7eee752e0413fdd40",
-        "sha256": "1d5jpff480p9i2fypxp9cmjjbivi1fy1lw3xhimq7iizwywdnsxv",
+        "rev": "f8aa8dd433cab5da79e5ed29629e94d7fd9083ea",
+        "sha256": "1lkwapmlwqjvkiwxm4ihr6y3cra9c2ii4cw846q4fdhvm620grlv",
         "type": "tarball",
-        "url": "https://github.com/digital-asset/ghcide/archive/4149ab539d736328e29957c7eee752e0413fdd40.tar.gz",
+        "url": "https://github.com/ttuegel/ghcide/archive/f8aa8dd433cab5da79e5ed29629e94d7fd9083ea.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "haskell.nix": {
@@ -17,10 +17,10 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "aef341f220193e31583453ea6a5a084cedf72569",
-        "sha256": "1m3wkp6g9cvwzs4qviz31s7ragh718j2xa14mklcfmachwy4d3l4",
+        "rev": "239d588fdc3d97f635c849d0f5c599ccb2f5a61a",
+        "sha256": "1z4kmksjgshb2s441mjs7kyvra2ad0rjryzsbax06yc9r5vkqz0j",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/aef341f220193e31583453ea6a5a084cedf72569.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/239d588fdc3d97f635c849d0f5c599ccb2f5a61a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "hlint": {
@@ -29,12 +29,12 @@
         "homepage": null,
         "owner": "ndmitchell",
         "repo": "hlint",
-        "rev": "b43c4c32b8c57abdbf0ecfabf81854379a5aa5b6",
-        "sha256": "0adfsn4can9qnybnjd9nhz2crg4n5xqhwca2rh137kwav9d84g5s",
+        "rev": "6c24ec497bbea3c40717d0a83c27fe3dc4936023",
+        "sha256": "02mg93psf34gcrffa9ghmvgszwcg0qw3bxhfzi39qp09m3vymc68",
         "type": "tarball",
-        "url": "https://github.com/ndmitchell/hlint/archive/b43c4c32b8c57abdbf0ecfabf81854379a5aa5b6.tar.gz",
+        "url": "https://github.com/ndmitchell/hlint/archive/6c24ec497bbea3c40717d0a83c27fe3dc4936023.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
-        "version": "v3.1"
+        "version": "v3.1.6"
     },
     "niv": {
         "branch": "master",
@@ -49,15 +49,28 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixos-20.03",
+        "branch": "nixos-unstable",
         "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs-channels",
-        "rev": "b780aefc621d0cd6131c68907ec0c9fb28e65650",
-        "sha256": "1qgz4qmrpv2hpamk88dvp3j2spanjipbkgb0hbpmxh5sgqyai1ci",
+        "rev": "5717d9d2f7ca0662291910c52f1d7b95b568fec2",
+        "sha256": "17gxd2f622pyss3r6cjngdav6wzdbr31d7bqx9z2lawxg47mmk1l",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/b780aefc621d0cd6131c68907ec0c9fb28e65650.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs-channels/archive/5717d9d2f7ca0662291910c52f1d7b95b568fec2.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "stylish-haskell": {
+        "branch": "master",
+        "description": "Haskell code prettifier",
+        "homepage": "",
+        "owner": "jaspervdj",
+        "repo": "stylish-haskell",
+        "rev": "f1569c0454fa0b7243a9787746e7bdf7e8ae5879",
+        "sha256": "1402jz6ds37khk7c5hq7b2zf9vbk4zfklqvickc4s24wlbs3x0zd",
+        "type": "tarball",
+        "url": "https://github.com/jaspervdj/stylish-haskell/archive/f1569c0454fa0b7243a9787746e7bdf7e8ae5879.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
+        "version": "v0.11.0.0"
     }
 }

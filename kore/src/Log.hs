@@ -35,7 +35,6 @@ import Prelude.Kore
 
 import Colog
     ( LogAction (..)
-    , Severity (..)
     , cmap
     , (<&)
     )
@@ -52,9 +51,6 @@ import Control.Monad.Morph
     ( MFunctor
     )
 import qualified Control.Monad.Morph as Monad.Morph
-import Control.Monad.Trans
-    ( MonadTrans
-    )
 import Control.Monad.Trans.Accum
     ( AccumT
     , mapAccumT

@@ -17,9 +17,6 @@ import Data.Default as Default
     ( def
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( on
-    )
 import Data.Maybe
     ( fromJust
     )

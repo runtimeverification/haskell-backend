@@ -8,9 +8,6 @@ import Prelude.Kore
 
 import Test.Tasty.HUnit
 
-import Kore.Attribute.Attributes
-    ( Attributes (..)
-    )
 import Kore.Attribute.Parser
 
 expectSuccess

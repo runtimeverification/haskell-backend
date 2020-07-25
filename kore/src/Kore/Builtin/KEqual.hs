@@ -74,9 +74,6 @@ import Kore.Syntax.Definition
     ( SentenceSymbol (..)
     )
 import Kore.Unification.Unify as Unify
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
 import qualified Logic
 
 verifiers :: Builtin.Verifiers

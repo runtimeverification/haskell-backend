@@ -67,9 +67,7 @@ import Kore.Attribute.Label
 import Kore.Attribute.Overload
 import Kore.Attribute.Owise
 import Kore.Attribute.Parser
-    ( AttributePattern
-    , Attributes
-    , ParseAttributes (..)
+    ( ParseAttributes (..)
     , Parser
     , SymbolOrAlias
     , toAttributes

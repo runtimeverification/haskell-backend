@@ -12,10 +12,6 @@ module Kore.Unification.Unify
 
 import Prelude.Kore
 
-import Control.Monad.Trans.Class
-    ( MonadTrans (..)
-    )
-
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike

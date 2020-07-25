@@ -58,9 +58,6 @@ import Control.DeepSeq
     )
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Map.Strict
     ( Map
     )

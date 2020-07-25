@@ -15,7 +15,6 @@ import Data.Map.Strict
 import Kore.Internal.Substitution
     ( mkUnwrappedSubstitution
     )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Unification.SubstitutionNormalization
 

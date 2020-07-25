@@ -56,10 +56,6 @@ import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Pattern
-import Kore.Syntax.PatternF
-    ( Const (..)
-    , PatternF (..)
-    )
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top

@@ -74,8 +74,7 @@ import Kore.Log.DebugProofState
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Step.RulePattern
-    ( ReachabilityRule (..)
-    , leftPattern
+    ( leftPattern
     , toRulePattern
     )
 import Kore.Step.Simplification.Simplify

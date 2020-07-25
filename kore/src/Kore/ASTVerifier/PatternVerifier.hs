@@ -50,9 +50,6 @@ import Kore.Internal.TermLike
     ( TermLikeF
     )
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Parser
-    ( ParsedPattern
-    )
 import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser

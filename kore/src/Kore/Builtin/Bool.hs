@@ -36,9 +36,6 @@ import Control.Error
     ( MaybeT
     )
 import qualified Control.Monad as Monad
-import Data.Functor
-    ( ($>)
-    )
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map

@@ -34,9 +34,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
-import Control.Monad.Fail
-    ( MonadFail
-    )
 import Data.Char
     ( isSpace
     )

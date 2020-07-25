@@ -25,9 +25,6 @@ import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Set as Set
@@ -57,8 +54,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
+    ( TermLike
     , Variable (..)
     )
 import qualified Kore.Internal.TermLike as TermLike

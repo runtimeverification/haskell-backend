@@ -15,9 +15,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
-import Control.Category
-    ( (>>>)
-    )
 import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
@@ -46,9 +43,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
-    )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-    ( AttemptedAxiomResults (..)
     )
 import Kore.Unparser
     ( unparse
