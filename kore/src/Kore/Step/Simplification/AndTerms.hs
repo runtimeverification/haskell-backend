@@ -700,16 +700,14 @@ functionAnd
     -> Maybe (Pattern variable)
 functionAnd first second
   | isFunctionPattern first, isFunctionPattern second =
-    return Conditional
-        { term = first  -- different for Equals
-        -- Ceil predicate not needed since first being
-        -- bottom will make the entire term bottom. However,
-        -- one must be careful to not just drop the term.
-        , predicate =
-            Predicate.markSimplified
-            $ makeEqualsPredicate_ first second
-        , substitution = mempty
-        }
+    makeEqualsPredicate_ first second
+    & Predicate.markSimplified
+    -- Ceil predicate not needed since first being
+    -- bottom will make the entire term bottom. However,
+    -- one must be careful to not just drop the term.
+    & Condition.fromPredicate
+    & Pattern.withCondition first  -- different for Equals
+    & pure
   | otherwise = empty
 
 bytesDifferent

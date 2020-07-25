@@ -704,7 +704,7 @@ test_equalsSimplification_TermLike =
             (assertTermEquals
                 Conditional
                     { term = ()
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate Mock.mapSort
                     , substitution =
                         Substitution.unsafeWrap [(inject Mock.x, Mock.b)]
                     }
@@ -723,8 +723,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate_ fOfB)
-                            (makeCeilPredicate_ fOfA)
+                            (makeCeilPredicate Mock.mapSort fOfB)
+                            (makeCeilPredicate Mock.mapSort fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
                         [ (inject Mock.x, fOfA)
@@ -743,8 +743,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate_ fOfB)
-                            (makeCeilPredicate_ fOfA)
+                            (makeCeilPredicate Mock.mapSort fOfB)
+                            (makeCeilPredicate Mock.mapSort fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
                         [ (inject Mock.x, fOfA)
@@ -763,8 +763,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate_ fOfB)
-                            (makeCeilPredicate_ fOfA)
+                            (makeCeilPredicate Mock.mapSort fOfB)
+                            (makeCeilPredicate Mock.mapSort fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
                         [ (inject Mock.x, fOfA)
@@ -783,8 +783,8 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate_ fOfB)
-                            (makeCeilPredicate_ fOfA)
+                            (makeCeilPredicate Mock.mapSort fOfB)
+                            (makeCeilPredicate Mock.mapSort fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
                         [ (inject Mock.x, fOfA)

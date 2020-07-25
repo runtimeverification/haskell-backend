@@ -767,7 +767,7 @@ unifyEqualsNormalized
                 (unzip . Map.toList)
                     (Domain.concreteElements unwrapped)
 
-    return (unifierTerm `withCondition` unifierCondition)
+    return (unifierTerm `Pattern.withCondition` unifierCondition)
   where
     sort1 = termLikeSort first
 

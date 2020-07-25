@@ -20,6 +20,7 @@ import Data.Text
     ( Text
     )
 
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
@@ -149,13 +150,11 @@ unificationResult :: UnificationResult -> TestPattern
 unificationResult
     UnificationResult { term, substitution, predicate }
   =
-    Conditional
-        { term
-        , predicate
-        , substitution =
-            Substitution.unsafeWrapFromAssignments
-                $ unificationSubstitution substitution
-        }
+    unificationSubstitution substitution
+    & Substitution.unsafeWrapFromAssignments
+    & Condition.fromSubstitution
+    & (<>) (Condition.fromPredicate predicate)
+    & Pattern.withCondition term
 
 newtype UnificationTerm = UnificationTerm TestTerm
 
@@ -428,7 +427,7 @@ test_unification =
             [ UnificationResult
                 { term = dv1
                 , substitution = []
-                , predicate = makeEqualsPredicate_ dv1 a2
+                , predicate = Predicate.makeEqualsPredicate Mock.testSort dv1 a2
                 }
             ]
     , testCase "Unmatching nonconstructor constant + domain value" $
@@ -438,7 +437,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = []
-                , predicate = makeEqualsPredicate_ a2 dv1
+                , predicate = Predicate.makeEqualsPredicate Mock.testSort a2 dv1
                 }
             ]
     , testCase "non-functional pattern" $
@@ -480,7 +479,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = []
-                , predicate = makeEqualsPredicate_ a a2
+                , predicate = Predicate.makeEqualsPredicate Mock.testSort a a2
                 }
             ]
     , testCase "non-constructor symbolHead left" $
@@ -490,7 +489,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = []
-                , predicate = makeEqualsPredicate_ a2 a
+                , predicate = Predicate.makeEqualsPredicate Mock.testSort a2 a
                 }
             ]
     , testCase "nested a=a1 is bottom" $
