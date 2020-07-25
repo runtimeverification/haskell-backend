@@ -14,8 +14,24 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.26.0.0] - 2020-07-24
+
+### Added
+
+- Speedscope is now supported for profiling proofs.
+- kore-repl can list rules applied between any related nodes.
+- kore-repl allows enabling debug-equation dynamically.
+- A warning is emitted to distinguish the types of proof failure.
+
+### Fixed
+
 - A bug is fixed where variables introduced by symbolic narrowing could be
   captured incorrectly.
+- A more helpful message is provided when the external solver crashes.
+- The interrupt signal no longer triggers the creation of a bug report archive
+  automatically.
+- The overhead of logging is significantly reduced.
+- Polymorphic symbols can now be encoded for the external solver.
 
 ## [0.25.0.0] - 2020-07-08
 
