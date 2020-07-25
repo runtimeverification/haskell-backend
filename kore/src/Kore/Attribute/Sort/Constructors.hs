@@ -12,10 +12,6 @@ module Kore.Attribute.Sort.Constructors
 
 import Prelude.Kore
 
-import Data.List.NonEmpty
-    ( NonEmpty
-    )
-
 import Kore.Internal.Symbol
     ( Symbol
     )

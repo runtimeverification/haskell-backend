@@ -12,9 +12,6 @@ module Kore.Builtin.Encoding
 
 import Prelude.Kore
 
-import Control.Category
-    ( (>>>)
-    )
 import qualified Data.Bits as Bits
 import Data.ByteString
     ( ByteString

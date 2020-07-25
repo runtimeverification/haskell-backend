@@ -118,7 +118,6 @@ import Kore.Step.RulePattern
     , OnePathRule (..)
     , RHS
     , ReachabilityRule (..)
-    , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
     , ToRulePattern (..)

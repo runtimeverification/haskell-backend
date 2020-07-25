@@ -13,9 +13,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    )
 
-simplify :: InternalVariable variable => InternalBytes -> OrPattern variable
+simplify
+    :: InternalVariable variable
+    => InternalBytes
+    -> OrPattern variable
 simplify = pure . pure . mkInternalBytes'

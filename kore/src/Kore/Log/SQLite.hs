@@ -14,9 +14,6 @@ module Kore.Log.SQLite
 
 import Prelude.Kore
 
-import Colog
-    ( unLogAction
-    )
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Extra as Monad
 import Control.Monad.Reader

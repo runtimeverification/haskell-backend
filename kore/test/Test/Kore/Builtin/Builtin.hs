@@ -115,13 +115,9 @@ import Kore.Unification.UnificationProcedure
 import Kore.Unparser
     ( unparseToString
     )
-import Log
-    ( MonadLog
-    )
 import qualified Logic
 import SMT
-    ( MonadSMT
-    , SMT
+    ( SMT
     )
 
 import Test.Kore.Builtin.Definition

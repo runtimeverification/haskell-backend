@@ -33,12 +33,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    )
-import Kore.Syntax.Application
-    ( Application (..)
-    )
 import Kore.Unification.Unify
     ( MonadUnify
     , explainAndReturnBottom

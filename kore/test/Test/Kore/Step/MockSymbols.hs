@@ -66,9 +66,6 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import Kore.Internal.ApplicationSorts
-    ( ApplicationSorts
-    )
 import Kore.Internal.Symbol hiding
     ( sortInjection
     )

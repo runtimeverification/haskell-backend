@@ -14,9 +14,6 @@ import Test.Tasty
 import Data.Int
     ( Int64
     )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 
 import SQL
 

@@ -51,8 +51,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , InternalVariable
+    ( InternalVariable
     , Sort
     , TermLike
     , mkBottom_

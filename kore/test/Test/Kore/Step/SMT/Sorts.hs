@@ -20,9 +20,6 @@ import qualified Kore.Builtin.Int as Int
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import Kore.Parser
-    ( ParsedPattern
-    )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
     ( declare
     )
@@ -33,9 +30,6 @@ import qualified Kore.Step.SMT.Representation.All as Representation
     ( build
     )
 import Kore.Syntax.Definition
-import qualified Kore.Syntax.Sentence as SentenceImport
-    ( SentenceImport (..)
-    )
 import qualified SMT
 
 import Test.Kore.Step.SMT.Builders

@@ -66,7 +66,6 @@ import Kore.Sort
 import Kore.Step
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
     , injectTermIntoRHS
     )
 import Kore.Step.RulePattern as RulePattern

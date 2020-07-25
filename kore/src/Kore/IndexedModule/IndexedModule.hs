@@ -93,9 +93,6 @@ import qualified Kore.Attribute.Symbol as Attribute
     )
 import Kore.Error
 import qualified Kore.Internal.Symbol as Internal.Symbol
-import Kore.Parser
-    ( ParsedPattern
-    )
 import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified

@@ -122,9 +122,6 @@ import Kore.Unparser
     )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import qualified Pretty
 import qualified SQL
 

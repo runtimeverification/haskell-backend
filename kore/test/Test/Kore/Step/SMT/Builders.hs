@@ -47,9 +47,6 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import Kore.Parser
-    ( ParsedPattern
-    )
 import Kore.Sort
     ( Sort (SortActualSort)
     , SortActual (SortActual)
@@ -58,21 +55,6 @@ import qualified Kore.Sort as SortActual
     ( SortActual (..)
     )
 import Kore.Syntax.Definition
-import qualified Kore.Syntax.Definition as Definition
-    ( Definition (..)
-    )
-import qualified Kore.Syntax.Module as Module
-    ( Module (..)
-    )
-import qualified Kore.Syntax.Sentence as SentenceSort
-    ( SentenceSort (..)
-    )
-import qualified Kore.Syntax.Sentence as SentenceSymbol
-    ( SentenceSymbol (..)
-    )
-import qualified Kore.Syntax.Sentence as Symbol
-    ( Symbol (..)
-    )
 
 import Test.Kore
     ( testId

@@ -84,14 +84,10 @@ import Kore.Step.Simplification.Overloading
     ( matchOverloading
     )
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import qualified Kore.Variables.Fresh as Variables
 import Pair
 

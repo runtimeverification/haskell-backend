@@ -92,9 +92,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    , InternalVariable
     , Sort
-    , Symbol
     , TermLike
     , TermLikeF (..)
     )

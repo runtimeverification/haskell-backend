@@ -51,17 +51,7 @@ import Kore.IndexedModule.IndexedModule
     , recursiveIndexedModuleSortDescriptions
     )
 import Kore.Internal.TermLike
-import Kore.Sort
-    ( Sort (SortActualSort)
-    , SortActual (SortActual)
-    )
-import qualified Kore.Sort as SortActual
-    ( SortActual (..)
-    )
 import qualified Kore.Step.SMT.AST as AST
-import Kore.Syntax.Id
-    ( Id
-    )
 import Kore.Syntax.Sentence
     ( SentenceSort (SentenceSort)
     )

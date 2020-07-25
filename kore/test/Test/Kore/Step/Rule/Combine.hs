@@ -11,9 +11,6 @@ import Test.Tasty
 import Data.Default
     ( def
     )
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
 import Data.Text
     ( Text
     )

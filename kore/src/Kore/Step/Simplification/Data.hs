@@ -72,8 +72,7 @@ import Logic
 import qualified Pretty
 import Prof
 import SMT
-    ( MonadSMT (..)
-    , SMT (..)
+    ( SMT (..)
     )
 
 -- * Simplifier

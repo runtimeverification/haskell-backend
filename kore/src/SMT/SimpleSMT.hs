@@ -194,8 +194,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified GHC.Generics as GHC
 import GHC.Stack
-    ( HasCallStack
-    , callStack
+    ( callStack
     )
 import Numeric
     ( readHex

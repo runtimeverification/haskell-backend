@@ -17,9 +17,6 @@ module Kore.ModelChecker.Step
 
 import Prelude.Kore
 
-import Control.Monad
-    ( when
-    )
 import Control.Monad.State.Strict
     ( StateT
     )

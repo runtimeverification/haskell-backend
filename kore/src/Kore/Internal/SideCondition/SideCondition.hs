@@ -29,7 +29,6 @@ import Kore.Debug
 import Type.Reflection
     ( SomeTypeRep (..)
     , TypeRep
-    , Typeable
     , typeRep
     )
 

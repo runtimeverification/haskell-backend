@@ -2,16 +2,7 @@ module Main (main) where
 
 import Prelude.Kore
 
-import Control.Monad
-    ( when
-    )
-import Control.Monad.Trans
-    ( lift
-    )
 import qualified Data.Map.Strict as Map
-import Data.Semigroup
-    ( (<>)
-    )
 import Data.Text
     ( Text
     )
@@ -51,8 +42,7 @@ import Kore.Log
     )
 import qualified Kore.Log as Log
 import Kore.Parser
-    ( ParsedPattern
-    , parseKoreDefinition
+    ( parseKoreDefinition
     , parseKorePattern
     )
 import Kore.Syntax.Definition

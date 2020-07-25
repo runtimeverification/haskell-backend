@@ -40,7 +40,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.OverloadSimplifier
 import Pair
