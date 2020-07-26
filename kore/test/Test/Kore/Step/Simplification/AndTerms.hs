@@ -4,6 +4,7 @@ module Test.Kore.Step.Simplification.AndTerms
     ( test_andTermsSimplification
     , test_equalsTermsSimplification
     , test_functionAnd
+    , test_Defined
     ) where
 
 import Prelude.Kore
@@ -1206,6 +1207,86 @@ test_functionAnd =
         let Just actual = functionAnd (f x) (f y)
         assertEqual "" expect (syncSort actual)
         assertBool "" (Pattern.isSimplified sideRepresentation actual)
+    ]
+
+test_Defined :: [TestTree]
+test_Defined =
+    [ testGroup "exact matching" $
+        let partial = Mock.f Mock.a
+            defined = mkDefined partial
+        in
+            [ testCase "\\and" $ do
+                let expect = [Pattern.fromTermLike defined]
+                (actualAnd, actualUnify) <- simplifyUnify partial defined
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\equals" $ do
+                let expect = Just [Condition.topOf Mock.testSort]
+                actual <- simplifyEquals mempty partial defined
+                assertEqual "" expect actual
+            ]
+    , testGroup "variable with function" $
+        let defined = mkDefined (Mock.f Mock.a)
+            variable = mkElemVar Mock.x
+            condition =
+                Condition.assign (inject Mock.x) defined
+                & Condition.coerceSort Mock.testSort
+        in
+            [ testCase "\\and" $ do
+                let expect = [Pattern.withCondition defined condition]
+                (actualAnd, actualUnify) <- simplifyUnify defined variable
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\equals" $ do
+                let expect = Just [condition]
+                actual <- simplifyEquals mempty defined variable
+                assertEqual "" expect actual
+            ]
+    , testGroup "functions" $
+        let function1 = Mock.f Mock.a
+            function2 = Mock.g Mock.b
+            defined1 = mkDefined function1
+            -- TODO (thomas.tuegel): condition should use defined1 instead of
+            -- function1.
+            condition =
+                makeEqualsPredicate_ function1 function2
+                & Condition.fromPredicate
+        in
+            [ testCase "\\and" $ do
+                let expect = [Pattern.withCondition function1 condition]
+                (actualAnd, actualUnify) <- simplifyUnify defined1 function2
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\equals" $ do
+                let expect = Just [condition]
+                actual <- simplifyEquals mempty defined1 function2
+                assertEqual "" expect actual
+            ]
+    , testGroup "Sets" $
+        let set1 = Mock.builtinSet [fOfA, fOfB]
+            set2 = Mock.builtinSet [mkElemVar Mock.x, mkElemVar Mock.y]
+            defined1 = mkDefined set1
+            conditions =
+                [ mconcat
+                    [ Condition.assign (inject Mock.x) fOfA
+                    , Condition.assign (inject Mock.y) fOfB
+                    ]
+                , mconcat
+                    [ Condition.assign (inject Mock.x) fOfB
+                    , Condition.assign (inject Mock.y) fOfA
+                    ]
+                ]
+        in
+            [ testCase "\\and" $ do
+                let expect = Pattern.withCondition set1 <$> conditions
+                (actualAnd, actualUnify) <- simplifyUnify defined1 set2
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\equals" $ do
+                let expect = Just conditions
+                actual <- simplifyEquals mempty defined1 set2
+                assertEqual "" expect actual
+            ]
     ]
 
 fOfA :: TermLike VariableName
