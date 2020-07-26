@@ -532,6 +532,12 @@ test_mkDefined =
                 )
             actual = mkDefined term
         assertEqual "" expected actual
+    , testCase "List" $ do
+        let fx = Mock.f (mkElemVar Mock.x)
+            fy = Mock.f (mkElemVar Mock.y)
+            actual = mkDefined (Mock.builtinList [fx, fy])
+            expect = defined (Mock.builtinList [defined fx, defined fy])
+        assertEqual "" expect actual
     , testCase "Set" $ do
         let fx = Mock.f (mkElemVar Mock.x)
             fy = Mock.f (mkElemVar Mock.y)
