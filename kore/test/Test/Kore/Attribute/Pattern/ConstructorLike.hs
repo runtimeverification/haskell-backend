@@ -25,18 +25,11 @@ test_TermLike =
         Mock.builtinSet [] `shouldBeConstructorLike` True
     , testCase "Simplifiable constructor-like BuiltinSet" $
         Mock.builtinSet [Mock.a, Mock.b] `shouldBeConstructorLike` True
-    , testCase "Simplifiable non-constructor-like BuiltinSet" $
-        assertErrorIO (assertSubstring "" "Expecting constructor-like object") $
-        Mock.builtinSet [Mock.a, Mock.f Mock.b] `shouldBeConstructorLike` False
     , testCase "Simplifiable empty BuiltinMap" $
         Mock.builtinMap [] `shouldBeConstructorLike` True
     , testCase "Simplifiable constructor-like BuiltinMap" $
         Mock.builtinMap [(Mock.a, Mock.c), (Mock.b, Mock.c)]
         `shouldBeConstructorLike` True
-    , testCase "Simplifiable non-constructor-like key BuiltinMap" $
-        assertErrorIO (assertSubstring "" "Expecting constructor-like object") $
-        Mock.builtinMap [(Mock.a, Mock.c), (Mock.f Mock.b, Mock.c)]
-        `shouldBeConstructorLike` False
     , testCase "Simplifiable non-constructor-like BuiltinMap" $
         Mock.builtinMap [(Mock.a, Mock.c), (Mock.b, Mock.f Mock.c)]
         `shouldBeConstructorLike` False
