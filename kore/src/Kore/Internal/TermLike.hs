@@ -1490,7 +1490,8 @@ mkDefined = updateCallStack . worker
                 BuiltinF (Domain.BuiltinString _) -> term
                 BuiltinF (Domain.BuiltinList internalList) ->
                     mkDefinedAtTop . mkBuiltinList $ mkDefined <$> internalList
-                BuiltinF (Domain.BuiltinMap _) -> mkDefinedAtTop term
+                BuiltinF (Domain.BuiltinMap internalMap) ->
+                    mkDefinedAtTop . mkBuiltinMap $ mkDefined <$> internalMap
                 BuiltinF (Domain.BuiltinSet internalSet) ->
                     mkDefinedAtTop . mkBuiltinSet $ mkDefined <$> internalSet
                 EqualsF _ -> term

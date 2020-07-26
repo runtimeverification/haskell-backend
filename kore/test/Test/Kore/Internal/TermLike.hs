@@ -544,6 +544,16 @@ test_mkDefined =
             actual = mkDefined (Mock.builtinSet [fx, fy])
             expect = defined (Mock.builtinSet [defined fx, defined fy])
         assertEqual "" expect actual
+    , testCase "Map" $ do
+        let fx = Mock.f (mkElemVar Mock.x)
+            fy = Mock.f (mkElemVar Mock.y)
+            fa = Mock.f Mock.a
+            defx = defined fx
+            defy = defined fy
+            defa = defined fa
+            actual = mkDefined (Mock.builtinMap [(fx, fx), (fa, fy)])
+            expect = defined (Mock.builtinMap [(defx, defx), (defa, defy)])
+        assertEqual "" expect actual
     ]
   where
     defined :: TermLike VariableName -> TermLike VariableName
