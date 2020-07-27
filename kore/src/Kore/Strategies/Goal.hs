@@ -516,18 +516,6 @@ transitionRule claims axiomGroups = transitionRuleWorker
     transitionRuleWorker Simplify (GoalRemainder goal) =
         GoalRemainder <$> simplify goal
 
-    transitionRuleWorker InferDefined (Goal goal) = do
-        results <- tryTransitionT (inferDefined goal)
-        case results of
-            [] -> return Proven
-            _ -> Goal <$> Transition.scatter results
-
-    transitionRuleWorker InferDefined (GoalRemainder goal) = do
-        results <- tryTransitionT (inferDefined goal)
-        case results of
-            [] -> return Proven
-            _ -> GoalRemainder <$> Transition.scatter results
-
     transitionRuleWorker CheckImplication (Goal goal) = do
         result <- checkImplication goal
         case result of

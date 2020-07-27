@@ -3,7 +3,6 @@ module Test.Kore.Strategies.AllPath.AllPath
     , test_transitionRule_CheckProven
     , test_transitionRule_CheckGoalRem
     , test_transitionRule_CheckImplication
-    , test_transitionRule_InferDefined
     , test_transitionRule_TriviallyValid
     , test_transitionRule_ApplyClaims
     , test_transitionRule_ApplyAxioms
@@ -221,19 +220,6 @@ test_transitionRule_ApplyAxioms =
         -- ^ transitions
         -> TestTree
     derives rules = equals_ (run rules $ ProofState.GoalRemainder (A, C))
-
-test_transitionRule_InferDefined :: [TestTree]
-test_transitionRule_InferDefined =
-    [ unmodified ProofState.Proven
-    , unmodified (ProofState.Goal (A, B))
-    , unmodified (ProofState.GoalStuck (A, B))
-    , ProofState.GoalRemainder (NotDef, B) `becomes` (ProofState.Proven, mempty)
-    ]
-  where
-    run = runTransitionRule [] [] ProofState.InferDefined
-    unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run state `equals_` [(state, mempty)]
-    becomes initial final = run initial `equals_` [final]
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
