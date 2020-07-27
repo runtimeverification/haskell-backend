@@ -8,9 +8,6 @@ License     : NCSA
 module Kore.Step.RulePattern
     ( RulePattern (..)
     , RewriteRule (..)
-    , OnePathRule (..)
-    , AllPathRule (..)
-    , ReachabilityRule (..)
     , ImplicationRule (..)
     , RHS (..)
     , HasAttributes (..)

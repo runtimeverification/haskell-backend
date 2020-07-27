@@ -20,6 +20,7 @@ module Kore.Internal.OrPattern
     , toPattern
     , toTermLike
     , targetBinder
+    , substitute
     , MultiOr.flatten
     , MultiOr.filterOr
     , MultiOr.gather
@@ -29,6 +30,9 @@ module Kore.Internal.OrPattern
 import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
+import Data.Map.Strict
+    ( Map
+    )
 
 import Kore.Internal.Condition
     ( Condition
@@ -219,3 +223,11 @@ targetBinder Binder { binderVariable, binderChild } =
          { binderVariable = newVar
          , binderChild = newChild
          }
+
+substitute
+    :: InternalVariable variable
+    => Map (SomeVariableName variable) (TermLike variable)
+    -> OrPattern variable
+    -> OrPattern variable
+substitute subst =
+    fromPatterns . fmap (Pattern.substitute subst) . toPatterns

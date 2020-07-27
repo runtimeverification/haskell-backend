@@ -6,6 +6,9 @@ License     : NCSA
 
 module Kore.Step.ClaimPattern
     ( ClaimPattern (..)
+    , OnePathRule (..)
+    , AllPathRule (..)
+    , ReachabilityRule (..)
     , toSentence
     ) where
 
@@ -35,7 +38,8 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( Modality
+    ( ElementVariable
+    , Modality
     , TermLike
     , VariableName
     )
@@ -63,7 +67,7 @@ import qualified Pretty
 data ClaimPattern =
     ClaimPattern
     { left :: !(Pattern RewritingVariableName)
-    , existentials :: ![RewritingVariable]
+    , existentials :: ![ElementVariable RewritingVariableName]
     , right :: !(OrPattern RewritingVariableName)
     , attributes :: !(Attribute.Axiom Symbol RewritingVariableName)
     }
