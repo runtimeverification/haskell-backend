@@ -14,6 +14,7 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
@@ -1300,35 +1301,50 @@ test_Defined =
                 assertEqual "" expect actual
             ]
     , testGroup "Maps" $
-        let map1 = Mock.builtinMap [(mkElemVar Mock.x, fOfA)]
-            map2 = Mock.builtinMap [(mkElemVar Mock.x, mkElemVar Mock.y)]
+        let map1 =
+                Mock.builtinMap
+                    [ (mkElemVar Mock.x, fOfA)
+                    , (mkElemVar Mock.y, fOfB)
+                    ]
+            map2 =
+                Mock.framedMap
+                    [(mkElemVar Mock.t, mkElemVar Mock.u)]
+                    [mkElemVar Mock.m]
             defined1 = mkDefined map1
             conditions =
                 map (Condition.coerceSort Mock.mapSort)
                 [ mconcat
-                    [ Condition.assign (inject Mock.x) Mock.a
-                    , Condition.assign (inject Mock.y) (mkDefined fOfA)
+                    [ Condition.assign (inject Mock.t) (mkElemVar Mock.x)
+                    , Condition.assign (inject Mock.u) (mkDefined fOfA)
+                    , Condition.assign (inject Mock.m)
+                        (Mock.builtinMap [(mkElemVar Mock.y, mkDefined fOfB)])
+                    ]
+                , mconcat
+                    [ Condition.assign (inject Mock.t) (mkElemVar Mock.y)
+                    , Condition.assign (inject Mock.u) (mkDefined fOfB)
+                    , Condition.assign (inject Mock.m)
+                        (Mock.builtinMap [(mkElemVar Mock.x, mkDefined fOfA)])
                     ]
                 ]
         in
             [ testCase "\\and(defined, _)" $ do
                 let expect = Pattern.withCondition defined1 <$> conditions
                 (actualAnd, actualUnify) <- simplifyUnify defined1 map2
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
+                assertEqual "" (List.sort expect) (List.sort actualAnd)
+                assertEqual "" (List.sort expect) (List.sort actualUnify)
             , testCase "\\and(_, defined)" $ do
                 let expect = Pattern.withCondition defined1 <$> conditions
                 (actualAnd, actualUnify) <- simplifyUnify map2 defined1
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
+                assertEqual "" (List.sort expect) (List.sort actualAnd)
+                assertEqual "" (List.sort expect) (List.sort actualUnify)
             , testCase "\\equals(defined, _)" $ do
                 let expect = Just conditions
                 actual <- simplifyEquals mempty defined1 map2
-                assertEqual "" expect actual
+                assertEqual "" (List.sort <$> expect) actual
             , testCase "\\equals(_, defined)" $ do
                 let expect = Just conditions
                 actual <- simplifyEquals mempty map2 defined1
-                assertEqual "" expect actual
+                assertEqual "" (List.sort <$> expect) actual
             ]
     ]
 
