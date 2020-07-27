@@ -34,11 +34,19 @@ import GHC.Stack
 import Kore.Attribute.Axiom
     ( Axiom (..)
     )
+import qualified Kore.Attribute.Pattern as Attribute
+import Kore.Attribute.Pattern.ConstructorLike
+    ( ConstructorLike (..)
+    , getConstructorLike
+    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import Kore.Internal.Pattern
     ( Pattern
+    )
+import Kore.Internal.TermLike
+    ( extractAttributes
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Variable
@@ -162,4 +170,11 @@ checkSubstitutionCoverage configuration solution
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     missingVariables = wouldNarrowWith solution
     isCoveringSubstitution = Set.null missingVariables
-    isSymbolic = Foldable.any isSomeConfigVariableName substitutionVariables
+    isSymbolic =
+        Foldable.any isSomeConfigVariableName substitutionVariables
+        || isJust
+            ( getConstructorLike
+            . Attribute.constructorLikeAttribute
+            . extractAttributes
+            $ term configuration
+            )
