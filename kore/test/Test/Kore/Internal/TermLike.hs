@@ -557,16 +557,20 @@ test_mkDefined =
                 assertEqual "" expect actual
             , testCase "f(a)" $ do
                 let actual = mkDefined (Mock.builtinSet [fa])
-                    expect = defined (Mock.builtinSet [defa])
+                    expect = Mock.builtinSet [defa]
                 assertEqual "" expect actual
             , testCase "f(x)" $ do
                 let actual = mkDefined (Mock.builtinSet [fx])
-                    expect = defined (Mock.builtinSet [defx])
+                    expect = Mock.builtinSet [defx]
                 assertEqual "" expect actual
             , testCase "a  opaque(a)" $ do
                 let actual = mkDefined (Mock.framedSet [Mock.a] [opaque])
                     expect = defined (Mock.framedSet [Mock.a] [defOpaque])
                 assertEqual "" expect actual
+            , testCase "same result inside and outside" $ do
+                let defInside = Mock.builtinSet [mkDefined fx]
+                    defOutside = mkDefined $ Mock.builtinSet [fx]
+                assertEqual "" defInside defOutside
             ]
     , testGroup "Map" $
         let fx = Mock.f (mkElemVar Mock.x)
@@ -595,19 +599,19 @@ test_mkDefined =
                 assertEqual "" expect actual
             , testCase "f(a) |-> a" $ do
                 let actual = mkDefined (Mock.builtinMap [(fa, Mock.a)])
-                    expect = defined (Mock.builtinMap [(defa, Mock.a)])
+                    expect = Mock.builtinMap [(defa, Mock.a)]
                 assertEqual "" expect actual
             , testCase "f(x) |-> a" $ do
                 let actual = mkDefined (Mock.builtinMap [(fx, Mock.a)])
-                    expect = defined (Mock.builtinMap [(defx, Mock.a)])
+                    expect = Mock.builtinMap [(defx, Mock.a)]
                 assertEqual "" expect actual
             , testCase "a |-> f(a)" $ do
                 let actual = mkDefined (Mock.builtinMap [(Mock.a, fa)])
-                    expect = defined (Mock.builtinMap [(Mock.a, defa)])
+                    expect = Mock.builtinMap [(Mock.a, defa)]
                 assertEqual "" expect actual
             , testCase "a |-> f(y)" $ do
                 let actual = mkDefined (Mock.builtinMap [(Mock.a, fy)])
-                    expect = defined (Mock.builtinMap [(Mock.a, defy)])
+                    expect = Mock.builtinMap [(Mock.a, defy)]
                 assertEqual "" expect actual
             , testCase "a |-> a  opaque(a)" $ do
                 let actual =
@@ -615,6 +619,10 @@ test_mkDefined =
                     expect =
                         defined (Mock.framedMap [(Mock.a, Mock.a)] [defOpaque])
                 assertEqual "" expect actual
+            , testCase "same result inside and outside" $ do
+                let defInside = Mock.builtinMap [(defx, defa)]
+                    defOutside = mkDefined $ Mock.builtinMap [(fx, fa)]
+                assertEqual "" defInside defOutside
             ]
     ]
   where

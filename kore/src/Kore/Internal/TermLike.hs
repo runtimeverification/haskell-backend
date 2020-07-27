@@ -1454,6 +1454,10 @@ mkDefined
     -> TermLike variable
 mkDefined = updateCallStack . worker
   where
+    mkDefined1 term
+      | isDefinedPattern term = term
+      | otherwise = mkDefinedAtTop term
+
     worker
         :: TermLike variable
         -> TermLike variable
@@ -1473,14 +1477,9 @@ mkDefined = updateCallStack . worker
                         { applicationSymbolOrAlias
                         , applicationChildren
                         } ->
-                    (if isFunctional applicationSymbolOrAlias
-                        then id
-                        else mkDefinedAtTop
-                    )
-                        (mkApplySymbol
-                                    applicationSymbolOrAlias
-                                    (fmap worker applicationChildren)
-                        )
+                    mkDefined1
+                    $ mkApplySymbol applicationSymbolOrAlias
+                    $ fmap worker applicationChildren
                 ApplyAliasF _ ->
                     mkDefinedAtTop term
                 BottomF _ ->
@@ -1497,10 +1496,10 @@ mkDefined = updateCallStack . worker
                     -- defined if its elements are all defined.
                     mkBuiltinList $ mkDefined <$> internalList
                 BuiltinF (Domain.BuiltinMap internalMap) ->
-                    mkDefinedAtTop . mkBuiltinMap
+                    mkDefined1 . mkBuiltinMap
                     $ mkDefinedInternalAc internalMap
                 BuiltinF (Domain.BuiltinSet internalSet) ->
-                    mkDefinedAtTop . mkBuiltinSet
+                    mkDefined1 . mkBuiltinSet
                     $ mkDefinedInternalAc internalSet
                 EqualsF _ -> term
                 ExistsF _ -> mkDefinedAtTop term
