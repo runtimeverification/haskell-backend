@@ -23,7 +23,6 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Default as Default
-import qualified Data.Functor.Foldable as Recursive
 import Data.Map.Strict
     ( Map
     )
@@ -63,8 +62,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariable
-    , RewritingVariableName
+    ( RewritingVariableName
     , getRewritingVariable
     )
 import qualified Kore.Syntax.Definition as Syntax
@@ -194,7 +192,7 @@ substitute subst claimPattern'@(ClaimPattern _ _ _ _) =
         { left = Pattern.substitute subst left
         }
   where
-    ClaimPattern { left, right, existentials } = claimPattern'
+    ClaimPattern { left } = claimPattern'
 
 -- | Applies a substitution to a claim and checks that
 -- it was fully applied, i.e. there is no substitution
@@ -226,14 +224,14 @@ isFreeOf rule =
     $ FreeVariables.toSet
     $ freeVariables rule
 
--- | Parses a term representing a RHS into a RHS
--- TODO: move this?
+-- TODO(Ana): move this to Internal.TermLike?
+-- | Extracts all top level existential quantifications
 termToExistentials
     :: TermLike RewritingVariableName
     -> [ElementVariable RewritingVariableName]
 termToExistentials (TermLike.Exists_ _ v term) =
     v : termToExistentials term
-termToRHS _ = []
+termToExistentials _ = []
 
 -- | One-Path-Claim claim pattern.
 newtype OnePathRule =

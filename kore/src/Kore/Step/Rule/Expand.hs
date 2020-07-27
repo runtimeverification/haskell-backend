@@ -55,7 +55,8 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( TermLike
+    ( InternalVariable
+    , TermLike
     , mkApplySymbol
     , mkElemVar
     )
@@ -79,6 +80,10 @@ import Kore.Step.ClaimPattern
     , OnePathRule (..)
     , ReachabilityRule (..)
     )
+import Kore.Step.RulePattern
+    ( RulePattern (RulePattern)
+    )
+import qualified Kore.Step.RulePattern as OLD
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh
     ( refreshVariable
@@ -95,6 +100,82 @@ class ExpandSingleConstructors rule where
         :: SmtMetadataTools attributes
         -> rule
         -> rule
+
+instance ExpandSingleConstructors (RulePattern VariableName) where
+    expandSingleConstructors
+        metadataTools
+        rule@(RulePattern _ _ _ _ _)
+      = case rule of
+        RulePattern
+            {left, antiLeft, requires
+            , rhs = OLD.RHS {existentials, right, ensures}
+            } ->
+            let leftVariables :: [ElementVariable VariableName]
+                leftVariables =
+                    mapMaybe retractElementVariable
+                    $ FreeVariables.toList
+                    $ freeVariables left
+                allSomeVariables :: Set (SomeVariable VariableName)
+                allSomeVariables =
+                    FreeVariables.toSet (freeVariables rule)
+                allElementVariables :: Set (ElementVariableName VariableName)
+                allElementVariables =
+                    Set.fromList
+                    $ map variableName
+                    $ mapMaybe retract (Set.toList allSomeVariables)
+                        ++ existentials
+                expansion
+                    ::  Map.Map
+                            (SomeVariable VariableName)
+                            (TermLike VariableName)
+                expansion =
+                    expandVariables
+                        metadataTools
+                        leftVariables
+                        allElementVariables
+                substitutionPredicate =
+                    ( Substitution.toPredicate
+                    . Substitution.wrap
+                    . Substitution.mkUnwrappedSubstitution
+                    )
+                        (Map.toList expansion)
+                subst = Map.mapKeys variableName expansion
+            in rule
+                { OLD.left = TermLike.substitute subst left
+                , OLD.antiLeft =
+                    AntiLeft.substitute subst <$> antiLeft
+                , OLD.requires =
+                    makeAndPredicate
+                        (Predicate.substitute subst requires)
+                        substitutionPredicate
+                , OLD.rhs = OLD.RHS
+                    { existentials
+                    , right = TermLike.substitute subst right
+                    , ensures = Predicate.substitute subst ensures
+                    }
+                }
+
+instance ExpandSingleConstructors OLD.OnePathRule where
+    expandSingleConstructors tools =
+        OLD.OnePathRule . expandSingleConstructors tools . OLD.getOnePathRule
+
+instance ExpandSingleConstructors OLD.AllPathRule where
+    expandSingleConstructors tools =
+        OLD.AllPathRule . expandSingleConstructors tools . OLD.getAllPathRule
+
+instance ExpandSingleConstructors OLD.ReachabilityRule where
+    expandSingleConstructors tools (OLD.OnePath rule) =
+        OLD.OnePath
+        . OLD.OnePathRule
+        . expandSingleConstructors tools
+        . OLD.getOnePathRule
+        $ rule
+    expandSingleConstructors tools (OLD.AllPath rule) =
+        OLD.AllPath
+        . OLD.AllPathRule
+        . expandSingleConstructors tools
+        . OLD.getAllPathRule
+        $ rule
 
 instance ExpandSingleConstructors ClaimPattern where
     expandSingleConstructors
@@ -167,31 +248,33 @@ instance ExpandSingleConstructors ReachabilityRule where
         . getAllPathRule
         $ rule
 
-data Expansion =
+data Expansion variable =
     Expansion
     { substitution
         :: !( Map
-                (SomeVariable RewritingVariableName)
-                (TermLike RewritingVariableName)
+                (SomeVariable variable)
+                (TermLike variable)
             )
     , stale
-        :: !(Set (ElementVariableName RewritingVariableName))
+        :: !(Set (ElementVariableName variable))
     }
     deriving (GHC.Generic)
 
-type Expander = State Expansion
+type Expander variable = State (Expansion variable)
 
 expandVariables
-    :: SmtMetadataTools attributes
-    -> [ElementVariable RewritingVariableName]
-    -> Set (ElementVariableName RewritingVariableName)
-    -> Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> [ElementVariable variable]
+    -> Set (ElementVariableName variable)
+    -> Map (SomeVariable variable) (TermLike variable)
 expandVariables metadataTools variables stale =
     traverse expandAddVariable variables
     & flip execState Expansion { substitution = Map.empty, stale }
     & substitution
   where
-    expandAddVariable :: ElementVariable RewritingVariableName -> Expander ()
+    expandAddVariable :: ElementVariable variable -> Expander variable ()
     expandAddVariable variable = do
         term <- expandVariable metadataTools variable
         Monad.unless
@@ -199,18 +282,22 @@ expandVariables metadataTools variables stale =
             (field @"substitution" %= Map.insert (inject variable) term)
 
 expandVariable
-    :: SmtMetadataTools attributes
-    -> ElementVariable RewritingVariableName
-    -> Expander (TermLike RewritingVariableName)
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> ElementVariable variable
+    -> Expander variable (TermLike variable)
 expandVariable metadataTools variable@Variable { variableSort } =
     expandSort metadataTools variable UseDirectly variableSort
 
 expandSort
-    :: SmtMetadataTools attributes
-    -> ElementVariable RewritingVariableName
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> ElementVariable variable
     -> VariableUsage
     -> Sort
-    -> Expander (TermLike RewritingVariableName)
+    -> Expander variable (TermLike variable)
 expandSort metadataTools defaultVariable variableUsage sort =
     case findSingleConstructor sort of
         Just constructor ->
@@ -229,10 +316,12 @@ expandSort metadataTools defaultVariable variableUsage sort =
             _ -> Nothing
 
 expandConstructor
-    :: SmtMetadataTools attributes
-    -> ElementVariable RewritingVariableName
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> ElementVariable variable
     -> Attribute.Constructors.Constructor
-    -> Expander (TermLike RewritingVariableName)
+    -> Expander variable (TermLike variable)
 expandConstructor
     metadataTools
     defaultVariable
@@ -240,7 +329,7 @@ expandConstructor
   =
     mkApplySymbol symbol <$> traverse expandChildSort sorts
   where
-    expandChildSort :: Sort -> Expander (TermLike RewritingVariableName)
+    expandChildSort :: Sort -> Expander variable (TermLike variable)
     expandChildSort = expandSort metadataTools defaultVariable UseAsPrototype
 
 {-| Context: we have a TermLike that contains a variables, and we
@@ -266,11 +355,13 @@ data VariableUsage =
     -- variable, so we need to generate a new one based on it.
 
 maybeNewVariable
-    :: HasCallStack
-    => ElementVariable RewritingVariableName
+    :: forall variable
+    .  InternalVariable variable
+    => HasCallStack
+    => ElementVariable variable
     -> Sort
     -> VariableUsage
-    -> Expander (TermLike RewritingVariableName)
+    -> Expander variable (TermLike variable)
 maybeNewVariable
     variable@Variable { variableSort }
     sort
