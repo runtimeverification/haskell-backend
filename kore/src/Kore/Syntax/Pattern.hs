@@ -43,6 +43,9 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
     ( Identity (..)
     )
+import Data.Kind
+    ( Type
+    )
 import Data.Text
     ( Text
     )
@@ -74,8 +77,8 @@ annotations.
 
 -}
 newtype Pattern
-    (variable :: *)
-    (annotation :: *)
+    (variable :: Type)
+    (annotation :: Type)
   =
     Pattern
         { getPattern :: Cofree (PatternF variable) annotation }

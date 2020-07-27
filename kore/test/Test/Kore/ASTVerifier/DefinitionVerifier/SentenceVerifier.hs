@@ -21,7 +21,6 @@ import Kore.Error
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( mkElemVar
-    , mkElementVariable
     , mkSetVar
     , mkTop
     , mkTop

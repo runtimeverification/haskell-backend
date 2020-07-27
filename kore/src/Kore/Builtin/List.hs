@@ -47,15 +47,11 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT
-    , fromMaybe
     , hoistMaybe
     )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe
     ( mapMaybeT
-    )
-import Data.Functor
-    ( (<$)
     )
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
@@ -94,7 +90,6 @@ import Kore.Internal.TermLike
     , pattern Builtin_
     , Concrete
     , pattern ElemVar_
-    , InternalVariable
     , Sort
     , TermLike
     , pattern Var_

@@ -65,10 +65,10 @@
                                 /* Fl Fn D Sfa */ VarX0:SortInt{}
                             )
                         ),
-                        /* Fl Fn D Sfa */ VarDotVar3:SortK{}
+                        /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortK{}
                     )
                 ),
-                /* Fl Fn D Sfa */ VarDotVar2:SortGeneratedCounterCell{}
+                /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortGeneratedCounterCell{}
             )
         )
     ),
@@ -82,9 +82,9 @@
                 /* Inj: */ inj{SortS{}, SortKItem{}}(
                     /* Fl Fn D Sfa Cl */ Lblone'Unds'PRIORITY'Unds'S{}()
                 ),
-                /* Fl Fn D Sfa */ VarDotVar3:SortK{}
+                /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortK{}
             )
         ),
-        /* Fl Fn D Sfa */ VarDotVar2:SortGeneratedCounterCell{}
+        /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortGeneratedCounterCell{}
     )
 )

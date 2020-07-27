@@ -68,7 +68,6 @@ import SQL.ColumnDef as Column
 import SQL.Key as Key
 import SQL.Query
     ( AccumT
-    , Query
     )
 import qualified SQL.Query as Query
 import SQL.SQL as SQL

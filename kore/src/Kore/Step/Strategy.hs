@@ -101,9 +101,6 @@ import qualified Data.List as List
 import Data.Maybe
     ( fromJust
     )
-import Data.Sequence
-    ( Seq
-    )
 import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
 import Kore.Step.Transition

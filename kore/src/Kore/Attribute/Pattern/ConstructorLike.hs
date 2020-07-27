@@ -35,9 +35,6 @@ import Kore.Internal.Symbol
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Syntax
-import Kore.Syntax.Application
-    ( Application (..)
-    )
 
 {- | A pattern is 'ConstructorLike' if logical equality is syntactic equality.
 

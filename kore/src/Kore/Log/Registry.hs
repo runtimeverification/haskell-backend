@@ -95,6 +95,9 @@ import Kore.Log.InfoReachability
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
+import Kore.Log.WarnIfLowProductivity
+    ( WarnIfLowProductivity
+    )
 import Kore.Log.WarnStuckProofState
     ( WarnStuckProofState
     )
@@ -148,6 +151,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @WarnStuckProofState
+    , mk $ Proxy @WarnIfLowProductivity
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop

@@ -44,13 +44,8 @@ import qualified GHC.Generics as GHC
 import Debug
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
-    , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate

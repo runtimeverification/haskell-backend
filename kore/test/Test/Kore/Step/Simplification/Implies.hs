@@ -33,9 +33,6 @@ import Test.Kore.Internal.Pattern
     ( TestPattern
     )
 import qualified Test.Kore.Internal.Pattern as Pattern
-import Test.Kore.Internal.Predicate
-    ( TestPredicate
-    )
 import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification

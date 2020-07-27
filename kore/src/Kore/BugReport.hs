@@ -83,7 +83,8 @@ writeBugReportArchive base tar = do
 {- | Run the inner action with a temporary directory holding the bug report.
 
 The bug report will be saved as an archive if that was requested by the user, or
-if there is an error in the inner action other than 'UserInterrupt'.
+if there is an error in the inner action other than
+'UserInterrupt' or 'ExitSuccess'.
 
  -}
 withBugReport
@@ -109,6 +110,9 @@ withBugReport exeName bugReport act =
         case exitCase of
             ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
             ExitCaseException someException
+              | Just ExitSuccess == fromException someException
+                    {- User exits the repl after the proof was finished -} ->
+                    optionalWriteBugReport tmpDir
               | Just UserInterrupt == fromException someException ->
                     optionalWriteBugReport tmpDir
               | otherwise -> do

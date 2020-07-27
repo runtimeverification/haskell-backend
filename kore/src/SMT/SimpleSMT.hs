@@ -26,6 +26,7 @@ module SMT.SimpleSMT
     , simpleCommand
     , simpleCommandMaybe
     , loadFile
+    , SolverException (..)
 
     -- ** S-Expressions
     , SExpr(..)
@@ -151,12 +152,14 @@ module SMT.SimpleSMT
     , existsQ
     ) where
 
-import Prelude hiding
+import Prelude.Kore hiding
     ( abs
     , and
+    , assert
     , concat
     , const
     , div
+    , extract
     , mod
     , not
     , or
@@ -166,8 +169,13 @@ import qualified Colog
 import Control.Concurrent
     ( forkIO
     )
+import Control.Exception
+    ( AsyncException
+    , SomeException (..)
+    )
 import qualified Control.Exception as X
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Catch as Exception
 import Data.Bits
     ( testBit
     )
@@ -176,6 +184,9 @@ import Data.Ratio
     , numerator
     , (%)
     )
+import Data.String
+    ( fromString
+    )
 import Data.Text
     ( Text
     )
@@ -183,8 +194,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified GHC.Generics as GHC
 import GHC.Stack
-    ( HasCallStack
-    , callStack
+    ( callStack
     )
 import Numeric
     ( readHex
@@ -193,7 +203,7 @@ import Numeric
     )
 import qualified Prelude
 import System.Exit
-    ( ExitCode
+    ( ExitCode (..)
     )
 import System.IO
     ( Handle
@@ -203,6 +213,7 @@ import System.IO
     )
 import System.Process
     ( ProcessHandle
+    , getProcessExitCode
     , runInteractiveProcess
     , waitForProcess
     )
@@ -219,6 +230,7 @@ import Kore.Log.DebugSolver
     , logDebugSolverSendWith
     )
 import qualified Log
+import qualified Pretty
 import SMT.AST
 
 -- ---------------------------------------------------------------------
@@ -266,6 +278,37 @@ data SolverHandle = SolverHandle
     , hProc  :: !ProcessHandle
     }
 
+data SolverException =
+    SolverException
+    { exitCode :: !(Maybe ExitCode)
+    , someException :: !Exception.SomeException
+    }
+    deriving (Show, Typeable)
+
+instance Exception.Exception SolverException where
+    displayException SolverException { exitCode, someException } =
+        (show . Pretty.vsep . catMaybes)
+        [ Just "Error while communicating with the solver:"
+        , Just $ Pretty.indent 4 $ prettyException someException
+        , (Pretty.<+>) "Solver exit code:" . prettyExitCode <$> exitCode
+        ]
+      where
+        prettyException =
+            Pretty.vsep . map fromString . lines . Exception.displayException
+        prettyExitCode ExitSuccess = "0"
+        prettyExitCode (ExitFailure code) = Pretty.pretty code
+
+throwSolverException :: ProcessHandle -> SomeException -> IO a
+throwSolverException solverHandle someException
+  | Just _ <- Exception.fromException someException :: Maybe AsyncException =
+    Exception.throwM someException
+  | otherwise = do
+    exitCode <- getProcessExitCode solverHandle
+    Exception.throwM SolverException { exitCode, someException }
+
+trySolver :: ProcessHandle -> IO a -> IO a
+trySolver hProc = Exception.handle (throwSolverException hProc)
+
 -- | Start a new solver process.
 newSolver
     :: FilePath -- ^ Executable
@@ -307,18 +350,20 @@ warn :: HasCallStack => Solver -> Text -> IO ()
 warn = logMessageWith Log.Warning
 
 send :: Solver -> SExpr -> IO ()
-send Solver { solverHandle = SolverHandle { hIn }, logger } command' = do
-    logDebugSolverSendWith logger command'
-    sendSExpr hIn command'
-    hPutChar hIn '\n'
-    hFlush hIn
+send Solver { solverHandle = SolverHandle { hIn, hProc }, logger } command' =
+    trySolver hProc $ do
+        logDebugSolverSendWith logger command'
+        sendSExpr hIn command'
+        hPutChar hIn '\n'
+        hFlush hIn
 
 recv :: Solver -> IO SExpr
-recv Solver { solverHandle = SolverHandle { hOut } , logger } = do
-    responseLines <- readResponse 0 []
-    let resp = Text.unlines (reverse responseLines)
-    logDebugSolverRecvWith logger resp
-    readSExpr resp
+recv Solver { solverHandle = SolverHandle { hOut, hProc } , logger } =
+    trySolver hProc $ do
+        responseLines <- readResponse 0 []
+        let resp = Text.unlines (reverse responseLines)
+        logDebugSolverRecvWith logger resp
+        readSExpr resp
   where
     {-| Reads an SMT response.
 
@@ -345,17 +390,17 @@ command solver c =
         recv solver
 
 stop :: Solver -> IO ExitCode
-stop solver@Solver { solverHandle = SolverHandle { hIn, hOut, hErr, hProc } } = do
-    send solver (List [Atom "exit"])
-    ec <- waitForProcess hProc
-    let handler :: X.IOException -> IO ()
-        handler ex = (debug solver . Text.pack) (show ex)
-    X.handle handler $ do
-        hClose hIn
-        hClose hOut
-        hClose hErr
-    return ec
-
+stop solver@Solver { solverHandle = SolverHandle { hIn, hOut, hErr, hProc } } =
+    trySolver hProc $ do
+        send solver (List [Atom "exit"])
+        ec <- waitForProcess hProc
+        let handler :: X.IOException -> IO ()
+            handler ex = (debug solver . Text.pack) (show ex)
+        X.handle handler $ do
+            hClose hIn
+            hClose hOut
+            hClose hErr
+        return ec
 
 -- | Load the contents of a file.
 loadFile :: Solver -> FilePath -> IO ()
@@ -365,7 +410,6 @@ loadFile s file = do
         Left err -> fail (show err)
         Right exprs ->
             mapM_ (command s) exprs
-
 
 -- | A command with no interesting result.
 ackCommand :: Solver -> SExpr -> IO ()

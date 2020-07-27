@@ -18,8 +18,7 @@ import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
 import Kore.Attribute.Subsort
-    ( Subsort (..)
-    , subsortAttribute
+    ( subsortAttribute
     )
 import qualified Kore.Builtin as Builtin
 import Kore.Error

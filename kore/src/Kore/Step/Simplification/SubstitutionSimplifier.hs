@@ -32,9 +32,6 @@ import Control.Monad.State.Strict
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.Map.Strict
     ( Map

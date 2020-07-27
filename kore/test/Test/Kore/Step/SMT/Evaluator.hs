@@ -15,14 +15,6 @@ import Hedgehog hiding
     )
 import Test.Tasty
 
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
-
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.MultiOr
     ( MultiOr
     )

@@ -12,9 +12,6 @@ import Prelude.Kore
 import Data.Functor.Compose
 
 import Kore.Internal.Condition as Condition
-import Kore.Internal.Inj
-    ( Inj (..)
-    )
 import Kore.Internal.MultiOr
     ( MultiOr
     )

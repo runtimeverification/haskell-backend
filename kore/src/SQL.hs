@@ -44,9 +44,6 @@ import Data.Generics.Wrapped
 import Data.Int
     ( Int64
     )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Proxy
     ( Proxy (..)
     )

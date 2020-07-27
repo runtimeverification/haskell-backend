@@ -50,7 +50,6 @@ import Control.Monad.RWS.Strict
     ( MonadWriter
     , RWST
     , ask
-    , lift
     , runRWST
     , tell
     )
@@ -68,9 +67,6 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Foldable as Foldable
-import Data.Functor
-    ( ($>)
-    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -89,9 +85,6 @@ import Data.IORef
 import qualified Data.List as List
 import Data.List.Extra
     ( upper
-    )
-import Data.List.NonEmpty
-    ( NonEmpty
     )
 import qualified Data.Map.Strict as Map
 import Data.Maybe
@@ -141,7 +134,9 @@ import System.Process
     )
 import Text.Megaparsec
     ( ParseErrorBundle (..)
+    , ShowErrorComponent (..)
     , errorBundlePretty
+    , mapParseError
     , parseMaybe
     , runParser
     )
@@ -211,7 +206,7 @@ import Kore.Unparser
 import qualified Pretty
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
--- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
+-- _great care_ of evaluating the RWST to a StateT immediately, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
 type ReplM m a = RWST (Config m) ReplOutput ReplState m a
@@ -1478,6 +1473,12 @@ showAxiomOrClaimName
   =
     Just $ "Claim " <> Text.unpack ruleName
 
+newtype ReplScriptParseError = ReplScriptParseError String
+    deriving (Eq, Ord, Show)
+
+instance ShowErrorComponent ReplScriptParseError where
+    showErrorComponent (ReplScriptParseError err) = err
+
 parseEvalScript
     :: forall t m
     .  MonadSimplify m
@@ -1498,14 +1499,18 @@ parseEvalScript file scriptModeOutput = do
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
   where
-    parseFailed
-        :: ParseErrorBundle String String
-        -> t m ()
     parseFailed err =
         lift . liftIO . putStrLn
-            $ "\nCouldn't parse initial script file."
+            $ "\nCouldn't parse repl script file."
             <> "\nParser error at: "
-            <> errorBundlePretty err
+            <> (err & toReplScriptParseErrors & errorBundlePretty)
+
+    toReplScriptParseErrors errorBundle =
+        errorBundle
+            { bundleErrors =
+                mapParseError ReplScriptParseError
+                <$> bundleErrors errorBundle
+            }
 
     executeScript
         :: [ReplCommand]

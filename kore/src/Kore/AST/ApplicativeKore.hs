@@ -12,9 +12,6 @@ import Data.Generics.Product
     ( field
     )
 
-import Kore.Attribute.Pattern.FreeVariables
-    ( freeVariables
-    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition

@@ -12,9 +12,6 @@ module Kore.Attribute.Source
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Default
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP

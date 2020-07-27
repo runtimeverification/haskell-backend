@@ -12,9 +12,6 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import qualified Control.Arrow as Arrow
-import Control.Comonad.Trans.Cofree
-    ( CofreeF ((:<))
-    )
 import qualified Control.Monad as Monad
 import Control.Monad.Reader
     ( ReaderT

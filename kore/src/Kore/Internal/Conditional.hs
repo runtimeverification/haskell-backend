@@ -29,14 +29,8 @@ module Kore.Internal.Conditional
 
 import Prelude.Kore
 
-import Control.Comonad
-    ( Comonad (..)
-    )
 import Control.DeepSeq
     ( NFData
-    )
-import Data.Monoid
-    ( (<>)
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
