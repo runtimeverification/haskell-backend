@@ -45,10 +45,10 @@ import Kore.Internal.Conditional
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( extractAttributes
     )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Variable
     ( SomeVariableName
     )
@@ -172,7 +172,7 @@ checkSubstitutionCoverage configuration solution
     isCoveringSubstitution = Set.null missingVariables
     isSymbolic =
         Foldable.any isSomeConfigVariableName substitutionVariables
-        || isJust
+        || isNothing
             ( getConstructorLike
             . Attribute.constructorLikeAttribute
             . extractAttributes
