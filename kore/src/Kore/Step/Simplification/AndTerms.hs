@@ -239,7 +239,7 @@ andEqualsFunctions notSimplifier =
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s)
+    , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Map.unifyEquals s))
     , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier)
     , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Set.unifyEquals s))
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
