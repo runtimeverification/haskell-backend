@@ -10,6 +10,7 @@ module Kore.Step.ClaimPattern
     , AllPathRule (..)
     , ReachabilityRule (..)
     , toSentence
+    , applySubstitution
     ) where
 
 import Prelude.Kore
@@ -18,6 +19,11 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Default as Default
+import Data.Map.Strict
+    ( Map
+    )
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -25,6 +31,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -34,12 +41,18 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Substitution
+    ( Substitution
+    )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
     ( ElementVariable
     , Modality
+    , SomeVariable
+    , SomeVariableName (..)
     , TermLike
     , VariableName
     )
@@ -142,6 +155,71 @@ claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
     rightPattern =
         OrPattern.toTermLike right
         & TermLike.mapVariables getRewritingVariable
+
+substituteRight
+    :: Map
+        (SomeVariableName RewritingVariableName)
+        (TermLike RewritingVariableName)
+    -> ClaimPattern
+    -> ClaimPattern
+substituteRight subst claimPattern'@ClaimPattern { right, existentials } =
+    claimPattern'
+        { right = OrPattern.substitute subst' right
+        }
+  where
+    subst' =
+        foldr
+            ( Map.delete
+            . inject
+            . TermLike.variableName
+            )
+            subst
+            existentials
+
+-- | Apply the substitution to the claim.
+substitute
+    :: Map
+        (SomeVariableName RewritingVariableName)
+        (TermLike RewritingVariableName)
+    -> ClaimPattern
+    -> ClaimPattern
+substitute subst claimPattern'@(ClaimPattern _ _ _ _) =
+    substituteRight subst
+    $ claimPattern'
+        { left = Pattern.substitute subst left
+        }
+  where
+    ClaimPattern { left, right, existentials } = claimPattern'
+
+-- | Applies a substitution to a claim and checks that
+-- it was fully applied, i.e. there is no substitution
+-- variable left in the claim.
+applySubstitution
+    :: HasCallStack
+    => Substitution RewritingVariableName
+    -> ClaimPattern
+    -> ClaimPattern
+applySubstitution substitution claim =
+    if finalClaim `isFreeOf` substitutedVariables
+        then finalClaim
+        else error
+            (  "Substituted variables not removed from the rule, cannot throw "
+            ++ "substitution away."
+            )
+  where
+    subst = Substitution.toMap substitution
+    finalClaim = substitute subst claim
+    substitutedVariables = Substitution.variables substitution
+
+-- |Is the rule free of the given variables?
+isFreeOf
+    :: ClaimPattern
+    -> Set.Set (SomeVariable RewritingVariableName)
+    -> Bool
+isFreeOf rule =
+    Set.disjoint
+    $ FreeVariables.toSet
+    $ freeVariables rule
 
 -- | One-Path-Claim claim pattern.
 newtype OnePathRule =

@@ -14,6 +14,7 @@ import Control.Monad
     ( (>=>)
     )
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -37,11 +38,18 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( termLikeSort
     )
-import Kore.Step.RulePattern
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Step.ClaimPattern
     ( AllPathRule (..)
+    , ClaimPattern (ClaimPattern)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , RewriteRule (..)
+    )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
+import Kore.Step.RulePattern
+    ( RewriteRule (..)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.RulePattern as RulePattern
@@ -63,7 +71,7 @@ import Logic
     )
 import qualified Logic
 
--- | Simplifies the left-hand-side of a rule/claim
+-- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
     simplifyRuleLhs
         :: forall simplifier
@@ -101,6 +109,36 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
                         $ makeAndPredicate predicate requires'
                     }
 
+instance SimplifyRuleLHS ClaimPattern
+  where
+    simplifyRuleLhs rule@(ClaimPattern _ _ _ _) = do
+        simplifiedTerms <-
+            Pattern.simplifyTopConfiguration left
+        fullySimplified <- SMT.Evaluator.filterMultiOr simplifiedTerms
+        let rules =
+                map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
+        return (MultiAnd.make rules)
+      where
+        ClaimPattern { left } = rule
+
+        setRuleLeft
+            :: ClaimPattern
+            -> Pattern RewritingVariableName
+            -> ClaimPattern
+        setRuleLeft
+            claimPattern@ClaimPattern { left }
+            patt@Conditional { substitution }
+          =
+            -- TODO: take another look at this
+            ClaimPattern.applySubstitution
+                substitution
+                claimPattern
+                    { ClaimPattern.left =
+                        Condition.andCondition
+                            patt
+                            (Condition.eraseConditionalTerm left)
+                    }
+
 instance SimplifyRuleLHS (RewriteRule VariableName) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
@@ -120,17 +158,16 @@ instance SimplifyRuleLHS ReachabilityRule where
         (fmap . fmap) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule
-    :: forall simplifier variable
+    :: forall simplifier
     .  MonadSimplify simplifier
-    => InternalVariable variable
-    => RulePattern variable
-    -> simplifier (MultiAnd (RulePattern variable))
+    => ClaimPattern
+    -> simplifier (MultiAnd ClaimPattern)
 simplifyClaimRule =
     fmap MultiAnd.make . Logic.observeAllT . worker
   where
     simplify, filterWithSolver
-        :: Pattern variable
-        -> LogicT simplifier (Pattern variable)
+        :: Pattern RewritingVariableName
+        -> LogicT simplifier (Pattern RewritingVariableName)
     simplify =
         (return . Pattern.requireDefined)
         >=> Pattern.simplifyTopConfiguration
@@ -138,13 +175,14 @@ simplifyClaimRule =
         >=> filterWithSolver
     filterWithSolver = SMT.Evaluator.filterBranch
 
-    worker :: RulePattern variable -> LogicT simplifier (RulePattern variable)
-    worker rulePattern = do
-        let lhs = Lens.view RulePattern.leftPattern rulePattern
+    worker :: ClaimPattern -> LogicT simplifier ClaimPattern
+    worker claimPattern = do
+        let lhs = ClaimPattern.left claimPattern
         simplified <- simplify lhs
         let substitution = Pattern.substitution simplified
             lhs' = simplified { Pattern.substitution = mempty }
-        rulePattern
-            & Lens.set RulePattern.leftPattern lhs'
-            & RulePattern.applySubstitution substitution
+        claimPattern
+            { ClaimPattern.left = lhs'
+            }
+            & ClaimPattern.applySubstitution substitution
             & return
