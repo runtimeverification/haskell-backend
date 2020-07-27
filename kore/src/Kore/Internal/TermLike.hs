@@ -1493,7 +1493,9 @@ mkDefined = updateCallStack . worker
                 BuiltinF (Domain.BuiltinInt _) -> term
                 BuiltinF (Domain.BuiltinString _) -> term
                 BuiltinF (Domain.BuiltinList internalList) ->
-                    mkDefinedAtTop . mkBuiltinList $ mkDefined <$> internalList
+                    -- mkDefinedAtTop is not needed because the list is always
+                    -- defined if its elements are all defined.
+                    mkBuiltinList $ mkDefined <$> internalList
                 BuiltinF (Domain.BuiltinMap internalMap) ->
                     mkDefinedAtTop . mkBuiltinMap
                     $ mkDefinedInternalAc internalMap
