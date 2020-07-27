@@ -11,9 +11,11 @@ module Kore.Builtin.Set.Set
     , isSymbolElement
     , isSymbolUnit
     , isSymbolList2set
+    , isSymbolInclusion
     , lookupSymbolIn
     , lookupSymbolDifference
     , lookupSymbolList2set
+    , lookupSymbolInclusion
       -- * Keys
     , concatKey
     , differenceKey
@@ -24,6 +26,7 @@ module Kore.Builtin.Set.Set
     , toListKey
     , unitKey
     , list2setKey
+    , inclusionKey
     ) where
 
 import Prelude.Kore
@@ -74,6 +77,9 @@ intersectionKey = "SET.intersection"
 list2setKey :: IsString s => s
 list2setKey = "SET.list2set"
 
+inclusionKey :: IsString s => s
+inclusionKey = "SET.inclusion"
+
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
 lookupSymbolIn
@@ -98,6 +104,14 @@ lookupSymbolList2set
     -> Either (Kore.Error e) Symbol
 lookupSymbolList2set = Builtin.lookupSymbol list2setKey
 
+{- | Find the symbol hooked to @SET.inclusion@ in an indexed module.
+ -}
+lookupSymbolInclusion
+    :: Sort
+    -> VerifiedModule Attribute.Symbol
+    -> Either (Kore.Error e) Symbol
+lookupSymbolInclusion = Builtin.lookupSymbol inclusionKey
+
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
 isSymbolConcat :: Symbol -> Bool
@@ -117,6 +131,11 @@ isSymbolUnit = Builtin.isSymbol unitKey
 -}
 isSymbolList2set :: Symbol -> Bool
 isSymbolList2set = Builtin.isSymbol list2setKey
+
+{- | Check if the given symbol is hooked to @SET.inclusion@.
+-}
+isSymbolInclusion :: Symbol -> Bool
+isSymbolInclusion = Builtin.isSymbol inclusionKey
 
 {- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
 -}
