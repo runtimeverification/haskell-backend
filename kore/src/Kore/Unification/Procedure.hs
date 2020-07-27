@@ -43,8 +43,7 @@ import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
 import Kore.Unification.Unify
-    ( InternalVariable
-    , MonadUnify
+    ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
 import Logic

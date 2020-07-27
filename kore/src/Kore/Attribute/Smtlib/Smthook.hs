@@ -13,12 +13,6 @@ module Kore.Attribute.Smtlib.Smthook
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
-import Data.Default
-    ( Default (..)
-    )
 import Data.Text
     ( Text
     )
@@ -28,9 +22,6 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser
 import Kore.Debug
-import Kore.Syntax.Id
-    ( Id
-    )
 import SMT.SimpleSMT
     ( SExpr (..)
     , showSExpr

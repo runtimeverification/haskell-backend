@@ -29,6 +29,7 @@ module SMT
     , declareFun_
     , setInfo
     , NoSMT (..), runNoSMT
+    , SimpleSMT.SolverException (..)
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.Logger
@@ -48,7 +49,9 @@ module SMT
     , SimpleSMT.existsQ
     ) where
 
-import Prelude
+import Prelude.Kore hiding
+    ( assert
+    )
 
 import Control.Concurrent.MVar
 import Control.Exception
@@ -62,9 +65,6 @@ import Control.Monad.Catch
     )
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Counter as Counter
-import Control.Monad.IO.Class
-    ( MonadIO
-    )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT (..)

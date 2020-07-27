@@ -19,14 +19,8 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import Data.Default
-    ( def
-    )
 import Data.Generics.Product
 
-import Kore.Attribute.Attributes
-    ( Attributes (..)
-    )
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser
 import Kore.Attribute.Symbol

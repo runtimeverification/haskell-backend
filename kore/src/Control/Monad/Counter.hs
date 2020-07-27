@@ -28,9 +28,6 @@ module Control.Monad.Counter
 
 import Prelude.Kore
 
-import Control.Monad
-    ( MonadPlus
-    )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
 import qualified Control.Monad.Morph as Morph

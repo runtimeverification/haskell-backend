@@ -21,9 +21,6 @@ import Data.Default
     ( Default (..)
     )
 import qualified Data.Foldable as Foldable
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( antiLeftPredicate
     )

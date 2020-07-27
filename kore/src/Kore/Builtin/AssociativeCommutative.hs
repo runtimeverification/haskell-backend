@@ -42,11 +42,11 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
-import Control.Monad
-    ( (>=>)
-    )
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+import Data.Kind
+    ( Type
+    )
 import qualified Data.List as List
 import qualified Data.List
 import Data.Map.Strict
@@ -96,7 +96,6 @@ import Kore.Internal.TermLike
     , pattern BuiltinMap_
     , pattern BuiltinSet_
     , pattern ElemVar_
-    , InternalVariable
     , TermLike
     , mkApplySymbol
     , mkBuiltin
@@ -128,7 +127,7 @@ import qualified Pretty
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
 -}
 class
-    Domain.AcWrapper (normalized :: * -> * -> *)
+    Domain.AcWrapper (normalized :: Type -> Type -> Type)
     => TermWrapper normalized
   where
     {- | Render a normalized value (e.g. 'NormalizedSet') as a Domain.Builtin.

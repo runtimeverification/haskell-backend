@@ -21,9 +21,6 @@ import Kore.Step.AntiLeft
     )
 import qualified Kore.Step.AntiLeft as AntiLeft.DoNotUse
 import Kore.Step.RulePattern
-import Kore.Step.Step
-    ( refreshRule
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 

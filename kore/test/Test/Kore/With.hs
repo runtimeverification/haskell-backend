@@ -12,18 +12,12 @@ import Data.List
     ( foldl'
     )
 import qualified Data.List as List
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
 import qualified Data.List.NonEmpty as NonEmpty
     ( cons
     , reverse
     )
 import qualified Data.Map.Strict as Map
 
-import Kore.Attribute.Attributes
-    ( AttributePattern
-    )
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors (Constructors)
     )
@@ -67,16 +61,7 @@ import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
     ( IndirectSymbolDeclaration (..)
     )
 import Kore.Syntax.Definition
-    ( Attributes (Attributes)
-    , Definition (Definition)
-    , Module (Module)
-    , Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence)
-    , SentenceAlias (SentenceAlias)
-    , SentenceAxiom (SentenceAxiom)
-    , SentenceHook (SentenceHookedSort, SentenceHookedSymbol)
-    , SentenceImport (SentenceImport)
-    , SentenceSort (SentenceSort)
-    , SentenceSymbol (SentenceSymbol)
+    ( Definition (Definition)
     )
 import qualified Kore.Syntax.Definition as Definition
     ( Definition (..)

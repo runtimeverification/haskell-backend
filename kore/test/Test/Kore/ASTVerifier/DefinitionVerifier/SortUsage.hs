@@ -8,9 +8,6 @@ import Test.Tasty
     ( TestTree
     , testGroup
     )
-import Test.Tasty.HUnit
-    ( HasCallStack
-    )
 
 import qualified Data.List as List
 import qualified Data.Text as Text

@@ -37,9 +37,6 @@ import Kore.IndexedModule.IndexedModule
     ( indexedModuleWithDefaultImports
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
@@ -57,8 +54,6 @@ import Kore.Step.RulePattern
     ( OnePathRule (..)
     , RHS (..)
     , ReachabilityRule (..)
-    , RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
     , injectTermIntoRHS
     , rulePattern
     )

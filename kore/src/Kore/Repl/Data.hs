@@ -62,9 +62,6 @@ import qualified Data.GraphViz as Graph
 import Data.List
     ( sort
     )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Map.Strict
     ( Map
     )

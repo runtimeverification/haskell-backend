@@ -60,7 +60,6 @@ import Kore.Internal.TermLike
     ( ElementVariable
     , pattern Equals_
     , Exists (Exists)
-    , InternalVariable
     , SomeVariableName
     , Sort
     , TermLike

@@ -37,9 +37,6 @@ module Kore.Unparser
 
 import Prelude.Kore
 
-import Control.Category
-    ( (>>>)
-    )
 import qualified Data.Char as Char
 import Data.Functor.Const
 import Data.Map.Strict

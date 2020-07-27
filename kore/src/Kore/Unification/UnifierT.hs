@@ -17,25 +17,21 @@ module Kore.Unification.UnifierT
 
 import Prelude.Kore
 
-import Control.Monad
-    ( MonadPlus
-    )
 import Control.Monad.Reader
     ( MonadReader (..)
-    )
-import Control.Monad.Trans.Class
-    ( MonadTrans (..)
     )
 import Control.Monad.Trans.Reader
     ( ReaderT (..)
     , mapReaderT
+    )
+import Data.Kind
+    ( Type
     )
 
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
     ( ConditionSimplifier (..)
-    , InternalVariable
     , MonadSimplify (..)
     )
 import Kore.Unification.SubstitutionSimplifier
@@ -49,7 +45,7 @@ import SMT
     ( MonadSMT (..)
     )
 
-newtype UnifierT (m :: * -> *) a =
+newtype UnifierT (m :: Type -> Type) a =
     UnifierT
         { getUnifierT
             :: ReaderT

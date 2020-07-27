@@ -37,7 +37,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT (..)
-    , fromMaybe
     )
 import Control.Monad
     ( zipWithM_

@@ -11,10 +11,6 @@ module Kore.Log.ErrorDecidePredicateUnknown
 
 import Prelude.Kore
 
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
-
 import Kore.Internal.Predicate
     ( Predicate
     )

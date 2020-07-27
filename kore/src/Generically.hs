@@ -8,6 +8,9 @@ module Generically
     ( Generically1 (..)
     ) where
 
+import Data.Kind
+    ( Type
+    )
 import Prelude.Kore
 
 {- | @Generically1@ is a wrapper for deriving instances generically.
@@ -18,6 +21,6 @@ unwrapping ('unGenerically1'). Then, we can use @DerivingVia@ to derive any
 instance @via Generically1@.
 
  -}
-newtype Generically1 (f :: * -> *) a =
+newtype Generically1 (f :: Type -> Type) a =
     Generically1 { unGenerically1 :: f a }
     deriving Functor

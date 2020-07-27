@@ -35,7 +35,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT (MaybeT)
-    , fromMaybe
     , hoistMaybe
     , runMaybeT
     )
@@ -84,7 +83,6 @@ import Kore.Internal.TermLike
     ( pattern App_
     , pattern Builtin_
     , Concrete
-    , InternalVariable
     , TermLike
     , mkSort
     , termLikeSort

@@ -30,9 +30,6 @@ import Prelude.Kore hiding
 import Control.Monad
     ( void
     )
-import Data.Functor
-    ( ($>)
-    )
 import Text.Megaparsec
     ( Parsec
     , anySingle

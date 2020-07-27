@@ -26,9 +26,6 @@ import Data.Limit
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
 
-import Kore.Internal.Pattern
-    ( Conditional (Conditional)
-    )
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
@@ -64,12 +61,6 @@ import Kore.Step.Strategy
     , Strategy
     , pickFinal
     , runStrategyWithSearchOrder
-    )
-import Kore.Syntax.Id
-    ( Id (..)
-    )
-import Kore.Syntax.Variable
-    ( VariableName
     )
 import qualified Log
 import Numeric.Natural

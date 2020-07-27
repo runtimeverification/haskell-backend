@@ -67,9 +67,6 @@ import Data.List.Extra
     ( findIndex
     , groupSort
     )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -123,9 +120,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import Kore.Repl.Data
-import Kore.Step.RulePattern
-    ( RulePattern (..)
-    )
 import Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify

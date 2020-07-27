@@ -45,9 +45,6 @@ import Data.Foldable
     , traverse_
     )
 import qualified Data.List as List
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -129,7 +126,6 @@ import Kore.Step.RulePattern
     ( ImplicationRule (..)
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
     , ToRulePattern (..)
     , getRewriteRule
     , lhsEqualsRhs

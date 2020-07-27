@@ -38,9 +38,6 @@ import Control.Monad.Except
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Map.Strict
     ( Map
     )

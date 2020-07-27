@@ -61,8 +61,7 @@ import Test.Tasty
     , testGroup
     )
 import Test.Tasty.HUnit
-    ( HasCallStack
-    , assertEqual
+    ( assertEqual
     , assertFailure
     , testCase
     )

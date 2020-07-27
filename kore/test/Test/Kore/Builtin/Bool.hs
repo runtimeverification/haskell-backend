@@ -25,9 +25,6 @@ import Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
-import Control.Error
-    ( runMaybeT
-    )
 import Control.Monad.Trans.Maybe
 import qualified Data.Text as Text
 

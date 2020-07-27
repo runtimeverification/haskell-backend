@@ -6,13 +6,7 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Concurrent.MVar
-import Control.Monad.Trans
-    ( lift
-    )
 import Data.Reflection
-import Data.Semigroup
-    ( (<>)
-    )
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -55,6 +49,9 @@ import Kore.Log
     )
 import Kore.Log.KoreLogOptions
     ( parseKoreLogOptions
+    )
+import Kore.Log.WarnIfLowProductivity
+    ( warnIfLowProductivity
     )
 import Kore.Repl.Data
 import Kore.Step.SMT.Lemma
@@ -271,6 +268,7 @@ mainWithOptions
                         mainModuleName
                         koreLogOptions
 
+                warnIfLowProductivity
                 pure ExitSuccess
     exitWith exitCode
   where

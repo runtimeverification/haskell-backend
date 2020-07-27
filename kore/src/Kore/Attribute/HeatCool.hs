@@ -14,9 +14,6 @@ module Kore.Attribute.HeatCool
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Monad
     ( (>=>)
     )

@@ -36,9 +36,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
     , simplify
     )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-    ( AttemptedAxiomResults (..)
-    )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )

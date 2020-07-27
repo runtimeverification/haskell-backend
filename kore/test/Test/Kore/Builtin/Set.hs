@@ -102,12 +102,8 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.Sort
-    ( Sort
-    )
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
     , injectTermIntoRHS
     )
 import Kore.Step.RulePattern as RulePattern
@@ -117,9 +113,6 @@ import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Syntax.Id
-    ( Id
-    )
 import Kore.Unification.UnifierT
     ( runUnifierT
     )

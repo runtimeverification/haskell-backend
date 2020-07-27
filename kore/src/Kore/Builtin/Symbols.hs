@@ -13,9 +13,6 @@ module Kore.Builtin.Symbols
 
 import Prelude.Kore
 
-import Control.Error
-    ( fromMaybe
-    )
 import Data.Text
     ( Text
     )

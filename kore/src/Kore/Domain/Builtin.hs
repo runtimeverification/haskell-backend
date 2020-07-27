@@ -56,6 +56,9 @@ import Control.Lens.Iso
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
+import Data.Kind
+    ( Type
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -161,7 +164,7 @@ The valueWrapper is a data type holding the non-key part of elements.
 For a set, the valueWapper would be something equivalent to @Data.Empty.T@.
 For a map, it would be something equivalent to @Identity@.
 -}
-data NormalizedAc (collection :: * -> * -> *) key child = NormalizedAc
+data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
     { elementsWithVariables :: [Element collection child]
     -- ^ Non-concrete elements of the structure.
     -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
@@ -377,7 +380,7 @@ asSingleOpaqueElem
 
 {- | Internal representation of associative-commutative builtin terms.
 -}
-data InternalAc key (normalized :: * -> * -> *) child =
+data InternalAc key (normalized :: Type -> Type -> Type) child =
     InternalAc
         { builtinAcSort :: !Sort
         , builtinAcUnit :: !Symbol
@@ -390,7 +393,7 @@ data InternalAc key (normalized :: * -> * -> *) child =
 {- | Establishes a bijection between value wrappers and entire-structure
 wrappers, with a few utility functions for the two.
 -}
-class AcWrapper (normalized :: * -> * -> *) where
+class AcWrapper (normalized :: Type -> Type -> Type) where
     -- TODO (thomas.tuegel): Make this a type family?
     data family Value normalized child
     data family Element normalized child

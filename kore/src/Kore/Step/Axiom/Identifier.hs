@@ -33,8 +33,7 @@ import qualified GHC.Generics as GHC
 import qualified Kore.Builtin.External as Builtin
 import Kore.Debug
 import Kore.Internal.TermLike
-    ( CofreeF (..)
-    , InternalVariable
+    ( InternalVariable
     , TermLike
     )
 import qualified Kore.Syntax.Application as Syntax
