@@ -19,6 +19,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 import Kore.Debug
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -111,6 +114,13 @@ instance From ClaimPattern Attribute.PriorityAttributes where
 
 instance From ClaimPattern Attribute.HeatCool where
     from = from @(Attribute.Axiom _ _) . attributes
+
+instance HasFreeVariables ClaimPattern RewritingVariableName where
+    freeVariables claimPattern'@(ClaimPattern _ _ _ _) =
+        freeVariables left
+        <> freeVariables (OrPattern.toPattern right)
+      where
+        ClaimPattern { left, right } = claimPattern'
 
 claimPatternToTerm
     :: Modality
