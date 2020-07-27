@@ -353,10 +353,6 @@ instance Goal.Goal Goal where
 
     simplify = return
 
-    inferDefined goal@(src, _)
-      | src == NotDef = empty
-      | otherwise = pure goal
-
     applyClaims claims = derivePar (map Rule claims)
 
     applyAxioms axiomGroups = derivePar (concat axiomGroups)

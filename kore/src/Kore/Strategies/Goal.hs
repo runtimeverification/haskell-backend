@@ -203,11 +203,6 @@ class Goal goal where
     -- checkImplication.
     isTriviallyValid :: goal -> Bool
 
-    inferDefined
-        :: MonadSimplify m
-        => goal
-        -> Strategy.TransitionT (Rule goal) m goal
-
     checkImplication
         :: MonadSimplify m
         => goal -> m (CheckImplicationResult goal)
@@ -314,8 +309,6 @@ instance Goal OnePathRule where
 
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
-    inferDefined = inferDefined' _Unwrapped
-
 deriveSeqOnePath
     ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
@@ -343,7 +336,6 @@ instance Goal AllPathRule where
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
     isTriviallyValid = isTriviallyValid' _Unwrapped
-    inferDefined = inferDefined' _Unwrapped
     applyClaims claims = deriveSeqAllPath (map goalToRule claims)
 
     applyAxioms axiomss = \goal ->
@@ -418,15 +410,6 @@ instance Goal ReachabilityRule where
 
     isTriviallyValid (AllPath goal) = isTriviallyValid goal
     isTriviallyValid (OnePath goal) = isTriviallyValid goal
-
-    inferDefined (AllPath goal) =
-        inferDefined goal
-        & fmap AllPath
-        & allPathTransition
-    inferDefined (OnePath goal) =
-        inferDefined goal
-        & fmap OnePath
-        & onePathTransition
 
     applyClaims claims (AllPath goal) =
         applyClaims (mapMaybe maybeAllPath claims) goal
@@ -682,22 +665,6 @@ simplify'
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify' lensRulePattern =
-    Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
-        let definedConfig =
-                Pattern.andCondition (mkDefined <$> config)
-                $ from $ makeCeilPredicate_ (Conditional.term config)
-        configs <-
-            simplifyTopConfiguration definedConfig
-            >>= SMT.Evaluator.filterMultiOr
-            & lift
-        Foldable.asum (pure <$> configs)
-
-inferDefined'
-    :: MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
-    -> goal
-    -> Strategy.TransitionT (Rule goal) m goal
-inferDefined' lensRulePattern =
     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
         let definedConfig =
                 Pattern.andCondition (mkDefined <$> config)
