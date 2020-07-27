@@ -1263,28 +1263,71 @@ test_Defined =
                 assertEqual "" expect actual
             ]
     , testGroup "Sets" $
-        let set1 = Mock.builtinSet [fOfA, fOfB]
-            set2 = Mock.builtinSet [mkElemVar Mock.x, mkElemVar Mock.y]
+        let fx = Mock.f (mkElemVar Mock.x)
+            fy = Mock.f (mkElemVar Mock.y)
+            set1 = Mock.builtinSet [fx, fy]
+            set2 = Mock.builtinSet [mkElemVar Mock.t, mkElemVar Mock.u]
             defined1 = mkDefined set1
             conditions =
+                map (Condition.coerceSort Mock.setSort)
                 [ mconcat
-                    [ Condition.assign (inject Mock.x) fOfA
-                    , Condition.assign (inject Mock.y) fOfB
+                    [ Condition.assign (inject Mock.t) (mkDefined fx)
+                    , Condition.assign (inject Mock.u) (mkDefined fy)
                     ]
                 , mconcat
-                    [ Condition.assign (inject Mock.x) fOfB
-                    , Condition.assign (inject Mock.y) fOfA
+                    [ Condition.assign (inject Mock.t) (mkDefined fy)
+                    , Condition.assign (inject Mock.u) (mkDefined fx)
                     ]
                 ]
         in
-            [ testCase "\\and" $ do
-                let expect = Pattern.withCondition set1 <$> conditions
+            [ testCase "\\and(defined, _)" $ do
+                let expect = Pattern.withCondition defined1 <$> conditions
                 (actualAnd, actualUnify) <- simplifyUnify defined1 set2
                 assertEqual "" expect actualAnd
                 assertEqual "" expect actualUnify
-            , testCase "\\equals" $ do
+            , testCase "\\and(_, defined)" $ do
+                let expect = Pattern.withCondition defined1 <$> conditions
+                (actualAnd, actualUnify) <- simplifyUnify set2 defined1
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\equals(defined, _)" $ do
                 let expect = Just conditions
                 actual <- simplifyEquals mempty defined1 set2
+                assertEqual "" expect actual
+            , testCase "\\equals(_, defined)" $ do
+                let expect = Just conditions
+                actual <- simplifyEquals mempty set2 defined1
+                assertEqual "" expect actual
+            ]
+    , testGroup "Maps" $
+        let map1 = Mock.builtinMap [(mkElemVar Mock.x, fOfA)]
+            map2 = Mock.builtinMap [(mkElemVar Mock.x, mkElemVar Mock.y)]
+            defined1 = mkDefined map1
+            conditions =
+                map (Condition.coerceSort Mock.mapSort)
+                [ mconcat
+                    [ Condition.assign (inject Mock.x) Mock.a
+                    , Condition.assign (inject Mock.y) (mkDefined fOfA)
+                    ]
+                ]
+        in
+            [ testCase "\\and(defined, _)" $ do
+                let expect = Pattern.withCondition defined1 <$> conditions
+                (actualAnd, actualUnify) <- simplifyUnify defined1 map2
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\and(_, defined)" $ do
+                let expect = Pattern.withCondition defined1 <$> conditions
+                (actualAnd, actualUnify) <- simplifyUnify map2 defined1
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\equals(defined, _)" $ do
+                let expect = Just conditions
+                actual <- simplifyEquals mempty defined1 map2
+                assertEqual "" expect actual
+            , testCase "\\equals(_, defined)" $ do
+                let expect = Just conditions
+                actual <- simplifyEquals mempty map2 defined1
                 assertEqual "" expect actual
             ]
     ]
