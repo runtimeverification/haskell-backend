@@ -589,7 +589,6 @@ reachabilityFirstStep =
         , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
-        , InferDefined
         , TriviallyValid
         , CheckImplication
         , ApplyAxioms
@@ -605,7 +604,6 @@ reachabilityNextStep =
         , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
-        , InferDefined
         , TriviallyValid
         , CheckImplication
         , ApplyClaims
@@ -697,12 +695,14 @@ simplify'
     -> Strategy.TransitionT (Rule goal) m goal
 simplify' lensRulePattern =
     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
+        let definedConfig =
+                Pattern.andCondition (mkDefined <$> config)
+                $ from $ makeCeilPredicate_ (Conditional.term config)
         configs <-
-            simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
+            simplifyTopConfiguration definedConfig
+            >>= SMT.Evaluator.filterMultiOr
             & lift
-        if isBottom configs
-            then pure Pattern.bottom
-            else Foldable.asum (pure <$> configs)
+        Foldable.asum (pure <$> configs)
 
 inferDefined'
     :: MonadSimplify m
