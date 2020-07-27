@@ -69,7 +69,6 @@ import Hedgehog hiding
     )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Kore.Unparser
 import Test.Tasty
 
 import qualified Data.Default as Default
