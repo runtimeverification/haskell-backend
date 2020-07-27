@@ -47,6 +47,8 @@ module Kore.Internal.TermLike
     , fullyOverrideSort
     -- * Reachability modalities and application
     , Modality
+    , weakExistsFinally
+    , weakAlwaysFinally
     , wEF
     , wAF
     , applyModality

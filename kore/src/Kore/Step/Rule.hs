@@ -52,12 +52,21 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Alias
     ( Alias (..)
     )
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.TermLike
+    ( weakAlwaysFinally
+    , weakExistsFinally
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     , VariableName
+    )
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
     )
 import Kore.Sort
     ( Sort (..)
@@ -66,21 +75,23 @@ import Kore.Sort
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( parse
     )
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
     ( AllPathRule (..)
-    , ImplicationRule (..)
+    , ClaimPattern (ClaimPattern)
     , OnePathRule (..)
+    , allPathRuleToTerm
+    , onePathRuleToTerm
+    )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
+import Kore.Step.RulePattern
+    ( ImplicationRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , allPathGlobally
-    , allPathRuleToTerm
     , implicationRuleToTerm
     , injectTermIntoRHS
-    , onePathRuleToTerm
     , rewriteRuleToTerm
     , termToRHS
-    , weakAlwaysFinally
-    , weakExistsFinally
     )
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
@@ -102,10 +113,10 @@ newtype AxiomPatternError = AxiomPatternError ()
 
 instance NFData AxiomPatternError
 
-qualifiedAxiomOpToConstructor
+reachabilityModalityToConstructor
     :: Alias (TermLike.TermLike VariableName)
-    -> Maybe (RulePattern VariableName -> QualifiedAxiomPattern VariableName)
-qualifiedAxiomOpToConstructor patternHead
+    -> Maybe (ClaimPattern -> QualifiedAxiomPattern VariableName)
+reachabilityModalityToConstructor patternHead
     | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
     | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
     | otherwise = Nothing
@@ -316,13 +327,18 @@ termToAxiomPattern attributes pat =
         TermLike.Implies_ _
             (TermLike.And_ _ requires lhs)
             (TermLike.ApplyAlias_ op [rhs])
-          | Just constructor <- qualifiedAxiomOpToConstructor op ->
-            pure $ constructor RulePattern
-                { left = lhs
-                , antiLeft = Nothing
-                , requires = Predicate.wrapPredicate requires
-                , rhs = termToRHS rhs
-                , attributes
+          | Just constructor <- reachabilityModalityToConstructor op ->
+            let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
+                attributes' = Attribute.mapAxiomVariables (pure mkRuleVariable) attributes
+             in pure $ constructor ClaimPattern
+                { ClaimPattern.left =
+                    Pattern.fromTermAndPredicate
+                        lhs
+                        (Predicate.wrapPredicate requires)
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                , ClaimPattern.right = OrPattern.parseFromTermLike rhs'
+                , ClaimPattern.existentials = ClaimPattern.termToExistentials rhs'
+                , ClaimPattern.attributes = attributes'
                 }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
         -- implication axioms:

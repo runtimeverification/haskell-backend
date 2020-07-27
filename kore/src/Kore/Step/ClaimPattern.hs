@@ -11,6 +11,10 @@ module Kore.Step.ClaimPattern
     , ReachabilityRule (..)
     , toSentence
     , applySubstitution
+    , termToExistentials
+    -- * For unparsing
+    , onePathRuleToTerm
+    , allPathRuleToTerm
     ) where
 
 import Prelude.Kore
@@ -19,6 +23,7 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Default as Default
+import qualified Data.Functor.Foldable as Recursive
 import Data.Map.Strict
     ( Map
     )
@@ -220,6 +225,15 @@ isFreeOf rule =
     Set.disjoint
     $ FreeVariables.toSet
     $ freeVariables rule
+
+-- | Parses a term representing a RHS into a RHS
+-- TODO: move this?
+termToExistentials
+    :: TermLike RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+termToExistentials (TermLike.Exists_ _ v term) =
+    v : termToExistentials term
+termToRHS _ = []
 
 -- | One-Path-Claim claim pattern.
 newtype OnePathRule =
