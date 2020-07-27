@@ -12,6 +12,7 @@ module Test.Kore.Builtin.Set
     , test_concatAssociates
     , test_concatNormalizes
     , test_difference
+    , test_difference_symbolic
     , test_toList
     , test_size
     , test_intersection_unit
@@ -68,6 +69,7 @@ import Hedgehog hiding
     )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import Kore.Unparser
 import Test.Tasty
 
 import qualified Data.Default as Default
@@ -83,6 +85,7 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
@@ -133,6 +136,7 @@ import Test.Kore.Builtin.Int
     , genIntegerPattern
     )
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -423,6 +427,35 @@ test_difference =
             (===) expect      =<< evaluateT patDifference
             (===) Pattern.top =<< evaluateT predicate
         )
+
+test_difference_symbolic :: TestTree
+test_difference_symbolic =
+    testCaseWithSMT
+        "SET.difference works for symbolic values"
+        (do
+            let patDifference =
+                    mkApplySymbol
+                        differenceSetSymbol
+                        [ xSingleton `concatSet` zeroSingleton
+                            `concatSet` oneSingleton
+                        , xSingleton `concatSet` zeroSingleton
+                        ]
+            actual <- evaluate patDifference
+            assertEqual "" expect actual
+        )
+  where
+    xSingleton = elementSet $ mkElemVar ("x" `ofSort` intSort)
+    zeroSingleton = elementSet (Int.asInternal 0)
+    oneSingleton = elementSet (Int.asInternal 1)
+    expect =
+        Conditional
+            { term =
+                asInternal $ Set.singleton (Int.asInternal 1)
+            , predicate = Predicate.makeTruePredicate setSort
+            , substitution = mempty
+            }
+    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+    idName `ofSort` sort = mkElementVariable (testId idName) sort
 
 test_toList :: TestTree
 test_toList =
