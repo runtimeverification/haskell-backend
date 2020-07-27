@@ -536,24 +536,86 @@ test_mkDefined =
         let fx = Mock.f (mkElemVar Mock.x)
             fy = Mock.f (mkElemVar Mock.y)
             actual = mkDefined (Mock.builtinList [fx, fy])
-            expect = defined (Mock.builtinList [defined fx, defined fy])
+            expect = Mock.builtinList [defined fx, defined fy]
         assertEqual "" expect actual
-    , testCase "Set" $ do
+    , testGroup "Set" $
         let fx = Mock.f (mkElemVar Mock.x)
-            fy = Mock.f (mkElemVar Mock.y)
-            actual = mkDefined (Mock.builtinSet [fx, fy])
-            expect = defined (Mock.builtinSet [defined fx, defined fy])
-        assertEqual "" expect actual
-    , testCase "Map" $ do
+            fa = Mock.f Mock.a
+            opaque = Mock.opaqueSet Mock.a
+            defx = defined fx
+            defa = defined fa
+            defOpaque = defined opaque
+        in
+            [ testCase "a  x" $ do
+                let actual =
+                        Mock.builtinSet [Mock.a, mkElemVar Mock.x]
+                        & mkDefined
+                    expect :: TermLike VariableName
+                    expect =
+                        Mock.builtinSet [Mock.a, mkElemVar Mock.x]
+                        & defined
+                assertEqual "" expect actual
+            , testCase "f(a)" $ do
+                let actual = mkDefined (Mock.builtinSet [fa])
+                    expect = defined (Mock.builtinSet [defa])
+                assertEqual "" expect actual
+            , testCase "f(x)" $ do
+                let actual = mkDefined (Mock.builtinSet [fx])
+                    expect = defined (Mock.builtinSet [defx])
+                assertEqual "" expect actual
+            , testCase "a  opaque(a)" $ do
+                let actual = mkDefined (Mock.framedSet [Mock.a] [opaque])
+                    expect = defined (Mock.framedSet [Mock.a] [defOpaque])
+                assertEqual "" expect actual
+            ]
+    , testGroup "Map" $
         let fx = Mock.f (mkElemVar Mock.x)
             fy = Mock.f (mkElemVar Mock.y)
             fa = Mock.f Mock.a
+            opaque = Mock.opaqueMap Mock.a
             defx = defined fx
             defy = defined fy
             defa = defined fa
-            actual = mkDefined (Mock.builtinMap [(fx, fx), (fa, fy)])
-            expect = defined (Mock.builtinMap [(defx, defx), (defa, defy)])
-        assertEqual "" expect actual
+            defOpaque = defined opaque
+        in
+            [ testCase "a |-> a  x |-> b" $ do
+                let actual =
+                        Mock.builtinMap
+                            [ (Mock.a, Mock.a)
+                            , (mkElemVar Mock.x, Mock.b)
+                            ]
+                        & mkDefined
+                    expect :: TermLike VariableName
+                    expect =
+                        Mock.builtinMap
+                            [ (Mock.a, Mock.a)
+                            , (mkElemVar Mock.x, Mock.b)
+                            ]
+                        & defined
+                assertEqual "" expect actual
+            , testCase "f(a) |-> a" $ do
+                let actual = mkDefined (Mock.builtinMap [(fa, Mock.a)])
+                    expect = defined (Mock.builtinMap [(defa, Mock.a)])
+                assertEqual "" expect actual
+            , testCase "f(x) |-> a" $ do
+                let actual = mkDefined (Mock.builtinMap [(fx, Mock.a)])
+                    expect = defined (Mock.builtinMap [(defx, Mock.a)])
+                assertEqual "" expect actual
+            , testCase "a |-> f(a)" $ do
+                let actual = mkDefined (Mock.builtinMap [(Mock.a, fa)])
+                    expect = defined (Mock.builtinMap [(Mock.a, defa)])
+                assertEqual "" expect actual
+            , testCase "a |-> f(y)" $ do
+                let actual = mkDefined (Mock.builtinMap [(Mock.a, fy)])
+                    expect = defined (Mock.builtinMap [(Mock.a, defy)])
+                assertEqual "" expect actual
+            , testCase "a |-> a  opaque(a)" $ do
+                let actual =
+                        mkDefined (Mock.framedMap [(Mock.a, Mock.a)] [opaque])
+                    expect =
+                        defined (Mock.framedMap [(Mock.a, Mock.a)] [defOpaque])
+                assertEqual "" expect actual
+            ]
     ]
   where
     defined :: TermLike VariableName -> TermLike VariableName

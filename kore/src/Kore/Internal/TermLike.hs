@@ -181,6 +181,7 @@ module Kore.Internal.TermLike
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Data.Align
     ( alignWith
     )
@@ -196,6 +197,9 @@ import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Map.Strict as Map
 import Data.Monoid
     ( Endo (..)
@@ -1491,9 +1495,11 @@ mkDefined = updateCallStack . worker
                 BuiltinF (Domain.BuiltinList internalList) ->
                     mkDefinedAtTop . mkBuiltinList $ mkDefined <$> internalList
                 BuiltinF (Domain.BuiltinMap internalMap) ->
-                    mkDefinedAtTop . mkBuiltinMap $ mkDefined <$> internalMap
+                    mkDefinedAtTop . mkBuiltinMap
+                    $ mkDefinedInternalAc internalMap
                 BuiltinF (Domain.BuiltinSet internalSet) ->
-                    mkDefinedAtTop . mkBuiltinSet $ mkDefined <$> internalSet
+                    mkDefinedAtTop . mkBuiltinSet
+                    $ mkDefinedInternalAc internalSet
                 EqualsF _ -> term
                 ExistsF _ -> mkDefinedAtTop term
                 FloorF _ -> term
@@ -1525,6 +1531,21 @@ mkDefined = updateCallStack . worker
                 InjF _ -> mkDefinedAtTop term
                 InhabitantF _ -> mkDefinedAtTop term
                 InternalBytesF _ -> term
+
+    mkDefinedInternalAc internalAc =
+        Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
+      where
+        mkDefinedNormalized =
+            Domain.unwrapAc
+            >>> Lens.over (field @"concreteElements") mkDefinedConcrete
+            >>> Lens.over (field @"elementsWithVariables") mkDefinedAbstract
+            >>> Lens.over (field @"opaque") mkDefinedOpaque
+            >>> Domain.wrapAc
+        mkDefinedConcrete =
+            Map.map (fmap mkDefined)
+            . Map.mapKeys mkDefined
+        mkDefinedAbstract = map (fmap mkDefined)
+        mkDefinedOpaque = map mkDefined
 
 -- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
 mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
