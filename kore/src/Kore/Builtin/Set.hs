@@ -332,7 +332,24 @@ evalDifference resultSort [_set1, _set2] = do
             _set1 <- expectConcreteBuiltinSet ctx _set1
             _set2 <- expectConcreteBuiltinSet ctx _set2
             returnConcreteSet resultSort (Map.difference _set1 _set2)
-    rightIdentity <|> bothConcrete
+        symbolic = do
+            _set1 <- expectBuiltinSet ctx _set1
+            _set2 <- expectBuiltinSet ctx _set2
+            let symbolicKeys2 = Domain.getSymbolicKeysOfAc _set2
+                set1withoutSymbolicKeys2 =
+                    foldr
+                        Domain.removeSymbolicKeyOfAc
+                        (Domain.getNormalizedSet _set1)
+                        symbolicKeys2
+                concreteKeys2 = Domain.getConcreteKeysOfAc _set2
+                difference =
+                    foldr
+                        Domain.removeConcreteKeyOfAc
+                        set1withoutSymbolicKeys2
+                        concreteKeys2
+            Ac.returnAc resultSort (Domain.NormalizedSet difference)
+
+    rightIdentity <|> bothConcrete <|> symbolic
   where
     ctx = Set.differenceKey
 evalDifference _ _ = Builtin.wrongArity Set.differenceKey
