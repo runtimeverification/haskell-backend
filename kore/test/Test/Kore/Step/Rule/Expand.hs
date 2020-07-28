@@ -46,6 +46,9 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkElemVar
     )
+import Kore.Step.ClaimPattern
+    ( OnePathRule
+    )
 import Kore.Step.Rule.Expand
 import Kore.Syntax.Id
     ( Id
@@ -58,9 +61,10 @@ import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Rule.Common
     ( Pair (..)
-    , rewritesTo
+    , RuleBase
     , rewritesToOLD
     )
+import qualified Test.Kore.Step.Rule.Common as Common
 import Test.Kore.With
     ( with
     )
@@ -398,6 +402,13 @@ test_expandRule =
         in assertEqual "" expected actual
     ]
   where
+    rewritesTo
+        :: RuleBase base OnePathRule
+        => base VariableName
+        -> base VariableName
+        -> OnePathRule
+    rewritesTo = Common.rewritesTo
+
     x = mkElemVar Mock.x
     x0 = mkElemVar Mock.x0
 
