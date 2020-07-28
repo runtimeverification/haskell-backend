@@ -105,7 +105,7 @@ import Test.Tasty.HUnit.Ext
 test_simplifyRule_RewriteRule :: [TestTree]
 test_simplifyRule_RewriteRule =
     [ testCase "No simplification needed" $ do
-        let rule = Mock.a `rewritesToWithSort` Mock.cf
+        let rule = Mock.a `rewritesToWithSortRewriteRule` Mock.cf
             expected = [rule]
 
         actual <- runSimplifyRule rule
@@ -113,11 +113,11 @@ test_simplifyRule_RewriteRule =
         assertEqual "" expected actual
 
     , testCase "Simplify lhs term" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.cf]
+        let expected = [Mock.a `rewritesToWithSortRewriteRule` Mock.cf]
 
         actual <- runSimplifyRule
             (   mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a)
-                `rewritesToWithSort`
+                `rewritesToWithSortRewriteRule`
                 Mock.cf
             )
 
@@ -126,7 +126,7 @@ test_simplifyRule_RewriteRule =
     , testCase "Does not simplify rhs term" $ do
         let rule =
                 Mock.a
-                `rewritesToWithSort`
+                `rewritesToWithSortRewriteRule`
                 mkAnd Mock.cf (mkEquals Mock.testSort Mock.a Mock.a)
             expected = [rule]
 
@@ -135,11 +135,11 @@ test_simplifyRule_RewriteRule =
         assertEqual "" expected actual
 
     , testCase "Substitution in lhs term" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.f Mock.b]
+        let expected = [Mock.a `rewritesToWithSortRewriteRule` Mock.f Mock.b]
 
         actual <- runSimplifyRule
             (   mkAnd Mock.a (mkEquals Mock.testSort Mock.b x)
-                `rewritesToWithSort` Mock.f x
+                `rewritesToWithSortRewriteRule` Mock.f x
             )
 
         assertEqual "" expected actual
@@ -147,7 +147,7 @@ test_simplifyRule_RewriteRule =
     , testCase "Does not simplify ensures predicate" $ do
         let rule =
                 Pair (Mock.a,  makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
+                `rewritesToWithSortRewriteRule`
                 Pair (Mock.cf, makeEqualsPredicate Mock.testSort Mock.b Mock.b)
             expected = [rule]
 
@@ -157,37 +157,37 @@ test_simplifyRule_RewriteRule =
 
     , testCase "Splits rule" $ do
         let expected =
-                [ Mock.a `rewritesToWithSort` Mock.cf
-                , Mock.b `rewritesToWithSort` Mock.cf
+                [ Mock.a `rewritesToWithSortRewriteRule` Mock.cf
+                , Mock.b `rewritesToWithSortRewriteRule` Mock.cf
                 ]
 
         actual <- runSimplifyRule
             (   mkOr Mock.a Mock.b
-                `rewritesToWithSort`
+                `rewritesToWithSortRewriteRule`
                 Mock.cf
             )
 
         assertEqual "" expected actual
     , testCase "f(x) is always defined" $ do
         let expected =
-                [ Mock.functional10 x `rewritesToWithSort` Mock.a
+                [ Mock.functional10 x `rewritesToWithSortRewriteRule` Mock.a
                 ]
 
         actual <- runSimplifyRule
             (   Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
+                `rewritesToWithSortRewriteRule`
                 Pair (Mock.a, makeTruePredicate Mock.testSort)
             )
 
         assertEqual "" expected actual
     ]
   where
-    rewritesToWithSort
+    rewritesToWithSortRewriteRule
         :: RuleBase base (RewriteRule VariableName)
         => base VariableName
         -> base VariableName
         -> RewriteRule VariableName
-    rewritesToWithSort = Common.rewritesToWithSort
+    rewritesToWithSortRewriteRule = Common.rewritesToWithSort
 
     x = mkElemVar Mock.x
 
