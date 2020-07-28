@@ -497,10 +497,9 @@ test_simplifyClaimRule =
         & requireDefined
         & Lens.over
             (field @"left")
-            (\patt ->
-                Pattern.andCondition
-                    (Mock.f Mock.a & Pattern.fromTermLike)
-                    (Pattern.withoutTerm patt)
+            ( Pattern.andCondition
+                (Mock.f Mock.a & Pattern.fromTermLike)
+            . Pattern.withoutTerm
             )
 
     require condition =
