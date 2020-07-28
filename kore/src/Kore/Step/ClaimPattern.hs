@@ -6,6 +6,8 @@ License     : NCSA
 
 module Kore.Step.ClaimPattern
     ( ClaimPattern (..)
+    , claimPattern
+    , claimPatternInternal
     , OnePathRule (..)
     , AllPathRule (..)
     , ReachabilityRule (..)
@@ -142,6 +144,38 @@ instance HasFreeVariables ClaimPattern RewritingVariableName where
       where
         ClaimPattern { left, right } = claimPattern'
 
+-- | Creates a 'ClaimPattern' from a left hand side 'Pattern'
+-- and a 'TermLike' representing the right hand side pattern. The
+-- 'TermLike' is parsed into an 'OrPattern' and a list of
+-- existentially quantified variables.
+claimPattern
+    :: Pattern RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> ClaimPattern
+claimPattern left rightTerm =
+    ClaimPattern
+        { left
+        , right = OrPattern.parseFromTermLike rightTerm
+        , existentials = termToExistentials rightTerm
+        , attributes = Default.def
+        }
+
+-- | Unsafe version of 'claimPattern'. The right hand side is
+-- assumed to be already processed into an 'OrPattern' and
+-- a list of existentially quantified variables.
+claimPatternInternal
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> ClaimPattern
+claimPatternInternal left right existentials =
+    ClaimPattern
+        { left
+        , right
+        , existentials
+        , attributes = Default.def
+        }
+
 claimPatternToTerm
     :: Modality
     -> ClaimPattern
@@ -253,22 +287,22 @@ instance Diff OnePathRule
 -- as some of the variable information related to the
 -- rewriting algorithm is lost.
 onePathRuleToTerm :: OnePathRule -> TermLike VariableName
-onePathRuleToTerm (OnePathRule claimPattern) =
-    claimPatternToTerm TermLike.wEF claimPattern
+onePathRuleToTerm (OnePathRule claimPattern') =
+    claimPatternToTerm TermLike.wEF claimPattern'
 
 instance Unparse OnePathRule where
-    unparse claimPattern =
+    unparse claimPattern' =
         "claim {}"
         <> Pretty.line'
         <> Pretty.nest 4
-            (unparse $ onePathRuleToTerm claimPattern)
+            (unparse $ onePathRuleToTerm claimPattern')
         <> Pretty.line'
         <> "[]"
 
-    unparse2 claimPattern =
+    unparse2 claimPattern' =
         "claim {}"
         Pretty.<+>
-            unparse2 (onePathRuleToTerm claimPattern)
+            unparse2 (onePathRuleToTerm claimPattern')
         Pretty.<+> "[]"
 
 instance TopBottom OnePathRule where
@@ -303,17 +337,17 @@ instance Debug AllPathRule
 instance Diff AllPathRule
 
 instance Unparse AllPathRule where
-    unparse claimPattern =
+    unparse claimPattern' =
         "claim {}"
         <> Pretty.line'
         <> Pretty.nest 4
-            (unparse $ allPathRuleToTerm claimPattern)
+            (unparse $ allPathRuleToTerm claimPattern')
         <> Pretty.line'
         <> "[]"
-    unparse2 claimPattern =
+    unparse2 claimPattern' =
         "claim {}"
         Pretty.<+>
-            unparse2 (allPathRuleToTerm claimPattern)
+            unparse2 (allPathRuleToTerm claimPattern')
         Pretty.<+> "[]"
 
 instance TopBottom AllPathRule where
@@ -337,8 +371,8 @@ instance From AllPathRule Attribute.Trusted where
 -- as some of the variable information related to the
 -- rewriting algorithm is lost.
 allPathRuleToTerm :: AllPathRule -> TermLike VariableName
-allPathRuleToTerm (AllPathRule claimPattern) =
-    claimPatternToTerm TermLike.wAF claimPattern
+allPathRuleToTerm (AllPathRule claimPattern') =
+    claimPatternToTerm TermLike.wAF claimPattern'
 
 -- | Unified One-Path and All-Path claim pattern.
 data ReachabilityRule
