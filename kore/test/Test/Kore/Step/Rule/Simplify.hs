@@ -422,7 +422,7 @@ test_simplifyClaimRuleOLD =
     [ test "infers definedness" []
         rule1
         [rule1']
-    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
+    , test "TESTING includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
         rule2
         [rule2']
     ]
@@ -481,7 +481,7 @@ test_simplifyClaimRule =
     [ test "infers definedness" []
         rule1
         [rule1']
-    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
+    , test "TESTING includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
         rule2
         [rule2']
     ]
@@ -493,9 +493,15 @@ test_simplifyClaimRule =
         claimPattern (Pattern.fromTermLike (Mock.g Mock.a)) Mock.b
         & require aEqualsb
     rule2' =
-        claimPattern (Pattern.fromTermLike (Mock.f Mock.a)) Mock.b
-        & require aEqualsb
+        rule2
         & requireDefined
+        & Lens.over
+            (field @"left")
+            (\patt ->
+                Pattern.andCondition
+                    (Mock.f Mock.a & Pattern.fromTermLike)
+                    (Pattern.withoutTerm patt)
+            )
 
     require condition =
         Lens.over
