@@ -25,6 +25,7 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -115,9 +116,11 @@ instance SimplifyRuleLHS ClaimPattern
     simplifyRuleLhs rule@(ClaimPattern _ _ _ _) = do
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration left
-        fullySimplified <- SMT.Evaluator.filterMultiOr simplifiedTerms
+        fullySimplified <-
+            SMT.Evaluator.filterMultiOr simplifiedTerms
         let rules =
-                map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
+                setRuleLeft rule
+                <$> OrPattern.toPatterns fullySimplified
         return (MultiAnd.make rules)
       where
         ClaimPattern { left } = rule
@@ -130,7 +133,6 @@ instance SimplifyRuleLHS ClaimPattern
             claimPattern@ClaimPattern { left = left' }
             patt@Conditional { substitution }
           =
-            -- TODO: take another look at this
             ClaimPattern.applySubstitution
                 substitution
                 claimPattern
