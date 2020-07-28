@@ -208,7 +208,7 @@ test_simplifyRule_OnePathRuleOLD =
                         )
                     )
                 )
-              `rewritesToWithSort`
+              `rewritesToWithSortOLD`
               Pair (Mock.a, makeTruePredicate Mock.testSort)
             )
         assertEqual "" expected actual
@@ -217,47 +217,47 @@ test_simplifyRule_OnePathRuleOLD =
                \ Case where it is not is simplified" $ do
         let expected =
                 [   Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
-                    `rewritesToWithSort`
+                    `rewritesToWithSortOLD`
                     Pair (Mock.a, makeTruePredicate Mock.testSort)
                 ]
 
         actual <- runSimplifyRule
             (   Pair (Mock.f x, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
+                `rewritesToWithSortOLD`
                 Pair (Mock.a, makeTruePredicate Mock.testSort)
             )
 
         assertEqual "" expected actual
 
     , testCase "Substitution in requires predicate" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.f Mock.b]
+        let expected = [Mock.a `rewritesToWithSortOLD` Mock.f Mock.b]
 
         actual <- runSimplifyRule
             (   Pair (Mock.a,  makeEqualsPredicate Mock.testSort Mock.b x)
-                `rewritesToWithSort`
+                `rewritesToWithSortOLD`
                 Pair (Mock.f x, makeTruePredicate Mock.testSort)
             )
 
         assertEqual "" expected actual
 
     , testCase "Simplifies requires predicate" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.cf]
+        let expected = [Mock.a `rewritesToWithSortOLD` Mock.cf]
 
         actual <- runSimplifyRule
             (   Pair (Mock.a,  makeEqualsPredicate Mock.testSort Mock.b Mock.b)
-                `rewritesToWithSort`
+                `rewritesToWithSortOLD`
                 Pair (Mock.cf, makeTruePredicate Mock.testSort)
             )
 
         assertEqual "" expected actual
     ]
   where
-    rewritesToWithSort
+    rewritesToWithSortOLD
         :: RuleBase base OLD.OnePathRule
         => base VariableName
         -> base VariableName
         -> OLD.OnePathRule
-    rewritesToWithSort = Common.rewritesToWithSort
+    rewritesToWithSortOLD = Common.rewritesToWithSort
 
     x = mkElemVar Mock.x
 
