@@ -546,7 +546,7 @@ test_mkDefined =
             defa = defined fa
             defOpaque = defined opaque
         in
-            [ testCase "a  x" $ do
+            [ testCase "SetItem(a) SetItem(x)" $ do
                 let actual =
                         Mock.builtinSet [Mock.a, mkElemVar Mock.x]
                         & mkDefined
@@ -555,15 +555,15 @@ test_mkDefined =
                         Mock.builtinSet [Mock.a, mkElemVar Mock.x]
                         & defined
                 assertEqual "" expect actual
-            , testCase "f(a)" $ do
+            , testCase "SetItem( f(a) )" $ do
                 let actual = mkDefined (Mock.builtinSet [fa])
                     expect = Mock.builtinSet [defa]
                 assertEqual "" expect actual
-            , testCase "f(x)" $ do
+            , testCase "SetItem( f(x) )" $ do
                 let actual = mkDefined (Mock.builtinSet [fx])
                     expect = Mock.builtinSet [defx]
                 assertEqual "" expect actual
-            , testCase "a  opaque(a)" $ do
+            , testCase "SetItem(a) SetItem( opaque(a) )" $ do
                 let actual = mkDefined (Mock.framedSet [Mock.a] [opaque])
                     expect = defined (Mock.framedSet [Mock.a] [defOpaque])
                 assertEqual "" expect actual

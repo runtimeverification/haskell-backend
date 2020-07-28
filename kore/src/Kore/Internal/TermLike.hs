@@ -1543,9 +1543,9 @@ mkDefined = updateCallStack . worker
             >>> Lens.over (field @"opaque") mkDefinedOpaque
             >>> Domain.wrapAc
         mkDefinedConcrete =
-            Map.map (fmap mkDefined)
+            (fmap . fmap) mkDefined
             . Map.mapKeys mkDefined
-        mkDefinedAbstract = map (fmap mkDefined)
+        mkDefinedAbstract = (fmap . fmap) mkDefined
         mkDefinedOpaque = map mkDefined
 
 -- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
