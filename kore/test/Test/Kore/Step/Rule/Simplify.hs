@@ -422,7 +422,7 @@ test_simplifyClaimRuleOLD =
     [ test "infers definedness" []
         rule1
         [rule1']
-    , test "TESTING includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
+    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
         rule2
         [rule2']
     ]
@@ -481,7 +481,7 @@ test_simplifyClaimRule =
     [ test "infers definedness" []
         rule1
         [rule1']
-    , test "TESTING includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
+    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
         rule2
         [rule2']
     ]

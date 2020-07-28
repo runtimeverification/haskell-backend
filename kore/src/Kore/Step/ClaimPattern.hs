@@ -248,7 +248,7 @@ applySubstitution substitution claim =
     finalClaim = substitute subst claim
     substitutedVariables = Substitution.variables substitution
 
--- |Is the rule free of the given variables?
+-- | Is the rule free of the given variables?
 isFreeOf
     :: ClaimPattern
     -> Set.Set (SomeVariable RewritingVariableName)
@@ -259,7 +259,7 @@ isFreeOf rule =
     $ freeVariables rule
 
 -- TODO(Ana): move this to Internal.TermLike?
--- | Extracts all top level existential quantifications
+-- | Extracts all top level existential quantifications.
 termToExistentials
     :: TermLike RewritingVariableName
     -> [ElementVariable RewritingVariableName]
@@ -366,7 +366,7 @@ instance From AllPathRule Attribute.RuleIndex where
 instance From AllPathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathRule
 
--- | Converts a 'AllPathRule' into its term representation.
+-- | Converts an 'AllPathRule' into its term representation.
 -- This is intended to be used only in unparsing situations,
 -- as some of the variable information related to the
 -- rewriting algorithm is lost.
