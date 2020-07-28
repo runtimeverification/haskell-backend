@@ -46,7 +46,9 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     , findSortConstructors
     )
-import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -107,7 +109,7 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
         rule@(RulePattern _ _ _ _ _)
       = case rule of
         RulePattern
-            {left, antiLeft, requires
+            { left, antiLeft, requires
             , rhs = OLD.RHS {existentials, right, ensures}
             } ->
             let leftVariables :: [ElementVariable VariableName]
@@ -187,20 +189,23 @@ instance ExpandSingleConstructors ClaimPattern where
             , existentials
             , right
             } ->
-            let leftVariables :: [ElementVariable RewritingVariableName]
-                leftVariables =
-                    mapMaybe retractElementVariable
-                    $ FreeVariables.toList
-                    $ freeVariables left
-                allSomeVariables :: Set (SomeVariable RewritingVariableName)
-                allSomeVariables =
-                    FreeVariables.toSet (freeVariables rule)
-                allElementVariables :: Set (ElementVariableName RewritingVariableName)
-                allElementVariables =
-                    Set.fromList
-                    $ map variableName
-                    $ mapMaybe retract (Set.toList allSomeVariables)
-                        ++ existentials
+            let leftElementVariables
+                    :: [ElementVariable RewritingVariableName]
+                leftElementVariables =
+                    extractFreeElementVariables
+                    . freeVariables
+                    $ left
+                freeElementVariables
+                    :: [ElementVariable RewritingVariableName]
+                freeElementVariables =
+                    extractFreeElementVariables
+                    . freeVariables
+                    $ rule
+                allElementVariableNames
+                    :: Set (ElementVariableName RewritingVariableName)
+                allElementVariableNames =
+                    variableName <$> freeElementVariables <> existentials
+                    & Set.fromList
                 expansion
                     ::  Map.Map
                             (SomeVariable RewritingVariableName)
@@ -208,23 +213,23 @@ instance ExpandSingleConstructors ClaimPattern where
                 expansion =
                     expandVariables
                         metadataTools
-                        leftVariables
-                        allElementVariables
-                substitutionPredicate =
-                    ( Substitution.toPredicate
-                    . Substitution.wrap
-                    . Substitution.mkUnwrappedSubstitution
-                    )
-                        (Map.toList expansion)
+                        leftElementVariables
+                        allElementVariableNames
+                substitutionCondition =
+                    from @(Map _ _) @(Condition _) expansion
                 subst = Map.mapKeys variableName expansion
             in rule
                 { left =
                     Pattern.andCondition
                         (Pattern.substitute subst left)
-                        (Condition.fromPredicate substitutionPredicate)
+                        substitutionCondition
                 , existentials
                 , right = OrPattern.substitute subst right
                 }
+      where
+        extractFreeElementVariables =
+            mapMaybe retractElementVariable
+            . FreeVariables.toList
 
 instance ExpandSingleConstructors OnePathRule where
     expandSingleConstructors tools =

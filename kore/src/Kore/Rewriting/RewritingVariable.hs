@@ -27,7 +27,7 @@ module Kore.Rewriting.RewritingVariable
     , getResultPattern
     , getRemainderPredicate
     , getRemainderPattern
-    -- * For reachability rule unparsing
+    -- * Exported for reachability rule unparsing
     , getRewritingVariable
     ) where
 

@@ -32,6 +32,9 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -244,6 +247,17 @@ instance
     => From term (Conditional variable term)
   where
     from = pure
+
+instance
+    InternalVariable variable
+    => From (Map (SomeVariable variable) (TermLike variable)) (Conditional variable ())
+  where
+    from =
+        from @(Predicate variable) @(Conditional variable ())
+        . from @(Substitution variable) @(Predicate variable)
+        . from
+            @(Map (SomeVariable variable) (TermLike variable))
+            @(Substitution variable)
 
 unparseConditional
     :: Sort
