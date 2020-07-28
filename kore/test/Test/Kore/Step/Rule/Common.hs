@@ -1,7 +1,6 @@
 module Test.Kore.Step.Rule.Common
     ( Pair (..)
     , RuleBase (..)
-    , rewritesToOLD
     ) where
 
 import Prelude.Kore
@@ -37,28 +36,6 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.RulePattern as OLD
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
-
-class OnePathRuleBaseOLD base where
-    rewritesToOLD :: base VariableName -> base VariableName -> OLD.OnePathRule
-
-instance OnePathRuleBaseOLD Pair where
-    Pair (t1, p1) `rewritesToOLD` Pair (t2, p2) =
-        OLD.OnePathRule RulePattern
-            { OLD.left = t1
-            , OLD.requires = p1
-            , OLD.rhs = RHS
-                { OLD.existentials = []
-                , OLD.right = t2
-                , OLD.ensures = p2
-                }
-            , OLD.antiLeft = Nothing
-            , OLD.attributes = Default.def
-            }
-
-instance OnePathRuleBaseOLD TermLike where
-    t1 `rewritesToOLD` t2 =
-        Pair (t1, makeTruePredicate_)
-        `rewritesToOLD` Pair (t2, makeTruePredicate_)
 
 class RuleBase base rule where
     rewritesTo :: base VariableName -> base VariableName -> rule
