@@ -1,10 +1,22 @@
-<T>
-  <k>
-    x = choice ( a , b ); ~> .
-  </k>
-  <state>
-    a |-> A:Int
-    b |-> B:Int
-    x |-> _0
-  </state>
-</T>
+  #Not ( #Exists I . {
+    choice ( a , b )
+  #Equals
+    I:Int
+  } )
+#And
+  #Not ( {
+    false
+  #Equals
+    isKResult ( choice ( a , b ) ~> . )
+  } )
+#And
+  <T>
+    <k>
+      x = choice ( a , b ); ~> .
+    </k>
+    <state>
+      a |-> A:Int
+      b |-> B:Int
+      x |-> _0
+    </state>
+  </T>
