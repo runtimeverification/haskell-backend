@@ -192,6 +192,9 @@ symbolVerifiers =
     , ( Set.list2setKey
       , Builtin.verifySymbol assertSort [List.assertSort]
       )
+    , ( Set.inclusionKey
+      , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
+      )
     ]
 
 {- | Returns @empty@ if the argument is not a @NormalizedSet@ domain value.
@@ -378,6 +381,15 @@ evalList2set resultSort [_list] = do
     returnConcreteSet resultSort _set
 evalList2set _ _ = Builtin.wrongArity Set.list2setKey
 
+evalInclusion :: Builtin.Function
+evalInclusion resultSort [_setLeft, _setRight] = do
+    _setLeft <- expectConcreteBuiltinSet Set.inclusionKey _setLeft
+    _setRight <- expectConcreteBuiltinSet Set.inclusionKey _setRight
+    Map.isSubmapOf _setLeft _setRight
+        & Bool.asPattern resultSort
+        & return
+evalInclusion _ _ = Builtin.wrongArity Set.inclusionKey
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
@@ -392,6 +404,7 @@ builtinFunctions =
         , (Set.sizeKey, Builtin.functionEvaluator evalSize)
         , (Set.intersectionKey, Builtin.functionEvaluator evalIntersection)
         , (Set.list2setKey, Builtin.functionEvaluator evalList2set)
+        , (Set.inclusionKey, Builtin.functionEvaluator evalInclusion)
         ]
 
 {- | Convert a Set-sorted 'TermLike' to its internal representation.
