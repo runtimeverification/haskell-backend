@@ -81,6 +81,7 @@ import Kore.Step.ClaimPattern
     , ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
+    , freeVariablesLeft
     )
 import Kore.Step.RulePattern
     ( RulePattern (RulePattern)
@@ -193,8 +194,8 @@ instance ExpandSingleConstructors ClaimPattern where
                     :: [ElementVariable RewritingVariableName]
                 leftElementVariables =
                     extractFreeElementVariables
-                    . freeVariables
-                    $ left
+                    . freeVariablesLeft
+                    $ rule
                 freeElementVariables
                     :: [ElementVariable RewritingVariableName]
                 freeElementVariables =

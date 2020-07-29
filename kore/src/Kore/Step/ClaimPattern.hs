@@ -6,6 +6,8 @@ License     : NCSA
 
 module Kore.Step.ClaimPattern
     ( ClaimPattern (..)
+    , freeVariablesLeft
+    , freeVariablesRight
     , claimPattern
     , claimPatternInternal
     , OnePathRule (..)
@@ -35,7 +37,8 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
+    ( FreeVariables
+    , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
@@ -137,12 +140,29 @@ instance From ClaimPattern Attribute.PriorityAttributes where
 instance From ClaimPattern Attribute.HeatCool where
     from = from @(Attribute.Axiom _ _) . attributes
 
+freeVariablesRight
+    :: ClaimPattern
+    -> FreeVariables RewritingVariableName
+freeVariablesRight claimPattern'@(ClaimPattern _ _ _ _) =
+    freeVariables
+        ( TermLike.mkExistsN existentials
+            (OrPattern.toTermLike right)
+        )
+  where
+    ClaimPattern { right, existentials } = claimPattern'
+
+freeVariablesLeft
+    :: ClaimPattern
+    -> FreeVariables RewritingVariableName
+freeVariablesLeft claimPattern'@(ClaimPattern _ _ _ _) =
+    freeVariables left
+  where
+    ClaimPattern { left } = claimPattern'
+
 instance HasFreeVariables ClaimPattern RewritingVariableName where
     freeVariables claimPattern'@(ClaimPattern _ _ _ _) =
-        freeVariables left
-        <> freeVariables (OrPattern.toPattern right)
-      where
-        ClaimPattern { left, right } = claimPattern'
+        freeVariablesLeft claimPattern'
+        <> freeVariablesRight claimPattern'
 
 -- | Creates a 'ClaimPattern' from a left hand side 'Pattern'
 -- and a 'TermLike' representing the right hand side pattern. The
