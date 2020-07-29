@@ -205,12 +205,12 @@ claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
         leftPattern
         (TermLike.applyModality modality rightPattern)
   where
-    ClaimPattern { left, right } = representation
+    ClaimPattern { left, right, existentials } = representation
     leftPattern =
         Pattern.toTermLike left
         & TermLike.mapVariables getRewritingVariable
     rightPattern =
-        OrPattern.toTermLike right
+        TermLike.mkExistsN existentials (OrPattern.toTermLike right)
         & TermLike.mapVariables getRewritingVariable
 
 substituteRight
