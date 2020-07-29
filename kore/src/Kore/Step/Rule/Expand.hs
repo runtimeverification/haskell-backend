@@ -12,12 +12,12 @@ import Prelude.Kore
 import Control.Lens
     ( (%=)
     )
-import qualified Control.Monad as Monad
 import Control.Monad.State.Strict
     ( State
-    , execState
+    , evalState
     )
 import qualified Control.Monad.State.Strict as State
+import qualified Data.Bifunctor as Bifunctor
 import Data.Generics.Product
     ( field
     )
@@ -254,16 +254,8 @@ instance ExpandSingleConstructors ReachabilityRule where
         . getAllPathRule
         $ rule
 
-data Expansion variable =
-    Expansion
-    { substitution
-        :: !( Map
-                (SomeVariable variable)
-                (TermLike variable)
-            )
-    , stale
-        :: !(Set (ElementVariableName variable))
-    }
+newtype Expansion variable =
+    Expansion { stale :: Set (ElementVariableName variable) }
     deriving (GHC.Generic)
 
 type Expander variable = State (Expansion variable)
@@ -276,16 +268,20 @@ expandVariables
     -> Set (ElementVariableName variable)
     -> Map (SomeVariable variable) (TermLike variable)
 expandVariables metadataTools variables stale =
-    traverse expandAddVariable variables
-    & flip execState Expansion { substitution = Map.empty, stale }
-    & substitution
+    wither expandAddVariable variables
+    & flip evalState Expansion { stale }
+    & (map . Bifunctor.first) inject
+    & Map.fromList
   where
-    expandAddVariable :: ElementVariable variable -> Expander variable ()
+    expandAddVariable
+        ::  ElementVariable variable
+        ->  Expander variable
+                (Maybe (ElementVariable variable, TermLike variable))
     expandAddVariable variable = do
         term <- expandVariable metadataTools variable
-        Monad.unless
-            (mkElemVar variable == term)
-            (field @"substitution" %= Map.insert (inject variable) term)
+        if mkElemVar variable == term
+            then return Nothing
+            else return $ Just (variable, term)
 
 expandVariable
     :: forall variable attributes
