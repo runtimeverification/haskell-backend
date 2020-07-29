@@ -73,6 +73,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
+import Kore.Log.WarnProvenZeroDepth
 import Kore.Step.RulePattern
     ( leftPattern
     , toRulePattern
@@ -278,6 +279,7 @@ verifyClaim
             & handle handleLimitExceeded
     let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
     infoProvenDepth maxProofDepth
+    warnIfProvenWithZeroDepth maxProofDepth
   where
     discardStrategy = snd
 
