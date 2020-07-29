@@ -86,15 +86,21 @@ import Kore.Sort
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( toTermLike
     )
+import Kore.Step.ClaimPattern
+    ( AllPathRule (..)
+    , ClaimPattern
+    , OnePathRule (..)
+    , freeVariablesLeft
+    , freeVariablesRight
+    )
 import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)
     , fromSentenceAxiom
     )
 import Kore.Step.RulePattern
-    ( AllPathRule (..)
-    , OnePathRule (..)
-    , RulePattern (..)
+    ( RulePattern (RulePattern)
     )
+import qualified Kore.Step.RulePattern as OLD
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import qualified Kore.Verified as Verified
@@ -411,18 +417,22 @@ verifyClaimSentence sentence =
             ((attrs, verified) :)
     rejectClaim attrs verified =
         case fromSentenceAxiom (attrs, verified) of
-            Right (OnePathClaimPattern (OnePathRule rulePattern))
+            Right (OnePathClaimPattern (OLD.OnePathRule rulePattern))
               | rejectRulePattern rulePattern -> True
-            Right (AllPathClaimPattern (AllPathRule rulePattern))
+            Right (AllPathClaimPattern (OLD.AllPathRule rulePattern))
               | rejectRulePattern rulePattern -> True
+            Right (OnePathClaimPatternNEW (OnePathRule claimPattern))
+              | rejectClaimPattern claimPattern -> True
+            Right (AllPathClaimPatternNEW (AllPathRule claimPattern))
+              | rejectClaimPattern claimPattern -> True
             _ -> False
     rejectRulePattern :: RulePattern VariableName -> Bool
     rejectRulePattern
         RulePattern
-            { left
-            , antiLeft
-            , requires
-            , rhs
+            { OLD.left = left
+            , OLD.antiLeft = antiLeft
+            , OLD.requires = requires
+            , OLD.rhs = rhs
             }
       =
         not $ Set.isSubsetOf rightVars leftVars
@@ -432,6 +442,14 @@ verifyClaimSentence sentence =
             lhs = Foldable.toList (AntiLeft.toTermLike <$> antiLeft)
                 <> [left, unwrapPredicate requires]
             leftVars = foldMap freeVariables lhs & FreeVariables.toSet
+    rejectClaimPattern :: ClaimPattern -> Bool
+    rejectClaimPattern claimPattern =
+        not $ Set.isSubsetOf freeRightVars freeLeftVars
+          where
+            freeRightVars =
+                freeVariablesRight claimPattern & FreeVariables.toSet
+            freeLeftVars =
+                freeVariablesLeft claimPattern & FreeVariables.toSet
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
