@@ -98,14 +98,14 @@ import Kore.Log.WarnFunctionWithoutEvaluators
 import Kore.Log.WarnIfLowProductivity
     ( WarnIfLowProductivity
     )
-import Kore.Log.WarnProvenZeroDepth
-    ( WarnProvenZeroDepth
-    )
 import Kore.Log.WarnStuckProofState
     ( WarnStuckProofState
     )
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
+    )
+import Kore.Log.WarnTrivialClaim
+    ( WarnTrivialClaim
     )
 import Log
     ( Entry (..)
@@ -155,7 +155,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @WarnStuckProofState
     , mk $ Proxy @WarnIfLowProductivity
-    , mk $ Proxy @WarnProvenZeroDepth
+    , mk $ Proxy @WarnTrivialClaim
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop

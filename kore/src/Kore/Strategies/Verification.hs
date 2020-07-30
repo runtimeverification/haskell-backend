@@ -73,7 +73,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
-import Kore.Log.WarnProvenZeroDepth
+import Kore.Log.WarnTrivialClaim
 import Kore.Step.RulePattern
     ( leftPattern
     , toRulePattern
