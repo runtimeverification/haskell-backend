@@ -103,7 +103,11 @@ import Kore.Internal.MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Symbol
+    ( applicationSorts
+    )
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , injectTermIntoRHS
@@ -428,10 +432,10 @@ test_difference =
             (===) Pattern.top =<< evaluateT predicate
         )
 
-test_difference_symbolic :: TestTree
+test_difference_symbolic :: [TestTree]
 test_difference_symbolic =
-    testCaseWithSMT
-        "SET.difference works for symbolic values"
+    [ testCaseWithSMT
+        "[X, 0, 1] -Set [X, 0] === [1]"
         (do
             let patDifference =
                     mkApplySymbol
@@ -440,20 +444,61 @@ test_difference_symbolic =
                             `concatSet` oneSingleton
                         , xSingleton `concatSet` zeroSingleton
                         ]
+            expect <- evaluate oneSingleton
             actual <- evaluate patDifference
             assertEqual "" expect actual
         )
+    , testCaseWithSMT
+        "[X, 1] -Set [X, Y] === [1] -Set [Y]"
+        (do
+            let patLeftDifference =
+                    mkApplySymbol
+                        differenceSetSymbol
+                        [ xSingleton `concatSet` oneSingleton
+                        , xSingleton `concatSet` ySingleton
+                        ]
+                patRightDifference =
+                    mkApplySymbol
+                        differenceSetSymbol
+                        [ oneSingleton, ySingleton ]
+            expect <- evaluate patRightDifference
+            actual <- evaluate patLeftDifference
+            assertEqual "" expect actual
+        )
+    , testCaseWithSMT
+        "[f(X), 1] -Set [f(X)] === [1] \\and \\ceil f(X)"
+        (do
+            let patLeftDifference =
+                    mkApplySymbol
+                        differenceSetSymbol
+                        [ fxSingleton `concatSet` oneSingleton
+                        , fxSingleton
+                        ]
+                patRight =
+                    mkAnd
+                        oneSingleton
+                        (mkCeil_ fx)
+            expect <- evaluate patRight
+            actual <- evaluate patLeftDifference
+            assertEqual "" expect actual
+        )
+    ]
   where
     xSingleton = elementSet $ mkElemVar ("x" `ofSort` intSort)
+    ySingleton = elementSet $ mkElemVar ("y" `ofSort` intSort)
     zeroSingleton = elementSet (Int.asInternal 0)
     oneSingleton = elementSet (Int.asInternal 1)
-    expect =
-        Conditional
-            { term =
-                asInternal $ Set.singleton (Int.asInternal 1)
-            , predicate = Predicate.makeTruePredicate setSort
-            , substitution = mempty
+    fx = TermLike.mkApplySymbol fSymbol [mkElemVar ("x" `ofSort` intSort)]
+    fxSingleton =
+        elementSet fx
+    fSymbol =
+        Symbol
+            { symbolConstructor = testId "f"
+            , symbolParams = []
+            , symbolAttributes = Default.def
+            , symbolSorts = applicationSorts [intSort] intSort
             }
+
     ofSort :: Text.Text -> Sort -> ElementVariable VariableName
     idName `ofSort` sort = mkElementVariable (testId idName) sort
 

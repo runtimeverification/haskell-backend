@@ -71,6 +71,9 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
@@ -78,6 +81,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
+    , wrapPredicate
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -350,11 +354,21 @@ evalDifference resultSort [_set1, _set2] = do
                         Domain.removeConcreteKeyOfAc
                         set1withoutSymbolicKeys2
                         concreteKeys2
-            Ac.returnAc resultSort (Domain.NormalizedSet difference)
+                ceilConditions =
+                    foldr
+                        (TermLike.mkAnd . TermLike.mkCeil_)
+                        TermLike.mkTop_
+                        ( filter
+                            (not . TermLike.isDefinedPattern)
+                            symbolicKeys2
+                        )
+            setPredicate (wrapPredicate ceilConditions)
+                <$> Ac.returnAc resultSort (Domain.NormalizedSet difference)
 
     rightIdentity <|> bothConcrete <|> symbolic
   where
     ctx = Set.differenceKey
+    setPredicate predicate' pat = pat { predicate = predicate' }
 evalDifference _ _ = Builtin.wrongArity Set.differenceKey
 
 evalToList :: Builtin.Function
