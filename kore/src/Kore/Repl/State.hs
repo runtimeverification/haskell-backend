@@ -120,7 +120,17 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import Kore.Repl.Data
-import Kore.Step.RulePattern as Rule
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Step.ClaimPattern
+    ( AllPathRule (..)
+    , ClaimPattern (..)
+    , OnePathRule (..)
+    , ReachabilityRule (..)
+    , allPathRuleToTerm
+    , onePathRuleToTerm
+    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -538,10 +548,10 @@ runUnifier
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => SideCondition VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> t m (Either ReplOutput (NonEmpty (Condition VariableName)))
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> t m (Either ReplOutput (NonEmpty (Condition RewritingVariableName)))
 runUnifier sideCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger
@@ -646,19 +656,19 @@ substituteAlias
         QuotedArgument str -> "\"" <> str <> "\""
 
 createClaim :: Claim -> Pattern VariableName -> Claim
-createClaim claim cpattern =
-    fromRulePattern
-        claim
-        Rule.RulePattern
-            { left
-            , antiLeft = Nothing
-            , requires
-            , rhs = Rule.rhs . toRulePattern $ claim
-            , attributes = Default.def
-            }
-  where
-    (left, condition) = Pattern.splitTerm cpattern
-    requires = Condition.toPredicate condition
+createClaim claim cpattern = undefined
+--     fromRulePattern
+--         claim
+--         RulePattern
+--             { left
+--             , antiLeft = Nothing
+--             , requires
+--             , rhs = Rule.rhs . toRulePattern $ claim
+--             , attributes = Default.def
+--             }
+--   where
+--     (left, condition) = Pattern.splitTerm cpattern
+--     requires = Condition.toPredicate condition
 
 conjOfClaims
     :: From claim (TermLike VariableName)
@@ -719,9 +729,8 @@ currentClaimSort :: MonadState ReplState m => m Sort
 currentClaimSort = do
     claims <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
-        . Rule.onePathRuleToTerm
-        . Rule.OnePathRule
-        . toRulePattern
+        . onePathRuleToTerm
+        . undefined
         $ claims
 
 sortLeafsByType :: InnerGraph axiom -> Map.Map NodeState [Graph.Node]
@@ -789,18 +798,15 @@ createNewDefinition mainModuleName name claims =
         . SentenceClaim
         $ SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = claimToTerm claim
+            , sentenceAxiomPattern = from @Claim @(TermLike _) claim
             , sentenceAxiomAttributes = trustedToAttribute claim
             }
-
-    claimToTerm :: Claim -> TermLike VariableName
-    claimToTerm = from
 
     trustedToAttribute :: Claim -> Syntax.Attributes
     trustedToAttribute
         ( Attribute.trusted
         . attributes
-        . toRulePattern
+        . undefined
         -> Attribute.Trusted { isTrusted }
         )
         | isTrusted = Syntax.Attributes [Attribute.trustedAttribute]

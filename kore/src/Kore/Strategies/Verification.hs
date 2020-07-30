@@ -73,6 +73,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.RulePattern
     ( leftPattern
     , toRulePattern
@@ -124,7 +127,7 @@ type CommonTransitionRule m =
 lhsProofStateTransformer
     :: ProofStateTransformer
         ReachabilityRule
-        (Pattern VariableName)
+        (Pattern RewritingVariableName)
 lhsProofStateTransformer =
     ProofStateTransformer
         { goalTransformer = getConfiguration
@@ -140,7 +143,7 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (OrPattern VariableName) m
+type Verifier m = ExceptT (OrPattern RewritingVariableName) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -153,7 +156,7 @@ If the verification succeeds, it returns ().
 -}
 data Stuck =
     Stuck
-    { stuckPatterns :: !(OrPattern VariableName)
+    { stuckPatterns :: !(OrPattern RewritingVariableName)
     , provenClaims :: ![ReachabilityRule]
     }
     deriving (Eq, GHC.Generic, Show)
@@ -240,7 +243,7 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
             verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
-        wrapStuckPattern :: OrPattern VariableName -> Stuck
+        wrapStuckPattern :: OrPattern RewritingVariableName -> Stuck
         wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
 
 verifyClaim
@@ -253,7 +256,7 @@ verifyClaim
     -> AllClaims ReachabilityRule
     -> Axioms ReachabilityRule
     -> (ReachabilityRule, Limit Natural)
-    -> ExceptT (OrPattern VariableName) simplifier ()
+    -> ExceptT (OrPattern RewritingVariableName) simplifier ()
 verifyClaim
     breadthLimit
     searchOrder
@@ -491,10 +494,10 @@ withConfiguration
     :: MonadCatch monad
     => CommonTransitionRule monad
     -> CommonTransitionRule monad
-withConfiguration transit prim proofState =
-    handle' (transit prim proofState)
-  where
-    config =
-        ProofState.extractUnproven proofState
-        & fmap (Lens.view leftPattern . toRulePattern)
-    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config
+withConfiguration transit prim proofState = undefined
+--     handle' (transit prim proofState)
+--   where
+--     config =
+--         ProofState.extractUnproven proofState
+--         & fmap (Lens.view leftPattern . toRulePattern)
+--     handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config

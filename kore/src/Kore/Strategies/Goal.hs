@@ -16,11 +16,10 @@ module Kore.Strategies.Goal
     , proven
     , reachabilityFirstStep
     , reachabilityNextStep
-    , getConfiguration
-    , getDestination
     , transitionRule
     , isTrusted
     , removalPatterns
+    , getConfiguration
     -- * Re-exports
     , module Kore.Strategies.Rule
     , module Kore.Log.InfoReachability
@@ -103,6 +102,12 @@ import Kore.Log.WarnStuckProofState
     , warnStuckProofStateTermsUnifiable
     )
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.ClaimPattern
+    ( AllPathRule (..)
+    , ClaimPattern (..)
+    , OnePathRule (..)
+    , ReachabilityRule (..)
+    )
 import Kore.Step.Result
     ( Result (..)
     , Results (..)
@@ -113,11 +118,8 @@ import Kore.Step.Rule
     , fromSentenceAxiom
     )
 import Kore.Step.RulePattern
-    ( AllPathRule (..)
-    , FromRulePattern (..)
-    , OnePathRule (..)
+    ( FromRulePattern (..)
     , RHS
-    , ReachabilityRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
     , ToRulePattern (..)
@@ -192,12 +194,6 @@ proven
 proven = Foldable.null . unprovenNodes
 
 class Goal goal where
-    goalToRule :: goal -> Rule goal
-    default goalToRule
-        :: Coercible goal (Rule goal)
-        => goal -> Rule goal
-    goalToRule = coerce
-
     -- TODO (thomas.tuegel): isTriviallyValid should be part of
     -- checkImplication.
     isTriviallyValid :: goal -> Bool
@@ -297,31 +293,27 @@ Things to note when implementing your own:
 -}
 
 instance Goal OnePathRule where
-    goalToRule =
-        OnePathRewriteRule
-        . mkRewritingRule
-        . RewriteRule
-        . getOnePathRule
-
     simplify = simplify' _Unwrapped
 
     checkImplication = checkImplication' _Unwrapped
 
-    applyClaims claims = deriveSeqOnePath (map goalToRule claims)
+    applyClaims claims = deriveSeqClaimOnePath claims
 
-    applyAxioms axioms = deriveSeqOnePath (concat axioms)
+    applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
 
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
     inferDefined = inferDefined' _Unwrapped
 
-deriveSeqOnePath
+deriveSeqClaimOnePath = undefined
+
+deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
     ->  OnePathRule
     ->  Strategy.TransitionT (Rule OnePathRule) simplifier
             (ProofState OnePathRule)
-deriveSeqOnePath rules =
+deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where
     rewrites = unRuleOnePath <$> rules
@@ -333,24 +325,18 @@ instance ClaimExtractor OnePathRule where
             _ -> Nothing
 
 instance Goal AllPathRule where
-    goalToRule =
-        AllPathRewriteRule
-        . mkRewritingRule
-        . RewriteRule
-        . getAllPathRule
-
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
     isTriviallyValid = isTriviallyValid' _Unwrapped
     inferDefined = inferDefined' _Unwrapped
-    applyClaims claims = deriveSeqAllPath (map goalToRule claims)
+    applyClaims claims = deriveSeqClaimAllPath claims
 
     applyAxioms axiomss = \goal ->
         foldM applyAxioms1 (GoalRemainder goal) axiomss
       where
         applyAxioms1 proofState axioms
           | Just goal <- retractRewritableGoal proofState =
-            deriveParAllPath axioms goal
+            deriveParAxiomAllPath axioms goal
             >>= simplifyRemainder
             >>= checkTriviallyValid
           | otherwise =
@@ -369,13 +355,16 @@ instance Goal AllPathRule where
           | all isTriviallyValid proofState = pure Proven
           | otherwise = pure proofState
 
-deriveParAllPath
+
+deriveSeqClaimAllPath = undefined
+
+deriveParAxiomAllPath
     ::  MonadSimplify simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (Rule AllPathRule) simplifier
             (ProofState AllPathRule)
-deriveParAllPath rules =
+deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where
     rewrites = unRuleAllPath <$> rules
@@ -398,17 +387,6 @@ instance ClaimExtractor AllPathRule where
             _ -> Nothing
 
 instance Goal ReachabilityRule where
-    goalToRule (OnePath rule) =
-        ReachabilityRewriteRule
-        $ mkRewritingRule
-        $ RewriteRule
-        $ getOnePathRule rule
-    goalToRule (AllPath rule) =
-        ReachabilityRewriteRule
-        $ mkRewritingRule
-        $ RewriteRule
-        $ getAllPathRule rule
-
     simplify (AllPath goal) = allPathTransition $ AllPath <$> simplify goal
     simplify (OnePath goal) = onePathTransition $ OnePath <$> simplify goal
 
@@ -633,7 +611,7 @@ data CheckImplicationResult a
 checkImplication'
     :: forall goal m
     .  MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> goal
     -> m (CheckImplicationResult goal)
 checkImplication' lensRulePattern goal =
@@ -642,80 +620,81 @@ checkImplication' lensRulePattern goal =
     & getCompose
   where
     checkImplicationWorker
-        :: RulePattern VariableName
-        -> m (CheckImplicationResult (RulePattern VariableName))
-    checkImplicationWorker (snd . Step.refreshRule mempty -> rulePattern) =
-        do
-            removal <- removalPatterns destination configuration existentials
-            when (isTop removal) (succeed . NotImplied $ rulePattern)
-            let definedConfig =
-                    Pattern.andCondition configuration
-                    $ from $ makeCeilPredicate_ (Conditional.term configuration)
-            let configAndRemoval = fmap (definedConfig <*) removal
-                sideCondition =
-                    Pattern.withoutTerm configuration
-                    & SideCondition.fromCondition
-            simplifiedRemoval <-
-                simplifyConditionsWithSmt
-                    sideCondition
-                    configAndRemoval
-            when (isBottom simplifiedRemoval) (succeed Implied)
-            let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
-            rulePattern
-                & Lens.set RulePattern.leftPattern stuckConfiguration
-                & NotImpliedStuck
-                & pure
-        & run
-      where
-        configuration = Lens.view RulePattern.leftPattern rulePattern
-        configFreeVars = freeVariables configuration
-        destination =
-            Lens.view (field @"rhs") rulePattern
-            & topExistsToImplicitForall configFreeVars
-        existentials =
-            Lens.view (field @"existentials")
-            . Lens.view (field @"rhs")
-            $ rulePattern
-
-        succeed :: r -> ExceptT r m a
-        succeed = throwE
-
-        run :: ExceptT r m r -> m r
-        run acts = runExceptT acts >>= either pure pure
+        :: ClaimPattern
+        -> m (CheckImplicationResult ClaimPattern)
+    checkImplicationWorker = -- (snd . Step.refreshRule mempty -> rulePattern) =
+        undefined
+--         do
+--             removal <- removalPatterns destination configuration existentials
+--             when (isTop removal) (succeed . NotImplied $ rulePattern)
+--             let definedConfig =
+--                     Pattern.andCondition configuration
+--                     $ from $ makeCeilPredicate_ (Conditional.term configuration)
+--             let configAndRemoval = fmap (definedConfig <*) removal
+--                 sideCondition =
+--                     Pattern.withoutTerm configuration
+--                     & SideCondition.fromCondition
+--             simplifiedRemoval <-
+--                 simplifyConditionsWithSmt
+--                     sideCondition
+--                     configAndRemoval
+--             when (isBottom simplifiedRemoval) (succeed Implied)
+--             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+--             rulePattern
+--                 & Lens.set RulePattern.leftPattern stuckConfiguration
+--                 & NotImpliedStuck
+--                 & pure
+--         & run
+--       where
+--         configuration = Lens.view RulePattern.leftPattern rulePattern
+--         configFreeVars = freeVariables configuration
+--         destination =
+--             Lens.view (field @"rhs") rulePattern
+--             & topExistsToImplicitForall configFreeVars
+--         existentials =
+--             Lens.view (field @"existentials")
+--             . Lens.view (field @"rhs")
+--             $ rulePattern
+--
+--         succeed :: r -> ExceptT r m a
+--         succeed = throwE
+--
+--         run :: ExceptT r m r -> m r
+--         run acts = runExceptT acts >>= either pure pure
 
 simplify'
     :: MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify' lensRulePattern =
-    Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
-        configs <-
-            simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
-            & lift
-        if isBottom configs
-            then pure Pattern.bottom
-            else Foldable.asum (pure <$> configs)
+simplify' lensRulePattern = undefined
+--     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
+--         configs <-
+--             simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
+--             & lift
+--         if isBottom configs
+--             then pure Pattern.bottom
+--             else Foldable.asum (pure <$> configs)
 
 inferDefined'
     :: MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
-inferDefined' lensRulePattern =
-    Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
-        let definedConfig =
-                Pattern.andCondition config
-                $ from $ makeCeilPredicate_ (Conditional.term config)
-        configs <-
-            simplifyTopConfiguration definedConfig
-            >>= SMT.Evaluator.filterMultiOr
-            & lift
-        Foldable.asum (pure <$> configs)
+inferDefined' lensRulePattern = undefined
+--     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
+--         let definedConfig =
+--                 Pattern.andCondition config
+--                 $ from $ makeCeilPredicate_ (Conditional.term config)
+--         configs <-
+--             simplifyTopConfiguration definedConfig
+--             >>= SMT.Evaluator.filterMultiOr
+--             & lift
+--         Foldable.asum (pure <$> configs)
 
-isTriviallyValid' :: Lens' goal (RulePattern variable) -> goal -> Bool
-isTriviallyValid' lensRulePattern =
-    isBottom . RulePattern.left . Lens.view lensRulePattern
+isTriviallyValid' :: Lens' goal ClaimPattern -> goal -> Bool
+isTriviallyValid' lensRulePattern = undefined
+--     isBottom . RulePattern.left . Lens.view lensRulePattern
 
 isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
@@ -730,7 +709,7 @@ instance Exception WithConfiguration
 derivePar'
     :: forall m goal
     .  MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
@@ -748,27 +727,27 @@ type Deriver monad =
 deriveWith
     :: forall m goal
     .  Monad m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-deriveWith lensRulePattern mkRule takeStep rewrites goal =
-    getCompose
-    $ Lens.forOf lensRulePattern goal
-    $ \rulePattern ->
-        fmap (snd . Step.refreshRule mempty)
-        $ Lens.forOf RulePattern.leftPattern rulePattern
-        $ \config -> Compose $ do
-            results <- takeStep rewrites config & lift
-            deriveResults mkRule results
+deriveWith lensRulePattern mkRule takeStep rewrites goal = undefined
+--     getCompose
+--     $ Lens.forOf lensRulePattern goal
+--     $ \rulePattern ->
+--         fmap (snd . Step.refreshRule mempty)
+--         $ Lens.forOf RulePattern.leftPattern rulePattern
+--         $ \config -> Compose $ do
+--             results <- takeStep rewrites config & lift
+--             deriveResults mkRule results
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq'
     :: forall m goal
     .  MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
@@ -872,9 +851,6 @@ removalPatterns
     sideCondition = SideCondition.assumeTrueCondition configPredicate
     configSort = termLikeSort configTerm
 
-getConfiguration :: ReachabilityRule -> Pattern VariableName
-getConfiguration (toRulePattern -> RulePattern { left, requires }) =
-    Pattern.withCondition left (Conditional.fromPredicate requires)
-
-getDestination :: ReachabilityRule -> RHS VariableName
-getDestination (toRulePattern -> RulePattern { rhs }) = rhs
+getConfiguration :: ReachabilityRule -> Pattern RewritingVariableName
+getConfiguration (OnePath (OnePathRule ClaimPattern { left })) = left
+getConfiguration (AllPath (AllPathRule ClaimPattern { left })) = left

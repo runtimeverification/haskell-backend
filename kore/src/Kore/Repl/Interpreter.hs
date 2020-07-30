@@ -110,6 +110,9 @@ import GHC.IO.Handle
 import GHC.Natural
     ( naturalToInt
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Numeric.Natural
 import System.Directory
     ( doesDirectoryExist
@@ -173,11 +176,9 @@ import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.RulePattern
-    ( ReachabilityRule (..)
-    , RulePattern (..)
-    , ToRulePattern (..)
-    , rhsToPattern
+import Kore.Step.ClaimPattern
+    ( ClaimPattern (..)
+    , ReachabilityRule (..)
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -573,13 +574,13 @@ showDest
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
 showDest =
-    showProofStateComponent "Destination" (rhsToPattern . getDestination)
+    showProofStateComponent "Destination" undefined
 
 showProofStateComponent
     :: Monad m
     => String
     -- ^ component name
-    -> (ReachabilityRule -> Pattern VariableName)
+    -> (ReachabilityRule -> Pattern RewritingVariableName)
     -> Maybe ReplNode
     -> ReplM m ()
 showProofStateComponent name transformer maybeNode = do
@@ -968,7 +969,7 @@ tryAxiomClaimWorker mode ref = do
                         }
                     (getConfiguration <$> second)
               where
-                patternUnifier :: Pattern VariableName -> ReplM m ()
+                patternUnifier :: Pattern RewritingVariableName -> ReplM m ()
                 patternUnifier
                     (Pattern.splitTerm -> (secondTerm, secondCondition))
                   =
@@ -997,9 +998,9 @@ tryAxiomClaimWorker mode ref = do
                 updateExecutionGraph graph
 
     runUnifier'
-        :: SideCondition VariableName
-        -> TermLike VariableName
-        -> TermLike VariableName
+        :: SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> ReplM m ()
     runUnifier' sideCondition first second =
         runUnifier sideCondition first' second
@@ -1007,8 +1008,8 @@ tryAxiomClaimWorker mode ref = do
       where
         first' = TermLike.refreshVariables (freeVariables second) first
 
-    extractLeftPattern :: Either Axiom ReachabilityRule -> TermLike VariableName
-    extractLeftPattern = left . either toRulePattern toRulePattern
+    extractLeftPattern :: Either Axiom Claim -> TermLike RewritingVariableName
+    extractLeftPattern = undefined -- left . either toRulePattern toRulePattern
 
 -- | Removes specified node and all its child nodes.
 clear
@@ -1114,14 +1115,14 @@ savePartialProof maybeNatural file = do
         ReplNode . naturalToInt <$> maybeNatural
 
     makeTrusted :: ReachabilityRule -> ReachabilityRule
-    makeTrusted goal@(toRulePattern -> rule) =
-        fromRulePattern goal
-        $ rule
-            { attributes =
-                (attributes rule)
-                    { Attribute.trusted = Attribute.Trusted True
-                    }
-            }
+    makeTrusted = undefined -- goal@(toRulePattern -> rule) =
+--         fromRulePattern goal
+--         $ rule
+--             { attributes =
+--                 (attributes rule)
+--                     { Attribute.trusted = Attribute.Trusted True
+--                     }
+--             }
 
     removeIfRoot
         :: ReplNode
@@ -1319,7 +1320,7 @@ showRewriteRule rule =
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseProofStateComponent
-    :: (ReachabilityRule -> Pattern VariableName)
+    :: (ReachabilityRule -> Pattern RewritingVariableName)
     -> Set String
     -- ^ omit list
     -> CommonProofState
@@ -1342,7 +1343,9 @@ unparseProofStateComponent transformation omitList =
   where
     unparseComponent =
         unparseToString . fmap hide . transformation
-    hide :: TermLike VariableName -> TermLike VariableName
+    hide
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
@@ -1549,7 +1552,7 @@ parseEvalScript file scriptModeOutput = do
                     command
 
 formatUnificationMessage
-    :: Either ReplOutput (NonEmpty (Condition VariableName))
+    :: Either ReplOutput (NonEmpty (Condition RewritingVariableName))
     -> ReplOutput
 formatUnificationMessage docOrCondition =
     either id prettyUnifiers docOrCondition

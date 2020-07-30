@@ -108,6 +108,9 @@ import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
+import Kore.Step.ClaimPattern
+    ( ReachabilityRule (..)
+    )
 import Kore.Step.Rule
     ( extractImplicationClaims
     , extractRewriteAxioms
@@ -124,7 +127,6 @@ import Kore.Step.Rule.Simplify
     )
 import Kore.Step.RulePattern
     ( ImplicationRule (..)
-    , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , ToRulePattern (..)
     , getRewriteRule
@@ -639,9 +641,9 @@ simplifyReachabilityRule
     :: MonadSimplify simplifier
     => ReachabilityRule
     -> simplifier ReachabilityRule
-simplifyReachabilityRule rule = do
-    rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
-    return (Goal.fromRulePattern rule . getRewriteRule $ rule')
+simplifyReachabilityRule rule = undefined -- do
+--     rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
+--     return (Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize

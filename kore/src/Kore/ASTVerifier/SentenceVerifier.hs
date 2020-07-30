@@ -417,31 +417,11 @@ verifyClaimSentence sentence =
             ((attrs, verified) :)
     rejectClaim attrs verified =
         case fromSentenceAxiom (attrs, verified) of
-            Right (OnePathClaimPattern (OLD.OnePathRule rulePattern))
-              | rejectRulePattern rulePattern -> True
-            Right (AllPathClaimPattern (OLD.AllPathRule rulePattern))
-              | rejectRulePattern rulePattern -> True
-            Right (OnePathClaimPatternNEW (OnePathRule claimPattern))
+            Right (OnePathClaimPattern (OnePathRule claimPattern))
               | rejectClaimPattern claimPattern -> True
-            Right (AllPathClaimPatternNEW (AllPathRule claimPattern))
+            Right (AllPathClaimPattern (AllPathRule claimPattern))
               | rejectClaimPattern claimPattern -> True
             _ -> False
-    rejectRulePattern :: RulePattern VariableName -> Bool
-    rejectRulePattern
-        RulePattern
-            { OLD.left = left
-            , OLD.antiLeft = antiLeft
-            , OLD.requires = requires
-            , OLD.rhs = rhs
-            }
-      =
-        not $ Set.isSubsetOf rightVars leftVars
-          where
-            rightVars, leftVars :: Set (SomeVariable VariableName)
-            rightVars = freeVariables rhs & FreeVariables.toSet
-            lhs = Foldable.toList (AntiLeft.toTermLike <$> antiLeft)
-                <> [left, unwrapPredicate requires]
-            leftVars = foldMap freeVariables lhs & FreeVariables.toSet
     rejectClaimPattern :: ClaimPattern -> Bool
     rejectClaimPattern claimPattern =
         not $ Set.isSubsetOf freeRightVars freeLeftVars

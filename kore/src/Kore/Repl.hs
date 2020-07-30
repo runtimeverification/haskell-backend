@@ -67,7 +67,7 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
     ( ReachabilityRule (..)
     )
 import Kore.Step.Simplification.Data

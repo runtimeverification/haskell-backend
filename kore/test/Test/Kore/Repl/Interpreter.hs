@@ -59,7 +59,12 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.ClaimPattern
+    ( ReachabilityRule (..)
+    )
 import Kore.Step.RulePattern
+    ( rulePattern
+    )
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
@@ -643,17 +648,17 @@ add1 =
     plusOne = n `addInt` one
 
 zeroToTen :: Claim
-zeroToTen =
-    OnePath . coerce
-    $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
-  where
-    zero = Int.asInternal intSort 0
-    ten  = Int.asInternal intSort 10
+zeroToTen = undefined
+--     OnePath . coerce
+--     $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
+--   where
+--     zero = Int.asInternal intSort 0
+--     ten  = Int.asInternal intSort 10
 
 emptyClaim :: Claim
-emptyClaim =
-    OnePath . coerce
-    $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
+emptyClaim = undefined
+--     OnePath . coerce
+--     $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 mkNamedAxiom
     :: TermLike VariableName
@@ -830,5 +835,7 @@ formatUnificationError info first second = do
         empty
     return $ formatUnificationMessage res
 
-formatUnifiers :: NonEmpty (Condition VariableName) -> ReplOutput
+formatUnifiers
+    :: NonEmpty (Condition RewritingVariableName)
+    -> ReplOutput
 formatUnifiers = formatUnificationMessage . Right

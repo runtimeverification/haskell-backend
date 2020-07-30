@@ -95,6 +95,9 @@ import Kore.Log
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -580,10 +583,10 @@ data Config m = Config
         -> m (ExecutionGraph Axiom)
     -- ^ Stepper function
     , unifier
-        :: SideCondition VariableName
-        -> TermLike VariableName
-        -> TermLike VariableName
-        -> UnifierWithExplanation m (Condition VariableName)
+        :: SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> UnifierWithExplanation m (Condition RewritingVariableName)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures

@@ -29,11 +29,13 @@ import Kore.Attribute.SourceLocation as Attribute
     ( SourceLocation
     )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
     ( AllPathRule
     , OnePathRule
     , ReachabilityRule
-    , RewriteRule (..)
+    )
+import Kore.Step.RulePattern
+    ( RewriteRule (..)
     , ToRulePattern (..)
     )
 import Kore.Unparser

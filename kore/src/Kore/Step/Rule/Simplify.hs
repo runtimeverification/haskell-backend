@@ -146,20 +146,6 @@ instance SimplifyRuleLHS (RewriteRule VariableName) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
 
-instance SimplifyRuleLHS OLD.OnePathRule where
-    simplifyRuleLhs =
-        fmap (fmap OLD.OnePathRule) . simplifyClaimRuleOLD . OLD.getOnePathRule
-
-instance SimplifyRuleLHS OLD.AllPathRule where
-    simplifyRuleLhs =
-        fmap (fmap OLD.AllPathRule) . simplifyClaimRuleOLD . OLD.getAllPathRule
-
-instance SimplifyRuleLHS OLD.ReachabilityRule where
-    simplifyRuleLhs (OLD.OnePath rule) =
-        (fmap . fmap) OLD.OnePath $ simplifyRuleLhs rule
-    simplifyRuleLhs (OLD.AllPath rule) =
-        (fmap . fmap) OLD.AllPath $ simplifyRuleLhs rule
-
 instance SimplifyRuleLHS OnePathRule where
     simplifyRuleLhs =
         fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
@@ -173,36 +159,6 @@ instance SimplifyRuleLHS ReachabilityRule where
         (fmap . fmap) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =
         (fmap . fmap) AllPath $ simplifyRuleLhs rule
-
-simplifyClaimRuleOLD
-    :: forall simplifier variable
-    .  MonadSimplify simplifier
-    => InternalVariable variable
-    => RulePattern variable
-    -> simplifier (MultiAnd (RulePattern variable))
-simplifyClaimRuleOLD =
-    fmap MultiAnd.make . Logic.observeAllT . worker
-  where
-    simplify, filterWithSolver
-        :: Pattern variable
-        -> LogicT simplifier (Pattern variable)
-    simplify =
-        (return . Pattern.requireDefined)
-        >=> Pattern.simplifyTopConfiguration
-        >=> Logic.scatter
-        >=> filterWithSolver
-    filterWithSolver = SMT.Evaluator.filterBranch
-
-    worker :: RulePattern variable -> LogicT simplifier (RulePattern variable)
-    worker rulePattern = do
-        let lhs = Lens.view RulePattern.leftPattern rulePattern
-        simplified <- simplify lhs
-        let substitution = Pattern.substitution simplified
-            lhs' = simplified { Pattern.substitution = mempty }
-        rulePattern
-            & Lens.set RulePattern.leftPattern lhs'
-            & RulePattern.applySubstitution substitution
-            & return
 
 simplifyClaimRule
     :: forall simplifier

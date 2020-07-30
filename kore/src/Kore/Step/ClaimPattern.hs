@@ -317,6 +317,9 @@ instance From OnePathRule Attribute.RuleIndex where
 instance From OnePathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getOnePathRule
 
+instance From OnePathRule (TermLike VariableName) where
+    from = onePathRuleToTerm
+
 -- | All-Path-Claim claim pattern.
 newtype AllPathRule =
     AllPathRule { getAllPathRule :: ClaimPattern }
@@ -353,6 +356,9 @@ instance From AllPathRule Attribute.RuleIndex where
 
 instance From AllPathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathRule
+
+instance From AllPathRule (TermLike VariableName) where
+    from = allPathRuleToTerm
 
 -- | Converts an 'AllPathRule' into its term representation.
 -- This is intended to be used only in unparsing situations,
@@ -409,6 +415,10 @@ instance From ReachabilityRule Attribute.RuleIndex where
 instance From ReachabilityRule Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
+
+instance From ReachabilityRule (TermLike VariableName) where
+    from (OnePath rule) = from rule
+    from (AllPath rule) = from rule
 
 toSentence :: ReachabilityRule -> Verified.Sentence
 toSentence rule =

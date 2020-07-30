@@ -1,8 +1,6 @@
 module Test.Kore.Step.Rule.Simplify
     ( test_simplifyRule_RewriteRule
     , test_simplifyRule_OnePathRule
-    , test_simplifyRule_OnePathRuleOLD
-    , test_simplifyClaimRuleOLD
     , test_simplifyClaimRule
     ) where
 
@@ -191,76 +189,6 @@ test_simplifyRule_RewriteRule =
 
     x = mkElemVar Mock.x
 
-test_simplifyRule_OnePathRuleOLD :: [TestTree]
-test_simplifyRule_OnePathRuleOLD =
-    [ testCase "Predicate simplification removes trivial claim" $ do
-        let expected = []
-        actual <- runSimplifyRule
-            ( Pair
-                ( Mock.b
-                , makeAndPredicate
-                    (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort x Mock.b)
-                    )
-                    (makeNotPredicate
-                        (makeNotPredicate
-                            (makeEqualsPredicate Mock.testSort x Mock.b)
-                        )
-                    )
-                )
-              `rewritesToWithSortOLD`
-              Pair (Mock.a, makeTruePredicate Mock.testSort)
-            )
-        assertEqual "" expected actual
-
-    , testCase "Case where f(x) is defined;\
-               \ Case where it is not is simplified" $ do
-        let expected =
-                [   Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
-                    `rewritesToWithSortOLD`
-                    Pair (Mock.a, makeTruePredicate Mock.testSort)
-                ]
-
-        actual <- runSimplifyRule
-            (   Pair (Mock.f x, makeTruePredicate Mock.testSort)
-                `rewritesToWithSortOLD`
-                Pair (Mock.a, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "Substitution in requires predicate" $ do
-        let expected = [Mock.a `rewritesToWithSortOLD` Mock.f Mock.b]
-
-        actual <- runSimplifyRule
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.testSort Mock.b x)
-                `rewritesToWithSortOLD`
-                Pair (Mock.f x, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "Simplifies requires predicate" $ do
-        let expected = [Mock.a `rewritesToWithSortOLD` Mock.cf]
-
-        actual <- runSimplifyRule
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.testSort Mock.b Mock.b)
-                `rewritesToWithSortOLD`
-                Pair (Mock.cf, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-    ]
-  where
-    rewritesToWithSortOLD
-        :: RuleBase base OLD.OnePathRule
-        => base VariableName
-        -> base VariableName
-        -> OLD.OnePathRule
-    rewritesToWithSortOLD = Common.rewritesToWithSort
-
-    x = mkElemVar Mock.x
-
 test_simplifyRule_OnePathRule :: [TestTree]
 test_simplifyRule_OnePathRule =
     [ testCase "No simplification needed" $ do
@@ -417,65 +345,6 @@ runSimplifyRule rule =
         SMT.All.declare Mock.smtDeclarations
         simplifyRuleLhs rule
 
-test_simplifyClaimRuleOLD :: [TestTree]
-test_simplifyClaimRuleOLD =
-    [ test "infers definedness" []
-        rule1
-        [rule1']
-    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
-        rule2
-        [rule2']
-    ]
-  where
-    rule1, rule2, rule2' :: RulePattern VariableName
-    rule1 = rulePattern (Mock.f Mock.a) Mock.b
-    rule1' = rule1 & requireDefined
-    rule2 =
-        rulePattern @VariableName (Mock.g Mock.a) Mock.b
-        & Lens.set (field @"requires") requiresOLD
-    rule2' =
-        rule2
-        & requireDefined
-        & Lens.set (field @"left") (Mock.f Mock.a)
-
-    requiresOLD :: Predicate VariableName
-    requiresOLD = makeEqualsPredicate Mock.testSort Mock.a Mock.b
-
-    requireDefined rule =
-        Lens.over
-            (field @"requires")
-            (flip makeAndPredicate
-                (makeCeilPredicate sort left)
-            )
-            rule
-      where
-        left = Lens.view (field @"left") rule
-        sort = termLikeSort left
-
-    test
-        :: HasCallStack
-        => TestName
-        -> [(TermLike VariableName, TermLike VariableName)]  -- ^ replacements
-        -> RulePattern VariableName
-        -> [RulePattern VariableName]
-        -> TestTree
-    test name replacementsOLD (OLD.OnePathRule -> inputOLD) (map OLD.OnePathRule -> expect) =
-        -- Test simplifyClaimRule through the OnePathRule instance.
-        testCase name $ do
-            actual <- run $ simplifyRuleLhs inputOLD
-            assertEqual "" expect (MultiAnd.extractPatterns actual)
-      where
-        run =
-            runNoSMT
-            . runSimplifier env
-            . flip runReaderT TestEnvOLD { replacementsOLD, inputOLD, requiresOLD }
-            . runTestSimplifierTOLD
-        env =
-            Mock.env
-                { simplifierCondition = emptyConditionSimplifier
-                , simplifierAxioms = mempty
-                }
-
 test_simplifyClaimRule :: [TestTree]
 test_simplifyClaimRule =
     [ test "infers definedness" []
@@ -556,74 +425,6 @@ test_simplifyClaimRule =
                 { simplifierCondition = emptyConditionSimplifier
                 , simplifierAxioms = mempty
                 }
-
-data TestEnvOLD =
-    TestEnvOLD
-    { replacementsOLD :: ![(TermLike VariableName, TermLike VariableName)]
-    , inputOLD :: !OLD.OnePathRule
-    , requiresOLD :: !(Predicate VariableName)
-    }
-
-newtype TestSimplifierTOLD m a =
-    TestSimplifierTOLD { runTestSimplifierTOLD :: ReaderT TestEnvOLD m a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadReader TestEnvOLD)
-    deriving (MonadLog, MonadSMT)
-
-instance MonadTrans TestSimplifierTOLD where
-    lift = TestSimplifierTOLD . lift
-
-instance MFunctor TestSimplifierTOLD where
-    hoist f = TestSimplifierTOLD . hoist f . runTestSimplifierTOLD
-
-instance MonadSimplify m => MonadSimplify (TestSimplifierTOLD m) where
-    simplifyTermLike sideCondition termLike = do
-        TestEnvOLD { replacementsOLD, inputOLD, requiresOLD } <- Reader.ask
-        let rule = OLD.getOnePathRule inputOLD
-            left = Lens.view (field @"left") rule
-            sort = termLikeSort left
-            expectSideCondition =
-                makeAndPredicate requiresOLD (makeCeilPredicate sort left)
-                & liftPredicate
-                & Predicate.coerceSort predicateSort
-                & Condition.fromPredicate
-                & SideCondition.fromCondition
-            satisfied = sideCondition == expectSideCondition
-        return
-            . OrPattern.fromTermLike
-            . (if satisfied then applyReplacements replacementsOLD else id)
-            $ termLike
-      where
-        applyReplacements
-            :: InternalVariable variable
-            => [(TermLike VariableName, TermLike VariableName)]
-            -> TermLike variable
-            -> TermLike variable
-        applyReplacements replacements zero =
-            Foldable.foldl' applyReplacement zero
-            $ map liftReplacement replacements
-
-        applyReplacement orig (ini, fin)
-          | orig == ini = fin
-          | otherwise   = orig
-
-        liftPredicate
-            :: InternalVariable variable
-            => Predicate VariableName
-            -> Predicate variable
-        liftPredicate = Predicate.mapVariables (pure fromVariableName)
-
-        liftTermLike
-            :: InternalVariable variable
-            => TermLike VariableName
-            -> TermLike variable
-        liftTermLike = TermLike.mapVariables (pure fromVariableName)
-
-        liftReplacement
-            :: InternalVariable variable
-            => (TermLike VariableName, TermLike VariableName)
-            -> (TermLike variable, TermLike variable)
-        liftReplacement = Bifunctor.bimap liftTermLike liftTermLike
 
 data TestEnv =
     TestEnv

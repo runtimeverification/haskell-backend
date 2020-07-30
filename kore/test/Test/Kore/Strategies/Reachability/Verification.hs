@@ -24,11 +24,16 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-import Kore.Step.RulePattern
+import Kore.Rewriting.RewritingVariable
+    ( mkRewritingPattern
+    )
+import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , RulePattern (..)
+    )
+import Kore.Step.RulePattern
+    ( RulePattern (..)
     , injectTermIntoRHS
     )
 import Kore.Strategies.Goal
@@ -488,7 +493,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPattern
+            ( Left . OrPattern.fromPattern . mkRewritingPattern
             $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -520,7 +525,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPattern
+            ( Left . OrPattern.fromPattern . mkRewritingPattern
             $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -555,7 +560,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPattern
+            ( Left . OrPattern.fromPattern . mkRewritingPattern
             $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -587,7 +592,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPatterns $
+            ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
             [ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -628,7 +633,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPatterns $
+            ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
             [ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -672,7 +677,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPatterns $
+            ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
             [ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -1288,57 +1293,61 @@ simpleOnePathClaim
     -> TermLike VariableName
     -> ReachabilityRule
 simpleOnePathClaim left right =
-    OnePath . OnePathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-            }
+    undefined
+--     OnePath . OnePathRule
+--     $ RulePattern
+--             { left = left
+--             , antiLeft = Nothing
+--             , requires = makeTruePredicate_
+--             , rhs = injectTermIntoRHS right
+--             , attributes = def
+--             }
 
 simpleAllPathClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleAllPathClaim left right =
-    AllPath . AllPathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-            }
+    undefined
+--     AllPath . AllPathRule
+--     $ RulePattern
+--             { left = left
+--             , antiLeft = Nothing
+--             , requires = makeTruePredicate_
+--             , rhs = injectTermIntoRHS right
+--             , attributes = def
+--             }
 
 simpleOnePathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleOnePathTrustedClaim left right =
-    OnePath
-    . OnePathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-                { Attribute.trusted = Attribute.Trusted True }
-            }
+    undefined
+--     OnePath
+--     . OnePathRule
+--     $ RulePattern
+--             { left = left
+--             , antiLeft = Nothing
+--             , requires = makeTruePredicate_
+--             , rhs = injectTermIntoRHS right
+--             , attributes = def
+--                 { Attribute.trusted = Attribute.Trusted True }
+--             }
 
 simpleAllPathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleAllPathTrustedClaim left right =
-    AllPath
-    . AllPathRule
-    $ RulePattern
-            { left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-                { Attribute.trusted = Attribute.Trusted True }
-            }
+    undefined
+--     AllPath
+--     . AllPathRule
+--     $ RulePattern
+--             { left
+--             , antiLeft = Nothing
+--             , requires = makeTruePredicate_
+--             , rhs = injectTermIntoRHS right
+--             , attributes = def
+--                 { Attribute.trusted = Attribute.Trusted True }
+--             }

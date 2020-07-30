@@ -58,7 +58,7 @@ runVerificationToPattern
     -> [Rule ReachabilityRule]
     -> [ReachabilityRule]
     -> [ReachabilityRule]
-    -> IO (Either (OrPattern VariableName) ())
+    -> IO (Either (OrPattern RewritingVariableName) ())
 runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
     do
         stuck <- runVerification

@@ -50,15 +50,14 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
     ( OnePathRule (..)
-    , RHS (..)
     , ReachabilityRule (..)
-    , injectTermIntoRHS
-    , rulePattern
+    , claimPattern
     )
-import Kore.Step.RulePattern as RulePattern
+import Kore.Step.RulePattern
     ( RulePattern (..)
+    , injectTermIntoRHS
     )
 import Kore.Step.SMT.Lemma
     ( declareSMTLemmas
@@ -89,7 +88,8 @@ makeOnePathRule
     -> TermLike'
     -> OnePathRule
 makeOnePathRule term dest =
-    OnePathRule $ rulePattern term dest
+    undefined
+    -- OnePathRule $ rulePattern term dest
 
 makeOnePathRuleFromPatterns
     :: Pattern'
@@ -99,22 +99,23 @@ makeOnePathRuleFromPatterns
     configuration
     destination
   =
-    let (left, Condition.toPredicate -> requires') =
-            Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures') =
-            Pattern.splitTerm destination
-    in coerce RulePattern
-        { left
-        , antiLeft = Nothing
-        , requires = Predicate.coerceSort (TermLike.termLikeSort left) requires'
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures =
-                Predicate.coerceSort (TermLike.termLikeSort right) ensures'
-            }
-        , attributes = Default.def
-        }
+      undefined
+--     let (left, Condition.toPredicate -> requires') =
+--             Pattern.splitTerm configuration
+--         (right, Condition.toPredicate -> ensures') =
+--             Pattern.splitTerm destination
+--     in coerce RulePattern
+--         { left
+--         , antiLeft = Nothing
+--         , requires = Predicate.coerceSort (TermLike.termLikeSort left) requires'
+--         , rhs = RHS
+--             { existentials = []
+--             , right
+--             , ensures =
+--                 Predicate.coerceSort (TermLike.termLikeSort right) ensures'
+--             }
+--         , attributes = Default.def
+--         }
 
 makeReachabilityOnePathRule
     :: TermLike'

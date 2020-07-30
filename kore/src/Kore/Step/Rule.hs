@@ -118,18 +118,8 @@ reachabilityModalityToConstructor
     :: Alias (TermLike.TermLike VariableName)
     -> Maybe (ClaimPattern -> QualifiedAxiomPattern VariableName)
 reachabilityModalityToConstructor patternHead
-    | headName == weakExistsFinally = Just $ OnePathClaimPatternNEW . OnePathRule
-    | headName == weakAlwaysFinally = Just $ AllPathClaimPatternNEW . AllPathRule
-    | otherwise = Nothing
-  where
-    headName = getId (aliasConstructor patternHead)
-
-qualifiedAxiomOpToConstructor
-    :: Alias (TermLike.TermLike VariableName)
-    -> Maybe (RulePattern VariableName -> QualifiedAxiomPattern VariableName)
-qualifiedAxiomOpToConstructor patternHead
-    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OLD.OnePathRule
-    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . OLD.AllPathRule
+    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
+    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
     | otherwise = Nothing
   where
     headName = getId (aliasConstructor patternHead)
@@ -139,10 +129,8 @@ from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
-    | OnePathClaimPattern OLD.OnePathRule
-    | AllPathClaimPattern OLD.AllPathRule
-    | OnePathClaimPatternNEW OnePathRule
-    | AllPathClaimPatternNEW AllPathRule
+    | OnePathClaimPattern OnePathRule
+    | AllPathClaimPattern AllPathRule
     | ImplicationAxiomPattern (ImplicationRule variable)
     deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
@@ -336,19 +324,7 @@ termToAxiomPattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 termToAxiomPattern attributes pat =
     case pat of
-        -- OLD: Reachability claims
-        TermLike.Implies_ _
-            (TermLike.And_ _ requires lhs)
-            (TermLike.ApplyAlias_ op [rhs])
-          | Just constructor <- qualifiedAxiomOpToConstructor op ->
-            pure $ constructor RulePattern
-                { left = lhs
-                , antiLeft = Nothing
-                , requires = Predicate.wrapPredicate requires
-                , rhs = termToRHS rhs
-                , attributes
-                }
-        -- NEW: Reachability claims
+        -- Reachability claims
         TermLike.Implies_ _
             (TermLike.And_ _ requires lhs)
             (TermLike.ApplyAlias_ op [rhs])
@@ -404,10 +380,8 @@ axiomPatternToTerm
     -> TermLike.TermLike VariableName
 axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
-    OnePathClaimPattern rule -> OLD.onePathRuleToTerm rule
-    AllPathClaimPattern rule -> OLD.allPathRuleToTerm rule
-    OnePathClaimPatternNEW rule -> onePathRuleToTerm rule
-    AllPathClaimPatternNEW rule -> allPathRuleToTerm rule
+    OnePathClaimPattern rule -> onePathRuleToTerm rule
+    AllPathClaimPattern rule -> allPathRuleToTerm rule
     ImplicationAxiomPattern rule -> implicationRuleToTerm rule
 
 -- TODO(Ana): are these three functions used anywhere anymore?

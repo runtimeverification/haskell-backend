@@ -9,9 +9,6 @@ module Kore.Step.RulePattern
     ( RulePattern (..)
     , RewriteRule (..)
     , ImplicationRule (..)
-    , OnePathRule (..)
-    , AllPathRule (..)
-    , ReachabilityRule (..)
     , RHS (..)
     , HasAttributes (..)
     , ToRulePattern (..)
@@ -35,14 +32,7 @@ module Kore.Step.RulePattern
     , termToRHS
     , injectTermIntoRHS
     , rewriteRuleToTerm
-    , onePathRuleToTerm
-    , allPathRuleToTerm
-    , toSentence
     , implicationRuleToTerm
-    , weakExistsFinally
-    , wEF
-    , weakAlwaysFinally
-    , wAF
     , allPathGlobally
     , aPG
     ) where
@@ -596,184 +586,6 @@ instance
     unparse = unparse . implicationRuleToTerm
     unparse2 = unparse2 . implicationRuleToTerm
 
-{-  | One-Path-Claim rule pattern.
--}
-newtype OnePathRule =
-    OnePathRule { getOnePathRule :: RulePattern VariableName }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData OnePathRule
-
-instance SOP.Generic OnePathRule
-
-instance SOP.HasDatatypeInfo OnePathRule
-
-instance Debug OnePathRule
-
-instance Diff OnePathRule
-
-instance Unparse OnePathRule where
-    unparse claimPattern =
-        "claim {}"
-        <> Pretty.line'
-        <> Pretty.nest 4
-            (unparse $ onePathRuleToTerm claimPattern)
-        <> Pretty.line'
-        <> "[]"
-
-    unparse2 claimPattern =
-        "claim {}"
-        Pretty.<+>
-            unparse2 (onePathRuleToTerm claimPattern)
-        Pretty.<+> "[]"
-
-instance TopBottom OnePathRule where
-    isTop _ = False
-    isBottom _ = False
-
-instance From OnePathRule Attribute.SourceLocation where
-    from = Attribute.sourceLocation . attributes . getOnePathRule
-
-instance From OnePathRule Attribute.Label where
-    from = Attribute.label . attributes . getOnePathRule
-
-instance From OnePathRule Attribute.RuleIndex where
-    from = Attribute.identifier . attributes . getOnePathRule
-
-instance From OnePathRule Attribute.Trusted where
-    from = Attribute.trusted . attributes . getOnePathRule
-
-{-  | Unified One-Path and All-Path Claim rule pattern.
--}
-data ReachabilityRule
-    = OnePath !OnePathRule
-    | AllPath !AllPathRule
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData ReachabilityRule
-
-instance SOP.Generic ReachabilityRule
-
-instance SOP.HasDatatypeInfo ReachabilityRule
-
-instance Debug ReachabilityRule
-
-instance Diff ReachabilityRule
-
-instance Unparse ReachabilityRule where
-    unparse (OnePath rule) = unparse rule
-    unparse (AllPath rule) = unparse rule
-    unparse2 (AllPath rule) = unparse2 rule
-    unparse2 (OnePath rule) = unparse2 rule
-
-instance TopBottom ReachabilityRule where
-    isTop _ = False
-    isBottom _ = False
-
-instance Pretty ReachabilityRule where
-    pretty (OnePath (OnePathRule rule)) =
-        Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
-    pretty (AllPath (AllPathRule rule)) =
-        Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
-
-instance From ReachabilityRule Attribute.SourceLocation where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-instance From ReachabilityRule Attribute.Label where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-instance From ReachabilityRule Attribute.RuleIndex where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-instance From ReachabilityRule Attribute.Trusted where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-toSentence :: ReachabilityRule -> Verified.Sentence
-toSentence rule =
-    Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
-        { sentenceAxiomParameters = []
-        , sentenceAxiomPattern    = patt
-        , sentenceAxiomAttributes = Default.def
-        }
-  where
-    patt = case rule of
-        OnePath rule' -> onePathRuleToTerm rule'
-        AllPath rule' -> allPathRuleToTerm rule'
-
-{-  | All-Path-Claim rule pattern.
--}
-newtype AllPathRule =
-    AllPathRule { getAllPathRule :: RulePattern VariableName }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData AllPathRule
-
-instance SOP.Generic AllPathRule
-
-instance SOP.HasDatatypeInfo AllPathRule
-
-instance Debug AllPathRule
-
-instance Diff AllPathRule
-
-instance Unparse AllPathRule where
-    unparse claimPattern =
-        "claim {}"
-        <> Pretty.line'
-        <> Pretty.nest 4
-            (unparse $ allPathRuleToTerm claimPattern)
-        <> Pretty.line'
-        <> "[]"
-    unparse2 claimPattern =
-        "claim {}"
-        Pretty.<+>
-            unparse2 (allPathRuleToTerm claimPattern)
-        Pretty.<+> "[]"
-
-instance TopBottom AllPathRule where
-    isTop _ = False
-    isBottom _ = False
-
-instance From AllPathRule Attribute.SourceLocation where
-    from = Attribute.sourceLocation . attributes . getAllPathRule
-
-instance From AllPathRule Attribute.Label where
-    from = Attribute.label . attributes . getAllPathRule
-
-instance From AllPathRule Attribute.RuleIndex where
-    from = Attribute.identifier . attributes . getAllPathRule
-
-instance From AllPathRule Attribute.Trusted where
-    from = Attribute.trusted . attributes . getAllPathRule
-
-instance ToRulePattern (RewriteRule VariableName)
-
-instance ToRulePattern OnePathRule
-
-instance ToRulePattern AllPathRule
-
-instance ToRulePattern (ImplicationRule VariableName)
-
-instance ToRulePattern ReachabilityRule where
-    toRulePattern (OnePath rule) = toRulePattern rule
-    toRulePattern (AllPath rule) = toRulePattern rule
-
-instance FromRulePattern OnePathRule
-
-instance FromRulePattern AllPathRule
-
-instance FromRulePattern (ImplicationRule VariableName)
-
-instance FromRulePattern ReachabilityRule where
-    fromRulePattern (OnePath _) rulePat =
-        OnePath $ coerce rulePat
-    fromRulePattern (AllPath _) rulePat =
-        AllPath $ coerce rulePat
-
 {-| Reverses an 'RewriteRule' back into its 'Pattern' representation.
   Should be the inverse of 'Rule.termToAxiomPattern'.
 -}
@@ -790,21 +602,7 @@ rewriteRuleToTerm
         (lhsToTerm left antiLeft requires)
         (rhsToTerm rhs)
 
-instance From OnePathRule (TermLike VariableName) where
-    from = onePathRuleToTerm
-
-instance From AllPathRule (TermLike VariableName) where
-    from = allPathRuleToTerm
-
-instance From ReachabilityRule (TermLike VariableName) where
-    from (OnePath claim) = from claim
-    from (AllPath claim) = from claim
-
--- | Converts a 'OnePathRule' into its term representation
-onePathRuleToTerm :: OnePathRule -> TermLike.TermLike VariableName
-onePathRuleToTerm (OnePathRule (RulePattern left _ requires rhs _)) =
-    mkImpliesRule left requires (Just wEF) rhs
-
+-- TODO: move this comment
 {- | Construct a 'TermLike' from the parts of an implication-based rule.
 
 The 'TermLike' has the following form:
@@ -820,29 +618,6 @@ left ∧ requires → alias(right)
 @
 
  -}
-mkImpliesRule
-    :: InternalVariable variable
-    => TermLike variable                             -- ^ left-hand term
-    -> Predicate variable                            -- ^ left-hand requires
-    -> Maybe (Sort -> Alias (TermLike VariableName)) -- ^ right-hand alias
-    -> RHS variable                                  -- ^ right-hand term
-    -> TermLike variable
-mkImpliesRule left requires alias right =
-    TermLike.mkImplies
-        (TermLike.mkAnd (Predicate.fromPredicate sortLeft requires) left)
-        (maybeApplyAlias rhsTerm)
-  where
-    maybeApplyAlias = maybe id applyAlias alias
-    applyAlias mkOp r = TermLike.mkApplyAlias (mkOp sortRight) [r]
-    sortLeft = TermLike.termLikeSort left
-    sortRight = TermLike.termLikeSort rhsTerm
-    rhsTerm = rhsToTerm right
-
--- | Converts an 'AllPathRule' into its term representation
-allPathRuleToTerm :: AllPathRule -> TermLike.TermLike VariableName
-allPathRuleToTerm (AllPathRule (RulePattern left _ requires rhs _)) =
-    mkImpliesRule left requires (Just wAF) rhs
-
 -- | Converts an 'ImplicationRule' into its term representation
 implicationRuleToTerm
     :: InternalVariable variable
@@ -852,39 +627,6 @@ implicationRuleToTerm
     (ImplicationRule (RulePattern left _ _ (RHS _ right _) _))
   =
     TermLike.mkImplies left right
-
-
--- | 'Alias' construct for weak exist finally
-wEF :: Sort -> Alias (TermLike.TermLike VariableName)
-wEF sort = Alias
-    { aliasConstructor = Id
-        { getId = weakExistsFinally
-        , idLocation = AstLocationNone
-        }
-    , aliasParams = [sort]
-    , aliasSorts = ApplicationSorts
-        { applicationSortsOperands = [sort]
-        , applicationSortsResult = sort
-        }
-    , aliasLeft = []
-    , aliasRight = TermLike.mkTop sort
-    }
-
--- | 'Alias' construct for weak always finally
-wAF :: Sort -> Alias (TermLike.TermLike VariableName)
-wAF sort = Alias
-    { aliasConstructor = Id
-        { getId = weakAlwaysFinally
-        , idLocation = AstLocationNone
-        }
-    , aliasParams = [sort]
-    , aliasSorts = ApplicationSorts
-        { applicationSortsOperands = [sort]
-        , applicationSortsResult = sort
-        }
-    , aliasLeft = []
-    , aliasRight = TermLike.mkTop sort
-    }
 
 -- | 'Alias' construct for all path globally
 aPG :: Sort -> Alias (TermLike.TermLike VariableName)
@@ -901,14 +643,6 @@ aPG sort = Alias
     , aliasLeft = []
     , aliasRight = TermLike.mkTop sort
     }
-
--- | weak exist finally modality symbol
-weakExistsFinally :: Text
-weakExistsFinally = "weakExistsFinally"
-
--- | weak always finally modality symbol
-weakAlwaysFinally :: Text
-weakAlwaysFinally = "weakAlwaysFinally"
 
 -- | all path globallt modality symbol
 allPathGlobally :: Text
