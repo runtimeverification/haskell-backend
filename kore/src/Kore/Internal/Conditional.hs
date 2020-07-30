@@ -253,8 +253,7 @@ instance
     => From (Map (SomeVariable variable) (TermLike variable)) (Conditional variable ())
   where
     from =
-        from @(Predicate variable) @(Conditional variable ())
-        . from @(Substitution variable) @(Predicate variable)
+        from @(Substitution variable) @(Conditional variable ())
         . from
             @(Map (SomeVariable variable) (TermLike variable))
             @(Substitution variable)

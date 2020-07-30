@@ -252,7 +252,7 @@ test_patternToAxiomPatternAndBack =
              let initialPattern = mkImplies
                     (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
                     (applyModality
-                        wEF
+                       WEF
                         (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
                     )
             in
@@ -264,7 +264,7 @@ test_patternToAxiomPatternAndBack =
             let initialPattern = mkImplies
                     (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
                     (applyModality
-                        wAF
+                        WAF
                         (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
                     )
             in

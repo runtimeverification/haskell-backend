@@ -5,7 +5,6 @@ module Test.Kore.Step.Rule.Common
 
 import Prelude.Kore
 
-
 import qualified Data.Default as Default
 
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -26,7 +25,7 @@ import Kore.Rewriting.RewritingVariable
     )
 import Kore.Step.ClaimPattern
     ( OnePathRule (..)
-    , claimPatternInternal
+    , claimPattern
     )
 import Kore.Step.RulePattern
     ( RHS (RHS)
@@ -44,7 +43,7 @@ class RuleBase base rule where
 instance RuleBase Pair OnePathRule where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
         OnePathRule
-        $ claimPatternInternal
+        $ claimPattern
             (Pattern.fromTermAndPredicate t1' p1')
             (Pattern.fromTermAndPredicate t2' p2' & OrPattern.fromPattern)
             []

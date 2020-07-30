@@ -46,15 +46,16 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     , findSortConstructors
     )
-import Kore.Internal.Condition
-    ( Condition
-    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( InternalVariable
@@ -216,14 +217,16 @@ instance ExpandSingleConstructors ClaimPattern where
                         metadataTools
                         leftElementVariables
                         allElementVariableNames
-                substitutionCondition =
-                    from @(Map _ _) @(Condition _) expansion
+                substitutionPredicate =
+                    Substitution.toPredicate
+                    . from @(Map _ _) @(Substitution _)
+                    $ expansion
                 subst = Map.mapKeys variableName expansion
             in rule
                 { left =
                     Pattern.andCondition
                         (Pattern.substitute subst left)
-                        substitutionCondition
+                        (Condition.fromPredicate substitutionPredicate)
                 , existentials
                 , right = OrPattern.substitute subst right
                 }

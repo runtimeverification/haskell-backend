@@ -487,10 +487,17 @@ test_simplifyClaimRule =
     ]
   where
     rule1, rule2, rule2' :: ClaimPattern
-    rule1 = claimPattern (Pattern.fromTermLike (Mock.f Mock.a)) Mock.b
+    rule1 =
+        claimPattern
+            (Pattern.fromTermLike (Mock.f Mock.a))
+            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
+            []
     rule1' = rule1 & requireDefined
     rule2 =
-        claimPattern (Pattern.fromTermLike (Mock.g Mock.a)) Mock.b
+        claimPattern
+            (Pattern.fromTermLike (Mock.g Mock.a))
+            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
+            []
         & require aEqualsb
     rule2' =
         rule2
