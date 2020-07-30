@@ -81,6 +81,7 @@ instance ParseAttributes Location where
                 [_] -> do
                     arg <- AttributeParser.getOneArgument args
                     StringLiteral str <- AttributeParser.getStringLiteral arg
+                    traceM $ "STR to be parsed " <> Text.unpack str
                     pure
                         . fromMaybe def
                         . parseMaybe locationParser

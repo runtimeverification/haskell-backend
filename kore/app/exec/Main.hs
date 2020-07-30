@@ -86,6 +86,7 @@ import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , indexedModuleRawSentences
+    , IndexedModule (..)
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
@@ -98,6 +99,7 @@ import Kore.Internal.Pattern
 import Kore.Internal.Predicate
     ( makePredicate
     )
+import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Internal.TermLike
     ( pattern And_
     , TermLike
@@ -663,12 +665,21 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
+    traceM $
+        "\nLoc koreProve: "
+        <>  ( show
+            . Attribute.Axiom.sourceLocation
+            . fst
+            . head
+            . indexedModuleClaims
+            )
+            specModule
     let KoreProveOptions { saveProofs } = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     proveResult <- execute execOptions mainModule $ do
         let KoreExecOptions { breadthLimit, depthLimit } = execOptions
             KoreProveOptions { graphSearch } = proveOptions
-        prove
+        proveQ
             graphSearch
             breadthLimit
             depthLimit
