@@ -200,7 +200,7 @@ fromNormalizationSimplified
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution
-        $ Substitution.unsafeWrap (Substitution.assignmentToPair <$> normalized)
+        $ Substitution.unsafeWrapFromAssignments normalized
     markSimplifiedIfChildrenSimplified childrenList result =
         Predicate.setSimplified childrenSimplified result
       where
