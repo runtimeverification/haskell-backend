@@ -15,8 +15,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import qualified Data.Foldable as Foldable
-import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
@@ -34,20 +32,14 @@ import GHC.Stack
 import Kore.Attribute.Axiom
     ( Axiom (..)
     )
-import qualified Kore.Attribute.Pattern as Attribute
-import Kore.Attribute.Pattern.ConstructorLike
-    ( ConstructorLike (..)
-    , getConstructorLike
-    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( extractAttributes
+    ( isConstructorLike
     )
 import Kore.Internal.Variable
     ( SomeVariableName
@@ -166,15 +158,6 @@ checkSubstitutionCoverage configuration solution
     substitutionCoverageError =
         SubstitutionCoverageError { solution, missingVariables }
 
-    Conditional { substitution } = solution
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     missingVariables = wouldNarrowWith solution
     isCoveringSubstitution = Set.null missingVariables
-    isSymbolic =
-        Foldable.any isSomeConfigVariableName substitutionVariables
-        || isNothing
-            ( getConstructorLike
-            . Attribute.constructorLikeAttribute
-            . extractAttributes
-            $ term configuration
-            )
+    isSymbolic = (not . isConstructorLike) (term configuration)
