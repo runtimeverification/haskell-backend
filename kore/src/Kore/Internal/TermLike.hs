@@ -45,6 +45,11 @@ module Kore.Internal.TermLike
     -- * Utility functions for dealing with sorts
     , forceSort
     , fullyOverrideSort
+    -- * Reachability modalities and application
+    , Modality (..)
+    , weakExistsFinally
+    , weakAlwaysFinally
+    , applyModality
     -- * Pure Kore pattern constructors
     , mkAnd
     , mkApplyAlias
@@ -2025,3 +2030,60 @@ refreshSetBinder
     -> Binder (SetVariable variable) (TermLike variable)
     -> Binder (SetVariable variable) (TermLike variable)
 refreshSetBinder = refreshBinder refreshSetVariable
+
+data Modality = WEF | WAF
+
+-- | Weak exists finally modality symbol.
+weakExistsFinally :: Text
+weakExistsFinally = "weakExistsFinally"
+
+-- | Weak always finally modality symbol.
+weakAlwaysFinally :: Text
+weakAlwaysFinally = "weakAlwaysFinally"
+
+-- | 'Alias' construct for weak exist finally.
+wEF :: Sort -> Alias (TermLike VariableName)
+wEF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakExistsFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = [sort]
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
+
+-- | 'Alias' construct for weak always finally.
+wAF :: Sort -> Alias (TermLike VariableName)
+wAF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakAlwaysFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = [sort]
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
+
+-- | Apply one of the reachability modality aliases
+-- to a term.
+applyModality
+    :: Modality
+    -> TermLike VariableName
+    -> TermLike VariableName
+applyModality modality term =
+    case modality of
+        WEF ->
+            mkApplyAlias (wEF sort) [term]
+        WAF ->
+            mkApplyAlias (wAF sort) [term]
+  where
+    sort = termLikeSort term

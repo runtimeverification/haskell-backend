@@ -8,10 +8,10 @@ License     : NCSA
 module Kore.Step.RulePattern
     ( RulePattern (..)
     , RewriteRule (..)
+    , ImplicationRule (..)
     , OnePathRule (..)
     , AllPathRule (..)
     , ReachabilityRule (..)
-    , ImplicationRule (..)
     , RHS (..)
     , HasAttributes (..)
     , ToRulePattern (..)
@@ -197,7 +197,7 @@ topExistsToImplicitForall avoid' RHS { existentials, right, ensures } =
             (Set.fromList $ mkSomeVariable <$> existentials)
     subst = TermLike.mkVar <$> rename
 
-{- | Normal rewriting axioms and claims
+{- | Normal rewriting axioms
 
  -}
 data RulePattern variable = RulePattern
@@ -595,7 +595,6 @@ instance
   where
     unparse = unparse . implicationRuleToTerm
     unparse2 = unparse2 . implicationRuleToTerm
-
 
 {-  | One-Path-Claim rule pattern.
 -}

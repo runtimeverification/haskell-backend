@@ -36,7 +36,10 @@ import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Rule
-import Kore.Step.RulePattern
+import Kore.Step.RulePattern hiding
+    ( wAF
+    , wEF
+    )
 import Kore.Syntax.Definition hiding
     ( Alias (..)
     )
@@ -246,12 +249,11 @@ test_patternToAxiomPatternAndBack =
     testGroup
         "pattern to axiomPattern to pattern"
         [
-             let op = wEF $ termLikeSort leftP
-                 initialPattern = mkImplies
+             let initialPattern = mkImplies
                     (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                    (mkApplyAlias
-                        op
-                        [mkAnd (Predicate.unwrapPredicate ensuresP) rightP]
+                    (applyModality
+                       WEF
+                        (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
                     )
             in
                 testCase "Reachability claim wEF" $
@@ -259,12 +261,11 @@ test_patternToAxiomPatternAndBack =
                         (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
-            let op = wAF $ termLikeSort leftP
-                initialPattern = mkImplies
+            let initialPattern = mkImplies
                     (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                    (mkApplyAlias
-                        op
-                        [mkAnd (Predicate.unwrapPredicate ensuresP) rightP]
+                    (applyModality
+                        WAF
+                        (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
                     )
             in
                 testCase "Reachability claim wAF" $
