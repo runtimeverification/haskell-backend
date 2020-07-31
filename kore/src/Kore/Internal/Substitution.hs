@@ -459,7 +459,8 @@ unsafeWrap =
             TermLike.hasFreeVariable variableName' termLike
 
 unsafeWrapFromAssignments
-    :: InternalVariable variable
+    :: HasCallStack
+    => InternalVariable variable
     => [Assignment variable]
     -> Substitution variable
 unsafeWrapFromAssignments =
