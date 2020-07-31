@@ -71,6 +71,9 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
+import Control.Error
+    ( runMaybeT
+    )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -86,6 +89,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
 import Kore.Domain.Builtin
     ( NormalizedAc
@@ -100,11 +104,7 @@ import Kore.Internal.MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.Symbol
-    ( applicationSorts
-    )
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , injectTermIntoRHS
@@ -446,22 +446,20 @@ test_difference_symbolic =
             actual <- evaluate patDifference
             assertEqual "" expect actual
         )
-    , testCaseWithSMT
-        "[X, 1] -Set [X, Y] === [1] -Set [Y] \
-            \\\and \\ceil [X, 1] \\and \\ceil [X, Y]"
-        (do
-            let args =
-                    [ xSingleton `concatSet` oneSingleton
-                    , xSingleton `concatSet` ySingleton
-                    ]
-                patLeftDifference = mkApplySymbol differenceSetSymbol args
-                patRightDifference =
-                    mkApplySymbol differenceSetSymbol [oneSingleton, ySingleton]
-                    & flip mkAnd (foldr1 mkAnd (mkCeil_ <$> args))
-            expect <- evaluate patRightDifference
-            actual <- evaluate patLeftDifference
-            assertEqual "" expect actual
-        )
+    , testCase "[X, 1] -Set [X, Y]" $ do
+        let args =
+                [ builtinSet_ [x, one]
+                , builtinSet_ [x, y]
+                ]
+            expect =
+                makeMultipleAndPredicate (makeCeilPredicate setSort <$> args)
+                & Condition.fromPredicate
+                & Pattern.withCondition (differenceSet oneSingleton ySingleton)
+        actual <-
+            Set.evalDifference setSort args
+            & runMaybeT
+            & runSimplifierNoSMT testEnv
+        assertEqual "" (Just expect) actual
     , testCaseWithSMT
         "[f(X), 1] -Set [f(X)] === [1] \\and \\ceil [f(X), 1]"
         (do
@@ -477,20 +475,16 @@ test_difference_symbolic =
         )
     ]
   where
-    xSingleton = elementSet $ mkElemVar ("x" `ofSort` intSort)
-    ySingleton = elementSet $ mkElemVar ("y" `ofSort` intSort)
-    zeroSingleton = elementSet (Int.asInternal 0)
-    oneSingleton = elementSet (Int.asInternal 1)
-    fx = TermLike.mkApplySymbol fSymbol [mkElemVar ("x" `ofSort` intSort)]
-    fxSingleton =
-        elementSet fx
-    fSymbol =
-        Symbol
-            { symbolConstructor = testId "f"
-            , symbolParams = []
-            , symbolAttributes = Default.def
-            , symbolSorts = applicationSorts [intSort] intSort
-            }
+    x = mkElemVar ("x" `ofSort` intSort)
+    y = mkElemVar ("y" `ofSort` intSort)
+    zero = Int.asInternal 0
+    one = Int.asInternal 1
+    fx = addInt x one
+    xSingleton = builtinSet_ [x]
+    ySingleton = builtinSet_ [y]
+    zeroSingleton = builtinSet_ [zero]
+    oneSingleton = builtinSet_ [one]
+    fxSingleton = builtinSet_ [fx]
     concatSets = foldr1 concatSet
 
     ofSort :: Text.Text -> Sort -> ElementVariable VariableName
