@@ -25,7 +25,10 @@ module Test.Kore.Step.MockSymbols where
 
 import Prelude.Kore
 
+import Test.Tasty
+
 import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import Data.Generics.Product
@@ -40,6 +43,9 @@ import qualified Data.Text as Text
 import Data.Sup
 import Kore.Attribute.Hook
     ( Hook (..)
+    )
+import Kore.Attribute.Pattern.ConstructorLike
+    ( isConstructorLike
     )
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute
@@ -67,7 +73,8 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.Symbol hiding
-    ( sortInjection
+    ( isConstructorLike
+    , sortInjection
     )
 import Kore.Internal.TermLike
     ( InternalVariable
@@ -112,6 +119,7 @@ import Test.Kore
     ( testId
     )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.Tasty.HUnit.Ext
 
 aId :: Id
 aId = testId "a"
@@ -1718,6 +1726,16 @@ builtinMap
     -> TermLike variable
 builtinMap elements = framedMap elements []
 
+test_builtinMap :: [TestTree]
+test_builtinMap =
+    [ testCase "constructor-like keys" $ do
+        let input = builtinMap [(a, a), (b, b)] :: TermLike VariableName
+        assertBool "" (isConstructorLike input)
+    , testCase "symbolic keys" $ do
+        let input = builtinMap [(f a, a), (f b, b)] :: TermLike VariableName
+        assertBool "" (not $ isConstructorLike input)
+    ]
+
 framedMap
     :: InternalVariable variable
     => [(TermLike variable, TermLike variable)]
@@ -1737,7 +1755,9 @@ framedMap elements opaque =
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> Internal.asConcrete key <*> pure value
+        do
+            Monad.guard (isConstructorLike key)
+            (,) <$> Internal.asConcrete key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements
@@ -1762,6 +1782,16 @@ builtinSet
     -> TermLike variable
 builtinSet elements = framedSet elements []
 
+test_builtinSet :: [TestTree]
+test_builtinSet =
+    [ testCase "constructor-like keys" $ do
+        let input = builtinSet [a, b] :: TermLike VariableName
+        assertBool "" (isConstructorLike input)
+    , testCase "symbolic keys" $ do
+        let input = builtinSet [f a, f b] :: TermLike VariableName
+        assertBool "" (not $ isConstructorLike input)
+    ]
+
 framedSet
     :: InternalVariable variable
     => [TermLike variable]
@@ -1781,7 +1811,9 @@ framedSet elements opaque =
         }
   where
     asConcrete key =
-        (,) <$> Internal.asConcrete key <*> pure Domain.SetValue
+        do
+            Monad.guard (isConstructorLike key)
+            (,) <$> Internal.asConcrete key <*> pure Domain.SetValue
         & maybe (Left (key, Domain.SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements
