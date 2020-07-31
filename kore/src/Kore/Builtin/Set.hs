@@ -71,9 +71,6 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
@@ -81,7 +78,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
-    , wrapPredicate
+    , makeMultipleAndPredicate
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -329,7 +326,7 @@ evalConcat resultSort [set1, set2] =
 evalConcat _ _ = Builtin.wrongArity Set.concatKey
 
 evalDifference :: Builtin.Function
-evalDifference resultSort [_set1, _set2] = do
+evalDifference resultSort args@[_set1, _set2] = do
     let rightIdentity = do
             _set2 <- expectConcreteBuiltinSet ctx _set2
             if Map.null _set2
@@ -354,21 +351,16 @@ evalDifference resultSort [_set1, _set2] = do
                         Domain.removeConcreteKeyOfAc
                         set1withoutSymbolicKeys2
                         concreteKeys2
-                ceilConditions =
-                    foldr
-                        (TermLike.mkAnd . TermLike.mkCeil_)
-                        TermLike.mkTop_
-                        ( filter
-                            (not . TermLike.isDefinedPattern)
-                            symbolicKeys2
-                        )
-            setPredicate (wrapPredicate ceilConditions)
+                definedArgs =
+                    filter (not . TermLike.isDefinedPattern) args
+                    & map (makeCeilPredicate resultSort)
+                    & makeMultipleAndPredicate
+                    & Conditional.fromPredicate
+            flip Pattern.andCondition definedArgs
                 <$> Ac.returnAc resultSort (Domain.NormalizedSet difference)
-
     rightIdentity <|> bothConcrete <|> symbolic
   where
     ctx = Set.differenceKey
-    setPredicate predicate' pat = pat { predicate = predicate' }
 evalDifference _ _ = Builtin.wrongArity Set.differenceKey
 
 evalToList :: Builtin.Function

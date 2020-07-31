@@ -435,49 +435,45 @@ test_difference =
 test_difference_symbolic :: [TestTree]
 test_difference_symbolic =
     [ testCaseWithSMT
-        "[X, 0, 1] -Set [X, 0] === [1]"
+        "[X, 0, 1] -Set [X, 0] === [1] \
+            \\\and \\ceil [X, 0, 1] \\and \\ceil [X, 0]"
         (do
-            let patDifference =
-                    mkApplySymbol
-                        differenceSetSymbol
-                        [ xSingleton `concatSet` zeroSingleton
-                            `concatSet` oneSingleton
-                        , xSingleton `concatSet` zeroSingleton
-                        ]
-            expect <- evaluate oneSingleton
+            let args =
+                    [ concatSets [xSingleton, zeroSingleton, oneSingleton]
+                    , concatSets [xSingleton, zeroSingleton]
+                    ]
+                patDifference = mkApplySymbol differenceSetSymbol args
+            expect <-
+                mkAnd oneSingleton (foldr1 mkAnd (mkCeil_ <$> args))
+                & evaluate
             actual <- evaluate patDifference
             assertEqual "" expect actual
         )
     , testCaseWithSMT
-        "[X, 1] -Set [X, Y] === [1] -Set [Y]"
+        "[X, 1] -Set [X, Y] === [1] -Set [Y] \
+            \\\and \\ceil [X, 1] \\and \\ceil [X, Y]"
         (do
-            let patLeftDifference =
-                    mkApplySymbol
-                        differenceSetSymbol
-                        [ xSingleton `concatSet` oneSingleton
-                        , xSingleton `concatSet` ySingleton
-                        ]
+            let args =
+                    [ xSingleton `concatSet` oneSingleton
+                    , xSingleton `concatSet` ySingleton
+                    ]
+                patLeftDifference = mkApplySymbol differenceSetSymbol args
                 patRightDifference =
-                    mkApplySymbol
-                        differenceSetSymbol
-                        [ oneSingleton, ySingleton ]
+                    mkApplySymbol differenceSetSymbol [oneSingleton, ySingleton]
+                    & flip mkAnd (foldr1 mkAnd (mkCeil_ <$> args))
             expect <- evaluate patRightDifference
             actual <- evaluate patLeftDifference
             assertEqual "" expect actual
         )
     , testCaseWithSMT
-        "[f(X), 1] -Set [f(X)] === [1] \\and \\ceil f(X)"
+        "[f(X), 1] -Set [f(X)] === [1] \\and \\ceil [f(X), 1]"
         (do
-            let patLeftDifference =
-                    mkApplySymbol
-                        differenceSetSymbol
-                        [ fxSingleton `concatSet` oneSingleton
-                        , fxSingleton
-                        ]
-                patRight =
-                    mkAnd
-                        oneSingleton
-                        (mkCeil_ fx)
+            let args =
+                    [ fxSingleton `concatSet` oneSingleton
+                    , fxSingleton
+                    ]
+                patLeftDifference = mkApplySymbol differenceSetSymbol args
+                patRight = mkAnd oneSingleton (foldr1 mkAnd (mkCeil_ <$> args))
             expect <- evaluate patRight
             actual <- evaluate patLeftDifference
             assertEqual "" expect actual
@@ -498,6 +494,7 @@ test_difference_symbolic =
             , symbolAttributes = Default.def
             , symbolSorts = applicationSorts [intSort] intSort
             }
+    concatSets = foldr1 concatSet
 
     ofSort :: Text.Text -> Sort -> ElementVariable VariableName
     idName `ofSort` sort = mkElementVariable (testId idName) sort
