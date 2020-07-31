@@ -27,6 +27,7 @@ module Kore.Builtin.Set
     , evalConcat
     , evalElement
     , evalUnit
+    , evalDifference
       -- * Unification
     , unifyEquals
     ) where
