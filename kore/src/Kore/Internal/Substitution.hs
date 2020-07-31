@@ -450,6 +450,7 @@ unsafeWrap =
         & assert (not $ any depends $ Map.keys subst)
         -- and if this is an element variable substitution, the substitution
         -- must be defined.
+        -- TODO (thomas.tuegel): isBottom -> isDefinedPattern
         & assert (not $ isElementVariable var && isBottom termLike)
         & withErrorContext "while wrapping substitution" (assign var termLike)
       where
