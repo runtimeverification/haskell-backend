@@ -14,6 +14,7 @@ import Control.Monad
     ( (>=>)
     )
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -24,6 +25,7 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -37,13 +39,21 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( termLikeSort
     )
-import Kore.Step.RulePattern
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Step.ClaimPattern
     ( AllPathRule (..)
+    , ClaimPattern (ClaimPattern)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , RewriteRule (..)
+    )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
+import Kore.Step.RulePattern
+    ( RewriteRule (..)
     , RulePattern (RulePattern)
     )
+import qualified Kore.Step.RulePattern as OLD
 import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     , applySubstitution
@@ -63,7 +73,7 @@ import Logic
     )
 import qualified Logic
 
--- | Simplifies the left-hand-side of a rule/claim
+-- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
     simplifyRuleLhs
         :: forall simplifier
@@ -101,9 +111,54 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
                         $ makeAndPredicate predicate requires'
                     }
 
+instance SimplifyRuleLHS ClaimPattern
+  where
+    simplifyRuleLhs rule@(ClaimPattern _ _ _ _) = do
+        simplifiedTerms <-
+            Pattern.simplifyTopConfiguration left
+        fullySimplified <-
+            SMT.Evaluator.filterMultiOr simplifiedTerms
+        let rules =
+                setRuleLeft rule
+                <$> OrPattern.toPatterns fullySimplified
+        return (MultiAnd.make rules)
+      where
+        ClaimPattern { left } = rule
+
+        setRuleLeft
+            :: ClaimPattern
+            -> Pattern RewritingVariableName
+            -> ClaimPattern
+        setRuleLeft
+            claimPattern@ClaimPattern { left = left' }
+            patt@Conditional { substitution }
+          =
+            ClaimPattern.applySubstitution
+                substitution
+                claimPattern
+                    { ClaimPattern.left =
+                        Condition.andCondition
+                            patt
+                            (Condition.eraseConditionalTerm left')
+                    }
+
 instance SimplifyRuleLHS (RewriteRule VariableName) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
+
+instance SimplifyRuleLHS OLD.OnePathRule where
+    simplifyRuleLhs =
+        fmap (fmap OLD.OnePathRule) . simplifyClaimRuleOLD . OLD.getOnePathRule
+
+instance SimplifyRuleLHS OLD.AllPathRule where
+    simplifyRuleLhs =
+        fmap (fmap OLD.AllPathRule) . simplifyClaimRuleOLD . OLD.getAllPathRule
+
+instance SimplifyRuleLHS OLD.ReachabilityRule where
+    simplifyRuleLhs (OLD.OnePath rule) =
+        (fmap . fmap) OLD.OnePath $ simplifyRuleLhs rule
+    simplifyRuleLhs (OLD.AllPath rule) =
+        (fmap . fmap) OLD.AllPath $ simplifyRuleLhs rule
 
 instance SimplifyRuleLHS OnePathRule where
     simplifyRuleLhs =
@@ -119,13 +174,13 @@ instance SimplifyRuleLHS ReachabilityRule where
     simplifyRuleLhs (AllPath rule) =
         (fmap . fmap) AllPath $ simplifyRuleLhs rule
 
-simplifyClaimRule
+simplifyClaimRuleOLD
     :: forall simplifier variable
     .  MonadSimplify simplifier
     => InternalVariable variable
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
-simplifyClaimRule =
+simplifyClaimRuleOLD =
     fmap MultiAnd.make . Logic.observeAllT . worker
   where
     simplify, filterWithSolver
@@ -147,4 +202,34 @@ simplifyClaimRule =
         rulePattern
             & Lens.set RulePattern.leftPattern lhs'
             & RulePattern.applySubstitution substitution
+            & return
+
+simplifyClaimRule
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => ClaimPattern
+    -> simplifier (MultiAnd ClaimPattern)
+simplifyClaimRule =
+    fmap MultiAnd.make . Logic.observeAllT . worker
+  where
+    simplify, filterWithSolver
+        :: Pattern RewritingVariableName
+        -> LogicT simplifier (Pattern RewritingVariableName)
+    simplify =
+        (return . Pattern.requireDefined)
+        >=> Pattern.simplifyTopConfiguration
+        >=> Logic.scatter
+        >=> filterWithSolver
+    filterWithSolver = SMT.Evaluator.filterBranch
+
+    worker :: ClaimPattern -> LogicT simplifier ClaimPattern
+    worker claimPattern = do
+        let lhs = ClaimPattern.left claimPattern
+        simplified <- simplify lhs
+        let substitution = Pattern.substitution simplified
+            lhs' = simplified { Pattern.substitution = mempty }
+        claimPattern
+            { ClaimPattern.left = lhs'
+            }
+            & ClaimPattern.applySubstitution substitution
             & return
