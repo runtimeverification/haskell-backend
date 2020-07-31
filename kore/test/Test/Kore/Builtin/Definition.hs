@@ -614,6 +614,12 @@ differenceSetSymbol :: Internal.Symbol
 differenceSetSymbol =
     binarySymbol "differenceSet" setSort & hook "SET.difference"
 
+differenceSet
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+differenceSet set1 set2 = mkApplySymbol differenceSetSymbol [set1, set2]
+
 toListSetSymbol :: Internal.Symbol
 toListSetSymbol =
     builtinSymbol "toListSet" listSort [setSort] & hook "SET.set2list"
