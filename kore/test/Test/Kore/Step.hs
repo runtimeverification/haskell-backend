@@ -139,7 +139,9 @@ takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
     $ runSimplifier mockEnv
-    $ makeExecutionGraph start (mkRewritingRule . unAxiom <$> wrappedAxioms)
+    $ makeExecutionGraph
+        (makeRewritingTerm start)
+        (mkRewritingRule . unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
@@ -147,12 +149,16 @@ takeSteps (Start start, wrappedAxioms) =
             transitionRule
             (repeat $ priorityAllStrategy axioms)
             (pure configuration)
+    makeRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
 
 compareTo
     :: HasCallStack
     => Expect -> Actual -> IO ()
 compareTo (Expect expected) actual =
-    assertEqual "" (Pattern.fromTermLike expected) actual
+    assertEqual
+        ""
+        (mkRewritingPattern . Pattern.fromTermLike $ expected)
+        actual
 
 
     {- Types used in this file -}
@@ -165,7 +171,7 @@ newtype Start = Start TestPattern
 newtype Axiom = Axiom { unAxiom :: RewriteRule VariableName }
 newtype Expect = Expect TestPattern
 
-type Actual = Pattern VariableName
+type Actual = Pattern RewritingVariableName
 
 -- Builders -- should these find a better home?
 
@@ -212,7 +218,7 @@ rewriteImplies =
                 (mkElemVar $ x1 Mock.testSort)
         )
 
-expectTwoAxioms :: [Pattern VariableName]
+expectTwoAxioms :: [Pattern RewritingVariableName]
 expectTwoAxioms =
     [ Pattern.fromTermLike (mkElemVar $ v1 Mock.testSort)
     , Pattern.fromTermLike
@@ -220,8 +226,9 @@ expectTwoAxioms =
             (mkElemVar $ v1 Mock.testSort)
             (mkElemVar $ v1 Mock.testSort)
     ]
+    & fmap mkRewritingPattern
 
-actualTwoAxioms :: IO [Pattern VariableName]
+actualTwoAxioms :: IO [Pattern RewritingVariableName]
 actualTwoAxioms =
     runStep
         Conditional
@@ -244,10 +251,10 @@ initialFailSimple =
         , substitution = mempty
         }
 
-expectFailSimple :: [Pattern VariableName]
-expectFailSimple = [initialFailSimple]
+expectFailSimple :: [Pattern RewritingVariableName]
+expectFailSimple = [initialFailSimple & mkRewritingPattern]
 
-actualFailSimple :: IO [Pattern VariableName]
+actualFailSimple :: IO [Pattern RewritingVariableName]
 actualFailSimple =
     runStep
         initialFailSimple
@@ -270,10 +277,10 @@ initialFailCycle =
         , substitution = mempty
         }
 
-expectFailCycle :: [Pattern VariableName]
-expectFailCycle = [initialFailCycle]
+expectFailCycle :: [Pattern RewritingVariableName]
+expectFailCycle = [initialFailCycle & mkRewritingPattern]
 
-actualFailCycle :: IO [Pattern VariableName]
+actualFailCycle :: IO [Pattern RewritingVariableName]
 actualFailCycle =
     runStep
         initialFailCycle
@@ -293,10 +300,10 @@ initialIdentity =
         , substitution = mempty
         }
 
-expectIdentity :: [Pattern VariableName]
-expectIdentity = [initialIdentity]
+expectIdentity :: [Pattern RewritingVariableName]
+expectIdentity = [initialIdentity & mkRewritingPattern]
 
-actualIdentity :: IO [Pattern VariableName]
+actualIdentity :: IO [Pattern RewritingVariableName]
 actualIdentity =
     runStep
         initialIdentity
@@ -388,6 +395,7 @@ test_SMT =
         assertEqual ""
             [ Mock.a
                 `Pattern.withCondition` smtCondition Mock.b PredicatePositive
+                & mkRewritingPattern
             ]
             [ _actual1 ]
     , testCase "Remainder with SMT pruning" $ do
@@ -445,7 +453,7 @@ test_unificationError =
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected unification error"
 
-actualUnificationError :: IO [Pattern VariableName]
+actualUnificationError :: IO [Pattern RewritingVariableName]
 actualUnificationError =
     runStep
         Conditional
@@ -525,18 +533,18 @@ runStep
     :: Pattern VariableName
     -- ^left-hand-side of unification
     -> [RewriteRule RewritingVariableName]
-    -> IO [Pattern VariableName]
+    -> IO [Pattern RewritingVariableName]
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
 
 runStepMockEnv
     :: Pattern VariableName
     -- ^left-hand-side of unification
     -> [RewriteRule RewritingVariableName]
-    -> IO [Pattern VariableName]
+    -> IO [Pattern RewritingVariableName]
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] configuration
+    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)

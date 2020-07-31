@@ -94,7 +94,7 @@ data ProofState patt
     -- for the start patterns.
     | GoalRemLHS !patt
     -- ^ State which can't be rewritten anymore.
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic, Functor)
 
 -- | A 'ProofState' instantiated to 'Pattern VariableName' for convenience.
 type CommonProofState = ProofState (Pattern VariableName)
@@ -217,7 +217,7 @@ transitionRule
             Step.applyRewriteRulesParallel
                 unificationProcedure
                 (mkRewritingRule <$> rules)
-                config
+                (mkRewritingPattern config)
             & lift . lift
         let
             mapRules =
@@ -230,6 +230,7 @@ transitionRule
                     GoalLHS
                     GoalRemLHS
         StepResult.transitionResults (mapConfigs $ mapRules results)
+            & (fmap . fmap) getRemainderPattern
 
 defaultOneStepStrategy
     :: patt

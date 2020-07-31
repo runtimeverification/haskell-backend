@@ -264,6 +264,7 @@ verifyClaim
     (Axioms axioms)
     (goal, depthLimit)
   =
+    -- TODO: make variables config variables
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startGoal = ProofState.Goal goal

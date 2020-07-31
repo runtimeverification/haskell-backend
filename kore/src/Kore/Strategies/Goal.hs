@@ -662,39 +662,40 @@ checkImplication' lensRulePattern goal =
 --         run :: ExceptT r m r -> m r
 --         run acts = runExceptT acts >>= either pure pure
 
+-- TODO: simplify right hand side as well
 simplify'
     :: MonadSimplify m
     => Lens' goal ClaimPattern
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify' lensRulePattern = undefined
---     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
---         configs <-
---             simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
---             & lift
---         if isBottom configs
---             then pure Pattern.bottom
---             else Foldable.asum (pure <$> configs)
+simplify' lensClaimPattern =
+    Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
+        configs <-
+            simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
+            & lift
+        if isBottom configs
+            then pure Pattern.bottom
+            else Foldable.asum (pure <$> configs)
 
 inferDefined'
     :: MonadSimplify m
     => Lens' goal ClaimPattern
     -> goal
     -> Strategy.TransitionT (Rule goal) m goal
-inferDefined' lensRulePattern = undefined
---     Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
---         let definedConfig =
---                 Pattern.andCondition config
---                 $ from $ makeCeilPredicate_ (Conditional.term config)
---         configs <-
---             simplifyTopConfiguration definedConfig
---             >>= SMT.Evaluator.filterMultiOr
---             & lift
---         Foldable.asum (pure <$> configs)
+inferDefined' lensRulePattern =
+    Lens.traverseOf (lensRulePattern . field @"left") $ \config -> do
+        let definedConfig =
+                Pattern.andCondition config
+                $ from $ makeCeilPredicate_ (Conditional.term config)
+        configs <-
+            simplifyTopConfiguration definedConfig
+            >>= SMT.Evaluator.filterMultiOr
+            & lift
+        Foldable.asum (pure <$> configs)
 
 isTriviallyValid' :: Lens' goal ClaimPattern -> goal -> Bool
-isTriviallyValid' lensRulePattern = undefined
---     isBottom . RulePattern.left . Lens.view lensRulePattern
+isTriviallyValid' lensClaimPattern =
+    isBottom . Lens.view (lensClaimPattern . field @"left")
 
 isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
@@ -720,8 +721,8 @@ derivePar' lensRulePattern mkRule =
 
 type Deriver monad =
         [RewriteRule RewritingVariableName]
-    ->  Pattern VariableName
-    ->  monad (Step.Results RulePattern VariableName)
+    ->  Pattern RewritingVariableName
+    ->  monad (Step.Results RulePattern RewritingVariableName)
 
 -- | Apply 'Rule's to the goal in parallel.
 deriveWith
@@ -733,15 +734,15 @@ deriveWith
     -> [RewriteRule RewritingVariableName]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-deriveWith lensRulePattern mkRule takeStep rewrites goal = undefined
---     getCompose
---     $ Lens.forOf lensRulePattern goal
---     $ \rulePattern ->
---         fmap (snd . Step.refreshRule mempty)
---         $ Lens.forOf RulePattern.leftPattern rulePattern
---         $ \config -> Compose $ do
---             results <- takeStep rewrites config & lift
---             deriveResults mkRule results
+deriveWith lensClaimPattern mkRule takeStep rewrites goal =
+    getCompose
+    $ Lens.forOf lensClaimPattern goal
+    $ \claimPattern ->
+        fmap (snd . undefined) -- Step.refreshRule mempty)
+        $ Lens.forOf (field @"left") claimPattern
+        $ \config -> Compose $ do
+            results <- takeStep rewrites config & lift
+            deriveResults mkRule results
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq'
@@ -756,11 +757,11 @@ deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
-deriveResults
-    :: (RewriteRule RewritingVariableName -> Rule goal)
-    -> Step.Results RulePattern VariableName
-    -> Strategy.TransitionT (Rule goal) simplifier
-        (ProofState.ProofState (Pattern VariableName))
+-- deriveResults
+--     :: (RewriteRule RewritingVariableName -> Rule goal)
+--     -> Step.Results RulePattern RewritingVariableName
+--     -> Strategy.TransitionT (Rule goal) simplifier
+--         (ProofState.ProofState (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove goal argument.
 deriveResults mkRule Results { results, remainders } =
     addResults <|> addRemainders

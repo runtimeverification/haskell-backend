@@ -232,10 +232,11 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    (strategy rewriteRules, (ExecDepth 0, initialConfig))
+                    (strategy rewriteRules, (ExecDepth 0, mkRewritingPattern initialConfig))
         infoExecDepth execDepth
-        exitCode <- getExitCode verifiedModule finalConfig
-        let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
+        let finalConfig' = getRemainderPattern finalConfig
+        exitCode <- getExitCode verifiedModule finalConfig'
+        let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig'
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
@@ -246,7 +247,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
         takeFirstResult act =
             Logic.observeT (takeResult <$> lift act) & runMaybeT
         orElseBottom =
-            pure . fromMaybe (ExecDepth 0, Pattern.bottomOf initialSort)
+            pure . fromMaybe (ExecDepth 0, mkRewritingPattern (Pattern.bottomOf initialSort))
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -338,19 +339,23 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                     (config : _) -> config
             runStrategy' =
                 runStrategy breadthLimit transitionRule (strategy rewriteRules)
-        executionGraph <- runStrategy' initialPattern
+        executionGraph <- runStrategy' (mkRewritingPattern initialPattern)
         let
             match target config = Search.matchWith target config
         solutionsLists <-
             searchGraph
                 searchConfig
-                (match SideCondition.topTODO searchPattern)
+                (match SideCondition.topTODO (mkRewritingPattern searchPattern))
                 executionGraph
         let
             solutions = concatMap MultiOr.extractPatterns solutionsLists
             orPredicate =
                 makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
-        return (forceSort patternSort $ unwrapPredicate orPredicate)
+        return
+            . forceSort patternSort
+            . mapVariables getRewritingVariable
+            . unwrapPredicate
+            $ orPredicate
   where
     patternSort = termLikeSort termLike
 

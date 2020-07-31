@@ -277,19 +277,19 @@ runStep
     -> SMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return (Step.gatherResults results)
+    return . fmap getRemainderPattern $ Step.gatherResults results
 
 runStepResult
     :: Pattern VariableName
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Step.Results RulePattern VariableName)
+    -> SMT (Step.Results RulePattern RewritingVariableName)
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
         [mkRewritingRule axiom]
-        configuration
+        (mkRewritingPattern configuration)
     & runSimplifier testEnv
 
 unificationProcedure

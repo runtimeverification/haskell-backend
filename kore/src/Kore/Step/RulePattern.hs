@@ -644,7 +644,7 @@ aPG sort = Alias
     , aliasRight = TermLike.mkTop sort
     }
 
--- | all path globallt modality symbol
+-- | all path globally modality symbol
 allPathGlobally :: Text
 allPathGlobally = "allPathGlobally"
 

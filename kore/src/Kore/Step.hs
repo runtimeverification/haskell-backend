@@ -104,7 +104,7 @@ transitionRule
     .   MonadSimplify simplifier
     =>  TransitionRule simplifier
             (RewriteRule RewritingVariableName)
-            (Pattern VariableName)
+            (Pattern RewritingVariableName)
 transitionRule =
     \case
         Simplify -> transitionSimplify

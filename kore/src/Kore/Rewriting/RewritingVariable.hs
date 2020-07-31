@@ -25,6 +25,7 @@ module Kore.Rewriting.RewritingVariable
     , unRewritingRule
     , mkRewritingPattern
     , getResultPattern
+    , getResultPattern'
     , getRemainderPredicate
     , getRemainderPattern
     -- * Exported for reachability rule unparsing
@@ -212,6 +213,33 @@ getResultPattern initial config@Conditional { substitution } =
     renamed :: Pattern RewritingVariableName
     renamed = filtered & Pattern.substitute renaming
 
+getResultPattern'
+    :: HasCallStack
+    => FreeVariables RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+getResultPattern' initial config@Conditional { substitution } =
+    renamed
+  where
+    substitution' = Substitution.filter isSomeConfigVariable substitution
+    filtered = config { Pattern.substitution = substitution' }
+    avoiding =
+        initial
+        & FreeVariables.toNames
+        & (Set.map . fmap) toVariableName
+    introduced =
+        Set.fromAscList
+        . mapMaybe getUnifiedRuleVariable
+        . Set.toAscList
+        . FreeVariables.toSet
+        $ freeVariables filtered
+    renaming =
+        Map.mapKeys (fmap RuleVariableName)
+        . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
+        $ refreshVariables avoiding introduced
+    renamed :: Pattern RewritingVariableName
+    renamed = filtered & Pattern.substitute renaming
+
 {- | Prepare a rule for unification or matching with the configuration.
 
 The rule's variables are:
@@ -234,7 +262,7 @@ unRewritingRule
     -> rule VariableName
 unRewritingRule = mapRuleVariables getRewritingVariable
 
--- |Renames configuration variables to distinguish them from those in the rule.
+-- | Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName
 mkRewritingPattern = Pattern.mapVariables (pure ConfigVariableName)
 

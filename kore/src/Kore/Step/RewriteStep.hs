@@ -130,7 +130,7 @@ finalizeRule
     -- ^ Initial conditions
     -> UnifiedRule RulePattern RewritingVariableName
     -- ^ Rewriting axiom
-    -> simplifier [Result RulePattern VariableName]
+    -> simplifier [Result RulePattern RewritingVariableName]
 finalizeRule initialVariables initial unifiedRule =
     Logic.observeAllT $ do
         let initialCondition = Conditional.withoutTerm initial
@@ -139,7 +139,7 @@ finalizeRule initialVariables initial unifiedRule =
         checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
-        let result = getResultPattern initialVariables <$> final
+        let result = getResultPattern' initialVariables <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
@@ -148,7 +148,7 @@ type Finalizer simplifier =
     =>  FreeVariables RewritingVariableName
     ->  Pattern RewritingVariableName
     ->  [UnifiedRule RulePattern RewritingVariableName]
-    ->  simplifier (Results RulePattern VariableName)
+    ->  simplifier (Results RulePattern RewritingVariableName)
 
 finalizeRulesParallel :: forall simplifier. Finalizer simplifier
 finalizeRulesParallel initialVariables initial unifiedRules = do
@@ -160,7 +160,7 @@ finalizeRulesParallel initialVariables initial unifiedRules = do
     remainders <-
         applyRemainder initial remainder
         & Logic.observeAllT
-        & fmap (OrPattern.fromPatterns . map getRemainderPattern)
+        & fmap OrPattern.fromPatterns -- . map getRemainderPattern)
     return Step.Results
         { results = Seq.fromList results
         , remainders
@@ -175,7 +175,7 @@ finalizeRulesSequence initialVariables initial unifiedRules = do
     remainders <-
         applyRemainder initial remainder
         & Logic.observeAllT
-        & fmap (OrPattern.fromPatterns . map getRemainderPattern)
+        & fmap OrPattern.fromPatterns -- . map getRemainderPattern)
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders
@@ -205,7 +205,7 @@ applyRulesWithFinalizer
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern VariableName)
+    -> simplifier (Results RulePattern RewritingVariableName)
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     results <- unifyRules unificationProcedure initial rules
     debugAppliedRewriteRules initial results
@@ -226,7 +226,7 @@ applyRulesParallel
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern VariableName)
+    -> simplifier (Results RulePattern RewritingVariableName)
 applyRulesParallel = applyRulesWithFinalizer finalizeRulesParallel
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -240,13 +240,13 @@ applyRewriteRulesParallel
     => UnificationProcedure simplifier
     -> [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
-    -> Pattern VariableName
+    -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern VariableName)
+    -> simplifier (Results RulePattern RewritingVariableName)
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
-    (mkRewritingPattern -> initial)
+    initial
   = do
     results <- applyRulesParallel unificationProcedure rules initial
     assertFunctionLikeResults (term initial) results
@@ -266,7 +266,7 @@ applyRulesSequence
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern VariableName)
+    -> simplifier (Results RulePattern RewritingVariableName)
 applyRulesSequence = applyRulesWithFinalizer finalizeRulesSequence
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -278,14 +278,14 @@ applyRewriteRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
     => UnificationProcedure simplifier
-    -> Pattern VariableName
+    -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
-    -> simplifier (Results RulePattern VariableName)
+    -> simplifier (Results RulePattern RewritingVariableName)
 applyRewriteRulesSequence
     unificationProcedure
-    (mkRewritingPattern -> initialConfig)
+    initialConfig
     (map getRewriteRule -> rules)
   = do
     results <- applyRulesSequence unificationProcedure rules initialConfig
