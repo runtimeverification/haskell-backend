@@ -15,6 +15,9 @@ module Kore.Step.ClaimPattern
     , toSentence
     , applySubstitution
     , termToExistentials
+    , getConfiguration
+    , getDestination
+    , lensAttribute
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -25,7 +28,10 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
 import qualified Data.Default as Default
+import Data.Generics.Product
+import Data.Generics.Wrapped
 import Data.Map.Strict
     ( Map
     )
@@ -431,3 +437,37 @@ toSentence rule =
     patt = case rule of
         OnePath rule' -> onePathRuleToTerm rule'
         AllPath rule' -> allPathRuleToTerm rule'
+
+getConfiguration :: ReachabilityRule -> Pattern RewritingVariableName
+getConfiguration (OnePath (OnePathRule ClaimPattern { left })) = left
+getConfiguration (AllPath (AllPathRule ClaimPattern { left })) = left
+
+getDestination :: ReachabilityRule -> OrPattern RewritingVariableName
+getDestination (OnePath (OnePathRule ClaimPattern { right })) = right
+getDestination (AllPath (AllPathRule ClaimPattern { right })) = right
+
+lensAttribute
+    :: Functor f
+    => ( Attribute.Axiom Symbol RewritingVariableName
+        ->f (Attribute.Axiom Symbol RewritingVariableName)
+       )
+    -> ReachabilityRule
+    -> f ReachabilityRule
+lensAttribute =
+    Lens.lens
+        (\case
+            OnePath onePathRule ->
+                Lens.view (_Unwrapped . field @"attributes") onePathRule
+            AllPath allPathRule ->
+                Lens.view (_Unwrapped . field @"attributes") allPathRule
+        )
+        (\case
+            OnePath onePathRule -> \attrs ->
+                onePathRule
+                & Lens.set (_Unwrapped . field @"attributes") attrs
+                & OnePath
+            AllPath allPathRule -> \attrs ->
+                allPathRule
+                & Lens.set (_Unwrapped . field @"attributes") attrs
+                & AllPath
+        )

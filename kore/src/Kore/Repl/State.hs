@@ -23,7 +23,7 @@ module Kore.Repl.State
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
     , sortLeafsByType
-    , generateInProgressClaims, createClaim
+    , generateInProgressClaims
     , currentClaimSort
     , conjOfClaims
     , appReplOut
@@ -129,6 +129,7 @@ import Kore.Step.ClaimPattern
     , OnePathRule (..)
     , ReachabilityRule (..)
     , allPathRuleToTerm
+    , lensAttribute
     , onePathRuleToTerm
     )
 import Kore.Step.Simplification.Data
@@ -655,21 +656,6 @@ substituteAlias
         SimpleArgument str -> str
         QuotedArgument str -> "\"" <> str <> "\""
 
-createClaim :: Claim -> Pattern VariableName -> Claim
-createClaim claim cpattern = undefined
---     fromRulePattern
---         claim
---         RulePattern
---             { left
---             , antiLeft = Nothing
---             , requires
---             , rhs = Rule.rhs . toRulePattern $ claim
---             , attributes = Default.def
---             }
---   where
---     (left, condition) = Pattern.splitTerm cpattern
---     requires = Condition.toPredicate condition
-
 conjOfClaims
     :: From claim (TermLike VariableName)
     => [claim]
@@ -727,11 +713,11 @@ findUnprovenGoals (Strategy.graph -> graph) =
 
 currentClaimSort :: MonadState ReplState m => m Sort
 currentClaimSort = do
-    claims <- Lens.use (field @"claim")
+    claim <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
-        . onePathRuleToTerm
-        . undefined
-        $ claims
+        . Pattern.toTermLike
+        . Goal.getConfiguration
+        $ claim
 
 sortLeafsByType :: InnerGraph axiom -> Map.Map NodeState [Graph.Node]
 sortLeafsByType graph =
@@ -803,11 +789,13 @@ createNewDefinition mainModuleName name claims =
             }
 
     trustedToAttribute :: Claim -> Syntax.Attributes
-    trustedToAttribute
-        ( Attribute.trusted
-        . attributes
-        . undefined
-        -> Attribute.Trusted { isTrusted }
-        )
+    trustedToAttribute claim
         | isTrusted = Syntax.Attributes [Attribute.trustedAttribute]
         | otherwise = mempty
+      where
+        Attribute.Trusted { isTrusted } =
+            Lens.view
+                ( lensAttribute
+                . field @"trusted"
+                )
+                claim

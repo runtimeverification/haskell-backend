@@ -66,6 +66,9 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import Control.Monad.Trans.Except
     ( runExceptT
     )
+import Data.Coerce
+    ( coerce
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
@@ -158,6 +161,7 @@ import Kore.Attribute.RuleIndex
 import Kore.Internal.Condition
     ( Condition
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -177,9 +181,11 @@ import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.ClaimPattern
-    ( ClaimPattern (..)
+    ( ClaimPattern
     , ReachabilityRule (..)
+    , lensAttribute
     )
+import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -574,7 +580,9 @@ showDest
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
 showDest =
-    showProofStateComponent "Destination" undefined
+    showProofStateComponent
+        "Destination"
+        (OrPattern.toPattern . getDestination)
 
 showProofStateComponent
     :: Monad m
@@ -1009,7 +1017,10 @@ tryAxiomClaimWorker mode ref = do
         first' = TermLike.refreshVariables (freeVariables second) first
 
     extractLeftPattern :: Either Axiom Claim -> TermLike RewritingVariableName
-    extractLeftPattern = undefined -- left . either toRulePattern toRulePattern
+    extractLeftPattern =
+        either
+            (RulePattern.left . coerce)
+            (Pattern.toTermLike . getConfiguration)
 
 -- | Removes specified node and all its child nodes.
 clear
@@ -1115,14 +1126,10 @@ savePartialProof maybeNatural file = do
         ReplNode . naturalToInt <$> maybeNatural
 
     makeTrusted :: ReachabilityRule -> ReachabilityRule
-    makeTrusted = undefined -- goal@(toRulePattern -> rule) =
---         fromRulePattern goal
---         $ rule
---             { attributes =
---                 (attributes rule)
---                     { Attribute.trusted = Attribute.Trusted True
---                     }
---             }
+    makeTrusted =
+        Lens.set
+            (lensAttribute . field @"trusted")
+            (Attribute.Trusted True)
 
     removeIfRoot
         :: ReplNode

@@ -19,10 +19,11 @@ module Kore.Strategies.Goal
     , transitionRule
     , isTrusted
     , removalPatterns
-    , getConfiguration
     -- * Re-exports
     , module Kore.Strategies.Rule
     , module Kore.Log.InfoReachability
+    , getConfiguration
+    , getDestination
     ) where
 
 import Prelude.Kore
@@ -107,6 +108,8 @@ import Kore.Step.ClaimPattern
     , ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
+    , getConfiguration
+    , getDestination
     )
 import Kore.Step.Result
     ( Result (..)
@@ -724,6 +727,7 @@ type Deriver monad =
     ->  Pattern RewritingVariableName
     ->  monad (Step.Results RulePattern RewritingVariableName)
 
+-- TODO: UnifyRule instance for ClaimPattern
 -- | Apply 'Rule's to the goal in parallel.
 deriveWith
     :: forall m goal
@@ -757,11 +761,11 @@ deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
--- deriveResults
---     :: (RewriteRule RewritingVariableName -> Rule goal)
---     -> Step.Results RulePattern RewritingVariableName
---     -> Strategy.TransitionT (Rule goal) simplifier
---         (ProofState.ProofState (Pattern RewritingVariableName))
+deriveResults
+    :: (RewriteRule RewritingVariableName -> Rule goal)
+    -> Step.Results RulePattern RewritingVariableName
+    -> Strategy.TransitionT (Rule goal) simplifier
+        (ProofState.ProofState (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove goal argument.
 deriveResults mkRule Results { results, remainders } =
     addResults <|> addRemainders
@@ -851,7 +855,3 @@ removalPatterns
     (configTerm, configPredicate) = Pattern.splitTerm configuration
     sideCondition = SideCondition.assumeTrueCondition configPredicate
     configSort = termLikeSort configTerm
-
-getConfiguration :: ReachabilityRule -> Pattern RewritingVariableName
-getConfiguration (OnePath (OnePathRule ClaimPattern { left })) = left
-getConfiguration (AllPath (AllPathRule ClaimPattern { left })) = left
