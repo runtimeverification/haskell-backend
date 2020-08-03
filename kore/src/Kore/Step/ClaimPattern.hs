@@ -18,6 +18,7 @@ module Kore.Step.ClaimPattern
     , getConfiguration
     , getDestination
     , lensAttribute
+    , refreshClaim
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -68,6 +69,7 @@ import Kore.Internal.TermLike
     , SomeVariable
     , SomeVariableName (..)
     , TermLike
+    , Variable (..)
     , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -75,12 +77,18 @@ import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingVariable
     )
+import Kore.Rewriting.UnifyingRule
+    ( Renaming
+    )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
     ( Unparse (..)
+    )
+import Kore.Variables.Fresh
+    ( refreshVariables
     )
 import qualified Kore.Verified as Verified
 
@@ -210,19 +218,41 @@ substituteRight
         (TermLike RewritingVariableName)
     -> ClaimPattern
     -> ClaimPattern
-substituteRight subst claimPattern'@ClaimPattern { right, existentials } =
+substituteRight rename claimPattern'@ClaimPattern { right, existentials } =
     claimPattern'
-        { right = OrPattern.substitute subst' right
+        { right = OrPattern.substitute subst right
         }
   where
-    subst' =
+    subst =
         foldr
             ( Map.delete
             . inject
             . TermLike.variableName
             )
-            subst
+            rename
             existentials
+
+renameExistentials
+    :: HasCallStack
+    => Map
+        (SomeVariableName RewritingVariableName)
+        (SomeVariable RewritingVariableName)
+    -> ClaimPattern
+    -> ClaimPattern
+renameExistentials rename claimPattern'@ClaimPattern { right, existentials } =
+    claimPattern'
+        { right = OrPattern.substitute subst right
+        , existentials = renameVariable <$> existentials
+        }
+  where
+    renameVariable
+        :: ElementVariable RewritingVariableName
+        -> ElementVariable RewritingVariableName
+    renameVariable var =
+        let name = SomeVariableNameElement . variableName $ var
+         in maybe var TermLike.expectElementVariable
+            $ Map.lookup name rename
+    subst = TermLike.mkVar <$> rename
 
 -- | Apply the substitution to the claim.
 substitute
@@ -471,3 +501,35 @@ lensAttribute =
                 & Lens.set (_Unwrapped . field @"attributes") attrs
                 & AllPath
         )
+
+refreshClaim
+    :: FreeVariables RewritingVariableName
+    -> ClaimPattern
+    -> (Renaming RewritingVariableName, ClaimPattern)
+refreshClaim stale claim@(ClaimPattern _ _ _ _) =
+    let staleNames = FreeVariables.toNames stale
+        freeVariablesClaim = freeVariables claim & FreeVariables.toSet
+        renaming = refreshVariables staleNames freeVariablesClaim
+        freeVariablesClaim1 =
+            Set.map (renameVariable renaming) freeVariablesClaim
+            & foldMap FreeVariables.freeVariable
+        existentials' =
+            existentials
+            & fmap inject
+            & Set.fromList
+        staleNames1 = FreeVariables.toNames freeVariablesClaim1 <> staleNames
+        renamingExists = refreshVariables staleNames1 existentials'
+        subst = TermLike.mkVar <$> renaming
+        refreshedClaim =
+            claim
+                { left = left claim & Pattern.substitute subst
+                , attributes = attributes claim
+                }
+            & renameExistentials renamingExists
+            & substituteRight subst
+     in (renaming, refreshedClaim)
+  where
+    renameVariable map' var =
+        Map.lookup (variableName var) map'
+        & fromMaybe var
+    ClaimPattern { existentials } = claim

@@ -110,6 +110,7 @@ import Kore.Step.ClaimPattern
     , ReachabilityRule (..)
     , getConfiguration
     , getDestination
+    , refreshClaim
     )
 import Kore.Step.Result
     ( Result (..)
@@ -742,7 +743,7 @@ deriveWith lensClaimPattern mkRule takeStep rewrites goal =
     getCompose
     $ Lens.forOf lensClaimPattern goal
     $ \claimPattern ->
-        fmap (snd . undefined) -- Step.refreshRule mempty)
+        fmap (snd . refreshClaim mempty)
         $ Lens.forOf (field @"left") claimPattern
         $ \config -> Compose $ do
             results <- takeStep rewrites config & lift
