@@ -135,6 +135,14 @@ test_goTranslatePredicate =
             (     exists 0 (exists 1 $ fun 2 [var 0, var 1])
             `and` exists 3 (existst 4 $ exists 5 $ fun 2 [var 5, var 3])
             )
+    , testCase "X:Int = X:Int /Int Y:Int" $
+        yields
+            (translating (peq n (Mock.tdivInt n m)))
+            (var 0 `eq` (var 0 `sdiv` var 1))
+    , testCase "X:Int = \\defined X:Int /Int Y:Int" $
+        yields
+            (translating (peq n (TermLike.mkDefined $ Mock.tdivInt n m)))
+            (var 0 `eq` (var 0 `sdiv` var 1))
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -155,6 +163,7 @@ test_goTranslatePredicate =
     existsb i p = existsQ [List [var i, Atom "Bool"]] p
     existst i p = existsQ [List [var i, Atom "|HB_testSort|"]] p
     fun i p = SMT.SimpleSMT.List (var i : p)
+    sdiv i j = List [Atom "div", i, j]
 
 translating :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translating =
