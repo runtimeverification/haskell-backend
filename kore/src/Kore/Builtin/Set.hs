@@ -387,8 +387,8 @@ evalDifference resultSort args@[_set1, _set2] = do
                   | set2WithoutCommonKeys == Domain.emptyNormalizedAc
                     = patSet1
                   | otherwise = differenceSet <$> patSet1 <*> patSet2
-            flip Pattern.andCondition definedArgs
-                <$> return patDiff
+            return (flip Pattern.andCondition definedArgs patDiff)
+
     rightIdentity <|> bothConcrete <|> symbolic
   where
     ctx = Set.differenceKey
