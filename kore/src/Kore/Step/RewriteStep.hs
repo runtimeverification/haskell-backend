@@ -67,7 +67,7 @@ import Kore.Step.Step
     )
 import qualified Logic
 
-withoutUnification :: UnifiedRule rule variable -> rule variable
+withoutUnification :: UnifiedRule rule -> rule
 withoutUnification = Conditional.term
 
 {- | Produce the final configurations of an applied rule.
@@ -128,9 +128,9 @@ finalizeRule
     => FreeVariables RewritingVariableName
     -> Pattern RewritingVariableName
     -- ^ Initial conditions
-    -> UnifiedRule RulePattern RewritingVariableName
+    -> UnifiedRule (RulePattern RewritingVariableName)
     -- ^ Rewriting axiom
-    -> simplifier [Result RulePattern RewritingVariableName]
+    -> simplifier [Result (RulePattern RewritingVariableName)]
 finalizeRule initialVariables initial unifiedRule =
     Logic.observeAllT $ do
         let initialCondition = Conditional.withoutTerm initial
@@ -147,8 +147,8 @@ type Finalizer simplifier =
         MonadSimplify simplifier
     =>  FreeVariables RewritingVariableName
     ->  Pattern RewritingVariableName
-    ->  [UnifiedRule RulePattern RewritingVariableName]
-    ->  simplifier (Results RulePattern RewritingVariableName)
+    ->  [UnifiedRule (RulePattern RewritingVariableName)]
+    ->  simplifier (Results (RulePattern RewritingVariableName))
 
 finalizeRulesParallel :: forall simplifier. Finalizer simplifier
 finalizeRulesParallel initialVariables initial unifiedRules = do
@@ -205,7 +205,7 @@ applyRulesWithFinalizer
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern RewritingVariableName)
+    -> simplifier (Results (RulePattern RewritingVariableName))
 applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     results <- unifyRules unificationProcedure initial rules
     debugAppliedRewriteRules initial results
@@ -226,7 +226,7 @@ applyRulesParallel
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern RewritingVariableName)
+    -> simplifier (Results (RulePattern RewritingVariableName))
 applyRulesParallel = applyRulesWithFinalizer finalizeRulesParallel
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -242,7 +242,7 @@ applyRewriteRulesParallel
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern RewritingVariableName)
+    -> simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
@@ -266,7 +266,7 @@ applyRulesSequence
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
-    -> simplifier (Results RulePattern RewritingVariableName)
+    -> simplifier (Results (RulePattern RewritingVariableName))
 applyRulesSequence = applyRulesWithFinalizer finalizeRulesSequence
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -282,7 +282,7 @@ applyRewriteRulesSequence
     -- ^ Configuration being rewritten
     -> [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
-    -> simplifier (Results RulePattern RewritingVariableName)
+    -> simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesSequence
     unificationProcedure
     initialConfig

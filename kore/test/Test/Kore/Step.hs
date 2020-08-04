@@ -67,6 +67,7 @@ import Kore.Step
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , injectTermIntoRHS
+    , mkRewritingRule
     )
 import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)

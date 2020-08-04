@@ -75,37 +75,31 @@ instance InternalVariable variable
 
 -- | A rule which can be unified against a configuration
 class UnifyingRule rule where
+    type UnifyingRuleVariable rule
+
     -- | The pattern used for matching/unifying the rule with the configuration.
-    matchingPattern :: rule variable -> TermLike variable
+    matchingPattern :: rule -> TermLike (UnifyingRuleVariable rule)
 
     -- | The condition to be checked upon matching the rule
-    precondition :: rule variable -> Predicate variable
+    precondition :: rule -> Predicate (UnifyingRuleVariable rule)
 
     {-| Refresh the variables of a rule.
     The free variables of a rule are implicitly quantified, so they are
     renamed to avoid collision with any variables in the given set.
      -}
     refreshRule
-        :: InternalVariable variable
-        => FreeVariables variable  -- ^ Variables to avoid
-        -> rule variable
-        -> (Renaming variable, rule variable)
-
-    {-| Apply a given function to all variables in a rule. This is used for
-    distinguishing rule variables from configuration variables.
-    -}
-    mapRuleVariables
-        :: Ord variable1
-        => FreshPartialOrd variable2
-        => AdjSomeVariableName (variable1 -> variable2)
-        -> rule variable1
-        -> rule variable2
+        :: InternalVariable (UnifyingRuleVariable rule)
+        => FreeVariables (UnifyingRuleVariable rule)  -- ^ Variables to avoid
+        -> rule
+        -> (Renaming (UnifyingRuleVariable rule), rule)
 
     -- | Checks whether a given substitution is acceptable for a rule
     checkInstantiation
-        :: InternalVariable variable
-        => rule variable
-        -> Map.Map (SomeVariable variable) (TermLike variable)
-        -> [InstantiationFailure variable]
+        :: InternalVariable (UnifyingRuleVariable rule)
+        => rule
+        -> Map.Map
+                (SomeVariable (UnifyingRuleVariable rule))
+                (TermLike (UnifyingRuleVariable rule))
+        -> [InstantiationFailure (UnifyingRuleVariable rule)]
     checkInstantiation _ _ = []
     {-# INLINE checkInstantiation #-}

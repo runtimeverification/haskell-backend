@@ -63,7 +63,8 @@ import Kore.Step.ClaimPattern
     ( ReachabilityRule (..)
     )
 import Kore.Step.RulePattern
-    ( rulePattern
+    ( mkRewritingRule
+    , rulePattern
     )
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues

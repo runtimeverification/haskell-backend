@@ -43,6 +43,8 @@ import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , allPathGlobally
+    , mkRewritingRule
+    , unRewritingRule
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyTopConfiguration
@@ -223,7 +225,7 @@ transitionRule
             mapRules =
                 StepResult.mapRules
                 $ RewriteRule
-                . Step.unRewritingRule
+                . unRewritingRule
                 . Step.withoutUnification
             mapConfigs =
                 StepResult.mapConfigs

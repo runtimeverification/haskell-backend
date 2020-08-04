@@ -37,6 +37,7 @@ import Kore.Step.ClaimPattern
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , ToRulePattern (..)
+    , unRewritingRule
     )
 import Kore.Unparser
     ( Unparse

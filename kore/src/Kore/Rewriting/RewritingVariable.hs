@@ -21,8 +21,6 @@ module Kore.Rewriting.RewritingVariable
     , mkElementRuleVariable
     , mkUnifiedRuleVariable
     , mkUnifiedConfigVariable
-    , mkRewritingRule
-    , unRewritingRule
     , mkRewritingPattern
     , getResultPattern
     , getResultPattern'
@@ -36,6 +34,9 @@ import Prelude.Kore
 
 import Control.DeepSeq
     ( NFData
+    )
+import Data.Coerce
+    ( Coercible (..)
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -239,28 +240,6 @@ getResultPattern' initial config@Conditional { substitution } =
         $ refreshVariables avoiding introduced
     renamed :: Pattern RewritingVariableName
     renamed = filtered & Pattern.substitute renaming
-
-{- | Prepare a rule for unification or matching with the configuration.
-
-The rule's variables are:
-
-* marked with 'Target' so that they are preferred targets for substitution, and
-* renamed to avoid any free variables from the configuration and side condition.
-
- -}
-mkRewritingRule
-    :: UnifyingRule rule
-    => rule VariableName
-    -> rule RewritingVariableName
-mkRewritingRule = mapRuleVariables (pure RuleVariableName)
-
-{- | Unwrap the variables in a 'RulePattern'. Inverse of 'targetRuleVariables'.
- -}
-unRewritingRule
-    :: UnifyingRule rule
-    => rule RewritingVariableName
-    -> rule VariableName
-unRewritingRule = mapRuleVariables getRewritingVariable
 
 -- | Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName

@@ -32,6 +32,7 @@ import Kore.Step.ClaimPattern
 import Kore.Step.RulePattern
     ( RulePattern (..)
     , injectTermIntoRHS
+    , mkRewritingRule
     )
 import Kore.Strategies.Goal
 

@@ -726,7 +726,7 @@ derivePar' lensRulePattern mkRule =
 type Deriver monad =
         [RewriteRule RewritingVariableName]
     ->  Pattern RewritingVariableName
-    ->  monad (Step.Results RulePattern RewritingVariableName)
+    ->  monad (Step.Results (RulePattern RewritingVariableName))
 
 -- TODO: UnifyRule instance for ClaimPattern
 -- | Apply 'Rule's to the goal in parallel.
@@ -764,7 +764,7 @@ deriveSeq' lensRulePattern mkRule =
 
 deriveResults
     :: (RewriteRule RewritingVariableName -> Rule goal)
-    -> Step.Results RulePattern RewritingVariableName
+    -> Step.Results (RulePattern RewritingVariableName)
     -> Strategy.TransitionT (Rule goal) simplifier
         (ProofState.ProofState (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove goal argument.

@@ -131,6 +131,8 @@ import Kore.Step.RulePattern
     , ToRulePattern (..)
     , getRewriteRule
     , lhsEqualsRhs
+    , mkRewritingRule
+    , unRewritingRule
     )
 import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)

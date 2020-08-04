@@ -49,6 +49,7 @@ import Kore.Step.RulePattern
     , RewriteRule (..)
     , RulePattern (..)
     , injectTermIntoRHS
+    , mkRewritingRule
     , rulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
@@ -76,7 +77,7 @@ import Test.Tasty.HUnit.Ext
 type RulePattern' = RulePattern VariableName
 type Conditional' = Conditional VariableName
 type RewriteRule' = RewriteRule VariableName
-type Results' = Step.Results RulePattern RewritingVariableName
+type Results' = Step.Results (RulePattern RewritingVariableName)
 
 applyInitialConditions
     :: TestCondition

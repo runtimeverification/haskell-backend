@@ -35,6 +35,9 @@ module Kore.Step.RulePattern
     , implicationRuleToTerm
     , allPathGlobally
     , aPG
+    , mapRuleVariables
+    , mkRewritingRule
+    , unRewritingRule
     ) where
 
 import Prelude.Kore
@@ -99,6 +102,11 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , getRewritingVariable
+    , mkRuleVariable
     )
 import Kore.Sort
     ( Sort (..)
@@ -648,7 +656,9 @@ aPG sort = Alias
 allPathGlobally :: Text
 allPathGlobally = "allPathGlobally"
 
-instance UnifyingRule RulePattern where
+instance UnifyingRule (RulePattern variable) where
+    type UnifyingRuleVariable (RulePattern variable) = variable
+
     matchingPattern = left
 
     precondition = requires
@@ -684,30 +694,42 @@ instance UnifyingRule RulePattern where
             Map.lookup (variableName var) map'
             & fromMaybe var
 
-    mapRuleVariables adj rule1@(RulePattern _ _ _ _ _) =
-        rule1
-            { left = mapTermLikeVariables left
-            , antiLeft = mapAntiLeftVariables <$> antiLeft
-            , requires = mapPredicateVariables requires
-            , rhs = RHS
-                { existentials = mapElementVariable adj <$> existentials
-                , right = mapTermLikeVariables right
-                , ensures = mapPredicateVariables ensures
-                }
-            , attributes =
-                Attribute.mapAxiomVariables adj attributes
+mapRuleVariables
+    :: forall rule variable1 variable2
+    .  Coercible rule RulePattern
+    => InternalVariable variable1
+    => InternalVariable variable2
+    => AdjSomeVariableName
+        (variable1 -> variable2)
+    -> rule variable1
+    -> rule variable2
+mapRuleVariables adj (coerce -> rule1@(RulePattern _ _ _ _ _)) =
+    coerce
+    $ rule1
+        { left = mapTermLikeVariables left
+        , antiLeft = mapAntiLeftVariables <$> antiLeft
+        , requires = mapPredicateVariables requires
+        , rhs = RHS
+            { existentials = mapElementVariable adj <$> existentials
+            , right = mapTermLikeVariables right
+            , ensures = mapPredicateVariables ensures
             }
-      where
-        RulePattern
-            { left, antiLeft, requires
-            , rhs = RHS { existentials, right, ensures }
-            , attributes
-            } = rule1
-        mapTermLikeVariables = TermLike.mapVariables adj
-        mapPredicateVariables = Predicate.mapVariables adj
-        mapAntiLeftVariables = AntiLeft.mapVariables adj
+        , attributes =
+            Attribute.mapAxiomVariables adj attributes
+        }
+  where
+    RulePattern
+        { left, antiLeft, requires
+        , rhs = RHS { existentials, right, ensures }
+        , attributes
+        } = rule1
+    mapTermLikeVariables = TermLike.mapVariables adj
+    mapPredicateVariables = Predicate.mapVariables adj
+    mapAntiLeftVariables = AntiLeft.mapVariables adj
 
-instance UnifyingRule RewriteRule where
+instance UnifyingRule (RewriteRule variable) where
+    type UnifyingRuleVariable (RewriteRule variable) = variable
+
     matchingPattern (RewriteRule rule) = matchingPattern rule
     {-# INLINE matchingPattern #-}
 
@@ -718,10 +740,6 @@ instance UnifyingRule RewriteRule where
         RewriteRule <$> refreshRule avoiding rule
     {-# INLINE refreshRule #-}
 
-    mapRuleVariables mapping (RewriteRule rule) =
-        RewriteRule (mapRuleVariables mapping rule)
-    {-# INLINE mapRuleVariables #-}
-
 lhsEqualsRhs
     :: InternalVariable variable
     => RulePattern variable
@@ -730,3 +748,25 @@ lhsEqualsRhs rule =
     lhsToTerm left antiLeft requires == rhsToTerm rhs
   where
     RulePattern { left, antiLeft, requires, rhs } = rule
+
+{- | Prepare a rule for unification or matching with the configuration.
+
+The rule's variables are:
+
+* marked with 'RewritingVariable' so that they are preferred targets for substitution, and
+* renamed to avoid any free variables from the configuration and side condition.
+
+ -}
+mkRewritingRule
+    :: Coercible rule RulePattern
+    => rule VariableName
+    -> rule RewritingVariableName
+mkRewritingRule = mapRuleVariables (pure mkRuleVariable)
+
+{- | Unwrap the variables in a 'RulePattern'. Inverse of 'mkRewritingRule'.
+ -}
+unRewritingRule
+    :: Coercible rule RulePattern
+    => rule RewritingVariableName
+    -> rule VariableName
+unRewritingRule = mapRuleVariables getRewritingVariable
