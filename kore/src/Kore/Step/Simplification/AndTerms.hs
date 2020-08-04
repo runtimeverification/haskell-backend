@@ -332,7 +332,8 @@ equalAndEquals
     -> MaybeT unifier (Pattern variable)
 equalAndEquals first second
   | unDefined first == unDefined second =
-    return (Pattern.fromTermLike $ if isDefinedPattern second then second else first)
+    -- TODO (thomas.tuegel): Preserve defined and simplified flags.
+    return (Pattern.fromTermLike first)
 equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
