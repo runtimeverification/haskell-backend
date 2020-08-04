@@ -1216,14 +1216,23 @@ test_Defined =
         let partial = Mock.f Mock.a
             defined = mkDefined partial
         in
-            [ testCase "\\and" $ do
-                let expect = [Pattern.fromTermLike defined]
+            [ testCase "\\and(partial, defined)" $ do
+                let expect = [Pattern.fromTermLike partial]
                 (actualAnd, actualUnify) <- simplifyUnify partial defined
                 assertEqual "" expect actualAnd
                 assertEqual "" expect actualUnify
-            , testCase "\\equals" $ do
+            , testCase "\\and(defined, partial)" $ do
+                let expect = [Pattern.fromTermLike defined]
+                (actualAnd, actualUnify) <- simplifyUnify defined partial
+                assertEqual "" expect actualAnd
+                assertEqual "" expect actualUnify
+            , testCase "\\equals(partial, defined)" $ do
                 let expect = Just [Condition.topOf Mock.testSort]
                 actual <- simplifyEquals mempty partial defined
+                assertEqual "" expect actual
+            , testCase "\\equals(defined, partial)" $ do
+                let expect = Just [Condition.topOf Mock.testSort]
+                actual <- simplifyEquals mempty defined partial
                 assertEqual "" expect actual
             ]
     , testGroup "variable with function" $
